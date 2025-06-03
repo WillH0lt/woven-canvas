@@ -1,0 +1,61 @@
+name: "  ▶️  CI Workflow"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths-ignore:
+      - ".vscode/**"
+      - "LICENSE"
+      - "README.md"
+  workflow_dispatch:
+
+concurrency:
+  group: pull-${{ github.ref }}-1
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: ["20.17.0"]
+        pnpm: ["9.15.0"]
+
+    name: "Build: ${{ matrix.os }}, Node.js ${{ matrix.node }}"
+
+    steps:
+      - name: Prepare git
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "💽️ Setup (Node.js)"
+        uses: ./.github/actions/setup-node
+        with:
+          node-version: ${{ matrix.node }}
+          pnpm-version: ${{ matrix.pnpm }}
+
+      - name: "🏗️ Build: Transpile TS to JS"
+        run: pnpm check:exports
+
+      - name: "🧪 Verify build"
+        run: pnpm check:exports
+
+      - name: "🚨️ Lint code"
+        run: pnpm lint:ci
+
+      - name: "🧳 Run unit tests"
+        run: pnpm test:unit

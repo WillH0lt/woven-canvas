@@ -1,0 +1,157 @@
+import { System, type SystemGroup, World } from '@lastolivegames/becsy'
+import type { z } from 'zod/v4'
+
+import { Emitter } from 'strict-event-emitter'
+import type { Extension } from './Extension'
+import * as sys from './systems'
+import { EmitterEventKind, type EmitterEvents, type ICommands, Options } from './types'
+
+const PRIVATE_CONSTRUCTOR_KEY = Symbol()
+
+function scheduleGroups(orderedGroups: SystemGroup[]): void {
+  for (let i = 0; i < orderedGroups.length - 1; i++) {
+    const currentGroup = orderedGroups[i]
+    const nextGroup = orderedGroups[i + 1]
+
+    currentGroup.schedule((s) => s.before(nextGroup))
+  }
+}
+
+export class InfiniteCanvas {
+  public readonly domElement: HTMLElement
+
+  public readonly options: Options
+
+  private readonly emitter: Emitter<EmitterEvents>
+
+  private readonly world: World
+
+  private extensions: Extension[]
+
+  public static async New(extensions: Extension[], options: Options = {}): Promise<InfiniteCanvas> {
+    const parsedOptions = Options.parse(options)
+
+    const domElement = document.createElement('div')
+    domElement.id = 'infinite-canvas'
+    domElement.style.position = 'relative'
+    domElement.style.width = '100%'
+    domElement.style.height = '100%'
+    domElement.style.overflow = 'hidden'
+
+    const resources = {
+      domElement,
+    }
+
+    const emitter = new Emitter<EmitterEvents>()
+    const coreResources = {
+      ...resources,
+      emitter,
+    }
+
+    await Promise.all(extensions.map((ext) => ext.initialize(resources)))
+
+    const setupGroup = [
+      System.group(sys.Deleter, { resources: coreResources }, sys.CommandSpawner, { resources: coreResources }),
+    ]
+    const inputGroup = extensions.map((ext) => ext.inputGroup).filter((g) => g !== null)
+    const captureGroups = extensions.map((ext) => ext.captureGroup).filter((g) => g !== null)
+    const updateGroups = extensions.map((ext) => ext.updateGroup).filter((g) => g !== null)
+    const renderGroups = extensions.map((ext) => ext.renderGroup).filter((g) => g !== null)
+
+    const orderedGroups = [...setupGroup, ...inputGroup, ...captureGroups, ...updateGroups, ...renderGroups]
+
+    scheduleGroups(orderedGroups)
+
+    // const useStore = create(() => ({
+    //   ...extensions
+    //     .map((extension) => extension.store)
+    //     .filter((store) => store !== null)
+    //     .reduce((acc: Record<string, unknown>, store, idx) => {
+    //       const extension = extensions[idx]
+    //       acc[extension.name] = store
+    //       return acc
+    //     }, {}),
+    //   // blocks: ["a", "b", "c"],
+    // }))
+
+    const world = await World.create({
+      defs: [orderedGroups],
+    })
+
+    // collect trackable components
+    // comps.Block.arguments
+    // comps.Block.
+
+    // world.build((worldSys) => {
+    //   for (const block of blocks) {
+    //     worldSys.createEntity(comps.Block, { ...block })
+    //   }
+    // })
+
+    return new InfiniteCanvas(extensions, parsedOptions, world, domElement, emitter, PRIVATE_CONSTRUCTOR_KEY)
+  }
+
+  constructor(
+    extensions: Extension[],
+    options: z.infer<typeof Options>,
+    world: World,
+    domElement: HTMLElement,
+    emitter: Emitter<EmitterEvents>,
+    privateConstructorKey: Symbol,
+  ) {
+    if (privateConstructorKey !== PRIVATE_CONSTRUCTOR_KEY) {
+      throw new Error('Use InfiniteCanvas.New() to create an instance.')
+    }
+
+    this.extensions = extensions
+    this.options = options
+    this.world = world
+    this.domElement = domElement
+    this.emitter = emitter
+
+    if (options.autoloop) {
+      this.loop()
+    }
+  }
+
+  public execute(): Promise<void> {
+    return this.world.execute().catch((err: unknown) => {
+      console.error(err)
+    })
+  }
+
+  /**
+   * An object of all registered commands.
+   */
+  public get commands(): ICommands {
+    const send = (kind: string, ...args: any[]) =>
+      this.emitter.emit(EmitterEventKind.Command, {
+        kind,
+        payload: JSON.stringify(args),
+      })
+
+    return this.extensions.reduce((commands, ext) => {
+      if (!ext.addCommands) return commands
+
+      const extCommands = ext.addCommands.call(this, send)
+      if (!extCommands) return commands
+
+      for (const key of Object.keys(extCommands)) {
+        ;(commands as any)[key] = extCommands[key as keyof typeof extCommands]
+      }
+      return commands
+    }, {} as ICommands)
+  }
+
+  private loop(): void {
+    if (!(this.world?.alive ?? true)) return
+
+    requestAnimationFrame(() => {
+      this.loop()
+    })
+
+    this.world.execute().catch((err: unknown) => {
+      console.error(err)
+    })
+  }
+}

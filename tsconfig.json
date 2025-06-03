@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.options.json",
+  "files": [],
+  "references": [
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/extension-renderer"
+    },
+    {
+      "path": "examples/canvas"
+    },
+    {
+      "path": "examples/zustand-test"
+    }
+  ],
+  "compilerOptions": {
+    "experimentalDecorators": true
+  }
+}
