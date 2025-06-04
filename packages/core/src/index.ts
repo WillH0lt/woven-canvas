@@ -1,7 +1,6 @@
 export { InfiniteCanvas } from './InfiniteCanvas'
 
-export * as comps from './components/index.js'
-// export * as sys from './systems/index.js'
+export * as comps from './components/index'
 export {
   Options,
   type Block,

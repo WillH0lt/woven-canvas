@@ -37,6 +37,7 @@ export class InfiniteCanvas {
     domElement.style.width = '100%'
     domElement.style.height = '100%'
     domElement.style.overflow = 'hidden'
+    domElement.tabIndex = 0
 
     const resources = {
       domElement,
@@ -112,6 +113,9 @@ export class InfiniteCanvas {
     if (options.autoloop) {
       this.loop()
     }
+    if (options.autofocus) {
+      this.useAutoFocus()
+    }
   }
 
   public execute(): Promise<void> {
@@ -153,5 +157,26 @@ export class InfiniteCanvas {
     this.world.execute().catch((err: unknown) => {
       console.error(err)
     })
+  }
+
+  private useAutoFocus(): void {
+    // Set up a MutationObserver to watch for when it's added
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of Array.from(mutation.addedNodes)) {
+          if (node === this.domElement) {
+            // Stop observing once it's added
+            observer.disconnect()
+            // Wait a tick to ensure layout is ready
+            requestAnimationFrame(() => {
+              this.domElement.focus()
+            })
+          }
+        }
+      }
+    })
+
+    // Start observing the whole document or a specific container's parent
+    observer.observe(document.body, { childList: true, subtree: true })
   }
 }

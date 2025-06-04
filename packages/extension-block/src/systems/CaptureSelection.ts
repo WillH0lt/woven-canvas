@@ -1,10 +1,10 @@
 import { BaseSystem, comps } from '@infinitecanvas/core'
-import type { Entity } from '@lastolivegames/becsy'
 
 import * as blockComps from '../components'
+import { intersectPoint } from '../helpers'
 import { BlockCommand, type BlockCommandArgs } from '../types'
 
-export class SelectionHandler extends BaseSystem<BlockCommandArgs> {
+export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
   private readonly pointer = this.singleton.read(comps.Pointer)
 
   private readonly selectableBlocks = this.query((q) => q.current.with(comps.Block, blockComps.Selectable))
@@ -17,7 +17,7 @@ export class SelectionHandler extends BaseSystem<BlockCommandArgs> {
 
     // create selection box when pointer is down
     if (this.pointer.downTrigger && !this.selectionBoxes.current.length) {
-      const intersected = this.intersectSelectable(this.pointer.position)
+      const intersected = intersectPoint(this.pointer.position, this.selectableBlocks.current)
       if (!intersected) {
         this.emitCommand(BlockCommand.AddSelectionBox, {
           start: [this.pointer.position[0], this.pointer.position[1]],
@@ -43,12 +43,6 @@ export class SelectionHandler extends BaseSystem<BlockCommandArgs> {
       })
     }
 
-    //   const part = this.selectionBoxes.current[0].write(comps.Part)
-    //   part.left = Math.min(start[0], this.input.pointer[0])
-    //   part.top = Math.min(start[1], this.input.pointer[1])
-    //   part.width = Math.abs(start[0] - this.input.pointer[0])
-    //   part.height = Math.abs(start[1] - this.input.pointer[1])
-
     //   const rect: [number, number, number, number] = [part.top, part.left, part.width, part.height]
     //   let intersectedBlocks = intersectRect(rect, this.selectableBlocks.current)
 
@@ -71,20 +65,5 @@ export class SelectionHandler extends BaseSystem<BlockCommandArgs> {
     if (this.pointer.upTrigger && this.selectionBoxes.current.length) {
       this.emitCommand(BlockCommand.RemoveSelectionBoxes)
     }
-  }
-
-  intersectSelectable(point: [number, number]): Entity | null {
-    for (const blockEntity of this.selectableBlocks.current) {
-      const block = blockEntity.read(comps.Block)
-      if (
-        point[0] >= block.left &&
-        point[0] <= block.left + block.width &&
-        point[1] >= block.top &&
-        point[1] <= block.top + block.height
-      ) {
-        return blockEntity
-      }
-    }
-    return null
   }
 }

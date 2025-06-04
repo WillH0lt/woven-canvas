@@ -8,18 +8,27 @@ export class InputPointer extends System {
 
   @co private *onPointerMove(e: PointerEvent): Generator {
     this.pointer.position = [e.clientX, e.clientY]
+    this.setTrigger('moveTrigger')
+
     yield
   }
 
   @co private *onPointerDown(e: PointerEvent): Generator {
+    if (e.button !== 0) return
+
     this.pointer.isDown = true
     this.pointer.position = [e.clientX, e.clientY]
+    this.pointer.downPosition = this.pointer.position
+    this.setTrigger('downTrigger')
+
     yield
   }
 
   @co private *onPointerUp(e: PointerEvent): Generator {
     this.pointer.isDown = false
     this.pointer.position = [e.clientX, e.clientY]
+    this.setTrigger('upTrigger')
+
     yield
   }
 
@@ -34,26 +43,12 @@ export class InputPointer extends System {
 
     Object.assign(this.pointer, { [triggerKey]: false })
   }
-  // @co private *onPointerDown(e: PointerEvent): Generator {
-  //   // this.pointerInput.isDown = true
-
-  //   console.log('Pointer down at:', performance.now())
-
-  //   yield
-  // }
 
   public initialize(): void {
     const domElement = this.resources.domElement
 
-    domElement.addEventListener('pointermove', this.onPointerMove.bind(this))
-    domElement.addEventListener('pointerdown', (e) => {
-      this.onPointerDown(e)
-      this.setTrigger('downTrigger')
-    })
-
-    domElement.addEventListener('pointerup', (e) => {
-      this.onPointerUp(e)
-      this.setTrigger('upTrigger')
-    })
+    window.addEventListener('pointermove', this.onPointerMove.bind(this))
+    domElement.addEventListener('pointerdown', this.onPointerDown.bind(this))
+    window.addEventListener('pointerup', this.onPointerUp.bind(this))
   }
 }

@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.7",
+    "@types/uuid": "^10.0.0",
     "tailwindcss": "^4.1.7",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
@@ -16,6 +17,7 @@
     "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/extension-block": "workspace:^",
     "@infinitecanvas/extension-input": "workspace:^",
-    "@infinitecanvas/extension-renderer": "workspace:^"
+    "@infinitecanvas/extension-renderer": "workspace:^",
+    "uuid": "^11.1.0"
   }
 }

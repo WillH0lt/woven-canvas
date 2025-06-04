@@ -24,6 +24,7 @@ export type CommandMap = {
 
 export const Options = z.object({
   autoloop: z.boolean().default(true),
+  autofocus: z.boolean().default(true),
 })
 
 export type Options = z.input<typeof Options>

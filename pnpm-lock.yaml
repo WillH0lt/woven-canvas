@@ -77,10 +77,16 @@ importers:
       '@infinitecanvas/extension-renderer':
         specifier: workspace:^
         version: link:../../packages/extension-renderer
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.1.7
         version: 4.1.7(vite@6.3.5)
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       tailwindcss:
         specifier: ^4.1.7
         version: 4.1.7

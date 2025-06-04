@@ -1,2 +1,3 @@
-export { BlockCommands } from './BlockCommands'
-export { SelectionHandler } from './SelectionHandler'
+export { UpdateBlocks } from './UpdateBlocks'
+export { CaptureSelection } from './CaptureSelection'
+export { CaptureDrag } from './CaptureDrag'

@@ -3,6 +3,7 @@ import { InfiniteCanvas } from '@infinitecanvas/core'
 import { BlockExtension } from '@infinitecanvas/extension-block'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { RendererExtension } from '@infinitecanvas/extension-renderer'
+import { v4 as uuid } from 'uuid'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="container" class="absolute inset-0"></div>
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'y') {
     infiniteCanvas?.commands.block.addBlock({
-      id: 'block2',
+      id: uuid(),
       top: 300,
       left: 300,
       width: 150,
