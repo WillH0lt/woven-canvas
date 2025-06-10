@@ -52,7 +52,9 @@ export class InfiniteCanvas {
     await Promise.all(extensions.map((ext) => ext.initialize(resources)))
 
     const setupGroup = [
-      System.group(sys.Deleter, { resources: coreResources }, sys.CommandSpawner, { resources: coreResources }),
+      System.group(sys.Deleter, { resources: coreResources }, sys.CommandSpawner, {
+        resources: coreResources,
+      }),
     ]
     const inputGroup = extensions.map((ext) => ext.inputGroup).filter((g) => g !== null)
     const captureGroups = extensions.map((ext) => ext.captureGroup).filter((g) => g !== null)
@@ -76,7 +78,7 @@ export class InfiniteCanvas {
     // }))
 
     const world = await World.create({
-      defs: [orderedGroups],
+      defs: orderedGroups,
     })
 
     // collect trackable components
@@ -160,7 +162,7 @@ export class InfiniteCanvas {
   }
 
   private useAutoFocus(): void {
-    // Set up a MutationObserver to watch for when it's added
+    // call focus on the domElement once it's added to the document
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of Array.from(mutation.addedNodes)) {

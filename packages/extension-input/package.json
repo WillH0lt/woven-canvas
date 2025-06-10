@@ -8,7 +8,9 @@
     "name": "Alberto Schiabel",
     "email": "alberto.schiabel@gmail.com"
   },
-  "files": ["build"],
+  "files": [
+    "build"
+  ],
   "main": "./build/index.js",
   "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
@@ -41,5 +43,8 @@
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.4"
   }
 }

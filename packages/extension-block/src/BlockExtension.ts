@@ -22,12 +22,10 @@ export class BlockExtension extends Extension {
   public name = 'block'
 
   public async initialize(resources: Resources): Promise<void> {
-    // this._captureGroup = System.group(sys.SelectionHandler, { resources })
-    this._captureGroup = System.group(sys.CaptureDrag, { resources })
-
+    this._captureGroup = System.group(sys.CaptureSelection, { resources })
     this._updateGroup = System.group(sys.UpdateBlocks, { resources })
 
-    this.createStore<Block[]>([])
+    // this.createStore<Block[]>([])
   }
 
   public addCommands = (send: SendCommandFn<BlockCommandArgs>): Partial<ICommands> => {

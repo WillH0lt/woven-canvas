@@ -66,6 +66,12 @@ export class BaseSystem<Commands extends CommandMap = {}> extends becsySystem {
     this.commandListeners[kind]!.push(callback)
   }
 
+  // protected runMachine(machine: StateMachine, events: Event[]): void {
+  //   // This method should be implemented in subclasses to run the state machine with the provided events
+  //   // The implementation will depend on how you manage state machines in your application
+  //   throw new Error('runMachine method not implemented')
+  // }
+
   public execute(): void {
     for (const commandEntity of this._commands.added) {
       const command = commandEntity.read(comps.Command)

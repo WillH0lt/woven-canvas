@@ -1,8 +1,8 @@
 import { World } from '@lastolivegames/becsy'
 
-import { BaseSystem } from '../BaseSystem'
-import { Block } from '../components/Block'
-import { ToBeDeleted } from '../components/ToBeDeleted'
+import { BaseSystem } from '../src/BaseSystem'
+import { Block } from '../src/components/Block'
+import { ToBeDeleted } from '../src/components/ToBeDeleted'
 
 class Deleter extends BaseSystem {
   blocks = this.query((q) => q.current.with(Block))

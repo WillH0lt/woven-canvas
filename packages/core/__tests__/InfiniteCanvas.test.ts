@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Extension } from '../Extension'
-import { InfiniteCanvas } from '../InfiniteCanvas'
-import type { Block, Options } from '../types'
+import { Extension } from '../src/Extension'
+import { InfiniteCanvas } from '../src/InfiniteCanvas'
+import type { Block, Options } from '../src/types'
 
 // Mock Extension implementation for testing
 class MockExtension extends Extension {

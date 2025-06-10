@@ -27,9 +27,9 @@ document.addEventListener('keydown', (event) => {
       left: 300,
       width: 150,
       height: 150,
-      red: 0,
-      green: 255,
-      blue: 0,
+      red: Math.floor(Math.random() * 256),
+      green: Math.floor(Math.random() * 256),
+      blue: Math.floor(Math.random() * 256),
       alpha: 255,
     })
     // infiniteCanvas?.commands.block.addBlock('blue')

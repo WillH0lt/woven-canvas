@@ -33,7 +33,9 @@ export class RenderPixi extends System {
       if (graphics) {
         graphics.clear()
         const color = (block.red << 16) | (block.green << 8) | block.blue
-        graphics.rect(block.left, block.top, block.width, block.height).fill(color)
+        const alpha = block.alpha / 255
+
+        graphics.rect(block.left, block.top, block.width, block.height).fill({ color, alpha })
       }
     }
 

@@ -4,17 +4,17 @@ import { component, field } from '@lastolivegames/becsy'
 
 @component
 export class Keyboard {
-  // @field.boolean public declare aDown: boolean;
+  // @field.boolean public declare aDown: boolean
 
-  // @field.boolean public declare aDownTrigger: boolean;
+  // @field.boolean public declare aDownTrigger: boolean
 
-  // @field.boolean public declare aUpTrigger: boolean;
+  // @field.boolean public declare aUpTrigger: boolean
 
-  // @field.boolean public declare bDown: boolean;
+  // @field.boolean public declare bDown: boolean
 
-  // @field.boolean public declare bDownTrigger: boolean;
+  // @field.boolean public declare bDownTrigger: boolean
 
-  // @field.boolean public declare bUpTrigger: boolean;
+  // @field.boolean public declare bUpTrigger: boolean
 
   // @field.boolean declare public cDown: boolean;
 
@@ -142,23 +142,23 @@ export class Keyboard {
 
   // @field.boolean public declare wUpTrigger: boolean;
 
-  // @field.boolean declare public xDown: boolean;
+  @field.boolean public declare xDown: boolean
 
-  // @field.boolean declare public xDownTrigger: boolean;
+  @field.boolean public declare xDownTrigger: boolean
 
-  // @field.boolean declare public xUpTrigger: boolean;
+  @field.boolean public declare xUpTrigger: boolean
 
-  // @field.boolean declare public yDown: boolean;
+  @field.boolean public declare yDown: boolean
 
-  // @field.boolean declare public yDownTrigger: boolean;
+  @field.boolean public declare yDownTrigger: boolean
 
-  // @field.boolean declare public yUpTrigger: boolean;
+  @field.boolean public declare yUpTrigger: boolean
 
-  // @field.boolean declare public zDown: boolean;
+  @field.boolean public declare zDown: boolean
 
-  // @field.boolean declare public zDownTrigger: boolean;
+  @field.boolean public declare zDownTrigger: boolean
 
-  // @field.boolean declare public zUpTrigger: boolean;
+  @field.boolean public declare zUpTrigger: boolean
 
   // @field.boolean public declare oneDown: boolean;
 

@@ -8,7 +8,9 @@
     "name": "Alberto Schiabel",
     "email": "alberto.schiabel@gmail.com"
   },
-  "files": ["build"],
+  "files": [
+    "build"
+  ],
   "main": "./build/index.js",
   "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
@@ -43,5 +45,7 @@
     "@lastolivegames/becsy": "^0.15.5",
     "pixi.js": "^8.9.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "strict-event-emitter": "^0.5.1"
+  }
 }

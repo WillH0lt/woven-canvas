@@ -7,20 +7,21 @@ export class InputScreen extends System {
 
   private readonly resources!: Resources
 
-  @co private *setResizeTrigger(): Generator {
+  @co private *handleResize(): Generator {
     co.cancelIfCoroutineStarted()
+
+    this.screen.width = this.resources.domElement.clientWidth
+    this.screen.height = this.resources.domElement.clientHeight
 
     this.screen.resizedTrigger = true
 
-    yield co.waitForFrames(1)
+    yield
 
     this.screen.resizedTrigger = false
   }
 
   public initialize(): void {
-    const resizeObserver = new ResizeObserver(() => {
-      this.setResizeTrigger()
-    })
+    const resizeObserver = new ResizeObserver(this.handleResize.bind(this))
     resizeObserver.observe(this.resources.domElement)
   }
 }

@@ -1,7 +1,8 @@
-import { Type, component, field } from '@lastolivegames/becsy'
+import { component, field } from '@lastolivegames/becsy'
 
 @component
 export class Screen {
-  @field({ type: Type.boolean, default: true })
-  public declare resizedTrigger: boolean
+  @field.boolean public declare resizedTrigger: boolean
+  @field.float64 public declare width: number
+  @field.float64 public declare height: number
 }

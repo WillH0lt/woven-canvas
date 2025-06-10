@@ -31,7 +31,7 @@ export class RendererExtension extends Extension {
     const group = System.group(sys.RenderPixi, {
       resources: {
         ...resources,
-        pixiApp: app as Application,
+        pixiApp: app,
       },
     })
 

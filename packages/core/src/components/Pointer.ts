@@ -4,8 +4,10 @@ import { component, field } from '@lastolivegames/becsy'
 export class Pointer {
   @field.int32.vector(2) public declare position: [number, number]
   @field.int32.vector(2) public declare downPosition: [number, number]
+  @field.int32.vector(2) public declare upPosition: [number, number]
   @field.boolean public declare isDown: boolean
   @field.boolean public declare downTrigger: boolean
   @field.boolean public declare upTrigger: boolean
   @field.boolean public declare moveTrigger: boolean
+  @field.boolean public declare clickTrigger: boolean
 }
