@@ -41,7 +41,9 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
 
   private readonly selectionState = this.singleton.write(comps.SelectionState)
 
-  private readonly selectableBlocks = this.query((q) => q.current.with(comps.Block, blockComps.Selectable))
+  private readonly selectableBlocks = this.query((q) => q.current.with(comps.Block, comps.Selectable, comps.ZIndex))
+
+  private readonly draggableBlocks = this.query((q) => q.current.with(comps.Block, comps.Draggable, comps.ZIndex))
 
   private readonly selectionMachine = setup({
     types: {
@@ -82,6 +84,13 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
           return [block.left, block.top] as [number, number]
         },
       }),
+      resetDragged: ({ context }) => {
+        if (!context.draggedEntity) return
+        this.emitCommand(BlockCommand.UpdateBlockPosition, context.draggedEntity, {
+          left: context.draggedEntityStart[0],
+          top: context.draggedEntityStart[1],
+        })
+      },
       resetContext: assign({
         dragStart: [0, 0],
         pointingStart: [0, 0],
@@ -99,7 +108,7 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
       updateDragged: ({ context, event }) => {
         if (!context.draggedEntity || !('position' in event)) return
 
-        this.emitCommand(BlockCommand.UpdateBlock, context.draggedEntity, {
+        this.emitCommand(BlockCommand.UpdateBlockPosition, context.draggedEntity, {
           left: context.draggedEntityStart[0] + event.position[0] - context.dragStart[0],
           top: context.draggedEntityStart[1] + event.position[1] - context.dragStart[1],
         })
@@ -113,6 +122,14 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
           height: Math.abs(context.pointingStart[1] - event.position[1]),
         })
       },
+      selectDragged: ({ context }) => {
+        if (!context.draggedEntity) return
+        if (!context.draggedEntity.has(comps.Selectable)) return
+        this.emitCommand(BlockCommand.SelectBlock, context.draggedEntity, { deselectOthers: true })
+      },
+      deselectAll: () => {
+        this.emitCommand(BlockCommand.DeselectAll)
+      },
     },
   }).createMachine({
     id: 'selection',
@@ -122,7 +139,6 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
       pointingStart: [0, 0],
       draggedEntityStart: [0, 0],
       draggedEntity: null,
-      selectionBoxEntity: null,
     },
     states: {
       [Selection.Idle]: {
@@ -134,6 +150,7 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
               target: Selection.Pointing,
             },
             {
+              actions: 'deselectAll',
               target: Selection.SelectionBoxPointing,
             },
           ],
@@ -149,7 +166,7 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
             },
           ],
           pointerUp: {
-            // actions: 'selectBlock',
+            actions: 'selectDragged',
             target: Selection.Idle,
           },
           cancel: {
@@ -164,9 +181,11 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
             actions: 'updateDragged',
           },
           pointerUp: {
+            actions: 'selectDragged',
             target: Selection.Idle,
           },
           cancel: {
+            actions: 'resetDragged',
             target: Selection.Idle,
           },
         },
@@ -208,27 +227,32 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
 
   public execute(): void {
     if (this.cursor.mode === 'selection') {
-      const events = this.getSelectionEvents()
+      this.runMachine()
+    }
+  }
 
-      let state = this.selectionMachine.resolveState({
-        value: this.selectionState.state,
-        context: this.selectionState,
-      })
+  private runMachine(): void {
+    const events = this.getSelectionEvents()
+    if (events.length === 0) return
 
-      for (const event of events) {
-        const result = transition(this.selectionMachine, state, event)
-        state = result[0]
+    let state = this.selectionMachine.resolveState({
+      value: this.selectionState.state,
+      context: this.selectionState,
+    })
 
-        for (const action of result[1]) {
-          if (typeof action.exec === 'function') {
-            action.exec(action.info, action.params)
-          }
+    for (const event of events) {
+      const result = transition(this.selectionMachine, state, event)
+      state = result[0]
+
+      for (const action of result[1]) {
+        if (typeof action.exec === 'function') {
+          action.exec(action.info, action.params)
         }
       }
-
-      Object.assign(this.selectionState, state.context)
-      this.selectionState.state = state.value
     }
+
+    Object.assign(this.selectionState, state.context)
+    this.selectionState.state = state.value
   }
 
   private getSelectionEvents(): SelectionEvent[] {
@@ -236,7 +260,7 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
 
     let blockEntity: Entity | null = null
     if (this.pointer.downTrigger || this.pointer.upTrigger) {
-      blockEntity = intersectPoint(this.pointer.position, this.selectableBlocks.current)
+      blockEntity = intersectPoint(this.pointer.position, this.draggableBlocks.current)
     }
 
     if (this.pointer.downTrigger) {

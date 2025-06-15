@@ -1,4 +1,4 @@
-import type { Block, ICommands, Resources, SendCommandFn } from '@infinitecanvas/core'
+import type { BlockModel, ICommands, Resources, SendCommandFn } from '@infinitecanvas/core'
 import { Extension } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
 
@@ -13,7 +13,13 @@ declare module '@infinitecanvas/core' {
        * @param color The color to set
        * @example editor.commands.setColor('red')
        */
-      addBlock: (block: Partial<Block>) => void
+      addBlock: (block: Partial<BlockModel>) => void
+
+      /**
+       * Remove the selected blocks
+       * @example editor.commands.removeSelected()
+       */
+      removeSelected: () => void
     }
   }
 }
@@ -23,15 +29,25 @@ export class BlockExtension extends Extension {
 
   public async initialize(resources: Resources): Promise<void> {
     this._captureGroup = System.group(sys.CaptureSelection, { resources })
-    this._updateGroup = System.group(sys.UpdateBlocks, { resources })
+    this._updateGroup = System.group(
+      sys.UpdateSelection,
+      { resources },
+      sys.UpdateTransformBox,
+      { resources },
+      sys.UpdateRanks,
+      { resources },
+    )
 
-    // this.createStore<Block[]>([])
+    console.log('BlockExtension initialized', sys)
+
+    // this.createStore<Block[]>([])}
   }
 
   public addCommands = (send: SendCommandFn<BlockCommandArgs>): Partial<ICommands> => {
     return {
       block: {
-        addBlock: (block: Partial<Block>) => send(BlockCommand.AddBlock, block),
+        addBlock: (block: Partial<BlockModel>) => send(BlockCommand.AddBlock, block),
+        removeSelected: () => send(BlockCommand.RemoveSelected),
       },
     }
   }

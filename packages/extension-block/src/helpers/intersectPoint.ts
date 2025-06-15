@@ -1,7 +1,12 @@
 import { comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
+import { LexoRank } from 'lexorank'
+
 export function intersectPoint(point: [number, number], blockEntities: readonly Entity[]): Entity | null {
+  let intersect: Entity | null = null
+  let maxRank: LexoRank = LexoRank.min()
+
   for (const blockEntity of blockEntities) {
     const block = blockEntity.read(comps.Block)
     if (
@@ -10,8 +15,13 @@ export function intersectPoint(point: [number, number], blockEntities: readonly 
       point[1] >= block.top &&
       point[1] <= block.top + block.height
     ) {
-      return blockEntity
+      const rank = LexoRank.parse(blockEntity.read(comps.ZIndex).rank)
+      if (!intersect || rank.compareTo(maxRank) > 0) {
+        intersect = blockEntity
+        maxRank = rank
+      }
     }
   }
-  return null
+
+  return intersect
 }

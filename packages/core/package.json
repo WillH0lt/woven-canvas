@@ -42,10 +42,9 @@
   },
   "dependencies": {
     "@lastolivegames/becsy": "^0.15.5",
-    "jsonpath-plus": "7.2.0",
+    "immer": "^10.1.1",
+    "signia": "^0.1.5",
     "strict-event-emitter": "^0.5.1",
-    "xstate": "^5.19.4",
-    "zod": "^3.25.36",
-    "zustand": "^5.0.5"
+    "zod": "^3.25.36"
   }
 }

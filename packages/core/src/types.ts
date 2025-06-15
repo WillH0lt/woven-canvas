@@ -1,5 +1,6 @@
 import type { Emitter } from 'strict-event-emitter'
 import { z } from 'zod/v4'
+import type { Store } from './Store'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -16,6 +17,7 @@ export type EmitterEvents = {
 
 export interface CoreResources extends Resources {
   emitter: Emitter<EmitterEvents>
+  store: Store
 }
 
 export type CommandMap = {
@@ -33,7 +35,7 @@ export interface Resources {
   domElement: HTMLElement
 }
 
-export interface Block {
+export interface BlockModel {
   id: string
   top: number
   left: number
@@ -43,6 +45,8 @@ export interface Block {
   green: number
   blue: number
   alpha: number
+  rotateZ: number
+  rank: string
 }
 
 export type CommandArgs = Record<string, Array<unknown>>
@@ -51,3 +55,9 @@ export type CommandArgs = Record<string, Array<unknown>>
 export interface ICommands {}
 
 export type SendCommandFn<T> = <C extends keyof T>(kind: C, ...args: T[C] extends any[] ? T[C] : [T[C]]) => void
+
+export interface IStorable<T = Record<string, any>> {
+  // id: string
+  toModel(): T
+  fromModel(model: T): void
+}

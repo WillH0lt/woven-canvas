@@ -14,6 +14,8 @@ export class BaseSystem<Commands extends CommandMap = {}> extends becsySystem {
 
   private readonly _commands = this.query((q) => q.added.with(comps.Command).write.using(comps.CommandRef).write)
 
+  private readonly _storables = this.query((q) => q.with(comps.Storable).write)
+
   private commandListeners: {
     [K in keyof Commands]?: ((...data: Commands[K]) => void)[]
   } = {}
@@ -72,10 +74,11 @@ export class BaseSystem<Commands extends CommandMap = {}> extends becsySystem {
   //   throw new Error('runMachine method not implemented')
   // }
 
-  public execute(): void {
+  protected executeCommands(): void {
     for (const commandEntity of this._commands.added) {
       const command = commandEntity.read(comps.Command)
       const listeners = this.commandListeners[command.kind]
+
       if (listeners) {
         const refs = command.refs.map((ref) => ref.read(comps.CommandRef).entity)
         const data = JSON.parse(command.payload, (_key, value) => {

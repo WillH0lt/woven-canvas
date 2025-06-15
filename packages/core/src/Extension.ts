@@ -1,5 +1,4 @@
 import type { SystemGroup } from '@lastolivegames/becsy'
-import { type StoreApi, createStore } from 'zustand/vanilla'
 
 import type { CommandArgs, ICommands, Resources, SendCommandFn } from './types.js'
 
@@ -11,10 +10,10 @@ export abstract class Extension {
     return this._commands
   }
 
-  protected _store: StoreApi<any> | null = null
-  public get store(): StoreApi<any> | null {
-    return this._store
-  }
+  // protected _store: StoreApi<any> | null = null
+  // public get store(): StoreApi<any> | null {
+  //   return this._store
+  // }
 
   protected _inputGroup: SystemGroup | null = null
   public get inputGroup(): SystemGroup | null {
@@ -38,13 +37,13 @@ export abstract class Extension {
 
   public abstract initialize(resources: Resources): Promise<void>
 
-  protected createStore<T>(initialState: T): StoreApi<T> {
-    this._store = createStore<T>(() => ({
-      ...initialState,
-    }))
+  // protected createStore<T>(initialState: T): StoreApi<T> {
+  //   this._store = createStore<T>(() => ({
+  //     ...initialState,
+  //   }))
 
-    return this._store
-  }
+  //   return this._store
+  // }
 
   public addCommands(_send: SendCommandFn<CommandArgs>): Partial<ICommands> {
     return {}

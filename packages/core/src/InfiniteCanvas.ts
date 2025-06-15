@@ -3,8 +3,9 @@ import type { z } from 'zod/v4'
 
 import { Emitter } from 'strict-event-emitter'
 import type { Extension } from './Extension'
+import { Store } from './Store'
 import * as sys from './systems'
-import { EmitterEventKind, type EmitterEvents, type ICommands, Options } from './types'
+import { type CoreResources, EmitterEventKind, type EmitterEvents, type ICommands, Options } from './types'
 
 const PRIVATE_CONSTRUCTOR_KEY = Symbol()
 
@@ -21,6 +22,8 @@ export class InfiniteCanvas {
   public readonly domElement: HTMLElement
 
   public readonly options: Options
+
+  public readonly store: Store
 
   private readonly emitter: Emitter<EmitterEvents>
 
@@ -44,17 +47,24 @@ export class InfiniteCanvas {
     }
 
     const emitter = new Emitter<EmitterEvents>()
+    const store = new Store()
     const coreResources = {
       ...resources,
       emitter,
+      store,
     }
 
     await Promise.all(extensions.map((ext) => ext.initialize(resources)))
 
     const setupGroup = [
-      System.group(sys.Deleter, { resources: coreResources }, sys.CommandSpawner, {
-        resources: coreResources,
-      }),
+      System.group(
+        sys.Deleter,
+        { resources: coreResources },
+        sys.CommandSpawner,
+        { resources: coreResources },
+        sys.StoreSync,
+        { resources: coreResources },
+      ),
     ]
     const inputGroup = extensions.map((ext) => ext.inputGroup).filter((g) => g !== null)
     const captureGroups = extensions.map((ext) => ext.captureGroup).filter((g) => g !== null)
@@ -91,15 +101,14 @@ export class InfiniteCanvas {
     //   }
     // })
 
-    return new InfiniteCanvas(extensions, parsedOptions, world, domElement, emitter, PRIVATE_CONSTRUCTOR_KEY)
+    return new InfiniteCanvas(extensions, parsedOptions, world, coreResources, PRIVATE_CONSTRUCTOR_KEY)
   }
 
   constructor(
     extensions: Extension[],
     options: z.infer<typeof Options>,
     world: World,
-    domElement: HTMLElement,
-    emitter: Emitter<EmitterEvents>,
+    coreResources: CoreResources,
     privateConstructorKey: Symbol,
   ) {
     if (privateConstructorKey !== PRIVATE_CONSTRUCTOR_KEY) {
@@ -109,8 +118,9 @@ export class InfiniteCanvas {
     this.extensions = extensions
     this.options = options
     this.world = world
-    this.domElement = domElement
-    this.emitter = emitter
+    this.domElement = coreResources.domElement
+    this.emitter = coreResources.emitter
+    this.store = coreResources.store
 
     if (options.autoloop) {
       this.loop()

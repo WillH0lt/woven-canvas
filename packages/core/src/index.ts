@@ -4,7 +4,7 @@ export * as comps from './components/index'
 export { Keyboard } from './components/Keyboard.js'
 export {
   Options,
-  type Block,
+  type BlockModel,
   type CommandArgs,
   type ICommands,
   type SendCommandFn,
@@ -13,3 +13,4 @@ export {
 
 export { Extension } from './Extension.js'
 export { BaseSystem } from './BaseSystem.js'
+// export { StorableComponent } from './StorableComponent'
