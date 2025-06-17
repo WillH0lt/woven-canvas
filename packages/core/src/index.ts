@@ -4,6 +4,9 @@ export * as comps from './components/index'
 export { Keyboard } from './components/Keyboard.js'
 export {
   Options,
+  Tool,
+  CursorIcon,
+  CursorState,
   type BlockModel,
   type CommandArgs,
   type ICommands,

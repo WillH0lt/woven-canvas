@@ -20,6 +20,10 @@ export class BaseSystem<Commands extends CommandMap = {}> extends becsySystem {
     [K in keyof Commands]?: ((...data: Commands[K]) => void)[]
   } = {}
 
+  public execute(): void {
+    this.executeCommands()
+  }
+
   protected deleteEntity(entity: Entity): void {
     this.deleteEntities([entity])
   }
@@ -80,19 +84,35 @@ export class BaseSystem<Commands extends CommandMap = {}> extends becsySystem {
       const listeners = this.commandListeners[command.kind]
 
       if (listeners) {
-        const refs = command.refs.map((ref) => ref.read(comps.CommandRef).entity)
-        const data = JSON.parse(command.payload, (_key, value) => {
-          if (value && typeof value === 'object' && value.kind === 'EntityRef') {
-            return refs[value.index]
-          }
-          return value
-        })
-
-        // Call all listeners for this command kind
+        const data = this._parseCommandPayload(command)
         for (const listener of listeners) {
           listener(...data)
         }
       }
     }
+  }
+
+  protected getCommand<CommandKind extends keyof Commands>(kind: CommandKind): Commands[CommandKind] | undefined {
+    for (const commandEntity of this._commands.added) {
+      const command = commandEntity.read(comps.Command)
+      if (command.kind === kind) {
+        const data = this._parseCommandPayload(command)
+        return data
+      }
+    }
+
+    return undefined
+  }
+
+  private _parseCommandPayload(command: Readonly<comps.Command>): any {
+    const refs = command.refs.map((ref) => ref.read(comps.CommandRef).entity)
+    const data = JSON.parse(command.payload, (_key, value) => {
+      if (value && typeof value === 'object' && value.kind === 'EntityRef') {
+        return refs[value.index]
+      }
+      return value
+    })
+
+    return data
   }
 }

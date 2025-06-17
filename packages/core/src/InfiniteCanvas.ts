@@ -67,11 +67,19 @@ export class InfiniteCanvas {
       ),
     ]
     const inputGroup = extensions.map((ext) => ext.inputGroup).filter((g) => g !== null)
+    const preCaptureGroup = extensions.map((ext) => ext.preCaptureGroup).filter((g) => g !== null)
     const captureGroups = extensions.map((ext) => ext.captureGroup).filter((g) => g !== null)
     const updateGroups = extensions.map((ext) => ext.updateGroup).filter((g) => g !== null)
     const renderGroups = extensions.map((ext) => ext.renderGroup).filter((g) => g !== null)
 
-    const orderedGroups = [...setupGroup, ...inputGroup, ...captureGroups, ...updateGroups, ...renderGroups]
+    const orderedGroups = [
+      ...setupGroup,
+      ...inputGroup,
+      ...preCaptureGroup,
+      ...captureGroups,
+      ...updateGroups,
+      ...renderGroups,
+    ]
 
     scheduleGroups(orderedGroups)
 

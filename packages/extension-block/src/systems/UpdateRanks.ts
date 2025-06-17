@@ -5,24 +5,10 @@ import { LexoRank } from 'lexorank'
 import { UpdateSelection } from './UpdateSelection'
 import { UpdateTransformBox } from './UpdateTransformBox'
 
-// function getRankBounds(parts: readonly Entity[]): [LexoRank, LexoRank] {
-//   let minRank = LexoRank.max();
-//   let maxRank = LexoRank.min();
-
-//   for (const part of parts) {
-//     const rank = LexoRank.parse(part.read(comps.Block).rank);
-//     minRank = rank.compareTo(minRank) < 0 ? rank : minRank;
-//     maxRank = rank.compareTo(maxRank) > 0 ? rank : maxRank;
-//   }
-
-//   return [minRank, maxRank];
-// }
-
 export class UpdateRanks extends System {
   private readonly blocks = this.query(
     (q) => q.added.current.changed.with(comps.Block).trackWrites.using(comps.ZIndex).write,
   )
-  // private readonly zIndices = this.query((q) => q.current.with(comps.ZIndex).write)
 
   public constructor() {
     super()
@@ -59,23 +45,26 @@ export class UpdateRanks extends System {
   }
 
   private orderZIndices(): void {
+    // creating a seperate ranks map so we only have to call LexoRank.parse once per rank
     const rankMap = new Map<string, LexoRank>()
-    const zIndexMap = new Map<string, number>()
 
     for (const blockEntity of this.blocks.current) {
       const zIndex = blockEntity.read(comps.ZIndex)
-      zIndexMap.set(zIndex.rank, zIndex.value)
       rankMap.set(zIndex.rank, LexoRank.parse(zIndex.rank))
     }
 
     const sortedRanks = Array.from(rankMap.values()).sort((a, b) => a.compareTo(b))
 
-    let currentZIndex = 0
-    for (const rank of sortedRanks) {
-      zIndexMap.set(rank.toString(), currentZIndex++)
-    }
+    // map of rank string to zIndex value
+    // saves us from looking up the rank in the sorted array for each block
+    const zIndexMap = new Map<string, number>()
+
+    sortedRanks.forEach((rank, i) => {
+      zIndexMap.set(rank.toString(), i)
+    })
 
     for (const blockEntity of this.blocks.current) {
+      // TODO investigate performance of calling blockEntity.write for every block
       const zIndex = blockEntity.write(comps.ZIndex)
       zIndex.value = zIndexMap.get(zIndex.rank) ?? 0
     }

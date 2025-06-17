@@ -1,4 +1,8 @@
+export { CaptureCursor } from './CaptureCursor'
 export { CaptureSelection } from './CaptureSelection'
+export { CaptureTransformBox } from './CaptureTransformBox'
+export { PreCaptureIntersect } from './PreCaptureIntersect'
+export { UpdateCursor } from './UpdateCursor'
 export { UpdateSelection } from './UpdateSelection'
 export { UpdateTransformBox } from './UpdateTransformBox'
 export { UpdateRanks } from './UpdateRanks'

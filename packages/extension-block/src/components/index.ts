@@ -1,4 +1,6 @@
+export { Aabb } from './Aabb'
 export { Draggable } from './Draggable'
+export { Intersect } from './Intersect'
 export { RankBounds } from './RankBounds'
 export { Selectable } from './Selectable'
 export { SelectionBox } from './SelectionBox'

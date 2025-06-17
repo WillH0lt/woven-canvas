@@ -1,5 +1,5 @@
 import './style.css'
-import { InfiniteCanvas } from '@infinitecanvas/core'
+import { InfiniteCanvas, Tool } from '@infinitecanvas/core'
 import { BlockExtension } from '@infinitecanvas/extension-block'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { RendererExtension } from '@infinitecanvas/extension-renderer'
@@ -13,6 +13,10 @@ let infiniteCanvas: InfiniteCanvas | null = null
 async function initializeCanvas(container: HTMLDivElement) {
   infiniteCanvas = await InfiniteCanvas.New([new InputExtension(), new BlockExtension(), new RendererExtension()])
   container.appendChild(infiniteCanvas.domElement)
+
+  for (let i = 0; i < 10; i++) {
+    addBlock()
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,16 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'y') {
-    infiniteCanvas?.commands.block.addBlock({
-      id: uuid(),
-      top: 300 + Math.random() * 400,
-      left: 300 + Math.random() * 400,
-      width: 150,
-      height: 150,
-      alpha: 255,
-    })
-    // infiniteCanvas?.commands.block.addBlock('blue')
-    // infiniteCanvas.sendCommand('createBlock', 'hello?')
+    addBlock()
   }
 
   if (event.key === 'Delete') {
@@ -41,6 +36,10 @@ document.addEventListener('keydown', (event) => {
     infiniteCanvas?.store.undo()
   }
 
+  if (event.key === 'u') {
+    infiniteCanvas?.commands.block.setTool(Tool.AddBlock, { width: 150, height: 150, blue: 255 })
+  }
+
   // if (event.key === 'x') {
   //   infiniteCanvas?.store.block.getBlocks().forEach((block) => {
   //     // infiniteCanvas?.commands.block.removeBlock(block.id)
@@ -48,3 +47,19 @@ document.addEventListener('keydown', (event) => {
   //   })
   // }
 })
+
+function addBlock() {
+  const width = 150
+  const height = 150
+  infiniteCanvas?.commands.block.addBlock({
+    id: uuid(),
+    top: Math.random() * (window.innerHeight - height),
+    left: Math.random() * (window.innerWidth - width),
+    width,
+    height,
+    red: Math.floor(Math.random() * 256),
+    green: Math.floor(Math.random() * 256),
+    blue: Math.floor(Math.random() * 256),
+    alpha: 255,
+  })
+}

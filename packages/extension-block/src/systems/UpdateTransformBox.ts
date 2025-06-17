@@ -1,4 +1,4 @@
-import { BaseSystem, comps as coreComps } from '@infinitecanvas/core'
+import { BaseSystem, CursorIcon, comps as coreComps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
 import * as blockComps from '../components'
@@ -8,7 +8,7 @@ import {
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
-import { computeAabb, computeCenter } from '../helpers'
+import { computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
 import { BlockCommand, type BlockCommandArgs, TransformHandleKind } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
@@ -20,16 +20,22 @@ const comps = {
 interface TransformHandleDef {
   // tag: keyof typeof Tag
   kind: TransformHandleKind
+  alpha: number
+  vector: [number, number]
   left: number
   top: number
   width: number
   height: number
-  // rank: string
+  rotateZ: number
+  rank: string
+  hoverCursor: CursorIcon
   // cursorKind: CursorKind
 }
 
 export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
-  private readonly selectedBlocks = this.query((q) => q.added.removed.current.with(comps.Block, comps.Selected).write)
+  private readonly selectedBlocks = this.query(
+    (q) => q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read,
+  )
 
   private readonly transformBoxes = this.query(
     (q) => q.current.with(comps.Block, comps.TransformBox, comps.Draggable).write.using(comps.TransformHandle).write,
@@ -42,23 +48,16 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
 
   public initialize(): void {
     this.addCommandListener(BlockCommand.UpdateBlockPosition, this.onBlockMove.bind(this))
+    this.addCommandListener(BlockCommand.AddOrReplaceTransformBox, this.addOrReplaceTransformBox.bind(this))
+    this.addCommandListener(BlockCommand.HideTransformBox, this.hideTransformBox.bind(this))
+    this.addCommandListener(BlockCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
   }
 
   public execute(): void {
     this.executeCommands()
-
-    if (this.selectedBlocks.added.length || this.selectedBlocks.removed.length) {
-      if (this.selectedBlocks.current.length === 0) {
-        this.removeTransformBox()
-      } else {
-        this.addTransformBox()
-      }
-    }
   }
 
   private removeTransformBox(): void {
-    // remove transform box if no blocks are selected
-
     for (const transformBoxEntity of this.transformBoxes.current) {
       const transformBox = transformBoxEntity.read(comps.TransformBox)
       this.deleteEntities(transformBox.handles)
@@ -66,32 +65,212 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     this.deleteEntities(this.transformBoxes.current)
   }
 
-  private addTransformBox(): void {
-    // get or create a transform box entity
-    let transformBoxEntity: Entity
-    if (this.transformBoxes.current.length === 0) {
-      transformBoxEntity = this.createTransformBox()
-    } else {
-      transformBoxEntity = this.transformBoxes.current[0]
+  private addOrReplaceTransformBox(): void {
+    this.removeTransformBox()
+
+    if (this.selectedBlocks.current.length === 0) return
+
+    let rotateZ = this.selectedBlocks.current[0].read(comps.Block).rotateZ
+    for (let i = 1; i < this.selectedBlocks.current.length; i++) {
+      const block = this.selectedBlocks.current[i].read(comps.Block)
+      if (Math.abs(rotateZ - block.rotateZ) > 0.01) {
+        rotateZ = 0
+        break
+      }
     }
 
     // size the transform box to selected blocks
-    const aabb = computeAabb(this.selectedBlocks.current)
-    const block = transformBoxEntity.write(comps.Block)
-    block.left = aabb.left
-    block.top = aabb.top
-    block.width = aabb.right - aabb.left
-    block.height = aabb.bottom - aabb.top
+    const extents = computeExtentsAlongAngle(this.selectedBlocks.current, rotateZ)
 
-    // set the initial size of the transform box
-    const transformBox = transformBoxEntity.write(comps.TransformBox)
-    transformBox.startLeft = block.left
-    transformBox.startTop = block.top
-    transformBox.startWidth = block.width
-    transformBox.startHeight = block.height
-    transformBox.startRotateZ = block.rotateZ
+    const left = extents.left
+    const top = extents.top
+    const width = extents.right - extents.left
+    const height = extents.bottom - extents.top
 
-    this.updateTransformBoxHandles(transformBoxEntity)
+    const transformBoxEntity = this.createEntity(
+      comps.Block,
+      {
+        id: crypto.randomUUID(),
+        blue: 255,
+        alpha: 128,
+        rank: TRANSFORM_BOX_RANK,
+        left,
+        top,
+        width,
+        height,
+        rotateZ,
+      },
+      comps.TransformBox,
+      comps.Draggable,
+      {
+        startLeft: left,
+        startTop: top,
+        startWidth: width,
+        startHeight: height,
+        startRotateZ: rotateZ,
+      },
+    )
+
+    for (const blockEntity of this.selectedBlocks.current) {
+      const block = blockEntity.read(comps.Block)
+      const draggable = blockEntity.write(comps.Draggable)
+      draggable.startLeft = block.left
+      draggable.startTop = block.top
+      draggable.startWidth = block.width
+      draggable.startHeight = block.height
+      draggable.startRotateZ = block.rotateZ
+    }
+
+    this.addTransformHandles(transformBoxEntity)
+  }
+
+  private addTransformHandles(transformBoxEntity: Entity): void {
+    const transformBoxBlock = transformBoxEntity.read(comps.Block)
+    const { left, top, width, height, rotateZ } = transformBoxBlock
+    const handleSize = 15
+    const rotationHandleSize = 2 * handleSize
+    const sideHandleSize = 2 * handleSize
+
+    const handles: TransformHandleDef[] = []
+
+    const rotateCursorKinds = [CursorIcon.RotateNW, CursorIcon.RotateNE, CursorIcon.RotateSW, CursorIcon.RotateSE]
+
+    // corners
+    for (let xi = 0; xi < 2; xi++) {
+      for (let yi = 0; yi < 2; yi++) {
+        handles.push({
+          // tag: Tag.TransformHandle,
+          kind: TransformHandleKind.Scale,
+          alpha: 128,
+          vector: [xi * 2 - 1, yi * 2 - 1],
+          left: left + width * xi - handleSize / 2,
+          top: top + height * yi - handleSize / 2,
+          width: handleSize,
+          height: handleSize,
+          rotateZ,
+          rank: TRANSFORM_HANDLE_CORNER_RANK,
+          hoverCursor: xi + yi === 1 ? CursorIcon.NESW : CursorIcon.NWSE,
+        })
+
+        handles.push({
+          // tag: Tag.Invisible,
+          kind: TransformHandleKind.Rotate,
+          alpha: 0,
+          vector: [xi * 2 - 1, yi * 2 - 1],
+          left: left - rotationHandleSize + handleSize / 2 + xi * (width + rotationHandleSize - handleSize),
+          top: top - rotationHandleSize + handleSize / 2 + yi * (height + rotationHandleSize - handleSize),
+          width: rotationHandleSize,
+          height: rotationHandleSize,
+          rotateZ,
+          rank: TRANSFORM_HANDLE_ROTATE_RANK,
+          hoverCursor: rotateCursorKinds[xi + yi * 2],
+        })
+      }
+    }
+
+    // top & bottom edges
+    // const stretchableY = selectedBlocks.length === 1 && isStretchableY(selectedBlocks[0])
+    for (let yi = 0; yi < 2; yi++) {
+      // let kind = TransformHandleKind.LeftScale
+      // if (stretchableY) {
+      //   kind = yi === 0 ? TransformHandleKind.TopStretch : TransformHandleKind.BottomStretch
+      // } else {
+      // kind = yi === 0 ? TransformHandleKind.TopScale : TransformHandleKind.BottomScale
+      // }
+
+      handles.push({
+        // tag: Tag.Invisible,
+        kind: TransformHandleKind.Scale,
+        alpha: 0,
+        vector: [0, yi * 2 - 1],
+        left,
+        top: top + height * yi - sideHandleSize / 2,
+        width,
+        height: sideHandleSize,
+        rotateZ,
+        rank: TRANSFORM_HANDLE_EDGE_RANK,
+        hoverCursor: CursorIcon.NS,
+      })
+    }
+
+    // left & right edges
+    // const stretchableX = selectedBlocks.length === 1 && isStretchableX(selectedBlocks[0])
+    for (let xi = 0; xi < 2; xi++) {
+      // let kind = TransformHandleKind.LeftScale
+      // if (stretchableX) {
+      // kind = xi === 0 ? TransformHandleKind.LeftStretch : TransformHandleKind.RightStretch
+      // } else {
+      // kind = xi === 0 ? TransformHandleKind.LeftScale : TransformHandleKind.RightScale
+      // }
+
+      handles.push({
+        // tag: Tag.Invisible,
+        kind: TransformHandleKind.Scale,
+        alpha: 0,
+        vector: [xi * 2 - 1, 0],
+        left: left + width * xi - sideHandleSize / 2,
+        top,
+        width: sideHandleSize,
+        height,
+        rotateZ,
+        rank: TRANSFORM_HANDLE_EDGE_RANK,
+        hoverCursor: CursorIcon.EW,
+      })
+    }
+
+    const center = computeCenter(transformBoxEntity)
+
+    for (const handle of handles) {
+      const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
+      const position = rotatePoint(handleCenter, center, rotateZ)
+      const left = position[0] - handle.width / 2
+      const top = position[1] - handle.height / 2
+
+      this.createEntity(
+        comps.TransformHandle,
+        {
+          kind: handle.kind,
+          vector: handle.vector,
+          transformBox: transformBoxEntity,
+        },
+        comps.Block,
+        {
+          id: crypto.randomUUID(),
+          alpha: handle.alpha,
+          red: 255,
+          left,
+          top,
+          width: handle.width,
+          height: handle.height,
+          rotateZ: handle.rotateZ,
+          rank: handle.rank,
+        },
+        // comps.Aabb,
+        comps.Draggable,
+        {
+          startLeft: left,
+          startTop: top,
+          startWidth: handle.width,
+          startHeight: handle.height,
+          startRotateZ: handle.rotateZ,
+          hoverCursor: handle.hoverCursor,
+        },
+        // comps.Hoverable,
+      )
+    }
+  }
+
+  private hideTransformBox(): void {
+    for (const transformBoxEntity of this.transformBoxes.current) {
+      const transformBox = transformBoxEntity.read(comps.TransformBox)
+      for (const handleEntity of transformBox.handles) {
+        const handleBlock = handleEntity.write(comps.Block)
+        handleBlock.alpha = 0
+      }
+
+      const transformBoxBlock = transformBoxEntity.write(comps.Block)
+      transformBoxBlock.alpha = 0
+    }
   }
 
   private onBlockMove(blockEntity: Entity, position: { left: number; top: number }): void {
@@ -119,16 +298,16 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     handleBlock.top = position.top
 
     const boxEntity = this.transformBoxes.current[0]
-    const { width, height } = boxEntity.read(comps.Block)
+    const { width, height, rotateZ } = boxEntity.read(comps.Block)
 
     const boxCenter = computeCenter(boxEntity)
     const handleCenter = computeCenter(handleEntity)
 
     const angleHandle = Math.atan2(handleCenter[1] - boxCenter[1], handleCenter[0] - boxCenter[0])
 
-    const { kind } = handleEntity.read(comps.TransformHandle)
-    const vec = getTransformHandleVector(kind)
-    const handleStartAngle = Math.atan2(height * vec[1], width * vec[0])
+    const { vector } = handleEntity.read(comps.TransformHandle)
+    // const vec = getTransformHandleVector(kind)
+    const handleStartAngle = Math.atan2(height * vector[1], width * vector[0]) + rotateZ
 
     const delta = angleHandle - handleStartAngle
 
@@ -141,12 +320,11 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     // boxEntity.write(comps.Block).rotateZ = (start + delta) % (2 * Math.PI)
 
     for (const blockEntity of this.selectedBlocks.current) {
-      const startRotateZ = blockEntity.read(comps.Selected).startRotateZ
+      const { startLeft, startTop, startWidth, startHeight, startRotateZ } = blockEntity.read(comps.Draggable)
 
       const block = blockEntity.write(comps.Block)
       block.rotateZ = (startRotateZ + delta) % (2 * Math.PI)
 
-      const { startLeft, startTop, startWidth, startHeight } = blockEntity.read(comps.Selected)
       const startCenter = [startLeft + startWidth / 2, startTop + startHeight / 2]
 
       const r = Math.hypot(startCenter[1] - boxCenter[1], startCenter[0] - boxCenter[0])
@@ -154,8 +332,6 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
       block.left = boxCenter[0] + Math.cos(angle) * r - block.width / 2
       block.top = boxCenter[1] + Math.sin(angle) * r - block.height / 2
     }
-
-    // this.cursors.current[0].write(comps.Cursor)
   }
 
   private onScaleHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
@@ -167,74 +343,55 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     const handleBlock = handleEntity.write(comps.Block)
     handleBlock.left = position.left
     handleBlock.top = position.top
+    const handleCenter = computeCenter(handleEntity)
 
     const boxEntity = this.transformBoxes.current[0]
-    // const boxRotateZ = boxEntity.read(comps.Part).rotateZ;
-
-    const transformBox = boxEntity.read(comps.TransformBox)
-    const boxStartLeft = transformBox.startLeft
-    const boxStartTop = transformBox.startTop
-    const boxStartWidth = transformBox.startWidth
-    const boxStartHeight = transformBox.startHeight
-
-    const aspectRatio = boxStartWidth / boxStartHeight
+    const {
+      startLeft: boxStartLeft,
+      startTop: boxStartTop,
+      startWidth: boxStartWidth,
+      startHeight: boxStartHeight,
+      startRotateZ: boxRotateZ,
+    } = boxEntity.read(comps.Draggable)
 
     // get the position of the opposite handle of the transform box
-    const handleKind = handleEntity.read(comps.TransformHandle).kind
-    const oppositeKind = getOppositeTransformHandleKind(handleKind)
-    const oppositeHandle = boxEntity
-      .read(comps.TransformBox)
-      .handles.find((h) => h.read(comps.TransformHandle).kind === oppositeKind)!
-    const oppositeBlock = oppositeHandle.read(comps.Block)
-    const oppositeCenter = [oppositeBlock.left + oppositeBlock.width / 2, oppositeBlock.top + oppositeBlock.height / 2]
+    const { vector, kind: handleKind } = handleEntity.read(comps.TransformHandle)
+    const handleVec: [number, number] = [vector[0], vector[1]]
 
-    const difference: [number, number] = [position.left - oppositeBlock.left, position.top - oppositeBlock.top]
-    // difference = rotatePoint(difference, [0, 0], -boxRotateZ)
+    const oppositeHandle = boxEntity.read(comps.TransformBox).handles.find((h) => {
+      const { vector, kind } = h.read(comps.TransformHandle)
+      return handleKind === kind && handleVec[0] === -vector[0] && handleVec[1] === -vector[1]
+    })
+    if (!oppositeHandle) {
+      console.error('No opposite handle found for', handleKind, handleVec)
+      return
+    }
+
+    const oppositeCenter = computeCenter(oppositeHandle)
+    let difference: [number, number] = [handleCenter[0] - oppositeCenter[0], handleCenter[1] - oppositeCenter[1]]
+    difference = rotatePoint(difference, [0, 0], -boxRotateZ)
+
+    console.log('difference', difference)
 
     let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
     let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
 
-    // const isStretchingX = [TransformHandleKind.LeftStretch, TransformHandleKind.RightStretch].includes(handleKind)
-    // const isStretchingY = [TransformHandleKind.TopStretch, TransformHandleKind.BottomStretch].includes(handleKind)
-
-    // let aspectLocked = true
-
-    // if (this.selectedBlocks.current.length === 1) {
-    //   const blockPart = this.selectedBlocks.current[0].read(comps.Part)
-    //   aspectLocked = blockPart.aspectLocked
-    // }
-
-    // if (isStretchingX) {
-    //   boxEndHeight = boxStartHeight
-    // } else if (isStretchingY) {
-    //   boxEndWidth = boxStartWidth
-    // } else if (aspectLocked) {
+    const startAspectRatio = boxStartWidth / boxStartHeight
     const newAspectRatio = boxEndWidth / boxEndHeight
-    if (newAspectRatio > aspectRatio) {
-      boxEndHeight = boxEndWidth / aspectRatio
+    if (newAspectRatio > startAspectRatio) {
+      boxEndHeight = boxEndWidth / startAspectRatio
     } else {
-      boxEndWidth = boxEndHeight * aspectRatio
+      boxEndWidth = boxEndHeight * startAspectRatio
     }
 
-    // } else {
-    //   const isChangingHeight = [TransformHandleKind.TopScale, TransformHandleKind.BottomScale].includes(handleKind)
-    //   const isChangingWidth = [TransformHandleKind.LeftScale, TransformHandleKind.RightScale].includes(handleKind)
-    //   if (isChangingHeight) {
-    //     boxEndWidth = boxStartWidth
-    //   } else if (isChangingWidth) {
-    //     boxEndHeight = boxStartHeight
-    //   }
-    // }
+    const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
+    const rotatedVector = rotatePoint(vec, [0, 0], boxRotateZ)
 
-    const handleVec = getTransformHandleVector(handleKind)
-    handleVec[0] *= boxEndWidth
-    handleVec[1] *= boxEndHeight
+    const newBoxCenter = [oppositeCenter[0] + rotatedVector[0] / 2, oppositeCenter[1] + rotatedVector[1] / 2]
 
-    // handleVec = rotatePoint(handleVec, [0, 0], boxRotateZ)
-    // handleVec[0] += oppositeCenter[0]
-    // handleVec[1] += oppositeCenter[1]
-
-    const newBoxCenter = [oppositeCenter[0] + handleVec[0] / 2, oppositeCenter[1] + handleVec[1] / 2]
+    // const dims = rotatePoint([boxEndWidth, boxEndHeight], [0, 0], boxRotateZ)
+    // boxEndWidth = dims[0]
+    // boxEndHeight = dims[1]
 
     const boxEndLeft = newBoxCenter[0] - boxEndWidth / 2
     const boxEndTop = newBoxCenter[1] - boxEndHeight / 2
@@ -248,23 +405,15 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     // TODO scale snapping
 
     for (const selectedEntity of this.selectedBlocks.current) {
-      const selected = selectedEntity.read(comps.Selected)
+      const { startLeft, startTop, startWidth, startHeight } = selectedEntity.read(comps.Draggable)
 
       const block = selectedEntity.write(comps.Block)
 
-      block.left = (selected.startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
-      block.top = (selected.startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
+      block.left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
+      block.top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
 
-      // if (!isStretchingY) {
-      block.width = selected.startWidth * (boxEndWidth / boxStartWidth)
-      // }
-      // if (!isStretchingX) {
-      block.height = selected.startHeight * (boxEndHeight / boxStartHeight)
-      // block.fontSize = selected.startFontSize * (boxEndHeight / boxStartHeight)
-      // }
-      // if (isStretchingY || isStretchingX) {
-      //   block.stretched = true
-      // }
+      block.width = startWidth * (boxEndWidth / boxStartWidth)
+      block.height = startHeight * (boxEndHeight / boxStartHeight)
     }
   }
 
@@ -281,281 +430,5 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
       block.left += dx
       block.top += dy
     }
-  }
-
-  private createTransformBox(): Entity {
-    const id = crypto.randomUUID()
-    const transformBoxEntity = this.createEntity(
-      comps.Block,
-      { id, blue: 255, alpha: 128, rank: TRANSFORM_BOX_RANK },
-      comps.TransformBox,
-      comps.Draggable,
-    )
-
-    this.createTransformHandles(transformBoxEntity)
-
-    return transformBoxEntity
-  }
-
-  private createTransformHandles(transformBoxEntity: Entity): Entity[] {
-    const kinds = [
-      TransformHandleKind.TopLeftScale,
-      TransformHandleKind.BottomRightScale,
-      TransformHandleKind.TopRightScale,
-      TransformHandleKind.BottomLeftScale,
-      TransformHandleKind.TopLeftRotate,
-      TransformHandleKind.TopRightRotate,
-      TransformHandleKind.BottomLeftRotate,
-      TransformHandleKind.BottomRightRotate,
-    ]
-
-    // const stretchableX = selectedBlocks.length === 1 && isStretchableX(selectedBlocks[0])
-    // if (stretchableX) {
-    //   kinds.push(TransformHandleKind.LeftStretch, TransformHandleKind.RightStretch)
-    // } else {
-    kinds.push(TransformHandleKind.LeftScale, TransformHandleKind.RightScale)
-    // }
-
-    // const stretchableY = selectedBlocks.length === 1 && isStretchableY(selectedBlocks[0])
-    // if (stretchableY) {
-    //   kinds.push(TransformHandleKind.TopStretch, TransformHandleKind.BottomStretch)
-    // } else {
-    kinds.push(TransformHandleKind.TopScale, TransformHandleKind.BottomScale)
-    // }
-
-    const transformHandleEntities = kinds.map((kind) =>
-      this.createEntity(
-        comps.TransformHandle,
-        {
-          kind,
-          transformBox: transformBoxEntity,
-        },
-        comps.Block,
-        {
-          id: crypto.randomUUID(),
-          alpha: 128,
-          red: 255,
-          rank: TRANSFORM_HANDLE_RANKS[kind],
-          // visible: false,
-          // opacity: 0,
-          // layer: LayerKind.Selection,
-        },
-        // comps.Aabb,
-        comps.Draggable,
-        // comps.Hoverable,
-      ),
-    )
-
-    // updateTransformBoxHandles(transformBoxEntity, transformHandleEntities)
-
-    return transformHandleEntities
-  }
-
-  private updateTransformBoxHandles(transformBoxEntity: Entity): void {
-    const transformBoxBlock = transformBoxEntity.read(comps.Block)
-    // const rotateZ = transformBoxBlock.rotateZ
-    const { left, top, width, height } = transformBoxBlock
-    const handleSize = 15
-    const rotationHandleSize = 2 * handleSize
-    const sideHandleSize = 2 * handleSize
-
-    const handles: TransformHandleDef[] = []
-
-    const scaleKinds = [
-      TransformHandleKind.TopLeftScale,
-      TransformHandleKind.BottomLeftScale,
-      TransformHandleKind.TopRightScale,
-      TransformHandleKind.BottomRightScale,
-    ]
-
-    const rotateKinds = [
-      TransformHandleKind.TopLeftRotate,
-      TransformHandleKind.TopRightRotate,
-      TransformHandleKind.BottomLeftRotate,
-      TransformHandleKind.BottomRightRotate,
-    ]
-
-    // const rotateCursorKinds = [CursorKind.NW, CursorKind.NE, CursorKind.SW, CursorKind.SE]
-
-    // corners
-    for (let xi = 0; xi < 2; xi++) {
-      for (let yi = 0; yi < 2; yi++) {
-        handles.push({
-          // tag: Tag.TransformHandle,
-          kind: scaleKinds[xi + yi * 2],
-          left: left + width * xi - handleSize / 2,
-          top: top + height * yi - handleSize / 2,
-          width: handleSize,
-          height: handleSize,
-          // rank: TRANSFORM_HANDLE_CORNER_RANK,
-          // cursorKind: xi + yi === 1 ? CursorKind.NESW : CursorKind.NWSE,
-        })
-
-        handles.push({
-          // tag: Tag.Invisible,
-          kind: rotateKinds[xi + yi * 2],
-          left: left - rotationHandleSize + handleSize / 2 + xi * (width + rotationHandleSize - handleSize),
-          top: top - rotationHandleSize + handleSize / 2 + yi * (height + rotationHandleSize - handleSize),
-          width: rotationHandleSize,
-          height: rotationHandleSize,
-          // rank: ROTATE_HANDLE_RANK,
-          // cursorKind: rotateCursorKinds[xi + yi * 2],
-        })
-      }
-    }
-
-    // top & bottom edges
-    // const stretchableY = selectedBlocks.length === 1 && isStretchableY(selectedBlocks[0])
-    for (let yi = 0; yi < 2; yi++) {
-      let kind = TransformHandleKind.LeftScale
-      // if (stretchableY) {
-      //   kind = yi === 0 ? TransformHandleKind.TopStretch : TransformHandleKind.BottomStretch
-      // } else {
-      kind = yi === 0 ? TransformHandleKind.TopScale : TransformHandleKind.BottomScale
-      // }
-
-      handles.push({
-        // tag: Tag.Invisible,
-        kind,
-        left,
-        top: top + height * yi - sideHandleSize / 2,
-        width,
-        height: sideHandleSize,
-        // rank: TRANSFORM_HANDLE_EDGE_RANK,
-        // cursorKind: CursorKind.NS,
-      })
-    }
-
-    // left & right edges
-    // const stretchableX = selectedBlocks.length === 1 && isStretchableX(selectedBlocks[0])
-    for (let xi = 0; xi < 2; xi++) {
-      let kind = TransformHandleKind.LeftScale
-      // if (stretchableX) {
-      // kind = xi === 0 ? TransformHandleKind.LeftStretch : TransformHandleKind.RightStretch
-      // } else {
-      kind = xi === 0 ? TransformHandleKind.LeftScale : TransformHandleKind.RightScale
-      // }
-
-      handles.push({
-        // tag: Tag.Invisible,
-        kind,
-        left: left + width * xi - sideHandleSize / 2,
-        top,
-        width: sideHandleSize,
-        height,
-        // rank: TRANSFORM_HANDLE_EDGE_RANK,
-        // cursorKind: CursorKind.EW,
-      })
-    }
-
-    // const center = getCenter(transformBoxEntity)
-    // const center = [
-    //   transformBoxBlock.left + transformBoxBlock.width / 2,
-    //   transformBoxBlock.top + transformBoxBlock.height / 2,
-    // ]
-
-    const transformBox = transformBoxEntity.read(comps.TransformBox)
-
-    for (const handleEntity of transformBox.handles) {
-      const { kind } = handleEntity.write(comps.TransformHandle)
-
-      const handle = handles.find((h) => h.kind === kind)
-      if (!handle) {
-        console.warn('No handle found')
-        continue
-        // throw new Error('No handle found');
-      }
-
-      const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
-      // const position = rotatePoint(handleCenter, center, rotateZ)
-
-      const block = handleEntity.write(comps.Block)
-      // part.tag = handle.tag
-      block.left = handleCenter[0] - handle.width / 2
-      block.top = handleCenter[1] - handle.height / 2
-      block.width = handle.width
-      block.height = handle.height
-      // part.rotateZ = rotateZ
-      // part.rank = handle.rank
-
-      // const hoverable = handleEntity.write(comps.Hoverable)
-      // hoverable.cursorKind = handle.cursorKind
-    }
-  }
-}
-
-export function getOppositeTransformHandleKind(kind: TransformHandleKind): TransformHandleKind {
-  const opposites: Partial<Record<TransformHandleKind, TransformHandleKind>> = {
-    [TransformHandleKind.TopLeftScale]: TransformHandleKind.BottomRightScale,
-    [TransformHandleKind.TopRightScale]: TransformHandleKind.BottomLeftScale,
-    [TransformHandleKind.BottomLeftScale]: TransformHandleKind.TopRightScale,
-    [TransformHandleKind.BottomRightScale]: TransformHandleKind.TopLeftScale,
-    [TransformHandleKind.TopScale]: TransformHandleKind.BottomScale,
-    [TransformHandleKind.RightScale]: TransformHandleKind.LeftScale,
-    [TransformHandleKind.BottomScale]: TransformHandleKind.TopScale,
-    [TransformHandleKind.LeftScale]: TransformHandleKind.RightScale,
-    [TransformHandleKind.LeftStretch]: TransformHandleKind.RightStretch,
-    [TransformHandleKind.RightStretch]: TransformHandleKind.LeftStretch,
-    [TransformHandleKind.TopStretch]: TransformHandleKind.BottomStretch,
-    [TransformHandleKind.BottomStretch]: TransformHandleKind.TopStretch,
-  }
-  return opposites[kind] ?? kind
-}
-
-const TRANSFORM_HANDLE_RANKS: Record<TransformHandleKind, string> = {
-  [TransformHandleKind.TopLeftScale]: TRANSFORM_HANDLE_CORNER_RANK,
-  [TransformHandleKind.BottomRightScale]: TRANSFORM_HANDLE_CORNER_RANK,
-  [TransformHandleKind.TopRightScale]: TRANSFORM_HANDLE_CORNER_RANK,
-  [TransformHandleKind.BottomLeftScale]: TRANSFORM_HANDLE_CORNER_RANK,
-  [TransformHandleKind.TopLeftRotate]: TRANSFORM_HANDLE_ROTATE_RANK,
-  [TransformHandleKind.TopRightRotate]: TRANSFORM_HANDLE_ROTATE_RANK,
-  [TransformHandleKind.BottomLeftRotate]: TRANSFORM_HANDLE_ROTATE_RANK,
-  [TransformHandleKind.BottomRightRotate]: TRANSFORM_HANDLE_ROTATE_RANK,
-  [TransformHandleKind.TopScale]: TRANSFORM_HANDLE_EDGE_RANK,
-  [TransformHandleKind.RightScale]: TRANSFORM_HANDLE_EDGE_RANK,
-  [TransformHandleKind.BottomScale]: TRANSFORM_HANDLE_EDGE_RANK,
-  [TransformHandleKind.LeftScale]: TRANSFORM_HANDLE_EDGE_RANK,
-  [TransformHandleKind.LeftStretch]: TRANSFORM_HANDLE_EDGE_RANK,
-  [TransformHandleKind.RightStretch]: TRANSFORM_HANDLE_EDGE_RANK,
-  [TransformHandleKind.TopStretch]: TRANSFORM_HANDLE_EDGE_RANK,
-  [TransformHandleKind.BottomStretch]: TRANSFORM_HANDLE_EDGE_RANK,
-}
-
-function getTransformHandleVector(kind: TransformHandleKind): [number, number] {
-  switch (kind) {
-    case TransformHandleKind.TopLeftScale:
-      return [-1, -1]
-    case TransformHandleKind.TopRightScale:
-      return [-1, 1]
-    case TransformHandleKind.BottomLeftScale:
-      return [1, -1]
-    case TransformHandleKind.BottomRightScale:
-      return [1, 1]
-    case TransformHandleKind.TopScale:
-      return [0, -1]
-    case TransformHandleKind.RightScale:
-      return [1, 0]
-    case TransformHandleKind.BottomScale:
-      return [0, 1]
-    case TransformHandleKind.LeftScale:
-      return [-1, 0]
-    case TransformHandleKind.LeftStretch:
-      return [-1, 0]
-    case TransformHandleKind.RightStretch:
-      return [1, 0]
-    case TransformHandleKind.TopStretch:
-      return [0, -1]
-    case TransformHandleKind.BottomStretch:
-      return [0, 1]
-    case TransformHandleKind.TopLeftRotate:
-      return [-1, -1]
-    case TransformHandleKind.TopRightRotate:
-      return [1, -1]
-    case TransformHandleKind.BottomLeftRotate:
-      return [-1, 1]
-    case TransformHandleKind.BottomRightRotate:
-      return [1, 1]
-    default:
-      return [0, 0]
   }
 }

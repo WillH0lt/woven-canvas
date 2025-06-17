@@ -20,6 +20,11 @@ export abstract class Extension {
     return this._inputGroup
   }
 
+  protected _preCaptureGroup: SystemGroup | null = null
+  public get preCaptureGroup(): SystemGroup | null {
+    return this._preCaptureGroup
+  }
+
   protected _captureGroup: SystemGroup | null = null
   public get captureGroup(): SystemGroup | null {
     return this._captureGroup

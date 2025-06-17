@@ -61,3 +61,36 @@ export interface IStorable<T = Record<string, any>> {
   toModel(): T
   fromModel(model: T): void
 }
+
+// export enum CursorState {
+//   Auto = 'auto',
+//   Interact = 'interact',
+//   Dragging = 'dragging',
+// }
+
+export enum Tool {
+  Select = 'select',
+  Pan = 'pan',
+  AddBlock = 'addBlock',
+}
+
+export enum CursorIcon {
+  Pointer = 'pointer',
+  NESW = 'nesw',
+  NWSE = 'nwse',
+  NS = 'ns',
+  EW = 'ew',
+  RotateNW = 'rotateNW',
+  RotateNE = 'rotateNE',
+  RotateSE = 'rotateSE',
+  RotateSW = 'rotateSW',
+  Move = 'move',
+  Crosshair = 'crosshair',
+}
+
+export enum CursorState {
+  Select = 'select',
+  Interact = 'interact',
+  Dragging = 'dragging',
+  Placing = 'placing',
+}

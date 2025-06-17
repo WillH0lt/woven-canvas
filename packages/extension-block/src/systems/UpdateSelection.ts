@@ -106,13 +106,16 @@ export class UpdateSelection extends BaseSystem<BlockCommandArgs> {
 
     // blockEntity.add(comps.Selected)
 
-    blockEntity.add(comps.Selected, {
-      startLeft: block.left,
-      startTop: block.top,
-      startWidth: block.width,
-      startHeight: block.height,
-      startRotateZ: block.rotateZ,
-    })
+    blockEntity.add(comps.Selected)
+
+    // if (blockEntity.has(comps.Draggable)) {
+    //   const draggable = blockEntity.write(comps.Draggable)
+    //   draggable.startHeight = block.height
+    //   draggable.startWidth = block.width
+    //   draggable.startLeft = block.left
+    //   draggable.startTop = block.top
+    //   draggable.startRotateZ = block.rotateZ
+    // }
   }
 
   private deselectBlock(blockEntity: Entity): void {

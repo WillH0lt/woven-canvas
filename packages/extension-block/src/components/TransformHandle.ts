@@ -6,6 +6,6 @@ import { TransformHandleKind } from '../types.js'
 @component
 export class TransformHandle {
   @field.staticString(Object.values(TransformHandleKind)) public declare kind: TransformHandleKind
-  @field.uint8.vector(2) public declare vector: [number, number]
+  @field.int8.vector(2) public declare vector: [number, number]
   @field.ref public declare transformBox: Entity
 }

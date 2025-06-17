@@ -1,4 +1,4 @@
-import type { BlockModel } from '@infinitecanvas/core'
+import type { BlockModel, CursorIcon, Tool } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
 export enum Selection {
@@ -21,26 +21,26 @@ export interface AabbModel {
 }
 
 export enum TransformHandleKind {
-  TopRightScale = 'top-right-scale',
-  BottomRightScale = 'bottom-right-scale',
-  BottomLeftScale = 'bottom-left-scale',
-  TopLeftScale = 'top-left-scale',
-  TopScale = 'top-scale',
-  RightScale = 'right-scale',
-  BottomScale = 'bottom-scale',
-  LeftScale = 'left-scale',
-  RightStretch = 'right-stretch',
-  LeftStretch = 'left-stretch',
-  TopStretch = 'top-stretch',
-  BottomStretch = 'bottom-stretch',
-  TopLeftRotate = 'top-left-rotate',
-  TopRightRotate = 'top-right-rotate',
-  BottomRightRotate = 'bottom-right-rotate',
-  BottomLeftRotate = 'bottom-left-rotate',
+  // TopRightScale = 'top-right-scale',
+  // BottomRightScale = 'bottom-right-scale',
+  // BottomLeftScale = 'bottom-left-scale',
+  // TopLeftScale = 'top-left-scale',
+  // TopScale = 'top-scale',
+  // RightScale = 'right-scale',
+  // BottomScale = 'bottom-scale',
+  // LeftScale = 'left-scale',
+  // RightStretch = 'right-stretch',
+  // LeftStretch = 'left-stretch',
+  // TopStretch = 'top-stretch',
+  // BottomStretch = 'bottom-stretch',
+  // TopLeftRotate = 'top-left-rotate',
+  // TopRightRotate = 'top-right-rotate',
+  // BottomRightRotate = 'bottom-right-rotate',
+  // BottomLeftRotate = 'bottom-left-rotate',
 
-  // Scale = 'scale',
+  Scale = 'scale',
   // Stretch = 'stretch',
-  // Rotate = 'rotate',
+  Rotate = 'rotate',
 }
 
 export enum BlockCommand {
@@ -56,6 +56,13 @@ export enum BlockCommand {
   DeselectBlock = 'deselectBlock',
   DeselectAll = 'deselectAll',
   RemoveSelected = 'removeSelected',
+
+  AddOrReplaceTransformBox = 'addOrReplaceTransformBox',
+  HideTransformBox = 'hideTransformBox',
+  RemoveTransformBox = 'removeTransformBox',
+
+  SetTool = 'setTool',
+  SetCursor = 'setCursor',
 }
 
 export type BlockCommandArgs = {
@@ -77,4 +84,11 @@ export type BlockCommandArgs = {
   [BlockCommand.DeselectBlock]: [Entity]
   [BlockCommand.DeselectAll]: []
   [BlockCommand.RemoveSelected]: []
+
+  [BlockCommand.AddOrReplaceTransformBox]: []
+  [BlockCommand.HideTransformBox]: []
+  [BlockCommand.RemoveTransformBox]: []
+
+  [BlockCommand.SetTool]: [Tool, Partial<BlockModel>]
+  [BlockCommand.SetCursor]: [CursorIcon]
 }

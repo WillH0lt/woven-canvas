@@ -1,9 +1,8 @@
-import { BaseSystem, comps as coreComps } from '@infinitecanvas/core'
+import { BaseSystem, Tool, comps as coreComps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
 import { assign, setup, transition } from 'xstate'
 import * as blockComps from '../components'
-import { intersectPoint } from '../helpers/intersectPoint'
 import { BlockCommand, type BlockCommandArgs, Selection } from '../types'
 
 const comps = {
@@ -37,7 +36,9 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
 
   private readonly keyboard = this.singleton.read(comps.Keyboard)
 
-  private readonly cursor = this.singleton.read(comps.Cursor)
+  private readonly cursorState = this.singleton.read(comps.CursorState)
+
+  private readonly intersect = this.singleton.read(comps.Intersect)
 
   private readonly selectionState = this.singleton.write(comps.SelectionState)
 
@@ -226,7 +227,9 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
   })
 
   public execute(): void {
-    if (this.cursor.mode === 'selection') {
+    // TODO need to transition state back when tool changes
+    // eg if drawing selection box and immediately switching to another tool
+    if (this.cursorState.tool === Tool.Select) {
       this.runMachine()
     }
   }
@@ -258,16 +261,11 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
   private getSelectionEvents(): SelectionEvent[] {
     const events = []
 
-    let blockEntity: Entity | null = null
-    if (this.pointer.downTrigger || this.pointer.upTrigger) {
-      blockEntity = intersectPoint(this.pointer.position, this.draggableBlocks.current)
-    }
-
     if (this.pointer.downTrigger) {
       events.push({
         type: 'pointerDown',
         position: this.pointer.downPosition,
-        blockEntity,
+        blockEntity: this.intersect.entity || null,
       } as SelectionEvent)
     }
 
@@ -275,7 +273,7 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
       events.push({
         type: 'pointerUp',
         position: this.pointer.upPosition,
-        blockEntity,
+        blockEntity: this.intersect.entity || null,
       } as SelectionEvent)
     }
 
