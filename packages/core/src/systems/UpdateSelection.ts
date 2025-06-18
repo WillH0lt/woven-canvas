@@ -1,22 +1,16 @@
-import { BaseSystem, comps as coreComps } from '@infinitecanvas/core'
-import type { BlockModel } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
-import * as blockComps from '../components'
+import { BaseSystem } from '../BaseSystem'
+import * as comps from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
-import { intersectBlock } from '../helpers'
-import { BlockCommand, type BlockCommandArgs, type SelectBlockOptions } from '../types'
-
-const comps = {
-  ...coreComps,
-  ...blockComps,
-}
+import { computeAabb, intersectAabb } from '../helpers'
+import { BlockCommand, type BlockCommandArgs, type BlockModel, type SelectBlockOptions } from '../types'
 
 export class UpdateSelection extends BaseSystem<BlockCommandArgs> {
   private readonly rankBounds = this.singleton.write(comps.RankBounds)
 
   private readonly selectableBlocks = this.query(
-    (q) => q.current.with(comps.Block, comps.Draggable, comps.Selectable).write,
+    (q) => q.current.with(comps.Block, comps.Draggable, comps.Selectable).write.using(comps.Aabb).read,
   )
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
@@ -69,7 +63,9 @@ export class UpdateSelection extends BaseSystem<BlockCommandArgs> {
     const block = blockEntity.write(comps.Block)
     Object.assign(block, blockPartial)
 
-    const intersectedEntities = intersectBlock(block, this.selectableBlocks.current)
+    // const aabb = { left: block.left, top: block.top, right: block.left + block.width, bottom: block.bottom }
+    const aabb = computeAabb(blockEntity)
+    const intersectedEntities = intersectAabb(aabb, this.selectableBlocks.current)
     for (const selectedEntity of this.selectedBlocks.current) {
       const shouldDeselect = !intersectedEntities.some((entity) => entity.isSame(selectedEntity))
       if (shouldDeselect) {

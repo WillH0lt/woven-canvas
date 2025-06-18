@@ -1,11 +1,11 @@
-import { System, type SystemGroup, World } from '@lastolivegames/becsy'
+import { type SystemGroup, World } from '@lastolivegames/becsy'
 import type { z } from 'zod/v4'
 
 import { Emitter } from 'strict-event-emitter'
+import { CoreExtension } from './CoreExtension'
 import type { Extension } from './Extension'
 import { Store } from './Store'
-import * as sys from './systems'
-import { type CoreResources, EmitterEventKind, type EmitterEvents, type ICommands, Options } from './types'
+import { EmitterEventKind, type EmitterEvents, type ICommands, Options, type Resources } from './types'
 
 const PRIVATE_CONSTRUCTOR_KEY = Symbol()
 
@@ -47,38 +47,52 @@ export class InfiniteCanvas {
     }
 
     const emitter = new Emitter<EmitterEvents>()
+
     const store = new Store()
-    const coreResources = {
-      ...resources,
-      emitter,
-      store,
-    }
+
+    extensions.push(new CoreExtension(emitter, store))
 
     await Promise.all(extensions.map((ext) => ext.initialize(resources)))
 
-    const setupGroup = [
-      System.group(
-        sys.Deleter,
-        { resources: coreResources },
-        sys.CommandSpawner,
-        { resources: coreResources },
-        sys.StoreSync,
-        { resources: coreResources },
-      ),
-    ]
+    // const setupGroup = [
+    //   System.group(sys.CommandSpawner, { resources: coreResources }, sys.StoreSync, { resources: coreResources }),
+    // ]
+
+    const preInputGroups = extensions.map((ext) => ext.preInputGroup).filter((g) => g !== null)
     const inputGroup = extensions.map((ext) => ext.inputGroup).filter((g) => g !== null)
-    const preCaptureGroup = extensions.map((ext) => ext.preCaptureGroup).filter((g) => g !== null)
+    const postInputGroups = extensions.map((ext) => ext.postInputGroup).filter((g) => g !== null)
+
+    const preCaptureGroups = extensions.map((ext) => ext.preCaptureGroup).filter((g) => g !== null)
     const captureGroups = extensions.map((ext) => ext.captureGroup).filter((g) => g !== null)
+    const postCaptureGroups = extensions.map((ext) => ext.postCaptureGroup).filter((g) => g !== null)
+
+    const preUpdateGroups = extensions.map((ext) => ext.preUpdateGroup).filter((g) => g !== null)
     const updateGroups = extensions.map((ext) => ext.updateGroup).filter((g) => g !== null)
+    const postUpdateGroups = extensions.map((ext) => ext.postUpdateGroup).filter((g) => g !== null)
+
+    const preRenderGroups = extensions.map((ext) => ext.preRenderGroup).filter((g) => g !== null)
     const renderGroups = extensions.map((ext) => ext.renderGroup).filter((g) => g !== null)
+    const postRenderGroups = extensions.map((ext) => ext.postRenderGroup).filter((g) => g !== null)
+
+    // postUpdateGroups.push(System.group(sys.Deleter, { resources: coreResources }))
 
     const orderedGroups = [
-      ...setupGroup,
+      // ...setupGroup,
+      ...preInputGroups,
       ...inputGroup,
-      ...preCaptureGroup,
+      ...postInputGroups,
+
+      ...preCaptureGroups,
       ...captureGroups,
+      ...postCaptureGroups,
+
+      ...preUpdateGroups,
       ...updateGroups,
+      ...postUpdateGroups,
+
+      ...preRenderGroups,
       ...renderGroups,
+      ...postRenderGroups,
     ]
 
     scheduleGroups(orderedGroups)
@@ -109,14 +123,16 @@ export class InfiniteCanvas {
     //   }
     // })
 
-    return new InfiniteCanvas(extensions, parsedOptions, world, coreResources, PRIVATE_CONSTRUCTOR_KEY)
+    return new InfiniteCanvas(extensions, parsedOptions, world, resources, emitter, store, PRIVATE_CONSTRUCTOR_KEY)
   }
 
   constructor(
     extensions: Extension[],
     options: z.infer<typeof Options>,
     world: World,
-    coreResources: CoreResources,
+    resources: Resources,
+    emitter: Emitter<EmitterEvents>,
+    store: Store,
     privateConstructorKey: Symbol,
   ) {
     if (privateConstructorKey !== PRIVATE_CONSTRUCTOR_KEY) {
@@ -126,9 +142,9 @@ export class InfiniteCanvas {
     this.extensions = extensions
     this.options = options
     this.world = world
-    this.domElement = coreResources.domElement
-    this.emitter = coreResources.emitter
-    this.store = coreResources.store
+    this.domElement = resources.domElement
+    this.emitter = emitter
+    this.store = store
 
     if (options.autoloop) {
       this.loop()

@@ -1,9 +1,13 @@
-import type { BlockModel, ICommands, Resources, SendCommandFn } from '@infinitecanvas/core'
-import { Extension, type Tool } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
+import type { Emitter } from 'strict-event-emitter'
 
+import { Extension } from './Extension'
+import type { Store } from './Store'
 import * as sys from './systems'
-import { BlockCommand, type BlockCommandArgs } from './types'
+import type { BlockModel, ICommands, Resources, SendCommandFn } from './types'
+import { BlockCommand, type BlockCommandArgs, type EmitterEvents, type Tool } from './types'
+
+// import { type CoreResources, EmitterEventKind, type EmitterEvents, type ICommands, Options } from './types'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -33,30 +37,49 @@ declare module '@infinitecanvas/core' {
   }
 }
 
-export class BlockExtension extends Extension {
-  public name = 'block'
+export class CoreExtension extends Extension {
+  public name = 'core'
+
+  constructor(
+    private readonly emitter: Emitter<EmitterEvents>,
+    public readonly store: Store,
+  ) {
+    super()
+  }
 
   public async initialize(resources: Resources): Promise<void> {
-    this._preCaptureGroup = System.group(sys.PreCaptureIntersect, { resources })
+    const coreResources = {
+      ...resources,
+      emitter: this.emitter,
+      store: this.store,
+    }
+
+    this._preInputGroup = System.group(sys.CommandSpawner, { resources: coreResources }, sys.StoreSync, {
+      resources: coreResources,
+    })
+
+    this._preCaptureGroup = System.group(sys.PreCaptureIntersect, { resources: coreResources })
 
     this._captureGroup = System.group(
       sys.CaptureSelection,
-      { resources },
+      { resources: coreResources },
       sys.CaptureTransformBox,
-      { resources },
+      { resources: coreResources },
       sys.CaptureCursor,
-      { resources },
+      { resources: coreResources },
     )
     this._updateGroup = System.group(
       sys.UpdateSelection,
-      { resources },
+      { resources: coreResources },
       sys.UpdateTransformBox,
-      { resources },
+      { resources: coreResources },
       sys.UpdateRanks,
-      { resources },
+      { resources: coreResources },
       sys.UpdateCursor,
-      { resources },
+      { resources: coreResources },
     )
+
+    this._postUpdateGroup = System.group(sys.Deleter, { resources: coreResources })
 
     // this.createStore<Block[]>([])}
   }

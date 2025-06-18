@@ -1,7 +1,7 @@
-import { comps } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
-
 import { LexoRank } from 'lexorank'
+
+import * as comps from '../components'
 import { UpdateSelection } from './UpdateSelection'
 import { UpdateTransformBox } from './UpdateTransformBox'
 

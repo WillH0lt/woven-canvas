@@ -191,12 +191,18 @@ importers:
       immer:
         specifier: ^10.1.1
         version: 10.1.1
+      lexorank:
+        specifier: ^1.0.5
+        version: 1.0.5
       signia:
         specifier: ^0.1.5
         version: 0.1.5
       strict-event-emitter:
         specifier: ^0.5.1
         version: 0.5.1
+      xstate:
+        specifier: ^5.19.4
+        version: 5.19.4
       zod:
         specifier: ^3.25.36
         version: 3.25.36

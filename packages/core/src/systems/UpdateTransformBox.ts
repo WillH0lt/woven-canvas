@@ -1,7 +1,7 @@
-import { BaseSystem, CursorIcon, comps as coreComps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
-import * as blockComps from '../components'
+import { BaseSystem } from '../BaseSystem'
+import * as comps from '../components'
 import {
   TRANSFORM_BOX_RANK,
   TRANSFORM_HANDLE_CORNER_RANK,
@@ -9,13 +9,8 @@ import {
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
 import { computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
-import { BlockCommand, type BlockCommandArgs, TransformHandleKind } from '../types'
+import { BlockCommand, type BlockCommandArgs, CursorIcon, TransformHandleKind } from '../types'
 import { UpdateSelection } from './UpdateSelection'
-
-const comps = {
-  ...coreComps,
-  ...blockComps,
-}
 
 interface TransformHandleDef {
   // tag: keyof typeof Tag
@@ -317,7 +312,7 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     //   delta += shift;
     // }
 
-    // boxEntity.write(comps.Block).rotateZ = (start + delta) % (2 * Math.PI)
+    handleEntity.write(comps.Block).rotateZ = (rotateZ + delta) % (2 * Math.PI)
 
     for (const blockEntity of this.selectedBlocks.current) {
       const { startLeft, startTop, startWidth, startHeight, startRotateZ } = blockEntity.read(comps.Draggable)
@@ -371,8 +366,6 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     let difference: [number, number] = [handleCenter[0] - oppositeCenter[0], handleCenter[1] - oppositeCenter[1]]
     difference = rotatePoint(difference, [0, 0], -boxRotateZ)
 
-    console.log('difference', difference)
-
     let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
     let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
 
@@ -396,11 +389,11 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     const boxEndLeft = newBoxCenter[0] - boxEndWidth / 2
     const boxEndTop = newBoxCenter[1] - boxEndHeight / 2
 
-    const boxBlock = boxEntity.write(comps.Block)
-    boxBlock.left = boxEndLeft
-    boxBlock.top = boxEndTop
-    boxBlock.width = boxEndWidth
-    boxBlock.height = boxEndHeight
+    // const boxBlock = boxEntity.write(comps.Block)
+    // boxBlock.left = boxEndLeft
+    // boxBlock.top = boxEndTop
+    // boxBlock.width = boxEndWidth
+    // boxBlock.height = boxEndHeight
 
     // TODO scale snapping
 

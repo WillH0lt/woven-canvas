@@ -1,16 +1,11 @@
-import { BaseSystem, type BlockModel, CursorIcon, CursorState, Tool, comps as coreComps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
-
 import { assign, setup, transition } from 'xstate'
-import * as blockComps from '../components'
-import { BlockCommand, type BlockCommandArgs } from '../types'
+
+import { BaseSystem } from '../BaseSystem'
+import * as comps from '../components'
+import { BlockCommand, type BlockCommandArgs, type BlockModel, CursorIcon, CursorState, Tool } from '../types'
 import { CaptureSelection } from './CaptureSelection'
 import { CaptureTransformBox } from './CaptureTransformBox'
-
-const comps = {
-  ...coreComps,
-  ...blockComps,
-}
 
 type CursorEvent =
   | { type: 'pointerMove'; position: [number, number]; blockEntity: Entity | null }
@@ -28,11 +23,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
-  private readonly _draggableBlocks = this.query((q) => q.with(comps.Draggable).read)
-
-  // private ghostBlocks = this.query(
-  //   (q) => q.added.with(comps.Block, comps.Ghost).read,
-  // )
+  private readonly _draggables = this.query((q) => q.with(comps.Block, comps.Draggable).read)
 
   public constructor() {
     super()
@@ -44,6 +35,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
       context: {} as {
         tool: Tool
         icon: CursorIcon
+        iconRotation: number
         hoveredEntity: Entity | null
         heldBlock: string
       },
@@ -69,15 +61,15 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
       resetContext: assign({
         tool: Tool.Select,
         icon: CursorIcon.Pointer,
+        iconRotation: 0,
         hoveredEntity: null,
+        heldBlock: '',
       }),
       setHoveredEntity: assign({
         hoveredEntity: ({ event }) => {
           if (!('blockEntity' in event) || !event.blockEntity) return null
           return event.blockEntity
         },
-      }),
-      setCursorIcon: assign({
         icon: ({ event }) => {
           let icon = CursorIcon.Pointer
           if ('blockEntity' in event && event.blockEntity) {
@@ -85,6 +77,12 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
             icon = draggable.hoverCursor
           }
           return icon
+        },
+        iconRotation: ({ event }) => {
+          if (!('blockEntity' in event) || !event.blockEntity) return 0
+          // if (!context.hoveredEntity) return 0
+          const block = event.blockEntity.read(comps.Block)
+          return block.rotateZ
         },
       }),
     },
@@ -94,6 +92,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     context: {
       tool: Tool.Select,
       icon: CursorIcon.Pointer,
+      iconRotation: 0,
       hoveredEntity: null,
       heldBlock: '',
     },
@@ -103,7 +102,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
         on: {
           pointerMove: {
             guard: 'isOverBlock',
-            actions: ['setHoveredEntity', 'setCursorIcon'],
+            actions: 'setHoveredEntity',
             target: CursorState.Interact,
           },
         },
@@ -113,23 +112,23 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
           pointerMove: [
             {
               guard: 'isOverDifferentBlock',
-              actions: ['setHoveredEntity', 'setCursorIcon'],
+              actions: 'setHoveredEntity',
               target: CursorState.Interact,
             },
             {
               guard: 'isOutsideBlock',
-              actions: ['setHoveredEntity', 'setCursorIcon'],
+              actions: 'setHoveredEntity',
               target: CursorState.Select,
             },
           ],
           pointerDown: {
+            actions: 'setHoveredEntity',
             target: CursorState.Dragging,
           },
         },
       },
       [CursorState.Dragging]: {
         entry: assign({
-          // set move icon
           icon: ({ context }) => {
             let icon = context.icon
             if (icon === CursorIcon.Pointer) {
@@ -140,8 +139,16 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
         }),
         on: {
           pointerUp: {
-            actions: 'setCursorIcon',
             target: CursorState.Select,
+          },
+          pointerMove: {
+            actions: assign({
+              iconRotation: ({ context }) => {
+                if (!context.hoveredEntity) return 0
+                const block = context.hoveredEntity.read(comps.Block)
+                return block.rotateZ
+              },
+            }),
           },
           cancel: {
             target: CursorState.Select,
@@ -175,24 +182,14 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     on: {
       setTool: {
         actions: assign({
-          tool: ({ event }) => {
-            return event.tool
-          },
-          heldBlock: ({ event }) => {
-            return JSON.stringify(event.block)
-          },
-          icon: () => {
-            return CursorIcon.Crosshair
-          },
+          tool: ({ event }) => event.tool,
+          heldBlock: ({ event }) => JSON.stringify(event.block),
+          icon: () => CursorIcon.Crosshair,
         }),
         target: `.${CursorState.Placing}`,
       },
     },
   })
-
-  // public initialize(): void {
-  //   this.addCommandListener(BlockCommand.SetTool, this.setTool.bind(this))
-  // }
 
   public execute(): void {
     this.runMachine()
@@ -204,7 +201,13 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
 
     let state = this.cursorMachine.resolveState({
       value: this.cursorState.state,
-      context: this.cursorState,
+      context: {
+        tool: this.cursorState.tool,
+        icon: this.cursorState.icon,
+        iconRotation: this.cursorState.iconRotation,
+        hoveredEntity: this.cursorState.hoveredEntity,
+        heldBlock: this.cursorState.heldBlock,
+      },
     })
 
     for (const event of events) {
@@ -218,9 +221,9 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
       }
     }
 
-    // TODO this will be handled in the store once we have a store
-    if (this.cursorState.icon !== state.context.icon) {
-      this.emitCommand(BlockCommand.SetCursor, state.context.icon)
+    // TODO this will maybe be handled in the store once we have a store
+    if (this.cursorState.icon !== state.context.icon || this.cursorState.iconRotation !== state.context.iconRotation) {
+      this.emitCommand(BlockCommand.SetCursor, state.context.icon, state.context.iconRotation)
     }
 
     Object.assign(this.cursorState, state.context)

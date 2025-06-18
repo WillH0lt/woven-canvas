@@ -1,3 +1,4 @@
+import type { Entity } from '@lastolivegames/becsy'
 import type { Emitter } from 'strict-event-emitter'
 import { z } from 'zod/v4'
 import type { Store } from './Store'
@@ -93,4 +94,78 @@ export enum CursorState {
   Interact = 'interact',
   Dragging = 'dragging',
   Placing = 'placing',
+}
+
+export enum Selection {
+  Idle = 'idle',
+  Pointing = 'pointing',
+  Dragging = 'dragging',
+  SelectionBoxPointing = 'selectionBoxPointing',
+  SelectionBoxDragging = 'selectionBoxDragging',
+}
+
+export interface SelectBlockOptions {
+  deselectOthers?: boolean
+}
+
+export interface AabbModel {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+export enum TransformHandleKind {
+  Scale = 'scale',
+  Rotate = 'rotate',
+}
+
+export enum BlockCommand {
+  AddBlock = 'addBlock',
+  UpdateBlockPosition = 'updateBlockPosition',
+  RemoveBlock = 'removeBlock',
+
+  AddSelectionBox = 'addSelectionBox',
+  UpdateSelectionBox = 'updateSelectionBox',
+  RemoveSelectionBoxes = 'removeSelectionBoxes',
+
+  SelectBlock = 'selectBlock',
+  DeselectBlock = 'deselectBlock',
+  DeselectAll = 'deselectAll',
+  RemoveSelected = 'removeSelected',
+
+  AddOrReplaceTransformBox = 'addOrReplaceTransformBox',
+  HideTransformBox = 'hideTransformBox',
+  RemoveTransformBox = 'removeTransformBox',
+
+  SetTool = 'setTool',
+  SetCursor = 'setCursor',
+}
+
+export type BlockCommandArgs = {
+  [BlockCommand.AddBlock]: [Partial<BlockModel>]
+  [BlockCommand.UpdateBlockPosition]: [
+    Entity,
+    {
+      left: number
+      top: number
+    },
+  ]
+  [BlockCommand.RemoveBlock]: [Entity]
+
+  [BlockCommand.AddSelectionBox]: [Partial<BlockModel>]
+  [BlockCommand.UpdateSelectionBox]: [Partial<BlockModel>]
+  [BlockCommand.RemoveSelectionBoxes]: []
+
+  [BlockCommand.SelectBlock]: [Entity, SelectBlockOptions]
+  [BlockCommand.DeselectBlock]: [Entity]
+  [BlockCommand.DeselectAll]: []
+  [BlockCommand.RemoveSelected]: []
+
+  [BlockCommand.AddOrReplaceTransformBox]: []
+  [BlockCommand.HideTransformBox]: []
+  [BlockCommand.RemoveTransformBox]: []
+
+  [BlockCommand.SetTool]: [Tool, Partial<BlockModel>]
+  [BlockCommand.SetCursor]: [CursorIcon, number]
 }

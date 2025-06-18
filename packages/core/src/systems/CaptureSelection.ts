@@ -1,28 +1,15 @@
-import { BaseSystem, Tool, comps as coreComps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
-
 import { assign, setup, transition } from 'xstate'
-import * as blockComps from '../components'
-import { BlockCommand, type BlockCommandArgs, Selection } from '../types'
 
-const comps = {
-  ...coreComps,
-  ...blockComps,
-}
+import { BaseSystem } from '../BaseSystem'
+import * as comps from '../components'
+import { BlockCommand, type BlockCommandArgs, Selection, Tool } from '../types'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
 
 const distance = (a: [number, number], b: [number, number]): number => {
   return Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
-}
-
-interface SelectionState {
-  state: Selection
-  pointingStart: [number, number]
-  dragStart: [number, number]
-  draggedEntityStart: [number, number]
-  draggedEntity: Entity | null
 }
 
 type SelectionEvent =
@@ -40,15 +27,18 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
+  private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Selectable).read)
+
   private readonly selectionState = this.singleton.write(comps.SelectionState)
-
-  private readonly selectableBlocks = this.query((q) => q.current.with(comps.Block, comps.Selectable, comps.ZIndex))
-
-  private readonly draggableBlocks = this.query((q) => q.current.with(comps.Block, comps.Draggable, comps.ZIndex))
 
   private readonly selectionMachine = setup({
     types: {
-      context: {} as Omit<SelectionState, 'state'>,
+      context: {} as {
+        pointingStart: [number, number]
+        dragStart: [number, number]
+        draggedEntityStart: [number, number]
+        draggedEntity: Entity | null
+      },
       events: {} as SelectionEvent,
     },
     guards: {

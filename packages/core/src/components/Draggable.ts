@@ -1,5 +1,5 @@
-import { CursorIcon } from '@infinitecanvas/core'
 import { Type, component, field } from '@lastolivegames/becsy'
+import { CursorIcon } from '../types'
 
 @component
 export class Draggable {

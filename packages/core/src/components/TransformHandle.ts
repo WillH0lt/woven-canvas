@@ -1,5 +1,4 @@
-import type { Entity } from '@lastolivegames/becsy'
-import { component, field } from '@lastolivegames/becsy'
+import { type Entity, component, field } from '@lastolivegames/becsy'
 
 import { TransformHandleKind } from '../types.js'
 

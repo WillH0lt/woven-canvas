@@ -1,5 +1,5 @@
 import { comps } from '@infinitecanvas/core'
-import { intersectBlock } from '../../src/helpers/intersectBlock'
+import { intersectBlock } from '../../src/helpers/intersectAabb'
 import { MockEntity } from './MockEntity'
 
 describe('intersectBlock', () => {

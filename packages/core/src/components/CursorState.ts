@@ -12,6 +12,8 @@ export class CursorState {
   @field({ type: Type.staticString(Object.values(CursorIcon)), default: CursorIcon.Pointer })
   public declare icon: CursorIcon
 
+  @field.float32 public declare iconRotation: number
+
   @field.ref public declare hoveredEntity: Entity | null
 
   // heldBlock is a stringified blockModel that the cursor is currently placing

@@ -1,6 +1,5 @@
 import './style.css'
 import { InfiniteCanvas, Tool } from '@infinitecanvas/core'
-import { BlockExtension } from '@infinitecanvas/extension-block'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { RendererExtension } from '@infinitecanvas/extension-renderer'
 import { v4 as uuid } from 'uuid'
@@ -11,7 +10,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 let infiniteCanvas: InfiniteCanvas | null = null
 async function initializeCanvas(container: HTMLDivElement) {
-  infiniteCanvas = await InfiniteCanvas.New([new InputExtension(), new BlockExtension(), new RendererExtension()])
+  infiniteCanvas = await InfiniteCanvas.New([new InputExtension(), new RendererExtension()])
   container.appendChild(infiniteCanvas.domElement)
 
   for (let i = 0; i < 10; i++) {

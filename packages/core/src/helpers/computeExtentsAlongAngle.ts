@@ -1,6 +1,5 @@
-import { comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
-import { Aabb } from '../components'
+import { Aabb, Block } from '../components'
 import type { AabbModel } from '../types'
 import { rotatePoint } from './rotatePoint'
 
@@ -18,7 +17,7 @@ export function computeExtentsAlongAngle(blockEntities: readonly Entity[], rotat
       maxX = Math.max(maxX, aabb.right)
       maxY = Math.max(maxY, aabb.bottom)
     } else {
-      const block = blockEntity.read(comps.Block)
+      const block = blockEntity.read(Block)
       const center: [number, number] = [block.left + block.width / 2, block.top + block.height / 2]
       const p1 = rotatePoint([block.left, block.top], center, block.rotateZ)
       const p2 = rotatePoint([block.left + block.width, block.top], center, block.rotateZ)

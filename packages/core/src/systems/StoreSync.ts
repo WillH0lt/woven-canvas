@@ -1,8 +1,8 @@
 import { type Entity, System } from '@lastolivegames/becsy'
+
 import * as comps from '../components'
 import type { CoreResources } from '../types'
 import { CommandSpawner } from './CommandSpawner'
-import { Deleter } from './Deleter'
 
 export class StoreSync extends System {
   // private readonly _commands = this.query((q) => q.with(comps.Command, comps.ToBeDeleted).write)
@@ -15,7 +15,7 @@ export class StoreSync extends System {
 
   public constructor() {
     super()
-    this.schedule((s) => s.after(Deleter).inAnyOrderWith(CommandSpawner))
+    this.schedule((s) => s.inAnyOrderWith(CommandSpawner))
   }
 
   public execute(): void {

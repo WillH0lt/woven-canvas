@@ -1,6 +1,6 @@
-import { BaseSystem, type CursorIcon } from '@infinitecanvas/core'
+import { BaseSystem } from '../BaseSystem'
 import { getCursorSvg } from '../helpers'
-import { BlockCommand, type BlockCommandArgs } from '../types'
+import { BlockCommand, type BlockCommandArgs, type CursorIcon } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 import { UpdateTransformBox } from './UpdateTransformBox'
 

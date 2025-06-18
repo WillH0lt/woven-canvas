@@ -1,10 +1,8 @@
-import { comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
-import { Aabb } from '../components'
-
 import { LexoRank } from 'lexorank'
+import { Aabb, Block, ZIndex } from '../components'
 
-function intersectsBlock(point: [number, number], block: comps.Block): boolean {
+function intersectsBlock(point: [number, number], block: Block): boolean {
   const { width, height, left, top, rotateZ } = block
 
   // Translate point to block's local coordinate system
@@ -41,13 +39,13 @@ export function intersectPoint(point: [number, number], blockEntities: readonly 
       continue
     }
 
-    const block = blockEntity.read(comps.Block)
+    const block = blockEntity.read(Block)
     if (!intersectsBlock(point, block)) {
       continue
     }
 
     // If we have an intersection, check if it has a higher rank
-    const rank = LexoRank.parse(blockEntity.read(comps.ZIndex).rank)
+    const rank = LexoRank.parse(blockEntity.read(ZIndex).rank)
 
     if (!intersect || maxRank.compareTo(rank) < 0) {
       intersect = blockEntity
@@ -57,8 +55,3 @@ export function intersectPoint(point: [number, number], blockEntities: readonly 
 
   return intersect
 }
-
-// export function intersectBlock(block: comps.Block, blockEntities: readonly Entity[]): Entity[] {
-//   const entities: Entity[] = []
-
-// }

@@ -1,13 +1,7 @@
-import { BaseSystem, comps as coreComps } from '@infinitecanvas/core'
-
-import * as blockComps from '../components'
+import { BaseSystem } from '../BaseSystem'
+import * as comps from '../components'
 import { BlockCommand, type BlockCommandArgs } from '../types'
 import { CaptureSelection } from './CaptureSelection'
-
-const comps = {
-  ...coreComps,
-  ...blockComps,
-}
 
 export class CaptureTransformBox extends BaseSystem<BlockCommandArgs> {
   private readonly pointer = this.singleton.read(comps.Pointer)

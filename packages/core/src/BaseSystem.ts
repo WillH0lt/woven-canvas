@@ -1,5 +1,4 @@
-import { System as becsySystem } from '@lastolivegames/becsy'
-import type { Entity } from '@lastolivegames/becsy'
+import { type Entity, System as becsySystem } from '@lastolivegames/becsy'
 
 import * as comps from './components'
 import type { CommandMap } from './types'
@@ -72,10 +71,39 @@ export class BaseSystem<Commands extends CommandMap = {}> extends becsySystem {
     this.commandListeners[kind]!.push(callback)
   }
 
-  // protected runMachine(machine: StateMachine, events: Event[]): void {
-  //   // This method should be implemented in subclasses to run the state machine with the provided events
-  //   // The implementation will depend on how you manage state machines in your application
-  //   throw new Error('runMachine method not implemented')
+  // protected runMachine(events: Array): void {
+  //   const events = this.getCursorEvents()
+  //   if (events.length === 0) return
+
+  //   let state = this.cursorMachine.resolveState({
+  //     value: this.cursorState.state,
+  //     context: {
+  //       tool: this.cursorState.tool,
+  //       icon: this.cursorState.icon,
+  //       iconRotation: this.cursorState.iconRotation,
+  //       hoveredEntity: this.cursorState.hoveredEntity,
+  //       heldBlock: this.cursorState.heldBlock,
+  //     },
+  //   })
+
+  //   for (const event of events) {
+  //     const result = transition(this.cursorMachine, state, event)
+  //     state = result[0]
+
+  //     for (const action of result[1]) {
+  //       if (typeof action.exec === 'function') {
+  //         action.exec(action.info, action.params)
+  //       }
+  //     }
+  //   }
+
+  //   // TODO this will maybe be handled in the store once we have a store
+  //   if (this.cursorState.icon !== state.context.icon || this.cursorState.iconRotation !== state.context.iconRotation) {
+  //     this.emitCommand(BlockCommand.SetCursor, state.context.icon, state.context.iconRotation)
+  //   }
+
+  //   Object.assign(this.cursorState, state.context)
+  //   this.cursorState.state = state.value
   // }
 
   protected executeCommands(): void {

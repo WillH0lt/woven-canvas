@@ -24,6 +24,7 @@ export class Block implements IStorable<BlockModel> {
       left: this.left,
       width: this.width,
       height: this.height,
+      rotateZ: this.rotateZ,
       red: this.red,
       green: this.green,
       blue: this.blue,
@@ -38,6 +39,7 @@ export class Block implements IStorable<BlockModel> {
     this.left = model.left
     this.width = model.width
     this.height = model.height
+    this.rotateZ = model.rotateZ
     this.red = model.red
     this.green = model.green
     this.blue = model.blue

@@ -9,6 +9,9 @@
       "path": "packages/extension-renderer"
     },
     {
+      "path": "packages/extension-input"
+    },
+    {
       "path": "examples/canvas"
     },
     {
