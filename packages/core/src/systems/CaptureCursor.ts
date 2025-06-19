@@ -23,6 +23,8 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
+  private readonly camera = this.singleton.read(comps.Camera)
+
   private readonly _draggables = this.query((q) => q.with(comps.Block, comps.Draggable).read)
 
   public constructor() {
@@ -236,7 +238,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     if (this.pointer.downTrigger) {
       events.push({
         type: 'pointerDown',
-        position: this.pointer.downPosition,
+        position: this.camera.toWorld(this.pointer.downPosition),
         blockEntity: this.intersect.entity || null,
       } as CursorEvent)
     }
@@ -244,7 +246,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     if (this.pointer.upTrigger) {
       events.push({
         type: 'pointerUp',
-        position: this.pointer.upPosition,
+        position: this.camera.toWorld(this.pointer.upPosition),
         blockEntity: this.intersect.entity || null,
       } as CursorEvent)
     }
@@ -252,7 +254,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     if (this.pointer.moveTrigger) {
       events.push({
         type: 'pointerMove',
-        position: this.pointer.position,
+        position: this.camera.toWorld(this.pointer.position),
         blockEntity: this.intersect.entity || null,
       } as CursorEvent)
     }

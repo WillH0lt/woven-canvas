@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
-    "@infinitecanvas/extension-block": "workspace:^",
+    "@infinitecanvas/extension-controls": "workspace:^",
     "@infinitecanvas/extension-input": "workspace:^",
     "@infinitecanvas/extension-renderer": "workspace:^",
     "uuid": "^11.1.0"

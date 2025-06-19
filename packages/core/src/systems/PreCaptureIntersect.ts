@@ -8,6 +8,8 @@ export class PreCaptureIntersect extends System {
 
   private readonly intersect = this.singleton.write(comps.Intersect)
 
+  private readonly camera = this.singleton.read(comps.Camera)
+
   private readonly draggableBlocks = this.query(
     (q) =>
       q.addedOrChanged.changed.removed.current
@@ -26,7 +28,8 @@ export class PreCaptureIntersect extends System {
     }
 
     if (this.pointer.moveTrigger || this.pointer.downPosition || this.pointer.upTrigger) {
-      this.intersect.entity = intersectPoint(this.pointer.position, this.draggableBlocks.current)
+      const point = this.camera.toWorld(this.pointer.position)
+      this.intersect.entity = intersectPoint(point, this.draggableBlocks.current)
     }
   }
 }

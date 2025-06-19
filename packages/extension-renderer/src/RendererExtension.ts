@@ -1,7 +1,7 @@
 import type { Resources } from '@infinitecanvas/core'
 import { Extension } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
-import { Application } from 'pixi.js'
+import { Application, Container } from 'pixi.js'
 
 import * as sys from './systems/index.js'
 
@@ -26,12 +26,16 @@ export class RendererExtension extends Extension {
     app.renderer.canvas.style.width = '100%'
     app.renderer.canvas.style.height = '100%'
 
+    const viewport = new Container()
+    app.stage.addChild(viewport)
+
     resources.domElement.append(app.renderer.canvas)
 
     const group = System.group(sys.RenderPixi, {
       resources: {
         ...resources,
-        pixiApp: app,
+        app,
+        viewport,
       },
     })
 

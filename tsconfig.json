@@ -9,6 +9,9 @@
       "path": "packages/extension-renderer"
     },
     {
+      "path": "packages/extension-controls"
+    },
+    {
       "path": "packages/extension-input"
     },
     {

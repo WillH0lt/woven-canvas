@@ -1,7 +1,7 @@
 import { comps } from '@infinitecanvas/core'
 import { System, World } from '@lastolivegames/becsy'
 import { afterEach, beforeEach } from 'vitest'
-import { InputPointer } from '../../src/systems/InputPointer'
+import { CLICK_THRESHOLD, InputPointer } from '../../src/systems/InputPointer'
 
 let moveTrigger: boolean
 let downTrigger: boolean
@@ -10,8 +10,7 @@ let pointerPosition: [number, number]
 let pointerDownPosition: [number, number]
 let pointerUpPosition: [number, number]
 let pointerIsDown: boolean
-let wheelDelta: number
-let wheelTrigger: boolean
+let clickTrigger: boolean
 let world: World
 let domElement: HTMLDivElement
 
@@ -31,8 +30,7 @@ class PointerReader extends System {
     pointerDownPosition = [this.pointer.downPosition[0], this.pointer.downPosition[1]]
     pointerUpPosition = [this.pointer.upPosition[0], this.pointer.upPosition[1]]
     pointerIsDown = this.pointer.isDown
-    wheelDelta = this.pointer.wheelDelta
-    wheelTrigger = this.pointer.wheelTrigger
+    clickTrigger = this.pointer.clickTrigger
   }
 }
 
@@ -159,6 +157,38 @@ describe('InputPointer', () => {
     expect(downTrigger).toBe(false)
   })
 
+  it('should trigger clickTrigger if pointer down and up are within CLICK_THRESHOLD', async () => {
+    const downEvent = new PointerEvent('pointerdown', { clientX: 0, clientY: 0, button: 0 })
+    domElement.dispatchEvent(downEvent)
+
+    await world.execute()
+
+    const upEvent = new PointerEvent('pointerup', { clientX: 0, clientY: CLICK_THRESHOLD, button: 0 })
+    window.dispatchEvent(upEvent)
+
+    await world.execute()
+
+    expect(clickTrigger).toBe(true)
+
+    await world.execute()
+
+    expect(clickTrigger).toBe(false)
+  })
+
+  it('should not trigger clickTrigger if pointer down and up are outside CLICK_THRESHOLD', async () => {
+    const downEvent = new PointerEvent('pointerdown', { clientX: 0, clientY: 0, button: 0 })
+    domElement.dispatchEvent(downEvent)
+
+    await world.execute()
+
+    const upEvent = new PointerEvent('pointerup', { clientX: 0, clientY: CLICK_THRESHOLD + 1, button: 0 })
+    window.dispatchEvent(upEvent)
+
+    await world.execute()
+
+    expect(clickTrigger).toBe(false)
+  })
+
   it('should set upTrigger on pointer cancel event', async () => {
     const event = new KeyboardEvent('pointercancel')
     window.dispatchEvent(event)
@@ -169,30 +199,5 @@ describe('InputPointer', () => {
     await world.execute()
 
     expect(upTrigger).toBe(false)
-  })
-
-  it('should set wheelDelta and wheelTrigger on wheel event', async () => {
-    const deltaY = -100
-    const event = new WheelEvent('wheel', { deltaY })
-    domElement.dispatchEvent(event)
-    await world.execute()
-
-    expect(wheelDelta).toBe(deltaY)
-    expect(wheelTrigger).toBe(true)
-
-    await world.execute()
-    expect(wheelTrigger).toBe(false)
-  })
-
-  it("should set wheelTrigger true on each frame there's a wheel event", async () => {
-    for (let i = 0; i < 3; i++) {
-      const event = new WheelEvent('wheel')
-      domElement.dispatchEvent(event)
-      await world.execute()
-      expect(wheelTrigger).toBe(true)
-    }
-
-    await world.execute()
-    expect(wheelTrigger).toBe(false)
   })
 })

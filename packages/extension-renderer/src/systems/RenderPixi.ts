@@ -9,17 +9,19 @@ export class RenderPixi extends System {
 
   private readonly blocks = this.query((q) => q.addedOrChanged.and.removed.with(comps.Block, comps.ZIndex).trackWrites)
 
+  private readonly camera = this.singleton.read(comps.Camera)
+
   private readonly resources!: RendererResources
 
   public execute(): void {
     for (const blockEntity of this.blocks.addedOrChanged) {
       const block = blockEntity.read(comps.Block)
 
-      let graphics = this.resources.pixiApp.stage.getChildByLabel(block.id) as PIXI.Graphics
+      let graphics = this.resources.viewport.getChildByLabel(block.id) as PIXI.Graphics
       if (!graphics) {
         // If the graphics object doesn't exist, create it
         graphics = new PIXI.Graphics()
-        this.resources.pixiApp.stage.addChild(graphics)
+        this.resources.viewport.addChild(graphics)
       }
 
       graphics.clear()
@@ -63,19 +65,21 @@ export class RenderPixi extends System {
       const block = blockEntity.read(comps.Block)
 
       // Remove the PIXI graphics object for the block
-      const graphics = this.resources.pixiApp.stage.getChildByLabel(block.id) as PIXI.Graphics
+      const graphics = this.resources.viewport.getChildByLabel(block.id) as PIXI.Graphics
       if (graphics) {
-        this.resources.pixiApp.stage.removeChild(graphics)
+        this.resources.viewport.removeChild(graphics)
       }
     }
 
     // Handle domElement resizing
     if (this.screen.resizedTrigger) {
       const { clientWidth, clientHeight } = this.resources.domElement
-      this.resources.pixiApp.renderer.resize(clientWidth, clientHeight)
+      this.resources.app.renderer.resize(clientWidth, clientHeight)
     }
 
-    // Render the PIXI application
-    this.resources.pixiApp.render()
+    this.resources.viewport.scale.set(this.camera.zoom, this.camera.zoom)
+    this.resources.viewport.position.set(-this.camera.left * this.camera.zoom, -this.camera.top * this.camera.zoom)
+
+    this.resources.app.render()
   }
 }

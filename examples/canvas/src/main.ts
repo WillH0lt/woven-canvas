@@ -1,5 +1,6 @@
 import './style.css'
 import { InfiniteCanvas, Tool } from '@infinitecanvas/core'
+import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { RendererExtension } from '@infinitecanvas/extension-renderer'
 import { v4 as uuid } from 'uuid'
@@ -10,11 +11,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 let infiniteCanvas: InfiniteCanvas | null = null
 async function initializeCanvas(container: HTMLDivElement) {
-  infiniteCanvas = await InfiniteCanvas.New([new InputExtension(), new RendererExtension()])
+  infiniteCanvas = await InfiniteCanvas.New([new InputExtension(), new ControlsExtension(), new RendererExtension()])
   container.appendChild(infiniteCanvas.domElement)
 
-  for (let i = 0; i < 10; i++) {
-    addBlock()
+  for (let i = 0; i < 100; i++) {
+    addBlock(i * 100, i * 100)
   }
 }
 
@@ -22,10 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeCanvas(document.querySelector<HTMLDivElement>('#container')!)
 })
 
+let i = 1
+
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'y') {
-    addBlock()
-  }
+  // if (event.key === 'y') {
+  //   addBlock()
+  // }
 
   if (event.key === 'Delete') {
     infiniteCanvas?.commands.block.removeSelected()
@@ -39,6 +42,15 @@ document.addEventListener('keydown', (event) => {
     infiniteCanvas?.commands.block.setTool(Tool.AddBlock, { width: 150, height: 150, blue: 255 })
   }
 
+  if (event.key === ' ') {
+    infiniteCanvas?.commands.controls.moveCamera(i * 100, i * 100)
+    i++
+  }
+
+  if (event.key === 'z') {
+    infiniteCanvas?.commands.controls.setZoom(5)
+  }
+
   // if (event.key === 'x') {
   //   infiniteCanvas?.store.block.getBlocks().forEach((block) => {
   //     // infiniteCanvas?.commands.block.removeBlock(block.id)
@@ -47,13 +59,13 @@ document.addEventListener('keydown', (event) => {
   // }
 })
 
-function addBlock() {
-  const width = 150
-  const height = 150
+function addBlock(left: number, top: number): void {
+  const width = 100
+  const height = 100
   infiniteCanvas?.commands.block.addBlock({
     id: uuid(),
-    top: Math.random() * (window.innerHeight - height),
-    left: Math.random() * (window.innerWidth - width),
+    top,
+    left,
     width,
     height,
     red: Math.floor(Math.random() * 256),

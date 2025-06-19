@@ -25,6 +25,8 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
 
   private readonly cursorState = this.singleton.read(comps.CursorState)
 
+  private readonly camera = this.singleton.read(comps.Camera)
+
   private readonly intersect = this.singleton.read(comps.Intersect)
 
   private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Selectable).read)
@@ -254,7 +256,7 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
     if (this.pointer.downTrigger) {
       events.push({
         type: 'pointerDown',
-        position: this.pointer.downPosition,
+        position: this.camera.toWorld(this.pointer.downPosition),
         blockEntity: this.intersect.entity || null,
       } as SelectionEvent)
     }
@@ -262,7 +264,7 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
     if (this.pointer.upTrigger) {
       events.push({
         type: 'pointerUp',
-        position: this.pointer.upPosition,
+        position: this.camera.toWorld(this.pointer.upPosition),
         blockEntity: this.intersect.entity || null,
       } as SelectionEvent)
     }
@@ -270,7 +272,7 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
     if (this.pointer.moveTrigger) {
       events.push({
         type: 'pointerMove',
-        position: this.pointer.position,
+        position: this.camera.toWorld(this.pointer.position),
       } as SelectionEvent)
     }
 

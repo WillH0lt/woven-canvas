@@ -9,5 +9,6 @@ export class Pointer {
   @field.boolean public declare downTrigger: boolean
   @field.boolean public declare upTrigger: boolean
   @field.boolean public declare moveTrigger: boolean
-  @field.boolean public declare clickTrigger: boolean
+  @field.boolean public declare wheelTrigger: boolean
+  @field.float32 public declare wheelDelta: number
 }

@@ -1,12 +1,6 @@
 import { type Resources, comps } from '@infinitecanvas/core'
 import { System, co } from '@lastolivegames/becsy'
 
-export const CLICK_THRESHOLD = 2
-
-function distance(a: [number, number], b: [number, number]): number {
-  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
-}
-
 export class InputPointer extends System {
   private readonly pointer = this.singleton.write(comps.Pointer)
 
@@ -56,10 +50,6 @@ export class InputPointer extends System {
     this.pointer.upPosition = this.pointer.position
     this.setTrigger('upTrigger')
 
-    if (distance(this.pointer.position, this.pointer.downPosition) <= CLICK_THRESHOLD) {
-      this.setTrigger('clickTrigger')
-    }
-
     yield
   }
 
@@ -88,6 +78,15 @@ export class InputPointer extends System {
     yield
   }
 
+  @co private *onWheel(e: WheelEvent): Generator {
+    e.preventDefault()
+
+    this.pointer.wheelDelta = normalizedDeltaY(e)
+    this.setTrigger('wheelTrigger')
+
+    yield
+  }
+
   public initialize(): void {
     const domElement = this.resources.domElement
 
@@ -95,9 +94,47 @@ export class InputPointer extends System {
     domElement.addEventListener('pointerdown', this.onPointerDown.bind(this))
     window.addEventListener('pointerup', this.onPointerUp.bind(this))
     window.addEventListener('pointercancel', this.onPointerCancel.bind(this))
+    domElement.addEventListener('wheel', this.onWheel.bind(this), { passive: false })
   }
 
   public execute(): void {
     this.frame++
   }
+}
+
+export function normalizedDeltaY(event: WheelEvent): number {
+  const LINE_MODE = 1
+  const PAGE_MODE = 2
+
+  // Default line height in pixels (approximate)
+  const LINE_HEIGHT = 16
+
+  // Default page height in pixels (approximate)
+  const PAGE_HEIGHT = window.innerHeight
+
+  let deltaY = event.deltaY
+
+  // Normalize based on the deltaMode
+  if (event.deltaMode === LINE_MODE) {
+    // Convert from lines to pixels
+    deltaY *= LINE_HEIGHT
+  } else if (event.deltaMode === PAGE_MODE) {
+    // Convert from pages to pixels
+    deltaY *= PAGE_HEIGHT
+  }
+
+  // Account for Firefox (which often uses smaller values)
+  if (navigator.userAgent.includes('Firefox')) {
+    deltaY *= 4
+  }
+
+  // You may want to add a multiplier for macOS where values can be smaller
+  if (navigator.userAgent.includes('Mac') || navigator.userAgent.includes('Macintosh')) {
+    deltaY *= 1.5
+  }
+
+  // Clamp the value to a reasonable range
+  deltaY = Math.min(Math.max(deltaY, -100), 100)
+
+  return deltaY
 }

@@ -4,8 +4,8 @@ import type { Emitter } from 'strict-event-emitter'
 import { Extension } from './Extension'
 import type { Store } from './Store'
 import * as sys from './systems'
-import type { BlockModel, ICommands, Resources, SendCommandFn } from './types'
-import { BlockCommand, type BlockCommandArgs, type EmitterEvents, type Tool } from './types'
+import type { BlockCommandArgs, BlockModel, EmitterEvents, ICommands, Resources, SendCommandFn, Tool } from './types'
+import { BlockCommand } from './types'
 
 // import { type CoreResources, EmitterEventKind, type EmitterEvents, type ICommands, Options } from './types'
 

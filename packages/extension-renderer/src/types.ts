@@ -1,6 +1,7 @@
 import type { Resources } from '@infinitecanvas/core'
-import type { Application } from 'pixi.js'
+import type { Application, Container } from 'pixi.js'
 
 export interface RendererResources extends Resources {
-  pixiApp: Application
+  app: Application
+  viewport: Container
 }
