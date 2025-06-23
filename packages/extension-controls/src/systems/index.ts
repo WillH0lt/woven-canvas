@@ -1,2 +1,7 @@
+export { CaptureDrag } from './CaptureDrag'
+export { CaptureScroll } from './CaptureScroll'
+export { CaptureSelect } from './CaptureSelect'
+export { CaptureTransformBox } from './CaptureTransformBox'
 export { CaptureZoom } from './CaptureZoom'
-export { UpdateCamera } from './UpdateCamera'
+export { UpdateSelection } from './UpdateSelection'
+export { UpdateTransformBox } from './UpdateTransformBox'

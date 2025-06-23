@@ -1,12 +1,19 @@
 export { InfiniteCanvas } from './InfiniteCanvas'
 
 export * as comps from './components/index'
-export { Keyboard } from './components/Keyboard.js'
+export * as helpers from './helpers'
+
 export {
   Options,
-  Tool,
   CursorIcon,
   CursorState,
+  PointerType,
+  PointerButton,
+  BlockCommand,
+  type BlockCommandArgs,
+  type AabbModel,
+  type PointerEvent,
+  type MouseEvent,
   type BlockModel,
   type CommandArgs,
   type ICommands,
@@ -16,4 +23,5 @@ export {
 
 export { Extension } from './Extension.js'
 export { BaseSystem } from './BaseSystem.js'
+
 // export { StorableComponent } from './StorableComponent'

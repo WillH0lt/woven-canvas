@@ -1,22 +1,24 @@
-import { comps } from '@infinitecanvas/core'
+import { PointerType, comps } from '@infinitecanvas/core'
 import { System, World } from '@lastolivegames/becsy'
 import { afterEach, beforeEach } from 'vitest'
 import { InputPointer } from '../../src/systems/InputPointer'
 
-let moveTrigger: boolean
-let downTrigger: boolean
-let upTrigger: boolean
-let pointerPosition: [number, number]
-let pointerDownPosition: [number, number]
-let pointerUpPosition: [number, number]
-let pointerIsDown: boolean
-let wheelDelta: number
-let wheelTrigger: boolean
+interface PointerModel {
+  id: number
+  downPosition: [number, number]
+  position: [number, number]
+  pointerType: PointerType
+}
+
+let addedPointers: PointerModel[] = []
+let currentPointers: PointerModel[] = []
+let removedPointers: PointerModel[] = []
+
 let world: World
 let domElement: HTMLDivElement
 
 class PointerReader extends System {
-  private readonly pointer = this.singleton.read(comps.Pointer)
+  private readonly pointers = this.query((q) => q.added.current.removed.with(comps.Pointer))
 
   public constructor() {
     super()
@@ -24,15 +26,36 @@ class PointerReader extends System {
   }
 
   execute() {
-    moveTrigger = this.pointer.moveTrigger
-    downTrigger = this.pointer.downTrigger
-    upTrigger = this.pointer.upTrigger
-    pointerPosition = [this.pointer.position[0], this.pointer.position[1]]
-    pointerDownPosition = [this.pointer.downPosition[0], this.pointer.downPosition[1]]
-    pointerUpPosition = [this.pointer.upPosition[0], this.pointer.upPosition[1]]
-    pointerIsDown = this.pointer.isDown
-    wheelDelta = this.pointer.wheelDelta
-    wheelTrigger = this.pointer.wheelTrigger
+    addedPointers = []
+    currentPointers = []
+    removedPointers = []
+
+    for (const pointerEntity of this.pointers.added) {
+      const model = this.toModel(pointerEntity.read(comps.Pointer))
+      addedPointers.push(model)
+    }
+
+    for (const pointerEntity of this.pointers.current) {
+      const model = this.toModel(pointerEntity.read(comps.Pointer))
+      currentPointers.push(model)
+    }
+
+    if (this.pointers.removed.length) {
+      this.accessRecentlyDeletedData(true)
+    }
+    for (const pointerEntity of this.pointers.removed) {
+      const model = this.toModel(pointerEntity.read(comps.Pointer))
+      removedPointers.push(model)
+    }
+  }
+
+  private toModel(pointer: comps.Pointer): PointerModel {
+    return {
+      id: pointer.id,
+      downPosition: [pointer.downPosition[0], pointer.downPosition[1]],
+      position: [pointer.position[0], pointer.position[1]],
+      pointerType: pointer.pointerType,
+    }
   }
 }
 
@@ -42,6 +65,9 @@ beforeEach(async () => {
   world = await World.create({
     defs: [System.group(InputPointer, { resources }, PointerReader)],
   })
+  addedPointers = []
+  currentPointers = []
+  removedPointers = []
 })
 
 afterEach(async () => {
@@ -49,150 +75,156 @@ afterEach(async () => {
 })
 
 describe('InputPointer', () => {
-  it('should update position and set moveTrigger on pointermove', async () => {
-    const x = 123
-    const y = 456
-
-    const event = new PointerEvent('pointermove', { clientX: x, clientY: y })
-    window.dispatchEvent(event)
-
-    await world.execute()
-
-    expect(pointerPosition).toEqual([x, y])
-    expect(moveTrigger).toBe(true)
-
-    await world.execute()
-    expect(moveTrigger).toBe(false)
-  })
-
-  it('should set isDown, position, downPosition, and downTrigger on pointerdown', async () => {
+  it('should add a pointer on pointerdown', async () => {
     const event = new PointerEvent('pointerdown', { clientX: 10, clientY: 20, button: 0 })
     domElement.dispatchEvent(event)
     await world.execute()
 
-    expect(pointerIsDown).toBe(true)
-    expect(pointerPosition).toEqual([10, 20])
-    expect(pointerDownPosition).toEqual([10, 20])
-    expect(downTrigger).toBe(true)
+    expect(addedPointers.length).toBe(1)
+    expect(currentPointers.length).toBe(1)
+    expect(removedPointers.length).toBe(0)
 
-    await world.execute()
-    expect(downTrigger).toBe(false)
+    const pointer = currentPointers[0]
+    expect(pointer.id).toBe(0) // First pointer should have ID 0
+    expect(pointer.downPosition).toEqual([10, 20])
+    expect(pointer.position).toEqual([10, 20])
+    expect(pointer.pointerType).toBe(PointerType.Mouse)
   })
 
-  it('should set isDown false, update position, and set upTrigger on pointerup', async () => {
-    // First, pointerdown to set isDown true
-    domElement.dispatchEvent(new PointerEvent('pointerdown', { clientX: 1, clientY: 2, button: 0 }))
+  it('should update position on pointermove', async () => {
+    // First, simulate pointerdown to add a pointer
+    const pointerId = 1
+    const downEvent = new PointerEvent('pointerdown', { clientX: 10, clientY: 20, pointerId })
+    domElement.dispatchEvent(downEvent)
     await world.execute()
 
-    // Now pointerup
-    const event = new PointerEvent('pointerup', { clientX: 5, clientY: 6, button: 0 })
-    window.dispatchEvent(event)
+    // Now simulate pointermove
+    const moveEvent = new PointerEvent('pointermove', { clientX: 30, clientY: 40, pointerId })
+    window.dispatchEvent(moveEvent)
     await world.execute()
 
-    expect(pointerIsDown).toBe(false)
-    expect(pointerPosition).toEqual([5, 6])
-    expect(pointerUpPosition).toEqual([5, 6])
-    expect(upTrigger).toBe(true)
-
-    await world.execute()
-    expect(upTrigger).toBe(false)
+    expect(currentPointers.length).toBe(1)
+    const pointer = currentPointers[0]
+    expect(pointer.position).toEqual([30, 40])
   })
 
-  it('should not trigger downTrigger for non-left mouse button', async () => {
-    const event = new PointerEvent('pointerdown', { clientX: 10, clientY: 20, button: 2 })
-    domElement.dispatchEvent(event)
+  it('should remove pointer on pointerup', async () => {
+    const pointerId = 0
+    // First, simulate pointerdown to add a pointer
+    const downEvent = new PointerEvent('pointerdown', { clientX: 10, clientY: 20, pointerId })
+    domElement.dispatchEvent(downEvent)
     await world.execute()
-    expect(pointerIsDown).toBe(false)
-    expect(downTrigger).toBe(false)
+
+    // Now simulate pointerup
+    const upEvent = new PointerEvent('pointerup', { clientX: 30, clientY: 40, pointerId })
+    window.dispatchEvent(upEvent)
+    await world.execute()
+
+    expect(addedPointers.length).toBe(0)
+    expect(currentPointers.length).toBe(0)
+    expect(removedPointers.length).toBe(1)
+
+    const removedPointer = removedPointers[0]
+    expect(removedPointer.id).toBe(0) // Should match the ID of the added pointer
   })
 
-  it("should keep move trigger true on each frame there's a pointermove", async () => {
-    let x = 0
-    let y = 0
-    for (let i = 0; i < 5; i++) {
-      x += 10
-      y += 10
-      const event = new PointerEvent('pointermove', { clientX: x, clientY: y })
-      window.dispatchEvent(event)
-      await world.execute()
-      expect(moveTrigger).toBe(true)
-      expect(pointerPosition).toEqual([x, y])
-    }
+  it('should handle multiple pointers', async () => {
+    const id1 = 111
+    const id2 = 222
 
+    // Simulate first pointer down
+    const downEvent1 = new PointerEvent('pointerdown', { clientX: 10, clientY: 20, pointerId: id1 })
+    domElement.dispatchEvent(downEvent1)
     await world.execute()
-    expect(moveTrigger).toBe(false)
+
+    // Simulate second pointer down
+    const downEvent2 = new PointerEvent('pointerdown', { clientX: 30, clientY: 40, pointerId: id2 })
+    domElement.dispatchEvent(downEvent2)
+    await world.execute()
+
+    expect(addedPointers.length).toBe(1)
+    expect(currentPointers.length).toBe(2)
+
+    // Check first pointer
+    let pointer = currentPointers[0]
+    expect(pointer.id).toBe(id1)
+    expect(pointer.downPosition).toEqual([10, 20])
+    expect(pointer.position).toEqual([10, 20])
+
+    // Check second pointer
+    pointer = currentPointers[1]
+    expect(pointer.id).toBe(id2)
+    expect(pointer.downPosition).toEqual([30, 40])
+    expect(pointer.position).toEqual([30, 40])
+
+    // Simulate pointer move for first pointer
+    const moveEvent1 = new PointerEvent('pointermove', { clientX: 50, clientY: 60, pointerId: id1 })
+    window.dispatchEvent(moveEvent1)
+    await world.execute()
+
+    expect(currentPointers[0].position).toEqual([50, 60])
+
+    // Simulate pointer up for first pointer
+    const upEvent1 = new PointerEvent('pointerup', { clientX: 70, clientY: 80, pointerId: id1 })
+    window.dispatchEvent(upEvent1)
+    await world.execute()
+
+    expect(currentPointers.length).toBe(1) // Only second pointer should remain
+    expect(removedPointers.length).toBe(1) // First pointer should be removed
+
+    const removedPointer = removedPointers[0]
+    expect(removedPointer.id).toBe(id1) // Should match the ID of the first added pointer
+  })
+
+  it('should handle pointer cancel', async () => {
+    const pointerId = 0
+    // First, simulate pointerdown to add a pointer
+    const downEvent = new PointerEvent('pointerdown', { clientX: 10, clientY: 20, pointerId })
+    domElement.dispatchEvent(downEvent)
+    await world.execute()
+
+    // Now simulate pointercancel
+    const cancelEvent = new PointerEvent('pointercancel', { pointerId })
+    window.dispatchEvent(cancelEvent)
+    await world.execute()
+
+    expect(addedPointers.length).toBe(0)
+    expect(currentPointers.length).toBe(0)
+    expect(removedPointers.length).toBe(1)
+
+    const removedPointer = removedPointers[0]
+    expect(removedPointer.id).toBe(pointerId) // Should match the ID of the added pointer
   })
 
   it('should handle pointer down then up in a single frame', async () => {
-    const downEvent = new PointerEvent('pointerdown', { clientX: 30, clientY: 40, button: 0 })
+    const pointerId = 111
+
+    const downEvent = new PointerEvent('pointerdown', { clientX: 10, clientY: 20, pointerId })
     domElement.dispatchEvent(downEvent)
 
-    const upEvent = new PointerEvent('pointerup', { clientX: 10, clientY: 20, button: 0 })
+    const upEvent = new PointerEvent('pointerup', { clientX: 30, clientY: 40, pointerId })
     window.dispatchEvent(upEvent)
 
     await world.execute()
 
-    expect(pointerIsDown).toBe(false)
-    expect(pointerPosition).toEqual([10, 20])
-    expect(upTrigger).toBe(true)
-    expect(downTrigger).toBe(false)
-
-    await world.execute()
-    expect(upTrigger).toBe(false)
+    expect(addedPointers.length).toBe(0)
+    expect(currentPointers.length).toBe(0)
+    expect(removedPointers.length).toBe(0)
   })
 
   it('should handle pointer up then down in a single frame', async () => {
-    const upEvent = new PointerEvent('pointerup', { clientX: 10, clientY: 20, button: 0 })
+    const pointerId = 111
+
+    const upEvent = new PointerEvent('pointerup', { clientX: 30, clientY: 40, pointerId })
     window.dispatchEvent(upEvent)
 
-    const downEvent = new PointerEvent('pointerdown', { clientX: 30, clientY: 40, button: 0 })
+    const downEvent = new PointerEvent('pointerdown', { clientX: 10, clientY: 20, pointerId })
     domElement.dispatchEvent(downEvent)
 
     await world.execute()
 
-    expect(pointerIsDown).toBe(true)
-    expect(pointerPosition).toEqual([30, 40])
-    expect(downTrigger).toBe(true)
-    expect(upTrigger).toBe(false)
-
-    await world.execute()
-    expect(downTrigger).toBe(false)
-  })
-
-  it('should set upTrigger on pointer cancel event', async () => {
-    const event = new KeyboardEvent('pointercancel')
-    window.dispatchEvent(event)
-    await world.execute()
-
-    expect(upTrigger).toBe(true)
-
-    await world.execute()
-
-    expect(upTrigger).toBe(false)
-  })
-
-  it('should set wheelDelta and wheelTrigger on wheel event', async () => {
-    const deltaY = -100
-    const event = new WheelEvent('wheel', { deltaY })
-    domElement.dispatchEvent(event)
-    await world.execute()
-
-    expect(wheelDelta).toBe(deltaY)
-    expect(wheelTrigger).toBe(true)
-
-    await world.execute()
-    expect(wheelTrigger).toBe(false)
-  })
-
-  it("should set wheelTrigger true on each frame there's a wheel event", async () => {
-    for (let i = 0; i < 3; i++) {
-      const event = new WheelEvent('wheel')
-      domElement.dispatchEvent(event)
-      await world.execute()
-      expect(wheelTrigger).toBe(true)
-    }
-
-    await world.execute()
-    expect(wheelTrigger).toBe(false)
+    expect(addedPointers.length).toBe(1)
+    expect(currentPointers.length).toBe(1)
+    expect(removedPointers.length).toBe(0)
   })
 })

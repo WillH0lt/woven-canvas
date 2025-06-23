@@ -42,7 +42,10 @@
   },
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
-    "@lastolivegames/becsy": "^0.15.5"
+    "@lastolivegames/becsy": "^0.15.5",
+    "lexorank": "^1.0.5",
+    "xstate": "^5.19.4",
+    "zod": "^3.25.36"
   },
   "devDependencies": {
     "vitest": "^3.1.4"

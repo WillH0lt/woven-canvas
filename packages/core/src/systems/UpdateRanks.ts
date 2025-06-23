@@ -2,18 +2,10 @@ import { System } from '@lastolivegames/becsy'
 import { LexoRank } from 'lexorank'
 
 import * as comps from '../components'
-import { UpdateSelection } from './UpdateSelection'
-import { UpdateTransformBox } from './UpdateTransformBox'
-
 export class UpdateRanks extends System {
   private readonly blocks = this.query(
     (q) => q.added.current.changed.with(comps.Block).trackWrites.using(comps.ZIndex).write,
   )
-
-  public constructor() {
-    super()
-    this.schedule((s) => s.after(UpdateSelection, UpdateTransformBox))
-  }
 
   public execute(): void {
     let needsReordering = false

@@ -237,6 +237,15 @@ importers:
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
+      lexorank:
+        specifier: ^1.0.5
+        version: 1.0.5
+      xstate:
+        specifier: ^5.19.4
+        version: 5.19.4
+      zod:
+        specifier: ^3.25.36
+        version: 3.25.36
     devDependencies:
       vitest:
         specifier: ^3.1.4

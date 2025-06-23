@@ -2,7 +2,14 @@ import { type Resources, comps } from '@infinitecanvas/core'
 import { System, co } from '@lastolivegames/becsy'
 
 export class InputKeyboard extends System {
-  private readonly keyboard = this.singleton.write(comps.Keyboard)
+  private readonly keyboards = this.query((q) => q.current.with(comps.Keyboard).write)
+
+  private get keyboard(): comps.Keyboard {
+    return this.keyboards.current[0].write(comps.Keyboard)
+  }
+
+  // declaring to becsy that keyboard is a singleton component
+  private readonly _keyboard = this.singleton.read(comps.Keyboard)
 
   private readonly resources!: Resources
 

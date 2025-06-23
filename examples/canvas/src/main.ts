@@ -1,5 +1,5 @@
 import './style.css'
-import { InfiniteCanvas, Tool } from '@infinitecanvas/core'
+import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { RendererExtension } from '@infinitecanvas/extension-renderer'
@@ -31,24 +31,24 @@ document.addEventListener('keydown', (event) => {
   // }
 
   if (event.key === 'Delete') {
-    infiniteCanvas?.commands.block.removeSelected()
+    infiniteCanvas?.commands.controls.removeSelected()
   }
 
   if (event.key === 'z') {
     infiniteCanvas?.store.undo()
   }
 
-  if (event.key === 'u') {
-    infiniteCanvas?.commands.block.setTool(Tool.AddBlock, { width: 150, height: 150, blue: 255 })
-  }
+  // if (event.key === 'u') {
+  //   infiniteCanvas?.commands.block.setTool(Tool.AddBlock, { width: 150, height: 150, blue: 255 })
+  // }
 
   if (event.key === ' ') {
-    infiniteCanvas?.commands.controls.moveCamera(i * 100, i * 100)
+    infiniteCanvas?.commands.block.moveCamera(i * 100, i * 100)
     i++
   }
 
   if (event.key === 'z') {
-    infiniteCanvas?.commands.controls.setZoom(5)
+    infiniteCanvas?.commands.block.setZoom(5)
   }
 
   // if (event.key === 'x') {

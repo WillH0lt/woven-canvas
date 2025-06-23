@@ -1,9 +1,17 @@
+import {
+  BaseSystem,
+  BlockCommand,
+  type BlockCommandArgs,
+  PointerButton,
+  type PointerEvent,
+  comps,
+} from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
-import { assign, setup, transition } from 'xstate'
+import { assign, setup } from 'xstate'
 
-import { BaseSystem } from '../BaseSystem'
-import * as comps from '../components'
-import { BlockCommand, type BlockCommandArgs, Selection, Tool } from '../types'
+import * as controlComps from '../components'
+import { ControlCommand, type ControlCommandArgs, SelectionState } from '../types'
+import { CaptureDrag } from './CaptureDrag'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
@@ -12,14 +20,10 @@ const distance = (a: [number, number], b: [number, number]): number => {
   return Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
 }
 
-type SelectionEvent =
-  | { type: 'pointerDown'; position: [number, number]; blockEntity: Entity | null }
-  | { type: 'pointerUp'; position: [number, number]; blockEntity: Entity | null }
-  | { type: 'pointerMove'; position: [number, number] }
-  | { type: 'cancel' }
+export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
+  private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
 
-export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
-  private readonly pointer = this.singleton.read(comps.Pointer)
+  private readonly tool = this.singleton.read(comps.Tool)
 
   private readonly keyboard = this.singleton.read(comps.Keyboard)
 
@@ -31,22 +35,28 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
 
   private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Selectable).read)
 
-  private readonly selectionState = this.singleton.write(comps.SelectionState)
+  private readonly selectionState = this.singleton.write(controlComps.SelectionState)
+
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(CaptureDrag))
+  }
 
   private readonly selectionMachine = setup({
     types: {
       context: {} as {
-        pointingStart: [number, number]
+        pointingStartClient: [number, number]
+        pointingStartWorld: [number, number]
         dragStart: [number, number]
         draggedEntityStart: [number, number]
         draggedEntity: Entity | null
       },
-      events: {} as SelectionEvent,
+      events: {} as PointerEvent,
     },
     guards: {
       isThresholdReached: ({ context, event }) => {
-        if (!('position' in event)) return false
-        const dist = distance(context.pointingStart, event.position)
+        if (!('clientPosition' in event)) return false
+        const dist = distance(context.pointingStartClient, event.clientPosition)
         return dist >= POINTING_THRESHOLD
       },
       isOverBlock: ({ event }) => {
@@ -56,14 +66,17 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
     },
     actions: {
       setPointingStart: assign({
-        pointingStart: ({ context, event }) => {
-          return 'position' in event ? event.position : context.pointingStart
+        pointingStartClient: ({ context, event }) => {
+          return 'clientPosition' in event ? event.clientPosition : context.pointingStartClient
+        },
+        pointingStartWorld: ({ context, event }) => {
+          return 'worldPosition' in event ? event.worldPosition : context.pointingStartWorld
         },
       }),
       setDragStart: assign({
         dragStart: ({ context, event }) => {
-          if (!('position' in event)) return context.dragStart
-          return event.position
+          if (!('worldPosition' in event)) return context.dragStart
+          return event.worldPosition
         },
       }),
       setDraggedEntity: assign({
@@ -86,88 +99,90 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
       },
       resetContext: assign({
         dragStart: [0, 0],
-        pointingStart: [0, 0],
+        pointingStartClient: [0, 0],
+        pointingStartWorld: [0, 0],
         draggedEntityStart: [0, 0],
         draggedEntity: null,
       }),
       createSelectionBox: () => {
-        this.emitCommand(BlockCommand.AddSelectionBox, {
+        this.emitCommand(ControlCommand.AddSelectionBox, {
           alpha: 128,
         })
       },
       removeSelectionBox: () => {
-        this.emitCommand(BlockCommand.RemoveSelectionBoxes)
+        this.emitCommand(ControlCommand.RemoveSelectionBoxes)
       },
       updateDragged: ({ context, event }) => {
-        if (!context.draggedEntity || !('position' in event)) return
+        if (!context.draggedEntity || !('worldPosition' in event)) return
 
         this.emitCommand(BlockCommand.UpdateBlockPosition, context.draggedEntity, {
-          left: context.draggedEntityStart[0] + event.position[0] - context.dragStart[0],
-          top: context.draggedEntityStart[1] + event.position[1] - context.dragStart[1],
+          left: context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0],
+          top: context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1],
         })
       },
       resizeSelectionBox: ({ context, event }) => {
-        if (!('position' in event)) return
-        this.emitCommand(BlockCommand.UpdateSelectionBox, {
-          left: Math.min(context.pointingStart[0], event.position[0]),
-          top: Math.min(context.pointingStart[1], event.position[1]),
-          width: Math.abs(context.pointingStart[0] - event.position[0]),
-          height: Math.abs(context.pointingStart[1] - event.position[1]),
+        if (!('worldPosition' in event)) return
+        this.emitCommand(ControlCommand.UpdateSelectionBox, {
+          left: Math.min(context.pointingStartWorld[0], event.worldPosition[0]),
+          top: Math.min(context.pointingStartWorld[1], event.worldPosition[1]),
+          width: Math.abs(context.pointingStartWorld[0] - event.worldPosition[0]),
+          height: Math.abs(context.pointingStartWorld[1] - event.worldPosition[1]),
         })
       },
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
         if (!context.draggedEntity.has(comps.Selectable)) return
-        this.emitCommand(BlockCommand.SelectBlock, context.draggedEntity, { deselectOthers: true })
+        this.emitCommand(ControlCommand.SelectBlock, context.draggedEntity, { deselectOthers: true })
       },
       deselectAll: () => {
-        this.emitCommand(BlockCommand.DeselectAll)
+        this.emitCommand(ControlCommand.DeselectAll)
       },
     },
   }).createMachine({
     id: 'selection',
-    initial: Selection.Idle,
+    initial: SelectionState.Idle,
     context: {
       dragStart: [0, 0],
-      pointingStart: [0, 0],
+      pointingStartClient: [0, 0],
+      pointingStartWorld: [0, 0],
       draggedEntityStart: [0, 0],
       draggedEntity: null,
     },
     states: {
-      [Selection.Idle]: {
+      [SelectionState.Idle]: {
         entry: 'resetContext',
         on: {
           pointerDown: [
             {
               guard: 'isOverBlock',
-              target: Selection.Pointing,
+              target: SelectionState.Pointing,
             },
             {
               actions: 'deselectAll',
-              target: Selection.SelectionBoxPointing,
+              target: SelectionState.SelectionBoxPointing,
             },
           ],
         },
       },
-      [Selection.Pointing]: {
+      [SelectionState.Pointing]: {
         entry: ['setPointingStart', 'setDraggedEntity'],
         on: {
           pointerMove: [
             {
               guard: 'isThresholdReached',
-              target: Selection.Dragging,
+              target: SelectionState.Dragging,
             },
           ],
           pointerUp: {
             actions: 'selectDragged',
-            target: Selection.Idle,
+            target: SelectionState.Idle,
           },
           cancel: {
-            target: Selection.Idle,
+            target: SelectionState.Idle,
           },
         },
       },
-      [Selection.Dragging]: {
+      [SelectionState.Dragging]: {
         entry: 'setDragStart',
         on: {
           pointerMove: {
@@ -175,32 +190,32 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
           },
           pointerUp: {
             actions: 'selectDragged',
-            target: Selection.Idle,
+            target: SelectionState.Idle,
           },
           cancel: {
             actions: 'resetDragged',
-            target: Selection.Idle,
+            target: SelectionState.Idle,
           },
         },
       },
-      [Selection.SelectionBoxPointing]: {
+      [SelectionState.SelectionBoxPointing]: {
         entry: 'setPointingStart',
         on: {
           pointerMove: [
             {
               guard: 'isThresholdReached',
-              target: Selection.SelectionBoxDragging,
+              target: SelectionState.SelectionBoxDragging,
             },
           ],
           pointerUp: {
-            target: Selection.Idle,
+            target: SelectionState.Idle,
           },
           cancel: {
-            target: Selection.Idle,
+            target: SelectionState.Idle,
           },
         },
       },
-      [Selection.SelectionBoxDragging]: {
+      [SelectionState.SelectionBoxDragging]: {
         entry: ['setDragStart', 'createSelectionBox'],
         exit: 'removeSelectionBox',
         on: {
@@ -208,10 +223,10 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
             actions: 'resizeSelectionBox',
           },
           pointerUp: {
-            target: Selection.Idle,
+            target: SelectionState.Idle,
           },
           cancel: {
-            target: Selection.Idle,
+            target: SelectionState.Idle,
           },
         },
       },
@@ -219,65 +234,39 @@ export class CaptureSelection extends BaseSystem<BlockCommandArgs> {
   })
 
   public execute(): void {
-    // TODO need to transition state back when tool changes
-    // eg if drawing selection box and immediately switching to another tool
-    if (this.cursorState.tool === Tool.Select) {
-      this.runMachine()
-    }
-  }
-
-  private runMachine(): void {
     const events = this.getSelectionEvents()
+
     if (events.length === 0) return
 
-    let state = this.selectionMachine.resolveState({
-      value: this.selectionState.state,
-      context: this.selectionState,
-    })
+    const { value, context } = this.runMachine<SelectionState>(
+      this.selectionMachine,
+      this.selectionState.state,
+      this.selectionState,
+      events,
+    )
 
-    for (const event of events) {
-      const result = transition(this.selectionMachine, state, event)
-      state = result[0]
-
-      for (const action of result[1]) {
-        if (typeof action.exec === 'function') {
-          action.exec(action.info, action.params)
-        }
-      }
-    }
-
-    Object.assign(this.selectionState, state.context)
-    this.selectionState.state = state.value
+    Object.assign(this.selectionState, context)
+    this.selectionState.state = value
   }
 
-  private getSelectionEvents(): SelectionEvent[] {
-    const events = []
-
-    if (this.pointer.downTrigger) {
-      events.push({
-        type: 'pointerDown',
-        position: this.camera.toWorld(this.pointer.downPosition),
-        blockEntity: this.intersect.entity || null,
-      } as SelectionEvent)
+  private getSelectionEvents(): PointerEvent[] {
+    let button: PointerButton | null = null
+    if (this.tool.leftMouse === 'select') {
+      button = PointerButton.Left
+    } else if (this.tool.middleMouse === 'select') {
+      button = PointerButton.Middle
+    } else if (this.tool.rightMouse === 'select') {
+      button = PointerButton.Right
     }
 
-    if (this.pointer.upTrigger) {
-      events.push({
-        type: 'pointerUp',
-        position: this.camera.toWorld(this.pointer.upPosition),
-        blockEntity: this.intersect.entity || null,
-      } as SelectionEvent)
-    }
+    if (button === null) return []
 
-    if (this.pointer.moveTrigger) {
-      events.push({
-        type: 'pointerMove',
-        position: this.camera.toWorld(this.pointer.position),
-      } as SelectionEvent)
-    }
+    const events = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
+      button,
+    })
 
     if (this.keyboard.escapeDownTrigger) {
-      events.push({ type: 'cancel' } as SelectionEvent)
+      events.push({ type: 'cancel' } as PointerEvent)
     }
 
     return events

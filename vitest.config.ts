@@ -26,4 +26,7 @@ export default defineConfig({
       },
     },
   ],
+  resolve: {
+    conditions: ['@infinitecanvas/source'],
+  },
 })

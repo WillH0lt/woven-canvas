@@ -2,40 +2,52 @@ import { Extension } from '@infinitecanvas/core'
 import type { ICommands, Resources, SendCommandFn } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
 
-import { ControlCommand, type ControlCommandArgs } from './types'
+import { ControlCommand, type ControlCommandArgs, ControlOptions, type ControlResources } from './types'
 
 import * as sys from './systems'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
     controls: {
-      moveCamera: (x: number, y: number) => void
-      setZoom: (zoom: number) => void
+      removeSelected: () => void
     }
   }
 }
 
 export class ControlsExtension extends Extension {
+  private readonly options: ControlOptions
+
+  constructor(options: ControlOptions = {}) {
+    super()
+    this.options = ControlOptions.parse(options)
+  }
+
   public async initialize(resources: Resources): Promise<void> {
-    this._captureGroup = System.group(sys.CaptureZoom, { resources })
+    const r: ControlResources = {
+      ...resources,
+      controlOptions: this.options,
+    }
 
-    this._updateGroup = System.group(sys.UpdateCamera, { resources })
+    this._captureGroup = System.group(
+      sys.CaptureZoom,
+      { resources: r },
+      sys.CaptureScroll,
+      { resources: r },
+      sys.CaptureDrag,
+      { resources: r },
+      sys.CaptureSelect,
+      { resources: r },
+      sys.CaptureTransformBox,
+      { resources: r },
+    )
 
-    // this._inputGroup = System.group(
-    //   sys.InputScreen,
-    //   { resources },
-    //   sys.InputPointer,
-    //   { resources },
-    //   sys.InputKeyboard,
-    //   { resources },
-    // )
+    this._updateGroup = System.group(sys.UpdateSelection, { resources: r }, sys.UpdateTransformBox, { resources: r })
   }
 
   public addCommands = (send: SendCommandFn<ControlCommandArgs>): Partial<ICommands> => {
     return {
       controls: {
-        moveCamera: (x: number, y: number) => send(ControlCommand.MoveCamera, x, y),
-        setZoom: (zoom: number) => send(ControlCommand.SetZoom, zoom),
+        removeSelected: () => send(ControlCommand.RemoveSelected),
       },
     }
   }

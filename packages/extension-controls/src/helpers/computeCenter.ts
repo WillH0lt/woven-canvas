@@ -1,5 +1,5 @@
+import { Block } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
-import { Block } from '../components'
 
 export function computeCenter(entity: Entity): [number, number] {
   const block = entity.read(Block)

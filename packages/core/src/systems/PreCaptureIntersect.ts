@@ -4,9 +4,16 @@ import * as comps from '../components'
 import { computeAabb, intersectPoint } from '../helpers'
 
 export class PreCaptureIntersect extends System {
-  private readonly pointer = this.singleton.read(comps.Pointer)
+  private readonly mouse = this.singleton.read(comps.Mouse)
 
-  private readonly intersect = this.singleton.write(comps.Intersect)
+  private readonly intersects = this.query((q) => q.current.with(comps.Intersect).write)
+
+  private get intersect(): comps.Intersect {
+    return this.intersects.current[0].write(comps.Intersect)
+  }
+
+  // declaring to becsy that intersect is a singleton component
+  private readonly _intersect = this.singleton.read(comps.Intersect)
 
   private readonly camera = this.singleton.read(comps.Camera)
 
@@ -27,8 +34,9 @@ export class PreCaptureIntersect extends System {
       }
     }
 
-    if (this.pointer.moveTrigger || this.pointer.downPosition || this.pointer.upTrigger) {
-      const point = this.camera.toWorld(this.pointer.position)
+    // if (this.pointer.moveTrigger || this.pointer.downPosition || this.pointer.upTrigger) {
+    if (this.mouse.moveTrigger) {
+      const point = this.camera.toWorld(this.mouse.position)
       this.intersect.entity = intersectPoint(point, this.draggableBlocks.current)
     }
   }

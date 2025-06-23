@@ -8,6 +8,13 @@
     "moduleResolution": "Bundler",
 
     // Include test-specific types.
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals"],
+    "baseUrl": "./"
+    // "paths": {
+    //   "@infinitecanvas/core": ["packages/core/src"],
+    //   "@infinitecanvas/extension-controls": ["packages/extension-controls/src"],
+    //   "@infinitecanvas/extension-input": ["packages/extension-input/src"],
+    //   "@infinitecanvas/extension-renderer": ["packages/extension-renderer/src"]
+    // }
   }
 }

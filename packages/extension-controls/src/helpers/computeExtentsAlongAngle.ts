@@ -1,6 +1,6 @@
+import type { AabbModel } from '@infinitecanvas/core'
+import { Aabb, Block } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
-import { Aabb, Block } from '../components'
-import type { AabbModel } from '../types'
 import { rotatePoint } from './rotatePoint'
 
 export function computeExtentsAlongAngle(blockEntities: readonly Entity[], rotateZ: number): AabbModel {

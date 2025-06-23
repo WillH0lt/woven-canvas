@@ -1,7 +1,8 @@
+import { BaseSystem, BlockCommand, type BlockCommandArgs, CursorIcon } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 
-import { BaseSystem } from '../BaseSystem'
-import * as comps from '../components'
+import { TransformBox, TransformHandle } from '../components'
 import {
   TRANSFORM_BOX_RANK,
   TRANSFORM_HANDLE_CORNER_RANK,
@@ -9,7 +10,7 @@ import {
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
 import { computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
-import { BlockCommand, type BlockCommandArgs, CursorIcon, TransformHandleKind } from '../types'
+import { ControlCommand, type ControlCommandArgs, TransformHandleKind } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
 interface TransformHandleDef {
@@ -27,13 +28,13 @@ interface TransformHandleDef {
   // cursorKind: CursorKind
 }
 
-export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
+export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
   private readonly selectedBlocks = this.query(
     (q) => q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read,
   )
 
   private readonly transformBoxes = this.query(
-    (q) => q.current.with(comps.Block, comps.TransformBox, comps.Draggable).write.using(comps.TransformHandle).write,
+    (q) => q.current.with(comps.Block, TransformBox, comps.Draggable).write.using(TransformHandle).write,
   )
 
   public constructor() {
@@ -43,9 +44,9 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
 
   public initialize(): void {
     this.addCommandListener(BlockCommand.UpdateBlockPosition, this.onBlockMove.bind(this))
-    this.addCommandListener(BlockCommand.AddOrReplaceTransformBox, this.addOrReplaceTransformBox.bind(this))
-    this.addCommandListener(BlockCommand.HideTransformBox, this.hideTransformBox.bind(this))
-    this.addCommandListener(BlockCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
+    this.addCommandListener(ControlCommand.AddOrReplaceTransformBox, this.addOrReplaceTransformBox.bind(this))
+    this.addCommandListener(ControlCommand.HideTransformBox, this.hideTransformBox.bind(this))
+    this.addCommandListener(ControlCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
   }
 
   public execute(): void {
@@ -54,7 +55,7 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
 
   private removeTransformBox(): void {
     for (const transformBoxEntity of this.transformBoxes.current) {
-      const transformBox = transformBoxEntity.read(comps.TransformBox)
+      const transformBox = transformBoxEntity.read(TransformBox)
       this.deleteEntities(transformBox.handles)
     }
     this.deleteEntities(this.transformBoxes.current)
@@ -95,7 +96,7 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
         height,
         rotateZ,
       },
-      comps.TransformBox,
+      TransformBox,
       comps.Draggable,
       {
         startLeft: left,
@@ -222,7 +223,7 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
       const top = position[1] - handle.height / 2
 
       this.createEntity(
-        comps.TransformHandle,
+        TransformHandle,
         {
           kind: handle.kind,
           vector: handle.vector,
@@ -257,7 +258,7 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
 
   private hideTransformBox(): void {
     for (const transformBoxEntity of this.transformBoxes.current) {
-      const transformBox = transformBoxEntity.read(comps.TransformBox)
+      const transformBox = transformBoxEntity.read(TransformBox)
       for (const handleEntity of transformBox.handles) {
         const handleBlock = handleEntity.write(comps.Block)
         handleBlock.alpha = 0
@@ -269,10 +270,10 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
   }
 
   private onBlockMove(blockEntity: Entity, position: { left: number; top: number }): void {
-    if (blockEntity.has(comps.TransformBox)) {
+    if (blockEntity.has(TransformBox)) {
       this.onTransformBoxMove(blockEntity, position)
-    } else if (blockEntity.has(comps.TransformHandle)) {
-      const handle = blockEntity.read(comps.TransformHandle)
+    } else if (blockEntity.has(TransformHandle)) {
+      const handle = blockEntity.read(TransformHandle)
       const kind = handle.kind.toString()
       if (kind.endsWith('rotate')) {
         this.onRotateHandleMove(blockEntity, position)
@@ -300,7 +301,7 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
 
     const angleHandle = Math.atan2(handleCenter[1] - boxCenter[1], handleCenter[0] - boxCenter[0])
 
-    const { vector } = handleEntity.read(comps.TransformHandle)
+    const { vector } = handleEntity.read(TransformHandle)
     // const vec = getTransformHandleVector(kind)
     const handleStartAngle = Math.atan2(height * vector[1], width * vector[0]) + rotateZ
 
@@ -350,11 +351,11 @@ export class UpdateTransformBox extends BaseSystem<BlockCommandArgs> {
     } = boxEntity.read(comps.Draggable)
 
     // get the position of the opposite handle of the transform box
-    const { vector, kind: handleKind } = handleEntity.read(comps.TransformHandle)
+    const { vector, kind: handleKind } = handleEntity.read(TransformHandle)
     const handleVec: [number, number] = [vector[0], vector[1]]
 
-    const oppositeHandle = boxEntity.read(comps.TransformBox).handles.find((h) => {
-      const { vector, kind } = h.read(comps.TransformHandle)
+    const oppositeHandle = boxEntity.read(TransformBox).handles.find((h) => {
+      const { vector, kind } = h.read(TransformHandle)
       return handleKind === kind && handleVec[0] === -vector[0] && handleVec[1] === -vector[1]
     })
     if (!oppositeHandle) {

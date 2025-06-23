@@ -63,18 +63,6 @@ export interface IStorable<T = Record<string, any>> {
   fromModel(model: T): void
 }
 
-// export enum CursorState {
-//   Auto = 'auto',
-//   Interact = 'interact',
-//   Dragging = 'dragging',
-// }
-
-export enum Tool {
-  Select = 'select',
-  Pan = 'pan',
-  AddBlock = 'addBlock',
-}
-
 export enum CursorIcon {
   Pointer = 'pointer',
   NESW = 'nesw',
@@ -96,18 +84,6 @@ export enum CursorState {
   Placing = 'placing',
 }
 
-export enum Selection {
-  Idle = 'idle',
-  Pointing = 'pointing',
-  Dragging = 'dragging',
-  SelectionBoxPointing = 'selectionBoxPointing',
-  SelectionBoxDragging = 'selectionBoxDragging',
-}
-
-export interface SelectBlockOptions {
-  deselectOthers?: boolean
-}
-
 export interface AabbModel {
   left: number
   right: number
@@ -115,28 +91,29 @@ export interface AabbModel {
   bottom: number
 }
 
-export enum TransformHandleKind {
-  Scale = 'scale',
-  Rotate = 'rotate',
+export enum PointerType {
+  Mouse = 'mouse',
+  Touch = 'touch',
+  Pen = 'pen',
+}
+
+export enum PointerButton {
+  None = 'none',
+  Left = 'left',
+  Middle = 'middle',
+  Right = 'right',
+  Back = 'back',
+  Forward = 'forward',
+  PenEraser = 'penEraser',
 }
 
 export enum BlockCommand {
+  SetZoom = 'setZoom',
+  MoveCamera = 'moveCamera',
+
   AddBlock = 'addBlock',
   UpdateBlockPosition = 'updateBlockPosition',
   RemoveBlock = 'removeBlock',
-
-  AddSelectionBox = 'addSelectionBox',
-  UpdateSelectionBox = 'updateSelectionBox',
-  RemoveSelectionBoxes = 'removeSelectionBoxes',
-
-  SelectBlock = 'selectBlock',
-  DeselectBlock = 'deselectBlock',
-  DeselectAll = 'deselectAll',
-  RemoveSelected = 'removeSelected',
-
-  AddOrReplaceTransformBox = 'addOrReplaceTransformBox',
-  HideTransformBox = 'hideTransformBox',
-  RemoveTransformBox = 'removeTransformBox',
 
   SetTool = 'setTool',
   SetCursor = 'setCursor',
@@ -153,19 +130,42 @@ export type BlockCommandArgs = {
   ]
   [BlockCommand.RemoveBlock]: [Entity]
 
-  [BlockCommand.AddSelectionBox]: [Partial<BlockModel>]
-  [BlockCommand.UpdateSelectionBox]: [Partial<BlockModel>]
-  [BlockCommand.RemoveSelectionBoxes]: []
-
-  [BlockCommand.SelectBlock]: [Entity, SelectBlockOptions]
-  [BlockCommand.DeselectBlock]: [Entity]
-  [BlockCommand.DeselectAll]: []
-  [BlockCommand.RemoveSelected]: []
-
-  [BlockCommand.AddOrReplaceTransformBox]: []
-  [BlockCommand.HideTransformBox]: []
-  [BlockCommand.RemoveTransformBox]: []
-
-  [BlockCommand.SetTool]: [Tool, Partial<BlockModel>]
+  [BlockCommand.SetTool]: [string]
   [BlockCommand.SetCursor]: [CursorIcon, number]
+
+  [BlockCommand.SetZoom]: [number]
+  [BlockCommand.MoveCamera]: [number, number]
 }
+
+export type PointerEvent =
+  | {
+      type: 'pointerDown'
+      worldPosition: [number, number]
+      clientPosition: [number, number]
+      blockEntity: Entity | null
+    }
+  | {
+      type: 'pointerMove'
+      worldPosition: [number, number]
+      clientPosition: [number, number]
+      blockEntity: Entity | null
+    }
+  | {
+      type: 'pointerUp'
+      worldPosition: [number, number]
+      clientPosition: [number, number]
+      blockEntity: Entity | null
+    }
+  | { type: 'cancel' }
+
+export type MouseEvent =
+  | {
+      type: 'wheel'
+      delta: number
+    }
+  | {
+      type: 'mouseMove'
+      worldPosition: [number, number]
+      clientPosition: [number, number]
+      blockEntity: Entity | null
+    }

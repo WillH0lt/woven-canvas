@@ -3,21 +3,16 @@ import { System, co } from '@lastolivegames/becsy'
 import { type Resources, comps } from '@infinitecanvas/core'
 
 export class InputScreen extends System {
-  private readonly screen = this.singleton.write(comps.Screen)
+  private readonly screens = this.query((q) => q.current.with(comps.Screen).write)
 
   private readonly resources!: Resources
 
   @co private *handleResize(): Generator {
-    co.cancelIfCoroutineStarted()
-
-    this.screen.width = this.resources.domElement.clientWidth
-    this.screen.height = this.resources.domElement.clientHeight
-
-    this.screen.resizedTrigger = true
+    const screen = this.screens.current[0].write(comps.Screen)
+    screen.width = this.resources.domElement.clientWidth
+    screen.height = this.resources.domElement.clientHeight
 
     yield
-
-    this.screen.resizedTrigger = false
   }
 
   public initialize(): void {

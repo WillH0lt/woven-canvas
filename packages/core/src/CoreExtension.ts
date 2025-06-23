@@ -20,19 +20,16 @@ declare module '@infinitecanvas/core' {
       addBlock: (block: Partial<BlockModel>) => void
 
       /**
-       * Remove the selected blocks
-       * @example editor.commands.block.removeSelected()
-       */
-      removeSelected: () => void
-
-      /**
        * Set the tool for block operations
        * @param tool The tool to set
        * @param block Optionally provide a block to set with the tool
        * @example editor.commands.block.setTool(Tool.Select)
        * @example editor.commands.block.setTool(Tool.Draw, { id: 'block2' })
        */
-      setTool: (tool: Tool, block?: Partial<BlockModel>) => void
+      setTool: (tool: Tool) => void
+
+      moveCamera: (x: number, y: number) => void
+      setZoom: (zoom: number) => void
     }
   }
 }
@@ -54,28 +51,28 @@ export class CoreExtension extends Extension {
       store: this.store,
     }
 
-    this._preInputGroup = System.group(sys.CommandSpawner, { resources: coreResources }, sys.StoreSync, {
-      resources: coreResources,
-    })
+    this._preInputGroup = System.group(
+      sys.CommandSpawner,
+      { resources: coreResources },
+      // sys.StoreSync,
+      // { resources: coreResources },
+      sys.PreInputFrameCounter,
+      { resources: coreResources },
+    )
 
     this._preCaptureGroup = System.group(sys.PreCaptureIntersect, { resources: coreResources })
 
-    this._captureGroup = System.group(
-      sys.CaptureSelection,
-      { resources: coreResources },
-      sys.CaptureTransformBox,
-      { resources: coreResources },
-      sys.CaptureCursor,
-      { resources: coreResources },
-    )
+    this._captureGroup = System.group(sys.CaptureCursor, {
+      resources: coreResources,
+    })
     this._updateGroup = System.group(
-      sys.UpdateSelection,
-      { resources: coreResources },
-      sys.UpdateTransformBox,
-      { resources: coreResources },
       sys.UpdateRanks,
       { resources: coreResources },
       sys.UpdateCursor,
+      { resources: coreResources },
+      sys.UpdateBlocks,
+      { resources: coreResources },
+      sys.UpdateCamera,
       { resources: coreResources },
     )
 
@@ -88,8 +85,9 @@ export class CoreExtension extends Extension {
     return {
       block: {
         addBlock: (block: Partial<BlockModel>) => send(BlockCommand.AddBlock, block),
-        removeSelected: () => send(BlockCommand.RemoveSelected),
-        setTool: (tool: Tool, block: Partial<BlockModel> = {}) => send(BlockCommand.SetTool, tool, block),
+        setTool: (tool: Tool) => send(BlockCommand.SetTool, tool),
+        moveCamera: (x: number, y: number) => send(BlockCommand.MoveCamera, x, y),
+        setZoom: (zoom: number) => send(BlockCommand.SetZoom, zoom),
       },
     }
   }

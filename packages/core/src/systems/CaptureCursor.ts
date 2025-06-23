@@ -1,21 +1,29 @@
 import type { Entity } from '@lastolivegames/becsy'
-import { assign, setup, transition } from 'xstate'
+import { assign, setup } from 'xstate'
 
 import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components'
-import { BlockCommand, type BlockCommandArgs, type BlockModel, CursorIcon, CursorState, Tool } from '../types'
-import { CaptureSelection } from './CaptureSelection'
-import { CaptureTransformBox } from './CaptureTransformBox'
+import {
+  BlockCommand,
+  type BlockCommandArgs,
+  type BlockModel,
+  CursorIcon,
+  CursorState,
+  type MouseEvent,
+  type PointerEvent,
+} from '../types'
 
-type CursorEvent =
-  | { type: 'pointerMove'; position: [number, number]; blockEntity: Entity | null }
-  | { type: 'pointerDown'; position: [number, number]; blockEntity: Entity | null }
-  | { type: 'pointerUp'; position: [number, number]; blockEntity: Entity | null }
-  | { type: 'setTool'; tool: Tool; block: Partial<BlockModel> }
-  | { type: 'cancel' }
+type CursorEvent = PointerEvent | MouseEvent
+// | { type: 'mouseMove'; position: [number, number]; blockEntity: Entity | null }
+// | { type: 'pointerDown'; position: [number, number]; blockEntity: Entity | null }
+// | { type: 'pointerUp'; position: [number, number]; blockEntity: Entity | null }
+// | { type: 'setTool'; tool: Tool; block: Partial<BlockModel> }
+// | { type: 'cancel' }
 
 export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
-  private readonly pointer = this.singleton.read(comps.Pointer)
+  private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
+
+  private readonly mouse = this.singleton.read(comps.Mouse)
 
   private readonly keyboard = this.singleton.read(comps.Keyboard)
 
@@ -27,15 +35,9 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
 
   private readonly _draggables = this.query((q) => q.with(comps.Block, comps.Draggable).read)
 
-  public constructor() {
-    super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureSelection, CaptureTransformBox))
-  }
-
   private readonly cursorMachine = setup({
     types: {
       context: {} as {
-        tool: Tool
         icon: CursorIcon
         iconRotation: number
         hoveredEntity: Entity | null
@@ -61,7 +63,6 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     },
     actions: {
       resetContext: assign({
-        tool: Tool.Select,
         icon: CursorIcon.Pointer,
         iconRotation: 0,
         hoveredEntity: null,
@@ -92,7 +93,6 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     id: 'cursor',
     initial: CursorState.Select,
     context: {
-      tool: Tool.Select,
       icon: CursorIcon.Pointer,
       iconRotation: 0,
       hoveredEntity: null,
@@ -102,7 +102,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
       [CursorState.Select]: {
         entry: 'resetContext',
         on: {
-          pointerMove: {
+          mouseMove: {
             guard: 'isOverBlock',
             actions: 'setHoveredEntity',
             target: CursorState.Interact,
@@ -111,7 +111,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
       },
       [CursorState.Interact]: {
         on: {
-          pointerMove: [
+          mouseMove: [
             {
               guard: 'isOverDifferentBlock',
               actions: 'setHoveredEntity',
@@ -172,8 +172,8 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
               }
               this.emitCommand(BlockCommand.AddBlock, {
                 ...block,
-                left: event.position[0],
-                top: event.position[1],
+                left: event.worldPosition[0],
+                top: event.worldPosition[1],
               })
             },
             target: CursorState.Select,
@@ -181,92 +181,60 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
         },
       },
     },
-    on: {
-      setTool: {
-        actions: assign({
-          tool: ({ event }) => event.tool,
-          heldBlock: ({ event }) => JSON.stringify(event.block),
-          icon: () => CursorIcon.Crosshair,
-        }),
-        target: `.${CursorState.Placing}`,
-      },
-    },
+    // on: {
+    //   setTool: {
+    //     actions: assign({
+    //       heldBlock: ({ event }) => JSON.stringify(event.block),
+    //       icon: () => CursorIcon.Crosshair,
+    //     }),
+    //     target: `.${CursorState.Placing}`,
+    //   },
+    // },
   })
 
   public execute(): void {
-    this.runMachine()
-  }
-
-  private runMachine(): void {
     const events = this.getCursorEvents()
     if (events.length === 0) return
 
-    let state = this.cursorMachine.resolveState({
-      value: this.cursorState.state,
-      context: {
-        tool: this.cursorState.tool,
-        icon: this.cursorState.icon,
-        iconRotation: this.cursorState.iconRotation,
-        hoveredEntity: this.cursorState.hoveredEntity,
-        heldBlock: this.cursorState.heldBlock,
-      },
-    })
-
-    for (const event of events) {
-      const result = transition(this.cursorMachine, state, event)
-      state = result[0]
-
-      for (const action of result[1]) {
-        if (typeof action.exec === 'function') {
-          action.exec(action.info, action.params)
-        }
-      }
-    }
+    const { value, context } = this.runMachine<CursorState>(
+      this.cursorMachine,
+      this.cursorState.state,
+      this.cursorState.toModel(),
+      events,
+    )
 
     // TODO this will maybe be handled in the store once we have a store
-    if (this.cursorState.icon !== state.context.icon || this.cursorState.iconRotation !== state.context.iconRotation) {
-      this.emitCommand(BlockCommand.SetCursor, state.context.icon, state.context.iconRotation)
+    if (this.cursorState.icon !== context.icon || this.cursorState.iconRotation !== context.iconRotation) {
+      this.emitCommand(BlockCommand.SetCursor, context.icon, context.iconRotation)
     }
 
-    Object.assign(this.cursorState, state.context)
-    this.cursorState.state = state.value
+    Object.assign(this.cursorState, context)
+    this.cursorState.state = value
   }
 
   private getCursorEvents(): CursorEvent[] {
-    const events = []
+    const events: CursorEvent[] = []
 
-    if (this.pointer.downTrigger) {
-      events.push({
-        type: 'pointerDown',
-        position: this.camera.toWorld(this.pointer.downPosition),
-        blockEntity: this.intersect.entity || null,
-      } as CursorEvent)
-    }
+    const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect)
+    const mouseEvents = this.getMouseEvents(this.mouse, this.camera, this.intersect, this.keyboard)
+    events.push(...pointerEvents, ...mouseEvents)
 
-    if (this.pointer.upTrigger) {
-      events.push({
-        type: 'pointerUp',
-        position: this.camera.toWorld(this.pointer.upPosition),
-        blockEntity: this.intersect.entity || null,
-      } as CursorEvent)
-    }
+    // if (this.mouse.moveTrigger) {
+    //   events.push({
+    //     type: 'mouseMove',
+    //     position: this.camera.toWorld(this.mouse.position),
+    //     blockEntity: this.intersect.entity || null,
+    //   } as CursorEvent)
+    // }
 
-    if (this.pointer.moveTrigger) {
-      events.push({
-        type: 'pointerMove',
-        position: this.camera.toWorld(this.pointer.position),
-        blockEntity: this.intersect.entity || null,
-      } as CursorEvent)
-    }
-
-    const setToolCommand = this.getCommand(BlockCommand.SetTool)
-    if (setToolCommand) {
-      events.push({
-        type: 'setTool',
-        tool: setToolCommand[0],
-        block: setToolCommand[1],
-      } as CursorEvent)
-    }
+    // const setToolCommand = this.getCommand(BlockCommand.SetTool)
+    // if (setToolCommand) {
+    //   events.push({
+    //     type: 'setTool',
+    //     tool: setToolCommand[0],
+    //     // block: setToolCommand[1],
+    //   } as CursorEvent)
+    // }
 
     if (this.keyboard.escapeDownTrigger) {
       events.push({ type: 'cancel' } as CursorEvent)

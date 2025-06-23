@@ -1,88 +1,85 @@
-import { type Resources, comps } from '@infinitecanvas/core'
+import { PointerButton, type Resources, comps } from '@infinitecanvas/core'
 import { System, co } from '@lastolivegames/becsy'
 
+function getPointerButton(b: number): PointerButton {
+  if (b === -1) return PointerButton.None
+  if (b === 0) return PointerButton.Left
+  if (b === 1) return PointerButton.Middle
+  if (b === 2) return PointerButton.Right
+  if (b === 3) return PointerButton.Back
+  if (b === 4) return PointerButton.Forward
+  if (b === 5) return PointerButton.PenEraser
+  return PointerButton.None
+}
+
 export class InputPointer extends System {
-  private readonly pointer = this.singleton.write(comps.Pointer)
+  private readonly pointers = this.query((q) => q.current.with(comps.Pointer).write)
 
   private readonly resources!: Resources
 
-  private pointerUpFrames = new Set<number>()
+  private pointerUpFrames = new Set<string>()
 
-  private pointerDownFrames = new Set<number>()
+  private pointerDownFrames = new Set<string>()
 
   private frame = 0
 
+  private pointerFrame(pointerId: number): string {
+    return `${this.frame}:${pointerId}`
+  }
+
   @co private *onPointerMove(e: PointerEvent): Generator {
-    this.pointer.position = [e.clientX, e.clientY]
-    this.setTrigger('moveTrigger')
+    const pointerEntity = this.pointers.current.find((p) => p.alive && p.read(comps.Pointer).id === e.pointerId)
+    if (!pointerEntity) return
+
+    pointerEntity.write(comps.Pointer).position = [e.clientX, e.clientY]
 
     yield
   }
 
   @co private *onPointerDown(e: PointerEvent): Generator {
-    if (e.button !== 0) return
-
-    this.pointerDownFrames.add(this.frame)
-    if (this.pointerUpFrames.has(this.frame)) {
-      console.warn(`Tried to handle pointerdown, but pointerup has been called this frame at: ${this.frame}`)
+    this.pointerDownFrames.add(this.pointerFrame(e.pointerId))
+    if (this.pointerUpFrames.has(this.pointerFrame(e.pointerId))) {
+      console.warn(
+        `Tried to handle pointerdown, but pointerup has been called this frame at: ${this.pointerFrame(e.pointerId)}`,
+      )
       return
     }
 
-    this.pointer.isDown = true
-    this.pointer.position = [e.clientX, e.clientY]
-    this.pointer.downPosition = this.pointer.position
-    this.setTrigger('downTrigger')
+    this.createEntity(comps.Pointer, {
+      id: e.pointerId,
+      downPosition: [e.clientX, e.clientY],
+      position: [e.clientX, e.clientY],
+      button: getPointerButton(e.button),
+    })
 
     yield
   }
 
   @co private *onPointerUp(e: PointerEvent): Generator {
-    if (e.button !== 0) return
-
-    this.pointerUpFrames.add(this.frame)
-    if (this.pointerDownFrames.has(this.frame)) {
-      console.warn(`Tried to handle pointerup, but pointerdown has been called this frame at: ${this.frame}`)
+    this.pointerUpFrames.add(this.pointerFrame(e.pointerId))
+    if (this.pointerDownFrames.has(this.pointerFrame(e.pointerId))) {
+      console.warn(
+        `Tried to handle pointerup, but pointerdown has been called this frame at: ${this.pointerFrame(e.pointerId)}`,
+      )
       return
     }
 
-    this.pointer.isDown = false
-    this.pointer.position = [e.clientX, e.clientY]
-    this.pointer.upPosition = this.pointer.position
-    this.setTrigger('upTrigger')
-
-    yield
-  }
-
-  @co private *setTrigger(triggerKey: string): Generator {
-    if (!(triggerKey in this.pointer)) {
-      throw new Error(`Invalid trigger key: ${triggerKey}`)
+    for (const pointerEntity of this.pointers.current) {
+      if (pointerEntity.read(comps.Pointer).id === e.pointerId) {
+        const pointer = pointerEntity.write(comps.Pointer)
+        pointer.position = [e.clientX, e.clientY]
+        pointerEntity.delete()
+      }
     }
 
-    Object.assign(this.pointer, { [triggerKey]: true })
-
-    yield co.waitForFrames(1)
-
-    Object.assign(this.pointer, { [triggerKey]: false })
+    yield
   }
 
   @co private *onPointerCancel(e: PointerEvent): Generator {
     e.preventDefault()
-
-    this.onPointerUp({
-      ...e,
-      button: 0,
-    })
-
     console.warn('Pointer event cancelled:', e)
 
-    yield
-  }
-
-  @co private *onWheel(e: WheelEvent): Generator {
-    e.preventDefault()
-
-    this.pointer.wheelDelta = normalizedDeltaY(e)
-    this.setTrigger('wheelTrigger')
+    this.onPointerUp(e)
 
     yield
   }
@@ -94,47 +91,9 @@ export class InputPointer extends System {
     domElement.addEventListener('pointerdown', this.onPointerDown.bind(this))
     window.addEventListener('pointerup', this.onPointerUp.bind(this))
     window.addEventListener('pointercancel', this.onPointerCancel.bind(this))
-    domElement.addEventListener('wheel', this.onWheel.bind(this), { passive: false })
   }
 
   public execute(): void {
     this.frame++
   }
-}
-
-export function normalizedDeltaY(event: WheelEvent): number {
-  const LINE_MODE = 1
-  const PAGE_MODE = 2
-
-  // Default line height in pixels (approximate)
-  const LINE_HEIGHT = 16
-
-  // Default page height in pixels (approximate)
-  const PAGE_HEIGHT = window.innerHeight
-
-  let deltaY = event.deltaY
-
-  // Normalize based on the deltaMode
-  if (event.deltaMode === LINE_MODE) {
-    // Convert from lines to pixels
-    deltaY *= LINE_HEIGHT
-  } else if (event.deltaMode === PAGE_MODE) {
-    // Convert from pages to pixels
-    deltaY *= PAGE_HEIGHT
-  }
-
-  // Account for Firefox (which often uses smaller values)
-  if (navigator.userAgent.includes('Firefox')) {
-    deltaY *= 4
-  }
-
-  // You may want to add a multiplier for macOS where values can be smaller
-  if (navigator.userAgent.includes('Mac') || navigator.userAgent.includes('Macintosh')) {
-    deltaY *= 1.5
-  }
-
-  // Clamp the value to a reasonable range
-  deltaY = Math.min(Math.max(deltaY, -100), 100)
-
-  return deltaY
 }

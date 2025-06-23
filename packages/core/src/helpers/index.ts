@@ -1,7 +1,3 @@
 export { getCursorSvg } from './getCursorSvg'
 export { computeAabb } from './computeAabb'
-export { computeCenter } from './computeCenter'
-export { computeExtentsAlongAngle } from './computeExtentsAlongAngle'
 export { intersectPoint } from './intersectPoint'
-export { intersectAabb } from './intersectAabb'
-export { rotatePoint } from './rotatePoint'

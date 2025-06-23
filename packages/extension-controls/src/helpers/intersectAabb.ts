@@ -1,6 +1,6 @@
+import type { AabbModel } from '@infinitecanvas/core'
+import { Aabb, Block } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
-import { Aabb, Block } from '../components'
-import type { AabbModel } from '../types'
 
 export function intersectAabb(aabb: AabbModel, blockEntities: readonly Entity[]): Entity[] {
   const intersecting: Entity[] = []

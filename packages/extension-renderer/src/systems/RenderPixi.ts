@@ -5,11 +5,11 @@ import * as PIXI from 'pixi.js'
 import type { RendererResources } from '../types'
 
 export class RenderPixi extends System {
-  private readonly screen = this.singleton.read(comps.Screen)
+  private readonly screens = this.query((q) => q.changed.with(comps.Screen).trackWrites)
 
   private readonly blocks = this.query((q) => q.addedOrChanged.and.removed.with(comps.Block, comps.ZIndex).trackWrites)
 
-  private readonly camera = this.singleton.read(comps.Camera)
+  private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
   private readonly resources!: RendererResources
 
@@ -43,21 +43,6 @@ export class RenderPixi extends System {
       }
     }
 
-    // for (const blockEntity of this.blocks.changed) {
-    //   const block = blockEntity.read(comps.Block)
-
-    //   // Update the existing PIXI graphics object for the block
-    //   const graphics = this.resources.pixiApp.stage.getChildByLabel(block.id) as PIXI.Graphics
-    //   if (graphics) {
-    //     graphics.clear()
-    //     const color = (block.red << 16) | (block.green << 8) | block.blue
-    //     const alpha = block.alpha / 255
-
-    //     graphics.rect(block.left, block.top, block.width, block.height).fill({ color, alpha })
-    //     graphics.zIndex = blockEntity.read(comps.ZIndex).value
-    //   }
-    // }
-
     if (this.blocks.removed.length) {
       this.accessRecentlyDeletedData(true)
     }
@@ -72,13 +57,16 @@ export class RenderPixi extends System {
     }
 
     // Handle domElement resizing
-    if (this.screen.resizedTrigger) {
-      const { clientWidth, clientHeight } = this.resources.domElement
-      this.resources.app.renderer.resize(clientWidth, clientHeight)
+    if (this.screens.changed.length) {
+      const screen = this.screens.changed[0].read(comps.Screen)
+      this.resources.app.renderer.resize(screen.width, screen.height)
     }
 
-    this.resources.viewport.scale.set(this.camera.zoom, this.camera.zoom)
-    this.resources.viewport.position.set(-this.camera.left * this.camera.zoom, -this.camera.top * this.camera.zoom)
+    if (this.cameras.changed.length) {
+      const camera = this.cameras.changed[0].read(comps.Camera)
+      this.resources.viewport.scale.set(camera.zoom, camera.zoom)
+      this.resources.viewport.position.set(-camera.left * camera.zoom, -camera.top * camera.zoom)
+    }
 
     this.resources.app.render()
   }

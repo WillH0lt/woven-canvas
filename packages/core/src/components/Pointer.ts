@@ -1,14 +1,13 @@
-import { component, field } from '@lastolivegames/becsy'
+import { Type, component, field } from '@lastolivegames/becsy'
+import { PointerButton, PointerType } from '../types'
 
 @component
 export class Pointer {
-  @field.int32.vector(2) public declare position: [number, number]
+  @field.uint16 public declare id: number
   @field.int32.vector(2) public declare downPosition: [number, number]
-  @field.int32.vector(2) public declare upPosition: [number, number]
-  @field.boolean public declare isDown: boolean
-  @field.boolean public declare downTrigger: boolean
-  @field.boolean public declare upTrigger: boolean
-  @field.boolean public declare moveTrigger: boolean
-  @field.boolean public declare wheelTrigger: boolean
-  @field.float32 public declare wheelDelta: number
+  @field.int32.vector(2) public declare position: [number, number]
+  @field({ type: Type.staticString(Object.values(PointerType)) })
+  public declare pointerType: PointerType
+  @field({ type: Type.staticString(Object.values(PointerButton)) })
+  public declare button: PointerButton
 }

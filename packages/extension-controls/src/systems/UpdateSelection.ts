@@ -1,13 +1,20 @@
+import { BaseSystem, type BlockModel, comps } from '@infinitecanvas/core'
+import { computeAabb } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
-import { BaseSystem } from '../BaseSystem'
-import * as comps from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
-import { computeAabb, intersectAabb } from '../helpers'
-import { BlockCommand, type BlockCommandArgs, type BlockModel, type SelectBlockOptions } from '../types'
+import { intersectAabb } from '../helpers'
+import { ControlCommand, type ControlCommandArgs, type SelectBlockOptions } from '../types'
 
-export class UpdateSelection extends BaseSystem<BlockCommandArgs> {
-  private readonly rankBounds = this.singleton.write(comps.RankBounds)
+export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
+  private readonly rankBoundsQuery = this.query((q) => q.current.with(comps.RankBounds).write)
+
+  private get rankBounds(): comps.RankBounds {
+    return this.rankBoundsQuery.current[0].write(comps.RankBounds)
+  }
+
+  // declaring to becsy that rankBounds is a singleton component
+  private readonly _rankBounds = this.singleton.read(comps.RankBounds)
 
   private readonly selectableBlocks = this.query(
     (q) => q.current.with(comps.Block, comps.Draggable, comps.Selectable).write.using(comps.Aabb).read,
@@ -18,34 +25,34 @@ export class UpdateSelection extends BaseSystem<BlockCommandArgs> {
   private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, comps.SelectionBox).write)
 
   public initialize(): void {
-    this.addCommandListener(BlockCommand.AddBlock, this.addBlock.bind(this))
-    this.addCommandListener(BlockCommand.UpdateBlockPosition, this.updateSelectablePosition.bind(this))
+    // this.addCommandListener(BlockCommand.AddBlock, this.addBlock.bind(this))
+    // this.addCommandListener(BlockCommand.UpdateBlockPosition, this.updateSelectablePosition.bind(this))
 
-    this.addCommandListener(BlockCommand.AddSelectionBox, this.addSelectionBox.bind(this))
-    this.addCommandListener(BlockCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
-    this.addCommandListener(BlockCommand.RemoveSelectionBoxes, this.removeSelectionBoxes.bind(this))
+    this.addCommandListener(ControlCommand.AddSelectionBox, this.addSelectionBox.bind(this))
+    this.addCommandListener(ControlCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
+    this.addCommandListener(ControlCommand.RemoveSelectionBoxes, this.removeSelectionBoxes.bind(this))
 
-    this.addCommandListener(BlockCommand.SelectBlock, this.selectBlock.bind(this))
-    this.addCommandListener(BlockCommand.DeselectBlock, this.deselectBlock.bind(this))
-    this.addCommandListener(BlockCommand.DeselectAll, this.deselectAll.bind(this))
-    this.addCommandListener(BlockCommand.RemoveSelected, this.removeSelected.bind(this))
+    this.addCommandListener(ControlCommand.SelectBlock, this.selectBlock.bind(this))
+    this.addCommandListener(ControlCommand.DeselectBlock, this.deselectBlock.bind(this))
+    this.addCommandListener(ControlCommand.DeselectAll, this.deselectAll.bind(this))
+    this.addCommandListener(ControlCommand.RemoveSelected, this.removeSelected.bind(this))
   }
 
   public execute(): void {
     this.executeCommands()
   }
 
-  private addBlock(block: Partial<BlockModel>): void {
-    block.id = block.id || crypto.randomUUID()
-    block.rank = block.rank || this.rankBounds.genNext().toString()
+  // private addBlock(block: Partial<BlockModel>): void {
+  //   block.id = block.id || crypto.randomUUID()
+  //   block.rank = block.rank || this.rankBounds.genNext().toString()
 
-    this.createEntity(comps.Block, block, comps.Selectable, comps.Draggable, comps.Storable, { id: block.id })
-  }
+  //   this.createEntity(comps.Block, block, comps.Selectable, comps.Draggable, comps.Storable, { id: block.id })
+  // }
 
-  private updateSelectablePosition(blockEntity: Entity, position: { left: number; top: number }): void {
-    if (!blockEntity.has(comps.Selectable)) return
-    Object.assign(blockEntity.write(comps.Block), position)
-  }
+  // private updateSelectablePosition(blockEntity: Entity, position: { left: number; top: number }): void {
+  //   if (!blockEntity.has(comps.Selectable)) return
+  //   Object.assign(blockEntity.write(comps.Block), position)
+  // }
 
   private addSelectionBox(block: Partial<BlockModel>): void {
     block.id = block.id || crypto.randomUUID()

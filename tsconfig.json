@@ -16,9 +16,6 @@
     },
     {
       "path": "examples/canvas"
-    },
-    {
-      "path": "examples/zustand-test"
     }
   ],
   "compilerOptions": {
