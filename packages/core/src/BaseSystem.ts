@@ -14,8 +14,6 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
 
   readonly #commands = this.query((q) => q.added.with(comps.Command).write.using(comps.CommandRef).write)
 
-  readonly #_storables = this.query((q) => q.with(comps.Storable).write)
-
   private commandListeners: {
     [K in keyof Commands]?: ((...data: Commands[K]) => void)[]
   } = {}
@@ -260,12 +258,4 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
 
     return { value: state.value, context: state.context }
   }
-
-  // protected get pointerDownTrigger(): boolean {
-  //   return this.#pointers.added.length > 0 && this.#pointers.current.length === 1
-  // }
-
-  // protected get pointerUpTrigger(): boolean {
-  //   return this.#pointers.removed.length > 0 && this.#pointers.current.length === 0
-  // }
 }

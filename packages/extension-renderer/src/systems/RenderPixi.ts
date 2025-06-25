@@ -1,5 +1,6 @@
 import { comps } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
+import { LexoRank } from 'lexorank'
 import * as PIXI from 'pixi.js'
 
 import type { RendererResources } from '../types'
@@ -7,13 +8,15 @@ import type { RendererResources } from '../types'
 export class RenderPixi extends System {
   private readonly screens = this.query((q) => q.changed.with(comps.Screen).trackWrites)
 
-  private readonly blocks = this.query((q) => q.addedOrChanged.and.removed.with(comps.Block, comps.ZIndex).trackWrites)
+  private readonly blocks = this.query((q) => q.addedOrChanged.and.removed.with(comps.Block).trackWrites)
 
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
   private readonly resources!: RendererResources
 
   public execute(): void {
+    let needsSorting = false
+
     for (const blockEntity of this.blocks.addedOrChanged) {
       const block = blockEntity.read(comps.Block)
 
@@ -24,6 +27,10 @@ export class RenderPixi extends System {
         this.resources.viewport.addChild(graphics)
       }
 
+      if (graphics.rank !== block.rank) {
+        needsSorting = true
+      }
+
       graphics.clear()
       const color = (block.red << 16) | (block.green << 8) | block.blue
       const alpha = block.alpha / 255
@@ -31,12 +38,9 @@ export class RenderPixi extends System {
       graphics.fill({ color, alpha })
       graphics.position.set(block.left + block.width / 2, block.top + block.height / 2)
 
-      // apply rotateZ around the center of the block
-      // graphics.pivot.set(block.left, block.top)
       graphics.rotation = block.rotateZ
-
-      graphics.zIndex = blockEntity.read(comps.ZIndex).value
       graphics.label = block.id
+      graphics.rank = block.rank
 
       if (block.id === '') {
         console.warn('Block does not have an ID:', block)
@@ -53,7 +57,16 @@ export class RenderPixi extends System {
       const graphics = this.resources.viewport.getChildByLabel(block.id) as PIXI.Graphics
       if (graphics) {
         this.resources.viewport.removeChild(graphics)
+        graphics.destroy({ children: true, texture: true })
       }
+    }
+
+    if (needsSorting) {
+      this.resources.viewport.children.sort((a, b) => {
+        const rankA = LexoRank.parse(a.rank ?? '0')
+        const rankB = LexoRank.parse(b.rank ?? '0')
+        return rankA.compareTo(rankB)
+      })
     }
 
     // Handle domElement resizing

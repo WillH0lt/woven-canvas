@@ -19,9 +19,7 @@ export class PreCaptureIntersect extends System {
 
   private readonly draggableBlocks = this.query(
     (q) =>
-      q.addedOrChanged.changed.removed.current
-        .with(comps.Block, comps.Draggable, comps.ZIndex)
-        .trackWrites.using(comps.Aabb).write,
+      q.addedOrChanged.changed.removed.current.with(comps.Block, comps.Draggable).trackWrites.using(comps.Aabb).write,
   )
 
   public execute(): void {
@@ -34,7 +32,6 @@ export class PreCaptureIntersect extends System {
       }
     }
 
-    // if (this.pointer.moveTrigger || this.pointer.downPosition || this.pointer.upTrigger) {
     if (this.mouse.moveTrigger) {
       const point = this.camera.toWorld(this.mouse.position)
       this.intersect.entity = intersectPoint(point, this.draggableBlocks.current)

@@ -3,7 +3,7 @@ import { System, co } from '@lastolivegames/becsy'
 import * as comps from '../components/index'
 import { type Command, type CoreResources, EmitterEventKind } from '../types'
 
-export class CommandSpawner extends System {
+export class PreInputCommandSpawner extends System {
   private readonly _commands = this.query((q) => q.with(comps.Command, comps.ToBeDeleted).write)
 
   private readonly resources!: CoreResources

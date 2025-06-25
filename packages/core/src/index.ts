@@ -17,11 +17,10 @@ export {
   type BlockModel,
   type CommandArgs,
   type ICommands,
+  type IStore,
   type SendCommandFn,
   type Resources,
 } from './types'
 
 export { Extension } from './Extension.js'
 export { BaseSystem } from './BaseSystem.js'
-
-// export { StorableComponent } from './StorableComponent'

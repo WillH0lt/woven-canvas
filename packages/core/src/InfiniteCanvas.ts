@@ -4,8 +4,9 @@ import type { z } from 'zod/v4'
 import { Emitter } from 'strict-event-emitter'
 import { CoreExtension } from './CoreExtension'
 import type { Extension } from './Extension'
-import { Store } from './Store'
-import { EmitterEventKind, type EmitterEvents, type ICommands, Options, type Resources } from './types'
+import { State, registerStateComponent } from './State'
+import { Block, Selected } from './components'
+import { EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options, type Resources } from './types'
 
 const PRIVATE_CONSTRUCTOR_KEY = Symbol()
 
@@ -21,9 +22,7 @@ function scheduleGroups(orderedGroups: SystemGroup[]): void {
 export class InfiniteCanvas {
   public readonly domElement: HTMLElement
 
-  public readonly options: Options
-
-  public readonly store: Store
+  private readonly state: State
 
   private readonly emitter: Emitter<EmitterEvents>
 
@@ -42,21 +41,20 @@ export class InfiniteCanvas {
     domElement.style.overflow = 'hidden'
     domElement.tabIndex = 0
 
+    registerStateComponent(Block)
+    registerStateComponent(Selected)
+
     const resources = {
       domElement,
     }
 
     const emitter = new Emitter<EmitterEvents>()
 
-    const store = new Store()
+    const state = new State()
 
-    extensions.push(new CoreExtension(emitter, store))
+    extensions.push(new CoreExtension(emitter, state))
 
     await Promise.all(extensions.map((ext) => ext.initialize(resources)))
-
-    // const setupGroup = [
-    //   System.group(sys.CommandSpawner, { resources: coreResources }, sys.StoreSync, { resources: coreResources }),
-    // ]
 
     const preInputGroups = extensions.map((ext) => ext.preInputGroup).filter((g) => g !== null)
     const inputGroup = extensions.map((ext) => ext.inputGroup).filter((g) => g !== null)
@@ -74,10 +72,7 @@ export class InfiniteCanvas {
     const renderGroups = extensions.map((ext) => ext.renderGroup).filter((g) => g !== null)
     const postRenderGroups = extensions.map((ext) => ext.postRenderGroup).filter((g) => g !== null)
 
-    // postUpdateGroups.push(System.group(sys.Deleter, { resources: coreResources }))
-
     const orderedGroups = [
-      // ...setupGroup,
       ...preInputGroups,
       ...inputGroup,
       ...postInputGroups,
@@ -97,33 +92,12 @@ export class InfiniteCanvas {
 
     scheduleGroups(orderedGroups)
 
-    // const useStore = create(() => ({
-    //   ...extensions
-    //     .map((extension) => extension.store)
-    //     .filter((store) => store !== null)
-    //     .reduce((acc: Record<string, unknown>, store, idx) => {
-    //       const extension = extensions[idx]
-    //       acc[extension.name] = store
-    //       return acc
-    //     }, {}),
-    //   // blocks: ["a", "b", "c"],
-    // }))
-
     const world = await World.create({
       defs: orderedGroups,
+      maxEntities: 100_000,
     })
 
-    // collect trackable components
-    // comps.Block.arguments
-    // comps.Block.
-
-    // world.build((worldSys) => {
-    //   for (const block of blocks) {
-    //     worldSys.createEntity(comps.Block, { ...block })
-    //   }
-    // })
-
-    return new InfiniteCanvas(extensions, parsedOptions, world, resources, emitter, store, PRIVATE_CONSTRUCTOR_KEY)
+    return new InfiniteCanvas(extensions, parsedOptions, world, resources, emitter, state, PRIVATE_CONSTRUCTOR_KEY)
   }
 
   constructor(
@@ -132,7 +106,7 @@ export class InfiniteCanvas {
     world: World,
     resources: Resources,
     emitter: Emitter<EmitterEvents>,
-    store: Store,
+    state: State,
     privateConstructorKey: Symbol,
   ) {
     if (privateConstructorKey !== PRIVATE_CONSTRUCTOR_KEY) {
@@ -140,11 +114,10 @@ export class InfiniteCanvas {
     }
 
     this.extensions = extensions
-    this.options = options
     this.world = world
     this.domElement = resources.domElement
     this.emitter = emitter
-    this.store = store
+    this.state = state
 
     if (options.autoloop) {
       this.loop()
@@ -181,6 +154,20 @@ export class InfiniteCanvas {
       }
       return commands
     }, {} as ICommands)
+  }
+
+  public get store(): IStore {
+    return this.extensions.reduce((stores, ext) => {
+      if (!ext.addStore) return stores
+
+      const extStores = ext.addStore.call(this, this.state)
+      if (!extStores) return stores
+
+      for (const key of Object.keys(extStores)) {
+        ;(stores as any)[key] = extStores[key as keyof typeof extStores]
+      }
+      return stores
+    }, {} as IStore)
   }
 
   private loop(): void {

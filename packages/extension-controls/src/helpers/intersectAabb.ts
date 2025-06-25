@@ -14,8 +14,7 @@ export function intersectAabb(aabb: AabbModel, blockEntities: readonly Entity[])
     }
 
     // Now check if the AABB actually intersects with the oriented block
-    const block = blockEntity.read(Block)
-    if (aabbIntersectsBlock(aabb, block)) {
+    if (aabbSurroundsAabb(aabb, entityAabb) || aabbIntersectsBlock(aabb, blockEntity)) {
       intersecting.push(blockEntity)
     }
   }
@@ -27,7 +26,16 @@ function intersectsAabbWithAabb(aabb1: AabbModel, aabb2: Aabb): boolean {
   return !(aabb1.right < aabb2.left || aabb1.left > aabb2.right || aabb1.bottom < aabb2.top || aabb1.top > aabb2.bottom)
 }
 
-function aabbIntersectsBlock(aabb: AabbModel, block: Block): boolean {
+function aabbSurroundsAabb(bigAabb: AabbModel, smallAabb: AabbModel): boolean {
+  return (
+    bigAabb.left <= smallAabb.left &&
+    bigAabb.top <= smallAabb.top &&
+    bigAabb.right >= smallAabb.right &&
+    bigAabb.bottom >= smallAabb.bottom
+  )
+}
+
+function aabbIntersectsBlock(aabb: AabbModel, blockEntity: Entity): boolean {
   // Use Separating Axis Theorem (SAT) between AABB and oriented rectangle
 
   // Get corners of the AABB
@@ -39,6 +47,7 @@ function aabbIntersectsBlock(aabb: AabbModel, block: Block): boolean {
   ]
 
   // Get corners of the oriented block
+  const block = blockEntity.read(Block)
   const blockCorners = getBlockCorners(block)
 
   // Test axes from AABB (just X and Y axes since AABB is axis-aligned)

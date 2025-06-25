@@ -1,7 +1,7 @@
 import type { Entity } from '@lastolivegames/becsy'
 import type { Emitter } from 'strict-event-emitter'
 import { z } from 'zod/v4'
-import type { Store } from './Store'
+import type { State } from './State'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -18,7 +18,7 @@ export type EmitterEvents = {
 
 export interface CoreResources extends Resources {
   emitter: Emitter<EmitterEvents>
-  store: Store
+  state: State
 }
 
 export type CommandMap = {
@@ -55,9 +55,12 @@ export type CommandArgs = Record<string, Array<unknown>>
 // biome-ignore lint/suspicious/noEmptyInterface: this type gets built upon with extensions
 export interface ICommands {}
 
+// biome-ignore lint/suspicious/noEmptyInterface: this type gets built upon with extensions
+export interface IStore {}
+
 export type SendCommandFn<T> = <C extends keyof T>(kind: C, ...args: T[C] extends any[] ? T[C] : [T[C]]) => void
 
-export interface IStorable<T = Record<string, any>> {
+export interface ISerializable<T = Record<string, any>> {
   // id: string
   toModel(): T
   fromModel(model: T): void

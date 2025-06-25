@@ -25,9 +25,6 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
   private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, comps.SelectionBox).write)
 
   public initialize(): void {
-    // this.addCommandListener(BlockCommand.AddBlock, this.addBlock.bind(this))
-    // this.addCommandListener(BlockCommand.UpdateBlockPosition, this.updateSelectablePosition.bind(this))
-
     this.addCommandListener(ControlCommand.AddSelectionBox, this.addSelectionBox.bind(this))
     this.addCommandListener(ControlCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
     this.addCommandListener(ControlCommand.RemoveSelectionBoxes, this.removeSelectionBoxes.bind(this))
@@ -41,18 +38,6 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
   public execute(): void {
     this.executeCommands()
   }
-
-  // private addBlock(block: Partial<BlockModel>): void {
-  //   block.id = block.id || crypto.randomUUID()
-  //   block.rank = block.rank || this.rankBounds.genNext().toString()
-
-  //   this.createEntity(comps.Block, block, comps.Selectable, comps.Draggable, comps.Storable, { id: block.id })
-  // }
-
-  // private updateSelectablePosition(blockEntity: Entity, position: { left: number; top: number }): void {
-  //   if (!blockEntity.has(comps.Selectable)) return
-  //   Object.assign(blockEntity.write(comps.Block), position)
-  // }
 
   private addSelectionBox(block: Partial<BlockModel>): void {
     block.id = block.id || crypto.randomUUID()
@@ -107,18 +92,7 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
     const block = blockEntity.write(comps.Block)
     block.green = 255
 
-    // blockEntity.add(comps.Selected)
-
     blockEntity.add(comps.Selected)
-
-    // if (blockEntity.has(comps.Draggable)) {
-    //   const draggable = blockEntity.write(comps.Draggable)
-    //   draggable.startHeight = block.height
-    //   draggable.startWidth = block.width
-    //   draggable.startLeft = block.left
-    //   draggable.startTop = block.top
-    //   draggable.startRotateZ = block.rotateZ
-    // }
   }
 
   private deselectBlock(blockEntity: Entity): void {

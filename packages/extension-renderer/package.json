@@ -43,6 +43,7 @@
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
+    "lexorank": "^1.0.5",
     "pixi.js": "^8.9.2"
   },
   "devDependencies": {

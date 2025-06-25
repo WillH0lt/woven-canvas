@@ -1,6 +1,6 @@
 import type { Entity } from '@lastolivegames/becsy'
 import { LexoRank } from 'lexorank'
-import { Aabb, Block, ZIndex } from '../components'
+import { Aabb, Block } from '../components'
 
 function intersectsBlock(point: [number, number], block: Block): boolean {
   const { width, height, left, top, rotateZ } = block
@@ -45,7 +45,7 @@ export function intersectPoint(point: [number, number], blockEntities: readonly 
     }
 
     // If we have an intersection, check if it has a higher rank
-    const rank = LexoRank.parse(blockEntity.read(ZIndex).rank)
+    const rank = LexoRank.parse(blockEntity.read(Block).rank)
 
     if (!intersect || maxRank.compareTo(rank) < 0) {
       intersect = blockEntity

@@ -1,19 +1,10 @@
 import type { SystemGroup } from '@lastolivegames/becsy'
 
-import type { CommandArgs, ICommands, Resources, SendCommandFn } from './types.js'
+import type { State } from './State.js'
+import type { CommandArgs, ICommands, IStore, Resources, SendCommandFn } from './types.js'
 
 export abstract class Extension {
   public name = 'base'
-
-  protected _commands: Record<string, (...args: any[]) => () => void> = {}
-  public get commands(): Record<string, (...args: any[]) => () => void> {
-    return this._commands
-  }
-
-  // protected _store: StoreApi<any> | null = null
-  // public get store(): StoreApi<any> | null {
-  //   return this._store
-  // }
 
   // == Input Groups ==
   protected _preInputGroup: SystemGroup | null = null
@@ -81,15 +72,11 @@ export abstract class Extension {
 
   public abstract initialize(resources: Resources): Promise<void>
 
-  // protected createStore<T>(initialState: T): StoreApi<T> {
-  //   this._store = createStore<T>(() => ({
-  //     ...initialState,
-  //   }))
-
-  //   return this._store
-  // }
-
   public addCommands(_send: SendCommandFn<CommandArgs>): Partial<ICommands> {
+    return {}
+  }
+
+  public addStore(_state: State): Partial<IStore> {
     return {}
   }
 }

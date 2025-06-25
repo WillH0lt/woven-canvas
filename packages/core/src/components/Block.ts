@@ -1,8 +1,8 @@
 import { Type, component, field } from '@lastolivegames/becsy'
-import type { BlockModel, IStorable } from '../types'
+import type { BlockModel, ISerializable } from '../types'
 
 @component
-export class Block implements IStorable<BlockModel> {
+export class Block implements ISerializable<BlockModel> {
   @field.dynamicString(36) public declare id: string
   @field.float32 declare top: number
   @field.float32 declare left: number
