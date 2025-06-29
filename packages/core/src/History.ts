@@ -57,7 +57,7 @@ function createDiff(fromState: HistoryState, toState: HistoryState): HistoryDiff
     }
 
     for (const compName in fromState[id]) {
-      if (!toState[id][compName]) {
+      if (!toState[id] || !toState[id][compName]) {
         if (!diff.removedComponents[id]) {
           diff.removedComponents[id] = {}
         }
