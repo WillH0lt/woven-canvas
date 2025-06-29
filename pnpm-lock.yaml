@@ -194,6 +194,9 @@ importers:
       '@preact/signals-core':
         specifier: ^1.10.0
         version: 1.10.0
+      idb:
+        specifier: ^8.0.3
+        version: 8.0.3
       immer:
         specifier: ^10.1.1
         version: 10.1.1
@@ -2802,6 +2805,10 @@ packages:
     dependencies:
       safer-buffer: 2.1.2
     dev: true
+
+  /idb@8.0.3:
+    resolution: {integrity: sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==}
+    dev: false
 
   /immer@10.1.1:
     resolution: {integrity: sha512-s2MPrmjovJcoMaHtx6K11Ra7oD05NT97w1IC5zpMkT6Atjr7H8LjaDd81iIxUYpMKSRRNMJE703M1Fhr/TctHw==}

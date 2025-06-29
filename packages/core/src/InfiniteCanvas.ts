@@ -4,11 +4,8 @@ import type { z } from 'zod/v4'
 import { Emitter } from 'strict-event-emitter'
 import { CoreExtension } from './CoreExtension'
 import type { Extension } from './Extension'
-import { State, registerStateComponent } from './State'
-import { Block, Selected } from './components'
+import { State } from './State'
 import { EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options, type Resources } from './types'
-
-const PRIVATE_CONSTRUCTOR_KEY = Symbol()
 
 function scheduleGroups(orderedGroups: SystemGroup[]): void {
   for (let i = 0; i < orderedGroups.length - 1; i++) {
@@ -22,13 +19,13 @@ function scheduleGroups(orderedGroups: SystemGroup[]): void {
 export class InfiniteCanvas {
   public readonly domElement: HTMLElement
 
-  private readonly state: State
+  // private readonly state: State
 
-  private readonly emitter: Emitter<EmitterEvents>
+  // private readonly emitter: Emitter<EmitterEvents>
 
-  private readonly world: World
+  // private readonly world: World
 
-  private extensions: Extension[]
+  // private extensions: Extension[]
 
   public static async New(extensions: Extension[], options: Options = {}): Promise<InfiniteCanvas> {
     const parsedOptions = Options.parse(options)
@@ -41,9 +38,6 @@ export class InfiniteCanvas {
     domElement.style.overflow = 'hidden'
     domElement.tabIndex = 0
 
-    registerStateComponent(Block)
-    registerStateComponent(Selected)
-
     const resources = {
       domElement,
     }
@@ -52,9 +46,9 @@ export class InfiniteCanvas {
 
     const state = new State()
 
-    extensions.push(new CoreExtension(emitter, state))
+    extensions.push(new CoreExtension(parsedOptions, emitter, state))
 
-    await Promise.all(extensions.map((ext) => ext.initialize(resources)))
+    await Promise.all(extensions.map((ext) => ext.preBuild(resources)))
 
     const preInputGroups = extensions.map((ext) => ext.preInputGroup).filter((g) => g !== null)
     const inputGroup = extensions.map((ext) => ext.inputGroup).filter((g) => g !== null)
@@ -95,29 +89,37 @@ export class InfiniteCanvas {
     const world = await World.create({
       defs: orderedGroups,
       maxEntities: 100_000,
+      maxLimboComponents: 100_000,
     })
 
-    return new InfiniteCanvas(extensions, parsedOptions, world, resources, emitter, state, PRIVATE_CONSTRUCTOR_KEY)
+    world.build((system) => {
+      extensions.map((ext) => ext.build(system))
+    })
+
+    return new InfiniteCanvas(extensions, world, emitter, state, resources, parsedOptions)
   }
 
-  constructor(
-    extensions: Extension[],
-    options: z.infer<typeof Options>,
-    world: World,
-    resources: Resources,
-    emitter: Emitter<EmitterEvents>,
-    state: State,
-    privateConstructorKey: Symbol,
-  ) {
-    if (privateConstructorKey !== PRIVATE_CONSTRUCTOR_KEY) {
-      throw new Error('Use InfiniteCanvas.New() to create an instance.')
-    }
+  // private readonly state: State
 
-    this.extensions = extensions
-    this.world = world
+  // private readonly emitter: Emitter<EmitterEvents>
+
+  // private readonly world: World
+
+  // private extensions: Extension[]
+
+  private constructor(
+    private readonly extensions: Extension[],
+    private readonly world: World,
+    private readonly emitter: Emitter<EmitterEvents>,
+    private readonly state: State,
+    resources: Resources,
+    options: z.infer<typeof Options>,
+  ) {
+    // this.extensions = extensions
+    // this.world = world
     this.domElement = resources.domElement
-    this.emitter = emitter
-    this.state = state
+    // this.emitter = emitter
+    // this.state = state
 
     if (options.autoloop) {
       this.loop()

@@ -1,4 +1,4 @@
-import { BaseSystem, type BlockModel, comps } from '@infinitecanvas/core'
+import { BaseSystem, BlockCommand, type BlockCommandArgs, type BlockModel, comps } from '@infinitecanvas/core'
 import { computeAabb } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
@@ -6,7 +6,7 @@ import { SELECTION_BOX_RANK } from '../constants'
 import { intersectAabb } from '../helpers'
 import { ControlCommand, type ControlCommandArgs, type SelectBlockOptions } from '../types'
 
-export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
+export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
   private readonly rankBoundsQuery = this.query((q) => q.current.with(comps.RankBounds).write)
 
   private get rankBounds(): comps.RankBounds {
@@ -16,8 +16,8 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
   // declaring to becsy that rankBounds is a singleton component
   private readonly _rankBounds = this.singleton.read(comps.RankBounds)
 
-  private readonly selectableBlocks = this.query(
-    (q) => q.current.with(comps.Block, comps.Draggable, comps.Selectable).write.using(comps.Aabb).read,
+  private readonly blocks = this.query(
+    (q) => q.current.with(comps.Block, comps.Persistent).write.using(comps.Aabb).read,
   )
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
@@ -33,16 +33,25 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
     this.addCommandListener(ControlCommand.DeselectBlock, this.deselectBlock.bind(this))
     this.addCommandListener(ControlCommand.DeselectAll, this.deselectAll.bind(this))
     this.addCommandListener(ControlCommand.RemoveSelected, this.removeSelected.bind(this))
+
+    this.addCommandListener(BlockCommand.Undo, this.deselectAll.bind(this))
+    this.addCommandListener(BlockCommand.Redo, this.deselectAll.bind(this))
   }
 
   public execute(): void {
     this.executeCommands()
   }
 
-  private addSelectionBox(block: Partial<BlockModel>): void {
-    block.id = block.id || crypto.randomUUID()
-    block.rank = block.rank || SELECTION_BOX_RANK
-    this.createEntity(comps.Block, block, comps.SelectionBox)
+  private addSelectionBox(): void {
+    this.createEntity(
+      comps.Block,
+      {
+        id: crypto.randomUUID(),
+        rank: SELECTION_BOX_RANK,
+        alpha: 128,
+      },
+      comps.SelectionBox,
+    )
   }
 
   private updateSelectionBox(blockPartial: Partial<BlockModel>): void {
@@ -57,7 +66,7 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
 
     // const aabb = { left: block.left, top: block.top, right: block.left + block.width, bottom: block.bottom }
     const aabb = computeAabb(blockEntity)
-    const intersectedEntities = intersectAabb(aabb, this.selectableBlocks.current)
+    const intersectedEntities = intersectAabb(aabb, this.blocks.current)
     for (const selectedEntity of this.selectedBlocks.current) {
       const shouldDeselect = !intersectedEntities.some((entity) => entity.isSame(selectedEntity))
       if (shouldDeselect) {
@@ -89,8 +98,8 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
 
     if (blockEntity.has(comps.Selected)) return
 
-    const block = blockEntity.write(comps.Block)
-    block.green = 255
+    // const block = blockEntity.write(comps.Block)
+    // block.green = 255
 
     blockEntity.add(comps.Selected)
   }
@@ -99,8 +108,8 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs> {
     if (!blockEntity.has(comps.Selected)) return
     blockEntity.remove(comps.Selected)
 
-    const block = blockEntity.write(comps.Block)
-    block.green = 0
+    // const block = blockEntity.write(comps.Block)
+    // block.green = 0
   }
 
   private removeSelected(): void {

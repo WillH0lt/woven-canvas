@@ -12,7 +12,13 @@ function isEntity(item: any): boolean {
 export class BaseSystem<Commands extends CommandMap = {}> extends System {
   readonly #_toBeDeleted = this.query((q) => q.with(comps.ToBeDeleted).write)
 
-  readonly #commands = this.query((q) => q.added.with(comps.Command).write.using(comps.CommandRef).write)
+  readonly #commands = this.query(
+    (q) =>
+      q.added
+        .with(comps.Command)
+        .write.orderBy((e) => e.ordinal)
+        .using(comps.CommandRef).write,
+  )
 
   private commandListeners: {
     [K in keyof Commands]?: ((...data: Commands[K]) => void)[]
@@ -69,41 +75,6 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
     }
     this.commandListeners[kind]!.push(callback)
   }
-
-  // protected runMachine(events: Array): void {
-  //   const events = this.getCursorEvents()
-  //   if (events.length === 0) return
-
-  //   let state = this.cursorMachine.resolveState({
-  //     value: this.cursorState.state,
-  //     context: {
-  //       tool: this.cursorState.tool,
-  //       icon: this.cursorState.icon,
-  //       iconRotation: this.cursorState.iconRotation,
-  //       hoveredEntity: this.cursorState.hoveredEntity,
-  //       heldBlock: this.cursorState.heldBlock,
-  //     },
-  //   })
-
-  //   for (const event of events) {
-  //     const result = transition(this.cursorMachine, state, event)
-  //     state = result[0]
-
-  //     for (const action of result[1]) {
-  //       if (typeof action.exec === 'function') {
-  //         action.exec(action.info, action.params)
-  //       }
-  //     }
-  //   }
-
-  //   // TODO this will maybe be handled in the store once we have a store
-  //   if (this.cursorState.icon !== state.context.icon || this.cursorState.iconRotation !== state.context.iconRotation) {
-  //     this.emitCommand(BlockCommand.SetCursor, state.context.icon, state.context.iconRotation)
-  //   }
-
-  //   Object.assign(this.cursorState, state.context)
-  //   this.cursorState.state = state.value
-  // }
 
   protected executeCommands(): void {
     for (const commandEntity of this.#commands.added) {

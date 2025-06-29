@@ -4,7 +4,7 @@ import { System } from '@lastolivegames/becsy'
 import * as sys from './systems/index.js'
 
 export class InputExtension extends Extension {
-  public async initialize(resources: Resources): Promise<void> {
+  public async preBuild(resources: Resources): Promise<void> {
     this._inputGroup = System.group(
       sys.InputScreen,
       { resources },

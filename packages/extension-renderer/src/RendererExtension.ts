@@ -8,7 +8,7 @@ import * as sys from './systems/index.js'
 export class RendererExtension extends Extension {
   public _pixiApp: Application | null = null
 
-  public async initialize(resources: Resources): Promise<void> {
+  public async preBuild(resources: Resources): Promise<void> {
     const app = new Application()
 
     await app.init({

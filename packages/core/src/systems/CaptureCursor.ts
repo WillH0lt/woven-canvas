@@ -33,7 +33,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
 
   private readonly camera = this.singleton.read(comps.Camera)
 
-  private readonly _draggables = this.query((q) => q.with(comps.Block, comps.Draggable).read)
+  private readonly _hoverables = this.query((q) => q.with(comps.Block, comps.Hoverable).read)
 
   private readonly cursorMachine = setup({
     types: {
@@ -75,9 +75,9 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
         },
         icon: ({ event }) => {
           let icon = CursorIcon.Pointer
-          if ('blockEntity' in event && event.blockEntity) {
-            const draggable = event.blockEntity.read(comps.Draggable)
-            icon = draggable.hoverCursor
+          if ('blockEntity' in event && event.blockEntity && event.blockEntity.has(comps.Hoverable)) {
+            const hoverable = event.blockEntity.read(comps.Hoverable)
+            icon = hoverable.cursor
           }
           return icon
         },
@@ -216,7 +216,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     const events: CursorEvent[] = []
 
     const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect)
-    const mouseEvents = this.getMouseEvents(this.mouse, this.camera, this.intersect, this.keyboard)
+    const mouseEvents = this.getMouseEvents(this.mouse, this.camera, this.intersect)
     events.push(...pointerEvents, ...mouseEvents)
 
     // if (this.mouse.moveTrigger) {

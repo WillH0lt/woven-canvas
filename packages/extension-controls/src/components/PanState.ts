@@ -1,10 +1,10 @@
 import { component, field } from '@lastolivegames/becsy'
 
-import { DragState as State } from '../types'
+import { PanState as State } from '../types'
 
 @component
-export class DragState {
+export class PanState {
   @field.staticString(Object.values(State)) public declare state: State
-  @field.int32.vector(2) public declare dragStart: [number, number]
+  @field.int32.vector(2) public declare panStart: [number, number]
   @field.int32.vector(2) public declare cameraStart: [number, number]
 }

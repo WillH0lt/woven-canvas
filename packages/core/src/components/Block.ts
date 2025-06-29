@@ -3,6 +3,8 @@ import type { BlockModel, ISerializable } from '../types'
 
 @component
 export class Block implements ISerializable<BlockModel> {
+  // ephemeral = true
+
   @field.dynamicString(36) public declare id: string
   @field.float32 declare top: number
   @field.float32 declare left: number

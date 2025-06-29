@@ -1,6 +1,6 @@
 import { BaseSystem, PointerButton, type PointerEvent, comps } from '@infinitecanvas/core'
 import { ControlCommand, type ControlCommandArgs } from '../types'
-import { CaptureDrag } from './CaptureDrag'
+import { CapturePan } from './CapturePan'
 import { CaptureSelect } from './CaptureSelect'
 
 export class CaptureTransformBox extends BaseSystem<ControlCommandArgs> {
@@ -16,7 +16,7 @@ export class CaptureTransformBox extends BaseSystem<ControlCommandArgs> {
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CaptureDrag))
+    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CapturePan))
   }
 
   public execute(): void {
@@ -24,24 +24,16 @@ export class CaptureTransformBox extends BaseSystem<ControlCommandArgs> {
       if (this.selectedBlocks.current.length === 0) {
         this.emitCommand(ControlCommand.RemoveTransformBox)
       } else {
-        this.emitCommand(ControlCommand.AddOrReplaceTransformBox)
+        this.emitCommand(ControlCommand.AddOrUpdateTransformBox)
       }
-    }
-
-    if (this.selectedBlocks.current.length) {
+    } else if (this.selectedBlocks.current.length) {
       const events = this.getSelectionEvents()
 
       if (events.find((e) => e.type === 'pointerDown')) {
         this.emitCommand(ControlCommand.HideTransformBox)
       } else if (events.find((e) => e.type === 'pointerUp')) {
-        this.emitCommand(ControlCommand.AddOrReplaceTransformBox)
+        this.emitCommand(ControlCommand.AddOrUpdateTransformBox)
       }
-
-      // if (this.pointers.added.length > 0) {
-      //   this.emitCommand(ControlCommand.HideTransformBox)
-      // } else if (this.pointers.removed.length > 0 && this.pointers.current.length === 0) {
-      //   this.emitCommand(ControlCommand.AddOrReplaceTransformBox)
-      // }
     }
   }
 

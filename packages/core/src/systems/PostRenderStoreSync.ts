@@ -1,12 +1,13 @@
 import { type Query, System } from '@lastolivegames/becsy'
 import { batch } from '@preact/signals-core'
-import { getStateComponents } from '../State'
-
+import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
 import type { CoreResources, ISerializable } from '../types'
 
 export class PostRenderStoreSync extends System {
-  private readonly addedOrChangedQueries: Map<new () => ISerializable, Query> = new Map()
+  private readonly addedQueries: Map<new () => ISerializable, Query> = new Map()
+
+  private readonly changedQueries: Map<new () => ISerializable, Query> = new Map()
 
   private readonly removedQueries: Map<new () => ISerializable, Query> = new Map()
 
@@ -15,31 +16,42 @@ export class PostRenderStoreSync extends System {
   public constructor() {
     super()
 
-    const Components = getStateComponents()
+    const Components = ComponentRegistry.instance.stateComponents
 
     for (const Component of Components) {
-      const addedOrChangedQuery = this.query((q) => q.addedOrChanged.with(comps.SaveToState, Component).trackWrites)
-      this.addedOrChangedQueries.set(Component, addedOrChangedQuery)
+      const addedQuery = this.query((q) => q.added.with(comps.Persistent, Component))
+      this.addedQueries.set(Component, addedQuery)
 
-      const removedQuery = this.query((q) => q.removed.with(comps.SaveToState, Component))
+      const changedQuery = this.query((q) => q.changed.with(comps.Persistent, Component).trackWrites)
+      this.changedQueries.set(Component, changedQuery)
+
+      const removedQuery = this.query((q) => q.removed.with(comps.Persistent, Component))
       this.removedQueries.set(Component, removedQuery)
     }
   }
 
   public execute(): void {
-    const hasAddedOrChanged = this.addedOrChangedQueries.values().some((q) => q.addedOrChanged.length > 0)
+    const hasAdded = Array.from(this.addedQueries.values()).some((q) => q.added.length > 0)
 
-    const hasRemoved = this.removedQueries.values().some((q) => q.removed.length > 0)
+    const hasChanged = Array.from(this.changedQueries.values()).some((q) => q.changed.length > 0)
 
-    const shouldExecute = hasAddedOrChanged || hasRemoved
+    const hasRemoved = Array.from(this.removedQueries.values()).some((q) => q.removed.length > 0)
+
+    const shouldExecute = hasAdded || hasChanged || hasRemoved
 
     if (!shouldExecute) return
 
     batch(() => {
-      for (const Component of this.addedOrChangedQueries.keys()) {
-        const query = this.addedOrChangedQueries.get(Component)!
-        if (query.addedOrChanged.length === 0) continue
-        this.resources.state.setComponents(Component, query.addedOrChanged)
+      for (const Component of this.addedQueries.keys()) {
+        const query = this.addedQueries.get(Component)!
+        if (query.added.length === 0) continue
+        this.resources.state.addComponents(Component, query.added)
+      }
+
+      for (const Component of this.changedQueries.keys()) {
+        const query = this.changedQueries.get(Component)!
+        if (query.changed.length === 0) continue
+        this.resources.state.updateComponents(Component, query.changed)
       }
 
       if (hasRemoved) {

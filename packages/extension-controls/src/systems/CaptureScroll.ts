@@ -1,6 +1,6 @@
 import { BaseSystem, BlockCommand, type BlockCommandArgs, comps } from '@infinitecanvas/core'
 import type { ControlCommandArgs } from '../types'
-import { CaptureDrag } from './CaptureDrag'
+import { CapturePan } from './CapturePan'
 import { CaptureSelect } from './CaptureSelect'
 import { CaptureTransformBox } from './CaptureTransformBox'
 import { CaptureZoom } from './CaptureZoom'
@@ -18,7 +18,7 @@ export class CaptureScroll extends BaseSystem<ControlCommandArgs & BlockCommandA
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CaptureDrag, CaptureTransformBox, CaptureZoom))
+    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CapturePan, CaptureTransformBox, CaptureZoom))
   }
 
   public execute(): void {
@@ -32,7 +32,7 @@ export class CaptureScroll extends BaseSystem<ControlCommandArgs & BlockCommandA
     const wheelEvent = events.find((e) => e.type === 'wheel')
     if (!wheelEvent) return
 
-    const top = this.camera.top + (0.25 * wheelEvent.delta) / this.camera.zoom
+    const top = this.camera.top + (1 * wheelEvent.delta) / this.camera.zoom
     this.emitCommand(BlockCommand.MoveCamera, this.camera.left, top)
   }
 }

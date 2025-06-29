@@ -1,4 +1,4 @@
-export { CaptureDrag } from './CaptureDrag'
+export { CapturePan } from './CapturePan'
 export { CaptureScroll } from './CaptureScroll'
 export { CaptureSelect } from './CaptureSelect'
 export { CaptureTransformBox } from './CaptureTransformBox'

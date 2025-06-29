@@ -7,11 +7,11 @@ import {
   comps,
 } from '@infinitecanvas/core'
 import { assign, setup } from 'xstate'
-import { DragState as DragStateComp } from '../components'
-import { type ControlCommandArgs, DragState } from '../types'
+import { PanState as PanStateComp } from '../components'
+import { type ControlCommandArgs, PanState } from '../types'
 import { CaptureZoom } from './CaptureZoom'
 
-export class CaptureDrag extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
+export class CapturePan extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
   private readonly pointers = this.query((q) => q.added.current.changed.removed.with(comps.Pointer).read.trackWrites)
 
   private readonly camera = this.singleton.read(comps.Camera)
@@ -20,9 +20,9 @@ export class CaptureDrag extends BaseSystem<ControlCommandArgs & BlockCommandArg
 
   private readonly tool = this.singleton.read(comps.Tool)
 
-  private readonly dragState = this.singleton.write(DragStateComp)
+  private readonly panState = this.singleton.write(PanStateComp)
 
-  private readonly dragMachine = setup({
+  private readonly panMachine = setup({
     types: {
       context: {} as {
         dragStart: [number, number]
@@ -43,21 +43,21 @@ export class CaptureDrag extends BaseSystem<ControlCommandArgs & BlockCommandArg
     },
   }).createMachine({
     id: 'drag',
-    initial: DragState.Idle,
+    initial: PanState.Idle,
     context: {
       dragStart: [0, 0],
     },
     states: {
-      [DragState.Idle]: {
+      [PanState.Idle]: {
         entry: 'resetContext',
         on: {
           pointerDown: {
             actions: 'setDragStart',
-            target: DragState.Dragging,
+            target: PanState.Panning,
           },
         },
       },
-      [DragState.Dragging]: {
+      [PanState.Panning]: {
         on: {
           pointerMove: [
             {
@@ -73,7 +73,7 @@ export class CaptureDrag extends BaseSystem<ControlCommandArgs & BlockCommandArg
             },
           ],
           pointerUp: {
-            target: DragState.Idle,
+            target: PanState.Idle,
           },
         },
       },
@@ -103,14 +103,14 @@ export class CaptureDrag extends BaseSystem<ControlCommandArgs & BlockCommandArg
 
     if (pointerEvents.length === 0) return
 
-    const { value, context } = this.runMachine<DragState>(
-      this.dragMachine,
-      this.dragState.state,
-      this.dragState,
+    const { value, context } = this.runMachine<PanState>(
+      this.panMachine,
+      this.panState.state,
+      this.panState,
       pointerEvents,
     )
 
-    Object.assign(this.dragState, context)
-    this.dragState.state = value
+    Object.assign(this.panState, context)
+    this.panState.state = value
   }
 }

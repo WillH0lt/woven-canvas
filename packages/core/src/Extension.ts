@@ -1,4 +1,4 @@
-import type { SystemGroup } from '@lastolivegames/becsy'
+import type { System, SystemGroup } from '@lastolivegames/becsy'
 
 import type { State } from './State.js'
 import type { CommandArgs, ICommands, IStore, Resources, SendCommandFn } from './types.js'
@@ -70,7 +70,14 @@ export abstract class Extension {
     return this._postRenderGroup
   }
 
-  public abstract initialize(resources: Resources): Promise<void>
+  public preBuild(resources: Resources): Promise<void> {
+    // implementation in subclasses
+    return Promise.resolve()
+  }
+
+  public build(worldSystem: System): void {
+    // implementation in subclasses
+  }
 
   public addCommands(_send: SendCommandFn<CommandArgs>): Partial<ICommands> {
     return {}

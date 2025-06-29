@@ -1,6 +1,7 @@
 import type { Entity } from '@lastolivegames/becsy'
 import type { Emitter } from 'strict-event-emitter'
 import { z } from 'zod/v4'
+import type { LocalDB } from './LocalDB'
 import type { State } from './State'
 
 export enum EmitterEventKind {
@@ -19,13 +20,20 @@ export type EmitterEvents = {
 export interface CoreResources extends Resources {
   emitter: Emitter<EmitterEvents>
   state: State
+  localDB: LocalDB
 }
 
 export type CommandMap = {
   [commandKind: string]: Array<unknown>
 }
 
-export const Options = z.object({
+export const CoreOptions = z.object({
+  persistenceKey: z.string().default('default'),
+})
+
+export type CoreOptions = z.input<typeof CoreOptions>
+
+export const Options = CoreOptions.extend({
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
 })
@@ -120,6 +128,10 @@ export enum BlockCommand {
 
   SetTool = 'setTool',
   SetCursor = 'setCursor',
+
+  Undo = 'undo',
+  Redo = 'redo',
+  CreateCheckpoint = 'createCheckpoint',
 }
 
 export type BlockCommandArgs = {
@@ -138,6 +150,9 @@ export type BlockCommandArgs = {
 
   [BlockCommand.SetZoom]: [number]
   [BlockCommand.MoveCamera]: [number, number]
+  [BlockCommand.Undo]: []
+  [BlockCommand.Redo]: []
+  [BlockCommand.CreateCheckpoint]: []
 }
 
 export type PointerEvent =

@@ -17,24 +17,25 @@ export class PreCaptureIntersect extends System {
 
   private readonly camera = this.singleton.read(comps.Camera)
 
-  private readonly draggableBlocks = this.query(
-    (q) =>
-      q.addedOrChanged.changed.removed.current.with(comps.Block, comps.Draggable).trackWrites.using(comps.Aabb).write,
+  private readonly blocks = this.query(
+    (q) => q.addedOrChanged.changed.removed.current.with(comps.Block).trackWrites.using(comps.Aabb).write,
   )
 
   public execute(): void {
-    for (const blockEntity of this.draggableBlocks.addedOrChanged) {
+    for (const blockEntity of this.blocks.addedOrChanged) {
       const aabb = computeAabb(blockEntity)
-      if (blockEntity.has(comps.Aabb)) {
-        Object.assign(blockEntity.write(comps.Aabb), aabb)
-      } else {
-        blockEntity.add(comps.Aabb, aabb)
+
+      if (!blockEntity.has(comps.Aabb)) {
+        blockEntity.add(comps.Aabb)
       }
+
+      Object.assign(blockEntity.write(comps.Aabb), aabb)
     }
 
     if (this.mouse.moveTrigger) {
       const point = this.camera.toWorld(this.mouse.position)
-      this.intersect.entity = intersectPoint(point, this.draggableBlocks.current)
+
+      this.intersect.entity = intersectPoint(point, this.blocks.current)
     }
   }
 }

@@ -1,8 +1,8 @@
 import { System, World } from '@lastolivegames/becsy'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Block } from '../../components/Block'
-import { ToBeDeleted } from '../../components/ToBeDeleted'
-import { Deleter } from '../PostUpdateDeleter'
+import { Block } from '../../src/components/Block'
+import { ToBeDeleted } from '../../src/components/ToBeDeleted'
+import { Deleter } from '../../src/systems/PostUpdateDeleter'
 
 let world: World
 

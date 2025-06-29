@@ -1,6 +1,7 @@
 export { CaptureCursor } from './CaptureCursor'
 export { PostRenderStoreSync } from './PostRenderStoreSync'
 export { PostUpdateDeleter } from './PostUpdateDeleter'
+export { PostUpdateHistory } from './PostUpdateHistory'
 export { PreInputCommandSpawner } from './PreInputCommandSpawner'
 export { PreInputFrameCounter } from './PreInputFrameCounter'
 export { PreCaptureIntersect } from './PreCaptureIntersect'

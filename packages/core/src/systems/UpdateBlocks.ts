@@ -14,9 +14,7 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
   // declaring to becsy that rankBounds is a singleton component
   private readonly _rankBounds = this.singleton.read(comps.RankBounds)
 
-  private readonly _blocks = this.query(
-    (q) => q.with(comps.Block, comps.Draggable, comps.SaveToState, comps.Selectable).write,
-  )
+  private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Persistent).write)
 
   public constructor() {
     super()
@@ -25,7 +23,7 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
 
   public initialize(): void {
     this.addCommandListener(BlockCommand.AddBlock, this.addBlock.bind(this))
-    this.addCommandListener(BlockCommand.UpdateBlockPosition, this.updateSelectablePosition.bind(this))
+    this.addCommandListener(BlockCommand.UpdateBlockPosition, this.updateBlockPosition.bind(this))
   }
 
   public execute(): void {
@@ -36,11 +34,12 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
     block.id = block.id || crypto.randomUUID()
     block.rank = block.rank || this.rankBounds.genNext().toString()
 
-    this.createEntity(comps.Block, block, comps.Selectable, comps.Draggable, comps.SaveToState, { id: block.id })
+    this.createEntity(comps.Block, block, comps.Persistent, { id: block.id })
   }
 
-  private updateSelectablePosition(blockEntity: Entity, position: { left: number; top: number }): void {
-    if (!blockEntity.has(comps.Selectable)) return
-    Object.assign(blockEntity.write(comps.Block), position)
+  private updateBlockPosition(blockEntity: Entity, position: { left: number; top: number }): void {
+    const block = blockEntity.write(comps.Block)
+    block.left = position.left
+    block.top = position.top
   }
 }

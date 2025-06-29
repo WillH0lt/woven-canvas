@@ -11,7 +11,7 @@ import { assign, setup } from 'xstate'
 
 import * as controlComps from '../components'
 import { ControlCommand, type ControlCommandArgs, SelectionState } from '../types'
-import { CaptureDrag } from './CaptureDrag'
+import { CapturePan } from './CapturePan'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
@@ -33,13 +33,13 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
-  private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Selectable).read)
+  private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Persistent).read)
 
   private readonly selectionState = this.singleton.write(controlComps.SelectionState)
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureDrag))
+    this.schedule((s) => s.inAnyOrderWith(CapturePan))
   }
 
   private readonly selectionMachine = setup({
@@ -61,7 +61,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
       },
       isOverBlock: ({ event }) => {
         if (!('blockEntity' in event)) return false
-        return !!event.blockEntity
+        return event.blockEntity?.alive ?? false
       },
     },
     actions: {
@@ -105,9 +105,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
         draggedEntity: null,
       }),
       createSelectionBox: () => {
-        this.emitCommand(ControlCommand.AddSelectionBox, {
-          alpha: 128,
-        })
+        this.emitCommand(ControlCommand.AddSelectionBox)
       },
       removeSelectionBox: () => {
         this.emitCommand(ControlCommand.RemoveSelectionBoxes)
@@ -131,7 +129,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
       },
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
-        if (!context.draggedEntity.has(comps.Selectable)) return
+        if (!context.draggedEntity.has(comps.Persistent)) return
         this.emitCommand(ControlCommand.SelectBlock, context.draggedEntity, { deselectOthers: true })
       },
       deselectAll: () => {

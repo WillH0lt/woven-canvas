@@ -1,6 +1,6 @@
 import { BaseSystem, BlockCommand, type BlockCommandArgs, comps } from '@infinitecanvas/core'
 import type { ControlCommandArgs } from '../types'
-import { CaptureDrag } from './CaptureDrag'
+import { CapturePan } from './CapturePan'
 import { CaptureSelect } from './CaptureSelect'
 import { CaptureTransformBox } from './CaptureTransformBox'
 
@@ -19,7 +19,7 @@ export class CaptureZoom extends BaseSystem<ControlCommandArgs & BlockCommandArg
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CaptureDrag, CaptureTransformBox))
+    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CapturePan, CaptureTransformBox))
   }
 
   public execute(): void {

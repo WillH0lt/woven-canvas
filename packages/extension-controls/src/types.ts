@@ -15,9 +15,9 @@ export enum WheelAction {
   Scroll = 'scroll',
 }
 
-export enum DragState {
+export enum PanState {
   Idle = 'idle',
-  Dragging = 'dragging',
+  Panning = 'panning',
 }
 
 export enum SelectionState {
@@ -52,13 +52,14 @@ export enum ControlCommand {
   DeselectAll = 'deselectAll',
   RemoveSelected = 'removeSelected',
 
-  AddOrReplaceTransformBox = 'addOrReplaceTransformBox',
+  AddOrUpdateTransformBox = 'addOrUpdateTransformBox',
   HideTransformBox = 'hideTransformBox',
+  ShowTransformBox = 'showTransformBox',
   RemoveTransformBox = 'removeTransformBox',
 }
 
 export type ControlCommandArgs = {
-  [ControlCommand.AddSelectionBox]: [Partial<BlockModel>]
+  [ControlCommand.AddSelectionBox]: []
   [ControlCommand.UpdateSelectionBox]: [Partial<BlockModel>]
   [ControlCommand.RemoveSelectionBoxes]: []
 
@@ -67,8 +68,9 @@ export type ControlCommandArgs = {
   [ControlCommand.DeselectAll]: []
   [ControlCommand.RemoveSelected]: []
 
-  [ControlCommand.AddOrReplaceTransformBox]: []
+  [ControlCommand.AddOrUpdateTransformBox]: []
   [ControlCommand.HideTransformBox]: []
+  [ControlCommand.ShowTransformBox]: []
   [ControlCommand.RemoveTransformBox]: []
 }
 

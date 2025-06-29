@@ -22,7 +22,7 @@ export class ControlsExtension extends Extension {
     this.options = ControlOptions.parse(options)
   }
 
-  public async initialize(resources: Resources): Promise<void> {
+  public async preBuild(resources: Resources): Promise<void> {
     const r: ControlResources = {
       ...resources,
       controlOptions: this.options,
@@ -33,7 +33,7 @@ export class ControlsExtension extends Extension {
       { resources: r },
       sys.CaptureScroll,
       { resources: r },
-      sys.CaptureDrag,
+      sys.CapturePan,
       { resources: r },
       sys.CaptureSelect,
       { resources: r },

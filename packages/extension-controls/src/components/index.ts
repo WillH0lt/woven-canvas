@@ -1,4 +1,5 @@
-export { DragState } from './DragState'
+export { DragStart } from './DragStart'
+export { PanState } from './PanState'
 export { SelectionState } from './SelectionState'
 export { TransformBox } from './TransformBox'
 export { TransformHandle } from './TransformHandle'
