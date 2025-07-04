@@ -11,7 +11,7 @@ export class PostRenderStoreSync extends System {
 
   private readonly removedQueries: Map<new () => ISerializable, Query> = new Map()
 
-  private readonly resources!: CoreResources
+  protected declare readonly resources: CoreResources
 
   public constructor() {
     super()

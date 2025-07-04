@@ -205,7 +205,10 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
 
     // TODO this will maybe be handled in the store once we have a store
     if (this.cursorState.icon !== context.icon || this.cursorState.iconRotation !== context.iconRotation) {
-      this.emitCommand(BlockCommand.SetCursor, context.icon, context.iconRotation)
+      this.emitCommand(BlockCommand.SetCursor, {
+        icon: context.icon,
+        rotateZ: context.iconRotation,
+      })
     }
 
     Object.assign(this.cursorState, context)

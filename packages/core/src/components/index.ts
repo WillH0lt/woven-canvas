@@ -1,7 +1,6 @@
 export { Aabb } from './Aabb'
 export { Block } from './Block'
 export { Command } from './Command'
-export { CommandRef } from './CommandRef'
 export { CursorState } from './CursorState'
 export { Hoverable } from './Hoverable'
 export { Frame } from './Frame'

@@ -1,6 +1,6 @@
 import { BaseSystem, comps } from '@infinitecanvas/core'
 
-import { BlockCommand, type BlockCommandArgs } from '../types'
+import { BlockCommand, type BlockCommandArgs, type CommandMeta } from '../types'
 
 export class UpdateCamera extends BaseSystem<BlockCommandArgs> {
   private readonly cameras = this.query((q) => q.current.with(comps.Camera).write)
@@ -14,14 +14,14 @@ export class UpdateCamera extends BaseSystem<BlockCommandArgs> {
     this.executeCommands()
   }
 
-  private setZoom(zoom: number): void {
+  private setZoom(_meta: CommandMeta, payload: { zoom: number }): void {
     const camera = this.cameras.current[0].write(comps.Camera)
-    camera.zoom = zoom
+    camera.zoom = payload.zoom
   }
 
-  private moveCamera(x: number, y: number): void {
+  private moveCamera(_meta: CommandMeta, position: { x: number; y: number }): void {
     const camera = this.cameras.current[0].write(comps.Camera)
-    camera.left = x
-    camera.top = y
+    camera.left = position.x
+    camera.top = position.y
   }
 }

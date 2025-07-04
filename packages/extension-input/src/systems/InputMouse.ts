@@ -11,7 +11,7 @@ export class InputMouse extends System {
   // declaring to becsy that mouse is a singleton component
   private readonly _mouse = this.singleton.read(comps.Mouse)
 
-  private readonly resources!: Resources
+  protected declare readonly resources: Resources
 
   @co private *onMouseMove(e: MouseEvent): Generator {
     this.mouse.position = [e.clientX, e.clientY]

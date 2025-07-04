@@ -1,11 +1,4 @@
-import {
-  BaseSystem,
-  BlockCommand,
-  type BlockCommandArgs,
-  PointerButton,
-  type PointerEvent,
-  comps,
-} from '@infinitecanvas/core'
+import { BaseSystem, BlockCommand, type BlockCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 import { assign, setup } from 'xstate'
 
@@ -92,7 +85,9 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
       }),
       resetDragged: ({ context }) => {
         if (!context.draggedEntity) return
-        this.emitCommand(BlockCommand.UpdateBlockPosition, context.draggedEntity, {
+        const { id } = context.draggedEntity.read(comps.Block)
+        this.emitCommand(BlockCommand.UpdateBlockPosition, {
+          id,
           left: context.draggedEntityStart[0],
           top: context.draggedEntityStart[1],
         })
@@ -108,12 +103,17 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
         this.emitCommand(ControlCommand.AddSelectionBox)
       },
       removeSelectionBox: () => {
-        this.emitCommand(ControlCommand.RemoveSelectionBoxes)
+        this.emitCommand(ControlCommand.RemoveSelectionBox)
+      },
+      createCheckpoint: () => {
+        this.emitCommand(BlockCommand.CreateCheckpoint)
       },
       updateDragged: ({ context, event }) => {
         if (!context.draggedEntity || !('worldPosition' in event)) return
 
-        this.emitCommand(BlockCommand.UpdateBlockPosition, context.draggedEntity, {
+        const { id } = context.draggedEntity.read(comps.Block)
+        this.emitCommand(BlockCommand.UpdateBlockPosition, {
+          id,
           left: context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0],
           top: context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1],
         })
@@ -130,7 +130,8 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
         if (!context.draggedEntity.has(comps.Persistent)) return
-        this.emitCommand(ControlCommand.SelectBlock, context.draggedEntity, { deselectOthers: true })
+        const { id } = context.draggedEntity.read(comps.Block)
+        this.emitCommand(ControlCommand.SelectBlock, { id, options: { deselectOthers: true } })
       },
       deselectAll: () => {
         this.emitCommand(ControlCommand.DeselectAll)
@@ -187,7 +188,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
             actions: 'updateDragged',
           },
           pointerUp: {
-            actions: 'selectDragged',
+            actions: ['selectDragged', 'createCheckpoint'],
             target: SelectionState.Idle,
           },
           cancel: {
@@ -248,14 +249,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
   }
 
   private getSelectionEvents(): PointerEvent[] {
-    let button: PointerButton | null = null
-    if (this.tool.leftMouse === 'select') {
-      button = PointerButton.Left
-    } else if (this.tool.middleMouse === 'select') {
-      button = PointerButton.Middle
-    } else if (this.tool.rightMouse === 'select') {
-      button = PointerButton.Right
-    }
+    const button = this.tool.getButton('select')
 
     if (button === null) return []
 

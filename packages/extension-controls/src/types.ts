@@ -1,5 +1,4 @@
 import type { BlockModel, Resources } from '@infinitecanvas/core'
-import type { Entity } from '@lastolivegames/becsy'
 import { z } from 'zod/v4'
 
 export enum PointerAction {
@@ -45,32 +44,41 @@ export type ControlOptions = z.input<typeof ControlOptions>
 export enum ControlCommand {
   AddSelectionBox = 'addSelectionBox',
   UpdateSelectionBox = 'updateSelectionBox',
-  RemoveSelectionBoxes = 'removeSelectionBoxes',
+  RemoveSelectionBox = 'removeSelectionBox',
 
   SelectBlock = 'selectBlock',
   DeselectBlock = 'deselectBlock',
   DeselectAll = 'deselectAll',
   RemoveSelected = 'removeSelected',
 
-  AddOrUpdateTransformBox = 'addOrUpdateTransformBox',
+  AddTransformBox = 'addTransformBox',
+  UpdateTransformBox = 'updateTransformBox',
   HideTransformBox = 'hideTransformBox',
-  ShowTransformBox = 'showTransformBox',
   RemoveTransformBox = 'removeTransformBox',
 }
 
 export type ControlCommandArgs = {
   [ControlCommand.AddSelectionBox]: []
   [ControlCommand.UpdateSelectionBox]: [Partial<BlockModel>]
-  [ControlCommand.RemoveSelectionBoxes]: []
+  [ControlCommand.RemoveSelectionBox]: []
 
-  [ControlCommand.SelectBlock]: [Entity, SelectBlockOptions]
-  [ControlCommand.DeselectBlock]: [Entity]
+  [ControlCommand.SelectBlock]: [
+    {
+      id: string
+      options: SelectBlockOptions
+    },
+  ]
+  [ControlCommand.DeselectBlock]: [
+    {
+      id: string
+    },
+  ]
   [ControlCommand.DeselectAll]: []
   [ControlCommand.RemoveSelected]: []
 
-  [ControlCommand.AddOrUpdateTransformBox]: []
+  [ControlCommand.AddTransformBox]: []
+  [ControlCommand.UpdateTransformBox]: []
   [ControlCommand.HideTransformBox]: []
-  [ControlCommand.ShowTransformBox]: []
   [ControlCommand.RemoveTransformBox]: []
 }
 

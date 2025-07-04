@@ -1,7 +1,7 @@
-import { type Resources, comps } from '@infinitecanvas/core'
-import { System, co } from '@lastolivegames/becsy'
+import { BaseSystem, type Resources, comps } from '@infinitecanvas/core'
+import { co } from '@lastolivegames/becsy'
 
-export class InputKeyboard extends System {
+export class InputKeyboard extends BaseSystem {
   private readonly keyboards = this.query((q) => q.current.with(comps.Keyboard).write)
 
   private get keyboard(): comps.Keyboard {
@@ -11,13 +11,11 @@ export class InputKeyboard extends System {
   // declaring to becsy that keyboard is a singleton component
   private readonly _keyboard = this.singleton.read(comps.Keyboard)
 
-  private readonly resources!: Resources
+  protected declare readonly resources: Resources
 
   private keyUpFrames: { key: string; frame: number }[] = []
 
   private keyDownFrames: { key: string; frame: number }[] = []
-
-  private frame = 0
 
   private updateKeyboard(field: string, value: boolean): void {
     if (!(field in this.keyboard)) return
@@ -27,11 +25,11 @@ export class InputKeyboard extends System {
   @co private *onKeyDown(e: KeyboardEvent): Generator {
     const key = e.key.toLowerCase()
 
-    this.keyDownFrames.push({ key, frame: this.frame })
+    this.keyDownFrames.push({ key, frame: this.frame.value })
 
-    if (this.keyUpFrames.some((kf) => kf.key === key && kf.frame === this.frame)) {
+    if (this.keyUpFrames.some((kf) => kf.key === key && kf.frame === this.frame.value)) {
       console.warn(
-        `tried to handle keydown, but keyup has been called this frame for key: ${key} on frame: ${this.frame}`,
+        `tried to handle keydown, but keyup has been called this frame for key: ${key} on frame: ${this.frame.value}`,
       )
       return
     }
@@ -62,11 +60,11 @@ export class InputKeyboard extends System {
     const key = e.key.toLowerCase()
     const keyDown = `${key}Down`
 
-    this.keyUpFrames.push({ key, frame: this.frame })
+    this.keyUpFrames.push({ key, frame: this.frame.value })
 
-    if (this.keyDownFrames.some((kf) => kf.key === key && kf.frame === this.frame)) {
+    if (this.keyDownFrames.some((kf) => kf.key === key && kf.frame === this.frame.value)) {
       console.warn(
-        `tried to handle keyup, but keydown has been called this frame on frame: ${key} at time: ${this.frame}`,
+        `tried to handle keyup, but keydown has been called this frame on frame: ${key} at time: ${this.frame.value}`,
       )
       return
     }
@@ -102,9 +100,5 @@ export class InputKeyboard extends System {
 
     domElement.addEventListener('keydown', this.onKeyDown.bind(this))
     domElement.addEventListener('keyup', this.onKeyUp.bind(this))
-  }
-
-  public execute(): void {
-    this.frame++
   }
 }

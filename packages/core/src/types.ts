@@ -1,7 +1,7 @@
 import type { Entity } from '@lastolivegames/becsy'
 import type { Emitter } from 'strict-event-emitter'
 import { z } from 'zod/v4'
-import type { LocalDB } from './LocalDB'
+import type { History } from './History'
 import type { State } from './State'
 
 export enum EmitterEventKind {
@@ -20,7 +20,6 @@ export type EmitterEvents = {
 export interface CoreResources extends Resources {
   emitter: Emitter<EmitterEvents>
   state: State
-  localDB: LocalDB
 }
 
 export type CommandMap = {
@@ -28,7 +27,7 @@ export type CommandMap = {
 }
 
 export const CoreOptions = z.object({
-  persistenceKey: z.string().default('default'),
+  // persistenceKey: z.string().optional(),
 })
 
 export type CoreOptions = z.input<typeof CoreOptions>
@@ -42,6 +41,8 @@ export type Options = z.input<typeof Options>
 
 export interface Resources {
   domElement: HTMLElement
+  uid: string
+  history: History
 }
 
 export interface BlockModel {
@@ -54,8 +55,17 @@ export interface BlockModel {
   green: number
   blue: number
   alpha: number
+  createdBy: string
   rotateZ: number
   rank: string
+}
+
+export interface CommandModel {
+  kind: string
+  payload: string
+  uid: string
+  seed: string
+  frame: number
 }
 
 export type CommandArgs = Record<string, Array<unknown>>
@@ -124,7 +134,6 @@ export enum BlockCommand {
 
   AddBlock = 'addBlock',
   UpdateBlockPosition = 'updateBlockPosition',
-  RemoveBlock = 'removeBlock',
 
   SetTool = 'setTool',
   SetCursor = 'setCursor',
@@ -137,22 +146,44 @@ export enum BlockCommand {
 export type BlockCommandArgs = {
   [BlockCommand.AddBlock]: [Partial<BlockModel>]
   [BlockCommand.UpdateBlockPosition]: [
-    Entity,
     {
+      id: string
       left: number
       top: number
     },
   ]
-  [BlockCommand.RemoveBlock]: [Entity]
 
-  [BlockCommand.SetTool]: [string]
-  [BlockCommand.SetCursor]: [CursorIcon, number]
+  [BlockCommand.SetTool]: [
+    {
+      tool: string
+    },
+  ]
+  [BlockCommand.SetCursor]: [
+    {
+      icon: CursorIcon
+      rotateZ: number
+    },
+  ]
 
-  [BlockCommand.SetZoom]: [number]
-  [BlockCommand.MoveCamera]: [number, number]
+  [BlockCommand.SetZoom]: [
+    {
+      zoom: number
+    },
+  ]
+  [BlockCommand.MoveCamera]: [
+    {
+      x: number
+      y: number
+    },
+  ]
   [BlockCommand.Undo]: []
   [BlockCommand.Redo]: []
   [BlockCommand.CreateCheckpoint]: []
+}
+
+export interface CommandMeta {
+  seed: string
+  uid: string
 }
 
 export type PointerEvent =

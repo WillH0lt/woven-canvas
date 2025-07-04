@@ -1,5 +1,6 @@
-import { BaseSystem, BlockCommand, type BlockCommandArgs, CursorIcon } from '@infinitecanvas/core'
+import { BaseSystem, BlockCommand, type BlockCommandArgs, type CommandMeta, CursorIcon } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
+import { UuidGenerator, binarySearchForId, uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
 import { DragStart, TransformBox, TransformHandle } from '../components'
@@ -37,6 +38,10 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     (q) => q.current.with(TransformBox).write.using(comps.Block, TransformHandle, DragStart, comps.Hoverable).write,
   )
 
+  private readonly blocks = this.query((q) =>
+    q.current.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
+  )
+
   public constructor() {
     super()
     this.schedule((s) => s.after(UpdateSelection))
@@ -44,9 +49,9 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
 
   public initialize(): void {
     this.addCommandListener(BlockCommand.UpdateBlockPosition, this.onBlockMove.bind(this))
-    this.addCommandListener(ControlCommand.AddOrUpdateTransformBox, this.addOrUpdateTransformBox.bind(this))
+    this.addCommandListener(ControlCommand.AddTransformBox, this.addTransformBox.bind(this))
+    this.addCommandListener(ControlCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
     this.addCommandListener(ControlCommand.HideTransformBox, this.hideTransformBox.bind(this))
-    this.addCommandListener(ControlCommand.ShowTransformBox, this.showTransformBox.bind(this))
     this.addCommandListener(ControlCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
   }
 
@@ -54,29 +59,51 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     this.executeCommands()
   }
 
-  private removeTransformBox(): void {
-    for (const transformBoxEntity of this.transformBoxes.current) {
+  private removeTransformBox(meta: CommandMeta): void {
+    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+
+    if (!transformBoxEntity) {
+      console.warn('No transform box found to remove')
+      return
+    }
+
+    if (transformBoxEntity) {
       const transformBox = transformBoxEntity.read(TransformBox)
       this.deleteEntities(transformBox.handles)
+      this.deleteEntity(transformBoxEntity)
     }
-    this.deleteEntities(this.transformBoxes.current)
   }
 
-  private addOrUpdateTransformBox(): void {
-    let transformBoxEntity: Entity
-    if (this.transformBoxes.current.length > 0) {
-      transformBoxEntity = this.transformBoxes.current[0]
-    } else {
-      transformBoxEntity = this.createEntity(TransformBox, comps.Block, { id: crypto.randomUUID() }, DragStart)
-    }
+  private addTransformBox(meta: CommandMeta): void {
+    const uuid = new UuidGenerator(meta.seed)
+    const transformBoxEntity = this.createEntity(
+      TransformBox,
+      comps.Block,
+      { id: uuid.next(), createdBy: meta.uid },
+      DragStart,
+    )
 
+    this._updateTransformBox(transformBoxEntity, uuid, meta.uid)
+  }
+
+  private updateTransformBox(meta: CommandMeta): void {
+    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+    if (!transformBoxEntity) return
+
+    const uuid = new UuidGenerator(meta.seed)
+    this._updateTransformBox(transformBoxEntity, uuid, meta.uid)
+  }
+
+  private _updateTransformBox(transformBoxEntity: Entity, uuid: UuidGenerator, uid: string): void {
     let rotateZ = 0
     if (this.selectedBlocks.current.length > 0) {
       rotateZ = this.selectedBlocks.current[0].read(comps.Block).rotateZ
     }
 
-    for (let i = 1; i < this.selectedBlocks.current.length; i++) {
-      const block = this.selectedBlocks.current[i].read(comps.Block)
+    const selectedBlocks = this.selectedBlocks.current.filter((e) => e.read(comps.Selected).selectedBy === uid)
+
+    for (let i = 1; i < selectedBlocks.length; i++) {
+      const block = selectedBlocks[i].read(comps.Block)
       if (Math.abs(rotateZ - block.rotateZ) > 0.01) {
         rotateZ = 0
         break
@@ -84,7 +111,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
 
     // size the transform box to selected blocks
-    const extents = computeExtentsAlongAngle(this.selectedBlocks.current, rotateZ)
+    const extents = computeExtentsAlongAngle(selectedBlocks, rotateZ)
 
     const left = extents.left
     const top = extents.top
@@ -110,7 +137,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       startRotateZ: rotateZ,
     })
 
-    for (const blockEntity of this.selectedBlocks.current) {
+    for (const blockEntity of selectedBlocks) {
       const block = blockEntity.read(comps.Block)
       if (!blockEntity.has(DragStart)) {
         blockEntity.add(DragStart)
@@ -123,10 +150,10 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       dragStart.startRotateZ = block.rotateZ
     }
 
-    this.addOrUpdateTransformHandles(transformBoxEntity)
+    this.addOrUpdateTransformHandles(transformBoxEntity, uuid)
   }
 
-  private addOrUpdateTransformHandles(transformBoxEntity: Entity): void {
+  private addOrUpdateTransformHandles(transformBoxEntity: Entity, uuid: UuidGenerator): void {
     const transformBoxBlock = transformBoxEntity.read(comps.Block)
     const { left, top, width, height, rotateZ } = transformBoxBlock
     const handleSize = 15
@@ -232,13 +259,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
         )
       })
       if (!handleEntity) {
-        handleEntity = this.createEntity(
-          TransformHandle,
-          comps.Block,
-          { id: crypto.randomUUID() },
-          comps.Hoverable,
-          DragStart,
-        )
+        handleEntity = this.createEntity(TransformHandle, comps.Block, { id: uuid.next() }, comps.Hoverable, DragStart)
       }
 
       const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
@@ -277,37 +298,41 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
   }
 
-  private hideTransformBox(): void {
-    this.updateTransformBoxAlpha(0)
-  }
+  private hideTransformBox(meta: CommandMeta): void {
+    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
 
-  private showTransformBox(): void {
-    this.updateTransformBoxAlpha(255)
-  }
-
-  private updateTransformBoxAlpha(alpha: number): void {
-    for (const transformBoxEntity of this.transformBoxes.current) {
-      const transformBox = transformBoxEntity.read(TransformBox)
-      for (const handleEntity of transformBox.handles) {
-        const handleBlock = handleEntity.write(comps.Block)
-        handleBlock.alpha = alpha
-      }
-
-      const transformBoxBlock = transformBoxEntity.write(comps.Block)
-      transformBoxBlock.alpha = alpha
+    if (!transformBoxEntity) {
+      console.warn('No transform box found to hide')
+      return
     }
+
+    const transformBox = transformBoxEntity.read(TransformBox)
+    for (const handleEntity of transformBox.handles) {
+      const handleBlock = handleEntity.write(comps.Block)
+      handleBlock.alpha = 0
+    }
+
+    const transformBoxBlock = transformBoxEntity.write(comps.Block)
+    transformBoxBlock.alpha = 0
   }
 
-  private onBlockMove(blockEntity: Entity, position: { left: number; top: number }): void {
+  private onBlockMove(meta: CommandMeta, payload: { id: string; left: number; top: number }): void {
+    // const blockEntity = this.blocks.current.find((e) => e.read(comps.Block).id === payload.id)
+    const blockEntity = binarySearchForId(comps.Block, payload.id, this.blocks.current)
+    if (!blockEntity) {
+      console.warn(`Block with id ${payload.id} not found`)
+      return
+    }
+
     if (blockEntity.has(TransformBox)) {
-      this.onTransformBoxMove(blockEntity, position)
+      this.onTransformBoxMove(blockEntity, payload)
     } else if (blockEntity.has(TransformHandle)) {
       const handle = blockEntity.read(TransformHandle)
       const kind = handle.kind.toString()
       if (kind.endsWith('rotate')) {
-        this.onRotateHandleMove(blockEntity, position)
+        this.onRotateHandleMove(blockEntity, payload)
       } else if (kind.endsWith('scale')) {
-        this.onScaleHandleMove(blockEntity, position)
+        this.onScaleHandleMove(blockEntity, payload)
       }
     }
   }

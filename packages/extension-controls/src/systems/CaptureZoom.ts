@@ -23,8 +23,7 @@ export class CaptureZoom extends BaseSystem<ControlCommandArgs & BlockCommandArg
   }
 
   public execute(): void {
-    const active =
-      (this.tool.wheel === 'zoom' && !this.keyboard.modDown) || (this.tool.modWheel === 'zoom' && this.keyboard.modDown)
+    const active = this.tool.wheelActive('zoom', this.keyboard.modDown)
     if (!active) return
 
     const events = this.getMouseEvents(this.mouse, this.camera, this.intersect)
@@ -48,8 +47,8 @@ export class CaptureZoom extends BaseSystem<ControlCommandArgs & BlockCommandArg
     const x = this.camera.left - percentX * dx
     const y = this.camera.top - percentY * dy
 
-    this.emitCommand(BlockCommand.SetZoom, zoom)
-    this.emitCommand(BlockCommand.MoveCamera, x, y)
+    this.emitCommand(BlockCommand.SetZoom, { zoom })
+    this.emitCommand(BlockCommand.MoveCamera, { x, y })
   }
 
   // private getWheelEvents(): WheelEvent

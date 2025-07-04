@@ -5,7 +5,7 @@ import { type Resources, comps } from '@infinitecanvas/core'
 export class InputScreen extends System {
   private readonly screens = this.query((q) => q.current.with(comps.Screen).write)
 
-  private readonly resources!: Resources
+  protected declare readonly resources: Resources
 
   @co private *handleResize(): Generator {
     const screen = this.screens.current[0].write(comps.Screen)

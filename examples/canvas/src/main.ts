@@ -2,8 +2,9 @@ import './style.css'
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
+import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
+// import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
 import { RendererExtension } from '@infinitecanvas/extension-renderer'
-import { v4 as uuid } from 'uuid'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="container" class="absolute inset-0"></div>
@@ -15,23 +16,18 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 let infiniteCanvas: InfiniteCanvas | null = null
 
 async function initializeCanvas(container: HTMLDivElement) {
-  infiniteCanvas = await InfiniteCanvas.New([new InputExtension(), new ControlsExtension(), new RendererExtension()])
+  infiniteCanvas = await InfiniteCanvas.New([
+    new InputExtension(),
+    new ControlsExtension(),
+    new RendererExtension(),
+    // new MultiplayerExtension(),
+    new LocalStorageExtension(),
+  ])
   container.appendChild(infiniteCanvas.domElement)
 
-  // const count = signal(0)
-
-  // const double = computed(() => count.value * 2)
-
-  // // effect(() => {
-  // //   console.log('Count:', count.value, 'Double:', double.value)
-  // // })
-  // double.subscribe((value) => {
-  //   console.log('Double value changed:', value)
-  // })
-
-  // infiniteCanvas.store.core.blockCount.subscribe((count) => {
-  //   console.log('Block count:', count)
-  // })
+  infiniteCanvas.store.block.blockCount.subscribe((count) => {
+    console.log('Block count:', count)
+  })
 
   // infiniteCanvas.store.core.selectedBlockCount.subscribe((count) => {
   //   console.log('Selected block count:', count)
@@ -53,8 +49,8 @@ async function initializeCanvas(container: HTMLDivElement) {
   //   })
   // })
 
-  // const size = 1000 //0_000
-  // const nBlocks = 100 //5_000
+  // const size = 10_000
+  // const nBlocks = 5_000
   // for (let i = 0; i < nBlocks; i++) {
   //   const x = 2 * size * (Math.random() - 0.5)
   //   const y = 2 * size * (Math.random() - 0.5)
@@ -92,7 +88,7 @@ function addBlock(left: number, top: number): void {
   const width = 100
   const height = 100
   infiniteCanvas?.commands.block.addBlock({
-    id: uuid(),
+    id: crypto.randomUUID(),
     top,
     left,
     width,

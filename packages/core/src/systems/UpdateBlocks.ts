@@ -1,6 +1,6 @@
 import { BaseSystem, type BlockModel, comps } from '@infinitecanvas/core'
-import type { Entity } from '@lastolivegames/becsy'
-import { BlockCommand, type BlockCommandArgs } from '../types'
+import { binarySearchForId, uuidToNumber } from '../helpers'
+import { BlockCommand, type BlockCommandArgs, type CommandMeta } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 import { UpdateCursor } from './UpdateCursor'
 
@@ -14,7 +14,13 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
   // declaring to becsy that rankBounds is a singleton component
   private readonly _rankBounds = this.singleton.read(comps.RankBounds)
 
-  private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Persistent).write)
+  private readonly blocks = this.query(
+    (q) =>
+      q.current
+        .with(comps.Block)
+        .write.orderBy((e) => uuidToNumber(e.read(comps.Block).id))
+        .using(comps.Persistent).write,
+  )
 
   public constructor() {
     super()
@@ -30,16 +36,26 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
     this.executeCommands()
   }
 
-  private addBlock(block: Partial<BlockModel>): void {
-    block.id = block.id || crypto.randomUUID()
+  private addBlock(meta: CommandMeta, block: Partial<BlockModel>): void {
+    if (!block.id) {
+      console.warn('Block id is required')
+      return
+    }
+
     block.rank = block.rank || this.rankBounds.genNext().toString()
+    block.createdBy = meta.uid
 
     this.createEntity(comps.Block, block, comps.Persistent, { id: block.id })
   }
 
-  private updateBlockPosition(blockEntity: Entity, position: { left: number; top: number }): void {
+  private updateBlockPosition(_meta: CommandMeta, payload: { id: string; left: number; top: number }): void {
+    const blockEntity = binarySearchForId(comps.Block, payload.id, this.blocks.current)
+    if (!blockEntity) {
+      console.warn(`Block with id ${payload.id} not found`)
+      return
+    }
     const block = blockEntity.write(comps.Block)
-    block.left = position.left
-    block.top = position.top
+    block.left = payload.left
+    block.top = payload.top
   }
 }

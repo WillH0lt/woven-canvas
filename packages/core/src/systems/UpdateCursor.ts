@@ -1,7 +1,7 @@
 import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components'
 import { getCursorSvg } from '../helpers'
-import { BlockCommand, type BlockCommandArgs, type CursorIcon } from '../types'
+import { BlockCommand, type BlockCommandArgs, type CommandMeta, type CursorIcon } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 
 export class UpdateCursor extends BaseSystem<BlockCommandArgs> {
@@ -20,15 +20,16 @@ export class UpdateCursor extends BaseSystem<BlockCommandArgs> {
     this.addCommandListener(BlockCommand.SetCursor, this.setCursor.bind(this))
   }
 
-  private setTool(value: string): void {
+  // TODO don't use a command for this
+  private setTool(_meta: CommandMeta, payload: { tool: string }): void {
     const tool = this.tools.current[0].write(comps.Tool)
-    tool.leftMouse = value
+    tool.leftMouse = payload.tool
   }
 
-  private setCursor(icon: CursorIcon, rotateZ = 0): void {
+  private setCursor(_meta: CommandMeta, payload: { icon: CursorIcon; rotateZ: number }): void {
     // TODO rotate the rotation cursor,
     // this should maybe be done in a computed store watcher instead of this system
-    const svg = getCursorSvg(icon, rotateZ)
+    const svg = getCursorSvg(payload.icon, payload.rotateZ)
     document.body.style.cursor = svg
   }
 

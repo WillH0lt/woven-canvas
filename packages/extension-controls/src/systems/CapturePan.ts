@@ -1,11 +1,4 @@
-import {
-  BaseSystem,
-  BlockCommand,
-  type BlockCommandArgs,
-  PointerButton,
-  type PointerEvent,
-  comps,
-} from '@infinitecanvas/core'
+import { BaseSystem, BlockCommand, type BlockCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
 import { assign, setup } from 'xstate'
 import { PanState as PanStateComp } from '../components'
 import { type ControlCommandArgs, PanState } from '../types'
@@ -65,10 +58,10 @@ export class CapturePan extends BaseSystem<ControlCommandArgs & BlockCommandArgs
                 if (!('worldPosition' in event)) return
                 const deltaX = event.worldPosition[0] - context.dragStart[0]
                 const deltaY = event.worldPosition[1] - context.dragStart[1]
-                const cameraX = this.camera.left - deltaX
-                const cameraY = this.camera.top - deltaY
+                const x = this.camera.left - deltaX
+                const y = this.camera.top - deltaY
 
-                this.emitCommand(BlockCommand.MoveCamera, cameraX, cameraY)
+                this.emitCommand(BlockCommand.MoveCamera, { x, y })
               },
             },
           ],
@@ -86,15 +79,7 @@ export class CapturePan extends BaseSystem<ControlCommandArgs & BlockCommandArgs
   }
 
   public execute(): void {
-    let button: PointerButton | null = null
-    if (this.tool.leftMouse === 'pan') {
-      button = PointerButton.Left
-    } else if (this.tool.middleMouse === 'pan') {
-      button = PointerButton.Middle
-    } else if (this.tool.rightMouse === 'pan') {
-      button = PointerButton.Right
-    }
-
+    const button = this.tool.getButton('pan')
     if (button === null) return
 
     const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, {

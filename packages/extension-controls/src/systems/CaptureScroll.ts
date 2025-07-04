@@ -22,9 +22,7 @@ export class CaptureScroll extends BaseSystem<ControlCommandArgs & BlockCommandA
   }
 
   public execute(): void {
-    const active =
-      (this.tool.wheel === 'scroll' && !this.keyboard.modDown) ||
-      (this.tool.modWheel === 'scroll' && this.keyboard.modDown)
+    const active = this.tool.wheelActive('scroll', this.keyboard.modDown)
     if (!active) return
 
     const events = this.getMouseEvents(this.mouse, this.camera, this.intersect)
@@ -33,6 +31,9 @@ export class CaptureScroll extends BaseSystem<ControlCommandArgs & BlockCommandA
     if (!wheelEvent) return
 
     const top = this.camera.top + (1 * wheelEvent.delta) / this.camera.zoom
-    this.emitCommand(BlockCommand.MoveCamera, this.camera.left, top)
+    this.emitCommand(BlockCommand.MoveCamera, {
+      x: this.camera.left,
+      y: top,
+    })
   }
 }

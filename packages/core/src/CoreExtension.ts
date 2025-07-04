@@ -4,12 +4,20 @@ import type { Emitter } from 'strict-event-emitter'
 
 import { ComponentRegistry } from './ComponentRegistry'
 import { Extension } from './Extension'
-import { LocalDB } from './LocalDB'
 import type { State } from './State'
-import { Block, Persistent, Selected } from './components'
+import { Block, Selected } from './components'
 import * as sys from './systems'
-import type { BlockCommandArgs, BlockModel, EmitterEvents, ICommands, IStore, Resources, SendCommandFn } from './types'
-import { BlockCommand, CoreOptions } from './types'
+import type {
+  BlockCommandArgs,
+  BlockModel,
+  CoreResources,
+  EmitterEvents,
+  ICommands,
+  IStore,
+  Resources,
+  SendCommandFn,
+} from './types'
+import { BlockCommand, type CoreOptions } from './types'
 
 // import { type CoreResources, EmitterEventKind, type EmitterEvents, type ICommands, Options } from './types'
 
@@ -38,32 +46,28 @@ declare module '@infinitecanvas/core' {
 export class CoreExtension extends Extension {
   public name = 'core'
 
-  private initialEntities: Record<string, any> = {}
+  private initialEntities: Record<string, Record<string, any>> = {}
 
   constructor(
     private readonly options: CoreOptions,
     private readonly emitter: Emitter<EmitterEvents>,
     private readonly state: State,
-    // private readonly localDB: LocalDB,
   ) {
     super()
   }
 
   public async preBuild(resources: Resources): Promise<void> {
-    const options = CoreOptions.parse(this.options)
-    const localDB = await LocalDB.New(options.persistenceKey)
-    this.initialEntities = await localDB.getAll()
+    // const options = CoreOptions.parse(this.options)
 
     ComponentRegistry.instance.registerHistoryComponent(Block)
 
     ComponentRegistry.instance.registerStateComponent(Block)
     ComponentRegistry.instance.registerStateComponent(Selected)
 
-    const coreResources = {
+    const coreResources: CoreResources = {
       ...resources,
       emitter: this.emitter,
       state: this.state,
-      localDB,
     }
 
     this._preInputGroup = System.group(
@@ -98,30 +102,12 @@ export class CoreExtension extends Extension {
     })
   }
 
-  public build(worldSystem: System): void {
-    const componentNames = new Map(ComponentRegistry.instance.historyComponents.map((c) => [c.name, c]))
-
-    for (const [id, entity] of Object.entries(this.initialEntities)) {
-      const args = []
-      for (const [componentName, model] of Object.entries(entity)) {
-        const Component = componentNames.get(componentName)
-        if (!Component) continue
-        args.push(Component, model)
-      }
-
-      // @ts-ignore
-      worldSystem.createEntity(...args, Persistent, { id })
-    }
-
-    this.initialEntities = {}
-  }
-
   public addCommands = (send: SendCommandFn<BlockCommandArgs>): Partial<ICommands> => {
     return {
       block: {
         addBlock: (block: Partial<BlockModel>) => send(BlockCommand.AddBlock, block),
-        moveCamera: (x: number, y: number) => send(BlockCommand.MoveCamera, x, y),
-        setZoom: (zoom: number) => send(BlockCommand.SetZoom, zoom),
+        moveCamera: (x: number, y: number) => send(BlockCommand.MoveCamera, { x, y }),
+        setZoom: (zoom: number) => send(BlockCommand.SetZoom, { zoom }),
         undo: () => send(BlockCommand.Undo),
         redo: () => send(BlockCommand.Redo),
         createCheckpoint: () => send(BlockCommand.CreateCheckpoint),

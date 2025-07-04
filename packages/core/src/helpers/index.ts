@@ -1,3 +1,7 @@
+export { applyDiff } from './applyDiff'
 export { getCursorSvg } from './getCursorSvg'
 export { computeAabb } from './computeAabb'
 export { intersectPoint } from './intersectPoint'
+export { UuidGenerator } from './UuidGenerator'
+export { uuidToNumber } from './uuidToNumber'
+export { binarySearchForId } from './binarySearchForId'

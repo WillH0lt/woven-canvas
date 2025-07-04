@@ -12,6 +12,12 @@
       "path": "packages/extension-controls"
     },
     {
+      "path": "packages/extension-multiplayer"
+    },
+    {
+      "path": "packages/extension-local-storage"
+    },
+    {
       "path": "packages/extension-input"
     },
     {

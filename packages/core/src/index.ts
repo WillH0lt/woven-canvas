@@ -15,6 +15,8 @@ export {
   type PointerEvent,
   type MouseEvent,
   type BlockModel,
+  type CommandModel,
+  type CommandMeta,
   type CommandArgs,
   type ICommands,
   type IStore,
@@ -22,5 +24,7 @@ export {
   type Resources,
 } from './types'
 
-export { Extension } from './Extension.js'
-export { BaseSystem } from './BaseSystem.js'
+export { Extension } from './Extension'
+export { BaseSystem } from './BaseSystem'
+export { ComponentRegistry } from './ComponentRegistry'
+export { Diff, type State } from './History'

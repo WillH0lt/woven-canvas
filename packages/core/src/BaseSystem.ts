@@ -2,26 +2,27 @@ import { type Entity, type Query, System } from '@lastolivegames/becsy'
 import { type AnyStateMachine, transition } from 'xstate'
 
 import * as comps from './components'
-import type { CommandMap, MouseEvent, PointerButton, PointerEvent } from './types'
+import type { CommandMap, CommandMeta, MouseEvent, PointerButton, PointerEvent, Resources } from './types'
 
-function isEntity(item: any): boolean {
-  // Adjust this check based on the actual structure of your Entity objects
-  return typeof item === 'object' && item.alive && typeof item.__id === 'number'
+function randomString(length: number): string {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length))
+  }
+  return result
 }
-
 export class BaseSystem<Commands extends CommandMap = {}> extends System {
   readonly #_toBeDeleted = this.query((q) => q.with(comps.ToBeDeleted).write)
 
-  readonly #commands = this.query(
-    (q) =>
-      q.added
-        .with(comps.Command)
-        .write.orderBy((e) => e.ordinal)
-        .using(comps.CommandRef).write,
-  )
+  protected readonly resources!: Resources
+
+  readonly #commands = this.query((q) => q.added.with(comps.Command).write.orderBy((e) => e.ordinal))
+
+  protected readonly frame = this.singleton.read(comps.Frame)
 
   private commandListeners: {
-    [K in keyof Commands]?: ((...data: Commands[K]) => void)[]
+    [K in keyof Commands]?: ((meta: CommandMeta, ...data: Commands[K]) => void)[]
   } = {}
 
   public execute(): void {
@@ -39,36 +40,18 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
   }
 
   protected emitCommand<CommandKind extends keyof Commands>(kind: CommandKind, ...data: Commands[CommandKind]): void {
-    // scan data deeply and find values are entities, entities cant survive serialization, so we need to
-    // store them as CommandRef entities, then map them back to the original entities when executing the command
-
-    const entities = [] as Entity[]
-    const payload = JSON.stringify(data, (_key, value) => {
-      if (isEntity(value)) {
-        entities.push(value)
-        return { kind: 'EntityRef', index: entities.length - 1 }
-      }
-      return value
+    this.createEntity(comps.Command, {
+      kind,
+      payload: JSON.stringify(data),
+      uid: this.resources.uid,
+      seed: randomString(8),
+      frame: this.frame.value,
     })
-
-    const command = this.createEntity(
-      comps.Command,
-      {
-        kind,
-        payload,
-      },
-      comps.ToBeDeleted,
-    )
-
-    for (let i = 0; i < entities.length; i++) {
-      const entity = entities[i]
-      this.createEntity(comps.CommandRef, { index: i, entity, command }, comps.ToBeDeleted)
-    }
   }
 
   protected addCommandListener<CommandKind extends keyof Commands>(
     kind: CommandKind,
-    callback: (...data: Commands[CommandKind]) => void,
+    callback: (meta: CommandMeta, ...data: Commands[CommandKind]) => void,
   ): void {
     if (!this.commandListeners[kind]) {
       this.commandListeners[kind] = []
@@ -82,9 +65,11 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
       const listeners = this.commandListeners[command.kind]
 
       if (listeners) {
-        const data = this.#parseCommandPayload(command)
+        const payload = JSON.parse(command.payload)
         for (const listener of listeners) {
-          listener(...data)
+          const meta = { seed: command.seed, uid: command.uid, frame: command.frame }
+          listener(meta, ...payload)
+          // listener(payload, { seed: command.seed, uid: command.uid })
         }
       }
     }
@@ -94,24 +79,12 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
     for (const commandEntity of this.#commands.added) {
       const command = commandEntity.read(comps.Command)
       if (command.kind === kind) {
-        const data = this.#parseCommandPayload(command)
-        return data
+        const payload = JSON.parse(command.payload) as Commands[CommandKind]
+        return payload
       }
     }
 
     return undefined
-  }
-
-  #parseCommandPayload(command: Readonly<comps.Command>): any {
-    const refs = command.refs.map((ref) => ref.read(comps.CommandRef).entity)
-    const data = JSON.parse(command.payload, (_key, value) => {
-      if (value && typeof value === 'object' && value.kind === 'EntityRef') {
-        return refs[value.index]
-      }
-      return value
-    })
-
-    return data
   }
 
   protected getPointerEvents(

@@ -12,7 +12,6 @@ export class ComponentRegistry {
 
   private readonly _historyComponents: (new () => ISerializable)[] = []
   private readonly _stateComponents: (new () => ISerializable)[] = []
-  private readonly _localDBComponents: (new () => ISerializable)[] = []
 
   private constructor() {}
 
@@ -24,10 +23,6 @@ export class ComponentRegistry {
     return this._stateComponents
   }
 
-  public get localDBComponents(): (new () => ISerializable)[] {
-    return this._localDBComponents
-  }
-
   public registerStateComponent(serializable: new () => ISerializable): void {
     if (!this._stateComponents.includes(serializable)) {
       this._stateComponents.push(serializable)
@@ -37,12 +32,6 @@ export class ComponentRegistry {
   public registerHistoryComponent(serializable: new () => ISerializable): void {
     if (!this._historyComponents.includes(serializable)) {
       this._historyComponents.push(serializable)
-    }
-  }
-
-  public registerLocalDBComponent(serializable: new () => ISerializable): void {
-    if (!this._localDBComponents.includes(serializable)) {
-      this._localDBComponents.push(serializable)
     }
   }
 }

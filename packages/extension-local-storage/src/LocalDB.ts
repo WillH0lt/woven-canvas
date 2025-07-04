@@ -1,5 +1,4 @@
-import { openDB } from 'idb'
-import type { IDBPDatabase } from 'idb'
+import { type IDBPDatabase, openDB } from 'idb'
 
 const PREFIX = 'InfiniteCanvas-'
 const OBJECT_STORE_NAME = 'blocks'
@@ -27,9 +26,7 @@ export class LocalDB {
     const name = PREFIX + persistenceKey
     const db = await openDB(name, 1, {
       upgrade(db) {
-        if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
-          db.createObjectStore(OBJECT_STORE_NAME)
-        }
+        db.createObjectStore(OBJECT_STORE_NAME)
       },
     })
 
@@ -42,11 +39,6 @@ export class LocalDB {
     }, COMMIT_INTERVAL)
   }
 
-  public add(id: string, componentName: string, value: any): void {
-    console.log('Adding to LocalDB:', id, componentName, value)
-    this.actions.push({ kind: ActionKind.ADD, key: `${id}/${componentName}`, value })
-  }
-
   public put(id: string, componentName: string, value: any): void {
     this.actions.push({ kind: ActionKind.PUT, key: `${id}/${componentName}`, value })
   }
@@ -55,7 +47,7 @@ export class LocalDB {
     this.actions.push({ kind: ActionKind.DELETE, key: `${id}/${componentName}`, value: undefined })
   }
 
-  public async getAll(): Promise<Record<string, any>> {
+  public async getAll(): Promise<Record<string, Record<string, any>>> {
     if (this.commitPromise) {
       await this.commitPromise
     }
@@ -101,23 +93,24 @@ export class LocalDB {
 }
 
 async function runActions(actions: Action[], db: IDBPDatabase): Promise<void> {
-  if (actions.length > 0) {
-    console.log('Running actions:', actions)
-  }
-
   const tx = db.transaction(OBJECT_STORE_NAME, 'readwrite')
   const store = tx.objectStore(OBJECT_STORE_NAME)
 
   for (const action of actions) {
     switch (action.kind) {
-      case ActionKind.ADD:
-        await store.add(action.value, action.key)
-        break
       case ActionKind.PUT:
-        await store.put(action.value, action.key)
+        try {
+          await store.put(action.value, action.key)
+        } catch (error) {
+          console.error('Error putting to LocalDB:', error)
+        }
         break
       case ActionKind.DELETE:
-        await store.delete(action.key)
+        try {
+          await store.delete(action.key)
+        } catch (error) {
+          console.error('Error deleting from LocalDB:', error)
+        }
         break
     }
   }

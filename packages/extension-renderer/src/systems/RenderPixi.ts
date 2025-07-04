@@ -12,7 +12,7 @@ export class RenderPixi extends System {
 
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
-  private readonly resources!: RendererResources
+  protected declare readonly resources: RendererResources
 
   public execute(): void {
     let needsSorting = false

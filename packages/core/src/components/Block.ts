@@ -15,6 +15,7 @@ export class Block implements ISerializable<BlockModel> {
   @field.uint8 declare green: number
   @field.uint8 declare blue: number
   @field({ type: Type.uint8, default: 255 }) declare alpha: number
+  @field.dynamicString(36) public declare createdBy: string
   // @field.dynamicString(36) public declare tag: string
   // @field.dynamicString(32) public declare layer: string
   @field.dynamicString(36) public declare rank: string
@@ -31,6 +32,7 @@ export class Block implements ISerializable<BlockModel> {
       green: this.green,
       blue: this.blue,
       alpha: this.alpha,
+      createdBy: this.createdBy,
       rank: this.rank,
     }
   }
@@ -46,6 +48,7 @@ export class Block implements ISerializable<BlockModel> {
     this.green = model.green
     this.blue = model.blue
     this.alpha = model.alpha
+    this.createdBy = model.createdBy
     this.rank = model.rank
   }
 }

@@ -1,6 +1,12 @@
-import { BaseSystem, BlockCommand, type BlockCommandArgs, type BlockModel, comps } from '@infinitecanvas/core'
-import { computeAabb } from '@infinitecanvas/core/helpers'
-import type { Entity } from '@lastolivegames/becsy'
+import {
+  BaseSystem,
+  BlockCommand,
+  type BlockCommandArgs,
+  type BlockModel,
+  type CommandMeta,
+  comps,
+} from '@infinitecanvas/core'
+import { UuidGenerator, binarySearchForId, computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
 
 import { SELECTION_BOX_RANK } from '../constants'
 import { intersectAabb } from '../helpers'
@@ -17,7 +23,11 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
   private readonly _rankBounds = this.singleton.read(comps.RankBounds)
 
   private readonly blocks = this.query(
-    (q) => q.current.with(comps.Block, comps.Persistent).write.using(comps.Aabb).read,
+    (q) =>
+      q.current
+        .with(comps.Block, comps.Persistent)
+        .write.orderBy((e) => uuidToNumber(e.read(comps.Block).id))
+        .using(comps.Aabb).read,
   )
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
@@ -27,7 +37,7 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
   public initialize(): void {
     this.addCommandListener(ControlCommand.AddSelectionBox, this.addSelectionBox.bind(this))
     this.addCommandListener(ControlCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
-    this.addCommandListener(ControlCommand.RemoveSelectionBoxes, this.removeSelectionBoxes.bind(this))
+    this.addCommandListener(ControlCommand.RemoveSelectionBox, this.removeSelectionBox.bind(this))
 
     this.addCommandListener(ControlCommand.SelectBlock, this.selectBlock.bind(this))
     this.addCommandListener(ControlCommand.DeselectBlock, this.deselectBlock.bind(this))
@@ -42,79 +52,112 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     this.executeCommands()
   }
 
-  private addSelectionBox(): void {
+  private addSelectionBox(meta: CommandMeta): void {
+    const uuid = new UuidGenerator(meta.seed)
+    const id = uuid.next()
     this.createEntity(
       comps.Block,
       {
-        id: crypto.randomUUID(),
+        id,
         rank: SELECTION_BOX_RANK,
         alpha: 128,
+        createdBy: meta.uid,
       },
       comps.SelectionBox,
     )
   }
 
-  private updateSelectionBox(blockPartial: Partial<BlockModel>): void {
-    if (this.selectionBoxes.current.length === 0) {
-      console.warn('No selection box entity found to update.')
+  private updateSelectionBox(meta: CommandMeta, blockPartial: Partial<BlockModel>): void {
+    const selectionBoxEntity = this.selectionBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+
+    if (!selectionBoxEntity) {
+      console.warn(`Can't update selection box. Selection box not found for user ${meta.uid}`)
       return
     }
 
-    const blockEntity = this.selectionBoxes.current[0]
-    const block = blockEntity.write(comps.Block)
+    const block = selectionBoxEntity.write(comps.Block)
     Object.assign(block, blockPartial)
 
+    // if (meta.uid !== this.resources.uid) return
+
     // const aabb = { left: block.left, top: block.top, right: block.left + block.width, bottom: block.bottom }
-    const aabb = computeAabb(blockEntity)
+    const aabb = computeAabb(selectionBoxEntity)
     const intersectedEntities = intersectAabb(aabb, this.blocks.current)
     for (const selectedEntity of this.selectedBlocks.current) {
       const shouldDeselect = !intersectedEntities.some((entity) => entity.isSame(selectedEntity))
       if (shouldDeselect) {
-        this.deselectBlock(selectedEntity)
+        if (selectedEntity.has(comps.Selected)) selectedEntity.remove(comps.Selected)
       }
     }
 
     for (const entity of intersectedEntities) {
-      this.selectBlock(entity)
+      if (!entity.has(comps.Selected)) {
+        entity.add(comps.Selected, {
+          selectedBy: meta.uid,
+        })
+      }
     }
   }
 
-  private removeSelectionBoxes(): void {
-    for (const selectionBoxEntity of this.selectionBoxes.current) {
-      this.deleteEntity(selectionBoxEntity)
+  private removeSelectionBox(meta: CommandMeta): void {
+    const selectionBoxEntity = this.selectionBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+
+    if (!selectionBoxEntity) {
+      console.warn(`Can't remove selection box. Selection box not found for user ${meta.uid}`)
+      return
     }
+
+    this.deleteEntity(selectionBoxEntity)
   }
 
-  private deselectAll(): void {
+  private deselectAll(meta: CommandMeta): void {
     for (const blockEntity of this.selectedBlocks.current) {
-      this.deselectBlock(blockEntity)
+      if (blockEntity.has(comps.Selected) && blockEntity.read(comps.Selected).selectedBy === meta.uid) {
+        blockEntity.remove(comps.Selected)
+      }
     }
   }
 
-  private selectBlock(blockEntity: Entity, options: SelectBlockOptions = {}): void {
-    if (options.deselectOthers) {
-      this.deselectAll()
+  private selectBlock(meta: CommandMeta, { id, options }: { id: string; options?: SelectBlockOptions }): void {
+    if (options?.deselectOthers) {
+      this.deselectAll(meta)
+    }
+
+    const blockEntity = binarySearchForId(comps.Block, id, this.blocks.current)
+    if (!blockEntity) {
+      console.warn(`Block with id ${id} not found`)
+      return
     }
 
     if (blockEntity.has(comps.Selected)) return
 
-    // const block = blockEntity.write(comps.Block)
-    // block.green = 255
-
-    blockEntity.add(comps.Selected)
+    blockEntity.add(comps.Selected, {
+      selectedBy: meta.uid,
+    })
   }
 
-  private deselectBlock(blockEntity: Entity): void {
+  private deselectBlock(meta: CommandMeta, { id }: { id: string }): void {
+    const blockEntity = binarySearchForId(comps.Block, id, this.blocks.current)
+    if (!blockEntity) {
+      console.warn(`Block with id ${id} not found`)
+      return
+    }
+
     if (!blockEntity.has(comps.Selected)) return
-    blockEntity.remove(comps.Selected)
+    if (blockEntity.read(comps.Selected).selectedBy !== meta.uid) return
 
-    // const block = blockEntity.write(comps.Block)
-    // block.green = 0
+    blockEntity.remove(comps.Selected)
   }
 
-  private removeSelected(): void {
+  private removeSelected(meta: CommandMeta): void {
     for (const blockEntity of this.selectedBlocks.current) {
-      this.deleteEntity(blockEntity)
+      if (blockEntity.read(comps.Selected).selectedBy === meta.uid) {
+        this.deleteEntity(blockEntity)
+      }
+    }
+
+    if (meta.uid === this.resources.uid) {
+      this.emitCommand(BlockCommand.CreateCheckpoint)
     }
   }
 }

@@ -15,7 +15,7 @@ function getPointerButton(b: number): PointerButton {
 export class InputPointer extends System {
   private readonly pointers = this.query((q) => q.current.with(comps.Pointer).write)
 
-  private readonly resources!: Resources
+  protected declare readonly resources: Resources
 
   private pointerUpFrames = new Set<string>()
 

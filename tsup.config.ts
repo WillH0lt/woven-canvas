@@ -9,7 +9,7 @@ export default defineConfig({
   outDir: 'build',
   esbuildPlugins: [
     replace({
-      '@infinitecanvas/ecs': '@infinitecanvas/ecs/perf',
+      '@lastolivegames/becsy': '@lastolivegames/becsy/perf',
     }),
   ],
 })

@@ -1,13 +1,21 @@
-import { component } from '@lastolivegames/becsy'
+import { component, field } from '@lastolivegames/becsy'
 import type { ISerializable } from '../types'
 
+interface SelectedModel {
+  selectedBy: string
+}
+
 @component
-export class Selected implements ISerializable<Record<string, never>> {
-  public toModel(): Record<string, never> {
-    return {}
+export class Selected implements ISerializable<SelectedModel> {
+  @field.dynamicString(36) public declare selectedBy: string
+
+  public toModel(): SelectedModel {
+    return {
+      selectedBy: this.selectedBy,
+    }
   }
 
-  public fromModel(): void {
-    // No-op, as this component does not hold any data
+  public fromModel(model: SelectedModel): void {
+    this.selectedBy = model.selectedBy
   }
 }

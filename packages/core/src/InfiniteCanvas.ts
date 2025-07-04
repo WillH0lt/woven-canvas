@@ -4,6 +4,7 @@ import type { z } from 'zod/v4'
 import { Emitter } from 'strict-event-emitter'
 import { CoreExtension } from './CoreExtension'
 import type { Extension } from './Extension'
+import { History } from './History'
 import { State } from './State'
 import { EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options, type Resources } from './types'
 
@@ -40,6 +41,8 @@ export class InfiniteCanvas {
 
     const resources = {
       domElement,
+      uid: crypto.randomUUID(),
+      history: new History(),
     }
 
     const emitter = new Emitter<EmitterEvents>()

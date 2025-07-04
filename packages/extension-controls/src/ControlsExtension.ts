@@ -41,6 +41,10 @@ export class ControlsExtension extends Extension {
       { resources: r },
     )
 
+    // this._preUpdateGroup = System.group(sys.PreUpdateSelection, { resources: r }, sys.PreUpdateTransformBox, {
+    //   resources: r,
+    // })
+
     this._updateGroup = System.group(sys.UpdateSelection, { resources: r }, sys.UpdateTransformBox, { resources: r })
   }
 
