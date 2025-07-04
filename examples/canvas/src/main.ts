@@ -3,7 +3,7 @@ import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
-// import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
+import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
 import { RendererExtension } from '@infinitecanvas/extension-renderer'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -20,7 +20,7 @@ async function initializeCanvas(container: HTMLDivElement) {
     new InputExtension(),
     new ControlsExtension(),
     new RendererExtension(),
-    // new MultiplayerExtension(),
+    new MultiplayerExtension(),
     new LocalStorageExtension(),
   ])
   container.appendChild(infiniteCanvas.domElement)
