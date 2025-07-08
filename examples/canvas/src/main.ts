@@ -1,15 +1,34 @@
+import { LoremIpsum } from "lorem-ipsum";
+
 import './style.css'
-import { InfiniteCanvas } from '@infinitecanvas/core'
+import { type BlockModel, InfiniteCanvas } from '@infinitecanvas/core'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
 import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
 import { RendererExtension } from '@infinitecanvas/extension-renderer'
 
+const lorem = new LoremIpsum({
+  sentencesPerParagraph: {
+    max: 8,
+    min: 4
+  },
+  wordsPerSentence: {
+    max: 16,
+    min: 4
+  }
+});
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="container" class="absolute inset-0"></div>
-  <div class="absolute bottom-0 left-0 p-4">
-    x: <span id="x">0</span>, y: <span id="y">0</span>
+
+  <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 p-4 bg-white rounded shadow flex gap-4 cursor-pointer">
+    <button id="blockBtn" class="bg-amber-300 p-2 rounded">
+      block
+    </button>
+    <button id="textBtn" class="bg-amber-300 p-2 rounded">
+      text
+    </button>
   </div>
 `
 
@@ -84,18 +103,40 @@ document.addEventListener('keydown', (event) => {
   // }
 })
 
-function addBlock(left: number, top: number): void {
-  const width = 100
-  const height = 100
-  infiniteCanvas?.commands.block.addBlock({
+document.querySelector<HTMLDivElement>('#blockBtn')!.addEventListener('click', () => {
+  const left = Math.random() * window.innerWidth
+  const top = Math.random() * window.innerHeight
+  addBlock(left, top)
+})
+
+document.querySelector<HTMLDivElement>('#textBtn')!.addEventListener('click', () => {
+  const left = Math.random() * window.innerWidth
+  const top = Math.random() * window.innerHeight
+  addText(left, top)
+})
+
+function generateBlock(block: Partial<BlockModel>): Partial<BlockModel> {
+  return {
     id: crypto.randomUUID(),
-    top,
-    left,
-    width,
-    height,
+    left: Math.random() * window.innerWidth,
+    top: Math.random() * window.innerHeight,
+    width: 100,
+    height: 100,
+    tag: 'block',
     red: Math.floor(Math.random() * 256),
     green: Math.floor(Math.random() * 256),
     blue: Math.floor(Math.random() * 256),
     alpha: 255,
-  })
+    ...block,
+  }
+}
+
+function addBlock(left: number, top: number): void {
+  const block = generateBlock({ left, top })
+  infiniteCanvas?.commands.block.addBlock(block)
+}
+
+function addText(left: number, top: number): void {
+  const block = generateBlock({ left, top })
+  infiniteCanvas?.commands.block.addText(block, { content: lorem.generateParagraphs(5), fontSize: 24 })
 }

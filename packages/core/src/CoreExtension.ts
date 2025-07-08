@@ -5,7 +5,7 @@ import type { Emitter } from 'strict-event-emitter'
 import { ComponentRegistry } from './ComponentRegistry'
 import { Extension } from './Extension'
 import type { State } from './State'
-import { Block, Selected } from './components'
+import { Block, Selected, Text } from './components'
 import * as sys from './systems'
 import type {
   BlockCommandArgs,
@@ -25,6 +25,7 @@ declare module '@infinitecanvas/core' {
   interface ICommands {
     block: {
       addBlock: (block: Partial<BlockModel>) => void
+      addText: (block: Partial<BlockModel>, text: Partial<{ content: string; fontSize: number }>) => void
       moveCamera: (x: number, y: number) => void
       setZoom: (zoom: number) => void
       undo: () => void
@@ -60,9 +61,11 @@ export class CoreExtension extends Extension {
     // const options = CoreOptions.parse(this.options)
 
     ComponentRegistry.instance.registerHistoryComponent(Block)
+    ComponentRegistry.instance.registerHistoryComponent(Text)
 
     ComponentRegistry.instance.registerStateComponent(Block)
     ComponentRegistry.instance.registerStateComponent(Selected)
+    ComponentRegistry.instance.registerStateComponent(Text)
 
     const coreResources: CoreResources = {
       ...resources,
@@ -106,6 +109,8 @@ export class CoreExtension extends Extension {
     return {
       block: {
         addBlock: (block: Partial<BlockModel>) => send(BlockCommand.AddBlock, block),
+        addText: (block: Partial<BlockModel>, text: Partial<{ content: string; fontSize: number }>) =>
+          send(BlockCommand.AddText, block, text),
         moveCamera: (x: number, y: number) => send(BlockCommand.MoveCamera, { x, y }),
         setZoom: (zoom: number) => send(BlockCommand.SetZoom, { zoom }),
         undo: () => send(BlockCommand.Undo),

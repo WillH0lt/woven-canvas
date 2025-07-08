@@ -1,13 +1,11 @@
 import type { Resources } from '@infinitecanvas/core'
 import { Extension } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
-import { Application, Container } from 'pixi.js'
+import { Application, Assets, Container } from 'pixi.js'
 
 import * as sys from './systems/index.js'
 
 export class RendererExtension extends Extension {
-  public _pixiApp: Application | null = null
-
   public async preBuild(resources: Resources): Promise<void> {
     const app = new Application()
 
@@ -31,6 +29,8 @@ export class RendererExtension extends Extension {
 
     resources.domElement.append(app.renderer.canvas)
 
+    await Assets.load('./Figtree.fnt')
+
     const group = System.group(sys.RenderPixi, {
       resources: {
         ...resources,
@@ -40,6 +40,5 @@ export class RendererExtension extends Extension {
     })
 
     this._renderGroup = group
-    this._pixiApp = app
   }
 }

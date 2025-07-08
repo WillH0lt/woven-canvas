@@ -51,13 +51,23 @@ export interface BlockModel {
   left: number
   width: number
   height: number
+  rotateZ: number
   red: number
   green: number
   blue: number
   alpha: number
   createdBy: string
-  rotateZ: number
+  tag: string
   rank: string
+}
+
+export interface TextModel {
+  content: string
+  align: string
+  fontSize: number
+  red: number
+  green: number
+  blue: number
 }
 
 export interface CommandModel {
@@ -133,6 +143,7 @@ export enum BlockCommand {
   MoveCamera = 'moveCamera',
 
   AddBlock = 'addBlock',
+  AddText = 'addText',
   UpdateBlockPosition = 'updateBlockPosition',
 
   SetTool = 'setTool',
@@ -145,6 +156,7 @@ export enum BlockCommand {
 
 export type BlockCommandArgs = {
   [BlockCommand.AddBlock]: [Partial<BlockModel>]
+  [BlockCommand.AddText]: [Partial<BlockModel>, Partial<TextModel>]
   [BlockCommand.UpdateBlockPosition]: [
     {
       id: string

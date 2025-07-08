@@ -7,5 +7,7 @@ export class SelectionBox implements ISerializable {
     return {}
   }
 
-  public fromModel(): void {}
+  public fromModel(): void {
+    // No-op
+  }
 }

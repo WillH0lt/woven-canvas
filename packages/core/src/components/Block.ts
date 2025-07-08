@@ -3,8 +3,6 @@ import type { BlockModel, ISerializable } from '../types'
 
 @component
 export class Block implements ISerializable<BlockModel> {
-  // ephemeral = true
-
   @field.dynamicString(36) public declare id: string
   @field.float32 declare top: number
   @field.float32 declare left: number
@@ -16,7 +14,7 @@ export class Block implements ISerializable<BlockModel> {
   @field.uint8 declare blue: number
   @field({ type: Type.uint8, default: 255 }) declare alpha: number
   @field.dynamicString(36) public declare createdBy: string
-  // @field.dynamicString(36) public declare tag: string
+  @field.dynamicString(36) public declare tag: string
   // @field.dynamicString(32) public declare layer: string
   @field.dynamicString(36) public declare rank: string
 
@@ -33,6 +31,7 @@ export class Block implements ISerializable<BlockModel> {
       blue: this.blue,
       alpha: this.alpha,
       createdBy: this.createdBy,
+      tag: this.tag,
       rank: this.rank,
     }
   }
@@ -49,6 +48,7 @@ export class Block implements ISerializable<BlockModel> {
     this.blue = model.blue
     this.alpha = model.alpha
     this.createdBy = model.createdBy
+    this.tag = model.tag
     this.rank = model.rank
   }
 }

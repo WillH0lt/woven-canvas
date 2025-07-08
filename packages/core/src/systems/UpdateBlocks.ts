@@ -1,6 +1,8 @@
 import { BaseSystem, type BlockModel, comps } from '@infinitecanvas/core'
+import type { Entity } from '@lastolivegames/becsy'
+
 import { binarySearchForId, uuidToNumber } from '../helpers'
-import { BlockCommand, type BlockCommandArgs, type CommandMeta } from '../types'
+import { BlockCommand, type BlockCommandArgs, type CommandMeta, type TextModel } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 import { UpdateCursor } from './UpdateCursor'
 
@@ -19,7 +21,7 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
       q.current
         .with(comps.Block)
         .write.orderBy((e) => uuidToNumber(e.read(comps.Block).id))
-        .using(comps.Persistent).write,
+        .using(comps.Persistent, comps.Text).write,
   )
 
   public constructor() {
@@ -29,6 +31,7 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
 
   public initialize(): void {
     this.addCommandListener(BlockCommand.AddBlock, this.addBlock.bind(this))
+    this.addCommandListener(BlockCommand.AddText, this.addText.bind(this))
     this.addCommandListener(BlockCommand.UpdateBlockPosition, this.updateBlockPosition.bind(this))
   }
 
@@ -36,16 +39,25 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
     this.executeCommands()
   }
 
-  private addBlock(meta: CommandMeta, block: Partial<BlockModel>): void {
+  private addBlock(_meta: CommandMeta, block: Partial<BlockModel>): void {
+    this._addBlock(block)
+  }
+
+  private addText(_meta: CommandMeta, block: Partial<BlockModel>, text: Partial<TextModel>): void {
+    const entity = this._addBlock(block)
+
+    entity.add(comps.Text, { ...text })
+  }
+
+  private _addBlock(block: Partial<BlockModel>): Entity {
     if (!block.id) {
       console.warn('Block id is required')
-      return
     }
 
     block.rank = block.rank || this.rankBounds.genNext().toString()
-    block.createdBy = meta.uid
+    block.createdBy = this.resources.uid
 
-    this.createEntity(comps.Block, block, comps.Persistent, { id: block.id })
+    return this.createEntity(comps.Block, block, comps.Persistent, { id: block.id })
   }
 
   private updateBlockPosition(_meta: CommandMeta, payload: { id: string; left: number; top: number }): void {

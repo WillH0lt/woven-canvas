@@ -5,7 +5,7 @@ import type { CommandModel, ISerializable } from '../types'
 @component
 export class Command implements ISerializable {
   @field.dynamicString(32) public declare kind: string
-  @field.dynamicString(512) public declare payload: string
+  @field.dynamicString(1e4) public declare payload: string
   @field.dynamicString(36) public declare uid: string
   @field.dynamicString(36) public declare seed: string
   @field.uint32 public declare frame: number
