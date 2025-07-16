@@ -9,13 +9,8 @@ export class Block implements ISerializable<BlockModel> {
   @field.float32 declare width: number
   @field.float32 declare height: number
   @field.float32 declare rotateZ: number
-  @field.uint8 declare red: number
-  @field.uint8 declare green: number
-  @field.uint8 declare blue: number
-  @field({ type: Type.uint8, default: 255 }) declare alpha: number
   @field.dynamicString(36) public declare createdBy: string
-  @field.dynamicString(36) public declare tag: string
-  // @field.dynamicString(32) public declare layer: string
+  @field({ type: Type.dynamicString(36), default: 'ic-shape' }) public declare tag: string
   @field.dynamicString(36) public declare rank: string
 
   toModel(): BlockModel {
@@ -26,10 +21,6 @@ export class Block implements ISerializable<BlockModel> {
       width: this.width,
       height: this.height,
       rotateZ: this.rotateZ,
-      red: this.red,
-      green: this.green,
-      blue: this.blue,
-      alpha: this.alpha,
       createdBy: this.createdBy,
       tag: this.tag,
       rank: this.rank,
@@ -43,10 +34,6 @@ export class Block implements ISerializable<BlockModel> {
     this.width = model.width
     this.height = model.height
     this.rotateZ = model.rotateZ
-    this.red = model.red
-    this.green = model.green
-    this.blue = model.blue
-    this.alpha = model.alpha
     this.createdBy = model.createdBy
     this.tag = model.tag
     this.rank = model.rank

@@ -15,6 +15,7 @@
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/extension-controls": "workspace:^",
+    "@infinitecanvas/extension-html-renderer": "workspace:^",
     "@infinitecanvas/extension-input": "workspace:^",
     "@infinitecanvas/extension-local-storage": "workspace:^",
     "@infinitecanvas/extension-multiplayer": "workspace:^",

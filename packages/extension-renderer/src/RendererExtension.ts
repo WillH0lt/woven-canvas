@@ -27,9 +27,11 @@ export class RendererExtension extends Extension {
     const viewport = new Container()
     app.stage.addChild(viewport)
 
-    resources.domElement.append(app.renderer.canvas)
+    resources.domElement.prepend(app.renderer.canvas)
 
-    await Assets.load('./Figtree.fnt')
+    // await Assets.load('./Figtree.fnt')
+
+    await Assets.addBundle('fonts', [{ alias: 'Figtree', src: './Figtree.ttf' }])
 
     const group = System.group(sys.RenderPixi, {
       resources: {

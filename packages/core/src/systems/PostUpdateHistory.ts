@@ -84,7 +84,6 @@ export class PostUpdateHistory extends BaseSystem<BlockCommandArgs> {
     if (!diff) return
 
     applyDiff(this, diff, this.entities)
-    // this.syncLocalDB(diff)
   }
 
   private redo(): void {
@@ -92,13 +91,9 @@ export class PostUpdateHistory extends BaseSystem<BlockCommandArgs> {
     if (!diff) return
 
     applyDiff(this, diff, this.entities)
-    // this.syncLocalDB(diff)
   }
 
   private createCheckpoint(): void {
-    const diff = this.resources.history.createCheckpoint()
-    if (!diff) return
-
-    // this.syncLocalDB(diff)
+    this.resources.history.createCheckpoint()
   }
 }

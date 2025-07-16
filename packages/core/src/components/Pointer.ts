@@ -5,6 +5,7 @@ import { PointerButton, PointerType } from '../types'
 export class Pointer {
   @field.uint16 public declare id: number
   @field.int32.vector(2) public declare downPosition: [number, number]
+  @field.uint32 public declare downFrame: number
   @field.int32.vector(2) public declare position: [number, number]
   @field({ type: Type.staticString(Object.values(PointerType)) })
   public declare pointerType: PointerType

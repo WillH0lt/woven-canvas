@@ -20,7 +20,6 @@ export class UpdateCursor extends BaseSystem<BlockCommandArgs> {
     this.addCommandListener(BlockCommand.SetCursor, this.setCursor.bind(this))
   }
 
-  // TODO don't use a command for this
   private setTool(_meta: CommandMeta, payload: { tool: string }): void {
     const tool = this.tools.current[0].write(comps.Tool)
     tool.leftMouse = payload.tool

@@ -1,11 +1,10 @@
 import { System } from '@lastolivegames/becsy'
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
-
 import { ComponentRegistry } from './ComponentRegistry'
 import { Extension } from './Extension'
 import type { State } from './State'
-import { Block, Selected, Text } from './components'
+import { Block, Selected, Shape, Text } from './components'
 import * as sys from './systems'
 import type {
   BlockCommandArgs,
@@ -16,6 +15,8 @@ import type {
   IStore,
   Resources,
   SendCommandFn,
+  ShapeModel,
+  TextModel,
 } from './types'
 import { BlockCommand, type CoreOptions } from './types'
 
@@ -24,8 +25,8 @@ import { BlockCommand, type CoreOptions } from './types'
 declare module '@infinitecanvas/core' {
   interface ICommands {
     block: {
-      addBlock: (block: Partial<BlockModel>) => void
-      addText: (block: Partial<BlockModel>, text: Partial<{ content: string; fontSize: number }>) => void
+      addShape: (block: Omit<Partial<BlockModel>, 'tag'>, shape: Partial<ShapeModel>) => void
+      addText: (block: Omit<Partial<BlockModel>, 'tag'>, text: Partial<TextModel>) => void
       moveCamera: (x: number, y: number) => void
       setZoom: (zoom: number) => void
       undo: () => void
@@ -62,10 +63,12 @@ export class CoreExtension extends Extension {
 
     ComponentRegistry.instance.registerHistoryComponent(Block)
     ComponentRegistry.instance.registerHistoryComponent(Text)
+    ComponentRegistry.instance.registerHistoryComponent(Shape)
 
     ComponentRegistry.instance.registerStateComponent(Block)
     ComponentRegistry.instance.registerStateComponent(Selected)
     ComponentRegistry.instance.registerStateComponent(Text)
+    ComponentRegistry.instance.registerStateComponent(Shape)
 
     const coreResources: CoreResources = {
       ...resources,
@@ -96,9 +99,14 @@ export class CoreExtension extends Extension {
       { resources: coreResources },
     )
 
-    this._postUpdateGroup = System.group(sys.PostUpdateDeleter, { resources: coreResources }, sys.PostUpdateHistory, {
-      resources: coreResources,
-    })
+    this._postUpdateGroup = System.group(
+      sys.PostUpdateDeleter,
+      { resources: coreResources },
+      sys.PostUpdateHistory,
+      { resources: coreResources },
+      sys.PostUpdateFontSizer,
+      { resources: coreResources },
+    )
 
     this._postRenderGroup = System.group(sys.PostRenderStoreSync, {
       resources: coreResources,
@@ -108,9 +116,8 @@ export class CoreExtension extends Extension {
   public addCommands = (send: SendCommandFn<BlockCommandArgs>): Partial<ICommands> => {
     return {
       block: {
-        addBlock: (block: Partial<BlockModel>) => send(BlockCommand.AddBlock, block),
-        addText: (block: Partial<BlockModel>, text: Partial<{ content: string; fontSize: number }>) =>
-          send(BlockCommand.AddText, block, text),
+        addShape: (block: Partial<BlockModel>, shape: Partial<ShapeModel>) => send(BlockCommand.AddShape, block, shape),
+        addText: (block: Partial<BlockModel>, text: Partial<TextModel>) => send(BlockCommand.AddText, block, text),
         moveCamera: (x: number, y: number) => send(BlockCommand.MoveCamera, { x, y }),
         setZoom: (zoom: number) => send(BlockCommand.SetZoom, { zoom }),
         undo: () => send(BlockCommand.Undo),

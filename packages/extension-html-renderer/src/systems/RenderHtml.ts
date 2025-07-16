@@ -1,0 +1,132 @@
+import { BaseSystem, comps } from '@infinitecanvas/core'
+import type { Entity } from '@lastolivegames/becsy'
+import type { ShapeElement, TextElement } from '../elements'
+import type { HtmlRendererResources } from '../types'
+
+export class RenderHtml extends BaseSystem {
+  protected declare readonly resources: HtmlRendererResources
+
+  private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
+
+  private readonly blocks = this.query((q) => q.added.changed.removed.with(comps.Block).trackWrites)
+
+  private readonly opacityBlocks = this.query(
+    (q) => q.addedChangedOrRemoved.with(comps.Block, comps.Opacity).trackWrites,
+  )
+
+  private readonly shapes = this.query(
+    (q) => q.addedOrChanged.with(comps.Shape).trackWrites.using(comps.Opacity).read.trackWrites,
+  )
+
+  private readonly texts = this.query(
+    (q) => q.addedOrChanged.with(comps.Text, comps.FontSize).trackWrites.using(comps.Opacity).read.trackWrites,
+  )
+
+  public execute(): void {
+    // update viewport
+    if (this.cameras.changed.length > 0) {
+      const camera = this.cameras.changed[0].read(comps.Camera)
+      const viewport = this.resources.viewport
+      viewport.style.transformOrigin = '0 0'
+      viewport.style.transform = `translate(${-camera.left * camera.zoom}px, ${-camera.top * camera.zoom}px) scale(${camera.zoom})`
+      viewport.style.position = 'relative'
+    }
+
+    // render blocks
+    for (const blockEntity of this.blocks.added) {
+      const element = this.createBlockElement(blockEntity)
+      this.updateBlockElementHtml(blockEntity, element)
+      this.resources.viewport.appendChild(element)
+    }
+
+    for (const blockEntity of this.blocks.changed) {
+      const block = blockEntity.read(comps.Block)
+      const element = this.resources.viewport.querySelector<HTMLElement>(`[id='${block.id}']`)
+      if (!element) continue
+      this.updateBlockElementHtml(blockEntity, element)
+    }
+
+    // block opacity
+    for (const blockEntity of this.opacityBlocks.addedChangedOrRemoved) {
+      if (!blockEntity.alive) continue
+      const block = blockEntity.read(comps.Block)
+      const element = this.resources.viewport.querySelector<HTMLElement>(`[id='${block.id}']`)
+      if (!element) continue
+      this.updateOpacityBlockHtml(blockEntity, element)
+    }
+
+    // shapes
+    for (const shapeEntity of this.shapes.addedOrChanged) {
+      const block = shapeEntity.read(comps.Block)
+      const element = this.resources.viewport.querySelector<ShapeElement>(`[id='${block.id}']`)
+      if (element) {
+        this.updateShapeElementHtml(shapeEntity, element)
+      }
+    }
+
+    // texts
+    for (const textEntity of this.texts.addedOrChanged) {
+      const block = textEntity.read(comps.Block)
+      const element = this.resources.viewport.querySelector<TextElement>(`[id='${block.id}']`)
+      if (element) {
+        this.updateTextElementHtml(textEntity, element)
+      }
+    }
+
+    // remove blocks
+    if (this.blocks.removed.length > 0) {
+      this.accessRecentlyDeletedData()
+    }
+    for (const blockEntity of this.blocks.removed) {
+      const block = blockEntity.read(comps.Block)
+      const element = this.resources.viewport.querySelector<HTMLElement>(`[id='${block.id}']`)
+      if (!element) continue
+      this.resources.viewport.removeChild(element)
+    }
+  }
+
+  private createBlockElement(entity: Entity): HTMLElement {
+    const block = entity.read(comps.Block)
+    const element = document.createElement(block.tag)
+    element.id = block.id
+
+    return element
+  }
+
+  private updateBlockElementHtml(entity: Entity, element: HTMLElement): void {
+    const block = entity.read(comps.Block)
+
+    element.style.position = 'absolute'
+    element.style.userSelect = 'none'
+    element.style.pointerEvents = 'none'
+    element.style.display = 'block'
+
+    element.style.left = `${block.left}px`
+    element.style.top = `${block.top}px`
+    element.style.width = `${block.width}px`
+    element.style.height = `${block.height}px`
+    element.style.transform = `rotateZ(${block.rotateZ}rad)`
+  }
+
+  private updateOpacityBlockHtml(entity: Entity, element: HTMLElement): void {
+    let opacity = 1
+    if (entity.has(comps.Opacity)) {
+      opacity = entity.read(comps.Opacity).value / 255
+    }
+    element.style.opacity = `${opacity}`
+  }
+
+  private updateShapeElementHtml(entity: Entity, element: ShapeElement): void {
+    const shape = entity.read(comps.Shape)
+    element.style.backgroundColor = `rgba(${shape.red}, ${shape.green}, ${shape.blue}, ${shape.alpha / 255})`
+  }
+
+  private updateTextElementHtml(entity: Entity, element: TextElement): void {
+    const text = entity.read(comps.Text)
+    const fontSize = entity.read(comps.FontSize)
+
+    element.model = text.toModel()
+    element.fontSize = fontSize.value
+    element.requestUpdate()
+  }
+}

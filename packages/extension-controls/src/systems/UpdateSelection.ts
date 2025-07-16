@@ -8,6 +8,7 @@ import {
 } from '@infinitecanvas/core'
 import { UuidGenerator, binarySearchForId, computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
 
+import { SelectionBox } from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
 import { intersectAabb } from '../helpers'
 import { ControlCommand, type ControlCommandArgs, type SelectBlockOptions } from '../types'
@@ -32,7 +33,7 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
 
-  private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, comps.SelectionBox).write)
+  private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, comps.Shape, SelectionBox).write)
 
   public initialize(): void {
     this.addCommandListener(ControlCommand.AddSelectionBox, this.addSelectionBox.bind(this))
@@ -60,10 +61,13 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
       {
         id,
         rank: SELECTION_BOX_RANK,
-        alpha: 128,
         createdBy: meta.uid,
       },
-      comps.SelectionBox,
+      comps.Shape,
+      {
+        alpha: 128,
+      },
+      SelectionBox,
     )
   }
 

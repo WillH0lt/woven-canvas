@@ -1,23 +1,23 @@
-import { LoremIpsum } from "lorem-ipsum";
+import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
 import { type BlockModel, InfiniteCanvas } from '@infinitecanvas/core'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
+// import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
+import { HtmlRendererExtension } from '@infinitecanvas/extension-html-renderer'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
-import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
-import { RendererExtension } from '@infinitecanvas/extension-renderer'
 
 const lorem = new LoremIpsum({
   sentencesPerParagraph: {
     max: 8,
-    min: 4
+    min: 4,
   },
   wordsPerSentence: {
     max: 16,
-    min: 4
-  }
-});
+    min: 4,
+  },
+})
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="container" class="absolute inset-0"></div>
@@ -35,11 +35,14 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 let infiniteCanvas: InfiniteCanvas | null = null
 
 async function initializeCanvas(container: HTMLDivElement) {
+  await loadFont('Figtree')
+
   infiniteCanvas = await InfiniteCanvas.New([
     new InputExtension(),
     new ControlsExtension(),
-    new RendererExtension(),
-    new MultiplayerExtension(),
+    new HtmlRendererExtension(),
+    // new OverlayExtension(),
+    // new MultiplayerExtension(),
     new LocalStorageExtension(),
   ])
   container.appendChild(infiniteCanvas.domElement)
@@ -97,16 +100,12 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'q') {
     infiniteCanvas?.commands.block.createCheckpoint()
   }
-
-  // if (event.key === 'u') {
-  //   infiniteCanvas?.commands.block.setTool(Tool.AddBlock, { width: 150, height: 150, blue: 255 })
-  // }
 })
 
 document.querySelector<HTMLDivElement>('#blockBtn')!.addEventListener('click', () => {
   const left = Math.random() * window.innerWidth
   const top = Math.random() * window.innerHeight
-  addBlock(left, top)
+  addShape(left, top)
 })
 
 document.querySelector<HTMLDivElement>('#textBtn')!.addEventListener('click', () => {
@@ -117,26 +116,47 @@ document.querySelector<HTMLDivElement>('#textBtn')!.addEventListener('click', ()
 
 function generateBlock(block: Partial<BlockModel>): Partial<BlockModel> {
   return {
-    id: crypto.randomUUID(),
     left: Math.random() * window.innerWidth,
     top: Math.random() * window.innerHeight,
     width: 100,
     height: 100,
-    tag: 'block',
-    red: Math.floor(Math.random() * 256),
-    green: Math.floor(Math.random() * 256),
-    blue: Math.floor(Math.random() * 256),
-    alpha: 255,
     ...block,
   }
 }
 
-function addBlock(left: number, top: number): void {
+function addShape(left: number, top: number): void {
   const block = generateBlock({ left, top })
-  infiniteCanvas?.commands.block.addBlock(block)
+  infiniteCanvas?.commands.block.addShape(block, {
+    red: Math.floor(Math.random() * 256),
+    green: Math.floor(Math.random() * 256),
+    blue: Math.floor(Math.random() * 256),
+    alpha: 255,
+  })
 }
 
 function addText(left: number, top: number): void {
   const block = generateBlock({ left, top })
-  infiniteCanvas?.commands.block.addText(block, { content: lorem.generateParagraphs(5), fontSize: 24 })
+  infiniteCanvas?.commands.block.addText(block, {
+    content: lorem.generateSentences(1),
+    fontFamily: 'Figtree',
+    red: Math.floor(Math.random() * 256),
+    green: Math.floor(Math.random() * 256),
+    blue: Math.floor(Math.random() * 256),
+    alpha: 255,
+  })
+}
+
+function loadFont(fontFamily: string): Promise<void> {
+  return new Promise((resolve) => {
+    const href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@300&display=swap`
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = href
+    link.onload = (): void => {
+      resolve()
+    }
+    document.head.appendChild(link)
+
+    // loadedFonts.push(fontFamily);
+  })
 }

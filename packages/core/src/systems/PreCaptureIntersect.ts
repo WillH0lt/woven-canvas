@@ -32,9 +32,8 @@ export class PreCaptureIntersect extends System {
       Object.assign(blockEntity.write(comps.Aabb), aabb)
     }
 
-    if (this.mouse.moveTrigger) {
+    if (this.mouse.moveTrigger || this.blocks.addedOrChanged.length > 0) {
       const point = this.camera.toWorld(this.mouse.position)
-
       this.intersect.entity = intersectPoint(point, this.blocks.current)
     }
   }

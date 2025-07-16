@@ -15,6 +15,7 @@ export {
   type PointerEvent,
   type MouseEvent,
   type BlockModel,
+  type TextModel,
   type CommandModel,
   type CommandMeta,
   type CommandArgs,

@@ -6,7 +6,6 @@ import * as comps from '../components'
 import {
   BlockCommand,
   type BlockCommandArgs,
-  type BlockModel,
   CursorIcon,
   CursorState,
   type MouseEvent,
@@ -163,19 +162,19 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
             target: CursorState.Select,
           },
           pointerUp: {
-            actions: ({ context, event }) => {
-              let block: Partial<BlockModel> = {}
-              try {
-                block = JSON.parse(context.heldBlock)
-              } catch (e) {
-                console.error('Failed to parse held block:', e)
-              }
-              this.emitCommand(BlockCommand.AddBlock, {
-                ...block,
-                left: event.worldPosition[0],
-                top: event.worldPosition[1],
-              })
-            },
+            // actions: ({ context, event }) => {
+            //   let block: Partial<BlockModel> = {}
+            //   try {
+            //     block = JSON.parse(context.heldBlock)
+            //   } catch (e) {
+            //     console.error('Failed to parse held block:', e)
+            //   }
+            //   this.emitCommand(BlockCommand.AddShape, {
+            //     ...block,
+            //     left: event.worldPosition[0],
+            //     top: event.worldPosition[1],
+            //   })
+            // },
             target: CursorState.Select,
           },
         },

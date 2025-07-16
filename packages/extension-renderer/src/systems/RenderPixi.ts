@@ -23,13 +23,13 @@ import type { RendererResources } from '../types'
 
 //   while (high - low > tolerance && guesses < 15) {
 //     guesses++;
-    
+
 //     fontSize = (low + high) / 2;
 //     testStyle.fontSize = fontSize;
-    
+
 //     const layout = PIXI.getBitmapTextLayout(chars, testStyle, bitmapFont, false);
 //     const actualHeight = layout.lines.length * lineHeight * fontSize;
-    
+
 //     if (actualHeight > height) {
 //       high = fontSize; // Font size is too large
 //     } else {
@@ -56,7 +56,7 @@ import type { RendererResources } from '../types'
 //   let guesses = 0
 //   while (high - low > 0.1) {
 //     guesses++
-    
+
 //     fontSize = (low + high) / 2;
 //     style.fontSize = fontSize;
 
@@ -77,12 +77,11 @@ import type { RendererResources } from '../types'
 // }
 
 function calculateFontSize(chars: string[], height: number, style: PIXI.TextStyle): number {
-
   // relative to font size
   const avgLengthPerCharacter = 2
 
   // initial guess
-  let lines = avgLengthPerCharacter * style.fontSize / style.wordWrapWidth
+  let lines = (avgLengthPerCharacter * style.fontSize) / style.wordWrapWidth
 
   // const len = layout.lines.length * (style.wordWrapWidth / style.fontSize)
 
@@ -104,7 +103,6 @@ function calculateFontSize(chars: string[], height: number, style: PIXI.TextStyl
   }
 }
 
-
 export class RenderPixi extends System {
   private readonly screens = this.query((q) => q.changed.with(comps.Screen).trackWrites)
 
@@ -115,7 +113,7 @@ export class RenderPixi extends System {
   )
 
   private readonly texts = this.query(
-    (q) => q.addedOrChanged.and.removed.with(comps.Block).trackWrites.and.with(comps.Text).trackWrites,
+    (q) => q.addedOrChanged.and.removed.with(comps.Block).trackWrites.and.with(comps.Text, comps.FontSize).trackWrites,
   )
 
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
@@ -128,30 +126,34 @@ export class RenderPixi extends System {
     for (const textEntity of this.texts.addedOrChanged) {
       const block = textEntity.read(comps.Block)
       const text = textEntity.read(comps.Text)
-      
+      const fontSize = textEntity.read(comps.FontSize)
+
       let textObject = this.resources.viewport.getChildByLabel(block.id) as PIXI.BitmapText
       if (!textObject) {
         const style = new PIXI.TextStyle({
-          fontFamily: 'Figtree',
+          fontFamily: text.fontFamily,
+          fontSize: fontSize.value,
           fill: '#ffcc00',
           wordWrap: true,
-          align: 'center',
-          fontSize: 24, // guess value
         })
 
         textObject = new PIXI.BitmapText({
-          style
+          text: text.content,
+          style,
+          resolution: 2,
         })
+
+        textObject.anchor.set(0.5, 0.5)
         textObject.label = block.id
         this.resources.viewport.addChild(textObject)
       }
-      
+
+      textObject.style.fontFamily = text.fontFamily
+      textObject.style.align = text.align
       textObject.style.wordWrapWidth = block.width
-      if (block.height !== textObject.height) {
-        textObject.style.fontSize = calculateFontSize(text.content.split(''), block.height, textObject.style)
-      }
-      
-      textObject.text = text.content
+      textObject.style.fontSize = fontSize.value
+      // textObject.style.lineHeight = fontSize.value * 1.5 // Adjust line height as needed
+      // textObject.text = text.content
     }
 
     for (const rectangleEntity of this.rectangles.addedOrChanged) {
@@ -167,7 +169,7 @@ export class RenderPixi extends System {
       const color = (block.red << 16) | (block.green << 8) | block.blue
       const alpha = block.alpha / 255
       shapeObj.beginFill(color, alpha)
-      shapeObj.drawRect(0, 0, block.width, block.height)
+      shapeObj.drawRect(-block.width / 2, -block.height / 2, block.width, block.height)
       shapeObj.endFill()
 
       this.resources.viewport.addChild(shapeObj)
@@ -179,7 +181,7 @@ export class RenderPixi extends System {
       const blockObj = this.resources.viewport.getChildByLabel(block.id) as PIXI.Container
 
       if (!blockObj) {
-        console.warn('Block does not have a PIXI object:', block)
+        // console.warn('Block does not have a PIXI object:', block)
         continue
       }
 
@@ -187,7 +189,8 @@ export class RenderPixi extends System {
         needsSorting = true
       }
 
-      blockObj.position.set(block.left, block.top)
+      blockObj.position.set(block.left + block.width / 2, block.top + block.height / 2)
+      // blockObj.position.set(block.left, block.top)
       blockObj.rotation = block.rotateZ
       blockObj.rank = block.rank
 

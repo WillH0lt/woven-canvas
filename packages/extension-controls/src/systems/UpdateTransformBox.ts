@@ -3,15 +3,16 @@ import * as comps from '@infinitecanvas/core/components'
 import { UuidGenerator, binarySearchForId, uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
-import { DragStart, TransformBox, TransformHandle } from '../components'
+import { DragStart, Locked, TransformBox, TransformHandle } from '../components'
 import {
   TRANSFORM_BOX_RANK,
   TRANSFORM_HANDLE_CORNER_RANK,
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
+import type { EditableTextElement } from '../elements'
 import { computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
-import { ControlCommand, type ControlCommandArgs, TransformHandleKind } from '../types'
+import { ControlCommand, type ControlCommandArgs, type ControlResources, TransformHandleKind } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
 interface TransformHandleDef {
@@ -34,13 +35,23 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     (q) => q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read,
   )
 
+  private readonly editedBlocks = this.query(
+    (q) => q.current.with(comps.Block, comps.Edited).write.using(comps.Text).write,
+  )
+
   private readonly transformBoxes = this.query(
-    (q) => q.current.with(TransformBox).write.using(comps.Block, TransformHandle, DragStart, comps.Hoverable).write,
+    (q) =>
+      q.current
+        .with(TransformBox)
+        .write.using(comps.Block, TransformHandle, DragStart, comps.Hoverable, Locked, comps.Shape, comps.Opacity)
+        .write,
   )
 
   private readonly blocks = this.query((q) =>
     q.current.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
   )
+
+  protected declare readonly resources: ControlResources
 
   public constructor() {
     super()
@@ -52,7 +63,10 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     this.addCommandListener(ControlCommand.AddTransformBox, this.addTransformBox.bind(this))
     this.addCommandListener(ControlCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
     this.addCommandListener(ControlCommand.HideTransformBox, this.hideTransformBox.bind(this))
+    this.addCommandListener(ControlCommand.ShowTransformBox, this.showTransformBox.bind(this))
     this.addCommandListener(ControlCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
+    this.addCommandListener(ControlCommand.StartTransformBoxEdit, this.startTransformBoxEdit.bind(this))
+    this.addCommandListener(ControlCommand.EndTransformBoxEdit, this.endTransformBoxEdit.bind(this))
   }
 
   public execute(): void {
@@ -80,6 +94,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       TransformBox,
       comps.Block,
       { id: uuid.next(), createdBy: meta.uid },
+      comps.Shape,
       DragStart,
     )
 
@@ -119,14 +134,17 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     const height = extents.bottom - extents.top
 
     Object.assign(transformBoxEntity.write(comps.Block), {
-      blue: 255,
-      alpha: 128,
       rank: TRANSFORM_BOX_RANK,
       left,
       top,
       width,
       height,
       rotateZ,
+    })
+
+    Object.assign(transformBoxEntity.write(comps.Shape), {
+      blue: 255,
+      alpha: 128,
     })
 
     Object.assign(transformBoxEntity.write(DragStart), {
@@ -259,7 +277,14 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
         )
       })
       if (!handleEntity) {
-        handleEntity = this.createEntity(TransformHandle, comps.Block, { id: uuid.next() }, comps.Hoverable, DragStart)
+        handleEntity = this.createEntity(
+          TransformHandle,
+          comps.Block,
+          { id: uuid.next() },
+          comps.Shape,
+          comps.Hoverable,
+          DragStart,
+        )
       }
 
       const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
@@ -274,14 +299,18 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       })
 
       Object.assign(handleEntity.write(comps.Block), {
-        alpha: handle.alpha,
-        red: 255,
         left,
         top,
         width: handle.width,
         height: handle.height,
         rotateZ: handle.rotateZ,
         rank: handle.rank,
+        createdBy: this.resources.uid,
+      })
+
+      Object.assign(handleEntity.write(comps.Shape), {
+        alpha: handle.alpha,
+        red: 255,
       })
 
       Object.assign(handleEntity.write(comps.Hoverable), {
@@ -308,15 +337,43 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
 
     const transformBox = transformBoxEntity.read(TransformBox)
     for (const handleEntity of transformBox.handles) {
-      const handleBlock = handleEntity.write(comps.Block)
-      handleBlock.alpha = 0
+      if (!handleEntity.has(comps.Opacity)) {
+        handleEntity.add(comps.Opacity)
+      }
+
+      const handleOpacity = handleEntity.write(comps.Opacity)
+      handleOpacity.value = 0
     }
 
-    const transformBoxBlock = transformBoxEntity.write(comps.Block)
-    transformBoxBlock.alpha = 0
+    if (!transformBoxEntity.has(comps.Opacity)) {
+      transformBoxEntity.add(comps.Opacity)
+    }
+    const boxOpacity = transformBoxEntity.write(comps.Opacity)
+    boxOpacity.value = 0
   }
 
-  private onBlockMove(meta: CommandMeta, payload: { id: string; left: number; top: number }): void {
+  private showTransformBox(meta: CommandMeta): void {
+    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+
+    if (!transformBoxEntity) {
+      console.warn('No transform box found to show')
+      return
+    }
+
+    const transformBox = transformBoxEntity.read(TransformBox)
+    for (const handleEntity of transformBox.handles) {
+      if (handleEntity.has(comps.Opacity)) {
+        handleEntity.remove(comps.Opacity)
+      }
+    }
+    if (transformBoxEntity.has(comps.Opacity)) {
+      transformBoxEntity.remove(comps.Opacity)
+    }
+
+    this.updateTransformBox(meta)
+  }
+
+  private onBlockMove(_meta: CommandMeta, payload: { id: string; left: number; top: number }): void {
     // const blockEntity = this.blocks.current.find((e) => e.read(comps.Block).id === payload.id)
     const blockEntity = binarySearchForId(comps.Block, payload.id, this.blocks.current)
     if (!blockEntity) {
@@ -470,5 +527,75 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       block.left = blockStart.startLeft + dx
       block.top = blockStart.startTop + dy
     }
+  }
+
+  private startTransformBoxEdit(meta: CommandMeta): void {
+    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+
+    if (!transformBoxEntity) {
+      console.warn('No transform box found to edit')
+      return
+    }
+
+    if (!transformBoxEntity.has(Locked)) {
+      transformBoxEntity.add(Locked)
+    }
+
+    const selectedBlocks = this.selectedBlocks.current.filter((e) => e.read(comps.Selected).selectedBy === meta.uid)
+
+    for (const blockEntity of selectedBlocks) {
+      if (!blockEntity.has(comps.Edited)) {
+        blockEntity.add(comps.Edited, {
+          editedBy: meta.uid,
+        })
+      }
+      if (!blockEntity.has(comps.Opacity)) {
+        blockEntity.add(comps.Opacity)
+      }
+      blockEntity.write(comps.Opacity).value = 0
+    }
+  }
+
+  private endTransformBoxEdit(meta: CommandMeta): void {
+    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+
+    if (!transformBoxEntity) {
+      console.warn('No transform box found to end edit')
+      return
+    }
+
+    if (transformBoxEntity.has(Locked)) {
+      transformBoxEntity.remove(Locked)
+    }
+
+    const editedBlocks = this.editedBlocks.current.filter((e) => e.read(comps.Edited).editedBy === meta.uid)
+
+    for (const blockEntity of editedBlocks) {
+      blockEntity.remove(comps.Edited)
+      blockEntity.remove(comps.Opacity)
+
+      this._saveChanges(blockEntity)
+    }
+  }
+
+  private _saveChanges(textEntity: Entity): void {
+    if (!textEntity.has(comps.Text)) return
+
+    const block = textEntity.write(comps.Block)
+    const element = this.resources.viewport.querySelector<EditableTextElement>(`[id='${block.id}']`)
+    if (!element) return
+    // TODO element.getTextModel() should return the text model
+
+    const content = element.getEditorContent()
+    if (content === null) return
+
+    const size = element.getEditorSize()
+    if (size === null) return
+
+    const text = textEntity.write(comps.Text)
+    text.content = content
+
+    block.width = size.width
+    block.height = size.height
   }
 }

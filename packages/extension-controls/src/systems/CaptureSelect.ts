@@ -1,6 +1,7 @@
 import { BaseSystem, BlockCommand, type BlockCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
+import { distance } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
-import { assign, setup } from 'xstate'
+import { and, assign, not, setup } from 'xstate'
 
 import * as controlComps from '../components'
 import { ControlCommand, type ControlCommandArgs, SelectionState } from '../types'
@@ -8,10 +9,6 @@ import { CapturePan } from './CapturePan'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
-
-const distance = (a: [number, number], b: [number, number]): number => {
-  return Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
-}
 
 export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
@@ -26,7 +23,9 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
-  private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Persistent).read)
+  private readonly _blocks = this.query(
+    (q) => q.with(comps.Block, comps.Persistent).read.using(controlComps.Locked).read,
+  )
 
   private readonly selectionState = this.singleton.write(controlComps.SelectionState)
 
@@ -54,7 +53,13 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
       },
       isOverBlock: ({ event }) => {
         if (!('blockEntity' in event)) return false
-        return event.blockEntity?.alive ?? false
+        if (event.blockEntity === null) return false
+
+        return event.blockEntity.alive
+      },
+      draggedEntityIsLocked: ({ context }) => {
+        if (!context.draggedEntity) return false
+        return context.draggedEntity.has(controlComps.Locked)
       },
     },
     actions: {
@@ -166,12 +171,10 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
       [SelectionState.Pointing]: {
         entry: ['setPointingStart', 'setDraggedEntity'],
         on: {
-          pointerMove: [
-            {
-              guard: 'isThresholdReached',
-              target: SelectionState.Dragging,
-            },
-          ],
+          pointerMove: {
+            guard: and(['isThresholdReached', not('draggedEntityIsLocked')]),
+            target: SelectionState.Dragging,
+          },
           pointerUp: {
             actions: 'selectDragged',
             target: SelectionState.Idle,
@@ -200,12 +203,10 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
       [SelectionState.SelectionBoxPointing]: {
         entry: 'setPointingStart',
         on: {
-          pointerMove: [
-            {
-              guard: 'isThresholdReached',
-              target: SelectionState.SelectionBoxDragging,
-            },
-          ],
+          pointerMove: {
+            guard: 'isThresholdReached',
+            target: SelectionState.SelectionBoxDragging,
+          },
           pointerUp: {
             target: SelectionState.Idle,
           },

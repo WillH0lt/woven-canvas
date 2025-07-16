@@ -3,7 +3,7 @@ import type { ICommands, Resources, SendCommandFn } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
 
 import { ControlCommand, type ControlCommandArgs, ControlOptions, type ControlResources } from './types'
-
+import './elements'
 import * as sys from './systems'
 
 declare module '@infinitecanvas/core' {
@@ -23,9 +23,13 @@ export class ControlsExtension extends Extension {
   }
 
   public async preBuild(resources: Resources): Promise<void> {
+    const viewport = document.createElement('div')
+    resources.domElement.appendChild(viewport)
+
     const r: ControlResources = {
       ...resources,
       controlOptions: this.options,
+      viewport,
     }
 
     this._captureGroup = System.group(
@@ -46,6 +50,8 @@ export class ControlsExtension extends Extension {
     // })
 
     this._updateGroup = System.group(sys.UpdateSelection, { resources: r }, sys.UpdateTransformBox, { resources: r })
+
+    this._preRenderGroup = System.group(sys.PreRenderOverlay, { resources: r })
   }
 
   public addCommands = (send: SendCommandFn<ControlCommandArgs>): Partial<ICommands> => {

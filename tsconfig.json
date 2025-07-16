@@ -6,19 +6,22 @@
       "path": "packages/core"
     },
     {
-      "path": "packages/extension-renderer"
-    },
-    {
       "path": "packages/extension-controls"
     },
     {
-      "path": "packages/extension-multiplayer"
+      "path": "packages/extension-input"
     },
     {
       "path": "packages/extension-local-storage"
     },
     {
-      "path": "packages/extension-input"
+      "path": "packages/extension-multiplayer"
+    },
+    {
+      "path": "packages/extension-html-renderer"
+    },
+    {
+      "path": "packages/extension-renderer"
     },
     {
       "path": "examples/canvas"

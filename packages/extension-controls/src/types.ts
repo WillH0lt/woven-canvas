@@ -27,6 +27,13 @@ export enum SelectionState {
   SelectionBoxDragging = 'selectionBoxDragging',
 }
 
+export enum TransformBoxState {
+  None = 'none',
+  Idle = 'idle',
+  EditingText = 'EditingText',
+  // Transforming = 'transforming',
+}
+
 export const ControlOptions = z.object({
   actionLeftMouse: z.string().default(PointerAction.None),
   actionMiddleMouse: z.string().default(PointerAction.Pan),
@@ -54,7 +61,10 @@ export enum ControlCommand {
   AddTransformBox = 'addTransformBox',
   UpdateTransformBox = 'updateTransformBox',
   HideTransformBox = 'hideTransformBox',
+  ShowTransformBox = 'showTransformBox',
   RemoveTransformBox = 'removeTransformBox',
+  StartTransformBoxEdit = 'startTransformBoxEdit',
+  EndTransformBoxEdit = 'endTransformBoxEdit',
 }
 
 export type ControlCommandArgs = {
@@ -79,11 +89,15 @@ export type ControlCommandArgs = {
   [ControlCommand.AddTransformBox]: []
   [ControlCommand.UpdateTransformBox]: []
   [ControlCommand.HideTransformBox]: []
+  [ControlCommand.ShowTransformBox]: []
   [ControlCommand.RemoveTransformBox]: []
+  [ControlCommand.StartTransformBoxEdit]: []
+  [ControlCommand.EndTransformBoxEdit]: []
 }
 
 export interface ControlResources extends Resources {
   controlOptions: ControlOptions
+  viewport: HTMLDivElement
 }
 
 export enum TransformHandleKind {

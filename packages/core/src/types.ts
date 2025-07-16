@@ -47,27 +47,38 @@ export interface Resources {
 
 export interface BlockModel {
   id: string
+  tag: string
+  createdBy: string
   top: number
   left: number
   width: number
   height: number
   rotateZ: number
+  rank: string
+}
+
+export enum TextAlign {
+  Left = 'left',
+  Center = 'center',
+  Right = 'right',
+  Justify = 'justify',
+}
+export interface TextModel {
+  content: string
+  fontFamily: string
+  align: TextAlign
+  lineHeight: number
   red: number
   green: number
   blue: number
   alpha: number
-  createdBy: string
-  tag: string
-  rank: string
 }
 
-export interface TextModel {
-  content: string
-  align: string
-  fontSize: number
+export interface ShapeModel {
   red: number
   green: number
   blue: number
+  alpha: number
 }
 
 export interface CommandModel {
@@ -142,7 +153,7 @@ export enum BlockCommand {
   SetZoom = 'setZoom',
   MoveCamera = 'moveCamera',
 
-  AddBlock = 'addBlock',
+  AddShape = 'addShape',
   AddText = 'addText',
   UpdateBlockPosition = 'updateBlockPosition',
 
@@ -155,7 +166,7 @@ export enum BlockCommand {
 }
 
 export type BlockCommandArgs = {
-  [BlockCommand.AddBlock]: [Partial<BlockModel>]
+  [BlockCommand.AddShape]: [Partial<BlockModel>, Partial<ShapeModel>]
   [BlockCommand.AddText]: [Partial<BlockModel>, Partial<TextModel>]
   [BlockCommand.UpdateBlockPosition]: [
     {
@@ -213,6 +224,12 @@ export type PointerEvent =
     }
   | {
       type: 'pointerUp'
+      worldPosition: [number, number]
+      clientPosition: [number, number]
+      blockEntity: Entity | null
+    }
+  | {
+      type: 'click'
       worldPosition: [number, number]
       clientPosition: [number, number]
       blockEntity: Entity | null

@@ -2,7 +2,11 @@ import { type Entity, type Query, System } from '@lastolivegames/becsy'
 import { type AnyStateMachine, transition } from 'xstate'
 
 import * as comps from './components'
+import { distance } from './helpers'
 import type { CommandMap, CommandMeta, MouseEvent, PointerButton, PointerEvent, Resources } from './types'
+
+const CLICK_MOVE_THRESHOLD = 1
+const CLICK_FRAME_THRESHOLD = 60
 
 function randomString(length: number): string {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -135,6 +139,17 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
         worldPosition: camera.toWorld(pointer.position),
         blockEntity: intersect.entity || null,
       } as PointerEvent)
+
+      const dist = distance(pointer.downPosition, pointer.position)
+      const deltaFrame = this.frame.value - pointer.downFrame
+      if (dist < CLICK_MOVE_THRESHOLD && deltaFrame < CLICK_FRAME_THRESHOLD) {
+        events.push({
+          type: 'click',
+          clientPosition: pointer.position,
+          worldPosition: camera.toWorld(pointer.position),
+          blockEntity: intersect.entity || null,
+        } as PointerEvent)
+      }
     }
 
     if (changed.length > 0 && current.length === 1) {

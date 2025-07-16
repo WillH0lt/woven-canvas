@@ -15,14 +15,14 @@ export class Tool {
 
   @field({ type: Type.dynamicString(32), default: 'zoom' }) public declare modWheel: string
 
-  getButton(tool: string): PointerButton | null {
-    if (this.leftMouse === tool) {
+  getButton(...tools: string[]): PointerButton | null {
+    if (tools.includes(this.leftMouse)) {
       return PointerButton.Left
     }
-    if (this.middleMouse === tool) {
+    if (tools.includes(this.middleMouse)) {
       return PointerButton.Middle
     }
-    if (this.rightMouse === tool) {
+    if (tools.includes(this.rightMouse)) {
       return PointerButton.Right
     }
 
