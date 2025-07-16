@@ -13,6 +13,10 @@ export class Block implements ISerializable<BlockModel> {
   @field({ type: Type.dynamicString(36), default: 'ic-shape' }) public declare tag: string
   @field.dynamicString(36) public declare rank: string
 
+  @field.boolean public declare stretchableWidth: boolean
+  @field.boolean public declare stretchableHeight: boolean
+  @field.boolean public declare hasStretched: boolean
+
   toModel(): BlockModel {
     return {
       id: this.id,
@@ -24,6 +28,9 @@ export class Block implements ISerializable<BlockModel> {
       createdBy: this.createdBy,
       tag: this.tag,
       rank: this.rank,
+      stretchableWidth: this.stretchableWidth,
+      stretchableHeight: this.stretchableHeight,
+      hasStretched: this.hasStretched,
     }
   }
 
@@ -37,5 +44,8 @@ export class Block implements ISerializable<BlockModel> {
     this.createdBy = model.createdBy
     this.tag = model.tag
     this.rank = model.rank
+    this.stretchableWidth = model.stretchableWidth
+    this.stretchableHeight = model.stretchableHeight
+    this.hasStretched = model.hasStretched
   }
 }

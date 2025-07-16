@@ -102,5 +102,6 @@ export interface ControlResources extends Resources {
 
 export enum TransformHandleKind {
   Scale = 'scale',
+  Stretch = 'stretch',
   Rotate = 'rotate',
 }

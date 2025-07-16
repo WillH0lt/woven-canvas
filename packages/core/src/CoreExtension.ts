@@ -26,7 +26,10 @@ declare module '@infinitecanvas/core' {
   interface ICommands {
     block: {
       addShape: (block: Omit<Partial<BlockModel>, 'tag'>, shape: Partial<ShapeModel>) => void
-      addText: (block: Omit<Partial<BlockModel>, 'tag'>, text: Partial<TextModel>) => void
+      addText: (
+        block: Omit<Partial<BlockModel>, 'tag' | 'stretchableHeight' | 'stretchableWidth'>,
+        text: Partial<TextModel>,
+      ) => void
       moveCamera: (x: number, y: number) => void
       setZoom: (zoom: number) => void
       undo: () => void

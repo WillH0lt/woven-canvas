@@ -12,12 +12,11 @@ export class TextElement extends LitElement {
   static styles = css`
     p {
       margin: 0;
-      min-height: 1.2em;
     }
 
     p:empty::before {
-      content: ' ';
-      white-space: pre;
+      content: '';
+      display: inline-block;
     }
   `
 

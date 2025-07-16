@@ -5,12 +5,14 @@ import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
 import { LitElement, type PropertyValues, css, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
+import { styleMap } from 'lit/directives/style-map.js'
 
 import type { TextModel } from '@infinitecanvas/core'
 
 @customElement('ic-editable-text')
 export class EditableTextElement extends LitElement {
-  @property({ type: Object }) model?: TextModel
+  @property({ type: Object }) model!: TextModel
+  @property({ type: Number }) fontSize!: number
 
   @property({ type: Number }) pointerStartX?: number
   @property({ type: Number }) pointerStartY?: number
@@ -23,7 +25,6 @@ export class EditableTextElement extends LitElement {
     }
     .ProseMirror-focused {
       outline: none;
-      white-space: pre-wrap;
     }
   `
 
@@ -87,7 +88,13 @@ export class EditableTextElement extends LitElement {
 
   render() {
     return html`
-      <div id="editor-content"></div>
+    <div id="editor-content" style=${styleMap({
+      'font-family': this.model.fontFamily,
+      'text-align': this.model.align,
+      'line-height': `${this.model.lineHeight}`,
+      color: `rgba(${this.model.red}, ${this.model.green}, ${this.model.blue}, ${this.model.alpha / 255})`,
+      'font-size': `${this.fontSize}px`,
+    })}></div>
     `
   }
 }
@@ -97,15 +104,3 @@ declare global {
     'ic-editable-text': EditableTextElement
   }
 }
-
-// class TextUpdate extends Event {
-//   constructor() {
-//     super('wa-reposition', { bubbles: true, cancelable: false, composed: true });
-//   }
-// }
-
-// declare global {
-//   interface GlobalEventHandlersEventMap {
-//     'wa-reposition': WaRepositionEvent;
-//   }
-// }

@@ -52,6 +52,7 @@ export class UpdateBlocks extends BaseSystem<BlockCommandArgs> {
 
   private addText(_meta: CommandMeta, block: Partial<BlockModel>, text: Partial<TextModel>): void {
     block.tag = 'ic-text'
+    block.stretchableWidth = true
     const entity = this._addBlock(block)
 
     entity.add(comps.Text, { ...text })

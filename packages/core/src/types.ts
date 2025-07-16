@@ -55,6 +55,9 @@ export interface BlockModel {
   height: number
   rotateZ: number
   rank: string
+  stretchableWidth: boolean
+  stretchableHeight: boolean
+  hasStretched: boolean
 }
 
 export enum TextAlign {

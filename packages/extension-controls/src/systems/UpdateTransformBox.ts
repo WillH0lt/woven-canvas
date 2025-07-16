@@ -186,7 +186,6 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     for (let xi = 0; xi < 2; xi++) {
       for (let yi = 0; yi < 2; yi++) {
         handles.push({
-          // tag: Tag.TransformHandle,
           kind: TransformHandleKind.Scale,
           alpha: 128,
           vector: [xi * 2 - 1, yi * 2 - 1],
@@ -200,7 +199,6 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
         })
 
         handles.push({
-          // tag: Tag.Invisible,
           kind: TransformHandleKind.Rotate,
           alpha: 0,
           vector: [xi * 2 - 1, yi * 2 - 1],
@@ -215,19 +213,18 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       }
     }
 
-    // top & bottom edges
-    // const stretchableY = selectedBlocks.length === 1 && isStretchableY(selectedBlocks[0])
-    for (let yi = 0; yi < 2; yi++) {
-      // let kind = TransformHandleKind.LeftScale
-      // if (stretchableY) {
-      //   kind = yi === 0 ? TransformHandleKind.TopStretch : TransformHandleKind.BottomStretch
-      // } else {
-      // kind = yi === 0 ? TransformHandleKind.TopScale : TransformHandleKind.BottomScale
-      // }
+    const selectedBlocks = this.selectedBlocks.current.filter(
+      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
+    )
+    let singularSelectedBlock: comps.Block | null = null
+    if (selectedBlocks.length === 1) {
+      singularSelectedBlock = selectedBlocks[0].read(comps.Block)
+    }
 
+    // top & bottom edges
+    for (let yi = 0; yi < 2; yi++) {
       handles.push({
-        // tag: Tag.Invisible,
-        kind: TransformHandleKind.Scale,
+        kind: singularSelectedBlock?.stretchableHeight ? TransformHandleKind.Stretch : TransformHandleKind.Scale,
         alpha: 0,
         vector: [0, yi * 2 - 1],
         left,
@@ -241,18 +238,9 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
 
     // left & right edges
-    // const stretchableX = selectedBlocks.length === 1 && isStretchableX(selectedBlocks[0])
     for (let xi = 0; xi < 2; xi++) {
-      // let kind = TransformHandleKind.LeftScale
-      // if (stretchableX) {
-      // kind = xi === 0 ? TransformHandleKind.LeftStretch : TransformHandleKind.RightStretch
-      // } else {
-      // kind = xi === 0 ? TransformHandleKind.LeftScale : TransformHandleKind.RightScale
-      // }
-
       handles.push({
-        // tag: Tag.Invisible,
-        kind: TransformHandleKind.Scale,
+        kind: singularSelectedBlock?.stretchableWidth ? TransformHandleKind.Stretch : TransformHandleKind.Scale,
         alpha: 0,
         vector: [xi * 2 - 1, 0],
         left: left + width * xi - sideHandleSize / 2,
@@ -385,11 +373,11 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       this.onTransformBoxMove(blockEntity, payload)
     } else if (blockEntity.has(TransformHandle)) {
       const handle = blockEntity.read(TransformHandle)
-      const kind = handle.kind.toString()
-      if (kind.endsWith('rotate')) {
+      const kind = handle.kind
+      if (kind === TransformHandleKind.Rotate) {
         this.onRotateHandleMove(blockEntity, payload)
-      } else if (kind.endsWith('scale')) {
-        this.onScaleHandleMove(blockEntity, payload)
+      } else if (kind === TransformHandleKind.Scale || kind === TransformHandleKind.Stretch) {
+        this.onScaleOrStretchHandleMove(blockEntity, payload)
       }
     }
   }
@@ -436,7 +424,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
   }
 
-  private onScaleHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
+  private onScaleOrStretchHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
     if (!this.transformBoxes.current.length) {
       console.error('No transform box found')
       return
@@ -474,12 +462,20 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
     let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
 
-    const startAspectRatio = boxStartWidth / boxStartHeight
-    const newAspectRatio = boxEndWidth / boxEndHeight
-    if (newAspectRatio > startAspectRatio) {
-      boxEndHeight = boxEndWidth / startAspectRatio
+    if (handleKind === TransformHandleKind.Stretch) {
+      if (handleVec[0] === 0) {
+        boxEndWidth = boxStartWidth
+      } else if (handleVec[1] === 0) {
+        boxEndHeight = boxStartHeight
+      }
     } else {
-      boxEndWidth = boxEndHeight * startAspectRatio
+      const startAspectRatio = boxStartWidth / boxStartHeight
+      const newAspectRatio = boxEndWidth / boxEndHeight
+      if (newAspectRatio > startAspectRatio) {
+        boxEndHeight = boxEndWidth / startAspectRatio
+      } else {
+        boxEndWidth = boxEndHeight * startAspectRatio
+      }
     }
 
     const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
@@ -487,18 +483,8 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
 
     const newBoxCenter = [oppositeCenter[0] + rotatedVector[0] / 2, oppositeCenter[1] + rotatedVector[1] / 2]
 
-    // const dims = rotatePoint([boxEndWidth, boxEndHeight], [0, 0], boxRotateZ)
-    // boxEndWidth = dims[0]
-    // boxEndHeight = dims[1]
-
     const boxEndLeft = newBoxCenter[0] - boxEndWidth / 2
     const boxEndTop = newBoxCenter[1] - boxEndHeight / 2
-
-    // const boxBlock = boxEntity.write(comps.Block)
-    // boxBlock.left = boxEndLeft
-    // boxBlock.top = boxEndTop
-    // boxBlock.width = boxEndWidth
-    // boxBlock.height = boxEndHeight
 
     // TODO scale snapping
 
@@ -512,6 +498,10 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
 
       block.width = startWidth * (boxEndWidth / boxStartWidth)
       block.height = startHeight * (boxEndHeight / boxStartHeight)
+
+      if (handleKind === TransformHandleKind.Stretch) {
+        block.hasStretched = true
+      }
     }
   }
 

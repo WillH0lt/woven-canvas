@@ -82,10 +82,9 @@ export class PreRenderOverlay extends BaseSystem {
     element.style.width = `${block.width}px`
     element.style.height = `${block.height}px`
     element.style.transform = `rotateZ(${block.rotateZ}rad)`
-    element.style.fontSize = `${fontSize.value}px`
-    element.style.textAlign = text.align
-    element.style.fontFamily = text.fontFamily
-    element.style.color = `rgba(${text.red}, ${text.green}, ${text.blue}, ${text.alpha / 255})`
-    element.style.lineHeight = `${text.lineHeight}`
+
+    element.model = text.toModel()
+    element.fontSize = fontSize.value
+    element.requestUpdate()
   }
 }
