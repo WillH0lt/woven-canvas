@@ -2,8 +2,8 @@ import { type SystemGroup, World } from '@lastolivegames/becsy'
 import type { z } from 'zod/v4'
 
 import { Emitter } from 'strict-event-emitter'
+import type { BaseExtension } from './BaseExtension'
 import { CoreExtension } from './CoreExtension'
-import type { Extension } from './Extension'
 import { History } from './History'
 import { State } from './State'
 import { EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options, type Resources } from './types'
@@ -18,6 +18,8 @@ function scheduleGroups(orderedGroups: SystemGroup[]): void {
 }
 
 export class InfiniteCanvas {
+  public static instance: InfiniteCanvas | null = null
+
   public readonly domElement: HTMLElement
 
   // private readonly state: State
@@ -28,12 +30,11 @@ export class InfiniteCanvas {
 
   // private extensions: Extension[]
 
-  public static async New(extensions: Extension[], options: Options = {}): Promise<InfiniteCanvas> {
+  public static async New(extensions: BaseExtension[], options: Options = {}): Promise<InfiniteCanvas> {
     const parsedOptions = Options.parse(options)
 
     const domElement = document.createElement('div')
     domElement.id = 'infinite-canvas'
-    domElement.style.position = 'relative'
     domElement.style.width = '100%'
     domElement.style.height = '100%'
     domElement.style.overflow = 'hidden'
@@ -49,7 +50,7 @@ export class InfiniteCanvas {
 
     const state = new State()
 
-    extensions.push(new CoreExtension(parsedOptions, emitter, state))
+    extensions.push(new CoreExtension(emitter, state))
 
     await Promise.all(extensions.map((ext) => ext.preBuild(resources)))
 
@@ -99,7 +100,10 @@ export class InfiniteCanvas {
       extensions.map((ext) => ext.build(system))
     })
 
-    return new InfiniteCanvas(extensions, world, emitter, state, resources, parsedOptions)
+    const infiniteCanvas = new InfiniteCanvas(extensions, world, emitter, state, resources, parsedOptions)
+    InfiniteCanvas.instance = infiniteCanvas
+
+    return infiniteCanvas
   }
 
   // private readonly state: State
@@ -111,7 +115,7 @@ export class InfiniteCanvas {
   // private extensions: Extension[]
 
   private constructor(
-    private readonly extensions: Extension[],
+    private readonly extensions: BaseExtension[],
     private readonly world: World,
     private readonly emitter: Emitter<EmitterEvents>,
     private readonly state: State,
@@ -175,6 +179,12 @@ export class InfiniteCanvas {
     }, {} as IStore)
   }
 
+  public async destroy(): Promise<void> {
+    await Promise.all(this.extensions.map((ext) => ext.destroy()))
+    await this.world.terminate()
+    InfiniteCanvas.instance = null
+  }
+
   private loop(): void {
     if (!(this.world?.alive ?? true)) return
 
@@ -204,7 +214,6 @@ export class InfiniteCanvas {
       }
     })
 
-    // Start observing the whole document or a specific container's parent
     observer.observe(document.body, { childList: true, subtree: true })
   }
 }

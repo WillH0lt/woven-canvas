@@ -56,7 +56,6 @@ export enum ControlCommand {
   SelectBlock = 'selectBlock',
   DeselectBlock = 'deselectBlock',
   DeselectAll = 'deselectAll',
-  RemoveSelected = 'removeSelected',
 
   AddTransformBox = 'addTransformBox',
   UpdateTransformBox = 'updateTransformBox',
@@ -84,7 +83,6 @@ export type ControlCommandArgs = {
     },
   ]
   [ControlCommand.DeselectAll]: []
-  [ControlCommand.RemoveSelected]: []
 
   [ControlCommand.AddTransformBox]: []
   [ControlCommand.UpdateTransformBox]: []

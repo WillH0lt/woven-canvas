@@ -1,4 +1,4 @@
-import { ComponentRegistry, Extension, type Resources } from '@infinitecanvas/core'
+import { BaseExtension, ComponentRegistry, type Resources } from '@infinitecanvas/core'
 import { Persistent } from '@infinitecanvas/core/components'
 import { System } from '@lastolivegames/becsy'
 
@@ -6,7 +6,7 @@ import { LocalDB } from './LocalDB'
 import * as sys from './systems'
 import { LocalStorageOptions, type LocalStorageResources } from './types'
 
-export class LocalStorageExtension extends Extension {
+export class LocalStorageExtension extends BaseExtension {
   public name = 'local-storage'
 
   private initialEntities: Record<string, Record<string, any>> = {}

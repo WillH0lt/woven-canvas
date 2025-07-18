@@ -1,20 +1,14 @@
-import { Extension } from '@infinitecanvas/core'
-import type { ICommands, Resources, SendCommandFn } from '@infinitecanvas/core'
+import { BaseExtension } from '@infinitecanvas/core'
+import type { Resources } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
 
-import { ControlCommand, type ControlCommandArgs, ControlOptions, type ControlResources } from './types'
+import { ControlOptions, type ControlResources } from './types'
 import './elements'
 import * as sys from './systems'
 
-declare module '@infinitecanvas/core' {
-  interface ICommands {
-    controls: {
-      removeSelected: () => void
-    }
-  }
-}
+export class ControlsExtension extends BaseExtension {
+  public name = 'controls'
 
-export class ControlsExtension extends Extension {
   private readonly options: ControlOptions
 
   constructor(options: ControlOptions = {}) {
@@ -24,6 +18,11 @@ export class ControlsExtension extends Extension {
 
   public async preBuild(resources: Resources): Promise<void> {
     const viewport = document.createElement('div')
+    viewport.style.transformOrigin = '0 0'
+    // establish a stacking context
+    viewport.style.transform = 'translate(0, 0) scale(1)'
+    viewport.style.position = 'relative'
+
     resources.domElement.appendChild(viewport)
 
     const r: ControlResources = {
@@ -52,13 +51,5 @@ export class ControlsExtension extends Extension {
     this._updateGroup = System.group(sys.UpdateSelection, { resources: r }, sys.UpdateTransformBox, { resources: r })
 
     this._preRenderGroup = System.group(sys.PreRenderOverlay, { resources: r })
-  }
-
-  public addCommands = (send: SendCommandFn<ControlCommandArgs>): Partial<ICommands> => {
-    return {
-      controls: {
-        removeSelected: () => send(ControlCommand.RemoveSelected),
-      },
-    }
   }
 }

@@ -210,7 +210,6 @@ export class StateManager {
         if (!fromState[id][compName]) {
           diff.addComponent(id, compName, model)
         } else if (!this.recordIsTheSame(id, compName, fromState[id][compName])) {
-          console.log('====================')
           diff.changeComponent(id, compName, fromState[id][compName], model)
         }
       }
@@ -345,6 +344,17 @@ export class History {
 
   public getState(): State {
     return JSON.parse(JSON.stringify(this.stateManager.state))
+  }
+
+  public getEntities(ids: Id[]): State {
+    const state: State = {}
+    for (const id of ids) {
+      const record = this.stateManager.state[id]
+      if (record) {
+        state[id] = record
+      }
+    }
+    return JSON.parse(JSON.stringify(state))
   }
 
   public computeDiff(fromState: State): Diff {

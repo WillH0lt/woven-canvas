@@ -73,13 +73,13 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     this.executeCommands()
   }
 
-  private removeTransformBox(meta: CommandMeta): void {
-    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
-
-    if (!transformBoxEntity) {
-      console.warn('No transform box found to remove')
+  private removeTransformBox(_meta: CommandMeta): void {
+    if (this.transformBoxes.current.length === 0) {
+      console.warn('No transform box to remove')
       return
     }
+
+    const transformBoxEntity = this.transformBoxes.current[0]
 
     if (transformBoxEntity) {
       const transformBox = transformBoxEntity.read(TransformBox)
@@ -90,20 +90,18 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
 
   private addTransformBox(meta: CommandMeta): void {
     const uuid = new UuidGenerator(meta.seed)
-    const transformBoxEntity = this.createEntity(
-      TransformBox,
-      comps.Block,
-      { id: uuid.next(), createdBy: meta.uid },
-      comps.Shape,
-      DragStart,
-    )
+    const transformBoxEntity = this.createEntity(TransformBox, comps.Block, { id: uuid.next() }, comps.Shape, DragStart)
 
     this._updateTransformBox(transformBoxEntity, uuid, meta.uid)
   }
 
   private updateTransformBox(meta: CommandMeta): void {
-    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
-    if (!transformBoxEntity) return
+    if (this.transformBoxes.current.length === 0) {
+      console.warn('No transform box to update')
+      return
+    }
+
+    const transformBoxEntity = this.transformBoxes.current[0]
 
     const uuid = new UuidGenerator(meta.seed)
     this._updateTransformBox(transformBoxEntity, uuid, meta.uid)
@@ -293,7 +291,6 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
         height: handle.height,
         rotateZ: handle.rotateZ,
         rank: handle.rank,
-        createdBy: this.resources.uid,
       })
 
       Object.assign(handleEntity.write(comps.Shape), {
@@ -315,8 +312,13 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
   }
 
-  private hideTransformBox(meta: CommandMeta): void {
-    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+  private hideTransformBox(_meta: CommandMeta): void {
+    if (this.transformBoxes.current.length === 0) {
+      console.warn('No transform box to hide')
+      return
+    }
+
+    const transformBoxEntity = this.transformBoxes.current[0]
 
     if (!transformBoxEntity) {
       console.warn('No transform box found to hide')
@@ -341,7 +343,12 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
   }
 
   private showTransformBox(meta: CommandMeta): void {
-    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+    if (this.transformBoxes.current.length === 0) {
+      console.warn('No transform box to show')
+      return
+    }
+
+    const transformBoxEntity = this.transformBoxes.current[0]
 
     if (!transformBoxEntity) {
       console.warn('No transform box found to show')
@@ -520,7 +527,12 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
   }
 
   private startTransformBoxEdit(meta: CommandMeta): void {
-    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+    if (this.transformBoxes.current.length === 0) {
+      console.warn('No transform box to edit')
+      return
+    }
+
+    const transformBoxEntity = this.transformBoxes.current[0]
 
     if (!transformBoxEntity) {
       console.warn('No transform box found to edit')
@@ -547,7 +559,11 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
   }
 
   private endTransformBoxEdit(meta: CommandMeta): void {
-    const transformBoxEntity = this.transformBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
+    if (this.transformBoxes.current.length === 0) {
+      console.warn('No transform box to end edit')
+      return
+    }
+    const transformBoxEntity = this.transformBoxes.current[0]
 
     if (!transformBoxEntity) {
       console.warn('No transform box found to end edit')

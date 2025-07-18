@@ -10,7 +10,6 @@ export class PreInputCommandSpawner extends BaseSystem<Record<string, Array<unkn
   protected declare readonly resources: CoreResources
 
   @co private *spawnCommand(command: Command): Generator {
-    console.log('Spawning command:', command)
     const args = JSON.parse(command.payload)
     this.emitCommand(command.kind, ...args)
     yield

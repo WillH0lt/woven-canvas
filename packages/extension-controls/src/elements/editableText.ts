@@ -1,3 +1,4 @@
+import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { Editor } from '@tiptap/core'
 import Document from '@tiptap/extension-document'
 import History from '@tiptap/extension-history'
@@ -7,12 +8,16 @@ import { LitElement, type PropertyValues, css, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 
-import type { TextModel } from '@infinitecanvas/core'
+import { type FontSizeModel, InfiniteCanvas, type TextModel } from '@infinitecanvas/core'
 
 @customElement('ic-editable-text')
-export class EditableTextElement extends LitElement {
-  @property({ type: Object }) model!: TextModel
-  @property({ type: Number }) fontSize!: number
+export class EditableTextElement extends SignalWatcher(LitElement) {
+  @property({ type: String }) blockId!: string
+
+  model: ReadonlySignal<TextModel | undefined> | null = null
+  fontSize: ReadonlySignal<FontSizeModel | undefined> | null = null
+  // @state() model: TextModel | null = null
+  // @state() fontSize: FontSizeModel | null = null
 
   @property({ type: Number }) pointerStartX?: number
   @property({ type: Number }) pointerStartY?: number
@@ -27,6 +32,13 @@ export class EditableTextElement extends LitElement {
       outline: none;
     }
   `
+
+  public connectedCallback(): void {
+    super.connectedCallback()
+
+    this.model = InfiniteCanvas.instance?.store.core.textById(this.blockId) ?? null
+    this.fontSize = InfiniteCanvas.instance?.store.core.fontSizeById(this.blockId) ?? null
+  }
 
   public firstUpdated(_changedProperties: PropertyValues): void {
     super.firstUpdated(_changedProperties)
@@ -46,7 +58,7 @@ export class EditableTextElement extends LitElement {
     this._editor = new Editor({
       element,
       extensions: [Document, Paragraph, Text, History],
-      content: this.model?.content,
+      content: this.model?.value?.content,
     })
 
     if (this.pointerStartX !== undefined && this.pointerStartY !== undefined) {
@@ -87,13 +99,17 @@ export class EditableTextElement extends LitElement {
   }
 
   render() {
+    if (!this.model?.value || !this.fontSize?.value) {
+      return html`<div>Error: Model or FontSize not found</div>`
+    }
+
     return html`
     <div id="editor-content" style=${styleMap({
-      'font-family': this.model.fontFamily,
-      'text-align': this.model.align,
-      'line-height': `${this.model.lineHeight}`,
-      color: `rgba(${this.model.red}, ${this.model.green}, ${this.model.blue}, ${this.model.alpha / 255})`,
-      'font-size': `${this.fontSize}px`,
+      'font-family': this.model.value.fontFamily,
+      'text-align': this.model.value.align,
+      'line-height': `${this.model.value.lineHeight}`,
+      color: `rgba(${this.model.value.red}, ${this.model.value.green}, ${this.model.value.blue}, ${this.model.value.alpha / 255})`,
+      'font-size': `${this.fontSize.value.value}px`,
     })}></div>
     `
   }

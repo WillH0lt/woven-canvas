@@ -46,8 +46,7 @@ export function intersectPoint(point: [number, number], blockEntities: readonly 
 
     // If we have an intersection, check if it has a higher rank
     const rank = LexoRank.parse(blockEntity.read(Block).rank)
-
-    if (!intersect || maxRank.compareTo(rank) < 0) {
+    if (!intersect || rank.compareTo(maxRank) > 0) {
       intersect = blockEntity
       maxRank = rank
     }

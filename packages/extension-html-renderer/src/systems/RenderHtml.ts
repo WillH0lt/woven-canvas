@@ -1,7 +1,11 @@
 import { BaseSystem, comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
+import { LexoRank } from 'lexorank'
+
 import type { ShapeElement, TextElement } from '../elements'
 import type { HtmlRendererResources } from '../types'
+
+const RANK_ATTRIBUTE = 'data-ic-rank'
 
 export class RenderHtml extends BaseSystem {
   protected declare readonly resources: HtmlRendererResources
@@ -11,15 +15,13 @@ export class RenderHtml extends BaseSystem {
   private readonly blocks = this.query((q) => q.added.changed.removed.with(comps.Block).trackWrites)
 
   private readonly opacityBlocks = this.query(
-    (q) => q.addedChangedOrRemoved.with(comps.Block, comps.Opacity).trackWrites,
+    (q) => q.addedChangedOrRemoved.with(comps.Block).and.with(comps.Opacity).trackWrites,
   )
 
-  private readonly shapes = this.query(
-    (q) => q.addedOrChanged.with(comps.Shape).trackWrites.using(comps.Opacity).read.trackWrites,
-  )
+  private readonly shapes = this.query((q) => q.addedOrChanged.with(comps.Shape).trackWrites.using(comps.Opacity).read)
 
   private readonly texts = this.query(
-    (q) => q.addedOrChanged.with(comps.Text, comps.FontSize).trackWrites.using(comps.Opacity).read.trackWrites,
+    (q) => q.addedOrChanged.with(comps.Text, comps.FontSize).trackWrites.using(comps.Opacity).read,
   )
 
   public execute(): void {
@@ -27,23 +29,24 @@ export class RenderHtml extends BaseSystem {
     if (this.cameras.changed.length > 0) {
       const camera = this.cameras.changed[0].read(comps.Camera)
       const viewport = this.resources.viewport
-      viewport.style.transformOrigin = '0 0'
       viewport.style.transform = `translate(${-camera.left * camera.zoom}px, ${-camera.top * camera.zoom}px) scale(${camera.zoom})`
-      viewport.style.position = 'relative'
     }
 
     // render blocks
+    let needsSorting = false
     for (const blockEntity of this.blocks.added) {
       const element = this.createBlockElement(blockEntity)
       this.updateBlockElementHtml(blockEntity, element)
       this.resources.viewport.appendChild(element)
+      needsSorting = true
     }
 
     for (const blockEntity of this.blocks.changed) {
       const block = blockEntity.read(comps.Block)
       const element = this.resources.viewport.querySelector<HTMLElement>(`[id='${block.id}']`)
       if (!element) continue
-      this.updateBlockElementHtml(blockEntity, element)
+      const rankUpdate = this.updateBlockElementHtml(blockEntity, element)
+      needsSorting ||= rankUpdate
     }
 
     // block opacity
@@ -83,17 +86,32 @@ export class RenderHtml extends BaseSystem {
       if (!element) continue
       this.resources.viewport.removeChild(element)
     }
+
+    if (needsSorting) {
+      const elements = Array.from(this.resources.viewport.children) as HTMLElement[]
+
+      elements.sort((a, b) => {
+        const rankA = LexoRank.parse(a.getAttribute(RANK_ATTRIBUTE) || '0')
+        const rankB = LexoRank.parse(b.getAttribute(RANK_ATTRIBUTE) || '0')
+        return rankA.compareTo(rankB)
+      })
+
+      for (const [index, element] of elements.entries()) {
+        element.style.zIndex = `${index}`
+      }
+    }
   }
 
   private createBlockElement(entity: Entity): HTMLElement {
     const block = entity.read(comps.Block)
-    const element = document.createElement(block.tag)
+    const element = document.createElement(block.kind)
     element.id = block.id
+    element.setAttribute(RANK_ATTRIBUTE, block.rank)
 
     return element
   }
 
-  private updateBlockElementHtml(entity: Entity, element: HTMLElement): void {
+  private updateBlockElementHtml(entity: Entity, element: HTMLElement): boolean {
     const block = entity.read(comps.Block)
 
     element.style.position = 'absolute'
@@ -106,6 +124,13 @@ export class RenderHtml extends BaseSystem {
     element.style.width = `${block.width}px`
     element.style.height = `${block.height}px`
     element.style.transform = `rotateZ(${block.rotateZ}rad)`
+
+    const rank = element.getAttribute(RANK_ATTRIBUTE)
+    const rankUpdate = rank !== block.rank
+
+    element.setAttribute(RANK_ATTRIBUTE, block.rank)
+
+    return rankUpdate
   }
 
   private updateOpacityBlockHtml(entity: Entity, element: HTMLElement): void {

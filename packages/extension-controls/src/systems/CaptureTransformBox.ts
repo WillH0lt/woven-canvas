@@ -58,16 +58,12 @@ export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & BlockCo
         if (!event.blockEntity?.has(controlComps.TransformBox)) return false
 
         const block = event.blockEntity.read(comps.Block)
-        if (block.createdBy !== this.resources.uid) return false
 
         return true
       },
       isOverTransformHandle: ({ event }) => {
         if (!('blockEntity' in event)) return false
         if (!event.blockEntity?.has(controlComps.TransformHandle)) return false
-
-        const handle = event.blockEntity.read(comps.Block)
-        if (handle.createdBy !== this.resources.uid) return false
 
         return true
       },

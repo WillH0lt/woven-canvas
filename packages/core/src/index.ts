@@ -16,6 +16,7 @@ export {
   type MouseEvent,
   type BlockModel,
   type TextModel,
+  type FontSizeModel,
   type CommandModel,
   type CommandMeta,
   type CommandArgs,
@@ -25,7 +26,7 @@ export {
   type Resources,
 } from './types'
 
-export { Extension } from './Extension'
+export { BaseExtension } from './BaseExtension'
 export { BaseSystem } from './BaseSystem'
 export { ComponentRegistry } from './ComponentRegistry'
 export { Diff, type State } from './History'

@@ -14,15 +14,6 @@ import { intersectAabb } from '../helpers'
 import { ControlCommand, type ControlCommandArgs, type SelectBlockOptions } from '../types'
 
 export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
-  private readonly rankBoundsQuery = this.query((q) => q.current.with(comps.RankBounds).write)
-
-  private get rankBounds(): comps.RankBounds {
-    return this.rankBoundsQuery.current[0].write(comps.RankBounds)
-  }
-
-  // declaring to becsy that rankBounds is a singleton component
-  private readonly _rankBounds = this.singleton.read(comps.RankBounds)
-
   private readonly blocks = this.query(
     (q) =>
       q.current
@@ -43,7 +34,6 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     this.addCommandListener(ControlCommand.SelectBlock, this.selectBlock.bind(this))
     this.addCommandListener(ControlCommand.DeselectBlock, this.deselectBlock.bind(this))
     this.addCommandListener(ControlCommand.DeselectAll, this.deselectAll.bind(this))
-    this.addCommandListener(ControlCommand.RemoveSelected, this.removeSelected.bind(this))
 
     this.addCommandListener(BlockCommand.Undo, this.deselectAll.bind(this))
     this.addCommandListener(BlockCommand.Redo, this.deselectAll.bind(this))
@@ -61,7 +51,6 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
       {
         id,
         rank: SELECTION_BOX_RANK,
-        createdBy: meta.uid,
       },
       comps.Shape,
       {
@@ -72,12 +61,12 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
   }
 
   private updateSelectionBox(meta: CommandMeta, blockPartial: Partial<BlockModel>): void {
-    const selectionBoxEntity = this.selectionBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
-
-    if (!selectionBoxEntity) {
+    if (this.selectionBoxes.current.length === 0) {
       console.warn(`Can't update selection box. Selection box not found for user ${meta.uid}`)
       return
     }
+    // TODO somehow reference which selection box to update (ie by uid)
+    const selectionBoxEntity = this.selectionBoxes.current[0]
 
     const block = selectionBoxEntity.write(comps.Block)
     Object.assign(block, blockPartial)
@@ -104,12 +93,13 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
   }
 
   private removeSelectionBox(meta: CommandMeta): void {
-    const selectionBoxEntity = this.selectionBoxes.current.find((e) => e.read(comps.Block).createdBy === meta.uid)
-
-    if (!selectionBoxEntity) {
+    if (this.selectionBoxes.current.length === 0) {
       console.warn(`Can't remove selection box. Selection box not found for user ${meta.uid}`)
       return
     }
+
+    // TODO somehow reference which selection box to remove (ie by uid)
+    const selectionBoxEntity = this.selectionBoxes.current[0]
 
     this.deleteEntity(selectionBoxEntity)
   }
@@ -151,17 +141,5 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     if (blockEntity.read(comps.Selected).selectedBy !== meta.uid) return
 
     blockEntity.remove(comps.Selected)
-  }
-
-  private removeSelected(meta: CommandMeta): void {
-    for (const blockEntity of this.selectedBlocks.current) {
-      if (blockEntity.read(comps.Selected).selectedBy === meta.uid) {
-        this.deleteEntity(blockEntity)
-      }
-    }
-
-    if (meta.uid === this.resources.uid) {
-      this.emitCommand(BlockCommand.CreateCheckpoint)
-    }
   }
 }

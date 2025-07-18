@@ -21,9 +21,7 @@ export class PreRenderOverlay extends BaseSystem {
     if (this.cameras.changed.length > 0) {
       const camera = this.cameras.changed[0].read(comps.Camera)
       const viewport = this.resources.viewport
-      viewport.style.transformOrigin = '0 0'
       viewport.style.transform = `translate(${-camera.left * camera.zoom}px, ${-camera.top * camera.zoom}px) scale(${camera.zoom})`
-      viewport.style.position = 'relative'
     }
 
     for (const entity of this.entities.added) {
@@ -55,9 +53,8 @@ export class PreRenderOverlay extends BaseSystem {
   private createTextElement(entity: Entity): EditableTextElement {
     const element = document.createElement('ic-editable-text') as EditableTextElement
     const block = entity.read(comps.Block)
-    const text = entity.read(comps.Text)
     element.id = block.id
-    element.model = text.toModel()
+    element.blockId = block.id
 
     if (this.pointers.removed.length > 0) {
       this.accessRecentlyDeletedData()
@@ -73,8 +70,6 @@ export class PreRenderOverlay extends BaseSystem {
 
   private updateElementHtml(entity: Entity, element: EditableTextElement): void {
     const block = entity.read(comps.Block)
-    const text = entity.read(comps.Text)
-    const fontSize = entity.read(comps.FontSize)
 
     element.style.position = 'absolute'
     element.style.left = `${block.left}px`
@@ -82,9 +77,5 @@ export class PreRenderOverlay extends BaseSystem {
     element.style.width = `${block.width}px`
     element.style.height = `${block.height}px`
     element.style.transform = `rotateZ(${block.rotateZ}rad)`
-
-    element.model = text.toModel()
-    element.fontSize = fontSize.value
-    element.requestUpdate()
   }
 }

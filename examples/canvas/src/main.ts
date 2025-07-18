@@ -1,6 +1,7 @@
 import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
+import { FloatingMenusExtension } from '@infiniteCanvas/extension-floating-menus'
 import { type BlockModel, InfiniteCanvas } from '@infinitecanvas/core'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 // import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
@@ -44,10 +45,12 @@ async function initializeCanvas(container: HTMLDivElement) {
     // new OverlayExtension(),
     // new MultiplayerExtension(),
     new LocalStorageExtension(),
+    new FloatingMenusExtension(),
   ])
+
   container.appendChild(infiniteCanvas.domElement)
 
-  infiniteCanvas.store.block.blockCount.subscribe((count) => {
+  infiniteCanvas.store.core.blockCount.subscribe((count) => {
     console.log('Block count:', count)
   })
 
@@ -86,19 +89,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Delete') {
-    infiniteCanvas?.commands.controls.removeSelected()
+    infiniteCanvas?.commands.core.removeSelected()
   }
 
   if (event.key === 'z' && event.ctrlKey) {
-    infiniteCanvas?.commands.block.undo()
+    infiniteCanvas?.commands.core.undo()
   }
 
   if (event.key === 'y' && event.ctrlKey) {
-    infiniteCanvas?.commands.block.redo()
+    infiniteCanvas?.commands.core.redo()
   }
 
   if (event.key === 'q') {
-    infiniteCanvas?.commands.block.createCheckpoint()
+    infiniteCanvas?.commands.core.createCheckpoint()
   }
 })
 
@@ -126,7 +129,7 @@ function generateBlock(block: Partial<BlockModel>): Partial<BlockModel> {
 
 function addShape(left: number, top: number): void {
   const block = generateBlock({ left, top })
-  infiniteCanvas?.commands.block.addShape(block, {
+  infiniteCanvas?.commands.core.addShape(block, {
     red: Math.floor(Math.random() * 256),
     green: Math.floor(Math.random() * 256),
     blue: Math.floor(Math.random() * 256),
@@ -136,7 +139,7 @@ function addShape(left: number, top: number): void {
 
 function addText(left: number, top: number): void {
   const block = generateBlock({ left, top })
-  infiniteCanvas?.commands.block.addText(block, {
+  infiniteCanvas?.commands.core.addText(block, {
     content: lorem.generateSentences(1),
     fontFamily: 'Figtree',
     red: Math.floor(Math.random() * 256),

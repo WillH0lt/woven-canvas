@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Extension } from '../src/Extension'
+import { BaseExtension } from '../src/BaseExtension'
 import { InfiniteCanvas } from '../src/InfiniteCanvas'
 import type { Block, Options } from '../src/types'
 
 // Mock Extension implementation for testing
-class MockExtension extends Extension {
+class MockExtension extends BaseExtension {
   async initialize() {
     /* no-op */
   }

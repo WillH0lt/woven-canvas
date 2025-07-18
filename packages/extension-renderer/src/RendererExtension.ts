@@ -1,11 +1,13 @@
 import type { Resources } from '@infinitecanvas/core'
-import { Extension } from '@infinitecanvas/core'
+import { BaseExtension } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
 import { Application, Assets, Container } from 'pixi.js'
 
 import * as sys from './systems/index.js'
 
-export class RendererExtension extends Extension {
+export class RendererExtension extends BaseExtension {
+  public name = 'renderer'
+
   public async preBuild(resources: Resources): Promise<void> {
     const app = new Application()
 

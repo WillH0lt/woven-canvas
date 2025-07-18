@@ -1,16 +1,17 @@
 import { System } from '@lastolivegames/becsy'
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
+import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
-import { Extension } from './Extension'
 import type { State } from './State'
-import { Block, Selected, Shape, Text } from './components'
+import { Block, FontSize, Selected, Shape, Text } from './components'
 import * as sys from './systems'
 import type {
   BlockCommandArgs,
   BlockModel,
   CoreResources,
   EmitterEvents,
+  FontSizeModel,
   ICommands,
   IStore,
   Resources,
@@ -18,13 +19,11 @@ import type {
   ShapeModel,
   TextModel,
 } from './types'
-import { BlockCommand, type CoreOptions } from './types'
-
-// import { type CoreResources, EmitterEventKind, type EmitterEvents, type ICommands, Options } from './types'
+import { BlockCommand } from './types'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
-    block: {
+    core: {
       addShape: (block: Omit<Partial<BlockModel>, 'tag'>, shape: Partial<ShapeModel>) => void
       addText: (
         block: Omit<Partial<BlockModel>, 'tag' | 'stretchableHeight' | 'stretchableWidth'>,
@@ -35,26 +34,32 @@ declare module '@infinitecanvas/core' {
       undo: () => void
       redo: () => void
       createCheckpoint: () => void
+      bringForwardSelected: () => void
+      sendBackwardSelected: () => void
+      duplicateSelected: () => void
+      removeSelected: () => void
     }
   }
 
   interface IStore {
-    block: {
+    core: {
       blockCount: ReadonlySignal<number>
       selectedBlockCount: ReadonlySignal<number>
       selectedBlockIds: ReadonlySignal<string[]>
       blockById: (id: string) => ReadonlySignal<BlockModel | undefined>
+      textById: (id: string) => ReadonlySignal<TextModel | undefined>
+      shapeById: (id: string) => ReadonlySignal<ShapeModel | undefined>
+      fontSizeById: (id: string) => ReadonlySignal<FontSizeModel | undefined>
     }
   }
 }
 
-export class CoreExtension extends Extension {
+export class CoreExtension extends BaseExtension {
   public name = 'core'
 
   private initialEntities: Record<string, Record<string, any>> = {}
 
   constructor(
-    private readonly options: CoreOptions,
     private readonly emitter: Emitter<EmitterEvents>,
     private readonly state: State,
   ) {
@@ -72,6 +77,7 @@ export class CoreExtension extends Extension {
     ComponentRegistry.instance.registerStateComponent(Selected)
     ComponentRegistry.instance.registerStateComponent(Text)
     ComponentRegistry.instance.registerStateComponent(Shape)
+    ComponentRegistry.instance.registerStateComponent(FontSize)
 
     const coreResources: CoreResources = {
       ...resources,
@@ -118,7 +124,7 @@ export class CoreExtension extends Extension {
 
   public addCommands = (send: SendCommandFn<BlockCommandArgs>): Partial<ICommands> => {
     return {
-      block: {
+      core: {
         addShape: (block: Partial<BlockModel>, shape: Partial<ShapeModel>) => send(BlockCommand.AddShape, block, shape),
         addText: (block: Partial<BlockModel>, text: Partial<TextModel>) => send(BlockCommand.AddText, block, text),
         moveCamera: (x: number, y: number) => send(BlockCommand.MoveCamera, { x, y }),
@@ -126,13 +132,17 @@ export class CoreExtension extends Extension {
         undo: () => send(BlockCommand.Undo),
         redo: () => send(BlockCommand.Redo),
         createCheckpoint: () => send(BlockCommand.CreateCheckpoint),
+        bringForwardSelected: () => send(BlockCommand.BringForwardSelected),
+        sendBackwardSelected: () => send(BlockCommand.SendBackwardSelected),
+        duplicateSelected: () => send(BlockCommand.DuplicateSelected),
+        removeSelected: () => send(BlockCommand.RemoveSelected),
       },
     }
   }
 
   public addStore = (state: State): Partial<IStore> => {
     return {
-      block: {
+      core: {
         blockCount: computed(() => Object.keys(state.getComponents(Block).value).length),
         selectedBlockCount: computed(() => Object.keys(state.getComponents(Selected).value).length),
         selectedBlockIds: computed(() => {
@@ -141,6 +151,12 @@ export class CoreExtension extends Extension {
         }),
         blockById: (id: string): ReadonlySignal<BlockModel | undefined> =>
           computed(() => state.getComponents(Block).value[id]?.value),
+        textById: (id: string): ReadonlySignal<TextModel | undefined> =>
+          computed(() => state.getComponents(Text).value[id]?.value),
+        shapeById: (id: string): ReadonlySignal<ShapeModel | undefined> =>
+          computed(() => state.getComponents(Shape).value[id]?.value),
+        fontSizeById: (id: string): ReadonlySignal<FontSizeModel | undefined> =>
+          computed(() => state.getComponents(FontSize).value[id]?.value),
       },
     }
   }

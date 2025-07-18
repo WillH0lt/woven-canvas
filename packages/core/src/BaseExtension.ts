@@ -3,7 +3,7 @@ import type { System, SystemGroup } from '@lastolivegames/becsy'
 import type { State } from './State.js'
 import type { CommandArgs, ICommands, IStore, Resources, SendCommandFn } from './types.js'
 
-export abstract class Extension {
+export abstract class BaseExtension {
   public name = 'base'
 
   // == Input Groups ==
@@ -70,12 +70,12 @@ export abstract class Extension {
     return this._postRenderGroup
   }
 
-  public preBuild(resources: Resources): Promise<void> {
+  public preBuild(_resources: Resources): Promise<void> {
     // implementation in subclasses
     return Promise.resolve()
   }
 
-  public build(worldSystem: System): void {
+  public build(_worldSystem: System): void {
     // implementation in subclasses
   }
 
@@ -85,5 +85,10 @@ export abstract class Extension {
 
   public addStore(_state: State): Partial<IStore> {
     return {}
+  }
+
+  public async destroy(): Promise<void> {
+    // implementation in subclasses
+    return Promise.resolve()
   }
 }

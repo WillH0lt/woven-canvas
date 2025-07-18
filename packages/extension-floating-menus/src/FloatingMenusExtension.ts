@@ -1,13 +1,21 @@
 import type { Resources } from '@infinitecanvas/core'
 import { BaseExtension } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
+import type { z } from 'zod'
 
 import './elements'
 import * as sys from './systems/index'
-import type { HtmlRendererResources } from './types'
+import { FloatingMenusOptions, type FloatingMenusResources } from './types'
 
-export class HtmlRendererExtension extends BaseExtension {
-  public name = 'html-renderer'
+export class FloatingMenusExtension extends BaseExtension {
+  public name = 'floating-menus'
+
+  private readonly options: z.infer<typeof FloatingMenusOptions>
+
+  constructor(options: z.input<typeof FloatingMenusOptions> = {}) {
+    super()
+    this.options = FloatingMenusOptions.parse(options)
+  }
 
   public async preBuild(resources: Resources): Promise<void> {
     const viewport = document.createElement('div')
@@ -17,14 +25,15 @@ export class HtmlRendererExtension extends BaseExtension {
     // establish a stacking context
     viewport.style.transform = 'translate(0, 0) scale(1)'
     viewport.style.position = 'relative'
-    resources.domElement.prepend(viewport)
+    resources.domElement.append(viewport)
 
-    const r: HtmlRendererResources = {
+    const r: FloatingMenusResources = {
       ...resources,
       viewport,
+      options: this.options,
     }
 
-    const group = System.group(sys.RenderHtml, {
+    const group = System.group(sys.PreRenderFloatingMenus, {
       resources: r,
     })
 

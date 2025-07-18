@@ -26,13 +26,18 @@ export type CommandMap = {
   [commandKind: string]: Array<unknown>
 }
 
-export const CoreOptions = z.object({
-  // persistenceKey: z.string().optional(),
-})
+// export const CoreOptions = z.object({
+//   persistenceKey: z.string().optional(),
+// })
 
-export type CoreOptions = z.input<typeof CoreOptions>
+// export type CoreOptions = z.input<typeof CoreOptions>
 
-export const Options = CoreOptions.extend({
+// export const Options = CoreOptions.extend({
+//   autoloop: z.boolean().default(true),
+//   autofocus: z.boolean().default(true),
+// })
+
+export const Options = z.object({
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
 })
@@ -47,8 +52,7 @@ export interface Resources {
 
 export interface BlockModel {
   id: string
-  tag: string
-  createdBy: string
+  kind: string
   top: number
   left: number
   width: number
@@ -82,6 +86,12 @@ export interface ShapeModel {
   green: number
   blue: number
   alpha: number
+}
+
+export interface FontSizeModel {
+  value: number
+  lastBlockWidth: number
+  lastBlockHeight: number
 }
 
 export interface CommandModel {
@@ -166,6 +176,11 @@ export enum BlockCommand {
   Undo = 'undo',
   Redo = 'redo',
   CreateCheckpoint = 'createCheckpoint',
+
+  BringForwardSelected = 'bringForwardSelected',
+  SendBackwardSelected = 'sendBackwardSelected',
+  DuplicateSelected = 'duplicateSelected',
+  RemoveSelected = 'removeSelected',
 }
 
 export type BlockCommandArgs = {
@@ -205,6 +220,11 @@ export type BlockCommandArgs = {
   [BlockCommand.Undo]: []
   [BlockCommand.Redo]: []
   [BlockCommand.CreateCheckpoint]: []
+
+  [BlockCommand.BringForwardSelected]: []
+  [BlockCommand.SendBackwardSelected]: []
+  [BlockCommand.DuplicateSelected]: []
+  [BlockCommand.RemoveSelected]: []
 }
 
 export interface CommandMeta {
