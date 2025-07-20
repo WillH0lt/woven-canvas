@@ -1,12 +1,7 @@
-import {
-  BaseSystem,
-  type BlockModel,
-  CoreCommand,
-  type CoreCommandArgs,
-  comps,
-} from '@infinitecanvas/core'
-import { binarySearchForId, computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
+import { BaseSystem, type BlockModel, CoreCommand, type CoreCommandArgs, comps } from '@infinitecanvas/core'
+import { computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
 
+import type { Entity } from '@lastolivegames/becsy'
 import { SelectionBox } from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
 import { intersectAabb } from '../helpers'
@@ -110,15 +105,9 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & CoreCommand
     }
   }
 
-  private selectBlock({ id, options }: { id: string; options?: SelectBlockOptions }): void {
+  private selectBlock(blockEntity: Entity, { options }: { options?: SelectBlockOptions }): void {
     if (options?.deselectOthers) {
       this.deselectAll()
-    }
-
-    const blockEntity = binarySearchForId(comps.Block, id, this.blocks.current)
-    if (!blockEntity) {
-      console.warn(`Block with id ${id} not found`)
-      return
     }
 
     if (blockEntity.has(comps.Selected)) return
@@ -128,13 +117,7 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & CoreCommand
     })
   }
 
-  private deselectBlock({ id }: { id: string }): void {
-    const blockEntity = binarySearchForId(comps.Block, id, this.blocks.current)
-    if (!blockEntity) {
-      console.warn(`Block with id ${id} not found`)
-      return
-    }
-
+  private deselectBlock(blockEntity: Entity): void {
     if (!blockEntity.has(comps.Selected)) return
     if (blockEntity.read(comps.Selected).selectedBy !== this.resources.uid) return
 

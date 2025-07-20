@@ -131,8 +131,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & CoreCommandAr
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
         if (!context.draggedEntity.has(comps.Persistent)) return
-        const { id } = context.draggedEntity.read(comps.Block)
-        this.emitCommand(ControlCommand.SelectBlock, { id, options: { deselectOthers: true } })
+        this.emitCommand(ControlCommand.SelectBlock, context.draggedEntity, { options: { deselectOthers: true } })
       },
       deselectAll: () => {
         this.emitCommand(ControlCommand.DeselectAll)

@@ -1,4 +1,5 @@
 import type { BlockModel, Resources } from '@infinitecanvas/core'
+import type { Entity } from '@lastolivegames/becsy'
 import { z } from 'zod/v4'
 
 export enum PointerAction {
@@ -72,16 +73,12 @@ export type ControlCommandArgs = {
   [ControlCommand.RemoveSelectionBox]: []
 
   [ControlCommand.SelectBlock]: [
+    Entity,
     {
-      id: string
       options: SelectBlockOptions
     },
   ]
-  [ControlCommand.DeselectBlock]: [
-    {
-      id: string
-    },
-  ]
+  [ControlCommand.DeselectBlock]: [Entity]
   [ControlCommand.DeselectAll]: []
 
   [ControlCommand.AddTransformBox]: []
