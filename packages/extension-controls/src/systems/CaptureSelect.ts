@@ -1,4 +1,4 @@
-import { BaseSystem, BlockCommand, type BlockCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
 import { distance } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 import { and, assign, not, setup } from 'xstate'
@@ -10,7 +10,7 @@ import { CapturePan } from './CapturePan'
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
 
-export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
+export class CaptureSelect extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
 
   private readonly tool = this.singleton.read(comps.Tool)
@@ -90,9 +90,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
       }),
       resetDragged: ({ context }) => {
         if (!context.draggedEntity) return
-        const { id } = context.draggedEntity.read(comps.Block)
-        this.emitCommand(BlockCommand.UpdateBlockPosition, {
-          id,
+        this.emitCommand(CoreCommand.UpdateBlock, context.draggedEntity, {
           left: context.draggedEntityStart[0],
           top: context.draggedEntityStart[1],
         })
@@ -111,14 +109,12 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & BlockCommandA
         this.emitCommand(ControlCommand.RemoveSelectionBox)
       },
       createCheckpoint: () => {
-        this.emitCommand(BlockCommand.CreateCheckpoint)
+        this.emitCommand(CoreCommand.CreateCheckpoint)
       },
       updateDragged: ({ context, event }) => {
         if (!context.draggedEntity || !('worldPosition' in event)) return
 
-        const { id } = context.draggedEntity.read(comps.Block)
-        this.emitCommand(BlockCommand.UpdateBlockPosition, {
-          id,
+        this.emitCommand(CoreCommand.UpdateBlock, context.draggedEntity, {
           left: context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0],
           top: context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1],
         })

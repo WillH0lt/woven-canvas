@@ -4,8 +4,8 @@ import { assign, setup } from 'xstate'
 import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components'
 import {
-  BlockCommand,
-  type BlockCommandArgs,
+  CoreCommand,
+  type CoreCommandArgs,
   CursorIcon,
   CursorState,
   type MouseEvent,
@@ -19,7 +19,7 @@ type CursorEvent = PointerEvent | MouseEvent
 // | { type: 'setTool'; tool: Tool; block: Partial<BlockModel> }
 // | { type: 'cancel' }
 
-export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
+export class CaptureCursor extends BaseSystem<CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
 
   private readonly mouse = this.singleton.read(comps.Mouse)
@@ -169,7 +169,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
             //   } catch (e) {
             //     console.error('Failed to parse held block:', e)
             //   }
-            //   this.emitCommand(BlockCommand.AddShape, {
+            //   this.emitCommand(CoreCommand.AddShape, {
             //     ...block,
             //     left: event.worldPosition[0],
             //     top: event.worldPosition[1],
@@ -204,7 +204,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
 
     // TODO this will maybe be handled in the store once we have a store
     if (this.cursorState.icon !== context.icon || this.cursorState.iconRotation !== context.iconRotation) {
-      this.emitCommand(BlockCommand.SetCursor, {
+      this.emitCommand(CoreCommand.SetCursor, {
         icon: context.icon,
         rotateZ: context.iconRotation,
       })
@@ -229,7 +229,7 @@ export class CaptureCursor extends BaseSystem<BlockCommandArgs> {
     //   } as CursorEvent)
     // }
 
-    // const setToolCommand = this.getCommand(BlockCommand.SetTool)
+    // const setToolCommand = this.getCommand(CoreCommand.SetTool)
     // if (setToolCommand) {
     //   events.push({
     //     type: 'setTool',

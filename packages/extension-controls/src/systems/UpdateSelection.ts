@@ -1,19 +1,18 @@
 import {
   BaseSystem,
-  BlockCommand,
-  type BlockCommandArgs,
   type BlockModel,
-  type CommandMeta,
+  CoreCommand,
+  type CoreCommandArgs,
   comps,
 } from '@infinitecanvas/core'
-import { UuidGenerator, binarySearchForId, computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
+import { binarySearchForId, computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
 
 import { SelectionBox } from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
 import { intersectAabb } from '../helpers'
 import { ControlCommand, type ControlCommandArgs, type SelectBlockOptions } from '../types'
 
-export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
+export class UpdateSelection extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
   private readonly blocks = this.query(
     (q) =>
       q.current
@@ -35,17 +34,16 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     this.addCommandListener(ControlCommand.DeselectBlock, this.deselectBlock.bind(this))
     this.addCommandListener(ControlCommand.DeselectAll, this.deselectAll.bind(this))
 
-    this.addCommandListener(BlockCommand.Undo, this.deselectAll.bind(this))
-    this.addCommandListener(BlockCommand.Redo, this.deselectAll.bind(this))
+    this.addCommandListener(CoreCommand.Undo, this.deselectAll.bind(this))
+    this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))
   }
 
   public execute(): void {
     this.executeCommands()
   }
 
-  private addSelectionBox(meta: CommandMeta): void {
-    const uuid = new UuidGenerator(meta.seed)
-    const id = uuid.next()
+  private addSelectionBox(): void {
+    const id = crypto.randomUUID()
     this.createEntity(
       comps.Block,
       {
@@ -60,9 +58,9 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     )
   }
 
-  private updateSelectionBox(meta: CommandMeta, blockPartial: Partial<BlockModel>): void {
+  private updateSelectionBox(blockPartial: Partial<BlockModel>): void {
     if (this.selectionBoxes.current.length === 0) {
-      console.warn(`Can't update selection box. Selection box not found for user ${meta.uid}`)
+      console.warn(`Can't update selection box. Selection box not found for user ${this.resources.uid}`)
       return
     }
     // TODO somehow reference which selection box to update (ie by uid)
@@ -86,15 +84,15 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     for (const entity of intersectedEntities) {
       if (!entity.has(comps.Selected)) {
         entity.add(comps.Selected, {
-          selectedBy: meta.uid,
+          selectedBy: this.resources.uid,
         })
       }
     }
   }
 
-  private removeSelectionBox(meta: CommandMeta): void {
+  private removeSelectionBox(): void {
     if (this.selectionBoxes.current.length === 0) {
-      console.warn(`Can't remove selection box. Selection box not found for user ${meta.uid}`)
+      console.warn(`Can't remove selection box. Selection box not found for user ${this.resources.uid}`)
       return
     }
 
@@ -104,17 +102,17 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     this.deleteEntity(selectionBoxEntity)
   }
 
-  private deselectAll(meta: CommandMeta): void {
+  private deselectAll(): void {
     for (const blockEntity of this.selectedBlocks.current) {
-      if (blockEntity.has(comps.Selected) && blockEntity.read(comps.Selected).selectedBy === meta.uid) {
+      if (blockEntity.has(comps.Selected) && blockEntity.read(comps.Selected).selectedBy === this.resources.uid) {
         blockEntity.remove(comps.Selected)
       }
     }
   }
 
-  private selectBlock(meta: CommandMeta, { id, options }: { id: string; options?: SelectBlockOptions }): void {
+  private selectBlock({ id, options }: { id: string; options?: SelectBlockOptions }): void {
     if (options?.deselectOthers) {
-      this.deselectAll(meta)
+      this.deselectAll()
     }
 
     const blockEntity = binarySearchForId(comps.Block, id, this.blocks.current)
@@ -126,11 +124,11 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     if (blockEntity.has(comps.Selected)) return
 
     blockEntity.add(comps.Selected, {
-      selectedBy: meta.uid,
+      selectedBy: this.resources.uid,
     })
   }
 
-  private deselectBlock(meta: CommandMeta, { id }: { id: string }): void {
+  private deselectBlock({ id }: { id: string }): void {
     const blockEntity = binarySearchForId(comps.Block, id, this.blocks.current)
     if (!blockEntity) {
       console.warn(`Block with id ${id} not found`)
@@ -138,7 +136,7 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & BlockComman
     }
 
     if (!blockEntity.has(comps.Selected)) return
-    if (blockEntity.read(comps.Selected).selectedBy !== meta.uid) return
+    if (blockEntity.read(comps.Selected).selectedBy !== this.resources.uid) return
 
     blockEntity.remove(comps.Selected)
   }

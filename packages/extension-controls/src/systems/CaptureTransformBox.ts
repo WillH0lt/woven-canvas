@@ -1,4 +1,4 @@
-import { BaseSystem, type BlockCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
+import { BaseSystem, type CoreCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
 import { and, not, setup } from 'xstate'
 
 import type { Entity } from '@lastolivegames/becsy'
@@ -14,7 +14,7 @@ type SelectionEvent =
       selectedEntities: Entity[]
     }
 
-export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
+export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.current.changed.with(comps.Pointer).trackWrites)
 
   private readonly selectedBlocks = this.query(

@@ -7,8 +7,8 @@ import type { State } from './State'
 import { Block, FontSize, Selected, Shape, Text } from './components'
 import * as sys from './systems'
 import type {
-  BlockCommandArgs,
   BlockModel,
+  CoreCommandArgs,
   CoreResources,
   EmitterEvents,
   FontSizeModel,
@@ -19,7 +19,7 @@ import type {
   ShapeModel,
   TextModel,
 } from './types'
-import { BlockCommand } from './types'
+import { CoreCommand } from './types'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -122,20 +122,20 @@ export class CoreExtension extends BaseExtension {
     })
   }
 
-  public addCommands = (send: SendCommandFn<BlockCommandArgs>): Partial<ICommands> => {
+  public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       core: {
-        addShape: (block: Partial<BlockModel>, shape: Partial<ShapeModel>) => send(BlockCommand.AddShape, block, shape),
-        addText: (block: Partial<BlockModel>, text: Partial<TextModel>) => send(BlockCommand.AddText, block, text),
-        moveCamera: (x: number, y: number) => send(BlockCommand.MoveCamera, { x, y }),
-        setZoom: (zoom: number) => send(BlockCommand.SetZoom, { zoom }),
-        undo: () => send(BlockCommand.Undo),
-        redo: () => send(BlockCommand.Redo),
-        createCheckpoint: () => send(BlockCommand.CreateCheckpoint),
-        bringForwardSelected: () => send(BlockCommand.BringForwardSelected),
-        sendBackwardSelected: () => send(BlockCommand.SendBackwardSelected),
-        duplicateSelected: () => send(BlockCommand.DuplicateSelected),
-        removeSelected: () => send(BlockCommand.RemoveSelected),
+        addShape: (block: Partial<BlockModel>, shape: Partial<ShapeModel>) => send(CoreCommand.AddShape, block, shape),
+        addText: (block: Partial<BlockModel>, text: Partial<TextModel>) => send(CoreCommand.AddText, block, text),
+        moveCamera: (x: number, y: number) => send(CoreCommand.MoveCamera, { x, y }),
+        setZoom: (zoom: number) => send(CoreCommand.SetZoom, { zoom }),
+        undo: () => send(CoreCommand.Undo),
+        redo: () => send(CoreCommand.Redo),
+        createCheckpoint: () => send(CoreCommand.CreateCheckpoint),
+        bringForwardSelected: () => send(CoreCommand.BringForwardSelected),
+        sendBackwardSelected: () => send(CoreCommand.SendBackwardSelected),
+        duplicateSelected: () => send(CoreCommand.DuplicateSelected),
+        removeSelected: () => send(CoreCommand.RemoveSelected),
       },
     }
   }
@@ -149,6 +149,10 @@ export class CoreExtension extends BaseExtension {
           const selected = state.getComponents(Selected).value
           return Object.keys(selected)
         }),
+        // selectedBlocks: computed(() => {
+        //   const selected = state.getComponents(Selected).value
+        //   return Object.values(selected).map((s) => s.value)
+        // }),
         blockById: (id: string): ReadonlySignal<BlockModel | undefined> =>
           computed(() => state.getComponents(Block).value[id]?.value),
         textById: (id: string): ReadonlySignal<TextModel | undefined> =>

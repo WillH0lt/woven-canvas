@@ -4,10 +4,10 @@ import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
 import { applyDiff, uuidToNumber } from '../helpers'
-import { BlockCommand, type BlockCommandArgs, type CoreResources, type ISerializable } from '../types'
+import { CoreCommand, type CoreCommandArgs, type CoreResources, type ISerializable } from '../types'
 import { PostUpdateDeleter } from './PostUpdateDeleter'
 
-export class PostUpdateHistory extends BaseSystem<BlockCommandArgs> {
+export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
   private readonly addedQueries = new Map<new () => ISerializable, Query>()
 
   private readonly changedQueries = new Map<new () => ISerializable, Query>()
@@ -40,9 +40,9 @@ export class PostUpdateHistory extends BaseSystem<BlockCommandArgs> {
   }
 
   public initialize(): void {
-    this.addCommandListener(BlockCommand.Undo, this.undo.bind(this))
-    this.addCommandListener(BlockCommand.Redo, this.redo.bind(this))
-    this.addCommandListener(BlockCommand.CreateCheckpoint, this.createCheckpoint.bind(this))
+    this.addCommandListener(CoreCommand.Undo, this.undo.bind(this))
+    this.addCommandListener(CoreCommand.Redo, this.redo.bind(this))
+    this.addCommandListener(CoreCommand.CreateCheckpoint, this.createCheckpoint.bind(this))
   }
 
   public execute(): void {

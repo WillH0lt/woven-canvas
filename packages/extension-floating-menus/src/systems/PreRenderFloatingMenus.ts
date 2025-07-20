@@ -1,6 +1,7 @@
-import { BaseSystem, comps } from '@infinitecanvas/core'
+import { BaseSystem, PointerButton, comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 import type { z } from 'zod'
+
 import type { FloatingMenuElement } from '../elements'
 import { computeExtents } from '../helpers'
 import type { Button, FloatingMenusResources } from '../types'
@@ -10,9 +11,17 @@ export class PreRenderFloatingMenus extends BaseSystem {
 
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
+  private readonly camera = this.singleton.read(comps.Camera)
+
+  private readonly intersect = this.singleton.read(comps.Intersect)
+
+  private readonly tool = this.singleton.read(comps.Tool)
+
   private readonly selectedBlocks = this.query(
     (q) => q.addedChangedOrRemoved.current.with(comps.Selected).with(comps.Block).trackWrites.using(comps.Aabb).read,
   )
+
+  private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
 
   public execute(): void {
     if (this.cameras.changed.length > 0) {
@@ -21,8 +30,17 @@ export class PreRenderFloatingMenus extends BaseSystem {
       viewport.style.transform = `translate(${-camera.left * camera.zoom}px, ${-camera.top * camera.zoom}px) scale(${camera.zoom})`
     }
 
-    if (this.selectedBlocks.addedChangedOrRemoved.length > 0) {
-      this.syncFloatingMenuElement()
+    const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
+      button: PointerButton.Left,
+    })
+    if (pointerEvents.find((e) => e.type === 'pointerDown')) {
+      this.removeFloatingMenuElement()
+    }
+
+    if (this.pointers.current.length === 0) {
+      if (this.selectedBlocks.addedChangedOrRemoved.length > 0 || pointerEvents.find((e) => e.type === 'pointerUp')) {
+        this.syncFloatingMenuElement()
+      }
     }
   }
 

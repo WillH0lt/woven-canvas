@@ -88,17 +88,27 @@ export class RenderHtml extends BaseSystem {
     }
 
     if (needsSorting) {
-      const elements = Array.from(this.resources.viewport.children) as HTMLElement[]
+      this.sortElementsByRank()
+    }
+  }
 
-      elements.sort((a, b) => {
-        const rankA = LexoRank.parse(a.getAttribute(RANK_ATTRIBUTE) || '0')
-        const rankB = LexoRank.parse(b.getAttribute(RANK_ATTRIBUTE) || '0')
-        return rankA.compareTo(rankB)
-      })
+  private sortElementsByRank(): void {
+    const elements = Array.from(this.resources.viewport.children) as HTMLElement[]
+    const rankCache = new Map<HTMLElement, LexoRank>()
 
-      for (const [index, element] of elements.entries()) {
-        element.style.zIndex = `${index}`
-      }
+    for (const element of elements) {
+      const rankStr = element.getAttribute(RANK_ATTRIBUTE) || '0'
+      rankCache.set(element, LexoRank.parse(rankStr))
+    }
+
+    elements.sort((a, b) => {
+      const rankA = rankCache.get(a)!
+      const rankB = rankCache.get(b)!
+      return rankA.compareTo(rankB)
+    })
+
+    for (let i = 0; i < elements.length; i++) {
+      elements[i].style.zIndex = `${i}`
     }
   }
 

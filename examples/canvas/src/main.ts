@@ -42,7 +42,6 @@ async function initializeCanvas(container: HTMLDivElement) {
     new InputExtension(),
     new ControlsExtension(),
     new HtmlRendererExtension(),
-    // new OverlayExtension(),
     // new MultiplayerExtension(),
     new LocalStorageExtension(),
     new FloatingMenusExtension(),

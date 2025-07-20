@@ -1,10 +1,10 @@
-import { BaseSystem, BlockCommand, type BlockCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
 import { assign, setup } from 'xstate'
 import { PanState as PanStateComp } from '../components'
 import { type ControlCommandArgs, PanState } from '../types'
 import { CaptureZoom } from './CaptureZoom'
 
-export class CapturePan extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
+export class CapturePan extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.current.changed.removed.with(comps.Pointer).read.trackWrites)
 
   private readonly camera = this.singleton.read(comps.Camera)
@@ -61,7 +61,7 @@ export class CapturePan extends BaseSystem<ControlCommandArgs & BlockCommandArgs
                 const x = this.camera.left - deltaX
                 const y = this.camera.top - deltaY
 
-                this.emitCommand(BlockCommand.MoveCamera, { x, y })
+                this.emitCommand(CoreCommand.MoveCamera, { x, y })
               },
             },
           ],

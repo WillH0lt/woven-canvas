@@ -1,10 +1,10 @@
-import { BaseSystem, BlockCommand, type BlockCommandArgs, comps } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs, comps } from '@infinitecanvas/core'
 import type { ControlCommandArgs } from '../types'
 import { CapturePan } from './CapturePan'
 import { CaptureSelect } from './CaptureSelect'
 import { CaptureTransformBox } from './CaptureTransformBox'
 
-export class CaptureZoom extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
+export class CaptureZoom extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
   private readonly mouse = this.singleton.read(comps.Mouse)
 
   private readonly screen = this.singleton.read(comps.Screen)
@@ -47,8 +47,8 @@ export class CaptureZoom extends BaseSystem<ControlCommandArgs & BlockCommandArg
     const x = this.camera.left - percentX * dx
     const y = this.camera.top - percentY * dy
 
-    this.emitCommand(BlockCommand.SetZoom, { zoom })
-    this.emitCommand(BlockCommand.MoveCamera, { x, y })
+    this.emitCommand(CoreCommand.SetZoom, { zoom })
+    this.emitCommand(CoreCommand.MoveCamera, { x, y })
   }
 
   // private getWheelEvents(): WheelEvent

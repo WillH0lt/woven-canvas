@@ -1,8 +1,9 @@
-import { BaseSystem, BlockCommand, type BlockCommandArgs, type CommandMeta, CursorIcon } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs, CursorIcon } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
-import { UuidGenerator, binarySearchForId, uuidToNumber } from '@infinitecanvas/core/helpers'
+import { uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
+import type { BlockModel } from 'packages/core/build'
 import { DragStart, Locked, TransformBox, TransformHandle } from '../components'
 import {
   TRANSFORM_BOX_RANK,
@@ -30,7 +31,7 @@ interface TransformHandleDef {
   // cursorKind: CursorKind
 }
 
-export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCommandArgs> {
+export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
   private readonly selectedBlocks = this.query(
     (q) => q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read,
   )
@@ -59,7 +60,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
   }
 
   public initialize(): void {
-    this.addCommandListener(BlockCommand.UpdateBlockPosition, this.onBlockMove.bind(this))
+    this.addCommandListener(CoreCommand.UpdateBlock, this.onBlockUpdate.bind(this))
     this.addCommandListener(ControlCommand.AddTransformBox, this.addTransformBox.bind(this))
     this.addCommandListener(ControlCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
     this.addCommandListener(ControlCommand.HideTransformBox, this.hideTransformBox.bind(this))
@@ -73,7 +74,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     this.executeCommands()
   }
 
-  private removeTransformBox(_meta: CommandMeta): void {
+  private removeTransformBox(): void {
     if (this.transformBoxes.current.length === 0) {
       console.warn('No transform box to remove')
       return
@@ -88,14 +89,19 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
   }
 
-  private addTransformBox(meta: CommandMeta): void {
-    const uuid = new UuidGenerator(meta.seed)
-    const transformBoxEntity = this.createEntity(TransformBox, comps.Block, { id: uuid.next() }, comps.Shape, DragStart)
+  private addTransformBox(): void {
+    const transformBoxEntity = this.createEntity(
+      TransformBox,
+      comps.Block,
+      { id: crypto.randomUUID() },
+      comps.Shape,
+      DragStart,
+    )
 
-    this._updateTransformBox(transformBoxEntity, uuid, meta.uid)
+    this._updateTransformBox(transformBoxEntity, this.resources.uid)
   }
 
-  private updateTransformBox(meta: CommandMeta): void {
+  private updateTransformBox(): void {
     if (this.transformBoxes.current.length === 0) {
       console.warn('No transform box to update')
       return
@@ -103,11 +109,10 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
 
     const transformBoxEntity = this.transformBoxes.current[0]
 
-    const uuid = new UuidGenerator(meta.seed)
-    this._updateTransformBox(transformBoxEntity, uuid, meta.uid)
+    this._updateTransformBox(transformBoxEntity, this.resources.uid)
   }
 
-  private _updateTransformBox(transformBoxEntity: Entity, uuid: UuidGenerator, uid: string): void {
+  private _updateTransformBox(transformBoxEntity: Entity, uid: string): void {
     let rotateZ = 0
     if (this.selectedBlocks.current.length > 0) {
       rotateZ = this.selectedBlocks.current[0].read(comps.Block).rotateZ
@@ -166,10 +171,10 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       dragStart.startRotateZ = block.rotateZ
     }
 
-    this.addOrUpdateTransformHandles(transformBoxEntity, uuid)
+    this.addOrUpdateTransformHandles(transformBoxEntity)
   }
 
-  private addOrUpdateTransformHandles(transformBoxEntity: Entity, uuid: UuidGenerator): void {
+  private addOrUpdateTransformHandles(transformBoxEntity: Entity): void {
     const transformBoxBlock = transformBoxEntity.read(comps.Block)
     const { left, top, width, height, rotateZ } = transformBoxBlock
     const handleSize = 15
@@ -266,7 +271,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
         handleEntity = this.createEntity(
           TransformHandle,
           comps.Block,
-          { id: uuid.next() },
+          { id: crypto.randomUUID() },
           comps.Shape,
           comps.Hoverable,
           DragStart,
@@ -312,7 +317,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
   }
 
-  private hideTransformBox(_meta: CommandMeta): void {
+  private hideTransformBox(): void {
     if (this.transformBoxes.current.length === 0) {
       console.warn('No transform box to hide')
       return
@@ -342,7 +347,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     boxOpacity.value = 0
   }
 
-  private showTransformBox(meta: CommandMeta): void {
+  private showTransformBox(): void {
     if (this.transformBoxes.current.length === 0) {
       console.warn('No transform box to show')
       return
@@ -365,26 +370,31 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       transformBoxEntity.remove(comps.Opacity)
     }
 
-    this.updateTransformBox(meta)
+    this.updateTransformBox()
   }
 
-  private onBlockMove(_meta: CommandMeta, payload: { id: string; left: number; top: number }): void {
-    // const blockEntity = this.blocks.current.find((e) => e.read(comps.Block).id === payload.id)
-    const blockEntity = binarySearchForId(comps.Block, payload.id, this.blocks.current)
-    if (!blockEntity) {
-      console.warn(`Block with id ${payload.id} not found`)
+  private onBlockUpdate(blockEntity: Entity, updates: Partial<BlockModel>): void {
+    const block = blockEntity.read(comps.Block)
+    // check if the position has changed
+    if (block.left === updates.left && block.top === updates.top) {
+      // No position change
       return
     }
 
+    const position = {
+      left: updates.left ?? block.left,
+      top: updates.top ?? block.top,
+    }
+
     if (blockEntity.has(TransformBox)) {
-      this.onTransformBoxMove(blockEntity, payload)
+      this.onTransformBoxMove(blockEntity, position)
     } else if (blockEntity.has(TransformHandle)) {
       const handle = blockEntity.read(TransformHandle)
       const kind = handle.kind
       if (kind === TransformHandleKind.Rotate) {
-        this.onRotateHandleMove(blockEntity, payload)
+        this.onRotateHandleMove(blockEntity, position)
       } else if (kind === TransformHandleKind.Scale || kind === TransformHandleKind.Stretch) {
-        this.onScaleOrStretchHandleMove(blockEntity, payload)
+        this.onScaleOrStretchHandleMove(blockEntity, position)
       }
     }
   }
@@ -526,7 +536,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
   }
 
-  private startTransformBoxEdit(meta: CommandMeta): void {
+  private startTransformBoxEdit(): void {
     if (this.transformBoxes.current.length === 0) {
       console.warn('No transform box to edit')
       return
@@ -543,12 +553,14 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       transformBoxEntity.add(Locked)
     }
 
-    const selectedBlocks = this.selectedBlocks.current.filter((e) => e.read(comps.Selected).selectedBy === meta.uid)
+    const selectedBlocks = this.selectedBlocks.current.filter(
+      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
+    )
 
     for (const blockEntity of selectedBlocks) {
       if (!blockEntity.has(comps.Edited)) {
         blockEntity.add(comps.Edited, {
-          editedBy: meta.uid,
+          editedBy: this.resources.uid,
         })
       }
       if (!blockEntity.has(comps.Opacity)) {
@@ -558,7 +570,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
     }
   }
 
-  private endTransformBoxEdit(meta: CommandMeta): void {
+  private endTransformBoxEdit(): void {
     if (this.transformBoxes.current.length === 0) {
       console.warn('No transform box to end edit')
       return
@@ -574,7 +586,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & BlockCom
       transformBoxEntity.remove(Locked)
     }
 
-    const editedBlocks = this.editedBlocks.current.filter((e) => e.read(comps.Edited).editedBy === meta.uid)
+    const editedBlocks = this.editedBlocks.current.filter((e) => e.read(comps.Edited).editedBy === this.resources.uid)
 
     for (const blockEntity of editedBlocks) {
       blockEntity.remove(comps.Edited)

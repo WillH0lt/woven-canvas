@@ -1,10 +1,10 @@
 import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components'
 import { getCursorSvg } from '../helpers'
-import { BlockCommand, type BlockCommandArgs, type CommandMeta, type CursorIcon } from '../types'
+import { CoreCommand, type CoreCommandArgs, type CursorIcon } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 
-export class UpdateCursor extends BaseSystem<BlockCommandArgs> {
+export class UpdateCursor extends BaseSystem<CoreCommandArgs> {
   // private readonly cursors = this.query((q) => q.current.with(comps.Cursor).write)
 
   private readonly tools = this.query((q) => q.current.with(comps.Tool).write)
@@ -16,16 +16,16 @@ export class UpdateCursor extends BaseSystem<BlockCommandArgs> {
   }
 
   public initialize(): void {
-    this.addCommandListener(BlockCommand.SetTool, this.setTool.bind(this))
-    this.addCommandListener(BlockCommand.SetCursor, this.setCursor.bind(this))
+    this.addCommandListener(CoreCommand.SetTool, this.setTool.bind(this))
+    this.addCommandListener(CoreCommand.SetCursor, this.setCursor.bind(this))
   }
 
-  private setTool(_meta: CommandMeta, payload: { tool: string }): void {
+  private setTool(payload: { tool: string }): void {
     const tool = this.tools.current[0].write(comps.Tool)
     tool.leftMouse = payload.tool
   }
 
-  private setCursor(_meta: CommandMeta, payload: { icon: CursorIcon; rotateZ: number }): void {
+  private setCursor(payload: { icon: CursorIcon; rotateZ: number }): void {
     // TODO rotate the rotation cursor,
     // this should maybe be done in a computed store watcher instead of this system
     const svg = getCursorSvg(payload.icon, payload.rotateZ)
@@ -40,6 +40,6 @@ export class UpdateCursor extends BaseSystem<BlockCommandArgs> {
     // applyCursorIcon(cursor.icon, cursor.rotateZ)
 
     // Emit the cursor update command
-    // this.emitCommand(BlockCommand.UpdateCursor, cursor.icon, cursor.rotateZ)
+    // this.emitCommand(CoreCommand.UpdateCursor, cursor.icon, cursor.rotateZ)
   }
 }

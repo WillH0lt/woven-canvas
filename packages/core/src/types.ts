@@ -162,13 +162,13 @@ export enum PointerButton {
   PenEraser = 'penEraser',
 }
 
-export enum BlockCommand {
+export enum CoreCommand {
   SetZoom = 'setZoom',
   MoveCamera = 'moveCamera',
 
   AddShape = 'addShape',
   AddText = 'addText',
-  UpdateBlockPosition = 'updateBlockPosition',
+  UpdateBlock = 'updateBlock',
 
   SetTool = 'setTool',
   SetCursor = 'setCursor',
@@ -183,53 +183,42 @@ export enum BlockCommand {
   RemoveSelected = 'removeSelected',
 }
 
-export type BlockCommandArgs = {
-  [BlockCommand.AddShape]: [Partial<BlockModel>, Partial<ShapeModel>]
-  [BlockCommand.AddText]: [Partial<BlockModel>, Partial<TextModel>]
-  [BlockCommand.UpdateBlockPosition]: [
-    {
-      id: string
-      left: number
-      top: number
-    },
-  ]
+export type CoreCommandArgs = {
+  [CoreCommand.AddShape]: [Partial<BlockModel>, Partial<ShapeModel>]
+  [CoreCommand.AddText]: [Partial<BlockModel>, Partial<TextModel>]
+  [CoreCommand.UpdateBlock]: [Entity, Partial<BlockModel>]
 
-  [BlockCommand.SetTool]: [
+  [CoreCommand.SetTool]: [
     {
       tool: string
     },
   ]
-  [BlockCommand.SetCursor]: [
+  [CoreCommand.SetCursor]: [
     {
       icon: CursorIcon
       rotateZ: number
     },
   ]
 
-  [BlockCommand.SetZoom]: [
+  [CoreCommand.SetZoom]: [
     {
       zoom: number
     },
   ]
-  [BlockCommand.MoveCamera]: [
+  [CoreCommand.MoveCamera]: [
     {
       x: number
       y: number
     },
   ]
-  [BlockCommand.Undo]: []
-  [BlockCommand.Redo]: []
-  [BlockCommand.CreateCheckpoint]: []
+  [CoreCommand.Undo]: []
+  [CoreCommand.Redo]: []
+  [CoreCommand.CreateCheckpoint]: []
 
-  [BlockCommand.BringForwardSelected]: []
-  [BlockCommand.SendBackwardSelected]: []
-  [BlockCommand.DuplicateSelected]: []
-  [BlockCommand.RemoveSelected]: []
-}
-
-export interface CommandMeta {
-  seed: string
-  uid: string
+  [CoreCommand.BringForwardSelected]: []
+  [CoreCommand.SendBackwardSelected]: []
+  [CoreCommand.DuplicateSelected]: []
+  [CoreCommand.RemoveSelected]: []
 }
 
 export type PointerEvent =
