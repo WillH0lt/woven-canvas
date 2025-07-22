@@ -5,9 +5,7 @@ import { Emitter } from 'strict-event-emitter'
 import type { BaseExtension } from './BaseExtension'
 import { CoreExtension } from './CoreExtension'
 import { History } from './History'
-import { Registry } from './Registry'
 import { State } from './State'
-import { loadFontData } from './helpers'
 import { EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options, type Resources } from './types'
 
 function scheduleGroups(orderedGroups: SystemGroup[]): void {
@@ -51,11 +49,6 @@ export class InfiniteCanvas {
     const emitter = new Emitter<EmitterEvents>()
 
     const state = new State()
-
-    const fontsData = await Promise.all(parsedOptions.fonts.map((fntUrl) => loadFontData(fntUrl)))
-    for (const fontData of fontsData) {
-      Registry.instance.registerFont(fontData.face, fontData)
-    }
 
     extensions.push(new CoreExtension(emitter, state))
 
@@ -211,9 +204,4 @@ export class InfiniteCanvas {
 
     observer.observe(document.body, { childList: true, subtree: true })
   }
-
-  // public async registerFont(fntUrl: string, name: string): Promise<void> {
-  //   const fontData = await loadFontData(fntUrl)
-  //   Registry.instance.registerFont(name, fontData)
-  // }
 }

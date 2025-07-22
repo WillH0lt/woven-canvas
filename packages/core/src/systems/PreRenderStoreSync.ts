@@ -1,6 +1,6 @@
 import { type Query, System } from '@lastolivegames/becsy'
 import { batch } from '@preact/signals-core'
-import { Registry } from '../Registry'
+import { ComponentRegistry } from '../ComponentRegistry'
 import { Block } from '../components'
 import type { CoreResources, ISerializable } from '../types'
 
@@ -16,7 +16,7 @@ export class PreRenderStoreSync extends System {
   public constructor() {
     super()
 
-    const Components = Registry.instance.stateComponents
+    const Components = ComponentRegistry.instance.stateComponents
 
     for (const Component of Components) {
       const addedQuery = this.query((q) => q.added.with(Block, Component))

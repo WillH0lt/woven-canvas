@@ -27,5 +27,5 @@ export {
 
 export { BaseExtension } from './BaseExtension'
 export { BaseSystem } from './BaseSystem'
-export { Registry } from './Registry'
+export { ComponentRegistry } from './ComponentRegistry'
 export { Diff, type State } from './History'

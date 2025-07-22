@@ -38,19 +38,14 @@ let infiniteCanvas: InfiniteCanvas | null = null
 async function initializeCanvas(container: HTMLDivElement) {
   await loadFont('Figtree')
 
-  infiniteCanvas = await InfiniteCanvas.New(
-    [
-      new InputExtension(),
-      new ControlsExtension(),
-      new HtmlRendererExtension(),
-      // new MultiplayerExtension(),
-      new LocalStorageExtension(),
-      new FloatingMenusExtension(),
-    ],
-    {
-      fonts: ['./Figtree.fnt'],
-    },
-  )
+  infiniteCanvas = await InfiniteCanvas.New([
+    new InputExtension(),
+    new ControlsExtension(),
+    new HtmlRendererExtension(),
+    // new MultiplayerExtension(),
+    new LocalStorageExtension(),
+    new FloatingMenusExtension(),
+  ])
 
   container.appendChild(infiniteCanvas.domElement)
 

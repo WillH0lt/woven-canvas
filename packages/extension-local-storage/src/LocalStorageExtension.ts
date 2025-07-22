@@ -1,4 +1,4 @@
-import { BaseExtension, Registry, type Resources } from '@infinitecanvas/core'
+import { BaseExtension, ComponentRegistry, type Resources } from '@infinitecanvas/core'
 import { Persistent } from '@infinitecanvas/core/components'
 import { System } from '@lastolivegames/becsy'
 
@@ -30,7 +30,7 @@ export class LocalStorageExtension extends BaseExtension {
   }
 
   public build(worldSystem: System): void {
-    const componentNames = new Map(Registry.instance.historyComponents.map((c) => [c.name, c]))
+    const componentNames = new Map(ComponentRegistry.instance.historyComponents.map((c) => [c.name, c]))
 
     for (const [id, entity] of Object.entries(this.initialEntities)) {
       const args = []

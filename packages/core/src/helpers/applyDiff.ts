@@ -1,11 +1,11 @@
 import type { Query, System } from '@lastolivegames/becsy'
+import { ComponentRegistry } from '../ComponentRegistry'
 import type { Diff } from '../History'
-import { Registry } from '../Registry'
 import { Persistent } from '../components'
 import { binarySearchForId } from '../helpers/binarySearchForId'
 
 export function applyDiff(system: System, diff: Diff, entities: Query): void {
-  const componentNames = new Map(Registry.instance.historyComponents.map((c) => [c.name, c]))
+  const componentNames = new Map(ComponentRegistry.instance.historyComponents.map((c) => [c.name, c]))
 
   // added components
   for (const [id, components] of Object.entries(diff.added)) {
@@ -46,7 +46,7 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
     }
 
     // If the entity has no components left, delete it
-    const count = entity.countHas(...Registry.instance.historyComponents)
+    const count = entity.countHas(...ComponentRegistry.instance.historyComponents)
     if (count === 0) {
       entity.delete()
     }

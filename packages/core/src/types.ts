@@ -40,7 +40,6 @@ export type CommandMap = {
 export const Options = z.object({
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
-  fonts: z.array(z.string()).default([]),
 })
 
 export type Options = z.input<typeof Options>
@@ -255,57 +254,3 @@ export type MouseEvent =
       clientPosition: [number, number]
       blockEntity: Entity | null
     }
-
-export interface CharData {
-  /** The page of the font texture that the character is on. */
-  page: number
-  /** The x position of the character in the page. */
-  x: number
-  /** The y position of the character in the page. */
-  y: number
-  /** The width of the character in the page. */
-  width: number
-  /** The height of the character in the page. */
-  height: number
-  /** The letter of the character. */
-  letter: string
-  /** Unique id of character */
-  id: number
-  /** x-offset to apply when rendering character */
-  xOffset: number
-  /** y-offset to apply when rendering character. */
-  yOffset: number
-  /** Advancement to apply to next character. */
-  xAdvance: number
-  /** The kerning values for this character. */
-  kerning: Record<string, number>
-}
-
-export interface FontData {
-  /** The name of the font face */
-  face: string
-  /** The offset of the font face from the baseline. */
-  baseLineOffset: number
-  /** The map of characters by character code. */
-  chars: Record<string, CharData>
-  /** The map of base page textures (i.e., sheets of glyphs). */
-  pages: {
-    /** Unique id for bitmap texture */
-    id: number
-    /** File name */
-    file: string
-  }[]
-  /** The line-height of the font face in pixels. */
-  lineHeight: number
-  /** The size of the font face in pixels. */
-  fontSize: number
-  /** The name of the font face. */
-  fontFamily: string
-  /** The range and type of the distance field for this font. */
-  distanceField?: {
-    /** Type of distance field */
-    type: 'sdf' | 'msdf' | 'none'
-    /** Range of the distance field in pixels */
-    range: number
-  }
-}

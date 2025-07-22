@@ -2,7 +2,7 @@ import { System } from '@lastolivegames/becsy'
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
 import { BaseExtension } from './BaseExtension'
-import { Registry } from './Registry'
+import { ComponentRegistry } from './ComponentRegistry'
 import type { State } from './State'
 import { Block, Persistent, Selected, Shape, Text } from './components'
 import * as sys from './systems'
@@ -69,15 +69,15 @@ export class CoreExtension extends BaseExtension {
   public async preBuild(resources: Resources): Promise<void> {
     // const options = CoreOptions.parse(this.options)
 
-    Registry.instance.registerHistoryComponent(Block)
-    Registry.instance.registerHistoryComponent(Text)
-    Registry.instance.registerHistoryComponent(Shape)
+    ComponentRegistry.instance.registerHistoryComponent(Block)
+    ComponentRegistry.instance.registerHistoryComponent(Text)
+    ComponentRegistry.instance.registerHistoryComponent(Shape)
 
-    Registry.instance.registerStateComponent(Block)
-    Registry.instance.registerStateComponent(Selected)
-    Registry.instance.registerStateComponent(Text)
-    Registry.instance.registerStateComponent(Shape)
-    Registry.instance.registerStateComponent(Persistent)
+    ComponentRegistry.instance.registerStateComponent(Block)
+    ComponentRegistry.instance.registerStateComponent(Selected)
+    ComponentRegistry.instance.registerStateComponent(Text)
+    ComponentRegistry.instance.registerStateComponent(Shape)
+    ComponentRegistry.instance.registerStateComponent(Persistent)
 
     const coreResources: CoreResources = {
       ...resources,
