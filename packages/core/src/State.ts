@@ -1,6 +1,6 @@
 import type { Entity } from '@lastolivegames/becsy'
 import { type Signal, signal } from '@preact/signals-core'
-import { Persistent } from './components'
+import { Block } from './components'
 import type { ISerializable } from './types'
 
 export class State {
@@ -9,7 +9,7 @@ export class State {
   public addComponents(Component: new () => ISerializable, entities: readonly Entity[]): void {
     const signalComponents: Record<string, Signal<any>> = {}
     for (const entity of entities) {
-      const id = entity.read(Persistent).id
+      const id = entity.read(Block).id
       const comp = entity.read(Component)
       signalComponents[id] = signal(comp.toModel())
     }
@@ -24,7 +24,7 @@ export class State {
   public updateComponents<T extends ISerializable>(Component: new () => T, entities: readonly Entity[]): void {
     const components = this.getComponents(Component)
     for (const entity of entities) {
-      const id = entity.read(Persistent).id
+      const id = entity.read(Block).id
       const comp = entity.read(Component)
       if (!components.value[id]) {
         console.warn(`Component with id ${id} does not exist in state for component ${Component.name}.`)
@@ -36,7 +36,7 @@ export class State {
 
   public removeComponents(Component: new () => ISerializable, entities: readonly Entity[]): void {
     const components = this.getComponents(Component)
-    const entityIds = new Set(entities.map((entity) => entity.read(Persistent).id))
+    const entityIds = new Set(entities.map((entity) => entity.read(Block).id))
     components.value = Object.fromEntries(Object.entries(components.value).filter(([key]) => !entityIds.has(key)))
   }
 
@@ -46,6 +46,7 @@ export class State {
       components = signal({})
       this.state.set(component.name, components)
     }
+
     return components
   }
 }

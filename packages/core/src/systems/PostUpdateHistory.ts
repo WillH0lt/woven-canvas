@@ -1,7 +1,7 @@
 import type { Query } from '@lastolivegames/becsy'
 
 import { BaseSystem } from '../BaseSystem'
-import { ComponentRegistry } from '../ComponentRegistry'
+import { Registry } from '../Registry'
 import * as comps from '../components'
 import { applyDiff, uuidToNumber } from '../helpers'
 import { CoreCommand, type CoreCommandArgs, type CoreResources, type ISerializable } from '../types'
@@ -25,7 +25,7 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
 
     this.schedule((s) => s.after(PostUpdateDeleter))
 
-    const Components = ComponentRegistry.instance.historyComponents
+    const Components = Registry.instance.historyComponents
 
     for (const Component of Components) {
       const added = this.query((q) => q.added.with(comps.Persistent, Component))

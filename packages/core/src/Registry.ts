@@ -1,17 +1,18 @@
-import type { ISerializable } from './types.js'
+import type { FontData, ISerializable } from './types.js'
 
-export class ComponentRegistry {
-  private static _instance: ComponentRegistry | null = null
+export class Registry {
+  private static _instance: Registry | null = null
 
-  static get instance(): ComponentRegistry {
-    if (!ComponentRegistry._instance) {
-      ComponentRegistry._instance = new ComponentRegistry()
+  static get instance(): Registry {
+    if (!Registry._instance) {
+      Registry._instance = new Registry()
     }
-    return ComponentRegistry._instance
+    return Registry._instance
   }
 
   private readonly _historyComponents: (new () => ISerializable)[] = []
   private readonly _stateComponents: (new () => ISerializable)[] = []
+  private readonly _fonts: Map<string, FontData> = new Map()
 
   private constructor() {}
 
@@ -23,6 +24,10 @@ export class ComponentRegistry {
     return this._stateComponents
   }
 
+  public getFont(name: string): FontData | undefined {
+    return this._fonts.get(name)
+  }
+
   public registerStateComponent(serializable: new () => ISerializable): void {
     if (!this._stateComponents.includes(serializable)) {
       this._stateComponents.push(serializable)
@@ -32,6 +37,14 @@ export class ComponentRegistry {
   public registerHistoryComponent(serializable: new () => ISerializable): void {
     if (!this._historyComponents.includes(serializable)) {
       this._historyComponents.push(serializable)
+    }
+  }
+
+  public registerFont(name: string, fontData: FontData): void {
+    if (!this._fonts.has(name)) {
+      this._fonts.set(name, Object.freeze(fontData))
+    } else {
+      console.warn(`Font "${name}" is already registered.`)
     }
   }
 }

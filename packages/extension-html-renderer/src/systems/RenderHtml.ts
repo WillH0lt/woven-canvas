@@ -2,7 +2,7 @@ import { BaseSystem, comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 import { LexoRank } from 'lexorank'
 
-import type { ShapeElement, TextElement } from '../elements'
+import type { BaseElement, ShapeElement } from '../elements'
 import type { HtmlRendererResources } from '../types'
 
 const RANK_ATTRIBUTE = 'data-ic-rank'
@@ -16,12 +16,6 @@ export class RenderHtml extends BaseSystem {
 
   private readonly opacityBlocks = this.query(
     (q) => q.addedChangedOrRemoved.with(comps.Block).and.with(comps.Opacity).trackWrites,
-  )
-
-  private readonly shapes = this.query((q) => q.addedOrChanged.with(comps.Shape).trackWrites.using(comps.Opacity).read)
-
-  private readonly texts = this.query(
-    (q) => q.addedOrChanged.with(comps.Text, comps.FontSize).trackWrites.using(comps.Opacity).read,
   )
 
   public execute(): void {
@@ -58,23 +52,23 @@ export class RenderHtml extends BaseSystem {
       this.updateOpacityBlockHtml(blockEntity, element)
     }
 
-    // shapes
-    for (const shapeEntity of this.shapes.addedOrChanged) {
-      const block = shapeEntity.read(comps.Block)
-      const element = this.resources.viewport.querySelector<ShapeElement>(`[id='${block.id}']`)
-      if (element) {
-        this.updateShapeElementHtml(shapeEntity, element)
-      }
-    }
+    // // shapes
+    // for (const shapeEntity of this.shapes.addedOrChanged) {
+    //   const block = shapeEntity.read(comps.Block)
+    //   const element = this.resources.viewport.querySelector<ShapeElement>(`[id='${block.id}']`)
+    //   if (element) {
+    //     this.updateShapeElementHtml(shapeEntity, element)
+    //   }
+    // }
 
-    // texts
-    for (const textEntity of this.texts.addedOrChanged) {
-      const block = textEntity.read(comps.Block)
-      const element = this.resources.viewport.querySelector<TextElement>(`[id='${block.id}']`)
-      if (element) {
-        this.updateTextElementHtml(textEntity, element)
-      }
-    }
+    // // texts
+    // for (const textEntity of this.texts.addedOrChanged) {
+    //   const block = textEntity.read(comps.Block)
+    //   const element = this.resources.viewport.querySelector<TextElement>(`[id='${block.id}']`)
+    //   if (element) {
+    //     this.updateTextElementHtml(textEntity, element)
+    //   }
+    // }
 
     // remove blocks
     if (this.blocks.removed.length > 0) {
@@ -112,10 +106,11 @@ export class RenderHtml extends BaseSystem {
     }
   }
 
-  private createBlockElement(entity: Entity): HTMLElement {
+  private createBlockElement(entity: Entity): BaseElement {
     const block = entity.read(comps.Block)
-    const element = document.createElement(block.kind)
+    const element = document.createElement(block.kind) as BaseElement
     element.id = block.id
+    element.blockId = block.id
     element.setAttribute(RANK_ATTRIBUTE, block.rank)
 
     return element
@@ -154,14 +149,5 @@ export class RenderHtml extends BaseSystem {
   private updateShapeElementHtml(entity: Entity, element: ShapeElement): void {
     const shape = entity.read(comps.Shape)
     element.style.backgroundColor = `rgba(${shape.red}, ${shape.green}, ${shape.blue}, ${shape.alpha / 255})`
-  }
-
-  private updateTextElementHtml(entity: Entity, element: TextElement): void {
-    const text = entity.read(comps.Text)
-    const fontSize = entity.read(comps.FontSize)
-
-    element.model = text.toModel()
-    element.fontSize = fontSize.value
-    element.requestUpdate()
   }
 }

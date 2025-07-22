@@ -59,18 +59,14 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
       return value
     })
 
-    const command = this.createEntity(
-      comps.Command,
-      {
-        kind,
-        payload,
-      },
-      comps.ToBeDeleted,
-    )
+    const command = this.createEntity(comps.Command, {
+      kind,
+      payload,
+    })
 
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i]
-      this.createEntity(comps.CommandRef, { index: i, entity, command }, comps.ToBeDeleted)
+      this.createEntity(comps.CommandRef, { index: i, entity, command })
     }
   }
 

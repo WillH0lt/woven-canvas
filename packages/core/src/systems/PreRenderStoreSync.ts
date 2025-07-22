@@ -1,10 +1,10 @@
 import { type Query, System } from '@lastolivegames/becsy'
 import { batch } from '@preact/signals-core'
-import { ComponentRegistry } from '../ComponentRegistry'
-import * as comps from '../components'
+import { Registry } from '../Registry'
+import { Block } from '../components'
 import type { CoreResources, ISerializable } from '../types'
 
-export class PostRenderStoreSync extends System {
+export class PreRenderStoreSync extends System {
   private readonly addedQueries: Map<new () => ISerializable, Query> = new Map()
 
   private readonly changedQueries: Map<new () => ISerializable, Query> = new Map()
@@ -16,16 +16,16 @@ export class PostRenderStoreSync extends System {
   public constructor() {
     super()
 
-    const Components = ComponentRegistry.instance.stateComponents
+    const Components = Registry.instance.stateComponents
 
     for (const Component of Components) {
-      const addedQuery = this.query((q) => q.added.with(comps.Persistent, Component))
+      const addedQuery = this.query((q) => q.added.with(Block, Component))
       this.addedQueries.set(Component, addedQuery)
 
-      const changedQuery = this.query((q) => q.changed.with(comps.Persistent, Component).trackWrites)
+      const changedQuery = this.query((q) => q.changed.with(Block, Component).trackWrites)
       this.changedQueries.set(Component, changedQuery)
 
-      const removedQuery = this.query((q) => q.removed.with(comps.Persistent, Component))
+      const removedQuery = this.query((q) => q.removed.with(Block, Component))
       this.removedQueries.set(Component, removedQuery)
     }
   }

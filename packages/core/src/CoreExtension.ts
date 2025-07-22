@@ -2,16 +2,15 @@ import { System } from '@lastolivegames/becsy'
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
 import { BaseExtension } from './BaseExtension'
-import { ComponentRegistry } from './ComponentRegistry'
+import { Registry } from './Registry'
 import type { State } from './State'
-import { Block, FontSize, Selected, Shape, Text } from './components'
+import { Block, Persistent, Selected, Shape, Text } from './components'
 import * as sys from './systems'
 import type {
   BlockModel,
   CoreCommandArgs,
   CoreResources,
   EmitterEvents,
-  FontSizeModel,
   ICommands,
   IStore,
   Resources,
@@ -49,7 +48,8 @@ declare module '@infinitecanvas/core' {
       blockById: (id: string) => ReadonlySignal<BlockModel | undefined>
       textById: (id: string) => ReadonlySignal<TextModel | undefined>
       shapeById: (id: string) => ReadonlySignal<ShapeModel | undefined>
-      fontSizeById: (id: string) => ReadonlySignal<FontSizeModel | undefined>
+
+      shapeCount: ReadonlySignal<number>
     }
   }
 }
@@ -69,15 +69,15 @@ export class CoreExtension extends BaseExtension {
   public async preBuild(resources: Resources): Promise<void> {
     // const options = CoreOptions.parse(this.options)
 
-    ComponentRegistry.instance.registerHistoryComponent(Block)
-    ComponentRegistry.instance.registerHistoryComponent(Text)
-    ComponentRegistry.instance.registerHistoryComponent(Shape)
+    Registry.instance.registerHistoryComponent(Block)
+    Registry.instance.registerHistoryComponent(Text)
+    Registry.instance.registerHistoryComponent(Shape)
 
-    ComponentRegistry.instance.registerStateComponent(Block)
-    ComponentRegistry.instance.registerStateComponent(Selected)
-    ComponentRegistry.instance.registerStateComponent(Text)
-    ComponentRegistry.instance.registerStateComponent(Shape)
-    ComponentRegistry.instance.registerStateComponent(FontSize)
+    Registry.instance.registerStateComponent(Block)
+    Registry.instance.registerStateComponent(Selected)
+    Registry.instance.registerStateComponent(Text)
+    Registry.instance.registerStateComponent(Shape)
+    Registry.instance.registerStateComponent(Persistent)
 
     const coreResources: CoreResources = {
       ...resources,
@@ -108,16 +108,11 @@ export class CoreExtension extends BaseExtension {
       { resources: coreResources },
     )
 
-    this._postUpdateGroup = System.group(
-      sys.PostUpdateDeleter,
-      { resources: coreResources },
-      sys.PostUpdateHistory,
-      { resources: coreResources },
-      sys.PostUpdateFontSizer,
-      { resources: coreResources },
-    )
+    this._postUpdateGroup = System.group(sys.PostUpdateDeleter, { resources: coreResources }, sys.PostUpdateHistory, {
+      resources: coreResources,
+    })
 
-    this._postRenderGroup = System.group(sys.PostRenderStoreSync, {
+    this._preRenderGroup = System.group(sys.PreRenderStoreSync, {
       resources: coreResources,
     })
   }
@@ -143,7 +138,7 @@ export class CoreExtension extends BaseExtension {
   public addStore = (state: State): Partial<IStore> => {
     return {
       core: {
-        blockCount: computed(() => Object.keys(state.getComponents(Block).value).length),
+        blockCount: computed(() => Object.keys(state.getComponents(Persistent).value).length),
         selectedBlockCount: computed(() => Object.keys(state.getComponents(Selected).value).length),
         selectedBlockIds: computed(() => {
           const selected = state.getComponents(Selected).value
@@ -159,8 +154,8 @@ export class CoreExtension extends BaseExtension {
           computed(() => state.getComponents(Text).value[id]?.value),
         shapeById: (id: string): ReadonlySignal<ShapeModel | undefined> =>
           computed(() => state.getComponents(Shape).value[id]?.value),
-        fontSizeById: (id: string): ReadonlySignal<FontSizeModel | undefined> =>
-          computed(() => state.getComponents(FontSize).value[id]?.value),
+
+        shapeCount: computed(() => Object.keys(state.getComponents(Shape).value).length),
       },
     }
   }

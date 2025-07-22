@@ -12,9 +12,7 @@ export class PreRenderOverlay extends BaseSystem {
   private readonly pointers = this.query((q) => q.removed.with(comps.Pointer).read)
 
   private readonly entities = this.query(
-    (q) =>
-      q.added.changed.removed.with(comps.Persistent, comps.Text, comps.FontSize, comps.Edited).with(comps.Block)
-        .trackWrites,
+    (q) => q.added.changed.removed.with(comps.Persistent, comps.Text, comps.Edited).with(comps.Block).trackWrites,
   )
 
   public execute(): void {
@@ -51,7 +49,7 @@ export class PreRenderOverlay extends BaseSystem {
   }
 
   private createTextElement(entity: Entity): EditableTextElement {
-    const element = document.createElement('ic-editable-text') as EditableTextElement
+    const element = document.createElement('ic-editable-text')
     const block = entity.read(comps.Block)
     element.id = block.id
     element.blockId = block.id

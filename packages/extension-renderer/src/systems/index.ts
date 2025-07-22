@@ -1,1 +1,0 @@
-export { RenderPixi } from './RenderPixi'

@@ -22,6 +22,11 @@ export class PreInputCommandSpawner extends BaseSystem<Record<string, Array<unkn
   public execute(): void {
     // commands only exist for 1 frame
     for (const commandEntity of this._commands.current) {
+      const command = commandEntity.read(comps.Command)
+      for (const ref of command.refs) {
+        ref.delete()
+      }
+
       commandEntity.delete()
     }
   }

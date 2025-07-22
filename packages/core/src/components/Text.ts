@@ -5,6 +5,7 @@ import { type ISerializable, TextAlign, type TextModel } from '../types.js'
 @component
 export class Text implements ISerializable<TextModel> {
   @field.dynamicString(1e4) public declare content: string
+  @field({ type: Type.float32, default: 24 }) public declare fontSize: number
   @field.dynamicString(36) public declare fontFamily: string
   @field({ type: Type.staticString(Object.values(TextAlign)) }) public declare align: TextAlign
   @field({ type: Type.float32, default: 1.2 }) public declare lineHeight: number
@@ -16,6 +17,7 @@ export class Text implements ISerializable<TextModel> {
   toModel(): TextModel {
     return {
       content: this.content,
+      fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       align: this.align,
       lineHeight: this.lineHeight,
@@ -28,6 +30,7 @@ export class Text implements ISerializable<TextModel> {
 
   fromModel(model: TextModel): void {
     this.content = model.content
+    this.fontSize = model.fontSize
     this.fontFamily = model.fontFamily
     this.align = model.align
     this.lineHeight = model.lineHeight

@@ -2,4 +2,7 @@
 
 :root {
   text-rendering: geometricPrecision;
+  font-kerning: none;
+  word-break: break-word;
+  /* word-break: break-all; */
 }

@@ -5,7 +5,9 @@ import { Emitter } from 'strict-event-emitter'
 import type { BaseExtension } from './BaseExtension'
 import { CoreExtension } from './CoreExtension'
 import { History } from './History'
+import { Registry } from './Registry'
 import { State } from './State'
+import { loadFontData } from './helpers'
 import { EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options, type Resources } from './types'
 
 function scheduleGroups(orderedGroups: SystemGroup[]): void {
@@ -30,7 +32,7 @@ export class InfiniteCanvas {
 
   // private extensions: Extension[]
 
-  public static async New(extensions: BaseExtension[], options: Options = {}): Promise<InfiniteCanvas> {
+  public static async New(extensions: BaseExtension[], options: z.input<typeof Options> = {}): Promise<InfiniteCanvas> {
     const parsedOptions = Options.parse(options)
 
     const domElement = document.createElement('div')
@@ -49,6 +51,11 @@ export class InfiniteCanvas {
     const emitter = new Emitter<EmitterEvents>()
 
     const state = new State()
+
+    const fontsData = await Promise.all(parsedOptions.fonts.map((fntUrl) => loadFontData(fntUrl)))
+    for (const fontData of fontsData) {
+      Registry.instance.registerFont(fontData.face, fontData)
+    }
 
     extensions.push(new CoreExtension(emitter, state))
 
@@ -106,14 +113,6 @@ export class InfiniteCanvas {
     return infiniteCanvas
   }
 
-  // private readonly state: State
-
-  // private readonly emitter: Emitter<EmitterEvents>
-
-  // private readonly world: World
-
-  // private extensions: Extension[]
-
   private constructor(
     private readonly extensions: BaseExtension[],
     private readonly world: World,
@@ -122,11 +121,7 @@ export class InfiniteCanvas {
     resources: Resources,
     options: z.infer<typeof Options>,
   ) {
-    // this.extensions = extensions
-    // this.world = world
     this.domElement = resources.domElement
-    // this.emitter = emitter
-    // this.state = state
 
     if (options.autoloop) {
       this.loop()
@@ -216,4 +211,9 @@ export class InfiniteCanvas {
 
     observer.observe(document.body, { childList: true, subtree: true })
   }
+
+  // public async registerFont(fntUrl: string, name: string): Promise<void> {
+  //   const fontData = await loadFontData(fntUrl)
+  //   Registry.instance.registerFont(name, fontData)
+  // }
 }

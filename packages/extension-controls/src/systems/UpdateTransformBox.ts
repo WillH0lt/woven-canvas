@@ -1,9 +1,8 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs, CursorIcon } from '@infinitecanvas/core'
+import { BaseSystem, type BlockModel, CoreCommand, type CoreCommandArgs, CursorIcon } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
 import { uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
-import type { BlockModel } from 'packages/core/build'
 import { DragStart, Locked, TransformBox, TransformHandle } from '../components'
 import {
   TRANSFORM_BOX_RANK,
@@ -12,7 +11,7 @@ import {
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
 import type { EditableTextElement } from '../elements'
-import { computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
+import { calculateTextHeight, computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
 import { ControlCommand, type ControlCommandArgs, type ControlResources, TransformHandleKind } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
@@ -169,6 +168,10 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreComm
       dragStart.startWidth = block.width
       dragStart.startHeight = block.height
       dragStart.startRotateZ = block.rotateZ
+
+      if (blockEntity.has(comps.Text)) {
+        dragStart.startFontSize = blockEntity.read(comps.Text).fontSize
+      }
     }
 
     this.addOrUpdateTransformHandles(transformBoxEntity)
@@ -506,7 +509,7 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreComm
     // TODO scale snapping
 
     for (const selectedEntity of this.selectedBlocks.current) {
-      const { startLeft, startTop, startWidth, startHeight } = selectedEntity.read(DragStart)
+      const { startLeft, startTop, startWidth, startHeight, startFontSize } = selectedEntity.read(DragStart)
 
       const block = selectedEntity.write(comps.Block)
 
@@ -518,6 +521,17 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreComm
 
       if (handleKind === TransformHandleKind.Stretch) {
         block.hasStretched = true
+      }
+
+      if (selectedEntity.has(comps.Text)) {
+        // if we are stretching the block then font size stays constant and the block height is updated
+        if (handleKind === TransformHandleKind.Stretch) {
+          block.height = calculateTextHeight(block, selectedEntity.read(comps.Text))
+        } else {
+          // otherwise adjust the font size proportionally to the new height
+          const text = selectedEntity.write(comps.Text)
+          text.fontSize = startFontSize * (block.height / startHeight)
+        }
       }
     }
   }

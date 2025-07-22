@@ -38,20 +38,29 @@ let infiniteCanvas: InfiniteCanvas | null = null
 async function initializeCanvas(container: HTMLDivElement) {
   await loadFont('Figtree')
 
-  infiniteCanvas = await InfiniteCanvas.New([
-    new InputExtension(),
-    new ControlsExtension(),
-    new HtmlRendererExtension(),
-    // new MultiplayerExtension(),
-    new LocalStorageExtension(),
-    new FloatingMenusExtension(),
-  ])
+  infiniteCanvas = await InfiniteCanvas.New(
+    [
+      new InputExtension(),
+      new ControlsExtension(),
+      new HtmlRendererExtension(),
+      // new MultiplayerExtension(),
+      new LocalStorageExtension(),
+      new FloatingMenusExtension(),
+    ],
+    {
+      fonts: ['./Figtree.fnt'],
+    },
+  )
 
   container.appendChild(infiniteCanvas.domElement)
 
   infiniteCanvas.store.core.blockCount.subscribe((count) => {
     console.log('Block count:', count)
   })
+
+  // infiniteCanvas.store.core.shapeCount.subscribe((count) => {
+  //   console.log('Shape count:', count)
+  // })
 
   // infiniteCanvas.store.core.selectedBlockCount.subscribe((count) => {
   //   console.log('Selected block count:', count)
