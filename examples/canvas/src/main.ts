@@ -4,10 +4,12 @@ import './style.css'
 import { FloatingMenusExtension } from '@infiniteCanvas/extension-floating-menus'
 import { type BlockModel, InfiniteCanvas } from '@infinitecanvas/core'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
-// import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
 import { HtmlRendererExtension } from '@infinitecanvas/extension-html-renderer'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
+// import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
+import { TextEditorExtension } from '@infinitecanvas/extension-text-editor'
+import { TransformExtension } from '@infinitecanvas/extension-transform'
 
 const lorem = new LoremIpsum({
   sentencesPerParagraph: {
@@ -41,7 +43,9 @@ async function initializeCanvas(container: HTMLDivElement) {
   infiniteCanvas = await InfiniteCanvas.New([
     new InputExtension(),
     new ControlsExtension(),
+    new TransformExtension(),
     new HtmlRendererExtension(),
+    new TextEditorExtension(),
     // new MultiplayerExtension(),
     new LocalStorageExtension(),
     new FloatingMenusExtension(),

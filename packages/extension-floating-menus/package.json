@@ -44,7 +44,6 @@
     "@floating-ui/dom": "^1.7.2",
     "@infinitecanvas/core": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
-    "lexorank": "^1.0.5",
     "lit": "^3.3.0",
     "zod": "^3.25.36"
   }

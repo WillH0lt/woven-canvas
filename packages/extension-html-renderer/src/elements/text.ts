@@ -12,6 +12,9 @@ export class TextElement extends SignalWatcher(BaseElement) {
   private model!: ReadonlySignal<TextModel>
 
   static styles = css`
+    :host {
+      word-break: break-word;
+    }
     p {
       margin: 0;
     }

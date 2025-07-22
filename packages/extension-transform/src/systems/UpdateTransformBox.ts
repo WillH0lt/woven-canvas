@@ -10,9 +10,8 @@ import {
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
-import type { EditableTextElement } from '../elements'
 import { calculateTextHeight, computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
-import { ControlCommand, type ControlCommandArgs, type ControlResources, TransformHandleKind } from '../types'
+import { TransformCommand, type TransformCommandArgs, TransformHandleKind } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
 interface TransformHandleDef {
@@ -30,14 +29,13 @@ interface TransformHandleDef {
   // cursorKind: CursorKind
 }
 
-export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
+export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   private readonly selectedBlocks = this.query(
-    (q) => q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read,
+    (q) =>
+      q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read.using(comps.Text).write,
   )
 
-  private readonly editedBlocks = this.query(
-    (q) => q.current.with(comps.Block, comps.Edited).write.using(comps.Text).write,
-  )
+  private readonly editedBlocks = this.query((q) => q.current.with(comps.Block, comps.Edited).write)
 
   private readonly transformBoxes = this.query(
     (q) =>
@@ -51,8 +49,6 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreComm
     q.current.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
   )
 
-  protected declare readonly resources: ControlResources
-
   public constructor() {
     super()
     this.schedule((s) => s.after(UpdateSelection))
@@ -60,13 +56,13 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreComm
 
   public initialize(): void {
     this.addCommandListener(CoreCommand.UpdateBlock, this.onBlockUpdate.bind(this))
-    this.addCommandListener(ControlCommand.AddTransformBox, this.addTransformBox.bind(this))
-    this.addCommandListener(ControlCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
-    this.addCommandListener(ControlCommand.HideTransformBox, this.hideTransformBox.bind(this))
-    this.addCommandListener(ControlCommand.ShowTransformBox, this.showTransformBox.bind(this))
-    this.addCommandListener(ControlCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
-    this.addCommandListener(ControlCommand.StartTransformBoxEdit, this.startTransformBoxEdit.bind(this))
-    this.addCommandListener(ControlCommand.EndTransformBoxEdit, this.endTransformBoxEdit.bind(this))
+    this.addCommandListener(TransformCommand.AddTransformBox, this.addTransformBox.bind(this))
+    this.addCommandListener(TransformCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
+    this.addCommandListener(TransformCommand.HideTransformBox, this.hideTransformBox.bind(this))
+    this.addCommandListener(TransformCommand.ShowTransformBox, this.showTransformBox.bind(this))
+    this.addCommandListener(TransformCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
+    this.addCommandListener(TransformCommand.StartTransformBoxEdit, this.startTransformBoxEdit.bind(this))
+    this.addCommandListener(TransformCommand.EndTransformBoxEdit, this.endTransformBoxEdit.bind(this))
   }
 
   public execute(): void {
@@ -573,14 +569,12 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreComm
 
     for (const blockEntity of selectedBlocks) {
       if (!blockEntity.has(comps.Edited)) {
-        blockEntity.add(comps.Edited, {
-          editedBy: this.resources.uid,
-        })
+        blockEntity.add(comps.Edited)
       }
-      if (!blockEntity.has(comps.Opacity)) {
-        blockEntity.add(comps.Opacity)
-      }
-      blockEntity.write(comps.Opacity).value = 0
+      // if (!blockEntity.has(comps.Opacity)) {
+      //   blockEntity.add(comps.Opacity)
+      // }
+      // blockEntity.write(comps.Opacity).value = 0
     }
   }
 
@@ -600,34 +594,10 @@ export class UpdateTransformBox extends BaseSystem<ControlCommandArgs & CoreComm
       transformBoxEntity.remove(Locked)
     }
 
-    const editedBlocks = this.editedBlocks.current.filter((e) => e.read(comps.Edited).editedBy === this.resources.uid)
-
-    for (const blockEntity of editedBlocks) {
+    for (const blockEntity of this.editedBlocks.current) {
       blockEntity.remove(comps.Edited)
-      blockEntity.remove(comps.Opacity)
-
-      this._saveChanges(blockEntity)
+      // blockEntity.remove(comps.Opacity)
+      // this._saveChanges(blockEntity)
     }
-  }
-
-  private _saveChanges(textEntity: Entity): void {
-    if (!textEntity.has(comps.Text)) return
-
-    const block = textEntity.write(comps.Block)
-    const element = this.resources.viewport.querySelector<EditableTextElement>(`[id='${block.id}']`)
-    if (!element) return
-    // TODO element.getTextModel() should return the text model
-
-    const content = element.getEditorContent()
-    if (content === null) return
-
-    const size = element.getEditorSize()
-    if (size === null) return
-
-    const text = textEntity.write(comps.Text)
-    text.content = content
-
-    block.width = size.width
-    block.height = size.height
   }
 }

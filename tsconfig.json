@@ -24,6 +24,12 @@
       "path": "packages/extension-html-renderer"
     },
     {
+      "path": "packages/extension-text-editor"
+    },
+    {
+      "path": "packages/extension-transform"
+    },
+    {
       "path": "examples/canvas"
     }
   ],

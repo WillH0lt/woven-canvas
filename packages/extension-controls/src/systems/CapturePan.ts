@@ -18,27 +18,27 @@ export class CapturePan extends BaseSystem<ControlCommandArgs & CoreCommandArgs>
   private readonly panMachine = setup({
     types: {
       context: {} as {
-        dragStart: [number, number]
+        panStart: [number, number]
       },
       events: {} as PointerEvent,
     },
     actions: {
       setDragStart: assign({
-        dragStart: ({ event, context }) => {
-          if (!('worldPosition' in event)) return context.dragStart
+        panStart: ({ event, context }) => {
+          if (!('worldPosition' in event)) return context.panStart
           return event.worldPosition
         },
       }),
 
       resetContext: assign({
-        dragStart: [0, 0],
+        panStart: [0, 0],
       }),
     },
   }).createMachine({
-    id: 'drag',
+    id: 'pan',
     initial: PanState.Idle,
     context: {
-      dragStart: [0, 0],
+      panStart: [0, 0],
     },
     states: {
       [PanState.Idle]: {
@@ -56,8 +56,8 @@ export class CapturePan extends BaseSystem<ControlCommandArgs & CoreCommandArgs>
             {
               actions: ({ context, event }) => {
                 if (!('worldPosition' in event)) return
-                const deltaX = event.worldPosition[0] - context.dragStart[0]
-                const deltaY = event.worldPosition[1] - context.dragStart[1]
+                const deltaX = event.worldPosition[0] - context.panStart[0]
+                const deltaY = event.worldPosition[1] - context.panStart[1]
                 const x = this.camera.left - deltaX
                 const y = this.camera.top - deltaY
 

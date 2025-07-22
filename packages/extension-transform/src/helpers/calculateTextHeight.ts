@@ -10,8 +10,8 @@ export function calculateTextHeight(block: Block, text: Text): number {
   tempDiv.style.textAlign = text.align
   tempDiv.style.lineHeight = `${text.lineHeight}`
   tempDiv.innerHTML = text.content
-  document.body.appendChild(tempDiv)
 
+  document.body.appendChild(tempDiv)
   const height = tempDiv.clientHeight
   document.body.removeChild(tempDiv)
 

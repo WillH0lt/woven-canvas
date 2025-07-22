@@ -22,6 +22,9 @@ export class EditableTextElement extends SignalWatcher(LitElement) {
   private _editor: Editor | null = null
 
   static styles = css`
+    :host {
+      word-break: break-word;
+    }
     p {
       margin: 0;
     }

@@ -5,9 +5,9 @@ import type { Entity } from '@lastolivegames/becsy'
 import { SelectionBox } from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
 import { intersectAabb } from '../helpers'
-import { ControlCommand, type ControlCommandArgs, type SelectBlockOptions } from '../types'
+import { type SelectBlockOptions, TransformCommand, type TransformCommandArgs } from '../types'
 
-export class UpdateSelection extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
+export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   private readonly blocks = this.query(
     (q) =>
       q.current
@@ -21,13 +21,13 @@ export class UpdateSelection extends BaseSystem<ControlCommandArgs & CoreCommand
   private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, comps.Shape, SelectionBox).write)
 
   public initialize(): void {
-    this.addCommandListener(ControlCommand.AddSelectionBox, this.addSelectionBox.bind(this))
-    this.addCommandListener(ControlCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
-    this.addCommandListener(ControlCommand.RemoveSelectionBox, this.removeSelectionBox.bind(this))
+    this.addCommandListener(TransformCommand.AddSelectionBox, this.addSelectionBox.bind(this))
+    this.addCommandListener(TransformCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
+    this.addCommandListener(TransformCommand.RemoveSelectionBox, this.removeSelectionBox.bind(this))
 
-    this.addCommandListener(ControlCommand.SelectBlock, this.selectBlock.bind(this))
-    this.addCommandListener(ControlCommand.DeselectBlock, this.deselectBlock.bind(this))
-    this.addCommandListener(ControlCommand.DeselectAll, this.deselectAll.bind(this))
+    this.addCommandListener(TransformCommand.SelectBlock, this.selectBlock.bind(this))
+    this.addCommandListener(TransformCommand.DeselectBlock, this.deselectBlock.bind(this))
+    this.addCommandListener(TransformCommand.DeselectAll, this.deselectAll.bind(this))
 
     this.addCommandListener(CoreCommand.Undo, this.deselectAll.bind(this))
     this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))

@@ -1,6 +1,6 @@
 {
   "private": false,
-  "name": "@infinitecanvas/extension-controls",
+  "name": "@infinitecanvas/extension-text-editor",
   "version": "0.1.0",
   "description": "Demo library that contains common utility functions",
   "repository": "https://github.com/jkomyno/pnpm-monorepo-example.git",
@@ -43,7 +43,13 @@
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
-    "xstate": "^5.19.4"
+    "@lit-labs/preact-signals": "^1.0.3",
+    "@tiptap/core": "^3.0.1",
+    "@tiptap/extension-document": "^3.0.1",
+    "@tiptap/extension-history": "^3.0.1",
+    "@tiptap/extension-paragraph": "^3.0.1",
+    "@tiptap/extension-text": "^3.0.1",
+    "lit": "^3.3.0"
   },
   "devDependencies": {
     "vitest": "^3.1.4"

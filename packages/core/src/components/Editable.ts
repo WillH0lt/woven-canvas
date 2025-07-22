@@ -1,4 +1,4 @@
 import { component } from '@lastolivegames/becsy'
 
 @component
-export class Edited {}
+export class Editable {}

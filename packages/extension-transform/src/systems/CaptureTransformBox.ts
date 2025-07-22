@@ -2,9 +2,8 @@ import { BaseSystem, type CoreCommandArgs, type PointerEvent, comps } from '@inf
 import { and, not, setup } from 'xstate'
 
 import type { Entity } from '@lastolivegames/becsy'
-import * as controlComps from '../components'
-import { ControlCommand, type ControlCommandArgs, TransformBoxState } from '../types'
-import { CapturePan } from './CapturePan'
+import * as transformComps from '../components'
+import { TransformBoxState, TransformCommand, type TransformCommandArgs } from '../types'
 import { CaptureSelect } from './CaptureSelect'
 
 type SelectionEvent =
@@ -14,15 +13,15 @@ type SelectionEvent =
       selectedEntities: Entity[]
     }
 
-export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
+export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.current.changed.with(comps.Pointer).trackWrites)
 
   private readonly selectedBlocks = this.query(
-    (q) => q.added.removed.current.with(comps.Block, comps.Selected).using(comps.Text).read,
+    (q) => q.added.removed.current.with(comps.Block, comps.Selected).using(comps.Editable).read,
   )
 
   private readonly transformBoxes = this.query(
-    (q) => q.current.with(controlComps.TransformBox).write.using(controlComps.TransformHandle).read,
+    (q) => q.current.with(transformComps.TransformBox).write.using(transformComps.TransformHandle).read,
   )
 
   private readonly tool = this.singleton.read(comps.Tool)
@@ -31,11 +30,11 @@ export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & CoreCom
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
-  private readonly transformBoxState = this.singleton.write(controlComps.TransformBoxState)
+  private readonly transformBoxState = this.singleton.write(transformComps.TransformBoxState)
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CapturePan))
+    this.schedule((s) => s.inAnyOrderWith(CaptureSelect))
   }
 
   private readonly transformBoxMachine = setup({
@@ -43,19 +42,19 @@ export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & CoreCom
       events: {} as SelectionEvent,
     },
     guards: {
-      isSelectingText: () => {
+      isSelectingEditable: () => {
         const selectedEntities = this.selectedBlocks.current.filter(
           (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
         )
 
         if (selectedEntities.length !== 1) return false
-        if (!selectedEntities[0].has(comps.Text)) return false
+        if (!selectedEntities[0].has(comps.Editable)) return false
 
         return true
       },
       isOverTransformBox: ({ event }) => {
         if (!('blockEntity' in event)) return false
-        if (!event.blockEntity?.has(controlComps.TransformBox)) return false
+        if (!event.blockEntity?.has(transformComps.TransformBox)) return false
 
         const block = event.blockEntity.read(comps.Block)
 
@@ -63,32 +62,32 @@ export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & CoreCom
       },
       isOverTransformHandle: ({ event }) => {
         if (!('blockEntity' in event)) return false
-        if (!event.blockEntity?.has(controlComps.TransformHandle)) return false
+        if (!event.blockEntity?.has(transformComps.TransformHandle)) return false
 
         return true
       },
     },
     actions: {
       addTransformBox: () => {
-        this.emitCommand(ControlCommand.AddTransformBox)
+        this.emitCommand(TransformCommand.AddTransformBox)
       },
       updateTransformBox: () => {
-        this.emitCommand(ControlCommand.UpdateTransformBox)
+        this.emitCommand(TransformCommand.UpdateTransformBox)
       },
       hideTransformBox: () => {
-        this.emitCommand(ControlCommand.HideTransformBox)
+        this.emitCommand(TransformCommand.HideTransformBox)
       },
       showTransformBox: () => {
-        this.emitCommand(ControlCommand.ShowTransformBox)
+        this.emitCommand(TransformCommand.ShowTransformBox)
       },
       removeTransformBox: () => {
-        this.emitCommand(ControlCommand.RemoveTransformBox)
+        this.emitCommand(TransformCommand.RemoveTransformBox)
       },
       startTransformBoxEdit: () => {
-        this.emitCommand(ControlCommand.StartTransformBoxEdit)
+        this.emitCommand(TransformCommand.StartTransformBoxEdit)
       },
       endTransformBoxEdit: () => {
-        this.emitCommand(ControlCommand.EndTransformBoxEdit)
+        this.emitCommand(TransformCommand.EndTransformBoxEdit)
       },
     },
   }).createMachine({
@@ -126,12 +125,12 @@ export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & CoreCom
             actions: 'showTransformBox',
           },
           click: {
-            guard: and(['isOverTransformBox', 'isSelectingText']),
-            target: TransformBoxState.EditingText,
+            guard: and(['isOverTransformBox', 'isSelectingEditable']),
+            target: TransformBoxState.Editing,
           },
         },
       },
-      [TransformBoxState.EditingText]: {
+      [TransformBoxState.Editing]: {
         entry: ['startTransformBoxEdit', 'hideTransformBox'],
         on: {
           pointerDown: {
@@ -186,7 +185,7 @@ export class CaptureTransformBox extends BaseSystem<ControlCommandArgs & CoreCom
       }
     }
 
-    const button = this.tool.getButton('select', 'editText')
+    const button = this.tool.getButton('select')
     if (button !== null) {
       const e = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
         button,

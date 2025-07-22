@@ -2,10 +2,10 @@ import { BaseSystem, comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
 import type { EditableTextElement } from '../elements'
-import type { ControlResources } from '../types'
+import type { TextEditorResources } from '../types'
 
 export class PreRenderOverlay extends BaseSystem {
-  protected declare readonly resources: ControlResources
+  protected declare readonly resources: TextEditorResources
 
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 

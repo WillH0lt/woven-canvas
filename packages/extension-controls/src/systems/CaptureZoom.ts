@@ -1,10 +1,7 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs, comps } from '@infinitecanvas/core'
-import type { ControlCommandArgs } from '../types'
 import { CapturePan } from './CapturePan'
-import { CaptureSelect } from './CaptureSelect'
-import { CaptureTransformBox } from './CaptureTransformBox'
 
-export class CaptureZoom extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
+export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
   private readonly mouse = this.singleton.read(comps.Mouse)
 
   private readonly screen = this.singleton.read(comps.Screen)
@@ -19,7 +16,7 @@ export class CaptureZoom extends BaseSystem<ControlCommandArgs & CoreCommandArgs
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CapturePan, CaptureTransformBox))
+    this.schedule((s) => s.inAnyOrderWith(CapturePan))
   }
 
   public execute(): void {
@@ -50,6 +47,4 @@ export class CaptureZoom extends BaseSystem<ControlCommandArgs & CoreCommandArgs
     this.emitCommand(CoreCommand.SetZoom, { zoom })
     this.emitCommand(CoreCommand.MoveCamera, { x, y })
   }
-
-  // private getWheelEvents(): WheelEvent
 }

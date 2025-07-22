@@ -3,14 +3,13 @@ import { distance } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 import { and, assign, not, setup } from 'xstate'
 
-import * as controlComps from '../components'
-import { ControlCommand, type ControlCommandArgs, SelectionState } from '../types'
-import { CapturePan } from './CapturePan'
+import * as transformComps from '../components'
+import { SelectionState, TransformCommand, type TransformCommandArgs } from '../types'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
 
-export class CaptureSelect extends BaseSystem<ControlCommandArgs & CoreCommandArgs> {
+export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
 
   private readonly tool = this.singleton.read(comps.Tool)
@@ -24,15 +23,10 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & CoreCommandAr
   private readonly intersect = this.singleton.read(comps.Intersect)
 
   private readonly _blocks = this.query(
-    (q) => q.with(comps.Block, comps.Persistent).read.using(controlComps.Locked).read,
+    (q) => q.with(comps.Block, comps.Persistent).read.using(transformComps.Locked).read,
   )
 
-  private readonly selectionState = this.singleton.write(controlComps.SelectionState)
-
-  public constructor() {
-    super()
-    this.schedule((s) => s.inAnyOrderWith(CapturePan))
-  }
+  private readonly selectionState = this.singleton.write(transformComps.SelectionState)
 
   private readonly selectionMachine = setup({
     types: {
@@ -59,7 +53,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & CoreCommandAr
       },
       draggedEntityIsLocked: ({ context }) => {
         if (!context.draggedEntity) return false
-        return context.draggedEntity.has(controlComps.Locked)
+        return context.draggedEntity.has(transformComps.Locked)
       },
     },
     actions: {
@@ -103,10 +97,10 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & CoreCommandAr
         draggedEntity: null,
       }),
       createSelectionBox: () => {
-        this.emitCommand(ControlCommand.AddSelectionBox)
+        this.emitCommand(TransformCommand.AddSelectionBox)
       },
       removeSelectionBox: () => {
-        this.emitCommand(ControlCommand.RemoveSelectionBox)
+        this.emitCommand(TransformCommand.RemoveSelectionBox)
       },
       createCheckpoint: () => {
         this.emitCommand(CoreCommand.CreateCheckpoint)
@@ -121,7 +115,7 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & CoreCommandAr
       },
       resizeSelectionBox: ({ context, event }) => {
         if (!('worldPosition' in event)) return
-        this.emitCommand(ControlCommand.UpdateSelectionBox, {
+        this.emitCommand(TransformCommand.UpdateSelectionBox, {
           left: Math.min(context.pointingStartWorld[0], event.worldPosition[0]),
           top: Math.min(context.pointingStartWorld[1], event.worldPosition[1]),
           width: Math.abs(context.pointingStartWorld[0] - event.worldPosition[0]),
@@ -131,10 +125,10 @@ export class CaptureSelect extends BaseSystem<ControlCommandArgs & CoreCommandAr
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
         if (!context.draggedEntity.has(comps.Persistent)) return
-        this.emitCommand(ControlCommand.SelectBlock, context.draggedEntity, { options: { deselectOthers: true } })
+        this.emitCommand(TransformCommand.SelectBlock, context.draggedEntity, { options: { deselectOthers: true } })
       },
       deselectAll: () => {
-        this.emitCommand(ControlCommand.DeselectAll)
+        this.emitCommand(TransformCommand.DeselectAll)
       },
     },
   }).createMachine({

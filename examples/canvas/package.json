@@ -20,6 +20,8 @@
     "@infinitecanvas/extension-input": "workspace:^",
     "@infinitecanvas/extension-local-storage": "workspace:^",
     "@infinitecanvas/extension-multiplayer": "workspace:^",
+    "@infinitecanvas/extension-text-editor": "workspace:^",
+    "@infinitecanvas/extension-transform": "workspace:^",
     "@preact/signals-core": "^1.10.0",
     "lorem-ipsum": "^2.0.8"
   }

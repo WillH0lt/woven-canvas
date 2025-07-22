@@ -1,8 +1,3 @@
 export { CapturePan } from './CapturePan'
 export { CaptureScroll } from './CaptureScroll'
-export { CaptureSelect } from './CaptureSelect'
-export { CaptureTransformBox } from './CaptureTransformBox'
 export { CaptureZoom } from './CaptureZoom'
-export { UpdateSelection } from './UpdateSelection'
-export { UpdateTransformBox } from './UpdateTransformBox'
-export { PreRenderOverlay } from './PreRenderOverlay'
