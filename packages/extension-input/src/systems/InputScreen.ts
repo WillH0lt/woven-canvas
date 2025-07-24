@@ -1,11 +1,11 @@
 import { System, co } from '@lastolivegames/becsy'
 
-import { type Resources, comps } from '@infinitecanvas/core'
+import { type BaseResources, comps } from '@infinitecanvas/core'
 
 export class InputScreen extends System {
   private readonly screens = this.query((q) => q.current.with(comps.Screen).write)
 
-  protected declare readonly resources: Resources
+  protected declare readonly resources: BaseResources
 
   @co private *handleResize(): Generator {
     const screen = this.screens.current[0].write(comps.Screen)

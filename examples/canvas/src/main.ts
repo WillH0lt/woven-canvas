@@ -1,14 +1,14 @@
 import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
-import { FloatingMenusExtension } from '@infiniteCanvas/extension-floating-menus'
+import { FloatingMenusExtension, defaultFloatingMenus } from '@infiniteCanvas/extension-floating-menus'
 import { type BlockModel, InfiniteCanvas } from '@infinitecanvas/core'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { HtmlRendererExtension } from '@infinitecanvas/extension-html-renderer'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
 // import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
-import { TextEditorExtension } from '@infinitecanvas/extension-text-editor'
+import { TextEditorExtension, TextEditorFloatingMenuButtons } from '@infinitecanvas/extension-text-editor'
 import { TransformExtension } from '@infinitecanvas/extension-transform'
 
 const lorem = new LoremIpsum({
@@ -48,13 +48,33 @@ async function initializeCanvas(container: HTMLDivElement) {
     new TextEditorExtension(),
     // new MultiplayerExtension(),
     new LocalStorageExtension(),
-    new FloatingMenusExtension(),
+    new FloatingMenusExtension({
+      menus: [
+        ...defaultFloatingMenus,
+        {
+          blockKind: 'ic-text-edited',
+          buttons: TextEditorFloatingMenuButtons,
+        },
+      ],
+    }),
   ])
 
   container.appendChild(infiniteCanvas.domElement)
 
   infiniteCanvas.store.core.blockCount.subscribe((count) => {
     console.log('Block count:', count)
+  })
+
+  infiniteCanvas.store.textEditor.bold.subscribe((isBold) => {
+    console.log('Text editor bold:', isBold)
+  })
+
+  infiniteCanvas.store.textEditor.italic.subscribe((isItalic) => {
+    console.log('Text editor italic:', isItalic)
+  })
+
+  infiniteCanvas.store.textEditor.underline.subscribe((isUnderline) => {
+    console.log('Text editor underline:', isUnderline)
   })
 
   // infiniteCanvas.store.core.shapeCount.subscribe((count) => {
@@ -149,10 +169,6 @@ function addText(left: number, top: number): void {
   infiniteCanvas?.commands.core.addText(block, {
     content: lorem.generateSentences(1),
     fontFamily: 'Figtree',
-    red: Math.floor(Math.random() * 256),
-    green: Math.floor(Math.random() * 256),
-    blue: Math.floor(Math.random() * 256),
-    alpha: 255,
   })
 }
 

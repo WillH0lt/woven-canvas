@@ -1,5 +1,5 @@
-import type { Resources } from '@infinitecanvas/core'
+import type { BaseResources } from '@infinitecanvas/core'
 
-export interface TextEditorResources extends Resources {
+export interface TextEditorResources extends BaseResources {
   viewport: HTMLDivElement
 }

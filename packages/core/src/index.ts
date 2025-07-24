@@ -10,6 +10,7 @@ export {
   PointerType,
   PointerButton,
   CoreCommand,
+  TextAlign,
   type CoreCommandArgs,
   type AabbModel,
   type PointerEvent,
@@ -22,10 +23,11 @@ export {
   type ICommands,
   type IStore,
   type SendCommandFn,
-  type Resources,
+  type BaseResources,
 } from './types'
 
 export { BaseExtension } from './BaseExtension'
 export { BaseSystem } from './BaseSystem'
 export { ComponentRegistry } from './ComponentRegistry'
-export { Diff, type State } from './History'
+export { Diff, type Snapshot } from './History'
+export type { State } from './State'

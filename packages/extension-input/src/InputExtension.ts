@@ -1,4 +1,4 @@
-import { BaseExtension, type Resources } from '@infinitecanvas/core'
+import { BaseExtension, type BaseResources } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
 
 import * as sys from './systems/index.js'
@@ -6,7 +6,7 @@ import * as sys from './systems/index.js'
 export class InputExtension extends BaseExtension {
   public name = 'input'
 
-  public async preBuild(resources: Resources): Promise<void> {
+  public async preBuild(resources: BaseResources): Promise<void> {
     this._inputGroup = System.group(
       sys.InputScreen,
       { resources },

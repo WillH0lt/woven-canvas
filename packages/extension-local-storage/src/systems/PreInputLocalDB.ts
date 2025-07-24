@@ -1,4 +1,4 @@
-import { BaseSystem, type Diff, type State } from '@infinitecanvas/core'
+import { BaseSystem, type Diff, type Snapshot } from '@infinitecanvas/core'
 import { co } from '@lastolivegames/becsy'
 
 import type { LocalStorageResources } from '../types'
@@ -6,7 +6,7 @@ import type { LocalStorageResources } from '../types'
 export class PreInputLocalDB extends BaseSystem {
   protected declare readonly resources: LocalStorageResources
 
-  public lastSyncedState: State | null = null
+  public lastSyncedSnapshot: Snapshot | null = null
 
   public initialize(): void {
     this.syncInterval()
@@ -15,18 +15,18 @@ export class PreInputLocalDB extends BaseSystem {
   @co private *syncInterval(): Generator {
     yield co.waitForFrames(1)
 
-    this.lastSyncedState = this.resources.history.getState()
+    this.lastSyncedSnapshot = this.resources.history.getSnapshot()
 
     while (true) {
       yield co.waitForSeconds(5)
       if (!this.resources.history.isClean) continue
 
-      const diff = this.resources.history.computeDiff(this.lastSyncedState ?? {})
+      const diff = this.resources.history.computeDiff(this.lastSyncedSnapshot ?? {})
 
       if (diff.isEmpty) continue
 
       this.syncLocalDB(diff)
-      this.lastSyncedState = this.resources.history.getState()
+      this.lastSyncedSnapshot = this.resources.history.getSnapshot()
     }
   }
 

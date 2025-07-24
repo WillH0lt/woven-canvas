@@ -6,7 +6,7 @@ import type { BaseExtension } from './BaseExtension'
 import { CoreExtension } from './CoreExtension'
 import { History } from './History'
 import { State } from './State'
-import { EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options, type Resources } from './types'
+import { type BaseResources, EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options } from './types'
 
 function scheduleGroups(orderedGroups: SystemGroup[]): void {
   for (let i = 0; i < orderedGroups.length - 1; i++) {
@@ -21,6 +21,10 @@ export class InfiniteCanvas {
   public static instance: InfiniteCanvas | null = null
 
   public readonly domElement: HTMLElement
+
+  public store: IStore = {} as IStore
+
+  public commands: ICommands = {} as ICommands
 
   // private readonly state: State
 
@@ -111,7 +115,7 @@ export class InfiniteCanvas {
     private readonly world: World,
     private readonly emitter: Emitter<EmitterEvents>,
     private readonly state: State,
-    resources: Resources,
+    resources: BaseResources,
     options: z.infer<typeof Options>,
   ) {
     this.domElement = resources.domElement
@@ -122,28 +126,29 @@ export class InfiniteCanvas {
     if (options.autofocus) {
       this.useAutoFocus()
     }
-  }
 
-  public execute(): Promise<void> {
-    return this.world.execute().catch((err: unknown) => {
-      console.error(err)
-    })
-  }
+    this.store = extensions.reduce((stores, ext) => {
+      if (!ext.addStore) return stores
 
-  /**
-   * An object of all registered commands.
-   */
-  public get commands(): ICommands {
+      const extStores = ext.addStore(this.state)
+      if (!extStores) return stores
+
+      for (const key of Object.keys(extStores)) {
+        ;(stores as any)[key] = extStores[key as keyof typeof extStores]
+      }
+      return stores
+    }, {} as IStore)
+
     const send = (kind: string, ...args: any[]) =>
       this.emitter.emit(EmitterEventKind.Command, {
         kind,
         payload: JSON.stringify(args),
       })
 
-    return this.extensions.reduce((commands, ext) => {
+    this.commands = extensions.reduce((commands, ext) => {
       if (!ext.addCommands) return commands
 
-      const extCommands = ext.addCommands.call(this, send)
+      const extCommands = ext.addCommands(send)
       if (!extCommands) return commands
 
       for (const key of Object.keys(extCommands)) {
@@ -153,18 +158,10 @@ export class InfiniteCanvas {
     }, {} as ICommands)
   }
 
-  public get store(): IStore {
-    return this.extensions.reduce((stores, ext) => {
-      if (!ext.addStore) return stores
-
-      const extStores = ext.addStore.call(this, this.state)
-      if (!extStores) return stores
-
-      for (const key of Object.keys(extStores)) {
-        ;(stores as any)[key] = extStores[key as keyof typeof extStores]
-      }
-      return stores
-    }, {} as IStore)
+  public execute(): Promise<void> {
+    return this.world.execute().catch((err: unknown) => {
+      console.error(err)
+    })
   }
 
   public async destroy(): Promise<void> {

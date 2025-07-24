@@ -1,4 +1,4 @@
-import type { Resources } from '@infinitecanvas/core'
+import type { BaseResources } from '@infinitecanvas/core'
 import { BaseExtension } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
 
@@ -9,7 +9,7 @@ import type { HtmlRendererResources } from './types'
 export class HtmlRendererExtension extends BaseExtension {
   public name = 'html-renderer'
 
-  public async preBuild(resources: Resources): Promise<void> {
+  public async preBuild(resources: BaseResources): Promise<void> {
     const viewport = document.createElement('div')
     viewport.style.pointerEvents = 'none'
     viewport.style.userSelect = 'none'

@@ -3,7 +3,7 @@ import { type AnyStateMachine, transition } from 'xstate'
 
 import * as comps from './components'
 import { distance } from './helpers'
-import type { CommandMap, MouseEvent, PointerButton, PointerEvent, Resources } from './types'
+import type { BaseResources, CommandMap, MouseEvent, PointerButton, PointerEvent } from './types'
 
 const CLICK_MOVE_THRESHOLD = 1
 const CLICK_FRAME_THRESHOLD = 60
@@ -16,7 +16,7 @@ function isEntity(item: any): boolean {
 export class BaseSystem<Commands extends CommandMap = {}> extends System {
   readonly #_toBeDeleted = this.query((q) => q.with(comps.ToBeDeleted).write)
 
-  protected readonly resources!: Resources
+  protected readonly resources!: BaseResources
 
   readonly #commands = this.query(
     (q) =>

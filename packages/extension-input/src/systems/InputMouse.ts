@@ -1,4 +1,4 @@
-import { type Resources, comps } from '@infinitecanvas/core'
+import { type BaseResources, comps } from '@infinitecanvas/core'
 import { System, co } from '@lastolivegames/becsy'
 
 export class InputMouse extends System {
@@ -11,7 +11,7 @@ export class InputMouse extends System {
   // declaring to becsy that mouse is a singleton component
   private readonly _mouse = this.singleton.read(comps.Mouse)
 
-  protected declare readonly resources: Resources
+  protected declare readonly resources: BaseResources
 
   @co private *onMouseMove(e: MouseEvent): Generator {
     this.mouse.position = [e.clientX, e.clientY]

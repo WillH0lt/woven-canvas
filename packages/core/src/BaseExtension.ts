@@ -1,7 +1,7 @@
 import type { System, SystemGroup } from '@lastolivegames/becsy'
 
-import type { State } from './State.js'
-import type { CommandArgs, ICommands, IStore, Resources, SendCommandFn } from './types.js'
+import type { State } from './State'
+import type { BaseResources, CommandArgs, ICommands, IStore, SendCommandFn } from './types'
 
 export abstract class BaseExtension {
   public name = 'base'
@@ -70,7 +70,7 @@ export abstract class BaseExtension {
     return this._postRenderGroup
   }
 
-  public preBuild(_resources: Resources): Promise<void> {
+  public preBuild(_resources: BaseResources): Promise<void> {
     // implementation in subclasses
     return Promise.resolve()
   }

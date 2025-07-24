@@ -41,17 +41,30 @@
     "test:watch": "vitest  --config ../../vitest.config.ts run --watch"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.7.2",
     "@infinitecanvas/core": "workspace:^",
+    "@infinitecanvas/extension-floating-menus": "workspace:^",
+    "@jaames/iro": "^5.5.2",
     "@lastolivegames/becsy": "^0.15.5",
     "@lit-labs/preact-signals": "^1.0.3",
-    "@tiptap/core": "^3.0.1",
+    "@preact/signals-core": "^1.10.0",
+    "@tiptap/core": "^3.0.7",
+    "@tiptap/extension-bold": "^3.0.7",
+    "@tiptap/extension-color": "^3.0.7",
     "@tiptap/extension-document": "^3.0.1",
     "@tiptap/extension-history": "^3.0.1",
+    "@tiptap/extension-italic": "^3.0.7",
     "@tiptap/extension-paragraph": "^3.0.1",
     "@tiptap/extension-text": "^3.0.1",
-    "lit": "^3.3.0"
+    "@tiptap/extension-text-align": "^3.0.7",
+    "@tiptap/extension-text-style": "^3.0.7",
+    "@tiptap/extension-underline": "^3.0.7",
+    "lit": "^3.3.0",
+    "tinycolor2": "^1.6.0",
+    "zod": "^3.25.36"
   },
   "devDependencies": {
+    "@types/tinycolor2": "^1.4.6",
     "vitest": "^3.1.4"
   }
 }

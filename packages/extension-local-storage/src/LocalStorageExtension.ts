@@ -1,4 +1,4 @@
-import { BaseExtension, ComponentRegistry, type Resources } from '@infinitecanvas/core'
+import { BaseExtension, type BaseResources, ComponentRegistry } from '@infinitecanvas/core'
 import { Persistent } from '@infinitecanvas/core/components'
 import { System } from '@lastolivegames/becsy'
 
@@ -15,11 +15,13 @@ export class LocalStorageExtension extends BaseExtension {
     super()
   }
 
-  public async preBuild(resources: Resources): Promise<void> {
+  public async preBuild(resources: BaseResources): Promise<void> {
     const options = LocalStorageOptions.parse(this.options)
 
     const localDB = await LocalDB.New(options.persistenceKey)
     this.initialEntities = await localDB.getAll()
+
+    console.log(this.initialEntities)
 
     const localStorageResources: LocalStorageResources = {
       ...resources,

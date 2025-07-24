@@ -2,7 +2,7 @@ import { BaseSystem, type BlockModel, Diff, comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 import { LexoRank } from 'lexorank'
 
-import type { State } from '../History'
+import type { Snapshot } from '../History'
 import { applyDiff, uuidToNumber } from '../helpers'
 import { CoreCommand, type CoreCommandArgs, type ShapeModel, type TextModel } from '../types'
 import { UpdateCamera } from './UpdateCamera'
@@ -124,7 +124,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     blocks.sort((a, b) => LexoRank.parse(a.rank).compareTo(LexoRank.parse(b.rank)))
 
     // build new entities
-    const newEntities: State = {}
+    const newEntities: Snapshot = {}
     for (const block of blocks) {
       const newId = crypto.randomUUID()
       newEntities[newId] = {

@@ -571,10 +571,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       if (!blockEntity.has(comps.Edited)) {
         blockEntity.add(comps.Edited)
       }
-      // if (!blockEntity.has(comps.Opacity)) {
-      //   blockEntity.add(comps.Opacity)
-      // }
-      // blockEntity.write(comps.Opacity).value = 0
     }
   }
 
@@ -596,8 +592,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     for (const blockEntity of this.editedBlocks.current) {
       blockEntity.remove(comps.Edited)
-      // blockEntity.remove(comps.Opacity)
-      // this._saveChanges(blockEntity)
     }
   }
 }

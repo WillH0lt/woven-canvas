@@ -1,4 +1,4 @@
-import { PointerButton, type Resources, comps } from '@infinitecanvas/core'
+import { type BaseResources, PointerButton, comps } from '@infinitecanvas/core'
 import { type Entity, System } from '@lastolivegames/becsy'
 
 function getPointerButton(b: number): PointerButton {
@@ -15,7 +15,7 @@ function getPointerButton(b: number): PointerButton {
 export class InputPointer extends System {
   private readonly pointers = this.query((q) => q.current.with(comps.Pointer).write)
 
-  protected declare readonly resources: Resources
+  protected declare readonly resources: BaseResources
 
   private readonly frame = this.singleton.read(comps.Frame)
 

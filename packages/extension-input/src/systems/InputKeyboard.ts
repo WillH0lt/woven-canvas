@@ -1,4 +1,4 @@
-import { BaseSystem, type Resources, comps } from '@infinitecanvas/core'
+import { type BaseResources, BaseSystem, comps } from '@infinitecanvas/core'
 import { co } from '@lastolivegames/becsy'
 
 export class InputKeyboard extends BaseSystem {
@@ -11,7 +11,7 @@ export class InputKeyboard extends BaseSystem {
   // declaring to becsy that keyboard is a singleton component
   private readonly _keyboard = this.singleton.read(comps.Keyboard)
 
-  protected declare readonly resources: Resources
+  protected declare readonly resources: BaseResources
 
   private keyUpFrames: { key: string; frame: number }[] = []
 

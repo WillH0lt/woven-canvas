@@ -17,7 +17,7 @@ export type EmitterEvents = {
   [EmitterEventKind.Command]: [Command]
 }
 
-export interface CoreResources extends Resources {
+export interface CoreResources extends BaseResources {
   emitter: Emitter<EmitterEvents>
   state: State
 }
@@ -44,7 +44,7 @@ export const Options = z.object({
 
 export type Options = z.input<typeof Options>
 
-export interface Resources {
+export interface BaseResources {
   domElement: HTMLElement
   uid: string
   history: History
@@ -74,12 +74,7 @@ export interface TextModel {
   content: string
   fontSize: number
   fontFamily: string
-  align: TextAlign
   lineHeight: number
-  red: number
-  green: number
-  blue: number
-  alpha: number
 }
 
 export interface ShapeModel {

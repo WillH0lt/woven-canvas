@@ -1,4 +1,4 @@
-import { computePosition, flip, offset, shift } from '@floating-ui/dom'
+import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
 import { LitElement, type PropertyValues, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { html, unsafeStatic } from 'lit/static-html.js'
@@ -14,6 +14,9 @@ export class FloatingMenuElement extends LitElement {
   private tooltipTimeout: number | null = null
   private isTooltipVisible = false
 
+  private menuElement: HTMLElement | null = null
+  private cleanupMenu: (() => void) | null = null
+
   static styles = css`
     :host {
       display: block;
@@ -23,33 +26,34 @@ export class FloatingMenuElement extends LitElement {
 
     .container {
       display: flex;
+      overflow: hidden;
       cursor: pointer;
       height: 100%;
-      color: white;
-      background-color: #060607;
-      border-radius: 12px;
+      color: var(--ic-floating-menus-gray-100);
+      background-color: var(--ic-floating-menus-gray-700);
+      border-radius: var(--ic-floating-menus-border-radius);
     }
 
     .container *:first-child {
-      border-top-left-radius: 12px;
-      border-bottom-left-radius: 12px;
+      border-top-left-radius: var(--ic-floating-menus-border-radius);
+      border-bottom-left-radius: var(--ic-floating-menus-border-radius);
     }
 
     .container *:last-child {
-      border-top-right-radius: 12px;
-      border-bottom-right-radius: 12px;
+      border-top-right-radius: var(--ic-floating-menus-border-radius);
+      border-bottom-right-radius: var(--ic-floating-menus-border-radius);
     }
 
     .container * {
       width: 100%;
       height: 100%;
       transition-property: background-color;
-      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-      transition-duration: 150ms;
+      transition-timing-function: var(--ic-floating-menus-transition-timing-function);
+      transition-duration: var(--ic-floating-menus-transition-duration);
     }
 
-    .container *:hover {
-      background-color: #2e3338;
+    .container *:hover:not([divider]) {
+      background-color: var(--ic-floating-menus-gray-600);
     }
 
     #tooltip {
@@ -58,11 +62,11 @@ export class FloatingMenuElement extends LitElement {
       position: absolute;
       top: 0;
       left: 0;
-      background: #060607;
-      color: white;
+      background: var(--ic-floating-menus-gray-700);
+      color: var(--ic-floating-menus-gray-100);
       font-weight: bold;
       padding: 5px 10px;
-      border-radius: 6px;
+      border-radius: var(--ic-floating-menus-tooltip-border-radius);
       font-size: 70%;
     }
   `
@@ -79,18 +83,54 @@ export class FloatingMenuElement extends LitElement {
         ${this.buttons.map(
           (button) => html`
             <${unsafeStatic(button.tag)}
+              ?divider="${button.tag === 'ic-divider'}"
               style="width: ${button.width}px"
               @mouseenter="${() => this.onMouseEnter(button)}"
+              @click="${() => this.onClick(button)}"
             />
           `,
         )}
       </div>
-      <div id="tooltip" role="tooltip">My tooltip</div>
+      <div id="tooltip" role="tooltip"></div>
     `
   }
 
-  handleButtonClick() {
-    console.log('Button clicked!')
+  onClick(button: z.infer<typeof Button>) {
+    if (this.cleanupMenu) {
+      this.cleanupMenu()
+      this.cleanupMenu = null
+    }
+
+    if (this.menuElement) {
+      const tag = this.menuElement.tagName.toLowerCase()
+      this.shadowRoot?.removeChild(this.menuElement)
+      this.menuElement = null
+
+      if (tag === button.menu) return
+    }
+
+    if (button.menu) {
+      // If the button has a menu, create the menu element if it doesn't exist
+      const menuElement = document.createElement(button.menu)
+      menuElement.style.position = 'absolute'
+      this.shadowRoot?.appendChild(menuElement)
+      this.menuElement = menuElement
+
+      const buttonElement = this.shadowRoot?.querySelector(button.tag)
+      if (!buttonElement) return
+
+      this.cleanupMenu = autoUpdate(buttonElement, menuElement, () => {
+        computePosition(buttonElement, menuElement, {
+          placement: 'top',
+          middleware: [offset(6), flip(), shift({ padding: 5 })],
+        }).then(({ x, y }) => {
+          Object.assign(menuElement.style, {
+            left: `${x}px`,
+            top: `${y}px`,
+          })
+        })
+      })
+    }
   }
 
   onMouseEnter(button: z.infer<typeof Button>) {
@@ -118,10 +158,16 @@ export class FloatingMenuElement extends LitElement {
   }
 
   showTooltip(button: z.infer<typeof Button>, tooltip: HTMLElement) {
-    tooltip.style.display = 'block'
+    if (!button.tooltip) {
+      tooltip.style.display = 'none'
+    } else {
+      tooltip.style.display = 'block'
+    }
+
     this.isTooltipVisible = true
 
-    const buttonElement = this.shadowRoot?.querySelector(button.tag) as HTMLElement
+    const buttonElement = this.shadowRoot?.querySelector(button.tag)
+    if (!buttonElement) return
 
     computePosition(buttonElement, tooltip, {
       placement: 'top',

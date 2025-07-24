@@ -52,24 +52,6 @@ export class RenderHtml extends BaseSystem {
       this.updateOpacityBlockHtml(blockEntity, element)
     }
 
-    // // shapes
-    // for (const shapeEntity of this.shapes.addedOrChanged) {
-    //   const block = shapeEntity.read(comps.Block)
-    //   const element = this.resources.viewport.querySelector<ShapeElement>(`[id='${block.id}']`)
-    //   if (element) {
-    //     this.updateShapeElementHtml(shapeEntity, element)
-    //   }
-    // }
-
-    // // texts
-    // for (const textEntity of this.texts.addedOrChanged) {
-    //   const block = textEntity.read(comps.Block)
-    //   const element = this.resources.viewport.querySelector<TextElement>(`[id='${block.id}']`)
-    //   if (element) {
-    //     this.updateTextElementHtml(textEntity, element)
-    //   }
-    // }
-
     // remove blocks
     if (this.blocks.removed.length > 0) {
       this.accessRecentlyDeletedData()

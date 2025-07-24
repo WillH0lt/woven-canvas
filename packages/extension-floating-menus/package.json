@@ -45,6 +45,10 @@
     "@infinitecanvas/core": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
     "lit": "^3.3.0",
+    "tinycolor2": "^1.6.0",
     "zod": "^3.25.36"
+  },
+  "devDependencies": {
+    "@types/tinycolor2": "^1.4.6"
   }
 }

@@ -13,8 +13,10 @@ export class TextElement extends SignalWatcher(BaseElement) {
 
   static styles = css`
     :host {
+      white-space: pre-wrap;
       word-break: break-word;
     }
+
     p {
       margin: 0;
     }
@@ -32,17 +34,11 @@ export class TextElement extends SignalWatcher(BaseElement) {
   }
 
   render() {
-    return html`
-    <div style=${styleMap({
+    return html`<div style=${styleMap({
       'font-family': this.model.value.fontFamily,
-      'text-align': this.model.value.align,
       'line-height': `${this.model.value.lineHeight}`,
-      color: `rgba(${this.model.value.red}, ${this.model.value.green}, ${this.model.value.blue}, ${this.model.value.alpha / 255})`,
       'font-size': `${this.model.value.fontSize}px`,
-    })}>
-      ${unsafeHTML(this.model.value.content)}
-    </div>
-  `
+    })}>${unsafeHTML(this.model.value.content)}</div>`
   }
 }
 

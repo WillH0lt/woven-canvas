@@ -6,13 +6,13 @@ type Id = string
 type ComponentName = string
 type ComponentField = string
 type ComponentValue = number | string | boolean | Array<number>
-export type State = Record<Id, Record<ComponentName, Record<ComponentField, ComponentValue>>>
+export type Snapshot = Record<Id, Record<ComponentName, Record<ComponentField, ComponentValue>>>
 
 export class Diff {
-  public added: State = {}
-  public changedFrom: State = {}
-  public changedTo: State = {}
-  public removed: State = {}
+  public added: Snapshot = {}
+  public changedFrom: Snapshot = {}
+  public changedTo: Snapshot = {}
+  public removed: Snapshot = {}
 
   get isEmpty(): boolean {
     return (
@@ -133,26 +133,26 @@ export class Diff {
   }
 }
 
-export class StateManager {
-  public state: State = {}
+export class SnapshotManager {
+  public snapshot: Snapshot = {}
 
   public putComponent(id: Id, compName: ComponentName, model: Record<ComponentField, ComponentValue>): void {
-    if (!this.state[id]) {
-      this.state[id] = {}
+    if (!this.snapshot[id]) {
+      this.snapshot[id] = {}
     }
-    this.state[id][compName] = model
+    this.snapshot[id][compName] = model
   }
 
   public removeComponent(id: Id, compName: ComponentName): void {
-    if (!this.state[id]) return
-    delete this.state[id][compName]
-    if (Object.keys(this.state[id]).length === 0) {
-      delete this.state[id]
+    if (!this.snapshot[id]) return
+    delete this.snapshot[id][compName]
+    if (Object.keys(this.snapshot[id]).length === 0) {
+      delete this.snapshot[id]
     }
   }
 
   public recordIsTheSame(id: Id, compName: ComponentName, model: Record<ComponentField, ComponentValue>): boolean {
-    const record = this.state[id]?.[compName]
+    const record = this.snapshot[id]?.[compName]
     if (!record) return false
 
     for (const [field, value] of Object.entries(model)) {
@@ -173,7 +173,7 @@ export class StateManager {
   }
 
   public getRecord(id: Id, compName: ComponentName): Record<ComponentField, ComponentValue> | undefined {
-    return this.state[id]?.[compName]
+    return this.snapshot[id]?.[compName]
   }
 
   public applyDiff(diff: Diff): void {
@@ -196,34 +196,34 @@ export class StateManager {
     }
   }
 
-  public computeDiff(fromState: State): Diff {
+  public computeDiff(fromSnapshot: Snapshot): Diff {
     const diff = new Diff()
 
     // added components
-    for (const [id, components] of Object.entries(this.state)) {
-      if (!fromState[id]) {
+    for (const [id, components] of Object.entries(this.snapshot)) {
+      if (!fromSnapshot[id]) {
         diff.added[id] = components
         continue
       }
 
       for (const [compName, model] of Object.entries(components)) {
-        if (!fromState[id][compName]) {
+        if (!fromSnapshot[id][compName]) {
           diff.addComponent(id, compName, model)
-        } else if (!this.recordIsTheSame(id, compName, fromState[id][compName])) {
-          diff.changeComponent(id, compName, fromState[id][compName], model)
+        } else if (!this.recordIsTheSame(id, compName, fromSnapshot[id][compName])) {
+          diff.changeComponent(id, compName, fromSnapshot[id][compName], model)
         }
       }
     }
 
     // removed components
-    for (const [id, components] of Object.entries(fromState)) {
-      if (!this.state[id]) {
+    for (const [id, components] of Object.entries(fromSnapshot)) {
+      if (!this.snapshot[id]) {
         diff.removed[id] = components
         continue
       }
 
       for (const compName of Object.keys(components)) {
-        if (!this.state[id][compName]) {
+        if (!this.snapshot[id][compName]) {
           diff.removeComponent(id, compName, components[compName])
         }
       }
@@ -234,7 +234,7 @@ export class StateManager {
 }
 
 export class History {
-  private stateManager = new StateManager()
+  private snapshotManager = new SnapshotManager()
 
   private diffSinceCheckpoint = new Diff()
   public frameDiff = new Diff()
@@ -252,11 +252,11 @@ export class History {
       const comp = entity.read(Component)
       const model = comp.toModel()
 
-      if (this.stateManager.recordIsTheSame(id, Component.name, model)) continue
+      if (this.snapshotManager.recordIsTheSame(id, Component.name, model)) continue
 
       this.frameDiff.addComponent(id, Component.name, model)
       this.diffSinceCheckpoint.addComponent(id, Component.name, model)
-      this.stateManager.putComponent(id, Component.name, model)
+      this.snapshotManager.putComponent(id, Component.name, model)
     }
   }
 
@@ -266,24 +266,24 @@ export class History {
       const comp = entity.read(Component)
       const model = comp.toModel()
 
-      if (this.stateManager.recordIsTheSame(id, Component.name, model)) continue
+      if (this.snapshotManager.recordIsTheSame(id, Component.name, model)) continue
 
-      const fromModel = this.stateManager.getRecord(id, Component.name) || {}
+      const fromModel = this.snapshotManager.getRecord(id, Component.name) || {}
       this.frameDiff.changeComponent(id, Component.name, fromModel, model)
       this.diffSinceCheckpoint.changeComponent(id, Component.name, fromModel, model)
-      this.stateManager.putComponent(id, Component.name, model)
+      this.snapshotManager.putComponent(id, Component.name, model)
     }
   }
 
   public removeComponents(Component: new () => ISerializable, entities: readonly Entity[]): void {
     const entityIds = new Set(entities.map((entity) => entity.read(Persistent).id))
     for (const id of entityIds) {
-      const model = this.stateManager.getRecord(id, Component.name)
+      const model = this.snapshotManager.getRecord(id, Component.name)
       if (!model) continue
 
       this.frameDiff.removeComponent(id, Component.name, model)
       this.diffSinceCheckpoint.removeComponent(id, Component.name, model)
-      this.stateManager.removeComponent(id, Component.name)
+      this.snapshotManager.removeComponent(id, Component.name)
     }
   }
 
@@ -306,16 +306,16 @@ export class History {
     this.redoStack.push(diff)
 
     const reversedDiff = diff.clone().reverse()
-    this.stateManager.applyDiff(reversedDiff)
+    this.snapshotManager.applyDiff(reversedDiff)
     this.frameDiff.merge(reversedDiff)
 
     return reversedDiff
   }
 
   public redo(): Diff | null {
-    // check that the current state is clean
+    // check that the current snapshot is clean
     if (!this.diffSinceCheckpoint.isEmpty) {
-      // we can't redo because the current state has changes
+      // we can't redo because the current snapshot has changes
       this.redoStack.length = 0
       return null
     }
@@ -324,14 +324,14 @@ export class History {
     const diff = this.redoStack.pop()!
     this.undoStack.push(diff)
 
-    this.stateManager.applyDiff(diff)
+    this.snapshotManager.applyDiff(diff)
     this.frameDiff.merge(diff)
 
     return diff
   }
 
   public applyDiff(diff: Diff): void {
-    this.stateManager.applyDiff(diff)
+    this.snapshotManager.applyDiff(diff)
   }
 
   public reset(): void {
@@ -342,22 +342,22 @@ export class History {
     this.redoStack.length = 0
   }
 
-  public getState(): State {
-    return JSON.parse(JSON.stringify(this.stateManager.state))
+  public getSnapshot(): Snapshot {
+    return JSON.parse(JSON.stringify(this.snapshotManager.snapshot))
   }
 
-  public getEntities(ids: Id[]): State {
-    const state: State = {}
+  public getEntities(ids: Id[]): Snapshot {
+    const snapshot: Snapshot = {}
     for (const id of ids) {
-      const record = this.stateManager.state[id]
+      const record = this.snapshotManager.snapshot[id]
       if (record) {
-        state[id] = record
+        snapshot[id] = record
       }
     }
-    return JSON.parse(JSON.stringify(state))
+    return JSON.parse(JSON.stringify(snapshot))
   }
 
-  public computeDiff(fromState: State): Diff {
-    return this.stateManager.computeDiff(fromState)
+  public computeDiff(fromSnapshot: Snapshot): Diff {
+    return this.snapshotManager.computeDiff(fromSnapshot)
   }
 }

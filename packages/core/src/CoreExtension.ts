@@ -7,13 +7,13 @@ import type { State } from './State'
 import { Block, Persistent, Selected, Shape, Text } from './components'
 import * as sys from './systems'
 import type {
+  BaseResources,
   BlockModel,
   CoreCommandArgs,
   CoreResources,
   EmitterEvents,
   ICommands,
   IStore,
-  Resources,
   SendCommandFn,
   ShapeModel,
   TextModel,
@@ -48,16 +48,12 @@ declare module '@infinitecanvas/core' {
       blockById: (id: string) => ReadonlySignal<BlockModel | undefined>
       textById: (id: string) => ReadonlySignal<TextModel | undefined>
       shapeById: (id: string) => ReadonlySignal<ShapeModel | undefined>
-
-      shapeCount: ReadonlySignal<number>
     }
   }
 }
 
 export class CoreExtension extends BaseExtension {
   public name = 'core'
-
-  private initialEntities: Record<string, Record<string, any>> = {}
 
   constructor(
     private readonly emitter: Emitter<EmitterEvents>,
@@ -66,7 +62,7 @@ export class CoreExtension extends BaseExtension {
     super()
   }
 
-  public async preBuild(resources: Resources): Promise<void> {
+  public async preBuild(resources: BaseResources): Promise<void> {
     // const options = CoreOptions.parse(this.options)
 
     ComponentRegistry.instance.registerHistoryComponent(Block)
@@ -144,18 +140,12 @@ export class CoreExtension extends BaseExtension {
           const selected = state.getComponents(Selected).value
           return Object.keys(selected)
         }),
-        // selectedBlocks: computed(() => {
-        //   const selected = state.getComponents(Selected).value
-        //   return Object.values(selected).map((s) => s.value)
-        // }),
         blockById: (id: string): ReadonlySignal<BlockModel | undefined> =>
           computed(() => state.getComponents(Block).value[id]?.value),
         textById: (id: string): ReadonlySignal<TextModel | undefined> =>
           computed(() => state.getComponents(Text).value[id]?.value),
         shapeById: (id: string): ReadonlySignal<ShapeModel | undefined> =>
           computed(() => state.getComponents(Shape).value[id]?.value),
-
-        shapeCount: computed(() => Object.keys(state.getComponents(Shape).value).length),
       },
     }
   }

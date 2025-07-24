@@ -1,6 +1,6 @@
 import { z } from 'zod/v4'
 
-import type { Resources } from '@infinitecanvas/core'
+import type { BaseResources } from '@infinitecanvas/core'
 import type { LocalDB } from './LocalDB'
 
 export const LocalStorageOptions = z.object({
@@ -9,6 +9,6 @@ export const LocalStorageOptions = z.object({
 
 export type LocalStorageOptions = z.input<typeof LocalStorageOptions>
 
-export interface LocalStorageResources extends Resources {
+export interface LocalStorageResources extends BaseResources {
   localDB: LocalDB
 }

@@ -1,14 +1,20 @@
+import { InfiniteCanvas, TextAlign as TextAlignKind, type TextModel } from '@infinitecanvas/core'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { Editor } from '@tiptap/core'
+import Bold from '@tiptap/extension-bold'
 import Document from '@tiptap/extension-document'
 import History from '@tiptap/extension-history'
+import Italic from '@tiptap/extension-italic'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
+import TextAlign from '@tiptap/extension-text-align'
+import { TextStyleKit } from '@tiptap/extension-text-style'
+import Underline from '@tiptap/extension-underline'
 import { LitElement, type PropertyValues, css, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 
-import { InfiniteCanvas, type TextModel } from '@infinitecanvas/core'
+import { alignments } from '../TextEditorExtension'
 
 @customElement('ic-editable-text')
 export class EditableTextElement extends SignalWatcher(LitElement) {
@@ -23,6 +29,7 @@ export class EditableTextElement extends SignalWatcher(LitElement) {
 
   static styles = css`
     :host {
+      white-space: pre-wrap;
       word-break: break-word;
     }
     p {
@@ -56,8 +63,29 @@ export class EditableTextElement extends SignalWatcher(LitElement) {
 
     this._editor = new Editor({
       element,
-      extensions: [Document, Paragraph, Text, History],
+      extensions: [
+        Document,
+        Paragraph,
+        Text,
+        TextStyleKit,
+        Bold,
+        Italic,
+        Underline,
+        TextAlign.configure({
+          types: ['paragraph'],
+          alignments: ['left', 'center', 'right', 'justify'],
+          defaultAlignment: 'left',
+        }),
+        History,
+      ],
       content: this.model.value.content,
+      parseOptions: {
+        preserveWhitespace: true,
+      },
+    })
+
+    this._editor.on('selectionUpdate', () => {
+      this.syncStore()
     })
 
     if (this.pointerStartX !== undefined && this.pointerStartY !== undefined) {
@@ -97,16 +125,95 @@ export class EditableTextElement extends SignalWatcher(LitElement) {
     }
   }
 
+  public setColor(color: string): void {
+    if (!this._editor) return
+
+    const { from, to } = this._editor.state.selection
+
+    if (from === to) {
+      this._editor.chain().focus().selectAll().setColor(color).setTextSelection(to).run()
+    } else {
+      this._editor.chain().focus().setColor(color).run()
+    }
+
+    this.syncStore()
+  }
+
+  public toggleBold(): void {
+    if (!this._editor) return
+
+    const { from, to } = this._editor.state.selection
+
+    if (from === to) {
+      this._editor.chain().focus().selectAll().toggleBold().setTextSelection(to).run()
+    } else {
+      this._editor.chain().focus().toggleBold().run()
+    }
+
+    this.syncStore()
+  }
+
+  public toggleItalic(): void {
+    if (!this._editor) return
+
+    const { from, to } = this._editor.state.selection
+
+    if (from === to) {
+      this._editor.chain().focus().selectAll().toggleItalic().setTextSelection(to).run()
+    } else {
+      this._editor.chain().focus().toggleItalic().run()
+    }
+
+    this.syncStore()
+  }
+
+  public toggleUnderline(): void {
+    if (!this._editor) return
+    const { from, to } = this._editor.state.selection
+
+    if (from === to) {
+      this._editor.chain().focus().selectAll().toggleUnderline().setTextSelection(to).run()
+    } else {
+      this._editor.chain().focus().toggleUnderline().run()
+    }
+
+    this.syncStore()
+  }
+
+  public setAlignment(alignment: TextAlignKind): void {
+    this._editor?.chain().selectAll().setTextAlign(alignment).run()
+    this.syncStore()
+  }
+
   render() {
-    return html`
-    <div id="editor-content" style=${styleMap({
+    return html`<div id="editor-content" style=${styleMap({
       'font-family': this.model.value.fontFamily,
-      'text-align': this.model.value.align,
       'line-height': `${this.model.value.lineHeight}`,
-      color: `rgba(${this.model.value.red}, ${this.model.value.green}, ${this.model.value.blue}, ${this.model.value.alpha / 255})`,
       'font-size': `${this.model.value.fontSize}px`,
-    })}></div>
-    `
+    })}></div>`
+  }
+
+  syncStore(): void {
+    const editor = this._editor
+    if (!editor) return
+
+    const store = InfiniteCanvas.instance?.store.textEditor
+    if (!store) return
+
+    store.color.value = editor.getAttributes('textStyle').color ?? '#000000'
+
+    store.bold.value = editor.isActive('bold')
+    store.italic.value = editor.isActive('italic')
+    store.underline.value = editor.isActive('underline')
+
+    const currentAlignment = alignments.find((alignment) => editor.isActive({ textAlign: alignment }))
+    store.alignment.value = currentAlignment ?? TextAlignKind.Left
+
+    // if (editor.isActive('link')) {
+    //   link.value = editor.getAttributes('link')?.href ?? '';
+    // } else {
+    //   link.value = '';
+    // }
   }
 }
 

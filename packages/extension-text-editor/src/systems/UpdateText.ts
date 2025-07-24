@@ -1,10 +1,10 @@
-import { BaseSystem, comps } from '@infinitecanvas/core'
+import { BaseSystem, type CommandArgs, CoreCommand, comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
 import type { EditableTextElement } from '../elements'
 import type { TextEditorResources } from '../types'
 
-export class UpdateText extends BaseSystem {
+export class UpdateText extends BaseSystem<CommandArgs> {
   protected declare readonly resources: TextEditorResources
 
   private readonly editedTexts = this.query(
@@ -25,11 +25,11 @@ export class UpdateText extends BaseSystem {
         textEntity.remove(comps.Opacity)
       }
 
-      this._saveChanges(textEntity)
+      this.saveChanges(textEntity)
     }
   }
 
-  private _saveChanges(textEntity: Entity): void {
+  private saveChanges(textEntity: Entity): void {
     if (!textEntity.has(comps.Text)) return
 
     const block = textEntity.write(comps.Block)
@@ -47,5 +47,7 @@ export class UpdateText extends BaseSystem {
 
     block.width = size.width
     block.height = size.height
+
+    this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 }

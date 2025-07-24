@@ -1,35 +1,31 @@
-import type { Resources } from '@infinitecanvas/core'
+import type { BaseResources } from '@infinitecanvas/core'
 import { z } from 'zod'
+import { defaultFloatingMenus } from './buttonCatelog'
 
 export const Button = z.object({
   tag: z.string(),
-  width: z.number().default(50),
-  tooltip: z.string().optional(),
+  tooltip: z.string().default(''),
+  menu: z.string().default(''),
+  width: z.number().default(40),
 })
 
-const bringForwardButton: z.infer<typeof Button> = {
-  tag: 'ic-bring-forward-button',
-  width: 40,
-  tooltip: 'Bring Forward',
-}
+export type Button = z.input<typeof Button>
 
-const sendBackwardButton: z.infer<typeof Button> = {
-  tag: 'ic-send-backward-button',
-  width: 40,
-  tooltip: 'Send Backward',
-}
+const ThemeSchema = z.object({
+  gray100: z.string().default('#f8f9f9'),
+  gray200: z.string().default('#e3e5e8'),
+  gray300: z.string().default('#c7ccd1'),
+  gray400: z.string().default('#9099a4'),
+  gray500: z.string().default('#4f5660'),
+  gray600: z.string().default('#2e3338'),
+  gray700: z.string().default('#060607'),
+  primaryColor: z.string().default('#6a58f2'),
 
-const duplicateButton: z.infer<typeof Button> = {
-  tag: 'ic-duplicate-button',
-  width: 40,
-  tooltip: 'Duplicate',
-}
-
-const deleteButton: z.infer<typeof Button> = {
-  tag: 'ic-delete-button',
-  width: 40,
-  tooltip: 'Delete',
-}
+  borderRadius: z.string().default('12px'),
+  tooltipBorderRadius: z.string().default('6px'),
+  transitionDuration: z.string().default('150ms'),
+  transitionTimingFunction: z.string().default('cubic-bezier(0.4, 0, 0.2, 1)'),
+})
 
 export const FloatingMenusOptions = z.object({
   menus: z
@@ -39,23 +35,13 @@ export const FloatingMenusOptions = z.object({
         buttons: z.array(Button),
       }),
     )
-    .default([
-      {
-        blockKind: 'group',
-        buttons: [bringForwardButton, sendBackwardButton, duplicateButton, deleteButton],
-      },
-      {
-        blockKind: 'ic-shape',
-        buttons: [bringForwardButton, sendBackwardButton, duplicateButton, deleteButton],
-      },
-      {
-        blockKind: 'ic-text',
-        buttons: [bringForwardButton, sendBackwardButton, duplicateButton, deleteButton],
-      },
-    ]),
+    .default(defaultFloatingMenus),
+  theme: ThemeSchema.default(ThemeSchema.parse({})),
 })
 
-export interface FloatingMenusResources extends Resources {
+export type FloatingMenusOptions = z.input<typeof FloatingMenusOptions>
+
+export interface FloatingMenusResources extends BaseResources {
   viewport: HTMLDivElement
   options: z.infer<typeof FloatingMenusOptions>
 }
