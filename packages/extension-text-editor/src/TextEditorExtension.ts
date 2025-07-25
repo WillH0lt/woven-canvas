@@ -12,6 +12,7 @@ import { System } from '@lastolivegames/becsy'
 import { type Signal, signal } from '@preact/signals-core'
 
 import './elements'
+import './floatingMenuButtons'
 import * as sys from './systems'
 import type { TextEditorResources } from './types'
 

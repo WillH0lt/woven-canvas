@@ -61,28 +61,20 @@ async function initializeCanvas(container: HTMLDivElement) {
 
   container.appendChild(infiniteCanvas.domElement)
 
-  infiniteCanvas.store.core.blockCount.subscribe((count) => {
-    console.log('Block count:', count)
-  })
-
-  infiniteCanvas.store.textEditor.bold.subscribe((isBold) => {
-    console.log('Text editor bold:', isBold)
-  })
-
-  infiniteCanvas.store.textEditor.italic.subscribe((isItalic) => {
-    console.log('Text editor italic:', isItalic)
-  })
-
-  infiniteCanvas.store.textEditor.underline.subscribe((isUnderline) => {
-    console.log('Text editor underline:', isUnderline)
-  })
-
-  // infiniteCanvas.store.core.shapeCount.subscribe((count) => {
-  //   console.log('Shape count:', count)
+  // infiniteCanvas.store.core.blockCount.subscribe((count) => {
+  //   console.log('Block count:', count)
   // })
 
-  // infiniteCanvas.store.core.selectedBlockCount.subscribe((count) => {
-  //   console.log('Selected block count:', count)
+  // infiniteCanvas.store.textEditor.bold.subscribe((isBold) => {
+  //   console.log('Text editor bold:', isBold)
+  // })
+
+  // infiniteCanvas.store.textEditor.italic.subscribe((isItalic) => {
+  //   console.log('Text editor italic:', isItalic)
+  // })
+
+  // infiniteCanvas.store.textEditor.underline.subscribe((isUnderline) => {
+  //   console.log('Text editor underline:', isUnderline)
   // })
 
   // let unsubscribe: (() => void) | undefined = undefined

@@ -1,6 +1,6 @@
 import type { BaseResources } from '@infinitecanvas/core'
 import { z } from 'zod'
-import { defaultFloatingMenus } from './buttonCatelog'
+import { defaultFloatingMenus } from './buttonCatalog'
 
 export const Button = z.object({
   tag: z.string(),

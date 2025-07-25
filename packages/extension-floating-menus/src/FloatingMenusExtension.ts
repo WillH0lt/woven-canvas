@@ -4,6 +4,7 @@ import { System } from '@lastolivegames/becsy'
 import type { z } from 'zod'
 
 import './elements'
+import './floatingMenuButtons'
 import * as sys from './systems/index'
 import { FloatingMenusOptions, type FloatingMenusResources } from './types'
 

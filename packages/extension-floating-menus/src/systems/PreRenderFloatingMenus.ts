@@ -16,10 +16,10 @@ export class PreRenderFloatingMenus extends BaseSystem {
   private readonly tool = this.singleton.read(comps.Tool)
 
   private readonly selectedBlocks = this.query(
-    (q) =>
-      q.addedChangedOrRemoved.current.with(comps.Selected).with(comps.Block).trackWrites.using(comps.Aabb, comps.Edited)
-        .read,
+    (q) => q.addedChangedOrRemoved.current.with(comps.Selected).with(comps.Block).trackWrites.using(comps.Aabb).read,
   )
+
+  private readonly editedBlocks = this.query((q) => q.current.with(comps.Edited))
 
   private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
 
@@ -33,15 +33,15 @@ export class PreRenderFloatingMenus extends BaseSystem {
     const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
       button: PointerButton.Left,
     })
-    if (pointerEvents.find((e) => e.type === 'pointerDown')) {
+    if (pointerEvents.find((e) => e.type === 'pointerDown') && this.editedBlocks.current.length === 0) {
       this.removeFloatingMenuElement()
     }
 
-    if (this.pointers.current.length === 0) {
-      if (this.selectedBlocks.addedChangedOrRemoved.length > 0 || pointerEvents.find((e) => e.type === 'pointerUp')) {
-        this.syncFloatingMenuElement()
-      }
+    // if (this.pointers.current.length === 0) {
+    if (this.selectedBlocks.addedChangedOrRemoved.length > 0 || pointerEvents.find((e) => e.type === 'pointerUp')) {
+      this.syncFloatingMenuElement()
     }
+    // }
   }
 
   syncFloatingMenuElement(): void {

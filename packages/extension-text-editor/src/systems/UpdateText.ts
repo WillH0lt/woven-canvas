@@ -1,7 +1,7 @@
 import { BaseSystem, type CommandArgs, CoreCommand, comps } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 
-import type { EditableTextElement } from '../elements'
+import type { EditableTextElement } from '../floatingMenuButtons'
 import type { TextEditorResources } from '../types'
 
 export class UpdateText extends BaseSystem<CommandArgs> {

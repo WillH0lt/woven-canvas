@@ -4,22 +4,15 @@ import { classMap } from 'lit/directives/class-map.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import Tinycolor from 'tinycolor2'
+
 import { drag } from '../helpers/drag.js'
 import { clamp } from '../helpers/math.js'
 import { watch } from '../helpers/watch.js'
-import style from './style'
+import { style } from './color-picker.style'
 
 /**
- * @summary Color pickers allow the user to select a color.
- * @documentation https://webawesome.com/docs/components/color-picker
- * @status stable
- * @since 2.0
- *
- * @dependency wa-button
- * @dependency wa-input
  *
  * @event change - Emitted when the color picker's value changes.
- * @event input - Emitted when the color picker receives input.
  *
  * @csspart base - The component's base wrapper.
  * @csspart grid - The color grid.

@@ -1,9 +1,8 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { buttonStyles } from '@infinitecanvas/extension-floating-menus'
+// import { buttonStyles } from '@infinitecanvas/extension-floating-menus'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { LitElement, css, html, svg } from 'lit'
 import { customElement } from 'lit/decorators.js'
-import { classMap } from 'lit/directives/class-map.js'
 import { styleMap } from 'lit/directives/style-map.js'
 
 const chevronDownIcon = svg`
@@ -12,45 +11,44 @@ const chevronDownIcon = svg`
 `
 @customElement('ic-text-color-button')
 export class TextColorButtonElement extends SignalWatcher(LitElement) {
-  static styles = [
-    buttonStyles,
-    css`
-      .button {
-        height: 100%;
-        gap: 8px;
-        margin-left: 4px;
-      }
-      .circle {
-        width: 20px;
-        height: 20px;
-        border-radius: 9999px;
-        outline-style: solid;
-        outline-width: 1px;
-        outline-color: #ffffff55;
-      }
-      .chevron-down {
-        width: 8px !important;
-        margin-bottom: 2px;
-        color: var(--ic-floating-menus-gray-300);
-      }
+  static styles = css`
+    .button {
+      display: flex;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 8px;
+      margin-left: 4px;
+    }
+    .circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      outline-style: solid;
+      outline-width: 1px;
+      outline-color: #ffffff55;
+    }
+    .chevron-down {
+      width: 8px !important;
+      margin-bottom: 2px;
+      color: var(--ic-floating-menus-gray-300);
+    }
 
-      #color-menu {
-        display: none;
-        width: max-content;
-        position: absolute;
-        top: 0;
-        left: 0;
-        background: var(--ic-floating-menus-gray-700);
-        color: var(--ic-floating-menus-gray-100);
-        font-weight: bold;
-        padding: 5px 10px;
-        border-radius: var(--ic-floating-menus-tooltip-border-radius);
-        font-size: 70%;
-      }
-  `,
-  ]
-
-  private isActive = false
+    #color-menu {
+      display: none;
+      width: max-content;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: var(--ic-floating-menus-gray-700);
+      color: var(--ic-floating-menus-gray-100);
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: var(--ic-floating-menus-tooltip-border-radius);
+      font-size: 70%;
+    }
+  `
 
   private color!: ReadonlySignal<string>
 
@@ -63,9 +61,7 @@ export class TextColorButtonElement extends SignalWatcher(LitElement) {
   render() {
     return html`
       <div
-        class="button ${classMap({
-          active: this.isActive,
-        })}"
+        class="button"
       >
         <div
           class="circle"
@@ -83,18 +79,6 @@ export class TextColorButtonElement extends SignalWatcher(LitElement) {
       </div>
     `
   }
-
-  // handleClick() {
-  //   computePosition(buttonElement, tooltip, {
-  //     placement: 'top',
-  //     middleware: [offset(6), flip(), shift({ padding: 5 })],
-  //   }).then(({ x, y }) => {
-  //     Object.assign(tooltip.style, {
-  //       left: `${x}px`,
-  //       top: `${y}px`,
-  //     })
-  //   })
-  // }
 }
 
 declare global {

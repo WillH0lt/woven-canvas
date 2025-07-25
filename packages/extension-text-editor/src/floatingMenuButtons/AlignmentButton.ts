@@ -1,7 +1,7 @@
 import { InfiniteCanvas, TextAlign } from '@infinitecanvas/core'
-import { buttonStyles } from '@infinitecanvas/extension-floating-menus'
+import { AbstractButtonElement } from '@infinitecanvas/extension-floating-menus'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
-import { LitElement, html, svg } from 'lit'
+import { svg } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import { alignments } from '../TextEditorExtension'
@@ -34,33 +34,27 @@ const icons = {
 }
 
 @customElement('ic-alignment-button')
-export class AlignmentButtonElement extends SignalWatcher(LitElement) {
-  static styles = buttonStyles
+export class AlignmentButtonElement extends SignalWatcher(AbstractButtonElement) {
+  protected viewbox = '0 0 448 512'
+  protected icon = icons[TextAlign.Left] // Default icon, will be updated in connected
+
+  protected onClick(): void {
+    const nextAlignment = alignments[(alignments.indexOf(this.alignment.value) + 1) % alignments.length]
+    InfiniteCanvas.instance?.commands.textEditor.setAlignment(nextAlignment)
+  }
 
   private alignment!: ReadonlySignal<TextAlign>
 
-  public connectedCallback(): void {
-    super.connectedCallback()
-
+  public firstUpdated(): void {
     this.alignment = InfiniteCanvas.instance?.store.textEditor.alignment as ReadonlySignal<TextAlign>
+
+    this.alignment.subscribe(this.updateIcon.bind(this))
+    this.updateIcon(this.alignment.value)
   }
 
-  render() {
-    return html`
-      <div class="button" @click="${this.setNextAlignment}">
-        <svg
-          viewBox="0 0 448 512"
-          fill="currentColor"
-        >
-          ${icons[this.alignment.value]}
-        </svg>
-      </div>
-    `
-  }
-
-  setNextAlignment(): void {
-    const nextAlignment = alignments[(alignments.indexOf(this.alignment.value) + 1) % alignments.length]
-    InfiniteCanvas.instance?.commands.textEditor.setAlignment(nextAlignment)
+  private updateIcon(kind: TextAlign): void {
+    this.icon = icons[kind]
+    this.requestUpdate()
   }
 }
 

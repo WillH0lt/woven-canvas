@@ -1,6 +1,6 @@
 import { css } from 'lit'
 
-export const buttonStyles = css`
+export const style = css`
   .button {
     display: flex;
     cursor: pointer;
@@ -16,7 +16,8 @@ export const buttonStyles = css`
     background-color: var(--ic-floating-menus-primary-color);
   }
 
-  .button > svg {
+  .button .icon {
     width: 40%;
+    overflow: visible;
   }
 `

@@ -1,13 +1,16 @@
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
-import { LitElement, type PropertyValues, css } from 'lit'
+import { LitElement, type PropertyValues } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { html, unsafeStatic } from 'lit/static-html.js'
 import type { z } from 'zod'
 
-import type { Button } from '../types'
+import type { Button } from '../../types'
+import { style } from './floating-menu.style.js'
 
 @customElement('ic-floating-menu')
 export class FloatingMenuElement extends LitElement {
+  static styles = style
+
   @property({ type: Array })
   public buttons: Array<z.infer<typeof Button>> = []
 
@@ -17,64 +20,30 @@ export class FloatingMenuElement extends LitElement {
   private menuElement: HTMLElement | null = null
   private cleanupMenu: (() => void) | null = null
 
-  static styles = css`
-    :host {
-      display: block;
-      position: absolute;
-      pointer-events: auto;
-    }
-
-    .container {
-      display: flex;
-      overflow: hidden;
-      cursor: pointer;
-      height: 100%;
-      color: var(--ic-floating-menus-gray-100);
-      background-color: var(--ic-floating-menus-gray-700);
-      border-radius: var(--ic-floating-menus-border-radius);
-    }
-
-    .container *:first-child {
-      border-top-left-radius: var(--ic-floating-menus-border-radius);
-      border-bottom-left-radius: var(--ic-floating-menus-border-radius);
-    }
-
-    .container *:last-child {
-      border-top-right-radius: var(--ic-floating-menus-border-radius);
-      border-bottom-right-radius: var(--ic-floating-menus-border-radius);
-    }
-
-    .container * {
-      width: 100%;
-      height: 100%;
-      transition-property: background-color;
-      transition-timing-function: var(--ic-floating-menus-transition-timing-function);
-      transition-duration: var(--ic-floating-menus-transition-duration);
-    }
-
-    .container *:hover:not([divider]) {
-      background-color: var(--ic-floating-menus-gray-600);
-    }
-
-    #tooltip {
-      display: none;
-      width: max-content;
-      position: absolute;
-      top: 0;
-      left: 0;
-      background: var(--ic-floating-menus-gray-700);
-      color: var(--ic-floating-menus-gray-100);
-      font-weight: bold;
-      padding: 5px 10px;
-      border-radius: var(--ic-floating-menus-tooltip-border-radius);
-      font-size: 70%;
-    }
-  `
-
   protected firstUpdated(_changedProperties: PropertyValues): void {
     super.firstUpdated(_changedProperties)
 
     this.addEventListener('pointerdown', (e) => e.stopPropagation())
+
+    document.addEventListener('click', (e) => {
+      if (!this.contains(e.target as Node)) {
+        this.handleClickOutside()
+      }
+    })
+  }
+
+  private handleClickOutside() {
+    if (this.cleanupMenu) {
+      this.cleanupMenu()
+      this.cleanupMenu = null
+    }
+
+    if (this.menuElement) {
+      this.shadowRoot?.removeChild(this.menuElement)
+      this.menuElement = null
+    }
+
+    this.hideTooltip()
   }
 
   render() {

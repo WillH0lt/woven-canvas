@@ -1,8 +1,8 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { LitElement, html, svg } from 'lit'
+import { svg } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { buttonStyles } from '../styles'
+import { AbstractButtonElement } from '../elements/AbstractButton'
 
 const bringForwardIcon = svg`
   <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
@@ -12,20 +12,12 @@ const bringForwardIcon = svg`
 `
 
 @customElement('ic-bring-forward-button')
-export class BringForwardButton extends LitElement {
-  static styles = buttonStyles
+export class BringForwardButton extends AbstractButtonElement {
+  protected viewbox = '0 0 384 512'
+  protected icon = bringForwardIcon
 
-  render() {
-    return html`
-      <div class="button" @click="${() => InfiniteCanvas.instance?.commands.core.bringForwardSelected()}">
-        <svg
-          viewBox="0 0 384 512"
-          fill="currentColor"
-        >
-          ${bringForwardIcon}
-        </svg>
-      </div>
-    `
+  protected onClick() {
+    InfiniteCanvas.instance?.commands.core.bringForwardSelected()
   }
 }
 

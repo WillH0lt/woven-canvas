@@ -1,6 +1,6 @@
 import { css } from 'lit'
 
-export default css`
+export const style = css`
 :host {
   --grid-width: 12em;
   --grid-height: 7em;

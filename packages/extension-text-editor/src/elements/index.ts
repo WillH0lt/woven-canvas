@@ -1,7 +1,2 @@
-export { AlignmentButtonElement } from './AlignmentButton'
 export { EditableTextElement } from './EditableText'
-export { BoldButtonElement } from './BoldButton'
-export { ItalicButtonElement } from './ItalicButton'
-export { UnderlineButtonElement } from './UnderlineButton'
-export { TextColorButtonElement } from './TextColorButton'
 export { TextColorMenuElement } from './TextColorMenu'

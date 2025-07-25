@@ -1,4 +1,4 @@
 export { FloatingMenusExtension } from './FloatingMenusExtension'
-export * from './buttonCatelog'
-export * from './styles'
+export * from './elements'
+export * from './buttonCatalog'
 export type { Button, FloatingMenusOptions } from './types'
