@@ -1,0 +1,1 @@
+export { UpdateTextResize } from './UpdateTextResize'

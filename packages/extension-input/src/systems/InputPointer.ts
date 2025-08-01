@@ -1,4 +1,5 @@
-import { type BaseResources, PointerButton, comps } from '@infinitecanvas/core'
+import { type BaseResources, PointerButton } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
 import { type Entity, System } from '@lastolivegames/becsy'
 
 function getPointerButton(b: number): PointerButton {

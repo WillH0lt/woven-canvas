@@ -1,4 +1,5 @@
-import { type BaseResources, BaseSystem, comps } from '@infinitecanvas/core'
+import { type BaseResources, BaseSystem } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
 import { co } from '@lastolivegames/becsy'
 
 export class InputKeyboard extends BaseSystem {

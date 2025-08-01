@@ -1,4 +1,4 @@
-import type { BlockModel } from '@infinitecanvas/core'
+import type { Block } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 
 export enum SelectionState {
@@ -39,7 +39,7 @@ export enum TransformCommand {
 
 export type TransformCommandArgs = {
   [TransformCommand.AddSelectionBox]: []
-  [TransformCommand.UpdateSelectionBox]: [Partial<BlockModel>]
+  [TransformCommand.UpdateSelectionBox]: [Partial<Block>]
   [TransformCommand.RemoveSelectionBox]: []
 
   [TransformCommand.SelectBlock]: [

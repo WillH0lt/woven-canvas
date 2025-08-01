@@ -1,4 +1,5 @@
-import { BaseSystem, type CoreCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
+import { BaseSystem, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
 import { and, not, setup } from 'xstate'
 
 import type { Entity } from '@lastolivegames/becsy'
@@ -16,9 +17,7 @@ type SelectionEvent =
 export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.current.changed.with(comps.Pointer).trackWrites)
 
-  private readonly selectedBlocks = this.query(
-    (q) => q.added.removed.current.with(comps.Block, comps.Selected).using(comps.Editable).read,
-  )
+  private readonly selectedBlocks = this.query((q) => q.added.removed.current.with(comps.Block, comps.Selected))
 
   private readonly transformBoxes = this.query(
     (q) => q.current.with(transformComps.TransformBox).write.using(transformComps.TransformHandle).read,
@@ -48,15 +47,14 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
         )
 
         if (selectedEntities.length !== 1) return false
-        if (!selectedEntities[0].has(comps.Editable)) return false
 
-        return true
+        const block = selectedEntities[0].read(comps.Block)
+        const blockDef = this.getBlockDef(block.tag)
+        return blockDef?.canEdit ?? false
       },
       isOverTransformBox: ({ event }) => {
         if (!('blockEntity' in event)) return false
         if (!event.blockEntity?.has(transformComps.TransformBox)) return false
-
-        const block = event.blockEntity.read(comps.Block)
 
         return true
       },

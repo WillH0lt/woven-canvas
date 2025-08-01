@@ -1,4 +1,5 @@
-import { type BaseResources, comps } from '@infinitecanvas/core'
+import type { BaseResources } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
 import { System, co } from '@lastolivegames/becsy'
 
 export class InputMouse extends System {

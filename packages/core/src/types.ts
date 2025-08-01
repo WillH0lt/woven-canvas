@@ -1,8 +1,11 @@
 import type { Entity } from '@lastolivegames/becsy'
 import type { Emitter } from 'strict-event-emitter'
 import { z } from 'zod/v4'
-import type { History } from './History'
+import type { History, Snapshot } from './History'
 import type { State } from './State'
+import { floatingMenuStandardButtons } from './buttonCatalog'
+import type { Block } from './components'
+// import { standardButtonSet } from './buttonCatalog'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -17,51 +20,69 @@ export type EmitterEvents = {
   [EmitterEventKind.Command]: [Command]
 }
 
+export const Button = z.object({
+  tag: z.string(),
+  tooltip: z.string().default(''),
+  menu: z.string().default(''),
+  width: z.number().default(40),
+})
+
+export type Button = z.infer<typeof Button>
+
 export interface CoreResources extends BaseResources {
   emitter: Emitter<EmitterEvents>
   state: State
+  menuContainer: HTMLDivElement
 }
 
 export type CommandMap = {
   [commandKind: string]: Array<unknown>
 }
 
-// export const CoreOptions = z.object({
-//   persistenceKey: z.string().optional(),
-// })
+const BlockDef = z.object({
+  tag: z.string(),
+  canEdit: z.boolean().default(false),
+  resizeMode: z.enum(['scale', 'text']).default('scale'), // TODO add 'free'
+  components: z.array(z.any()).default([]),
+  floatingMenu: z.array(Button).default(floatingMenuStandardButtons.map((btn) => Button.parse(btn))),
+  editedFloatingMenu: z.array(Button).default([]),
+})
 
-// export type CoreOptions = z.input<typeof CoreOptions>
+export type BlockDef = z.infer<typeof BlockDef>
 
-// export const Options = CoreOptions.extend({
-//   autoloop: z.boolean().default(true),
-//   autofocus: z.boolean().default(true),
-// })
+const Theme = z.object({
+  gray100: z.string().default('#f8f9f9'),
+  gray200: z.string().default('#e3e5e8'),
+  gray300: z.string().default('#c7ccd1'),
+  gray400: z.string().default('#9099a4'),
+  gray500: z.string().default('#4f5660'),
+  gray600: z.string().default('#2e3338'),
+  gray700: z.string().default('#060607'),
+  primaryColor: z.string().default('#6a58f2'),
+
+  menuBorderRadius: z.string().default('12px'),
+  menuTooltipBorderRadius: z.string().default('6px'),
+  transitionDuration: z.string().default('150ms'),
+  transitionTimingFunction: z.string().default('cubic-bezier(0.4, 0, 0.2, 1)'),
+})
+
+export type Theme = z.infer<typeof Theme>
 
 export const Options = z.object({
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
+  blockDefs: z.array(BlockDef).default([]),
+  theme: Theme.default(Theme.parse({})),
 })
 
 export type Options = z.input<typeof Options>
 
 export interface BaseResources {
   domElement: HTMLElement
+  blockContainer: HTMLDivElement
   uid: string
   history: History
-}
-
-export interface BlockModel {
-  id: string
-  kind: string
-  top: number
-  left: number
-  width: number
-  height: number
-  rotateZ: number
-  rank: string
-  stretchableWidth: boolean
-  stretchableHeight: boolean
-  hasStretched: boolean
+  blockDefs: z.infer<typeof BlockDef>[]
 }
 
 export enum TextAlign {
@@ -69,27 +90,6 @@ export enum TextAlign {
   Center = 'center',
   Right = 'right',
   Justify = 'justify',
-}
-export interface TextModel {
-  content: string
-  fontSize: number
-  fontFamily: string
-  lineHeight: number
-}
-
-export interface ShapeModel {
-  red: number
-  green: number
-  blue: number
-  alpha: number
-}
-
-export interface CommandModel {
-  kind: string
-  payload: string
-  uid: string
-  seed: string
-  frame: number
 }
 
 export type CommandArgs = Record<string, Array<unknown>>
@@ -101,12 +101,6 @@ export interface ICommands {}
 export interface IStore {}
 
 export type SendCommandFn<T> = <C extends keyof T>(kind: C, ...args: T[C] extends any[] ? T[C] : [T[C]]) => void
-
-export interface ISerializable<T = Record<string, any>> {
-  // id: string
-  toModel(): T
-  fromModel(model: T): void
-}
 
 export enum CursorIcon {
   Pointer = 'pointer',
@@ -129,13 +123,6 @@ export enum CursorState {
   Placing = 'placing',
 }
 
-export interface AabbModel {
-  left: number
-  right: number
-  top: number
-  bottom: number
-}
-
 export enum PointerType {
   Mouse = 'mouse',
   Touch = 'touch',
@@ -156,8 +143,7 @@ export enum CoreCommand {
   SetZoom = 'setZoom',
   MoveCamera = 'moveCamera',
 
-  AddShape = 'addShape',
-  AddText = 'addText',
+  AddBlock = 'addBlock',
   UpdateBlock = 'updateBlock',
 
   SetTool = 'setTool',
@@ -171,12 +157,11 @@ export enum CoreCommand {
   SendBackwardSelected = 'sendBackwardSelected',
   DuplicateSelected = 'duplicateSelected',
   RemoveSelected = 'removeSelected',
+  ApplySnapshot = 'applySnapshot',
 }
 
 export type CoreCommandArgs = {
-  [CoreCommand.AddShape]: [Partial<BlockModel>, Partial<ShapeModel>]
-  [CoreCommand.AddText]: [Partial<BlockModel>, Partial<TextModel>]
-  [CoreCommand.UpdateBlock]: [Entity, Partial<BlockModel>]
+  [CoreCommand.UpdateBlock]: [Entity, Partial<Block>]
 
   [CoreCommand.SetTool]: [
     {
@@ -209,6 +194,8 @@ export type CoreCommandArgs = {
   [CoreCommand.SendBackwardSelected]: []
   [CoreCommand.DuplicateSelected]: []
   [CoreCommand.RemoveSelected]: []
+  [CoreCommand.ApplySnapshot]: [Snapshot]
+  [CoreCommand.AddBlock]: [Snapshot]
 }
 
 export type PointerEvent =

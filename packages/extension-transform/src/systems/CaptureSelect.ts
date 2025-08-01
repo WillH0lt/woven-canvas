@@ -1,4 +1,5 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent, comps } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
 import { distance } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 import { and, assign, not, setup } from 'xstate'

@@ -13,7 +13,7 @@ export class CursorState {
 
   @field.ref public declare hoveredEntity: Entity | null
 
-  // heldBlock is a stringified blockModel that the cursor is currently placing
+  // heldBlock is a stringified block that the cursor is currently placing
   @field.dynamicString(512) public declare heldBlock: string
 
   toModel(): Record<string, any> {

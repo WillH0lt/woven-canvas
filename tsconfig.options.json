@@ -36,6 +36,7 @@
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "module": "ESNext",
     "moduleResolution": "bundler"
   }

@@ -3,31 +3,26 @@ import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
+import type { Snapshot } from './History'
 import type { State } from './State'
-import { Block, Persistent, Selected, Shape, Text } from './components'
+import { Block, Color, Persistent, Selected } from './components'
 import * as sys from './systems'
 import type {
   BaseResources,
-  BlockModel,
   CoreCommandArgs,
   CoreResources,
   EmitterEvents,
   ICommands,
   IStore,
   SendCommandFn,
-  ShapeModel,
-  TextModel,
 } from './types'
 import { CoreCommand } from './types'
+import './elements'
+import type { Component } from './Component'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
     core: {
-      addShape: (block: Omit<Partial<BlockModel>, 'tag'>, shape: Partial<ShapeModel>) => void
-      addText: (
-        block: Omit<Partial<BlockModel>, 'tag' | 'stretchableHeight' | 'stretchableWidth'>,
-        text: Partial<TextModel>,
-      ) => void
       moveCamera: (x: number, y: number) => void
       setZoom: (zoom: number) => void
       undo: () => void
@@ -37,6 +32,9 @@ declare module '@infinitecanvas/core' {
       sendBackwardSelected: () => void
       duplicateSelected: () => void
       removeSelected: () => void
+      applySnapshot: (...snapshots: Snapshot[]) => void
+      addBlock: (block: Partial<Block>, components: Component[]) => void
+      setColor: (blockId: string, color: Color) => void
     }
   }
 
@@ -45,9 +43,9 @@ declare module '@infinitecanvas/core' {
       blockCount: ReadonlySignal<number>
       selectedBlockCount: ReadonlySignal<number>
       selectedBlockIds: ReadonlySignal<string[]>
-      blockById: (id: string) => ReadonlySignal<BlockModel | undefined>
-      textById: (id: string) => ReadonlySignal<TextModel | undefined>
-      shapeById: (id: string) => ReadonlySignal<ShapeModel | undefined>
+      blockById: (id: string) => ReadonlySignal<Block | undefined>
+      textById: (id: string) => ReadonlySignal<Text | undefined>
+      colorById: (id: string) => ReadonlySignal<Color | undefined>
     }
   }
 }
@@ -63,22 +61,25 @@ export class CoreExtension extends BaseExtension {
   }
 
   public async preBuild(resources: BaseResources): Promise<void> {
-    // const options = CoreOptions.parse(this.options)
+    ComponentRegistry.instance.registerComponent(Block)
+    ComponentRegistry.instance.registerComponent(Selected)
+    ComponentRegistry.instance.registerComponent(Color)
+    ComponentRegistry.instance.registerComponent(Persistent)
 
-    ComponentRegistry.instance.registerHistoryComponent(Block)
-    ComponentRegistry.instance.registerHistoryComponent(Text)
-    ComponentRegistry.instance.registerHistoryComponent(Shape)
-
-    ComponentRegistry.instance.registerStateComponent(Block)
-    ComponentRegistry.instance.registerStateComponent(Selected)
-    ComponentRegistry.instance.registerStateComponent(Text)
-    ComponentRegistry.instance.registerStateComponent(Shape)
-    ComponentRegistry.instance.registerStateComponent(Persistent)
+    const menuContainer = document.createElement('div')
+    menuContainer.style.pointerEvents = 'none'
+    menuContainer.style.userSelect = 'none'
+    menuContainer.style.transformOrigin = '0 0'
+    // establish a stacking context
+    menuContainer.style.transform = 'translate(0, 0) scale(1)'
+    menuContainer.style.position = 'relative'
+    resources.domElement.append(menuContainer)
 
     const coreResources: CoreResources = {
       ...resources,
       emitter: this.emitter,
       state: this.state,
+      menuContainer,
     }
 
     this._preInputGroup = System.group(
@@ -95,6 +96,7 @@ export class CoreExtension extends BaseExtension {
     this._captureGroup = System.group(sys.CaptureCursor, {
       resources: coreResources,
     })
+    this._preUpdateGroup = System.group(sys.PreUpdateEdited, { resources: coreResources })
     this._updateGroup = System.group(
       sys.UpdateCursor,
       { resources: coreResources },
@@ -108,7 +110,14 @@ export class CoreExtension extends BaseExtension {
       resources: coreResources,
     })
 
-    this._preRenderGroup = System.group(sys.PreRenderStoreSync, {
+    this._preRenderGroup = System.group(
+      sys.PreRenderStoreSync,
+      { resources: coreResources },
+      sys.PreRenderFloatingMenus,
+      { resources: coreResources },
+    )
+
+    this._renderGroup = System.group(sys.RenderHtml, {
       resources: coreResources,
     })
   }
@@ -116,8 +125,6 @@ export class CoreExtension extends BaseExtension {
   public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       core: {
-        addShape: (block: Partial<BlockModel>, shape: Partial<ShapeModel>) => send(CoreCommand.AddShape, block, shape),
-        addText: (block: Partial<BlockModel>, text: Partial<TextModel>) => send(CoreCommand.AddText, block, text),
         moveCamera: (x: number, y: number) => send(CoreCommand.MoveCamera, { x, y }),
         setZoom: (zoom: number) => send(CoreCommand.SetZoom, { zoom }),
         undo: () => send(CoreCommand.Undo),
@@ -127,6 +134,29 @@ export class CoreExtension extends BaseExtension {
         sendBackwardSelected: () => send(CoreCommand.SendBackwardSelected),
         duplicateSelected: () => send(CoreCommand.DuplicateSelected),
         removeSelected: () => send(CoreCommand.RemoveSelected),
+        applySnapshot: (snapshot: Snapshot) => send(CoreCommand.ApplySnapshot, snapshot),
+        addBlock: (block: Partial<Block>, components: Component[]) => {
+          if (!block.id) {
+            block.id = crypto.randomUUID()
+          }
+          const snapshot: Snapshot = {
+            [block.id]: {
+              Block: block,
+            },
+          }
+          for (const component of components) {
+            const componentName = component.constructor.name
+            snapshot[block.id][componentName] = component.serialize()
+          }
+          send(CoreCommand.AddBlock, snapshot)
+        },
+        setColor: (blockId: string, color: Color) => {
+          send(CoreCommand.ApplySnapshot, {
+            [blockId]: {
+              Color: color.serialize(),
+            },
+          })
+        },
       },
     }
   }
@@ -140,12 +170,12 @@ export class CoreExtension extends BaseExtension {
           const selected = state.getComponents(Selected).value
           return Object.keys(selected)
         }),
-        blockById: (id: string): ReadonlySignal<BlockModel | undefined> =>
+        blockById: (id: string): ReadonlySignal<Block | undefined> =>
           computed(() => state.getComponents(Block).value[id]?.value),
-        textById: (id: string): ReadonlySignal<TextModel | undefined> =>
+        textById: (id: string): ReadonlySignal<Text | undefined> =>
           computed(() => state.getComponents(Text).value[id]?.value),
-        shapeById: (id: string): ReadonlySignal<ShapeModel | undefined> =>
-          computed(() => state.getComponents(Shape).value[id]?.value),
+        colorById: (id: string): ReadonlySignal<Color | undefined> =>
+          computed(() => state.getComponents(Color).value[id]?.value),
       },
     }
   }

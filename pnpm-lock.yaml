@@ -74,12 +74,6 @@ importers:
       '@infinitecanvas/extension-controls':
         specifier: workspace:^
         version: link:../../packages/extension-controls
-      '@infinitecanvas/extension-floating-menus':
-        specifier: workspace:^
-        version: link:../../packages/extension-floating-menus
-      '@infinitecanvas/extension-html-renderer':
-        specifier: workspace:^
-        version: link:../../packages/extension-html-renderer
       '@infinitecanvas/extension-input':
         specifier: workspace:^
         version: link:../../packages/extension-input
@@ -89,15 +83,18 @@ importers:
       '@infinitecanvas/extension-multiplayer':
         specifier: workspace:^
         version: link:../../packages/extension-multiplayer
-      '@infinitecanvas/extension-text-editor':
+      '@infinitecanvas/extension-text':
         specifier: workspace:^
-        version: link:../../packages/extension-text-editor
+        version: link:../../packages/extension-text
       '@infinitecanvas/extension-transform':
         specifier: workspace:^
         version: link:../../packages/extension-transform
       '@preact/signals-core':
         specifier: ^1.10.0
         version: 1.10.0
+      lit:
+        specifier: ^3.3.0
+        version: 3.3.0
       lorem-ipsum:
         specifier: ^2.0.8
         version: 2.0.8
@@ -117,18 +114,63 @@ importers:
 
   packages/core:
     dependencies:
+      '@floating-ui/dom':
+        specifier: ^1.7.2
+        version: 1.7.2
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
+      '@lit-labs/preact-signals':
+        specifier: ^1.0.3
+        version: 1.0.3
       '@preact/signals-core':
         specifier: ^1.10.0
         version: 1.10.0
+      '@tiptap/core':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/pm@3.0.7)
+      '@tiptap/extension-bold':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-color':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/extension-text-style@3.0.7)
+      '@tiptap/extension-document':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-history':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/extensions@3.0.1)
+      '@tiptap/extension-italic':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-paragraph':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-text':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-text-align':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-text-style':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-underline':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
       lexorank:
         specifier: ^1.0.5
         version: 1.0.5
+      lit:
+        specifier: ^3.3.0
+        version: 3.3.0
       strict-event-emitter:
         specifier: ^0.5.1
         version: 0.5.1
+      tinycolor2:
+        specifier: ^1.6.0
+        version: 1.6.0
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
@@ -138,6 +180,10 @@ importers:
       zod:
         specifier: ^3.25.36
         version: 3.25.36
+    devDependencies:
+      '@types/tinycolor2':
+        specifier: ^1.4.6
+        version: 1.4.6
 
   packages/extension-controls:
     dependencies:
@@ -154,49 +200,6 @@ importers:
       vitest:
         specifier: ^3.1.4
         version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
-
-  packages/extension-floating-menus:
-    dependencies:
-      '@floating-ui/dom':
-        specifier: ^1.7.2
-        version: 1.7.2
-      '@infinitecanvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@lastolivegames/becsy':
-        specifier: ^0.15.5
-        version: 0.15.5
-      lit:
-        specifier: ^3.3.0
-        version: 3.3.0
-      tinycolor2:
-        specifier: ^1.6.0
-        version: 1.6.0
-      zod:
-        specifier: ^3.25.36
-        version: 3.25.36
-    devDependencies:
-      '@types/tinycolor2':
-        specifier: ^1.4.6
-        version: 1.4.6
-
-  packages/extension-html-renderer:
-    dependencies:
-      '@infinitecanvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@lastolivegames/becsy':
-        specifier: ^0.15.5
-        version: 0.15.5
-      '@lit-labs/preact-signals':
-        specifier: ^1.0.3
-        version: 1.0.3
-      lexorank:
-        specifier: ^1.0.5
-        version: 1.0.5
-      lit:
-        specifier: ^3.3.0
-        version: 3.3.0
 
   packages/extension-input:
     dependencies:
@@ -246,20 +249,11 @@ importers:
         specifier: ^3.1.4
         version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
 
-  packages/extension-text-editor:
+  packages/extension-text:
     dependencies:
-      '@floating-ui/dom':
-        specifier: ^1.7.2
-        version: 1.7.2
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
-      '@infinitecanvas/extension-floating-menus':
-        specifier: workspace:^
-        version: link:../extension-floating-menus
-      '@jaames/iro':
-        specifier: ^5.5.2
-        version: 5.5.2
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
@@ -821,10 +815,6 @@ packages:
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
     dev: false
 
-  /@irojs/iro-core@1.2.1:
-    resolution: {integrity: sha512-p2OvsBSSmidsDsTSkID6jEyXDF7lcyxPrkh3qBzasBZFpjkYd6kZ3yMWai3MlAaQ3F7li/Et7rSJVV09Fpei+A==}
-    dev: false
-
   /@isaacs/cliui@8.0.2:
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
     engines: {node: '>=12'}
@@ -843,13 +833,6 @@ packages:
     dependencies:
       minipass: 7.1.2
     dev: true
-
-  /@jaames/iro@5.5.2:
-    resolution: {integrity: sha512-Fbi5U4Vdkw6UsF+R3oMlPONqkvUDMkwzh+mX718gQsDFt3+1r1jvGsrfCbedmXAAy0WsjDHOrefK0BkDk99TQg==}
-    dependencies:
-      '@irojs/iro-core': 1.2.1
-      preact: 10.26.9
-    dev: false
 
   /@jridgewell/gen-mapping@0.3.8:
     resolution: {integrity: sha512-imAbBGkb+ebQyxKgzv5Hu2nmROxoDOXHh80evxdoXNOrvAnVx7zimzc1Oo5h9RlfV4vPXaE2iM5pOFbvOCClWA==}
@@ -3094,10 +3077,6 @@ packages:
       picocolors: 1.1.1
       source-map-js: 1.2.1
     dev: true
-
-  /preact@10.26.9:
-    resolution: {integrity: sha512-SSjF9vcnF27mJK1XyFMNJzFd5u3pQiATFqoaDy03XuN00u4ziveVVEGt5RKJrDR8MHE/wJo9Nnad56RLzS2RMA==}
-    dev: false
 
   /pretty-format@27.5.1:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}

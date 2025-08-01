@@ -1,4 +1,5 @@
-import { BaseSystem, type BlockModel, CoreCommand, type CoreCommandArgs, comps } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
 import { computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
 
 import type { Entity } from '@lastolivegames/becsy'
@@ -18,7 +19,7 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
 
-  private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, comps.Shape, SelectionBox).write)
+  private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, comps.Color, SelectionBox).write)
 
   public initialize(): void {
     this.addCommandListener(TransformCommand.AddSelectionBox, this.addSelectionBox.bind(this))
@@ -45,7 +46,7 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
         id,
         rank: SELECTION_BOX_RANK,
       },
-      comps.Shape,
+      comps.Color,
       {
         alpha: 128,
       },
@@ -53,7 +54,7 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
     )
   }
 
-  private updateSelectionBox(blockPartial: Partial<BlockModel>): void {
+  private updateSelectionBox(blockPartial: Partial<comps.Block>): void {
     if (this.selectionBoxes.current.length === 0) {
       console.warn(`Can't update selection box. Selection box not found for user ${this.resources.uid}`)
       return

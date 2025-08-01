@@ -15,14 +15,13 @@
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/extension-controls": "workspace:^",
-    "@infinitecanvas/extension-floating-menus": "workspace:^",
-    "@infinitecanvas/extension-html-renderer": "workspace:^",
     "@infinitecanvas/extension-input": "workspace:^",
     "@infinitecanvas/extension-local-storage": "workspace:^",
     "@infinitecanvas/extension-multiplayer": "workspace:^",
-    "@infinitecanvas/extension-text-editor": "workspace:^",
+    "@infinitecanvas/extension-text": "workspace:^",
     "@infinitecanvas/extension-transform": "workspace:^",
     "@preact/signals-core": "^1.10.0",
+    "lit": "^3.3.0",
     "lorem-ipsum": "^2.0.8"
   }
 }

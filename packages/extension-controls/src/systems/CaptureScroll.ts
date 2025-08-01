@@ -1,4 +1,6 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs, comps } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
+
 import { CapturePan } from './CapturePan'
 import { CaptureZoom } from './CaptureZoom'
 

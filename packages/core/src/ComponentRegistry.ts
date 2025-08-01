@@ -1,4 +1,4 @@
-import type { ISerializable } from './types.js'
+import type { Component } from './Component'
 
 export class ComponentRegistry {
   private static _instance: ComponentRegistry | null = null
@@ -10,28 +10,17 @@ export class ComponentRegistry {
     return ComponentRegistry._instance
   }
 
-  private readonly _historyComponents: (new () => ISerializable)[] = []
-  private readonly _stateComponents: (new () => ISerializable)[] = []
+  private readonly _components: (new () => Component)[] = []
 
   private constructor() {}
 
-  public get historyComponents(): (new () => ISerializable)[] {
-    return this._historyComponents
+  public get components(): (new () => Component)[] {
+    return Object.values(this._components)
   }
 
-  public get stateComponents(): (new () => ISerializable)[] {
-    return this._stateComponents
-  }
-
-  public registerStateComponent(serializable: new () => ISerializable): void {
-    if (!this._stateComponents.includes(serializable)) {
-      this._stateComponents.push(serializable)
-    }
-  }
-
-  public registerHistoryComponent(serializable: new () => ISerializable): void {
-    if (!this._historyComponents.includes(serializable)) {
-      this._historyComponents.push(serializable)
+  public registerComponent(component: new () => Component): void {
+    if (!this._components.includes(component)) {
+      this._components.push(component)
     }
   }
 }

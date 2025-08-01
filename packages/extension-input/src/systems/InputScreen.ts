@@ -1,6 +1,7 @@
 import { System, co } from '@lastolivegames/becsy'
 
-import { type BaseResources, comps } from '@infinitecanvas/core'
+import type { BaseResources } from '@infinitecanvas/core'
+import * as comps from '@infinitecanvas/core/components'
 
 export class InputScreen extends System {
   private readonly screens = this.query((q) => q.current.with(comps.Screen).write)

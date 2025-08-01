@@ -1,9 +1,8 @@
-import type { AabbModel } from '@infinitecanvas/core'
 import { Aabb, Block } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 import { rotatePoint } from './rotatePoint'
 
-export function computeExtentsAlongAngle(blockEntities: readonly Entity[], rotateZ: number): AabbModel {
+export function computeExtentsAlongAngle(blockEntities: readonly Entity[], rotateZ: number): Aabb {
   let minX = Number.POSITIVE_INFINITY
   let minY = Number.POSITIVE_INFINITY
   let maxX = Number.NEGATIVE_INFINITY

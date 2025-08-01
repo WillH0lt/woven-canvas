@@ -1,5 +1,0 @@
-export { FloatingMenuElement } from './FloatingMenu'
-export { DividerElement } from './Divider'
-export { ColorPickerElement } from './ColorPicker'
-export { AbstractButtonElement } from './AbstractButton'
-export { ColorBubblesElement } from './ColorBubbles'

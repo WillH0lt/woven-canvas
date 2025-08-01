@@ -3,7 +3,7 @@ import { type AnyStateMachine, transition } from 'xstate'
 
 import * as comps from './components'
 import { distance } from './helpers'
-import type { BaseResources, CommandMap, MouseEvent, PointerButton, PointerEvent } from './types'
+import type { BaseResources, BlockDef, CommandMap, MouseEvent, PointerButton, PointerEvent } from './types'
 
 const CLICK_MOVE_THRESHOLD = 1
 const CLICK_FRAME_THRESHOLD = 60
@@ -116,6 +116,14 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
     })
 
     return data
+  }
+
+  protected getBlockDef(tag: string): BlockDef | undefined {
+    return this.resources.blockDefs.find((def) => def.tag === tag)
+  }
+
+  protected getBlockElementById(blockId: string): HTMLElement | null {
+    return this.resources.blockContainer.querySelector<HTMLElement>(`[id='${blockId}']`)
   }
 
   protected getPointerEvents(

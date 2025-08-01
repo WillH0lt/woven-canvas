@@ -1,8 +1,7 @@
-import type { AabbModel } from '@infinitecanvas/core'
 import { Aabb, Block } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 
-export function intersectAabb(aabb: AabbModel, blockEntities: readonly Entity[]): Entity[] {
+export function intersectAabb(aabb: Aabb, blockEntities: readonly Entity[]): Entity[] {
   const intersecting: Entity[] = []
 
   for (const blockEntity of blockEntities) {
@@ -22,11 +21,11 @@ export function intersectAabb(aabb: AabbModel, blockEntities: readonly Entity[])
   return intersecting
 }
 
-function intersectsAabbWithAabb(aabb1: AabbModel, aabb2: Aabb): boolean {
+function intersectsAabbWithAabb(aabb1: Aabb, aabb2: Aabb): boolean {
   return !(aabb1.right < aabb2.left || aabb1.left > aabb2.right || aabb1.bottom < aabb2.top || aabb1.top > aabb2.bottom)
 }
 
-function aabbSurroundsAabb(bigAabb: AabbModel, smallAabb: AabbModel): boolean {
+function aabbSurroundsAabb(bigAabb: Aabb, smallAabb: Aabb): boolean {
   return (
     bigAabb.left <= smallAabb.left &&
     bigAabb.top <= smallAabb.top &&
@@ -35,7 +34,7 @@ function aabbSurroundsAabb(bigAabb: AabbModel, smallAabb: AabbModel): boolean {
   )
 }
 
-function aabbIntersectsBlock(aabb: AabbModel, blockEntity: Entity): boolean {
+function aabbIntersectsBlock(aabb: Aabb, blockEntity: Entity): boolean {
   // Use Separating Axis Theorem (SAT) between AABB and oriented rectangle
 
   // Get corners of the AABB

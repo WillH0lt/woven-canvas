@@ -1,14 +1,14 @@
 import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
-import { FloatingMenusExtension, defaultFloatingMenus } from '@infiniteCanvas/extension-floating-menus'
-import { type BlockModel, InfiniteCanvas } from '@infinitecanvas/core'
+import './stickyNote'
+import { InfiniteCanvas, floatingMenuButtonColor, floatingMenuStandardButtons } from '@infinitecanvas/core'
+import { type Block, Color } from '@infinitecanvas/core/components'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
-import { HtmlRendererExtension } from '@infinitecanvas/extension-html-renderer'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
 // import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
-import { TextEditorExtension, TextEditorFloatingMenuButtons } from '@infinitecanvas/extension-text-editor'
+import { Text, TextEditorExtension, TextEditorFloatingMenuButtons } from '@infinitecanvas/extension-text'
 import { TransformExtension } from '@infinitecanvas/extension-transform'
 
 const lorem = new LoremIpsum({
@@ -32,6 +32,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <button id="textBtn" class="bg-amber-300 p-2 rounded">
       text
     </button>
+    <button id="stickyNoteBtn" class="bg-amber-300 p-2 rounded">
+      sticky note
+    </button>
   </div>
 `
 
@@ -40,30 +43,45 @@ let infiniteCanvas: InfiniteCanvas | null = null
 async function initializeCanvas(container: HTMLDivElement) {
   await loadFont('Figtree')
 
-  infiniteCanvas = await InfiniteCanvas.New([
-    new InputExtension(),
-    new ControlsExtension(),
-    new TransformExtension(),
-    new HtmlRendererExtension(),
-    new TextEditorExtension(),
-    // new MultiplayerExtension(),
-    new LocalStorageExtension(),
-    new FloatingMenusExtension({
-      menus: [
-        ...defaultFloatingMenus,
+  infiniteCanvas = await InfiniteCanvas.New(
+    [
+      new InputExtension(),
+      new ControlsExtension(),
+      new TransformExtension(),
+      new TextEditorExtension(),
+      // new MultiplayerExtension(),
+      new LocalStorageExtension(),
+    ],
+    {
+      blockDefs: [
         {
-          blockKind: 'ic-text-edited',
-          buttons: TextEditorFloatingMenuButtons,
+          tag: 'ic-shape',
+          floatingMenu: [floatingMenuButtonColor, ...floatingMenuStandardButtons],
+          components: [Color],
+        },
+        {
+          tag: 'ic-text',
+          canEdit: true,
+          resizeMode: 'text',
+          editedFloatingMenu: TextEditorFloatingMenuButtons,
+          components: [Text],
+        },
+        {
+          tag: 'ic-sticky-note',
+          canEdit: true,
+          floatingMenu: [floatingMenuButtonColor, ...floatingMenuStandardButtons],
+          editedFloatingMenu: TextEditorFloatingMenuButtons,
+          components: [Color, Text],
         },
       ],
-    }),
-  ])
+    },
+  )
 
   container.appendChild(infiniteCanvas.domElement)
 
-  // infiniteCanvas.store.core.blockCount.subscribe((count) => {
-  //   console.log('Block count:', count)
-  // })
+  infiniteCanvas.store.core.blockCount.subscribe((count) => {
+    console.log('Block count:', count)
+  })
 
   // infiniteCanvas.store.textEditor.bold.subscribe((isBold) => {
   //   console.log('Text editor bold:', isBold)
@@ -127,41 +145,49 @@ document.addEventListener('keydown', (event) => {
 document.querySelector<HTMLDivElement>('#blockBtn')!.addEventListener('click', () => {
   const left = Math.random() * window.innerWidth
   const top = Math.random() * window.innerHeight
-  addShape(left, top)
+  const block = generateBlock({ tag: 'ic-shape', left, top })
+  const color = new Color()
+  color.red = Math.floor(Math.random() * 256)
+  color.green = Math.floor(Math.random() * 256)
+  color.blue = Math.floor(Math.random() * 256)
+  infiniteCanvas?.commands.core.addBlock(block, [color])
 })
 
 document.querySelector<HTMLDivElement>('#textBtn')!.addEventListener('click', () => {
   const left = Math.random() * window.innerWidth
   const top = Math.random() * window.innerHeight
-  addText(left, top)
+  const block = generateBlock({ tag: 'ic-text', left, top })
+
+  const text = new Text()
+  text.content = lorem.generateSentences(1)
+  infiniteCanvas?.commands.core.addBlock(block, [text])
 })
 
-function generateBlock(block: Partial<BlockModel>): Partial<BlockModel> {
+document.querySelector<HTMLDivElement>('#stickyNoteBtn')!.addEventListener('click', () => {
+  const left = Math.random() * window.innerWidth
+  const top = Math.random() * window.innerHeight
+  const block = generateBlock({ tag: 'ic-sticky-note', left, top, width: 400, height: 400 })
+
+  const color = new Color()
+  color.red = Math.floor(Math.random() * 256)
+  color.green = Math.floor(Math.random() * 256)
+  color.blue = Math.floor(Math.random() * 256)
+
+  const text = new Text()
+  text.content = lorem.generateSentences(1)
+
+  infiniteCanvas?.commands.core.addBlock(block, [color, text])
+})
+
+function generateBlock(block: Partial<Block>): Partial<Block> {
   return {
     left: Math.random() * window.innerWidth,
     top: Math.random() * window.innerHeight,
     width: 100,
     height: 100,
+    id: crypto.randomUUID(),
     ...block,
   }
-}
-
-function addShape(left: number, top: number): void {
-  const block = generateBlock({ left, top })
-  infiniteCanvas?.commands.core.addShape(block, {
-    red: Math.floor(Math.random() * 256),
-    green: Math.floor(Math.random() * 256),
-    blue: Math.floor(Math.random() * 256),
-    alpha: 255,
-  })
-}
-
-function addText(left: number, top: number): void {
-  const block = generateBlock({ left, top })
-  infiniteCanvas?.commands.core.addText(block, {
-    content: lorem.generateSentences(1),
-    fontFamily: 'Figtree',
-  })
 }
 
 function loadFont(fontFamily: string): Promise<void> {

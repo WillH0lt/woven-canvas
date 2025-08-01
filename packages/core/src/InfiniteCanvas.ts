@@ -3,10 +3,19 @@ import type { z } from 'zod/v4'
 
 import { Emitter } from 'strict-event-emitter'
 import type { BaseExtension } from './BaseExtension'
+import { ComponentRegistry } from './ComponentRegistry'
 import { CoreExtension } from './CoreExtension'
 import { History } from './History'
 import { State } from './State'
-import { type BaseResources, EmitterEventKind, type EmitterEvents, type ICommands, type IStore, Options } from './types'
+import {
+  type BaseResources,
+  EmitterEventKind,
+  type EmitterEvents,
+  type ICommands,
+  type IStore,
+  Options,
+  type Theme,
+} from './types'
 
 function scheduleGroups(orderedGroups: SystemGroup[]): void {
   for (let i = 0; i < orderedGroups.length - 1; i++) {
@@ -44,10 +53,21 @@ export class InfiniteCanvas {
     domElement.style.overflow = 'hidden'
     domElement.tabIndex = 0
 
+    const blockContainer = document.createElement('div')
+    blockContainer.style.pointerEvents = 'none'
+    blockContainer.style.userSelect = 'none'
+    blockContainer.style.transformOrigin = '0 0'
+    // establish a stacking context
+    blockContainer.style.transform = 'translate(0, 0) scale(1)'
+    blockContainer.style.position = 'relative'
+    domElement.appendChild(blockContainer)
+
     const resources = {
       domElement,
+      blockContainer,
       uid: crypto.randomUUID(),
       history: new History(),
+      blockDefs: parsedOptions.blockDefs,
     }
 
     const emitter = new Emitter<EmitterEvents>()
@@ -94,8 +114,14 @@ export class InfiniteCanvas {
 
     scheduleGroups(orderedGroups)
 
+    for (const blockDef of parsedOptions.blockDefs) {
+      for (const component of blockDef.components) {
+        ComponentRegistry.instance.registerComponent(component)
+      }
+    }
+
     const world = await World.create({
-      defs: orderedGroups,
+      defs: [...orderedGroups, ...ComponentRegistry.instance.components],
       maxEntities: 100_000,
       maxLimboComponents: 100_000,
     })
@@ -126,6 +152,8 @@ export class InfiniteCanvas {
     if (options.autofocus) {
       this.useAutoFocus()
     }
+
+    this.useTheme(options.theme)
 
     this.store = extensions.reduce((stores, ext) => {
       if (!ext.addStore) return stores
@@ -200,5 +228,21 @@ export class InfiniteCanvas {
     })
 
     observer.observe(document.body, { childList: true, subtree: true })
+  }
+
+  private useTheme(theme: Theme): void {
+    const style = document.documentElement.style
+    style.setProperty('--ic-gray-100', theme.gray100)
+    style.setProperty('--ic-gray-200', theme.gray200)
+    style.setProperty('--ic-gray-300', theme.gray300)
+    style.setProperty('--ic-gray-400', theme.gray400)
+    style.setProperty('--ic-gray-500', theme.gray500)
+    style.setProperty('--ic-gray-600', theme.gray600)
+    style.setProperty('--ic-gray-700', theme.gray700)
+    style.setProperty('--ic-primary-color', theme.primaryColor)
+    style.setProperty('--ic-menu-border-radius', theme.menuBorderRadius)
+    style.setProperty('--ic-menu-tooltip-border-radius', theme.menuTooltipBorderRadius)
+    style.setProperty('--ic-transition-duration', theme.transitionDuration)
+    style.setProperty('--ic-transition-timing-function', theme.transitionTimingFunction)
   }
 }

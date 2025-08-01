@@ -1,21 +1,9 @@
 import { component, field } from '@lastolivegames/becsy'
-import type { ISerializable } from '../types'
-
-interface SelectedModel {
-  selectedBy: string
-}
+import { Component } from '../Component'
 
 @component
-export class Selected implements ISerializable<SelectedModel> {
+export class Selected extends Component {
+  static addToHistory = false
+
   @field.dynamicString(36) public declare selectedBy: string
-
-  public toModel(): SelectedModel {
-    return {
-      selectedBy: this.selectedBy,
-    }
-  }
-
-  public fromModel(model: SelectedModel): void {
-    this.selectedBy = model.selectedBy
-  }
 }

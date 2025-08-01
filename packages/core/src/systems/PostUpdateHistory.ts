@@ -1,18 +1,19 @@
 import type { Query } from '@lastolivegames/becsy'
 
 import { BaseSystem } from '../BaseSystem'
+import type { Component } from '../Component'
 import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
 import { applyDiff, uuidToNumber } from '../helpers'
-import { CoreCommand, type CoreCommandArgs, type CoreResources, type ISerializable } from '../types'
+import { CoreCommand, type CoreCommandArgs, type CoreResources } from '../types'
 import { PostUpdateDeleter } from './PostUpdateDeleter'
 
 export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
-  private readonly addedQueries = new Map<new () => ISerializable, Query>()
+  private readonly addedQueries = new Map<new () => Component, Query>()
 
-  private readonly changedQueries = new Map<new () => ISerializable, Query>()
+  private readonly changedQueries = new Map<new () => Component, Query>()
 
-  private readonly removedQueries = new Map<new () => ISerializable, Query>()
+  private readonly removedQueries = new Map<new () => Component, Query>()
 
   private readonly entities = this.query(
     (q) => q.current.with(comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Persistent).id)).usingAll.write,
@@ -25,17 +26,19 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
 
     this.schedule((s) => s.after(PostUpdateDeleter))
 
-    const Components = ComponentRegistry.instance.historyComponents
+    const Components = ComponentRegistry.instance.components
 
-    for (const Component of Components) {
-      const added = this.query((q) => q.added.with(comps.Persistent, Component))
-      this.addedQueries.set(Component, added)
+    for (const Comp of Components) {
+      if (!(Comp.prototype.constructor as typeof Component).addToHistory) continue
 
-      const changedQuery = this.query((q) => q.changed.with(comps.Persistent, Component).trackWrites)
-      this.changedQueries.set(Component, changedQuery)
+      const added = this.query((q) => q.added.with(comps.Persistent, Comp))
+      this.addedQueries.set(Comp, added)
 
-      const removedQuery = this.query((q) => q.removed.with(comps.Persistent, Component))
-      this.removedQueries.set(Component, removedQuery)
+      const changedQuery = this.query((q) => q.changed.with(comps.Persistent, Comp).trackWrites)
+      this.changedQueries.set(Comp, changedQuery)
+
+      const removedQuery = this.query((q) => q.removed.with(comps.Persistent, Comp))
+      this.removedQueries.set(Comp, removedQuery)
     }
   }
 
@@ -50,26 +53,26 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
 
     history.frameDiff.clear()
 
-    for (const Component of this.addedQueries.keys()) {
-      const query = this.addedQueries.get(Component)!
+    for (const Comp of this.addedQueries.keys()) {
+      const query = this.addedQueries.get(Comp)!
       if (query.added.length === 0) continue
-      history.addComponents(Component, query.added)
+      history.addComponents(Comp, query.added)
     }
 
-    for (const Component of this.changedQueries.keys()) {
-      const query = this.changedQueries.get(Component)!
+    for (const Comp of this.changedQueries.keys()) {
+      const query = this.changedQueries.get(Comp)!
       if (query.changed.length === 0) continue
-      history.updateComponents(Component, query.changed)
+      history.updateComponents(Comp, query.changed)
     }
 
     const hasRemoved = Array.from(this.removedQueries.values()).some((q) => q.removed.length > 0)
     if (hasRemoved) {
       this.accessRecentlyDeletedData(true)
     }
-    for (const Component of this.removedQueries.keys()) {
-      const query = this.removedQueries.get(Component)!
+    for (const Comp of this.removedQueries.keys()) {
+      const query = this.removedQueries.get(Comp)!
       if (query.removed.length === 0) continue
-      history.removeComponents(Component, query.removed)
+      history.removeComponents(Comp, query.removed)
     }
 
     if (this.frame.value === 1) {

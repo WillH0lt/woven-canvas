@@ -21,8 +21,6 @@ export class LocalStorageExtension extends BaseExtension {
     const localDB = await LocalDB.New(options.persistenceKey)
     this.initialEntities = await localDB.getAll()
 
-    console.log(this.initialEntities)
-
     const localStorageResources: LocalStorageResources = {
       ...resources,
       localDB,
@@ -32,7 +30,7 @@ export class LocalStorageExtension extends BaseExtension {
   }
 
   public build(worldSystem: System): void {
-    const componentNames = new Map(ComponentRegistry.instance.historyComponents.map((c) => [c.name, c]))
+    const componentNames = new Map(ComponentRegistry.instance.components.map((c) => [c.name, c]))
 
     for (const [id, entity] of Object.entries(this.initialEntities)) {
       const args = []

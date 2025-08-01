@@ -5,7 +5,7 @@ import { Persistent } from '../components'
 import { binarySearchForId } from '../helpers/binarySearchForId'
 
 export function applyDiff(system: System, diff: Diff, entities: Query): void {
-  const componentNames = new Map(ComponentRegistry.instance.historyComponents.map((c) => [c.name, c]))
+  const componentNames = new Map(ComponentRegistry.instance.components.map((c) => [c.name, c]))
 
   // added components
   for (const [id, components] of Object.entries(diff.added)) {
@@ -30,7 +30,7 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
       const Component = componentNames.get(componentName)
       if (!Component) continue
       const writableComponent = entity.write(Component)
-      writableComponent.fromModel(model)
+      writableComponent.deserialize(model)
     }
   }
 
@@ -46,7 +46,7 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
     }
 
     // If the entity has no components left, delete it
-    const count = entity.countHas(...ComponentRegistry.instance.historyComponents)
+    const count = entity.countHas(...ComponentRegistry.instance.components)
     if (count === 0) {
       entity.delete()
     }

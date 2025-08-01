@@ -1,27 +1,27 @@
 import type { Entity } from '@lastolivegames/becsy'
 import { type Signal, signal } from '@preact/signals-core'
+import type { Component } from './Component'
 import { Block } from './components'
-import type { ISerializable } from './types'
 
 export class State {
   private readonly state = new Map<string, Signal<Record<string, Signal<any>>>>()
 
-  public addComponents(Component: new () => ISerializable, entities: readonly Entity[]): void {
+  public addComponents(Comp: new () => Component, entities: readonly Entity[]): void {
     const signalComponents: Record<string, Signal<any>> = {}
     for (const entity of entities) {
       const id = entity.read(Block).id
-      const comp = entity.read(Component)
-      signalComponents[id] = signal(comp.toModel())
+      const comp = entity.read(Comp)
+      signalComponents[id] = signal(comp.serialize())
     }
 
-    const componentsState = this.getComponents(Component)
+    const componentsState = this.getComponents(Comp)
     componentsState.value = {
       ...componentsState.value,
       ...signalComponents,
     }
   }
 
-  public updateComponents<T extends ISerializable>(Component: new () => T, entities: readonly Entity[]): void {
+  public updateComponents(Component: new () => Component, entities: readonly Entity[]): void {
     const components = this.getComponents(Component)
     for (const entity of entities) {
       const id = entity.read(Block).id
@@ -30,17 +30,17 @@ export class State {
         console.warn(`Component with id ${id} does not exist in state for component ${Component.name}.`)
         continue
       }
-      components.value[id].value = comp.toModel() as any
+      components.value[id].value = comp.serialize() as any
     }
   }
 
-  public removeComponents(Component: new () => ISerializable, entities: readonly Entity[]): void {
-    const components = this.getComponents(Component)
+  public removeComponents(Comp: new () => Component, entities: readonly Entity[]): void {
+    const components = this.getComponents(Comp)
     const entityIds = new Set(entities.map((entity) => entity.read(Block).id))
     components.value = Object.fromEntries(Object.entries(components.value).filter(([key]) => !entityIds.has(key)))
   }
 
-  public getComponents<T extends ISerializable>(component: new () => T): Signal<Record<string, Signal<T>>> {
+  public getComponents<T>(component: new () => T): Signal<Record<string, Signal<T>>> {
     let components = this.state.get(component.name)
     if (!components) {
       components = signal({})

@@ -1,32 +1,33 @@
 import { type Query, System } from '@lastolivegames/becsy'
 import { batch } from '@preact/signals-core'
+import type { Component } from '../Component'
 import { ComponentRegistry } from '../ComponentRegistry'
 import { Block } from '../components'
-import type { CoreResources, ISerializable } from '../types'
+import type { CoreResources } from '../types'
 
 export class PreRenderStoreSync extends System {
-  private readonly addedQueries: Map<new () => ISerializable, Query> = new Map()
+  private readonly addedQueries: Map<new () => Component, Query> = new Map()
 
-  private readonly changedQueries: Map<new () => ISerializable, Query> = new Map()
+  private readonly changedQueries: Map<new () => Component, Query> = new Map()
 
-  private readonly removedQueries: Map<new () => ISerializable, Query> = new Map()
+  private readonly removedQueries: Map<new () => Component, Query> = new Map()
 
   protected declare readonly resources: CoreResources
 
   public constructor() {
     super()
 
-    const Components = ComponentRegistry.instance.stateComponents
+    const Components = ComponentRegistry.instance.components
 
-    for (const Component of Components) {
-      const addedQuery = this.query((q) => q.added.with(Block, Component))
-      this.addedQueries.set(Component, addedQuery)
+    for (const Comp of Components) {
+      const addedQuery = this.query((q) => q.added.with(Block, Comp))
+      this.addedQueries.set(Comp, addedQuery)
 
-      const changedQuery = this.query((q) => q.changed.with(Block, Component).trackWrites)
-      this.changedQueries.set(Component, changedQuery)
+      const changedQuery = this.query((q) => q.changed.with(Block, Comp).trackWrites)
+      this.changedQueries.set(Comp, changedQuery)
 
-      const removedQuery = this.query((q) => q.removed.with(Block, Component))
-      this.removedQueries.set(Component, removedQuery)
+      const removedQuery = this.query((q) => q.removed.with(Block, Comp))
+      this.removedQueries.set(Comp, removedQuery)
     }
   }
 
@@ -42,25 +43,25 @@ export class PreRenderStoreSync extends System {
     if (!shouldExecute) return
 
     batch(() => {
-      for (const Component of this.addedQueries.keys()) {
-        const query = this.addedQueries.get(Component)!
+      for (const Comp of this.addedQueries.keys()) {
+        const query = this.addedQueries.get(Comp)!
         if (query.added.length === 0) continue
-        this.resources.state.addComponents(Component, query.added)
+        this.resources.state.addComponents(Comp, query.added)
       }
 
-      for (const Component of this.changedQueries.keys()) {
-        const query = this.changedQueries.get(Component)!
+      for (const Comp of this.changedQueries.keys()) {
+        const query = this.changedQueries.get(Comp)!
         if (query.changed.length === 0) continue
-        this.resources.state.updateComponents(Component, query.changed)
+        this.resources.state.updateComponents(Comp, query.changed)
       }
 
       if (hasRemoved) {
         this.accessRecentlyDeletedData(true)
       }
-      for (const Component of this.removedQueries.keys()) {
-        const query = this.removedQueries.get(Component)!
+      for (const Comp of this.removedQueries.keys()) {
+        const query = this.removedQueries.get(Comp)!
         if (query.removed.length === 0) continue
-        this.resources.state.removeComponents(Component, query.removed)
+        this.resources.state.removeComponents(Comp, query.removed)
       }
     })
   }

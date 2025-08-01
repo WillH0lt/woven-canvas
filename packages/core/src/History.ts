@@ -1,6 +1,6 @@
 import type { Entity } from '@lastolivegames/becsy'
+import type { Component } from './Component'
 import { Persistent } from './components'
-import type { ISerializable } from './types'
 
 type Id = string
 type ComponentName = string
@@ -246,44 +246,44 @@ export class History {
     return this.diffSinceCheckpoint.isEmpty
   }
 
-  public addComponents(Component: new () => ISerializable, entities: readonly Entity[]): void {
+  public addComponents(Comp: new () => Component, entities: readonly Entity[]): void {
     for (const entity of entities) {
       const id = entity.read(Persistent).id
-      const comp = entity.read(Component)
-      const model = comp.toModel()
+      const comp = entity.read(Comp)
+      const model = comp.serialize()
 
-      if (this.snapshotManager.recordIsTheSame(id, Component.name, model)) continue
+      if (this.snapshotManager.recordIsTheSame(id, Comp.name, model)) continue
 
-      this.frameDiff.addComponent(id, Component.name, model)
-      this.diffSinceCheckpoint.addComponent(id, Component.name, model)
-      this.snapshotManager.putComponent(id, Component.name, model)
+      this.frameDiff.addComponent(id, Comp.name, model)
+      this.diffSinceCheckpoint.addComponent(id, Comp.name, model)
+      this.snapshotManager.putComponent(id, Comp.name, model)
     }
   }
 
-  public updateComponents(Component: new () => ISerializable, entities: readonly Entity[]): void {
+  public updateComponents(Comp: new () => Component, entities: readonly Entity[]): void {
     for (const entity of entities) {
       const id = entity.read(Persistent).id
-      const comp = entity.read(Component)
-      const model = comp.toModel()
+      const comp = entity.read(Comp)
+      const model = comp.serialize()
 
-      if (this.snapshotManager.recordIsTheSame(id, Component.name, model)) continue
+      if (this.snapshotManager.recordIsTheSame(id, Comp.name, model)) continue
 
-      const fromModel = this.snapshotManager.getRecord(id, Component.name) || {}
-      this.frameDiff.changeComponent(id, Component.name, fromModel, model)
-      this.diffSinceCheckpoint.changeComponent(id, Component.name, fromModel, model)
-      this.snapshotManager.putComponent(id, Component.name, model)
+      const fromModel = this.snapshotManager.getRecord(id, Comp.name) || {}
+      this.frameDiff.changeComponent(id, Comp.name, fromModel, model)
+      this.diffSinceCheckpoint.changeComponent(id, Comp.name, fromModel, model)
+      this.snapshotManager.putComponent(id, Comp.name, model)
     }
   }
 
-  public removeComponents(Component: new () => ISerializable, entities: readonly Entity[]): void {
+  public removeComponents(Comp: new () => Component, entities: readonly Entity[]): void {
     const entityIds = new Set(entities.map((entity) => entity.read(Persistent).id))
     for (const id of entityIds) {
-      const model = this.snapshotManager.getRecord(id, Component.name)
+      const model = this.snapshotManager.getRecord(id, Comp.name)
       if (!model) continue
 
-      this.frameDiff.removeComponent(id, Component.name, model)
-      this.diffSinceCheckpoint.removeComponent(id, Component.name, model)
-      this.snapshotManager.removeComponent(id, Component.name)
+      this.frameDiff.removeComponent(id, Comp.name, model)
+      this.diffSinceCheckpoint.removeComponent(id, Comp.name, model)
+      this.snapshotManager.removeComponent(id, Comp.name)
     }
   }
 

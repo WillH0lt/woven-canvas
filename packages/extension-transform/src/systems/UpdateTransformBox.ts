@@ -1,8 +1,9 @@
-import { BaseSystem, type BlockModel, CoreCommand, type CoreCommandArgs, CursorIcon } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs, CursorIcon } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
 import { uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
+import type { BlockDef } from 'packages/core/src/types'
 import { DragStart, Locked, TransformBox, TransformHandle } from '../components'
 import {
   TRANSFORM_BOX_RANK,
@@ -10,7 +11,7 @@ import {
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
-import { calculateTextHeight, computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
+import { computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
 import { TransformCommand, type TransformCommandArgs, TransformHandleKind } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
@@ -31,8 +32,7 @@ interface TransformHandleDef {
 
 export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   private readonly selectedBlocks = this.query(
-    (q) =>
-      q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read.using(comps.Text).write,
+    (q) => q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read,
   )
 
   private readonly editedBlocks = this.query((q) => q.current.with(comps.Block, comps.Edited).write)
@@ -41,7 +41,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     (q) =>
       q.current
         .with(TransformBox)
-        .write.using(comps.Block, TransformHandle, DragStart, comps.Hoverable, Locked, comps.Shape, comps.Opacity)
+        .write.using(comps.Block, TransformHandle, DragStart, comps.Hoverable, Locked, comps.Color, comps.Opacity)
         .write,
   )
 
@@ -89,7 +89,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       TransformBox,
       comps.Block,
       { id: crypto.randomUUID() },
-      comps.Shape,
+      comps.Color,
       DragStart,
     )
 
@@ -140,7 +140,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       rotateZ,
     })
 
-    Object.assign(transformBoxEntity.write(comps.Shape), {
+    Object.assign(transformBoxEntity.write(comps.Color), {
       blue: 255,
       alpha: 128,
     })
@@ -164,10 +164,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       dragStart.startWidth = block.width
       dragStart.startHeight = block.height
       dragStart.startRotateZ = block.rotateZ
-
-      if (blockEntity.has(comps.Text)) {
-        dragStart.startFontSize = blockEntity.read(comps.Text).fontSize
-      }
     }
 
     this.addOrUpdateTransformHandles(transformBoxEntity)
@@ -219,14 +215,16 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
     )
     let singularSelectedBlock: comps.Block | null = null
+    let blockDef: BlockDef | undefined = undefined
     if (selectedBlocks.length === 1) {
       singularSelectedBlock = selectedBlocks[0].read(comps.Block)
+      blockDef = this.getBlockDef(singularSelectedBlock.tag)
     }
 
     // top & bottom edges
     for (let yi = 0; yi < 2; yi++) {
       handles.push({
-        kind: singularSelectedBlock?.stretchableHeight ? TransformHandleKind.Stretch : TransformHandleKind.Scale,
+        kind: TransformHandleKind.Scale,
         alpha: 0,
         vector: [0, yi * 2 - 1],
         left,
@@ -242,7 +240,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     // left & right edges
     for (let xi = 0; xi < 2; xi++) {
       handles.push({
-        kind: singularSelectedBlock?.stretchableWidth ? TransformHandleKind.Stretch : TransformHandleKind.Scale,
+        kind: blockDef?.resizeMode === 'text' ? TransformHandleKind.Stretch : TransformHandleKind.Scale,
         alpha: 0,
         vector: [xi * 2 - 1, 0],
         left: left + width * xi - sideHandleSize / 2,
@@ -271,7 +269,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
           TransformHandle,
           comps.Block,
           { id: crypto.randomUUID() },
-          comps.Shape,
+          comps.Color,
           comps.Hoverable,
           DragStart,
         )
@@ -297,7 +295,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         rank: handle.rank,
       })
 
-      Object.assign(handleEntity.write(comps.Shape), {
+      Object.assign(handleEntity.write(comps.Color), {
         alpha: handle.alpha,
         red: 255,
       })
@@ -372,7 +370,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     this.updateTransformBox()
   }
 
-  private onBlockUpdate(blockEntity: Entity, updates: Partial<BlockModel>): void {
+  private onBlockUpdate(blockEntity: Entity, updates: Partial<comps.Block>): void {
     const block = blockEntity.read(comps.Block)
     // check if the position has changed
     if (block.left === updates.left && block.top === updates.top) {
@@ -478,21 +476,21 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
     let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
 
-    if (handleKind === TransformHandleKind.Stretch) {
-      if (handleVec[0] === 0) {
-        boxEndWidth = boxStartWidth
-      } else if (handleVec[1] === 0) {
-        boxEndHeight = boxStartHeight
-      }
+    // if (handleKind === TransformHandleKind.Stretch) {
+    //   if (handleVec[0] === 0) {
+    //     boxEndWidth = boxStartWidth
+    //   } else if (handleVec[1] === 0) {
+    //     boxEndHeight = boxStartHeight
+    //   }
+    // } else {
+    const startAspectRatio = boxStartWidth / boxStartHeight
+    const newAspectRatio = boxEndWidth / boxEndHeight
+    if (newAspectRatio > startAspectRatio) {
+      boxEndHeight = boxEndWidth / startAspectRatio
     } else {
-      const startAspectRatio = boxStartWidth / boxStartHeight
-      const newAspectRatio = boxEndWidth / boxEndHeight
-      if (newAspectRatio > startAspectRatio) {
-        boxEndHeight = boxEndWidth / startAspectRatio
-      } else {
-        boxEndWidth = boxEndHeight * startAspectRatio
-      }
+      boxEndWidth = boxEndHeight * startAspectRatio
     }
+    // }
 
     const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
     const rotatedVector = rotatePoint(vec, [0, 0], boxRotateZ)
@@ -505,29 +503,31 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     // TODO scale snapping
 
     for (const selectedEntity of this.selectedBlocks.current) {
-      const { startLeft, startTop, startWidth, startHeight, startFontSize } = selectedEntity.read(DragStart)
+      const { startLeft, startTop, startWidth, startHeight } = selectedEntity.read(DragStart)
 
       const block = selectedEntity.write(comps.Block)
 
-      block.left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
-      block.top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
+      const left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
+      const top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
 
-      block.width = startWidth * (boxEndWidth / boxStartWidth)
-      block.height = startHeight * (boxEndHeight / boxStartHeight)
+      const width = startWidth * (boxEndWidth / boxStartWidth)
+      const height = startHeight * (boxEndHeight / boxStartHeight)
 
       if (handleKind === TransformHandleKind.Stretch) {
+        // TODO this won't work if there are multiple blocks selected
         block.hasStretched = true
-      }
-
-      if (selectedEntity.has(comps.Text)) {
-        // if we are stretching the block then font size stays constant and the block height is updated
-        if (handleKind === TransformHandleKind.Stretch) {
-          block.height = calculateTextHeight(block, selectedEntity.read(comps.Text))
-        } else {
-          // otherwise adjust the font size proportionally to the new height
-          const text = selectedEntity.write(comps.Text)
-          text.fontSize = startFontSize * (block.height / startHeight)
+        if (handleVec[0] === 0) {
+          block.top = top
+          block.height = height
+        } else if (handleVec[1] === 0) {
+          block.left = left
+          block.width = width
         }
+      } else {
+        block.left = left
+        block.top = top
+        block.width = width
+        block.height = height
       }
     }
   }
