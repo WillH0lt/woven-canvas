@@ -1,5 +1,4 @@
 import { InfiniteCanvas, TextAlign as TextAlignKind } from '@infinitecanvas/core'
-import type { Text } from '@infinitecanvas/core/components'
 import { BaseEditable } from '@infinitecanvas/core/elements'
 import { Editor } from '@tiptap/core'
 import Bold from '@tiptap/extension-bold'
@@ -14,10 +13,11 @@ import Underline from '@tiptap/extension-underline'
 import { css, html, nothing } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
+import type { Text } from '../components'
 
 import type { Snapshot } from '@infinitecanvas/core'
 import { unsafeHTML } from 'lit/directives/unsafe-html.js'
-import { alignments } from '../TextEditorExtension'
+import { alignments } from '../TextExtension'
 
 @customElement('ic-text')
 export class TextElement extends BaseEditable {
@@ -26,23 +26,8 @@ export class TextElement extends BaseEditable {
   @property({ type: Object })
   text!: Text
 
-  @property({ type: Number }) pointerStartX?: number
-  @property({ type: Number }) pointerStartY?: number
-
   @property({ type: Boolean })
   editing = false
-
-  updated(changedProperties: Map<string, any>) {
-    super.updated(changedProperties)
-
-    if (changedProperties.has('editing')) {
-      if (this.editing) {
-        this.startEditing()
-      } else {
-        this.endEditing()
-      }
-    }
-  }
 
   @query('#editorContainer') editorContainer: HTMLElement | undefined
 
@@ -68,11 +53,43 @@ export class TextElement extends BaseEditable {
     }
   `
 
-  private async startEditing(): Promise<void> {
+  updated(changedProperties: Map<string, any>) {
+    super.updated(changedProperties)
+
+    if (changedProperties.has('editing')) {
+      if (this.editing) {
+        this.startEditing()
+      } else {
+        this.endEditing()
+      }
+    }
+  }
+
+  public connectedCallback(): void {
+    super.connectedCallback()
+
     this.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Control' || event.key === 'Meta') return
       event.stopPropagation()
     })
+  }
+
+  private handlePointerEnter(event: PointerEvent): void {
+    const position = this._editor?.view.posAtCoords({
+      left: event.clientX,
+      top: event.clientY,
+    })
+
+    // set caret position to pointer
+    this._editor
+      ?.chain()
+      .focus()
+      .setTextSelection(position?.pos ?? 0)
+      .run()
+  }
+
+  private async startEditing(): Promise<void> {
+    this.addEventListener('pointerenter', this.handlePointerEnter.bind(this), { once: true })
 
     await this.updateComplete
 
@@ -105,18 +122,7 @@ export class TextElement extends BaseEditable {
 
     this.syncStore()
 
-    if (this.pointerStartX !== undefined && this.pointerStartY !== undefined) {
-      const position = this._editor.view.posAtCoords({
-        left: this.pointerStartX,
-        top: this.pointerStartY,
-      })
-
-      this._editor
-        .chain()
-        .focus()
-        .setTextSelection(position?.pos ?? 0)
-        .run()
-    }
+    this._editor?.chain().focus().setTextSelection(0).run()
   }
 
   private endEditing(): void {

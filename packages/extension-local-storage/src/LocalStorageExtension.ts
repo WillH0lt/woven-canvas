@@ -6,14 +6,8 @@ import { LocalDB } from './LocalDB'
 import * as sys from './systems'
 import { LocalStorageOptions, type LocalStorageResources } from './types'
 
-export class LocalStorageExtension extends BaseExtension {
-  public name = 'local-storage'
-
+class LocalStorageExtensionClass extends BaseExtension {
   private initialEntities: Record<string, Record<string, any>> = {}
-
-  constructor(private readonly options: LocalStorageOptions = {}) {
-    super()
-  }
 
   public async preBuild(resources: BaseResources): Promise<void> {
     const options = LocalStorageOptions.parse(this.options)
@@ -48,3 +42,5 @@ export class LocalStorageExtension extends BaseExtension {
     this.initialEntities = {}
   }
 }
+
+export const LocalStorageExtension = (options: LocalStorageOptions = {}) => new LocalStorageExtensionClass(options)

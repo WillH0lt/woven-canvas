@@ -1,6 +1,7 @@
 import type { Entity } from '@lastolivegames/becsy'
 import type { Emitter } from 'strict-event-emitter'
 import { z } from 'zod/v4'
+import { BaseExtension } from './BaseExtension'
 import type { History, Snapshot } from './History'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
@@ -39,7 +40,7 @@ export type CommandMap = {
   [commandKind: string]: Array<unknown>
 }
 
-const BlockDef = z.object({
+export const BlockDef = z.object({
   tag: z.string(),
   canEdit: z.boolean().default(false),
   resizeMode: z.enum(['scale', 'text']).default('scale'), // TODO add 'free'
@@ -49,6 +50,8 @@ const BlockDef = z.object({
 })
 
 export type BlockDef = z.infer<typeof BlockDef>
+
+export type BlockDefInput = z.input<typeof BlockDef>
 
 const Theme = z.object({
   gray100: z.string().default('#f8f9f9'),
@@ -69,9 +72,14 @@ const Theme = z.object({
 export type Theme = z.infer<typeof Theme>
 
 export const Options = z.object({
+  extensions: z
+    .array(
+      z.union([z.instanceof(BaseExtension), z.custom<(args: any) => BaseExtension>((fn) => typeof fn === 'function')]),
+    )
+    .default([]),
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
-  blockDefs: z.array(BlockDef).default([]),
+  customBlocks: z.array(BlockDef).default([]),
   theme: Theme.default(Theme.parse({})),
 })
 
@@ -82,7 +90,7 @@ export interface BaseResources {
   blockContainer: HTMLDivElement
   uid: string
   history: History
-  blockDefs: z.infer<typeof BlockDef>[]
+  blockDefs: Record<string, z.infer<typeof BlockDef>>
 }
 
 export enum TextAlign {

@@ -3,9 +3,7 @@ import type { BaseResources } from '@infinitecanvas/core'
 import { System } from '@lastolivegames/becsy'
 import * as sys from './systems'
 
-export class ControlsExtension extends BaseExtension {
-  public name = 'controls'
-
+class ControlsExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     this._captureGroup = System.group(
       sys.CaptureZoom,
@@ -17,3 +15,5 @@ export class ControlsExtension extends BaseExtension {
     )
   }
 }
+
+export const ControlsExtension = () => new ControlsExtensionClass()

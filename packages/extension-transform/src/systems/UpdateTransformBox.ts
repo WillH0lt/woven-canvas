@@ -351,12 +351,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     const transformBoxEntity = this.transformBoxes.current[0]
-
-    if (!transformBoxEntity) {
-      console.warn('No transform box found to show')
-      return
-    }
-
     const transformBox = transformBoxEntity.read(TransformBox)
     for (const handleEntity of transformBox.handles) {
       if (handleEntity.has(comps.Opacity)) {
@@ -372,11 +366,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
   private onBlockUpdate(blockEntity: Entity, updates: Partial<comps.Block>): void {
     const block = blockEntity.read(comps.Block)
-    // check if the position has changed
-    if (block.left === updates.left && block.top === updates.top) {
-      // No position change
-      return
-    }
 
     const position = {
       left: updates.left ?? block.left,

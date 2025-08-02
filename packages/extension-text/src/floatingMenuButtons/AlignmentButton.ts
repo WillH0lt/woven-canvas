@@ -4,7 +4,7 @@ import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { svg } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { alignments } from '../TextEditorExtension'
+import { alignments } from '../TextExtension'
 
 const icons = {
   [TextAlign.Left]: svg`

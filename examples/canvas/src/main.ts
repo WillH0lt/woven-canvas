@@ -7,8 +7,8 @@ import { type Block, Color } from '@infinitecanvas/core/components'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
-// import { MultiplayerExtension } from '@infinitecanvas/extension-multiplayer'
-import { Text, TextEditorExtension, TextEditorFloatingMenuButtons } from '@infinitecanvas/extension-text'
+// import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
+import { Text, TextEditorFloatingMenuButtons, TextExtension } from '@infinitecanvas/extension-text'
 import { TransformExtension } from '@infinitecanvas/extension-transform'
 
 const lorem = new LoremIpsum({
@@ -43,39 +43,30 @@ let infiniteCanvas: InfiniteCanvas | null = null
 async function initializeCanvas(container: HTMLDivElement) {
   await loadFont('Figtree')
 
-  infiniteCanvas = await InfiniteCanvas.New(
-    [
-      new InputExtension(),
-      new ControlsExtension(),
-      new TransformExtension(),
-      new TextEditorExtension(),
-      // new MultiplayerExtension(),
-      new LocalStorageExtension(),
+  infiniteCanvas = await InfiniteCanvas.New({
+    extensions: [
+      InputExtension,
+      ControlsExtension,
+      TransformExtension,
+      TextExtension,
+      // MultiplayerExtension,
+      LocalStorageExtension,
     ],
-    {
-      blockDefs: [
-        {
-          tag: 'ic-shape',
-          floatingMenu: [floatingMenuButtonColor, ...floatingMenuStandardButtons],
-          components: [Color],
-        },
-        {
-          tag: 'ic-text',
-          canEdit: true,
-          resizeMode: 'text',
-          editedFloatingMenu: TextEditorFloatingMenuButtons,
-          components: [Text],
-        },
-        {
-          tag: 'ic-sticky-note',
-          canEdit: true,
-          floatingMenu: [floatingMenuButtonColor, ...floatingMenuStandardButtons],
-          editedFloatingMenu: TextEditorFloatingMenuButtons,
-          components: [Color, Text],
-        },
-      ],
-    },
-  )
+    customBlocks: [
+      {
+        tag: 'ic-shape',
+        floatingMenu: [floatingMenuButtonColor, ...floatingMenuStandardButtons],
+        components: [Color],
+      },
+      {
+        tag: 'ic-sticky-note',
+        canEdit: true,
+        floatingMenu: [floatingMenuButtonColor, ...floatingMenuStandardButtons],
+        editedFloatingMenu: TextEditorFloatingMenuButtons,
+        components: [Color, Text],
+      },
+    ],
+  })
 
   container.appendChild(infiniteCanvas.domElement)
 
@@ -166,7 +157,7 @@ document.querySelector<HTMLDivElement>('#textBtn')!.addEventListener('click', ()
 document.querySelector<HTMLDivElement>('#stickyNoteBtn')!.addEventListener('click', () => {
   const left = Math.random() * window.innerWidth
   const top = Math.random() * window.innerHeight
-  const block = generateBlock({ tag: 'ic-sticky-note', left, top, width: 400, height: 400 })
+  const block = generateBlock({ tag: 'ic-sticky-note', left, top, width: 300, height: 300 })
 
   const color = new Color()
   color.red = Math.floor(Math.random() * 256)
@@ -174,6 +165,7 @@ document.querySelector<HTMLDivElement>('#stickyNoteBtn')!.addEventListener('clic
   color.blue = Math.floor(Math.random() * 256)
 
   const text = new Text()
+  text.fontSize = 40
   text.content = lorem.generateSentences(1)
 
   infiniteCanvas?.commands.core.addBlock(block, [color, text])

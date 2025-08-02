@@ -140,7 +140,7 @@ export class RenderHtml extends BaseSystem {
     element.blockId = blockId
     element.setAttribute(RANK_ATTRIBUTE, block.rank)
 
-    const blockDef = this.resources.blockDefs.find((def) => def.tag === block.tag)
+    const blockDef = this.resources.blockDefs[block.tag]
     if (blockDef) {
       for (const Comp of blockDef.components) {
         const entities = this.currentQueries.get(Comp)?.current

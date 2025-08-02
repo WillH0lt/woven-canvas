@@ -14,7 +14,8 @@ import { type Signal, signal } from '@preact/signals-core'
 
 import './elements'
 import './floatingMenuButtons'
-import { Text } from './components'
+import { TextEditorFloatingMenuButtons } from './buttonCatelog'
+import { Text as TextComp } from './components'
 import { TextElement } from './elements'
 import * as sys from './systems'
 
@@ -42,13 +43,21 @@ declare module '@infinitecanvas/core' {
 
 export const alignments = [TextAlign.Left, TextAlign.Center, TextAlign.Right, TextAlign.Justify]
 
-export class TextEditorExtension extends BaseExtension {
-  public name = 'text'
+class TextExtensionClass extends BaseExtension {
+  public static blockDefs = [
+    {
+      tag: 'ic-text',
+      canEdit: true,
+      resizeMode: 'text' as const,
+      editedFloatingMenu: TextEditorFloatingMenuButtons,
+      components: [TextComp],
+    },
+  ]
 
   private blockContainer!: HTMLDivElement
 
   public async preBuild(resources: BaseResources): Promise<void> {
-    ComponentRegistry.instance.registerComponent(Text)
+    ComponentRegistry.instance.registerComponent(TextComp)
     this.blockContainer = resources.blockContainer
 
     this._postUpdateGroup = System.group(sys.UpdateTextResize, { resources })
@@ -76,28 +85,23 @@ export class TextEditorExtension extends BaseExtension {
       textEditor: {
         toggleBold: () => {
           const element = this.#getEditableTextElement()
-          if (!element) return
-          element.toggleBold()
+          element?.toggleBold()
         },
         toggleItalic: () => {
           const element = this.#getEditableTextElement()
-          if (!element) return
-          element.toggleItalic()
+          element?.toggleItalic()
         },
         toggleUnderline: () => {
           const element = this.#getEditableTextElement()
-          if (!element) return
-          element.toggleUnderline()
+          element?.toggleUnderline()
         },
         setAlignment: (alignment: TextAlign) => {
           const element = this.#getEditableTextElement()
-          if (!element) return
-          element.setAlignment(alignment)
+          element?.setAlignment(alignment)
         },
         setColor: (color: string) => {
           const element = this.#getEditableTextElement()
-          if (!element) return
-          element.setColor(color)
+          element?.setColor(color)
         },
       },
     }
@@ -115,3 +119,5 @@ export class TextEditorExtension extends BaseExtension {
     }
   }
 }
+
+export const TextExtension = () => new TextExtensionClass()

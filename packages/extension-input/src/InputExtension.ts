@@ -3,9 +3,7 @@ import { System } from '@lastolivegames/becsy'
 
 import * as sys from './systems/index.js'
 
-export class InputExtension extends BaseExtension {
-  public name = 'input'
-
+class InputExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     this._inputGroup = System.group(
       sys.InputScreen,
@@ -19,3 +17,5 @@ export class InputExtension extends BaseExtension {
     )
   }
 }
+
+export const InputExtension = () => new InputExtensionClass()

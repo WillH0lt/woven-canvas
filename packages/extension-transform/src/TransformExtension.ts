@@ -4,12 +4,12 @@ import { System } from '@lastolivegames/becsy'
 
 import * as sys from './systems'
 
-export class TransformExtension extends BaseExtension {
-  public name = 'transform'
-
+class TransformExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     this._captureGroup = System.group(sys.CaptureSelect, { resources }, sys.CaptureTransformBox, { resources })
 
     this._updateGroup = System.group(sys.UpdateSelection, { resources }, sys.UpdateTransformBox, { resources })
   }
 }
+
+export const TransformExtension = () => new TransformExtensionClass()

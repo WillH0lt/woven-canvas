@@ -119,7 +119,7 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
   }
 
   protected getBlockDef(tag: string): BlockDef | undefined {
-    return this.resources.blockDefs.find((def) => def.tag === tag)
+    return this.resources.blockDefs[tag]
   }
 
   protected getBlockElementById(blockId: string): HTMLElement | null {

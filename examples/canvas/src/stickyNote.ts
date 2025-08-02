@@ -28,9 +28,9 @@ export class StickyNoteElement extends BaseEditable {
       aspect-ratio: 1 / 1;
       box-sizing: border-box;
       box-shadow:
-        rgba(15, 23, 31, 0.6) 0px 4px 5px -6px,
-        rgba(15, 23, 31, 0.4) 0px 11px 13px -12px,
-        rgba(15, 23, 44, 0.02) 0px 48px 10px -12px inset;
+        rgba(16, 24, 32, 0.65) 0px 4px 5px -6px,
+        rgba(16, 24, 32, 0.45) 0px 11px 13px -12px,
+        rgba(16, 24, 45, 0.025) 0px 45px 10px -12px inset;
     }
   `
 

@@ -2,13 +2,14 @@ import { type SystemGroup, World } from '@lastolivegames/becsy'
 import type { z } from 'zod/v4'
 
 import { Emitter } from 'strict-event-emitter'
-import type { BaseExtension } from './BaseExtension'
+import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import { CoreExtension } from './CoreExtension'
 import { History } from './History'
 import { State } from './State'
 import {
   type BaseResources,
+  BlockDef,
   EmitterEventKind,
   type EmitterEvents,
   type ICommands,
@@ -43,9 +44,21 @@ export class InfiniteCanvas {
 
   // private extensions: Extension[]
 
-  public static async New(extensions: BaseExtension[], options: z.input<typeof Options> = {}): Promise<InfiniteCanvas> {
+  public static async New(options: z.input<typeof Options> = {}): Promise<InfiniteCanvas> {
     const parsedOptions = Options.parse(options)
 
+    const extensions = parsedOptions.extensions.map((ext) => {
+      if (ext instanceof BaseExtension) {
+        return ext
+      }
+      if (typeof ext === 'function') {
+        return ext()
+      }
+
+      throw new Error(`Invalid extension: ${ext}`)
+    })
+
+    // Create the main container element
     const domElement = document.createElement('div')
     domElement.id = 'infinite-canvas'
     domElement.style.width = '100%'
@@ -53,6 +66,7 @@ export class InfiniteCanvas {
     domElement.style.overflow = 'hidden'
     domElement.tabIndex = 0
 
+    // create the block container which acts as the camera viewport and holds all blocks
     const blockContainer = document.createElement('div')
     blockContainer.style.pointerEvents = 'none'
     blockContainer.style.userSelect = 'none'
@@ -62,19 +76,38 @@ export class InfiniteCanvas {
     blockContainer.style.position = 'relative'
     domElement.appendChild(blockContainer)
 
+    // Register block definitions from extensions and options
+    const blockDefs: Record<string, BlockDef> = {}
+    for (const ext of extensions) {
+      console.log(ext)
+      for (const blockDef of (ext.constructor as typeof BaseExtension).blockDefs) {
+        blockDefs[blockDef.tag] = BlockDef.parse(blockDef)
+      }
+    }
+    for (const blockDef of parsedOptions.customBlocks) {
+      blockDefs[blockDef.tag] = blockDef
+    }
+
+    // Register components for each block definition
+    for (const blockDef of Object.values(blockDefs)) {
+      for (const component of blockDef.components) {
+        ComponentRegistry.instance.registerComponent(component)
+      }
+    }
+
     const resources = {
       domElement,
       blockContainer,
+      blockDefs,
       uid: crypto.randomUUID(),
       history: new History(),
-      blockDefs: parsedOptions.blockDefs,
     }
 
     const emitter = new Emitter<EmitterEvents>()
 
     const state = new State()
 
-    extensions.push(new CoreExtension(emitter, state))
+    extensions.unshift(new CoreExtension(emitter, state))
 
     await Promise.all(extensions.map((ext) => ext.preBuild(resources)))
 
@@ -113,12 +146,6 @@ export class InfiniteCanvas {
     ]
 
     scheduleGroups(orderedGroups)
-
-    for (const blockDef of parsedOptions.blockDefs) {
-      for (const component of blockDef.components) {
-        ComponentRegistry.instance.registerComponent(component)
-      }
-    }
 
     const world = await World.create({
       defs: [...orderedGroups, ...ComponentRegistry.instance.components],

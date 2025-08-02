@@ -1,10 +1,12 @@
 import type { System, SystemGroup } from '@lastolivegames/becsy'
 
 import type { State } from './State'
-import type { BaseResources, CommandArgs, ICommands, IStore, SendCommandFn } from './types'
+import type { BaseResources, BlockDefInput, CommandArgs, ICommands, IStore, SendCommandFn } from './types'
 
-export abstract class BaseExtension {
-  public name = 'base'
+export class BaseExtension<Options = any> {
+  public static blockDefs: BlockDefInput[] = []
+
+  constructor(public options: Partial<Options> = {}) {}
 
   // == Input Groups ==
   protected _preInputGroup: SystemGroup | null = null
