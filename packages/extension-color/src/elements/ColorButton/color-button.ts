@@ -1,15 +1,15 @@
+import { InfiniteCanvas } from '@infinitecanvas/core'
+import { BaseElement } from '@infinitecanvas/core/elements'
 import { SignalWatcher } from '@lit-labs/preact-signals'
 import { html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { InfiniteCanvas } from '../../InfiniteCanvas'
-import { colorToHex } from '../../helpers'
-import { BaseElement } from '../base'
+import { colorToHex } from '../helpers/math'
 
 @customElement('ic-color-button')
 export class ColorButtonElement extends SignalWatcher(BaseElement) {
   render() {
-    const color = InfiniteCanvas.instance?.store.core.colorById(this.blockId)
+    const color = InfiniteCanvas.instance?.store.color.colorById(this.blockId)
     if (!color?.value) {
       return nothing
     }

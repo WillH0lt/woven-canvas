@@ -1,14 +1,16 @@
 import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
-import './stickyNote'
-import { InfiniteCanvas, floatingMenuButtonColor, floatingMenuStandardButtons } from '@infinitecanvas/core'
-import { type Block, Color } from '@infinitecanvas/core/components'
+import '../../../packages/extension-sticky-note/src/elements/StickyNote'
+import { InfiniteCanvas } from '@infinitecanvas/core'
+import type { Block } from '@infinitecanvas/core/components'
+import { Color, ColorExtension } from '@infinitecanvas/extension-color'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
 // import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
-import { Text, TextEditorFloatingMenuButtons, TextExtension } from '@infinitecanvas/extension-text'
+import { StickyNote, StickyNoteExtension, VerticalAlign } from '@infinitecanvas/extension-sticky-note'
+import { Text, TextExtension } from '@infinitecanvas/extension-text'
 import { TransformExtension } from '@infinitecanvas/extension-transform'
 
 const lorem = new LoremIpsum({
@@ -26,9 +28,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="container" class="absolute inset-0"></div>
 
   <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 p-4 bg-white rounded shadow flex gap-4 cursor-pointer">
-    <button id="blockBtn" class="bg-amber-300 p-2 rounded">
-      block
-    </button>
     <button id="textBtn" class="bg-amber-300 p-2 rounded">
       text
     </button>
@@ -49,22 +48,10 @@ async function initializeCanvas(container: HTMLDivElement) {
       ControlsExtension,
       TransformExtension,
       TextExtension,
+      ColorExtension,
+      StickyNoteExtension,
       // MultiplayerExtension,
       LocalStorageExtension,
-    ],
-    customBlocks: [
-      {
-        tag: 'ic-shape',
-        floatingMenu: [floatingMenuButtonColor, ...floatingMenuStandardButtons],
-        components: [Color],
-      },
-      {
-        tag: 'ic-sticky-note',
-        canEdit: true,
-        floatingMenu: [floatingMenuButtonColor, ...floatingMenuStandardButtons],
-        editedFloatingMenu: TextEditorFloatingMenuButtons,
-        components: [Color, Text],
-      },
     ],
   })
 
@@ -133,17 +120,6 @@ document.addEventListener('keydown', (event) => {
   }
 })
 
-document.querySelector<HTMLDivElement>('#blockBtn')!.addEventListener('click', () => {
-  const left = Math.random() * window.innerWidth
-  const top = Math.random() * window.innerHeight
-  const block = generateBlock({ tag: 'ic-shape', left, top })
-  const color = new Color()
-  color.red = Math.floor(Math.random() * 256)
-  color.green = Math.floor(Math.random() * 256)
-  color.blue = Math.floor(Math.random() * 256)
-  infiniteCanvas?.commands.core.addBlock(block, [color])
-})
-
 document.querySelector<HTMLDivElement>('#textBtn')!.addEventListener('click', () => {
   const left = Math.random() * window.innerWidth
   const top = Math.random() * window.innerHeight
@@ -168,7 +144,10 @@ document.querySelector<HTMLDivElement>('#stickyNoteBtn')!.addEventListener('clic
   text.fontSize = 40
   text.content = lorem.generateSentences(1)
 
-  infiniteCanvas?.commands.core.addBlock(block, [color, text])
+  const stickyNote = new StickyNote()
+  stickyNote.verticalAlign = VerticalAlign.Top
+
+  infiniteCanvas?.commands.core.addBlock(block, [color, text, stickyNote])
 })
 
 function generateBlock(block: Partial<Block>): Partial<Block> {

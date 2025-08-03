@@ -1,4 +1,4 @@
-import type { Component } from './Component'
+import type { BaseComponent } from './BaseComponent'
 
 export class ComponentRegistry {
   private static _instance: ComponentRegistry | null = null
@@ -10,15 +10,15 @@ export class ComponentRegistry {
     return ComponentRegistry._instance
   }
 
-  private readonly _components: (new () => Component)[] = []
+  private readonly _components: (new () => BaseComponent)[] = []
 
   private constructor() {}
 
-  public get components(): (new () => Component)[] {
+  public get components(): (new () => BaseComponent)[] {
     return Object.values(this._components)
   }
 
-  public registerComponent(component: new () => Component): void {
+  public registerComponent(component: new () => BaseComponent): void {
     if (!this._components.includes(component)) {
       this._components.push(component)
     }

@@ -1,9 +1,8 @@
+import { BaseComponent } from '@infinitecanvas/core'
 import { Type, component, field } from '@lastolivegames/becsy'
 
-import { Component } from '../Component.js'
-
 @component
-export class Color extends Component {
+export class Color extends BaseComponent {
   @field.uint8 declare red: number
   @field.uint8 declare green: number
   @field.uint8 declare blue: number

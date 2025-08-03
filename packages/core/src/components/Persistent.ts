@@ -1,8 +1,8 @@
 import { component, field } from '@lastolivegames/becsy'
-import { Component } from '../Component'
+import { BaseComponent } from '../BaseComponent'
 
 @component
-export class Persistent extends Component {
+export class Persistent extends BaseComponent {
   static addToHistory = false
 
   @field.dynamicString(36) public declare id: string

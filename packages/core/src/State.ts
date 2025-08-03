@@ -1,12 +1,12 @@
 import type { Entity } from '@lastolivegames/becsy'
 import { type Signal, signal } from '@preact/signals-core'
-import type { Component } from './Component'
+import type { BaseComponent } from './BaseComponent'
 import { Block } from './components'
 
 export class State {
   private readonly state = new Map<string, Signal<Record<string, Signal<any>>>>()
 
-  public addComponents(Comp: new () => Component, entities: readonly Entity[]): void {
+  public addComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
     const signalComponents: Record<string, Signal<any>> = {}
     for (const entity of entities) {
       const id = entity.read(Block).id
@@ -21,7 +21,7 @@ export class State {
     }
   }
 
-  public updateComponents(Component: new () => Component, entities: readonly Entity[]): void {
+  public updateComponents(Component: new () => BaseComponent, entities: readonly Entity[]): void {
     const components = this.getComponents(Component)
     for (const entity of entities) {
       const id = entity.read(Block).id
@@ -34,7 +34,7 @@ export class State {
     }
   }
 
-  public removeComponents(Comp: new () => Component, entities: readonly Entity[]): void {
+  public removeComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
     const components = this.getComponents(Comp)
     const entityIds = new Set(entities.map((entity) => entity.read(Block).id))
     components.value = Object.fromEntries(Object.entries(components.value).filter(([key]) => !entityIds.has(key)))

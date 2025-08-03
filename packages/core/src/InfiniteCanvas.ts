@@ -52,11 +52,15 @@ export class InfiniteCanvas {
         return ext
       }
       if (typeof ext === 'function') {
-        return ext()
+        return ext({})
       }
 
       throw new Error(`Invalid extension: ${ext}`)
     })
+
+    for (const ext of extensions) {
+      ext.checkDependencies(extensions)
+    }
 
     // Create the main container element
     const domElement = document.createElement('div')
@@ -76,11 +80,15 @@ export class InfiniteCanvas {
     blockContainer.style.position = 'relative'
     domElement.appendChild(blockContainer)
 
+    const emitter = new Emitter<EmitterEvents>()
+    const state = new State()
+    extensions.unshift(new CoreExtension(emitter, state))
+
     // Register block definitions from extensions and options
     const blockDefs: Record<string, BlockDef> = {}
     for (const ext of extensions) {
-      console.log(ext)
       for (const blockDef of (ext.constructor as typeof BaseExtension).blockDefs) {
+        console.log('Registering block def:', blockDef)
         blockDefs[blockDef.tag] = BlockDef.parse(blockDef)
       }
     }
@@ -102,12 +110,6 @@ export class InfiniteCanvas {
       uid: crypto.randomUUID(),
       history: new History(),
     }
-
-    const emitter = new Emitter<EmitterEvents>()
-
-    const state = new State()
-
-    extensions.unshift(new CoreExtension(emitter, state))
 
     await Promise.all(extensions.map((ext) => ext.preBuild(resources)))
 
@@ -154,7 +156,7 @@ export class InfiniteCanvas {
     })
 
     world.build((system) => {
-      extensions.map((ext) => ext.build(system))
+      extensions.map((ext) => ext.build(system, resources))
     })
 
     const infiniteCanvas = new InfiniteCanvas(extensions, world, emitter, state, resources, parsedOptions)

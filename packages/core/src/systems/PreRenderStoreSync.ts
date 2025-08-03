@@ -1,16 +1,16 @@
 import { type Query, System } from '@lastolivegames/becsy'
 import { batch } from '@preact/signals-core'
-import type { Component } from '../Component'
+import type { BaseComponent } from '../BaseComponent'
 import { ComponentRegistry } from '../ComponentRegistry'
 import { Block } from '../components'
 import type { CoreResources } from '../types'
 
 export class PreRenderStoreSync extends System {
-  private readonly addedQueries: Map<new () => Component, Query> = new Map()
+  private readonly addedQueries: Map<new () => BaseComponent, Query> = new Map()
 
-  private readonly changedQueries: Map<new () => Component, Query> = new Map()
+  private readonly changedQueries: Map<new () => BaseComponent, Query> = new Map()
 
-  private readonly removedQueries: Map<new () => Component, Query> = new Map()
+  private readonly removedQueries: Map<new () => BaseComponent, Query> = new Map()
 
   protected declare readonly resources: CoreResources
 

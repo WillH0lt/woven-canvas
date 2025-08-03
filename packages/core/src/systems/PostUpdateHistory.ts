@@ -1,7 +1,7 @@
 import type { Query } from '@lastolivegames/becsy'
 
+import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
-import type { Component } from '../Component'
 import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
 import { applyDiff, uuidToNumber } from '../helpers'
@@ -9,11 +9,11 @@ import { CoreCommand, type CoreCommandArgs, type CoreResources } from '../types'
 import { PostUpdateDeleter } from './PostUpdateDeleter'
 
 export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
-  private readonly addedQueries = new Map<new () => Component, Query>()
+  private readonly addedQueries = new Map<new () => BaseComponent, Query>()
 
-  private readonly changedQueries = new Map<new () => Component, Query>()
+  private readonly changedQueries = new Map<new () => BaseComponent, Query>()
 
-  private readonly removedQueries = new Map<new () => Component, Query>()
+  private readonly removedQueries = new Map<new () => BaseComponent, Query>()
 
   private readonly entities = this.query(
     (q) => q.current.with(comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Persistent).id)).usingAll.write,
@@ -29,7 +29,7 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
     const Components = ComponentRegistry.instance.components
 
     for (const Comp of Components) {
-      if (!(Comp.prototype.constructor as typeof Component).addToHistory) continue
+      if (!(Comp.prototype.constructor as typeof BaseComponent).addToHistory) continue
 
       const added = this.query((q) => q.added.with(comps.Persistent, Comp))
       this.addedQueries.set(Comp, added)

@@ -1,15 +1,24 @@
 import { BaseExtension } from '@infinitecanvas/core'
 import type { BaseResources } from '@infinitecanvas/core'
-import { System } from '@lastolivegames/becsy'
 
 import * as sys from './systems'
+import './elements'
+import { TransformOptions, type TransformResources } from './types'
 
 class TransformExtensionClass extends BaseExtension {
-  public async preBuild(resources: BaseResources): Promise<void> {
-    this._captureGroup = System.group(sys.CaptureSelect, { resources }, sys.CaptureTransformBox, { resources })
+  constructor(public options: TransformOptions = {}) {
+    super()
+  }
 
-    this._updateGroup = System.group(sys.UpdateSelection, { resources }, sys.UpdateTransformBox, { resources })
+  public async preBuild(resources: BaseResources): Promise<void> {
+    const transformResources: TransformResources = {
+      ...resources,
+      ...TransformOptions.parse(this.options),
+    }
+
+    this._captureGroup = this.createGroup(transformResources, sys.CaptureSelect, sys.CaptureTransformBox)
+    this._updateGroup = this.createGroup(transformResources, sys.UpdateSelection, sys.UpdateTransformBox)
   }
 }
 
-export const TransformExtension = () => new TransformExtensionClass()
+export const TransformExtension = (options: TransformOptions = {}) => new TransformExtensionClass(options)

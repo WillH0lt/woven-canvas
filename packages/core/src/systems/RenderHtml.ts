@@ -1,28 +1,21 @@
 import type { Entity, Query } from '@lastolivegames/becsy'
 import { LexoRank } from 'lexorank'
 
+import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
-import type { Component } from '../Component'
 import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
 import type { BaseElement } from '../elements'
-import { binarySearchForId } from '../helpers/binarySearchForId'
+import { binarySearchForId, lowercaseFirstLetter } from '../helpers'
 import { uuidToNumber } from '../helpers/uuidToNumber'
 import type { CoreResources } from '../types'
 
 const RANK_ATTRIBUTE = 'data-ic-rank'
 
-function lowercaseFirstLetter(str: string): string {
-  if (typeof str !== 'string' || str.length === 0) {
-    return str
-  }
-  return str[0].toLowerCase() + str.slice(1)
-}
-
 export class RenderHtml extends BaseSystem {
-  private readonly currentQueries = new Map<new () => Component, Query>()
+  private readonly currentQueries = new Map<new () => BaseComponent, Query>()
 
-  private readonly changedQueries = new Map<new () => Component, Query>()
+  private readonly changedQueries = new Map<new () => BaseComponent, Query>()
 
   protected declare readonly resources: CoreResources
 
@@ -186,7 +179,7 @@ export class RenderHtml extends BaseSystem {
     element.style.opacity = `${opacity}`
   }
 
-  private updateElementComponentAttribute(element: HTMLElement, entity: Entity, Comp: new () => Component): void {
+  private updateElementComponentAttribute(element: HTMLElement, entity: Entity, Comp: new () => BaseComponent): void {
     const value = entity.read(Comp)
     const name = lowercaseFirstLetter(Comp.name)
     ;(element as any)[name] = value.serialize()

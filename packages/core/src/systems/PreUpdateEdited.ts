@@ -23,7 +23,6 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
       const element = this.resources.blockContainer.querySelector<BaseEditable>(`[id='${block.id}']`)
       if (!element) continue
       element.setAttribute('editing', 'true')
-      // element.editing = true
     }
 
     if (this.editedEntities.removed.length > 0) {
@@ -34,7 +33,7 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
       const element = this.resources.blockContainer.querySelector<BaseEditable>(`[id='${block.id}']`)
       if (!element) continue
       const snapshot = element.getSnapshot()
-      // element.editing = false
+
       element.removeAttribute('editing')
 
       this.emitCommand(CoreCommand.ApplySnapshot, snapshot)

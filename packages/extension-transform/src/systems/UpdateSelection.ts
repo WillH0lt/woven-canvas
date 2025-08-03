@@ -6,9 +6,11 @@ import type { Entity } from '@lastolivegames/becsy'
 import { SelectionBox } from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
 import { intersectAabb } from '../helpers'
-import { type SelectBlockOptions, TransformCommand, type TransformCommandArgs } from '../types'
+import { type SelectBlockOptions, TransformCommand, type TransformCommandArgs, type TransformResources } from '../types'
 
 export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
+  protected readonly resources!: TransformResources
+
   private readonly blocks = this.query(
     (q) =>
       q.current
@@ -19,7 +21,7 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
 
-  private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, comps.Color, SelectionBox).write)
+  private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, SelectionBox).write)
 
   public initialize(): void {
     this.addCommandListener(TransformCommand.AddSelectionBox, this.addSelectionBox.bind(this))
@@ -44,11 +46,8 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
       comps.Block,
       {
         id,
+        tag: this.resources.selectionBoxTag,
         rank: SELECTION_BOX_RANK,
-      },
-      comps.Color,
-      {
-        alpha: 128,
       },
       SelectionBox,
     )

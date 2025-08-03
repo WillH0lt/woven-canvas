@@ -14,10 +14,12 @@
   },
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
+    "@infinitecanvas/extension-color": "workspace:^",
     "@infinitecanvas/extension-controls": "workspace:^",
     "@infinitecanvas/extension-input": "workspace:^",
     "@infinitecanvas/extension-local-storage": "workspace:^",
     "@infinitecanvas/extension-multiplayer": "workspace:^",
+    "@infinitecanvas/extension-sticky-note": "workspace:^",
     "@infinitecanvas/extension-text": "workspace:^",
     "@infinitecanvas/extension-transform": "workspace:^",
     "@preact/signals-core": "^1.10.0",

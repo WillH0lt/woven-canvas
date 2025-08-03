@@ -1,10 +1,11 @@
-import { InfiniteCanvas, TextAlign } from '@infinitecanvas/core'
+import { InfiniteCanvas } from '@infinitecanvas/core'
 import { AbstractButtonElement } from '@infinitecanvas/core/elements'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { svg } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import { alignments } from '../TextExtension'
+import { TextAlign } from '../types'
 
 const icons = {
   [TextAlign.Left]: svg`
@@ -33,7 +34,7 @@ const icons = {
   `,
 }
 
-@customElement('ic-alignment-button')
+@customElement('ic-text-alignment-button')
 export class AlignmentButtonElement extends SignalWatcher(AbstractButtonElement) {
   protected viewbox = '0 0 448 512'
   protected icon = icons[TextAlign.Left] // Default icon, will be updated in connected
@@ -60,6 +61,6 @@ export class AlignmentButtonElement extends SignalWatcher(AbstractButtonElement)
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-alignment-button': AlignmentButtonElement
+    'ic-text-alignment-button': AlignmentButtonElement
   }
 }

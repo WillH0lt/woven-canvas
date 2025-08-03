@@ -1,5 +1,17 @@
+import type { BaseResources } from '@infinitecanvas/core'
 import type { Block } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
+import { z } from 'zod/v4'
+
+export const TransformOptions = z.object({
+  transformBoxTag: z.string().default('ic-transform-box'),
+  transformHandleTag: z.string().default('ic-transform-box-handle'),
+  selectionBoxTag: z.string().default('ic-selection-box'),
+})
+
+export type TransformOptions = z.input<typeof TransformOptions>
+
+export type TransformResources = BaseResources & z.Infer<typeof TransformOptions>
 
 export enum SelectionState {
   Idle = 'idle',

@@ -1,4 +1,5 @@
-import { InfiniteCanvas, TextAlign as TextAlignKind } from '@infinitecanvas/core'
+import { InfiniteCanvas } from '@infinitecanvas/core'
+import type { Snapshot } from '@infinitecanvas/core'
 import { BaseEditable } from '@infinitecanvas/core/elements'
 import { Editor } from '@tiptap/core'
 import Bold from '@tiptap/extension-bold'
@@ -13,11 +14,11 @@ import Underline from '@tiptap/extension-underline'
 import { css, html, nothing } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
-import type { Text } from '../components'
-
-import type { Snapshot } from '@infinitecanvas/core'
 import { unsafeHTML } from 'lit/directives/unsafe-html.js'
+
 import { alignments } from '../TextExtension'
+import type { Text } from '../components'
+import { TextAlign as TextAlignKind } from '../types'
 
 @customElement('ic-text')
 export class TextElement extends BaseEditable {
@@ -37,6 +38,7 @@ export class TextElement extends BaseEditable {
     :host {
       white-space: pre-wrap;
       word-break: break-word;
+      width: 100%;
     }
 
     p {

@@ -1,6 +1,8 @@
 import { LitElement, type SVGTemplateResult, html } from 'lit'
 import { property } from 'lit/decorators.js'
 
+import type { BaseComponent } from '../../BaseComponent'
+import type { Snapshot } from '../../History'
 import { style } from './abstract-button.style'
 
 export abstract class AbstractButtonElement extends LitElement {
@@ -8,6 +10,9 @@ export abstract class AbstractButtonElement extends LitElement {
 
   @property({ type: String })
   public blockId = ''
+
+  @property({ type: Object })
+  public snapshot!: Snapshot
 
   protected abstract viewbox: string
 
@@ -27,5 +32,10 @@ export abstract class AbstractButtonElement extends LitElement {
         </svg>
       </div>
     `
+  }
+
+  protected readSnapshot<T extends BaseComponent>(comp: new () => BaseComponent): T | undefined {
+    // @ts-ignore
+    return this.snapshot[this.blockId]?.[comp.name] as T | undefined
   }
 }

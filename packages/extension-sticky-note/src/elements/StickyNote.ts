@@ -1,19 +1,18 @@
 import type { Snapshot } from '@infinitecanvas/core'
-import type { Color } from '@infinitecanvas/core/components'
 import { BaseEditable } from '@infinitecanvas/core/elements'
+import type { Color } from '@infinitecanvas/extension-color'
 import type { Text, TextElement } from '@infinitecanvas/extension-text'
 
 import { css, html } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
+import type { StickyNote } from '../components'
+import { VerticalAlign } from '../types'
 
 @customElement('ic-sticky-note')
 export class StickyNoteElement extends BaseEditable {
   @query('#container') container!: HTMLElement
   @query('ic-text') textElement!: TextElement
-
-  @property()
-  public blockId!: string
 
   @property({ type: Object })
   public text!: Text
@@ -21,9 +20,13 @@ export class StickyNoteElement extends BaseEditable {
   @property({ type: Object })
   public color!: Color
 
+  @property({ type: Object })
+  public stickyNote!: StickyNote
+
   static styles = css`
     #container {
       width: 100%;
+      display: flex;
       padding: 8%;
       aspect-ratio: 1 / 1;
       box-sizing: border-box;
@@ -35,9 +38,17 @@ export class StickyNoteElement extends BaseEditable {
   `
 
   render() {
+    const alignStyle =
+      {
+        [VerticalAlign.Top]: 'flex-start',
+        [VerticalAlign.Center]: 'center',
+        [VerticalAlign.Bottom]: 'flex-end',
+      }[this.stickyNote.verticalAlign] || 'flex-start'
+
     return html`
       <div id="container" style=${styleMap({
         'background-color': `rgb(${this.color.red}, ${this.color.green}, ${this.color.blue})`,
+        'align-items': alignStyle,
       })}>
         <ic-text blockId=${this.blockId} .editing=${this.editing} .text=${this.text}></ic-text>
     </div>

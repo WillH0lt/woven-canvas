@@ -1,6 +1,7 @@
 import type { Entity } from '@lastolivegames/becsy'
 import type { Emitter } from 'strict-event-emitter'
 import { z } from 'zod/v4'
+import type { BaseComponent } from './BaseComponent'
 import { BaseExtension } from './BaseExtension'
 import type { History, Snapshot } from './History'
 import type { State } from './State'
@@ -36,15 +37,11 @@ export interface CoreResources extends BaseResources {
   menuContainer: HTMLDivElement
 }
 
-export type CommandMap = {
-  [commandKind: string]: Array<unknown>
-}
-
 export const BlockDef = z.object({
   tag: z.string(),
   canEdit: z.boolean().default(false),
   resizeMode: z.enum(['scale', 'text']).default('scale'), // TODO add 'free'
-  components: z.array(z.any()).default([]),
+  components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
   floatingMenu: z.array(Button).default(floatingMenuStandardButtons.map((btn) => Button.parse(btn))),
   editedFloatingMenu: z.array(Button).default([]),
 })
@@ -85,19 +82,14 @@ export const Options = z.object({
 
 export type Options = z.input<typeof Options>
 
+export type BlockDefMap = Record<string, z.infer<typeof BlockDef>>
+
 export interface BaseResources {
   domElement: HTMLElement
   blockContainer: HTMLDivElement
-  uid: string
   history: History
-  blockDefs: Record<string, z.infer<typeof BlockDef>>
-}
-
-export enum TextAlign {
-  Left = 'left',
-  Center = 'center',
-  Right = 'right',
-  Justify = 'justify',
+  blockDefs: BlockDefMap
+  uid: string
 }
 
 export type CommandArgs = Record<string, Array<unknown>>

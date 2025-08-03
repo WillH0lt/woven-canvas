@@ -8,22 +8,22 @@ const textColorButton = {
 }
 
 const boldButton = {
-  tag: 'ic-bold-button',
+  tag: 'ic-text-bold-button',
   tooltip: 'Bold',
 }
 
 const italicButton = {
-  tag: 'ic-italic-button',
+  tag: 'ic-text-italic-button',
   tooltip: 'Italic',
 }
 
 const underlineButton = {
-  tag: 'ic-underline-button',
+  tag: 'ic-text-underline-button',
   tooltip: 'Underline',
 }
 
 const alignmentButton = {
-  tag: 'ic-alignment-button',
+  tag: 'ic-text-alignment-button',
   tooltip: 'Alignment',
 }
 

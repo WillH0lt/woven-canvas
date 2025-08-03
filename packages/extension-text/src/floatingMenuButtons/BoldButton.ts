@@ -11,7 +11,7 @@ const boldIcon = svg`
   />
 `
 
-@customElement('ic-bold-button')
+@customElement('ic-text-bold-button')
 export class BoldButtonElement extends SignalWatcher(AbstractButtonElement) {
   protected viewbox = '0 0 384 512'
   protected icon = boldIcon
@@ -43,6 +43,6 @@ export class BoldButtonElement extends SignalWatcher(AbstractButtonElement) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-bold-button': BoldButtonElement
+    'ic-text-bold-button': BoldButtonElement
   }
 }

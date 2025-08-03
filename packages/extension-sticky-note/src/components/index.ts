@@ -1,0 +1,1 @@
+export { StickyNote } from './StickyNote'

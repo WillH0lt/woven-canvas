@@ -71,6 +71,9 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../../packages/core
+      '@infinitecanvas/extension-color':
+        specifier: workspace:^
+        version: link:../../packages/extension-color
       '@infinitecanvas/extension-controls':
         specifier: workspace:^
         version: link:../../packages/extension-controls
@@ -83,6 +86,9 @@ importers:
       '@infinitecanvas/extension-multiplayer':
         specifier: workspace:^
         version: link:../../packages/extension-multiplayer
+      '@infinitecanvas/extension-sticky-note':
+        specifier: workspace:^
+        version: link:../../packages/extension-sticky-note
       '@infinitecanvas/extension-text':
         specifier: workspace:^
         version: link:../../packages/extension-text
@@ -120,45 +126,9 @@ importers:
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
-      '@lit-labs/preact-signals':
-        specifier: ^1.0.3
-        version: 1.0.3
       '@preact/signals-core':
         specifier: ^1.10.0
         version: 1.10.0
-      '@tiptap/core':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/pm@3.0.7)
-      '@tiptap/extension-bold':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-color':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/extension-text-style@3.0.7)
-      '@tiptap/extension-document':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-history':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/extensions@3.0.1)
-      '@tiptap/extension-italic':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-paragraph':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-text':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-text-align':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-text-style':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-underline':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
       lexorank:
         specifier: ^1.0.5
         version: 1.0.5
@@ -168,15 +138,33 @@ importers:
       strict-event-emitter:
         specifier: ^0.5.1
         version: 0.5.1
-      tinycolor2:
-        specifier: ^1.6.0
-        version: 1.6.0
-      uuid:
-        specifier: ^11.1.0
-        version: 11.1.0
       xstate:
         specifier: ^5.19.4
         version: 5.19.4
+      zod:
+        specifier: ^3.25.36
+        version: 3.25.36
+
+  packages/extension-color:
+    dependencies:
+      '@infinitecanvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@lastolivegames/becsy':
+        specifier: ^0.15.5
+        version: 0.15.5
+      '@lit-labs/preact-signals':
+        specifier: ^1.0.3
+        version: 1.0.3
+      '@preact/signals-core':
+        specifier: ^1.10.0
+        version: 1.10.0
+      lit:
+        specifier: ^3.3.0
+        version: 3.3.0
+      tinycolor2:
+        specifier: ^1.6.0
+        version: 1.6.0
       zod:
         specifier: ^3.25.36
         version: 3.25.36
@@ -184,6 +172,9 @@ importers:
       '@types/tinycolor2':
         specifier: ^1.4.6
         version: 1.4.6
+      vitest:
+        specifier: ^3.1.4
+        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
 
   packages/extension-controls:
     dependencies:
@@ -245,6 +236,76 @@ importers:
         specifier: ^4.8.1
         version: 4.8.1
     devDependencies:
+      vitest:
+        specifier: ^3.1.4
+        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
+
+  packages/extension-sticky-note:
+    dependencies:
+      '@infinitecanvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@infinitecanvas/extension-color':
+        specifier: workspace:^
+        version: link:../extension-color
+      '@infinitecanvas/extension-text':
+        specifier: workspace:^
+        version: link:../extension-text
+      '@lastolivegames/becsy':
+        specifier: ^0.15.5
+        version: 0.15.5
+      '@lit-labs/preact-signals':
+        specifier: ^1.0.3
+        version: 1.0.3
+      '@preact/signals-core':
+        specifier: ^1.10.0
+        version: 1.10.0
+      '@tiptap/core':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/pm@3.0.7)
+      '@tiptap/extension-bold':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-color':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/extension-text-style@3.0.7)
+      '@tiptap/extension-document':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-history':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/extensions@3.0.1)
+      '@tiptap/extension-italic':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-paragraph':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-text':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-text-align':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-text-style':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-underline':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      lit:
+        specifier: ^3.3.0
+        version: 3.3.0
+      tinycolor2:
+        specifier: ^1.6.0
+        version: 1.6.0
+      zod:
+        specifier: ^3.25.36
+        version: 3.25.36
+    devDependencies:
+      '@types/tinycolor2':
+        specifier: ^1.4.6
+        version: 1.4.6
       vitest:
         specifier: ^3.1.4
         version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
@@ -3888,11 +3949,6 @@ packages:
     dependencies:
       punycode: 2.3.1
     dev: true
-
-  /uuid@11.1.0:
-    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
-    hasBin: true
-    dev: false
 
   /validate-npm-package-name@5.0.1:
     resolution: {integrity: sha512-OljLrQ9SQdOUqTaQxqL5dEfZWrXExyyWsozYlAWFawPVNuD83igl7uJD2RTkNMbniIYgt8l81eCJGIdQF7avLQ==}

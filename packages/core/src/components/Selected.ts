@@ -1,8 +1,8 @@
 import { component, field } from '@lastolivegames/becsy'
-import { Component } from '../Component'
+import { BaseComponent } from '../BaseComponent'
 
 @component
-export class Selected extends Component {
+export class Selected extends BaseComponent {
   static addToHistory = false
 
   @field.dynamicString(36) public declare selectedBy: string

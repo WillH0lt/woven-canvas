@@ -1,6 +1,6 @@
 export { Type, field, component } from '@lastolivegames/becsy'
 
-export abstract class Component {
+export abstract class BaseComponent {
   static schema: Record<string, any>
 
   static addToHistory = true
@@ -8,7 +8,7 @@ export abstract class Component {
   public serialize(): Record<string, any> {
     const data: Record<string, any> = {}
 
-    const schema = (this.constructor as typeof Component).schema ?? {}
+    const schema = (this.constructor as typeof BaseComponent).schema ?? {}
     for (const key in schema) {
       if (Object.hasOwn(schema, key)) {
         // @ts-ignore
@@ -21,7 +21,7 @@ export abstract class Component {
 
   public deserialize(data: Record<string, any>): void {
     for (const key in data) {
-      if (Object.hasOwn((this.constructor as typeof Component).schema ?? {}, key)) {
+      if (Object.hasOwn((this.constructor as typeof BaseComponent).schema ?? {}, key)) {
         // @ts-ignore
         this[key] = data[key]
       }

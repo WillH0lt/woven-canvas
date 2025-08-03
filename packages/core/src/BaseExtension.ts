@@ -1,12 +1,12 @@
-import type { System, SystemGroup } from '@lastolivegames/becsy'
+import { System, type SystemGroup } from '@lastolivegames/becsy'
 
 import type { State } from './State'
 import type { BaseResources, BlockDefInput, CommandArgs, ICommands, IStore, SendCommandFn } from './types'
 
-export class BaseExtension<Options = any> {
+export class BaseExtension {
   public static blockDefs: BlockDefInput[] = []
 
-  constructor(public options: Partial<Options> = {}) {}
+  public static dependsOn = new Set<string>()
 
   // == Input Groups ==
   protected _preInputGroup: SystemGroup | null = null
@@ -72,12 +72,31 @@ export class BaseExtension<Options = any> {
     return this._postRenderGroup
   }
 
+  public checkDependencies(dependencies: BaseExtension[]): void {
+    for (const dep of (this.constructor as typeof BaseExtension).dependsOn) {
+      if (!dependencies.some((d) => d.constructor.name.startsWith(dep))) {
+        console.warn(`Missing dependency for ${this.constructor.name}: ${dep}`)
+      }
+    }
+  }
+
+  protected createGroup(resources: BaseResources, ...systems: (new () => System)[]): SystemGroup {
+    const systemArray = []
+    for (const system of systems) {
+      systemArray.push(system)
+      systemArray.push({ resources })
+    }
+
+    // @ts-ignore
+    return System.group(...systemArray)
+  }
+
   public preBuild(_resources: BaseResources): Promise<void> {
     // implementation in subclasses
     return Promise.resolve()
   }
 
-  public build(_worldSystem: System): void {
+  public build(_worldSystem: System, _resources: BaseResources): void {
     // implementation in subclasses
   }
 

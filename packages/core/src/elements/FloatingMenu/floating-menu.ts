@@ -3,6 +3,7 @@ import { LitElement, type PropertyValues } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { html, unsafeStatic } from 'lit/static-html.js'
 
+import type { Snapshot } from '../../History'
 import type { Button } from '../../types'
 import { style } from './floating-menu.style'
 
@@ -15,6 +16,9 @@ export class FloatingMenuElement extends LitElement {
 
   @property({ type: String })
   public blockId = ''
+
+  @property({ type: Object })
+  public snapshot: Snapshot = {}
 
   private tooltipTimeout: number | null = null
   private isTooltipVisible = false
@@ -51,17 +55,18 @@ export class FloatingMenuElement extends LitElement {
   render() {
     return html`
       <div class="container" @mouseleave="${() => this.hideTooltip()}">
-        ${this.buttons.map(
-          (button) => html`
-            <${unsafeStatic(button.tag)}
-              ?divider="${button.tag === 'ic-divider'}"
-              style="width: ${button.width}px"
-              blockId="${this.blockId}"
-              @mouseenter="${() => this.onMouseEnter(button)}"
-              @click="${() => this.onClick(button)}"
-            />
-          `,
-        )}
+      ${this.buttons.map(
+        (button) => html`
+          <${unsafeStatic(button.tag)}
+            ?divider="${button.tag === 'ic-divider'}"
+            style="width: ${button.width}px"
+            blockId="${this.blockId}"
+            .snapshot="${this.snapshot}"
+            @mouseenter="${() => this.onMouseEnter(button)}"
+            @click="${() => this.onClick(button)}"
+          />
+        `,
+      )}
       </div>
       <div id="tooltip" role="tooltip"></div>
     `

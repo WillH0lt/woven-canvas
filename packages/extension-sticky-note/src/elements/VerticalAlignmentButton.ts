@@ -1,0 +1,47 @@
+import { InfiniteCanvas } from '@infinitecanvas/core'
+import { AbstractButtonElement } from '@infinitecanvas/core/elements'
+import { type PropertyValues, svg } from 'lit'
+import { customElement } from 'lit/decorators.js'
+import { StickyNote } from '../components'
+import { VerticalAlign } from '../types'
+
+const alignments = [VerticalAlign.Top, VerticalAlign.Center, VerticalAlign.Bottom]
+
+const icons = {
+  [VerticalAlign.Top]: svg`
+    <path d="M280-80v-640h120v640H280Zm280-240v-400h120v400H560ZM80-800v-80h800v80H80Z"/>
+  `,
+  [VerticalAlign.Center]: svg`
+    <path d="M280-120v-320H80v-80h200v-320h120v320h160v-200h120v200h200v80H680v200H560v-200H400v320H280Z"/>
+  `,
+  [VerticalAlign.Bottom]: svg`
+    <path d="M80-80v-80h800v80H80Zm200-160v-640h120v640H280Zm280 0v-400h120v400H560Z"/>
+  `,
+}
+
+@customElement('ic-sticky-note-vertical-alignment-button')
+export class VerticalAlignmentButtonElement extends AbstractButtonElement {
+  protected viewbox = '0 -960 960 960'
+  protected icon = icons[VerticalAlign.Top] // Default icon, will be updated in connected
+
+  public updated(_changedProperties: PropertyValues): void {
+    if (!_changedProperties.has('snapshot')) return
+
+    const stickyNote = this.readSnapshot<StickyNote>(StickyNote)
+    this.icon = icons[stickyNote?.verticalAlign ?? VerticalAlign.Top]
+    this.requestUpdate()
+  }
+
+  protected onClick(): void {
+    const stickyNote = this.readSnapshot<StickyNote>(StickyNote)
+    const currAlign = stickyNote?.verticalAlign ?? VerticalAlign.Top
+    const nextAlign = alignments[(alignments.indexOf(currAlign) + 1) % alignments.length]
+    InfiniteCanvas.instance?.commands.stickyNote.setVerticalAlign(this.blockId, nextAlign)
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'ic-sticky-note-vertical-alignment-button': VerticalAlignmentButtonElement
+  }
+}

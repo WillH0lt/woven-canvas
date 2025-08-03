@@ -1,8 +1,8 @@
+import { BaseElement } from '@infinitecanvas/core/elements'
 import { html, svg } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 
-import { BaseElement } from '../base'
 import { style } from './color-button-content.style'
 
 const chevronDownIcon = svg`

@@ -5,15 +5,12 @@ import * as sys from './systems/index.js'
 
 class InputExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
-    this._inputGroup = System.group(
+    this._inputGroup = this.createGroup(
+      resources,
       sys.InputScreen,
-      { resources },
       sys.InputPointer,
-      { resources },
       sys.InputKeyboard,
-      { resources },
       sys.InputMouse,
-      { resources },
     )
   }
 }

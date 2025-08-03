@@ -5,14 +5,7 @@ import * as sys from './systems'
 
 class ControlsExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
-    this._captureGroup = System.group(
-      sys.CaptureZoom,
-      { resources },
-      sys.CaptureScroll,
-      { resources },
-      sys.CapturePan,
-      { resources },
-    )
+    this._captureGroup = this.createGroup(resources, sys.CaptureZoom, sys.CaptureScroll, sys.CapturePan)
   }
 }
 

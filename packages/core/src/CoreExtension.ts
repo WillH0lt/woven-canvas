@@ -5,7 +5,7 @@ import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import type { Snapshot } from './History'
 import type { State } from './State'
-import { Block, Color, Persistent, Selected } from './components'
+import { Block, Persistent, Selected } from './components'
 import * as sys from './systems'
 import type {
   BaseResources,
@@ -18,7 +18,8 @@ import type {
 } from './types'
 import { CoreCommand } from './types'
 import './elements'
-import type { Component } from './Component'
+import type { BaseComponent } from './BaseComponent'
+import { floatingMenuStandardButtons } from './buttonCatalog'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -33,8 +34,7 @@ declare module '@infinitecanvas/core' {
       duplicateSelected: () => void
       removeSelected: () => void
       applySnapshot: (...snapshots: Snapshot[]) => void
-      addBlock: (block: Partial<Block>, components: Component[]) => void
-      setColor: (blockId: string, color: Color) => void
+      addBlock: (block: Partial<Block>, components: BaseComponent[]) => void
     }
   }
 
@@ -45,13 +45,18 @@ declare module '@infinitecanvas/core' {
       selectedBlockIds: ReadonlySignal<string[]>
       blockById: (id: string) => ReadonlySignal<Block | undefined>
       textById: (id: string) => ReadonlySignal<Text | undefined>
-      colorById: (id: string) => ReadonlySignal<Color | undefined>
     }
   }
 }
 
 export class CoreExtension extends BaseExtension {
-  public name = 'core'
+
+  public static blockDefs = [
+    {
+      tag: 'group',
+      floatingMenu: floatingMenuStandardButtons,
+    },
+  ]
 
   constructor(
     private readonly emitter: Emitter<EmitterEvents>,
@@ -63,7 +68,6 @@ export class CoreExtension extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Block)
     ComponentRegistry.instance.registerComponent(Selected)
-    ComponentRegistry.instance.registerComponent(Color)
     ComponentRegistry.instance.registerComponent(Persistent)
 
     const menuContainer = document.createElement('div')
@@ -82,44 +86,19 @@ export class CoreExtension extends BaseExtension {
       menuContainer,
     }
 
-    this._preInputGroup = System.group(
-      sys.PreInputCommandSpawner,
-      { resources: coreResources },
-      sys.PreInputFrameCounter,
-      {
-        resources: coreResources,
-      },
-    )
-
-    this._preCaptureGroup = System.group(sys.PreCaptureIntersect, { resources: coreResources })
-
-    this._captureGroup = System.group(sys.CaptureCursor, {
-      resources: coreResources,
-    })
-    this._preUpdateGroup = System.group(sys.PreUpdateEdited, { resources: coreResources })
-    this._updateGroup = System.group(
+    this._preInputGroup = this.createGroup(coreResources, sys.PreInputCommandSpawner, sys.PreInputFrameCounter)
+    this._preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect)
+    this._captureGroup = this.createGroup(coreResources, sys.CaptureCursor)
+    this._preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited)
+    this._updateGroup = this.createGroup(
+      coreResources,
       sys.UpdateCursor,
-      { resources: coreResources },
       sys.UpdateBlocks,
-      { resources: coreResources },
       sys.UpdateCamera,
-      { resources: coreResources },
     )
-
-    this._postUpdateGroup = System.group(sys.PostUpdateDeleter, { resources: coreResources }, sys.PostUpdateHistory, {
-      resources: coreResources,
-    })
-
-    this._preRenderGroup = System.group(
-      sys.PreRenderStoreSync,
-      { resources: coreResources },
-      sys.PreRenderFloatingMenus,
-      { resources: coreResources },
-    )
-
-    this._renderGroup = System.group(sys.RenderHtml, {
-      resources: coreResources,
-    })
+    this._postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
+    this._preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
+    this._renderGroup = this.createGroup(coreResources, sys.RenderHtml)
   }
 
   public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
@@ -135,7 +114,7 @@ export class CoreExtension extends BaseExtension {
         duplicateSelected: () => send(CoreCommand.DuplicateSelected),
         removeSelected: () => send(CoreCommand.RemoveSelected),
         applySnapshot: (snapshot: Snapshot) => send(CoreCommand.ApplySnapshot, snapshot),
-        addBlock: (block: Partial<Block>, components: Component[]) => {
+        addBlock: (block: Partial<Block>, components: BaseComponent[]) => {
           if (!block.id) {
             block.id = crypto.randomUUID()
           }
@@ -149,13 +128,6 @@ export class CoreExtension extends BaseExtension {
             snapshot[block.id][componentName] = component.serialize()
           }
           send(CoreCommand.AddBlock, snapshot)
-        },
-        setColor: (blockId: string, color: Color) => {
-          send(CoreCommand.ApplySnapshot, {
-            [blockId]: {
-              Color: color.serialize(),
-            },
-          })
         },
       },
     }
@@ -174,8 +146,6 @@ export class CoreExtension extends BaseExtension {
           computed(() => state.getComponents(Block).value[id]?.value),
         textById: (id: string): ReadonlySignal<Text | undefined> =>
           computed(() => state.getComponents(Text).value[id]?.value),
-        colorById: (id: string): ReadonlySignal<Color | undefined> =>
-          computed(() => state.getComponents(Color).value[id]?.value),
       },
     }
   }

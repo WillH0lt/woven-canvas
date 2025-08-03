@@ -12,11 +12,11 @@ import {
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
 import { computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
-import { TransformCommand, type TransformCommandArgs, TransformHandleKind } from '../types'
+import { TransformCommand, type TransformCommandArgs, TransformHandleKind, type TransformResources } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
 interface TransformHandleDef {
-  // tag: keyof typeof Tag
+  tag: string
   kind: TransformHandleKind
   alpha: number
   vector: [number, number]
@@ -31,6 +31,8 @@ interface TransformHandleDef {
 }
 
 export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
+  protected readonly resources!: TransformResources
+
   private readonly selectedBlocks = this.query(
     (q) => q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read,
   )
@@ -41,8 +43,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     (q) =>
       q.current
         .with(TransformBox)
-        .write.using(comps.Block, TransformHandle, DragStart, comps.Hoverable, Locked, comps.Color, comps.Opacity)
-        .write,
+        .write.using(comps.Block, TransformHandle, DragStart, comps.Hoverable, Locked, comps.Opacity).write,
   )
 
   private readonly blocks = this.query((q) =>
@@ -88,8 +89,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     const transformBoxEntity = this.createEntity(
       TransformBox,
       comps.Block,
-      { id: crypto.randomUUID() },
-      comps.Color,
+      { id: crypto.randomUUID(), tag: this.resources.transformBoxTag, rank: TRANSFORM_BOX_RANK },
       DragStart,
     )
 
@@ -132,17 +132,11 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     const height = extents.bottom - extents.top
 
     Object.assign(transformBoxEntity.write(comps.Block), {
-      rank: TRANSFORM_BOX_RANK,
       left,
       top,
       width,
       height,
       rotateZ,
-    })
-
-    Object.assign(transformBoxEntity.write(comps.Color), {
-      blue: 255,
-      alpha: 128,
     })
 
     Object.assign(transformBoxEntity.write(DragStart), {
@@ -184,6 +178,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     for (let xi = 0; xi < 2; xi++) {
       for (let yi = 0; yi < 2; yi++) {
         handles.push({
+          tag: this.resources.transformHandleTag,
           kind: TransformHandleKind.Scale,
           alpha: 128,
           vector: [xi * 2 - 1, yi * 2 - 1],
@@ -197,6 +192,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         })
 
         handles.push({
+          tag: 'div',
           kind: TransformHandleKind.Rotate,
           alpha: 0,
           vector: [xi * 2 - 1, yi * 2 - 1],
@@ -224,6 +220,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     // top & bottom edges
     for (let yi = 0; yi < 2; yi++) {
       handles.push({
+        tag: 'div',
         kind: TransformHandleKind.Scale,
         alpha: 0,
         vector: [0, yi * 2 - 1],
@@ -240,6 +237,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     // left & right edges
     for (let xi = 0; xi < 2; xi++) {
       handles.push({
+        tag: 'div',
         kind: blockDef?.resizeMode === 'text' ? TransformHandleKind.Stretch : TransformHandleKind.Scale,
         alpha: 0,
         vector: [xi * 2 - 1, 0],
@@ -269,7 +267,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
           TransformHandle,
           comps.Block,
           { id: crypto.randomUUID() },
-          comps.Color,
           comps.Hoverable,
           DragStart,
         )
@@ -289,15 +286,11 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       Object.assign(handleEntity.write(comps.Block), {
         left,
         top,
+        tag: handle.tag,
         width: handle.width,
         height: handle.height,
         rotateZ: handle.rotateZ,
         rank: handle.rank,
-      })
-
-      Object.assign(handleEntity.write(comps.Color), {
-        alpha: handle.alpha,
-        red: 255,
       })
 
       Object.assign(handleEntity.write(comps.Hoverable), {

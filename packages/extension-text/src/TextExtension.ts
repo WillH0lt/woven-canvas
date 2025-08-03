@@ -7,9 +7,7 @@ import {
   type IStore,
   type SendCommandFn,
   type State,
-  TextAlign,
 } from '@infinitecanvas/core'
-import { System } from '@lastolivegames/becsy'
 import { type Signal, signal } from '@preact/signals-core'
 
 import './elements'
@@ -18,6 +16,7 @@ import { TextEditorFloatingMenuButtons } from './buttonCatelog'
 import { Text as TextComp } from './components'
 import { TextElement } from './elements'
 import * as sys from './systems'
+import { TextAlign } from './types'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -60,7 +59,10 @@ class TextExtensionClass extends BaseExtension {
     ComponentRegistry.instance.registerComponent(TextComp)
     this.blockContainer = resources.blockContainer
 
-    this._postUpdateGroup = System.group(sys.UpdateTextResize, { resources })
+    this._postUpdateGroup = this.createGroup(
+      resources,
+      sys.UpdateTextResize,
+    )
   }
 
   #getEditableTextElement(): TextElement | null {

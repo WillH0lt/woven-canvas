@@ -1,5 +1,5 @@
 import type { Entity } from '@lastolivegames/becsy'
-import type { Component } from './Component'
+import type { BaseComponent } from './BaseComponent'
 import { Persistent } from './components'
 
 type Id = string
@@ -133,7 +133,7 @@ export class Diff {
   }
 }
 
-export class SnapshotManager {
+export class SnapshotBuilder {
   public snapshot: Snapshot = {}
 
   public putComponent(id: Id, compName: ComponentName, model: Record<ComponentField, ComponentValue>): void {
@@ -234,7 +234,7 @@ export class SnapshotManager {
 }
 
 export class History {
-  private snapshotManager = new SnapshotManager()
+  private snapshotBuilder = new SnapshotBuilder()
 
   private diffSinceCheckpoint = new Diff()
   public frameDiff = new Diff()
@@ -246,44 +246,44 @@ export class History {
     return this.diffSinceCheckpoint.isEmpty
   }
 
-  public addComponents(Comp: new () => Component, entities: readonly Entity[]): void {
+  public addComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
     for (const entity of entities) {
       const id = entity.read(Persistent).id
       const comp = entity.read(Comp)
       const model = comp.serialize()
 
-      if (this.snapshotManager.recordIsTheSame(id, Comp.name, model)) continue
+      if (this.snapshotBuilder.recordIsTheSame(id, Comp.name, model)) continue
 
       this.frameDiff.addComponent(id, Comp.name, model)
       this.diffSinceCheckpoint.addComponent(id, Comp.name, model)
-      this.snapshotManager.putComponent(id, Comp.name, model)
+      this.snapshotBuilder.putComponent(id, Comp.name, model)
     }
   }
 
-  public updateComponents(Comp: new () => Component, entities: readonly Entity[]): void {
+  public updateComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
     for (const entity of entities) {
       const id = entity.read(Persistent).id
       const comp = entity.read(Comp)
       const model = comp.serialize()
 
-      if (this.snapshotManager.recordIsTheSame(id, Comp.name, model)) continue
+      if (this.snapshotBuilder.recordIsTheSame(id, Comp.name, model)) continue
 
-      const fromModel = this.snapshotManager.getRecord(id, Comp.name) || {}
+      const fromModel = this.snapshotBuilder.getRecord(id, Comp.name) || {}
       this.frameDiff.changeComponent(id, Comp.name, fromModel, model)
       this.diffSinceCheckpoint.changeComponent(id, Comp.name, fromModel, model)
-      this.snapshotManager.putComponent(id, Comp.name, model)
+      this.snapshotBuilder.putComponent(id, Comp.name, model)
     }
   }
 
-  public removeComponents(Comp: new () => Component, entities: readonly Entity[]): void {
+  public removeComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
     const entityIds = new Set(entities.map((entity) => entity.read(Persistent).id))
     for (const id of entityIds) {
-      const model = this.snapshotManager.getRecord(id, Comp.name)
+      const model = this.snapshotBuilder.getRecord(id, Comp.name)
       if (!model) continue
 
       this.frameDiff.removeComponent(id, Comp.name, model)
       this.diffSinceCheckpoint.removeComponent(id, Comp.name, model)
-      this.snapshotManager.removeComponent(id, Comp.name)
+      this.snapshotBuilder.removeComponent(id, Comp.name)
     }
   }
 
@@ -306,7 +306,7 @@ export class History {
     this.redoStack.push(diff)
 
     const reversedDiff = diff.clone().reverse()
-    this.snapshotManager.applyDiff(reversedDiff)
+    this.snapshotBuilder.applyDiff(reversedDiff)
     this.frameDiff.merge(reversedDiff)
 
     return reversedDiff
@@ -324,14 +324,14 @@ export class History {
     const diff = this.redoStack.pop()!
     this.undoStack.push(diff)
 
-    this.snapshotManager.applyDiff(diff)
+    this.snapshotBuilder.applyDiff(diff)
     this.frameDiff.merge(diff)
 
     return diff
   }
 
   public applyDiff(diff: Diff): void {
-    this.snapshotManager.applyDiff(diff)
+    this.snapshotBuilder.applyDiff(diff)
   }
 
   public reset(): void {
@@ -343,13 +343,13 @@ export class History {
   }
 
   public getSnapshot(): Snapshot {
-    return JSON.parse(JSON.stringify(this.snapshotManager.snapshot))
+    return JSON.parse(JSON.stringify(this.snapshotBuilder.snapshot))
   }
 
   public getEntities(ids: Id[]): Snapshot {
     const snapshot: Snapshot = {}
     for (const id of ids) {
-      const record = this.snapshotManager.snapshot[id]
+      const record = this.snapshotBuilder.snapshot[id]
       if (record) {
         snapshot[id] = record
       }
@@ -358,6 +358,6 @@ export class History {
   }
 
   public computeDiff(fromSnapshot: Snapshot): Diff {
-    return this.snapshotManager.computeDiff(fromSnapshot)
+    return this.snapshotBuilder.computeDiff(fromSnapshot)
   }
 }

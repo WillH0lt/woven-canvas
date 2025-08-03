@@ -7,7 +7,6 @@ export {
   PointerType,
   PointerButton,
   CoreCommand,
-  TextAlign,
   type CoreCommandArgs,
   type PointerEvent,
   type MouseEvent,
@@ -16,6 +15,8 @@ export {
   type IStore,
   type SendCommandFn,
   type BaseResources,
+  type BlockDef,
+  type BlockDefMap,
 } from './types'
 
 export { BaseExtension } from './BaseExtension'
@@ -23,5 +24,5 @@ export { BaseSystem } from './BaseSystem'
 export { ComponentRegistry } from './ComponentRegistry'
 export { Diff, type Snapshot } from './History'
 export type { State } from './State'
-
+export { BaseComponent } from './BaseComponent'
 export * from './buttonCatalog'

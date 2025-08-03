@@ -18,13 +18,6 @@ export const floatingMenuButtonDelete = {
   tooltip: 'Delete',
 }
 
-export const floatingMenuButtonColor = {
-  tag: 'ic-color-button',
-  width: 56,
-  tooltip: 'Color',
-  menu: 'ic-color-menu',
-}
-
 export const floatingMenuDivider = {
   tag: 'ic-divider',
   width: 8.75,

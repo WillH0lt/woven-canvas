@@ -3,7 +3,7 @@ import { type AnyStateMachine, transition } from 'xstate'
 
 import * as comps from './components'
 import { distance } from './helpers'
-import type { BaseResources, BlockDef, CommandMap, MouseEvent, PointerButton, PointerEvent } from './types'
+import type { BaseResources, BlockDef, MouseEvent, PointerButton, PointerEvent } from './types'
 
 const CLICK_MOVE_THRESHOLD = 1
 const CLICK_FRAME_THRESHOLD = 60
@@ -13,10 +13,13 @@ function isEntity(item: any): boolean {
   return typeof item === 'object' && item.alive && typeof item.__id === 'number'
 }
 
-export class BaseSystem<Commands extends CommandMap = {}> extends System {
-  readonly #_toBeDeleted = this.query((q) => q.with(comps.ToBeDeleted).write)
-
+type BaseCommands = {
+  [commandKind: string]: Array<unknown>
+}
+export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
   protected readonly resources!: BaseResources
+
+  readonly #_toBeDeleted = this.query((q) => q.with(comps.ToBeDeleted).write)
 
   readonly #commands = this.query(
     (q) =>
@@ -29,7 +32,7 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
   protected readonly frame = this.singleton.read(comps.Frame)
 
   private commandListeners: {
-    [K in keyof Commands]?: ((...data: Commands[K]) => void)[]
+    [K in keyof TCommands]?: ((...data: TCommands[K]) => void)[]
   } = {}
 
   public execute(): void {
@@ -46,7 +49,7 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
     }
   }
 
-  protected emitCommand<CommandKind extends keyof Commands>(kind: CommandKind, ...data: Commands[CommandKind]): void {
+  protected emitCommand<CommandKind extends keyof TCommands>(kind: CommandKind, ...data: TCommands[CommandKind]): void {
     // scan data deeply and find values are entities, entities cant survive serialization, so we need to
     // store them as CommandRef entities, then map them back to the original entities when executing the command
 
@@ -70,9 +73,9 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
     }
   }
 
-  protected addCommandListener<CommandKind extends keyof Commands>(
+  protected addCommandListener<CommandKind extends keyof TCommands>(
     kind: CommandKind,
-    callback: (...data: Commands[CommandKind]) => void,
+    callback: (...data: TCommands[CommandKind]) => void,
   ): void {
     if (!this.commandListeners[kind]) {
       this.commandListeners[kind] = []
@@ -94,7 +97,7 @@ export class BaseSystem<Commands extends CommandMap = {}> extends System {
     }
   }
 
-  protected getCommand<CommandKind extends keyof Commands>(kind: CommandKind): Commands[CommandKind] | undefined {
+  protected getCommand<CommandKind extends keyof TCommands>(kind: CommandKind): TCommands[CommandKind] | undefined {
     for (const commandEntity of this.#commands.added) {
       const command = commandEntity.read(comps.Command)
       if (command.kind === kind) {

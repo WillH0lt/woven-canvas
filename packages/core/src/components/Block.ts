@@ -1,9 +1,9 @@
 import { Type, component, field } from '@lastolivegames/becsy'
-import { Component } from '../Component'
+import { BaseComponent } from '../BaseComponent'
 @component
-export class Block extends Component {
+export class Block extends BaseComponent {
   @field.dynamicString(36) public declare id: string
-  @field({ type: Type.dynamicString(36), default: 'ic-shape' }) public declare tag: string
+  @field({ type: Type.dynamicString(36), default: 'div' }) public declare tag: string
   @field.float32 declare top: number
   @field.float32 declare left: number
   @field.float32 declare width: number
