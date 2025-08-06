@@ -2,8 +2,6 @@ import { BaseSystem, CoreCommand, type CoreCommandArgs, CursorIcon } from '@infi
 import * as comps from '@infinitecanvas/core/components'
 import { uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
-
-import type { BlockDef } from 'packages/core/src/types'
 import { DragStart, Locked, TransformBox, TransformHandle } from '../components'
 import {
   TRANSFORM_BOX_RANK,
@@ -50,6 +48,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     q.current.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
   )
 
+  private readonly camera = this.singleton.read(comps.Camera)
+
   public constructor() {
     super()
     this.schedule((s) => s.after(UpdateSelection))
@@ -64,10 +64,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     this.addCommandListener(TransformCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
     this.addCommandListener(TransformCommand.StartTransformBoxEdit, this.startTransformBoxEdit.bind(this))
     this.addCommandListener(TransformCommand.EndTransformBoxEdit, this.endTransformBoxEdit.bind(this))
-  }
-
-  public execute(): void {
-    this.executeCommands()
+    this.addCommandListener(CoreCommand.SetZoom, this.onZoom.bind(this))
   }
 
   private removeTransformBox(): void {
@@ -93,27 +90,27 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       DragStart,
     )
 
-    this._updateTransformBox(transformBoxEntity, this.resources.uid)
+    this.updateTransformBox(transformBoxEntity)
   }
 
-  private updateTransformBox(): void {
-    if (this.transformBoxes.current.length === 0) {
-      console.warn('No transform box to update')
-      return
+  private updateTransformBox(transformBoxEntity: Entity | null = null): void {
+    if (!transformBoxEntity) {
+      if (this.transformBoxes.current.length === 0) {
+        console.warn('No transform box found to update')
+        return
+      }
+
+      transformBoxEntity = this.transformBoxes.current[0]
     }
 
-    const transformBoxEntity = this.transformBoxes.current[0]
-
-    this._updateTransformBox(transformBoxEntity, this.resources.uid)
-  }
-
-  private _updateTransformBox(transformBoxEntity: Entity, uid: string): void {
     let rotateZ = 0
     if (this.selectedBlocks.current.length > 0) {
       rotateZ = this.selectedBlocks.current[0].read(comps.Block).rotateZ
     }
 
-    const selectedBlocks = this.selectedBlocks.current.filter((e) => e.read(comps.Selected).selectedBy === uid)
+    const selectedBlocks = this.selectedBlocks.current.filter(
+      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
+    )
 
     for (let i = 1; i < selectedBlocks.length; i++) {
       const block = selectedBlocks[i].read(comps.Block)
@@ -166,13 +163,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
   private addOrUpdateTransformHandles(transformBoxEntity: Entity): void {
     const transformBoxBlock = transformBoxEntity.read(comps.Block)
 
-    // delete all the handles
-    for (const handleEntity of transformBoxEntity.read(TransformBox).handles) {
-      this.deleteEntity(handleEntity)
-    }
-
     const { left, top, width, height, rotateZ } = transformBoxBlock
-    const handleSize = 15
+    const handleSize = 15 / this.camera.zoom
     const rotationHandleSize = 2 * handleSize
     const sideHandleSize = 2 * handleSize
 
@@ -184,13 +176,26 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
     )
     let singularSelectedBlock: comps.Block | null = null
-    let blockDef: BlockDef | undefined = undefined
+    let resizeMode = 'scale'
     if (selectedBlocks.length === 1) {
       singularSelectedBlock = selectedBlocks[0].read(comps.Block)
-      blockDef = this.getBlockDef(singularSelectedBlock.tag)
+      const blockDef = this.getBlockDef(singularSelectedBlock.tag)
+      resizeMode = blockDef?.resizeMode ?? resizeMode
     }
 
-    const handleKind = blockDef?.resizeMode === 'scale' ? TransformHandleKind.Scale : TransformHandleKind.Stretch
+    let handleKind: TransformHandleKind
+    switch (resizeMode) {
+      case 'scale':
+      case 'text':
+        handleKind = TransformHandleKind.Scale
+        break
+      case 'free':
+        handleKind = TransformHandleKind.Stretch
+        break
+      default:
+        handleKind = TransformHandleKind.Scale
+        break
+    }
 
     // corners
     for (let xi = 0; xi < 2; xi++) {
@@ -246,7 +251,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     for (let xi = 0; xi < 2; xi++) {
       handles.push({
         tag: 'div',
-        kind: blockDef?.resizeMode === 'text' ? TransformHandleKind.Stretch : handleKind,
+        kind: resizeMode === 'text' ? TransformHandleKind.Stretch : handleKind,
         alpha: 0,
         vector: [xi * 2 - 1, 0],
         left: left + width * xi - sideHandleSize / 2,
@@ -262,13 +267,29 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     const center = computeCenter(transformBoxEntity)
 
     for (const handle of handles) {
-      const handleEntity = this.createEntity(
-        TransformHandle,
-        comps.Block,
-        { id: crypto.randomUUID() },
-        comps.Hoverable,
-        DragStart,
-      )
+      let handleEntity: Entity | undefined
+
+      // find existing handle entity
+      const handleEntities = transformBoxEntity.read(TransformBox).handles
+      for (const entity of handleEntities) {
+        const h = entity.read(TransformHandle)
+        const b = entity.read(comps.Block)
+        if (b.tag === handle.tag && h.vector[0] === handle.vector[0] && h.vector[1] === handle.vector[1]) {
+          handleEntity = entity
+          break
+        }
+      }
+
+      // if no existing handle entity, create a new one
+      if (!handleEntity) {
+        handleEntity = this.createEntity(
+          TransformHandle,
+          comps.Block,
+          { id: crypto.randomUUID() },
+          comps.Hoverable,
+          DragStart,
+        )
+      }
 
       const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
       const position = rotatePoint(handleCenter, center, rotateZ)
@@ -631,5 +652,10 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     for (const blockEntity of this.editedBlocks.current) {
       blockEntity.remove(comps.Edited)
     }
+  }
+
+  public onZoom(): void {
+    if (!this.transformBoxes.current.length) return
+    this.addOrUpdateTransformHandles(this.transformBoxes.current[0])
   }
 }

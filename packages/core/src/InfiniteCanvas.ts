@@ -274,5 +274,6 @@ export class InfiniteCanvas {
     style.setProperty('--ic-menu-tooltip-border-radius', theme.menuTooltipBorderRadius)
     style.setProperty('--ic-transition-duration', theme.transitionDuration)
     style.setProperty('--ic-transition-timing-function', theme.transitionTimingFunction)
+    style.setProperty('--ic-zoom', '1')
   }
 }

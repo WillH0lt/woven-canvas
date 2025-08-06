@@ -11,7 +11,7 @@ export class SelectionBoxElement extends BaseElement {
       height: 100%;
       background-color: #5865f222;
       border-style: solid;
-      border-width: 2px;
+      border-width: calc(2px / var(--ic-zoom));
       border-color: var(--ic-primary);
     }
   `

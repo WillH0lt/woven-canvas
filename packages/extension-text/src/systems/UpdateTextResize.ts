@@ -27,7 +27,7 @@ export class UpdateTextResize extends BaseSystem {
       const blockDef = this.getBlockDef(block.tag)
 
       // skip resizing if we're doing a free transform
-      if (!blockDef || blockDef?.resizeMode === 'free') return
+      if (blockDef?.resizeMode === 'free') continue
 
       const textDragStart = textEntity.write(TextDragStart)
 

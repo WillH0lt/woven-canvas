@@ -12,6 +12,14 @@ import type { CoreResources } from '../types'
 
 const RANK_ATTRIBUTE = 'data-ic-rank'
 
+function updateCssProperty(property: string, value: string): void {
+  const style = document.documentElement.style
+  const currentValue = style.getPropertyValue(property)
+  if (currentValue !== value) {
+    style.setProperty(property, value)
+  }
+}
+
 export class RenderHtml extends BaseSystem {
   private readonly currentQueries = new Map<new () => BaseComponent, Query>()
 
@@ -48,6 +56,8 @@ export class RenderHtml extends BaseSystem {
       const camera = this.cameras.changed[0].read(comps.Camera)
       const blockContainer = this.resources.blockContainer
       blockContainer.style.transform = `translate(${-camera.left * camera.zoom}px, ${-camera.top * camera.zoom}px) scale(${camera.zoom})`
+
+      updateCssProperty('--ic-zoom', `${camera.zoom}`)
     }
 
     // render blocks

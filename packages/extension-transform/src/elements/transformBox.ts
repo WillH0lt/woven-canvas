@@ -10,9 +10,8 @@ export class TransformBoxElement extends BaseElement {
       width: 100%;
       height: 100%;
       outline-style: solid;
-      outline-width: 4px;
+      outline-width: calc(4px / var(--ic-zoom));
       outline-color: var(--ic-primary);
-      border-radius: 6px;
     }
   `
 

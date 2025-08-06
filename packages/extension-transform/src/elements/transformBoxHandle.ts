@@ -10,9 +10,9 @@ export class TransformBoxHandleElement extends BaseElement {
       width: 100%;
       height: 100%;
       border-style: solid;
-      border-width: 2px;
+      border-width: calc(2px / var(--ic-zoom));
       border-color: var(--ic-primary);
-      border-radius: 2px;
+      border-radius: calc(2px / var(--ic-zoom));
       transition-property: background-color;
       transition-timing-function: var(--ic-transition-timing-function);
       transition-duration: var(--ic-transition-duration);

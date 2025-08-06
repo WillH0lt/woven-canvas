@@ -6,7 +6,7 @@ import { ComponentRegistry } from '../ComponentRegistry'
 import { SnapshotBuilder } from '../History'
 import * as comps from '../components'
 import type { FloatingMenuElement } from '../elements'
-import { binarySearchForId, computeExtents, uuidToNumber } from '../helpers'
+import { binarySearchForId, clamp, computeExtents, uuidToNumber } from '../helpers'
 import { PointerButton } from '../types'
 import type { CoreResources } from '../types'
 
@@ -20,6 +20,8 @@ export class PreRenderFloatingMenus extends BaseSystem {
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
   private readonly camera = this.singleton.read(comps.Camera)
+
+  private readonly screen = this.singleton.read(comps.Screen)
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
@@ -48,9 +50,10 @@ export class PreRenderFloatingMenus extends BaseSystem {
 
   public execute(): void {
     if (this.cameras.changed.length > 0) {
-      const camera = this.cameras.changed[0].read(comps.Camera)
-      const menuContainer = this.resources.menuContainer
-      menuContainer.style.transform = `translate(${-camera.left * camera.zoom}px, ${-camera.top * camera.zoom}px) scale(${camera.zoom})`
+      const element = this.resources.menuContainer.querySelector('ic-floating-menu')
+      if (element) {
+        this.updateMenuPosition(element)
+      }
     }
 
     const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
@@ -136,10 +139,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
     element.style.height = `${height}px`
     element.requestUpdate()
 
-    const extents = computeExtents(mySelectedBlocks)
-    const cx = (extents.left + extents.right) / 2
-    element.style.left = `${cx - width / 2}px`
-    element.style.top = `${extents.top - height - 10}px`
+    this.updateMenuPosition(element)
   }
 
   private updateSnapshotAttribute(element: FloatingMenuElement, blockId: string, tag: string): void {
@@ -160,8 +160,43 @@ export class PreRenderFloatingMenus extends BaseSystem {
     element.snapshot = snapshotBuilder.snapshot
   }
 
-  removeFloatingMenuElement(): void {
+  private removeFloatingMenuElement(): void {
     const element = this.resources.menuContainer.querySelector('ic-floating-menu')
     element?.remove()
+  }
+
+  private updateMenuPosition(element: FloatingMenuElement): void {
+    const rect = element.getBoundingClientRect()
+
+    const menuWidth = rect.width / this.camera.zoom
+    const menuHeight = rect.height / this.camera.zoom
+
+    const offset = 12 / this.camera.zoom
+    const padding = 4 / this.camera.zoom
+
+    const extents = computeExtents(this.selectedBlocks.current)
+    const centerX = (extents.left + extents.right) / 2
+
+    let left = this.camera.zoom * (centerX - menuWidth / 2 - this.camera.left)
+    const screenWidth = this.screen.width
+    left = clamp(left, padding, screenWidth - padding - menuWidth * this.camera.zoom)
+
+    let top = this.camera.zoom * (extents.top - menuHeight - offset - this.camera.top)
+    if (top < 0) {
+      top = this.camera.zoom * (extents.bottom + offset - this.camera.top)
+    }
+
+    element.style.left = `${left}px`
+    element.style.top = `${top}px`
+
+    // hide menu if selection is off screen
+    if (
+      this.camera.zoom * (extents.right - this.camera.left) < 0 ||
+      this.camera.zoom * (extents.left - this.camera.left) > screenWidth
+    ) {
+      element.style.display = 'none'
+    } else {
+      element.style.display = 'block'
+    }
   }
 }

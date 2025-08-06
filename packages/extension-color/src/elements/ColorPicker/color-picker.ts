@@ -1,3 +1,4 @@
+import { clamp } from '@infinitecanvas/core/helpers'
 import { LitElement, html } from 'lit'
 import { customElement, eventOptions, property, state } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
@@ -6,7 +7,6 @@ import { styleMap } from 'lit/directives/style-map.js'
 import Tinycolor from 'tinycolor2'
 
 import { drag } from '../helpers/drag.js'
-import { clamp } from '../helpers/math.js'
 import { watch } from '../helpers/watch.js'
 import { style } from './color-picker.style.js'
 
