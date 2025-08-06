@@ -10,9 +10,6 @@ export const style = css`
 }
 
 .color-picker {
-  background-color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   font: inherit;
   font-size: inherit;
   user-select: none;
@@ -50,7 +47,7 @@ export const style = css`
 }
 
 .grid-handle:focus-visible {
-  outline: 2px solid var(--ic-primary-color);
+  outline: 2px solid var(--ic-primary);
 }
 
 .controls {
@@ -87,7 +84,7 @@ export const style = css`
 }
 
 .slider-handle:focus-visible {
-  outline: 2px solid var(--ic-primary-color);
+  outline: 2px solid var(--ic-primary);
 }
 
 .hue {
@@ -145,7 +142,7 @@ export const style = css`
 }
 
 .user-input input:focus {
-  outline: 1px solid var(--ic-primary-color);
+  outline: 1px solid var(--ic-primary);
 }
 
 .transparent-bg {

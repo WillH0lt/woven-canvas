@@ -125,6 +125,12 @@ export class TextElement extends BaseEditable {
     this.syncStore()
 
     this._editor?.chain().focus().setTextSelection(0).run()
+
+    // stop propagation because text can overflow block when resize mode is 'free'
+    const pointerEvents = ['pointerdown', 'pointerup', 'pointermove', 'pointercancel']
+    for (const pointerEvent of pointerEvents) {
+      this.editorContainer?.addEventListener(pointerEvent, (ev) => ev.stopPropagation())
+    }
   }
 
   private endEditing(): void {
@@ -243,7 +249,7 @@ export class TextElement extends BaseEditable {
     const editor = this._editor
     if (!editor) return
 
-    const store = InfiniteCanvas.instance?.store.textEditor
+    const store = InfiniteCanvas.instance?.store.text
     if (!store) return
 
     store.color.value = editor.getAttributes('textStyle').color ?? '#000000'

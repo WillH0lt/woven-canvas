@@ -29,6 +29,7 @@ export const Button = z.object({
   width: z.number().default(40),
 })
 
+export type ButtonInput = z.input<typeof Button>
 export type Button = z.infer<typeof Button>
 
 export interface CoreResources extends BaseResources {
@@ -40,7 +41,7 @@ export interface CoreResources extends BaseResources {
 export const BlockDef = z.object({
   tag: z.string(),
   canEdit: z.boolean().default(false),
-  resizeMode: z.enum(['scale', 'text']).default('scale'), // TODO add 'free'
+  resizeMode: z.enum(['scale', 'text', 'free']).default('scale'),
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
   floatingMenu: z.array(Button).default(floatingMenuStandardButtons.map((btn) => Button.parse(btn))),
   editedFloatingMenu: z.array(Button).default([]),
@@ -58,7 +59,9 @@ const Theme = z.object({
   gray500: z.string().default('#4f5660'),
   gray600: z.string().default('#2e3338'),
   gray700: z.string().default('#060607'),
-  primaryColor: z.string().default('#6a58f2'),
+
+  primaryLight: z.string().default('#8a76f4'),
+  primary: z.string().default('#6a58f2'),
 
   menuBorderRadius: z.string().default('12px'),
   menuTooltipBorderRadius: z.string().default('6px'),

@@ -12,18 +12,18 @@ export class TextColorMenuElement extends SignalWatcher(LitElement) {
           this.pickerVisible.value
             ? html`
               <ic-color-picker
-                value=${InfiniteCanvas.instance?.store.textEditor.color.value}
+                value=${InfiniteCanvas.instance?.store.text.color.value}
                 @change=${(e: CustomEvent<string>) => {
-                  InfiniteCanvas.instance?.commands.textEditor.setColor(e.detail)
+                  InfiniteCanvas.instance?.commands.text.setColor(e.detail)
                 }}
               ></ic-color-picker>
             `
             : html`
               <ic-color-bubbles
                 withPicker="true"
-                currentColor=${InfiniteCanvas.instance?.store.textEditor.color.value}
+                currentColor=${InfiniteCanvas.instance?.store.text.color.value}
                 @change=${(e: CustomEvent<string>) => {
-                  InfiniteCanvas.instance?.commands.textEditor.setColor(e.detail)
+                  InfiniteCanvas.instance?.commands.text.setColor(e.detail)
                 }}
                 @show-picker=${() => {
                   this.pickerVisible.value = true

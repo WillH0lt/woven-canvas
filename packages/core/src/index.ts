@@ -7,6 +7,8 @@ export {
   PointerType,
   PointerButton,
   CoreCommand,
+  type Button,
+  type ButtonInput,
   type CoreCommandArgs,
   type PointerEvent,
   type MouseEvent,

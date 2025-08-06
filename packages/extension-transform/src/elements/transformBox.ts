@@ -11,7 +11,7 @@ export class TransformBoxElement extends BaseElement {
       height: 100%;
       outline-style: solid;
       outline-width: 4px;
-      outline-color: var(--ic-primary-color);
+      outline-color: var(--ic-primary);
       border-radius: 6px;
     }
   `

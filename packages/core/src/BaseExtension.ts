@@ -6,7 +6,7 @@ import type { BaseResources, BlockDefInput, CommandArgs, ICommands, IStore, Send
 export class BaseExtension {
   public static blockDefs: BlockDefInput[] = []
 
-  public static dependsOn = new Set<string>()
+  public static dependsOn = Array<string>()
 
   // == Input Groups ==
   protected _preInputGroup: SystemGroup | null = null

@@ -1,15 +1,15 @@
 import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
-import '../../../packages/extension-sticky-note/src/elements/StickyNote'
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import type { Block } from '@infinitecanvas/core/components'
 import { Color, ColorExtension } from '@infinitecanvas/extension-color'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
+import { RoughShape, RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
 // import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
-import { StickyNote, StickyNoteExtension, VerticalAlign } from '@infinitecanvas/extension-sticky-note'
+import { StickyNotesExtension } from '@infinitecanvas/extension-sticky-notes'
 import { Text, TextExtension } from '@infinitecanvas/extension-text'
 import { TransformExtension } from '@infinitecanvas/extension-transform'
 
@@ -34,6 +34,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <button id="stickyNoteBtn" class="bg-amber-300 p-2 rounded">
       sticky note
     </button>
+    <button id="shapeBtn" class="bg-amber-300 p-2 rounded">
+      shape
+    </button>
   </div>
 `
 
@@ -49,7 +52,8 @@ async function initializeCanvas(container: HTMLDivElement) {
       TransformExtension,
       TextExtension,
       ColorExtension,
-      StickyNoteExtension,
+      StickyNotesExtension,
+      RoughShapesExtension,
       // MultiplayerExtension,
       LocalStorageExtension,
     ],
@@ -144,10 +148,22 @@ document.querySelector<HTMLDivElement>('#stickyNoteBtn')!.addEventListener('clic
   text.fontSize = 40
   text.content = lorem.generateSentences(1)
 
-  const stickyNote = new StickyNote()
-  stickyNote.verticalAlign = VerticalAlign.Top
+  infiniteCanvas?.commands.core.addBlock(block, [color, text])
+})
 
-  infiniteCanvas?.commands.core.addBlock(block, [color, text, stickyNote])
+document.querySelector<HTMLDivElement>('#shapeBtn')!.addEventListener('click', () => {
+  const left = Math.random() * window.innerWidth
+  const top = Math.random() * window.innerHeight
+  const block = generateBlock({ tag: 'ic-rough-shape', left, top, width: 300, height: 300 })
+
+  const text = new Text()
+  text.fontSize = 40
+  text.content = lorem.generateSentences(1)
+
+  const roughShape = new RoughShape()
+  roughShape.fillRed = 255
+
+  infiniteCanvas?.commands.core.addBlock(block, [text, roughShape])
 })
 
 function generateBlock(block: Partial<Block>): Partial<Block> {

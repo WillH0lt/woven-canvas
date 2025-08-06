@@ -11,7 +11,7 @@ export class TransformBoxHandleElement extends BaseElement {
       height: 100%;
       border-style: solid;
       border-width: 2px;
-      border-color: var(--ic-primary-color);
+      border-color: var(--ic-primary);
       border-radius: 2px;
       transition-property: background-color;
       transition-timing-function: var(--ic-transition-timing-function);
@@ -21,7 +21,7 @@ export class TransformBoxHandleElement extends BaseElement {
     }
 
     div:hover {
-      background-color: var(--ic-primary-color);
+      background-color: var(--ic-primary);
     }
   `
 

@@ -1,4 +1,3 @@
-import { System } from '@lastolivegames/becsy'
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
 import { BaseExtension } from './BaseExtension'
@@ -50,7 +49,6 @@ declare module '@infinitecanvas/core' {
 }
 
 export class CoreExtension extends BaseExtension {
-
   public static blockDefs = [
     {
       tag: 'group',
@@ -90,12 +88,7 @@ export class CoreExtension extends BaseExtension {
     this._preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect)
     this._captureGroup = this.createGroup(coreResources, sys.CaptureCursor)
     this._preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited)
-    this._updateGroup = this.createGroup(
-      coreResources,
-      sys.UpdateCursor,
-      sys.UpdateBlocks,
-      sys.UpdateCamera,
-    )
+    this._updateGroup = this.createGroup(coreResources, sys.UpdateCursor, sys.UpdateBlocks, sys.UpdateCamera)
     this._postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
     this._preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
     this._renderGroup = this.createGroup(coreResources, sys.RenderHtml)
@@ -118,6 +111,13 @@ export class CoreExtension extends BaseExtension {
           if (!block.id) {
             block.id = crypto.randomUUID()
           }
+
+          // const snapshotBuilder = new SnapshotBuilder()
+
+          // for (const component of components) {
+          //   snapshotBuilder.putComponent(block.id, component.constructor.name, component.serialize())
+          // }
+
           const snapshot: Snapshot = {
             [block.id]: {
               Block: block,

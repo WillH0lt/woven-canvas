@@ -165,6 +165,12 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
   private addOrUpdateTransformHandles(transformBoxEntity: Entity): void {
     const transformBoxBlock = transformBoxEntity.read(comps.Block)
+
+    // delete all the handles
+    for (const handleEntity of transformBoxEntity.read(TransformBox).handles) {
+      this.deleteEntity(handleEntity)
+    }
+
     const { left, top, width, height, rotateZ } = transformBoxBlock
     const handleSize = 15
     const rotationHandleSize = 2 * handleSize
@@ -174,12 +180,24 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     const rotateCursorKinds = [CursorIcon.RotateNW, CursorIcon.RotateNE, CursorIcon.RotateSW, CursorIcon.RotateSE]
 
+    const selectedBlocks = this.selectedBlocks.current.filter(
+      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
+    )
+    let singularSelectedBlock: comps.Block | null = null
+    let blockDef: BlockDef | undefined = undefined
+    if (selectedBlocks.length === 1) {
+      singularSelectedBlock = selectedBlocks[0].read(comps.Block)
+      blockDef = this.getBlockDef(singularSelectedBlock.tag)
+    }
+
+    const handleKind = blockDef?.resizeMode === 'scale' ? TransformHandleKind.Scale : TransformHandleKind.Stretch
+
     // corners
     for (let xi = 0; xi < 2; xi++) {
       for (let yi = 0; yi < 2; yi++) {
         handles.push({
           tag: this.resources.transformHandleTag,
-          kind: TransformHandleKind.Scale,
+          kind: handleKind,
           alpha: 128,
           vector: [xi * 2 - 1, yi * 2 - 1],
           left: left + width * xi - handleSize / 2,
@@ -207,21 +225,11 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       }
     }
 
-    const selectedBlocks = this.selectedBlocks.current.filter(
-      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
-    )
-    let singularSelectedBlock: comps.Block | null = null
-    let blockDef: BlockDef | undefined = undefined
-    if (selectedBlocks.length === 1) {
-      singularSelectedBlock = selectedBlocks[0].read(comps.Block)
-      blockDef = this.getBlockDef(singularSelectedBlock.tag)
-    }
-
     // top & bottom edges
     for (let yi = 0; yi < 2; yi++) {
       handles.push({
         tag: 'div',
-        kind: TransformHandleKind.Scale,
+        kind: handleKind,
         alpha: 0,
         vector: [0, yi * 2 - 1],
         left,
@@ -238,7 +246,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     for (let xi = 0; xi < 2; xi++) {
       handles.push({
         tag: 'div',
-        kind: blockDef?.resizeMode === 'text' ? TransformHandleKind.Stretch : TransformHandleKind.Scale,
+        kind: blockDef?.resizeMode === 'text' ? TransformHandleKind.Stretch : handleKind,
         alpha: 0,
         vector: [xi * 2 - 1, 0],
         left: left + width * xi - sideHandleSize / 2,
@@ -254,23 +262,13 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     const center = computeCenter(transformBoxEntity)
 
     for (const handle of handles) {
-      let handleEntity = transformBoxEntity.read(TransformBox).handles.find((h) => {
-        const hHandle = h.read(TransformHandle)
-        return (
-          hHandle.kind === handle.kind &&
-          hHandle.vector[0] === handle.vector[0] &&
-          hHandle.vector[1] === handle.vector[1]
-        )
-      })
-      if (!handleEntity) {
-        handleEntity = this.createEntity(
-          TransformHandle,
-          comps.Block,
-          { id: crypto.randomUUID() },
-          comps.Hoverable,
-          DragStart,
-        )
-      }
+      const handleEntity = this.createEntity(
+        TransformHandle,
+        comps.Block,
+        { id: crypto.randomUUID() },
+        comps.Hoverable,
+        DragStart,
+      )
 
       const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
       const position = rotatePoint(handleCenter, center, rotateZ)
@@ -372,8 +370,10 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       const kind = handle.kind
       if (kind === TransformHandleKind.Rotate) {
         this.onRotateHandleMove(blockEntity, position)
-      } else if (kind === TransformHandleKind.Scale || kind === TransformHandleKind.Stretch) {
-        this.onScaleOrStretchHandleMove(blockEntity, position)
+      } else if (kind === TransformHandleKind.Scale) {
+        this.onScaleHandleMove(blockEntity, position)
+      } else if (kind === TransformHandleKind.Stretch) {
+        this.onStretchHandleMove(blockEntity, position)
       }
     }
   }
@@ -420,7 +420,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
   }
 
-  private onScaleOrStretchHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
+  private onScaleHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
     if (!this.transformBoxes.current.length) {
       console.error('No transform box found')
       return
@@ -458,13 +458,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
     let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
 
-    // if (handleKind === TransformHandleKind.Stretch) {
-    //   if (handleVec[0] === 0) {
-    //     boxEndWidth = boxStartWidth
-    //   } else if (handleVec[1] === 0) {
-    //     boxEndHeight = boxStartHeight
-    //   }
-    // } else {
     const startAspectRatio = boxStartWidth / boxStartHeight
     const newAspectRatio = boxEndWidth / boxEndHeight
     if (newAspectRatio > startAspectRatio) {
@@ -472,7 +465,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     } else {
       boxEndWidth = boxEndHeight * startAspectRatio
     }
-    // }
 
     const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
     const rotatedVector = rotatePoint(vec, [0, 0], boxRotateZ)
@@ -482,7 +474,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     const boxEndLeft = newBoxCenter[0] - boxEndWidth / 2
     const boxEndTop = newBoxCenter[1] - boxEndHeight / 2
 
-    // TODO scale snapping
+    // TODO snapping
 
     for (const selectedEntity of this.selectedBlocks.current) {
       const { startLeft, startTop, startWidth, startHeight } = selectedEntity.read(DragStart)
@@ -495,22 +487,86 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       const width = startWidth * (boxEndWidth / boxStartWidth)
       const height = startHeight * (boxEndHeight / boxStartHeight)
 
-      if (handleKind === TransformHandleKind.Stretch) {
-        // TODO this won't work if there are multiple blocks selected
-        block.hasStretched = true
-        if (handleVec[0] === 0) {
-          block.top = top
-          block.height = height
-        } else if (handleVec[1] === 0) {
-          block.left = left
-          block.width = width
-        }
-      } else {
-        block.left = left
-        block.top = top
-        block.width = width
-        block.height = height
-      }
+      block.left = left
+      block.top = top
+      block.width = width
+      block.height = height
+    }
+  }
+
+  private onStretchHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
+    if (!this.transformBoxes.current.length) {
+      console.error('No transform box found')
+      return
+    }
+
+    const { width, height } = handleEntity.read(comps.Block)
+    const handleCenter: [number, number] = [position.left + width / 2, position.top + height / 2]
+
+    const boxEntity = this.transformBoxes.current[0]
+    const {
+      startLeft: boxStartLeft,
+      startTop: boxStartTop,
+      startWidth: boxStartWidth,
+      startHeight: boxStartHeight,
+      startRotateZ: boxRotateZ,
+    } = boxEntity.read(DragStart)
+
+    // get the position of the opposite handle of the transform box
+    const { vector, kind: handleKind } = handleEntity.read(TransformHandle)
+    const handleVec: [number, number] = [vector[0], vector[1]]
+
+    const oppositeHandle = boxEntity.read(TransformBox).handles.find((h) => {
+      const { vector, kind } = h.read(TransformHandle)
+      return handleKind === kind && handleVec[0] === -vector[0] && handleVec[1] === -vector[1]
+    })
+    if (!oppositeHandle) {
+      console.error('No opposite handle found for', handleKind, handleVec)
+      return
+    }
+
+    const oppositeCenter = computeCenter(oppositeHandle)
+    let difference: [number, number] = [handleCenter[0] - oppositeCenter[0], handleCenter[1] - oppositeCenter[1]]
+    difference = rotatePoint(difference, [0, 0], -boxRotateZ)
+
+    let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
+    let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
+
+    // //
+    if (handleVec[0] === 0) {
+      boxEndWidth = boxStartWidth
+    } else if (handleVec[1] === 0) {
+      boxEndHeight = boxStartHeight
+    }
+
+    const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
+    const rotatedVector = rotatePoint(vec, [0, 0], boxRotateZ)
+
+    const newBoxCenter = [oppositeCenter[0] + rotatedVector[0] / 2, oppositeCenter[1] + rotatedVector[1] / 2]
+
+    const boxEndLeft = newBoxCenter[0] - boxEndWidth / 2
+    const boxEndTop = newBoxCenter[1] - boxEndHeight / 2
+
+    for (const selectedEntity of this.selectedBlocks.current) {
+      const { startLeft, startTop, startWidth, startHeight } = selectedEntity.read(DragStart)
+
+      const block = selectedEntity.write(comps.Block)
+
+      const left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
+      const top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
+
+      const width = startWidth * (boxEndWidth / boxStartWidth)
+      const height = startHeight * (boxEndHeight / boxStartHeight)
+
+      // TODO this won't work if there are multiple blocks selected
+      block.hasStretched = true
+      block.top = top
+      block.height = height
+      block.left = left
+      block.width = width
+      // if (handleVec[0] === 0) {
+      // } else if (handleVec[1] === 0) {
+      // }
     }
   }
 

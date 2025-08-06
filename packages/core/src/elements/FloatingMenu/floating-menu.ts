@@ -91,6 +91,7 @@ export class FloatingMenuElement extends LitElement {
       const menuElement = document.createElement(button.menu)
       menuElement.setAttribute('blockId', this.blockId)
       menuElement.style.position = 'absolute'
+      menuElement.classList.add('menu')
       this.shadowRoot?.appendChild(menuElement)
       this.menuElement = menuElement
 

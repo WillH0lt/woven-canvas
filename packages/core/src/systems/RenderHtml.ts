@@ -131,6 +131,7 @@ export class RenderHtml extends BaseSystem {
     const blockId = block.id
     element.id = blockId
     element.blockId = blockId
+    // element.block = block
     element.setAttribute(RANK_ATTRIBUTE, block.rank)
 
     const blockDef = this.resources.blockDefs[block.tag]

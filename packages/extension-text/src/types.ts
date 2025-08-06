@@ -10,3 +10,9 @@ export enum TextAlign {
   Right = 'right',
   Justify = 'justify',
 }
+
+export enum VerticalAlign {
+  Top = 'top',
+  Center = 'center',
+  Bottom = 'bottom',
+}

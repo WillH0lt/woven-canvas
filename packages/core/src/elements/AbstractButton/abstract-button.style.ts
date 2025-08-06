@@ -13,10 +13,10 @@ export const style = css`
   }
 
   .button.active {
-    background-color: var(--ic-primary-color);
+    background-color: var(--ic-primary);
   }
 
-  .button .icon {
+  .button svg {
     width: 40%;
     overflow: visible;
   }

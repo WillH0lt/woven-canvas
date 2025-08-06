@@ -1,10 +1,11 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { BaseElement } from '@infinitecanvas/core/elements'
+import { colorToHex, hexToColor } from '@infinitecanvas/core/helpers'
 import { SignalWatcher, signal } from '@lit-labs/preact-signals'
 import { html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { colorToHex, hexToColor } from '../helpers/math'
+import { Color } from '../../components'
 
 @customElement('ic-color-menu')
 export class ColorMenuElement extends SignalWatcher(BaseElement) {
@@ -16,24 +17,29 @@ export class ColorMenuElement extends SignalWatcher(BaseElement) {
       return nothing
     }
 
+    const hex = colorToHex(color.value)
+
     return html`
         ${
           this.pickerVisible.value
             ? html`
               <ic-color-picker
-                value=${colorToHex(color.value)}
+                value=${hex}
                 @change=${(e: CustomEvent<string>) => {
-                  const color = hexToColor(e.detail)
+                  const c = hexToColor(e.detail)
+                  const color = new Color().deserialize(c)
                   InfiniteCanvas.instance?.commands.color.setColor(this.blockId, color)
                 }}
               ></ic-color-picker>
             `
             : html`
               <ic-color-bubbles
+                id="color-bubbles"
                 withPicker="true"
-                .currentColor=${colorToHex(color.value)}
+                .currentColor=${hex}
                 @change=${(e: CustomEvent<string>) => {
-                  const color = hexToColor(e.detail)
+                  const c = hexToColor(e.detail)
+                  const color = new Color().deserialize(c)
                   InfiniteCanvas.instance?.commands.color.setColor(this.blockId, color)
                 }}
                 @show-picker=${() => {
@@ -41,7 +47,8 @@ export class ColorMenuElement extends SignalWatcher(BaseElement) {
                 }}
               ></ic-color-bubbles>
             `
-        }`
+        }
+      `
   }
 }
 

@@ -2,7 +2,7 @@ import { InfiniteCanvas } from '@infinitecanvas/core'
 import { AbstractButtonElement } from '@infinitecanvas/core/elements'
 import { type PropertyValues, svg } from 'lit'
 import { customElement } from 'lit/decorators.js'
-import { StickyNote } from '../components'
+import { Text } from '../components'
 import { VerticalAlign } from '../types'
 
 const alignments = [VerticalAlign.Top, VerticalAlign.Center, VerticalAlign.Bottom]
@@ -19,7 +19,7 @@ const icons = {
   `,
 }
 
-@customElement('ic-sticky-note-vertical-alignment-button')
+@customElement('ic-text-vertical-alignment-button')
 export class VerticalAlignmentButtonElement extends AbstractButtonElement {
   protected viewbox = '0 -960 960 960'
   protected icon = icons[VerticalAlign.Top] // Default icon, will be updated in connected
@@ -27,21 +27,21 @@ export class VerticalAlignmentButtonElement extends AbstractButtonElement {
   public updated(_changedProperties: PropertyValues): void {
     if (!_changedProperties.has('snapshot')) return
 
-    const stickyNote = this.readSnapshot<StickyNote>(StickyNote)
-    this.icon = icons[stickyNote?.verticalAlign ?? VerticalAlign.Top]
+    const text = this.readSnapshot<Text>(Text)
+    this.icon = icons[text?.verticalAlign ?? VerticalAlign.Top]
     this.requestUpdate()
   }
 
   protected onClick(): void {
-    const stickyNote = this.readSnapshot<StickyNote>(StickyNote)
-    const currAlign = stickyNote?.verticalAlign ?? VerticalAlign.Top
+    const text = this.readSnapshot<Text>(Text)
+    const currAlign = text?.verticalAlign ?? VerticalAlign.Top
     const nextAlign = alignments[(alignments.indexOf(currAlign) + 1) % alignments.length]
-    InfiniteCanvas.instance?.commands.stickyNote.setVerticalAlign(this.blockId, nextAlign)
+    InfiniteCanvas.instance?.commands.text.setVerticalAlign(this.blockId, nextAlign)
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-sticky-note-vertical-alignment-button': VerticalAlignmentButtonElement
+    'ic-text-vertical-alignment-button': VerticalAlignmentButtonElement
   }
 }

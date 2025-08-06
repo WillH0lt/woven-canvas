@@ -23,6 +23,12 @@ export class UpdateTextResize extends BaseSystem {
 
     for (const textEntity of this.selectedTexts.changed) {
       const block = textEntity.read(comps.Block)
+
+      const blockDef = this.getBlockDef(block.tag)
+
+      // skip resizing if we're doing a free transform
+      if (!blockDef || blockDef?.resizeMode === 'free') return
+
       const textDragStart = textEntity.write(TextDragStart)
 
       const sizeChanged = block.height !== textDragStart.lastHeight || block.width !== textDragStart.lastWidth

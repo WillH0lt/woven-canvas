@@ -7,9 +7,7 @@ export const style = css`
     grid-template-rows: repeat(2, minmax(0, 1fr));
     gap: 8px;
     padding: 8px;
-    border-radius: var(--ic-menu-border-radius);
     justify-content: center;
-    background-color: var(--ic-gray-700);
   }
 
   .color-bubble {
@@ -23,7 +21,7 @@ export const style = css`
 
   .color-bubble.selected {
     outline-width: 2px !important;
-    outline-color: var(--ic-primary-color) !important;
+    outline-color: var(--ic-primary) !important;
     outline-offset: 2px !important;
   }
 

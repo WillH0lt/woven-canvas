@@ -49,4 +49,14 @@ export class State {
 
     return components
   }
+
+  public getComponent<T>(Comp: new (data?: any) => T, id: string): Signal<T | undefined> {
+    const components = this.getComponents(Comp)
+    const componentData = components.value[id]
+    if (!componentData) {
+      return signal(undefined)
+    }
+
+    return signal(new Comp(componentData.value))
+  }
 }

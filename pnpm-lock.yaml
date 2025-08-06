@@ -86,9 +86,12 @@ importers:
       '@infinitecanvas/extension-multiplayer':
         specifier: workspace:^
         version: link:../../packages/extension-multiplayer
-      '@infinitecanvas/extension-sticky-note':
+      '@infinitecanvas/extension-rough-shapes':
         specifier: workspace:^
-        version: link:../../packages/extension-sticky-note
+        version: link:../../packages/extension-rough-shapes
+      '@infinitecanvas/extension-sticky-notes':
+        specifier: workspace:^
+        version: link:../../packages/extension-sticky-notes
       '@infinitecanvas/extension-text':
         specifier: workspace:^
         version: link:../../packages/extension-text
@@ -240,7 +243,7 @@ importers:
         specifier: ^3.1.4
         version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
 
-  packages/extension-sticky-note:
+  packages/extension-rough-shapes:
     dependencies:
       '@infinitecanvas/core':
         specifier: workspace:^
@@ -260,52 +263,32 @@ importers:
       '@preact/signals-core':
         specifier: ^1.10.0
         version: 1.10.0
-      '@tiptap/core':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/pm@3.0.7)
-      '@tiptap/extension-bold':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-color':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/extension-text-style@3.0.7)
-      '@tiptap/extension-document':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-history':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/extensions@3.0.1)
-      '@tiptap/extension-italic':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-paragraph':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-text':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-text-align':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-text-style':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-underline':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
       lit:
         specifier: ^3.3.0
         version: 3.3.0
-      tinycolor2:
-        specifier: ^1.6.0
-        version: 1.6.0
-      zod:
-        specifier: ^3.25.36
-        version: 3.25.36
+      roughjs:
+        specifier: ^4.6.6
+        version: 4.6.6
     devDependencies:
-      '@types/tinycolor2':
-        specifier: ^1.4.6
-        version: 1.4.6
+      vitest:
+        specifier: ^3.1.4
+        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
+
+  packages/extension-sticky-notes:
+    dependencies:
+      '@infinitecanvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@infinitecanvas/extension-color':
+        specifier: workspace:^
+        version: link:../extension-color
+      '@infinitecanvas/extension-text':
+        specifier: workspace:^
+        version: link:../extension-text
+      lit:
+        specifier: ^3.3.0
+        version: 3.3.0
+    devDependencies:
       vitest:
         specifier: ^3.1.4
         version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
@@ -2354,6 +2337,10 @@ packages:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
     dev: true
 
+  /hachure-fill@0.5.2:
+    resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
+    dev: false
+
   /has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
@@ -3028,6 +3015,10 @@ packages:
       entities: 6.0.0
     dev: true
 
+  /path-data-parser@0.1.0:
+    resolution: {integrity: sha512-NOnmBpt5Y2RWbuv0LMzsayp3lVylAHLPUTut412ZA3l+C4uw4ZVkQbjShYCQ8TCpUMdPapr4YjUqLYD6v68j+w==}
+    dev: false
+
   /path-key@3.1.1:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
@@ -3107,6 +3098,17 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
+
+  /points-on-curve@0.2.0:
+    resolution: {integrity: sha512-0mYKnYYe9ZcqMCWhUjItv/oHjvgEsfKvnUTg8sAtnHr3GVy7rGkXCb6d5cSyqrWqL4k81b9CPg3urd+T7aop3A==}
+    dev: false
+
+  /points-on-path@0.2.1:
+    resolution: {integrity: sha512-25ClnWWuw7JbWZcgqY/gJ4FQWadKxGWk+3kR/7kD0tCaDtPPMj7oHu2ToLaVhfpnHrZzYby2w6tUA0eOIuUg8g==}
+    dependencies:
+      path-data-parser: 0.1.0
+      points-on-curve: 0.2.0
+    dev: false
 
   /postcss-load-config@6.0.1(tsx@4.19.4):
     resolution: {integrity: sha512-oPtTM4oerL+UXmx+93ytZVN82RrlY/wPUV8IeDxFrzIjXOLF1pN+EmKPLbubvKHT2HC20xXsCAH2Z+CKV6Oz/g==}
@@ -3396,6 +3398,15 @@ packages:
 
   /rope-sequence@1.3.4:
     resolution: {integrity: sha512-UT5EDe2cu2E/6O4igUr5PSFs23nvvukicWHx6GnOPlHAiiYbzNuCRQCuiUdHJQcqKalLKlrYJnjY0ySGsXNQXQ==}
+    dev: false
+
+  /roughjs@4.6.6:
+    resolution: {integrity: sha512-ZUz/69+SYpFN/g/lUlo2FXcIjRkSu3nDarreVdGGndHEBJ6cXPdKguS8JGxwj5HA5xIbVKSmLgr5b3AWxtRfvQ==}
+    dependencies:
+      hachure-fill: 0.5.2
+      path-data-parser: 0.1.0
+      points-on-curve: 0.2.0
+      points-on-path: 0.2.1
     dev: false
 
   /rrweb-cssom@0.8.0:

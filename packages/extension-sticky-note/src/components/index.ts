@@ -1,1 +1,0 @@
-export { StickyNote } from './StickyNote'

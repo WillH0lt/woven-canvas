@@ -3,6 +3,7 @@ import {
   type BaseResources,
   type CommandArgs,
   ComponentRegistry,
+  CoreCommand,
   type ICommands,
   type IStore,
   type SendCommandFn,
@@ -12,25 +13,26 @@ import { type Signal, signal } from '@preact/signals-core'
 
 import './elements'
 import './floatingMenuButtons'
-import { TextEditorFloatingMenuButtons } from './buttonCatelog'
+import { TextEditorFloatingMenuButtons } from './buttonCatalog'
 import { Text as TextComp } from './components'
 import { TextElement } from './elements'
 import * as sys from './systems'
-import { TextAlign } from './types'
+import { TextAlign, VerticalAlign } from './types'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
-    textEditor: {
+    text: {
       toggleBold: () => void
       toggleItalic: () => void
       toggleUnderline: () => void
       setAlignment: (alignment: TextAlign) => void
       setColor: (color: string) => void
+      setVerticalAlign: (blockId: string, verticalAlign: VerticalAlign) => void
     }
   }
 
   interface IStore {
-    textEditor: {
+    text: {
       bold: Signal<boolean>
       italic: Signal<boolean>
       underline: Signal<boolean>
@@ -82,9 +84,9 @@ class TextExtensionClass extends BaseExtension {
     return null
   }
 
-  public addCommands(_send: SendCommandFn<CommandArgs>): Partial<ICommands> {
+  public addCommands(send: SendCommandFn<CommandArgs>): Partial<ICommands> {
     return {
-      textEditor: {
+      text: {
         toggleBold: () => {
           const element = this.#getEditableTextElement()
           element?.toggleBold()
@@ -105,13 +107,22 @@ class TextExtensionClass extends BaseExtension {
           const element = this.#getEditableTextElement()
           element?.setColor(color)
         },
+        setVerticalAlign: (blockId: string, verticalAlign: VerticalAlign) => {
+          send(CoreCommand.ApplySnapshot, {
+            [blockId]: {
+              Text: {
+                verticalAlign,
+              },
+            },
+          })
+        },
       },
     }
   }
 
   public addStore = (_state: State): Partial<IStore> => {
     return {
-      textEditor: {
+      text: {
         bold: signal(false),
         italic: signal(false),
         underline: signal(false),

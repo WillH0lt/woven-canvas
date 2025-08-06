@@ -1,13 +1,11 @@
 import type { Snapshot } from '@infinitecanvas/core'
 import { BaseEditable } from '@infinitecanvas/core/elements'
 import type { Color } from '@infinitecanvas/extension-color'
-import type { Text, TextElement } from '@infinitecanvas/extension-text'
+import { type Text, type TextElement, VerticalAlign } from '@infinitecanvas/extension-text'
 
 import { css, html } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
-import type { StickyNote } from '../components'
-import { VerticalAlign } from '../types'
 
 @customElement('ic-sticky-note')
 export class StickyNoteElement extends BaseEditable {
@@ -19,9 +17,6 @@ export class StickyNoteElement extends BaseEditable {
 
   @property({ type: Object })
   public color!: Color
-
-  @property({ type: Object })
-  public stickyNote!: StickyNote
 
   static styles = css`
     #container {
@@ -43,7 +38,7 @@ export class StickyNoteElement extends BaseEditable {
         [VerticalAlign.Top]: 'flex-start',
         [VerticalAlign.Center]: 'center',
         [VerticalAlign.Bottom]: 'flex-end',
-      }[this.stickyNote.verticalAlign] || 'flex-start'
+      }[this.text.verticalAlign] || 'flex-start'
 
     return html`
       <div id="container" style=${styleMap({

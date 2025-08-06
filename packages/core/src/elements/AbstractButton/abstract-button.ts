@@ -1,4 +1,4 @@
-import { LitElement, type SVGTemplateResult, html } from 'lit'
+import { type HTMLTemplateResult, LitElement, html } from 'lit'
 import { property } from 'lit/decorators.js'
 
 import type { BaseComponent } from '../../BaseComponent'
@@ -14,22 +14,16 @@ export abstract class AbstractButtonElement extends LitElement {
   @property({ type: Object })
   public snapshot!: Snapshot
 
-  protected abstract viewbox: string
+  protected abstract icon: HTMLTemplateResult
 
-  protected abstract icon: SVGTemplateResult
-
-  protected abstract onClick(): void
+  protected onClick(): void {
+    // no-op
+  }
 
   render() {
     return html`
       <div class="button" @click="${this.onClick}">
-        <svg
-          class="icon"
-          viewBox="${this.viewbox}"
-          fill="currentColor"
-        >
-          ${this.icon}
-        </svg>
+        ${this.icon}
       </div>
     `
   }

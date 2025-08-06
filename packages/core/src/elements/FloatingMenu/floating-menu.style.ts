@@ -56,4 +56,10 @@ export const style = css`
       border-radius: var(--ic-menu-tooltip-border-radius);
       font-size: 70%;
     }
+
+    .menu {
+      background-color: var(--ic-gray-700);
+      border-radius: var(--ic-menu-border-radius);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
   `

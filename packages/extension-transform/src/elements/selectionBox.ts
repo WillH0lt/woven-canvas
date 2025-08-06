@@ -12,7 +12,7 @@ export class SelectionBoxElement extends BaseElement {
       background-color: #5865f222;
       border-style: solid;
       border-width: 2px;
-      border-color: var(--ic-primary-color);
+      border-color: var(--ic-primary);
     }
   `
 

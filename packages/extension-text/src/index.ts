@@ -1,4 +1,5 @@
 export { TextExtension } from './TextExtension.js'
 export * from './elements'
 export * from './components'
-export * from './buttonCatelog'
+export * from './buttonCatalog.js'
+export { TextAlign, VerticalAlign } from './types.js'
