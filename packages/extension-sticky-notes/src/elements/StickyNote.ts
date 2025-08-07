@@ -1,7 +1,7 @@
 import type { Snapshot } from '@infinitecanvas/core'
 import { BaseEditable } from '@infinitecanvas/core/elements'
 import type { Color } from '@infinitecanvas/extension-color'
-import { type Text, type TextElement, VerticalAlign } from '@infinitecanvas/extension-text'
+import { type Text, TextAlign, type TextElement, VerticalAlign } from '@infinitecanvas/extension-text'
 
 import { css, html } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
@@ -45,7 +45,12 @@ export class StickyNoteElement extends BaseEditable {
         'background-color': `rgb(${this.color.red}, ${this.color.green}, ${this.color.blue})`,
         'align-items': alignStyle,
       })}>
-        <ic-text blockId=${this.blockId} .editing=${this.editing} .text=${this.text}></ic-text>
+        <ic-text 
+          blockId=${this.blockId}
+          .editing=${this.editing}
+          .text=${this.text}
+          .defaultAlignment=${TextAlign.Center}
+        ></ic-text>
     </div>
     `
   }

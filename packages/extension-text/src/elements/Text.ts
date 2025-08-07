@@ -30,6 +30,9 @@ export class TextElement extends BaseEditable {
   @property({ type: Boolean })
   editing = false
 
+  @property({ type: String })
+  defaultAlignment: TextAlignKind = TextAlignKind.Left
+
   @query('#editorContainer') editorContainer: HTMLElement | undefined
 
   private _editor: Editor | null = null
@@ -108,7 +111,7 @@ export class TextElement extends BaseEditable {
         TextAlign.configure({
           types: ['paragraph'],
           alignments: ['left', 'center', 'right', 'justify'],
-          defaultAlignment: 'left',
+          defaultAlignment: this.defaultAlignment,
         }),
         History,
       ],
@@ -236,6 +239,7 @@ export class TextElement extends BaseEditable {
       'line-height': `${text.lineHeight}`,
       'font-size': `${text.fontSize}px`,
       'pointer-events': this.editing ? 'auto' : 'none',
+      'text-align': this.defaultAlignment.toLowerCase(),
     }
 
     return html`${

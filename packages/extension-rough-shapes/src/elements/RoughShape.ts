@@ -1,7 +1,7 @@
 import type { Snapshot } from '@infinitecanvas/core'
 import { BaseEditable } from '@infinitecanvas/core/elements'
 import { colorToHex } from '@infinitecanvas/core/helpers'
-import { type Text, type TextElement, VerticalAlign } from '@infinitecanvas/extension-text'
+import { type Text, TextAlign, type TextElement, VerticalAlign } from '@infinitecanvas/extension-text'
 import { type PropertyValues, css, html, svg } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
@@ -69,6 +69,7 @@ export class RoughShapeElement extends BaseEditable {
     #text {
       max-width: 100%;
       max-height: 100%;
+      min-width: 100%;
       padding: 16px;
     }
 
@@ -115,6 +116,7 @@ export class RoughShapeElement extends BaseEditable {
             blockId=${this.blockId} 
             .editing=${this.editing} 
             .text=${this.text} 
+            .defaultAlignment=${TextAlign.Center}
           ></ic-text>
         </div>
         <div id="shape">

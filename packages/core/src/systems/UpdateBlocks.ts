@@ -183,6 +183,8 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     const diff = new Diff()
     diff.added = snapshot
 
+    console.log('Creating blocks from snapshot:', diff.added)
+
     applyDiff(this, diff, this.entities)
 
     this.emitCommand(CoreCommand.CreateCheckpoint)
