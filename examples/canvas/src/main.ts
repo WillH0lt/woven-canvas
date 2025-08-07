@@ -10,7 +10,7 @@ import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
 import { RoughShape, RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
 // import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
 import { StickyNotesExtension } from '@infinitecanvas/extension-sticky-notes'
-import { Text, TextExtension } from '@infinitecanvas/extension-text'
+import { Text, TextExtension, VerticalAlign } from '@infinitecanvas/extension-text'
 import { TransformExtension } from '@infinitecanvas/extension-transform'
 
 const lorem = new LoremIpsum({
@@ -147,6 +147,7 @@ document.querySelector<HTMLDivElement>('#stickyNoteBtn')!.addEventListener('clic
   const text = new Text()
   text.fontSize = 40
   text.content = lorem.generateSentences(1)
+  text.verticalAlign = VerticalAlign.Center
 
   infiniteCanvas?.commands.core.addBlock(block, [color, text])
 })
@@ -159,6 +160,7 @@ document.querySelector<HTMLDivElement>('#shapeBtn')!.addEventListener('click', (
   const text = new Text()
   text.fontSize = 40
   text.content = lorem.generateSentences(1)
+  text.verticalAlign = VerticalAlign.Center
 
   const roughShape = new RoughShape()
   roughShape.fillRed = 255
