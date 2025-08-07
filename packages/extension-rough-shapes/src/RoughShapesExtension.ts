@@ -21,7 +21,7 @@ type RoughShapeData = Omit<RoughShape, keyof BaseComponent>
 declare module '@infinitecanvas/core' {
   interface ICommands {
     roughShapes: {
-      set: (blockId: string, roughShape: Partial<RoughShapeData>) => void
+      setRoughShape: (blockId: string, roughShape: Partial<RoughShapeData>) => void
     }
   }
 
@@ -49,8 +49,8 @@ class RoughShapesExtensionClass extends BaseExtension {
   public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       roughShapes: {
-        set: (blockId: string, roughShape: Partial<RoughShapeData>) => {
-          send(CoreCommand.ApplySnapshot, {
+        setRoughShape: (blockId: string, roughShape: Partial<RoughShapeData>) => {
+          send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {
               RoughShape: roughShape,
             },

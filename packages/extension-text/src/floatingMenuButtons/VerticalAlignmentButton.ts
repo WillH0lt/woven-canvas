@@ -36,7 +36,7 @@ export class VerticalAlignmentButtonElement extends AbstractButtonElement {
     const text = this.readSnapshot<Text>(Text)
     const currAlign = text?.verticalAlign ?? VerticalAlign.Top
     const nextAlign = alignments[(alignments.indexOf(currAlign) + 1) % alignments.length]
-    InfiniteCanvas.instance?.commands.text.setVerticalAlign(this.blockId, nextAlign)
+    InfiniteCanvas.instance?.commands.text.setText(this.blockId, { verticalAlign: nextAlign })
   }
 }
 

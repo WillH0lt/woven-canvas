@@ -47,14 +47,7 @@ class LocalStorageExtensionClass extends BaseExtension {
         args.push(component, model)
       }
 
-      // for (const [componentName, model] of Object.entries(entity)) {
-      //   const Component = componentNames.get(componentName)
-      //   if (!Component) continue
-      //   args.push(Component, model)
-      // }
-
-      // @ts-ignore
-      worldSystem.createEntity(...args, Persistent, { id })
+      worldSystem.createEntity(...args, Persistent)
     }
 
     // clear initialEntities to save on memory

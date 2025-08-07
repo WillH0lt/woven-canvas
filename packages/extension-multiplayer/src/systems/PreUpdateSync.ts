@@ -1,4 +1,5 @@
-import { type BaseResources, BaseSystem, type Diff, comps } from '@infinitecanvas/core'
+import { type BaseResources, BaseSystem, type Diff } from '@infinitecanvas/core'
+import { Block, Persistent } from '@infinitecanvas/core/components'
 import { applyDiff } from '@infinitecanvas/core/helpers'
 import { type Socket, io } from 'socket.io-client'
 
@@ -7,7 +8,7 @@ export class PreUpdateSync extends BaseSystem {
 
   protected declare readonly resources: BaseResources
 
-  private readonly entities = this.query((q) => q.current.with(comps.Persistent).usingAll.write)
+  private readonly entities = this.query((q) => q.current.with(Block, Persistent).usingAll.write)
 
   private diffBuffer: Diff[] = []
 

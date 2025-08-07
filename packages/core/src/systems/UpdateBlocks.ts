@@ -21,16 +21,12 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   // declaring to becsy that rankBounds is a singleton component
   private readonly _rankBounds = this.singleton.read(comps.RankBounds)
 
-  private readonly blocks = this.query(
-    (q) => q.current.added.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
-  )
-
   private readonly persistentBlocks = this.query((q) => q.added.with(comps.Block, comps.Persistent))
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
 
   private readonly entities = this.query(
-    (q) => q.current.with(comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Persistent).id)).usingAll.write,
+    (q) => q.current.with(comps.Block).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
   )
 
   public constructor() {
@@ -39,13 +35,13 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   }
 
   public initialize(): void {
-    this.addCommandListener(CoreCommand.UpdateBlock, this.updateBlock.bind(this))
     this.addCommandListener(CoreCommand.RemoveSelected, this.removeSelected.bind(this))
     this.addCommandListener(CoreCommand.DuplicateSelected, this.duplicateSelected.bind(this))
     this.addCommandListener(CoreCommand.BringForwardSelected, this.bringForwardSelected.bind(this))
     this.addCommandListener(CoreCommand.SendBackwardSelected, this.sendBackwardSelected.bind(this))
-    this.addCommandListener(CoreCommand.ApplySnapshot, this.applySnapshot.bind(this))
-    this.addCommandListener(CoreCommand.AddBlock, this.addBlock.bind(this))
+
+    this.addCommandListener(CoreCommand.UpdateFromSnapshot, this.updateFromSnapshot.bind(this))
+    this.addCommandListener(CoreCommand.CreateFromSnapshot, this.createFromSnapshot.bind(this))
   }
 
   public execute(): void {
@@ -149,7 +145,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 
-  private applySnapshot(snapshot: Snapshot): void {
+  private updateFromSnapshot(snapshot: Snapshot): void {
     const diff = new Diff()
     diff.changedTo = snapshot
 
@@ -158,11 +154,30 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 
-  private addBlock(snapshot: Snapshot): void {
+  private createFromSnapshot(snapshot: Snapshot): void {
     for (const id of Object.keys(snapshot)) {
-      const block = snapshot[id].Block as Block
-      if (block.rank) continue
-      block.rank = this.rankBounds.genNext().toString()
+      if (!snapshot[id].Block) {
+        console.error(`Block with id ${id} does not have a Block component. Skipping.`)
+        delete snapshot[id]
+        continue
+      }
+
+      const block = snapshot[id].Block as Partial<Block>
+      if (block.id !== id) {
+        console.warn(`Block id mismatch: expected ${id}, got ${block.id}. Updating id.`)
+        block.id = id
+      }
+
+      if (!block.rank) {
+        block.rank = this.rankBounds.genNext().toString()
+      }
+
+      try {
+        LexoRank.parse(block.rank)
+      } catch (err: any) {
+        console.error(`Invalid block rank for block with id ${id}: ${block.rank}. Error: ${err.message}`)
+        delete snapshot[id]
+      }
     }
 
     const diff = new Diff()

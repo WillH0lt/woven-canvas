@@ -1,7 +1,7 @@
 import type { Query, System } from '@lastolivegames/becsy'
 import { ComponentRegistry } from '../ComponentRegistry'
 import type { Diff } from '../History'
-import { Persistent } from '../components'
+import { Block } from '../components'
 import { binarySearchForId } from '../helpers/binarySearchForId'
 
 export function applyDiff(system: System, diff: Diff, entities: Query): void {
@@ -9,9 +9,9 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
 
   // added components
   for (const [id, components] of Object.entries(diff.added)) {
-    let entity = binarySearchForId(Persistent, id, entities.current)
+    let entity = binarySearchForId(Block, id, entities.current)
     if (!entity) {
-      entity = system.createEntity(Persistent, { id })
+      entity = system.createEntity(Block, { id })
     }
 
     for (const [componentName, model] of Object.entries(components)) {
@@ -23,7 +23,7 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
 
   // changed components
   for (const [id, components] of Object.entries(diff.changedTo)) {
-    const entity = binarySearchForId(Persistent, id, entities.current)
+    const entity = binarySearchForId(Block, id, entities.current)
     if (!entity) continue
 
     for (const [componentName, model] of Object.entries(components)) {
@@ -36,7 +36,7 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
 
   // removed components
   for (const [id, components] of Object.entries(diff.removed)) {
-    const entity = binarySearchForId(Persistent, id, entities.current)
+    const entity = binarySearchForId(Block, id, entities.current)
     if (!entity) continue
 
     for (const componentName of Object.keys(components)) {

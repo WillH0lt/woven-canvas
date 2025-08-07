@@ -36,7 +36,7 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
 
       element.removeAttribute('editing')
 
-      this.emitCommand(CoreCommand.ApplySnapshot, snapshot)
+      this.emitCommand(CoreCommand.UpdateFromSnapshot, snapshot)
     }
   }
 }

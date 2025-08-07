@@ -47,6 +47,8 @@ export enum TransformCommand {
   RemoveTransformBox = 'removeTransformBox',
   StartTransformBoxEdit = 'startTransformBoxEdit',
   EndTransformBoxEdit = 'endTransformBoxEdit',
+
+  DragBlock = 'dragBlock',
 }
 
 export type TransformCommandArgs = {
@@ -70,6 +72,14 @@ export type TransformCommandArgs = {
   [TransformCommand.RemoveTransformBox]: []
   [TransformCommand.StartTransformBoxEdit]: []
   [TransformCommand.EndTransformBoxEdit]: []
+
+  [TransformCommand.DragBlock]: [
+    Entity,
+    {
+      left: number
+      top: number
+    },
+  ]
 }
 
 export enum TransformHandleKind {

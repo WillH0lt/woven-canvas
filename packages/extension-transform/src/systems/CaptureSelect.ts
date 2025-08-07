@@ -85,7 +85,7 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
       }),
       resetDragged: ({ context }) => {
         if (!context.draggedEntity) return
-        this.emitCommand(CoreCommand.UpdateBlock, context.draggedEntity, {
+        this.emitCommand(TransformCommand.DragBlock, context.draggedEntity, {
           left: context.draggedEntityStart[0],
           top: context.draggedEntityStart[1],
         })
@@ -109,7 +109,7 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
       updateDragged: ({ context, event }) => {
         if (!context.draggedEntity || !('worldPosition' in event)) return
 
-        this.emitCommand(CoreCommand.UpdateBlock, context.draggedEntity, {
+        this.emitCommand(TransformCommand.DragBlock, context.draggedEntity, {
           left: context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0],
           top: context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1],
         })

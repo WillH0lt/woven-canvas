@@ -2,7 +2,7 @@ import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import type { Block } from '@infinitecanvas/core/components'
+import { Block } from '@infinitecanvas/core/components'
 import { Color, ColorExtension } from '@infinitecanvas/extension-color'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
@@ -166,15 +166,15 @@ document.querySelector<HTMLDivElement>('#shapeBtn')!.addEventListener('click', (
   infiniteCanvas?.commands.core.addBlock(block, [text, roughShape])
 })
 
-function generateBlock(block: Partial<Block>): Partial<Block> {
-  return {
+function generateBlock(block: Partial<Block>): Block {
+  return new Block({
     left: Math.random() * window.innerWidth,
     top: Math.random() * window.innerHeight,
     width: 100,
     height: 100,
     id: crypto.randomUUID(),
     ...block,
-  }
+  })
 }
 
 function loadFont(fontFamily: string): Promise<void> {

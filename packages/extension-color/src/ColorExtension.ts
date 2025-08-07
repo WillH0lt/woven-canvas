@@ -1,4 +1,5 @@
 import {
+  type BaseComponent,
   BaseExtension,
   type BaseResources,
   ComponentRegistry,
@@ -14,10 +15,12 @@ import { type ReadonlySignal, computed } from '@preact/signals-core'
 import { Color } from './components'
 import './elements'
 
+type ColorData = Omit<Color, keyof BaseComponent>
+
 declare module '@infinitecanvas/core' {
   interface ICommands {
     color: {
-      setColor: (blockId: string, color: Color) => void
+      setColor: (blockId: string, color: Partial<ColorData>) => void
     }
   }
 
@@ -36,10 +39,10 @@ class ColorExtensionClass extends BaseExtension {
   public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       color: {
-        setColor: (blockId: string, color: Color) => {
-          send(CoreCommand.ApplySnapshot, {
+        setColor: (blockId: string, color: Partial<ColorData>) => {
+          send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {
-              Color: color.serialize(),
+              Color: color,
             },
           })
         },
@@ -51,7 +54,7 @@ class ColorExtensionClass extends BaseExtension {
     return {
       color: {
         colorById: (id: string): ReadonlySignal<Color | undefined> =>
-          computed(() => state.getComponents(Color).value[id]?.value),
+          computed(() => state.getComponent<Color>(Color, id).value),
       },
     }
   }

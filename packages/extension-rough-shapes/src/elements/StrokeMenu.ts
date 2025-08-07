@@ -128,7 +128,7 @@ export class StrokeMenuElement extends SignalWatcher(BaseElement) {
   }
 
   private applyUpdate(updates: Partial<RoughShape>): void {
-    InfiniteCanvas.instance!.commands.roughShapes.set(this.blockId, updates)
+    InfiniteCanvas.instance!.commands.roughShapes.setRoughShape(this.blockId, updates)
   }
 }
 

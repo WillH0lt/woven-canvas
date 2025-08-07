@@ -36,10 +36,6 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
     this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))
   }
 
-  public execute(): void {
-    this.executeCommands()
-  }
-
   private addSelectionBox(): void {
     const id = crypto.randomUUID()
     this.createEntity(

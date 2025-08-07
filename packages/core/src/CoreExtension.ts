@@ -20,6 +20,8 @@ import './elements'
 import type { BaseComponent } from './BaseComponent'
 import { floatingMenuStandardButtons } from './buttonCatalog'
 
+type BlockData = Omit<Block, keyof BaseComponent>
+
 declare module '@infinitecanvas/core' {
   interface ICommands {
     core: {
@@ -32,8 +34,9 @@ declare module '@infinitecanvas/core' {
       sendBackwardSelected: () => void
       duplicateSelected: () => void
       removeSelected: () => void
-      applySnapshot: (...snapshots: Snapshot[]) => void
-      addBlock: (block: Partial<Block>, components: BaseComponent[]) => void
+      // updateComponent: (blockId: string, component: BaseComponent) => void
+      updateBlock: (blockId: string, block: Partial<BlockData>) => void
+      addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
     }
   }
 
@@ -43,7 +46,6 @@ declare module '@infinitecanvas/core' {
       selectedBlockCount: ReadonlySignal<number>
       selectedBlockIds: ReadonlySignal<string[]>
       blockById: (id: string) => ReadonlySignal<Block | undefined>
-      textById: (id: string) => ReadonlySignal<Text | undefined>
     }
   }
 }
@@ -106,28 +108,29 @@ export class CoreExtension extends BaseExtension {
         sendBackwardSelected: () => send(CoreCommand.SendBackwardSelected),
         duplicateSelected: () => send(CoreCommand.DuplicateSelected),
         removeSelected: () => send(CoreCommand.RemoveSelected),
-        applySnapshot: (snapshot: Snapshot) => send(CoreCommand.ApplySnapshot, snapshot),
-        addBlock: (block: Partial<Block>, components: BaseComponent[]) => {
+        updateBlock: (blockId: string, block: Partial<BlockData>) => {
+          send(CoreCommand.UpdateFromSnapshot, {
+            [blockId]: {
+              Block: block,
+            },
+          })
+        },
+        addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => {
           if (!block.id) {
             block.id = crypto.randomUUID()
           }
-
-          // const snapshotBuilder = new SnapshotBuilder()
-
-          // for (const component of components) {
-          //   snapshotBuilder.putComponent(block.id, component.constructor.name, component.serialize())
-          // }
 
           const snapshot: Snapshot = {
             [block.id]: {
               Block: block,
             },
           }
+
           for (const component of components) {
             const componentName = component.constructor.name
             snapshot[block.id][componentName] = component.serialize()
           }
-          send(CoreCommand.AddBlock, snapshot)
+          send(CoreCommand.CreateFromSnapshot, snapshot)
         },
       },
     }
@@ -143,9 +146,7 @@ export class CoreExtension extends BaseExtension {
           return Object.keys(selected)
         }),
         blockById: (id: string): ReadonlySignal<Block | undefined> =>
-          computed(() => state.getComponents(Block).value[id]?.value),
-        textById: (id: string): ReadonlySignal<Text | undefined> =>
-          computed(() => state.getComponents(Text).value[id]?.value),
+          computed(() => state.getComponent<Block>(Block, id).value),
       },
     }
   }

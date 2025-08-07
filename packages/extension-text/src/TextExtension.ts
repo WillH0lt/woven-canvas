@@ -1,4 +1,5 @@
 import {
+  type BaseComponent,
   BaseExtension,
   type BaseResources,
   type CommandArgs,
@@ -9,15 +10,17 @@ import {
   type SendCommandFn,
   type State,
 } from '@infinitecanvas/core'
-import { type Signal, signal } from '@preact/signals-core'
+import { type ReadonlySignal, type Signal, computed, signal } from '@preact/signals-core'
 
 import './elements'
 import './floatingMenuButtons'
 import { TextEditorFloatingMenuButtons } from './buttonCatalog'
-import { Text as TextComp } from './components'
+import { Text } from './components'
 import { TextElement } from './elements'
 import * as sys from './systems'
-import { TextAlign, VerticalAlign } from './types'
+import { TextAlign } from './types'
+
+type TextData = Omit<Text, keyof BaseComponent>
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -27,7 +30,7 @@ declare module '@infinitecanvas/core' {
       toggleUnderline: () => void
       setAlignment: (alignment: TextAlign) => void
       setColor: (color: string) => void
-      setVerticalAlign: (blockId: string, verticalAlign: VerticalAlign) => void
+      setText: (blockId: string, text: Partial<TextData>) => void
     }
   }
 
@@ -38,6 +41,7 @@ declare module '@infinitecanvas/core' {
       underline: Signal<boolean>
       alignment: Signal<TextAlign>
       color: Signal<string>
+      textById: (id: string) => ReadonlySignal<Text | undefined>
     }
   }
 }
@@ -51,20 +55,17 @@ class TextExtensionClass extends BaseExtension {
       canEdit: true,
       resizeMode: 'text' as const,
       editedFloatingMenu: TextEditorFloatingMenuButtons,
-      components: [TextComp],
+      components: [Text],
     },
   ]
 
   private blockContainer!: HTMLDivElement
 
   public async preBuild(resources: BaseResources): Promise<void> {
-    ComponentRegistry.instance.registerComponent(TextComp)
+    ComponentRegistry.instance.registerComponent(Text)
     this.blockContainer = resources.blockContainer
 
-    this._postUpdateGroup = this.createGroup(
-      resources,
-      sys.UpdateTextResize,
-    )
+    this._postUpdateGroup = this.createGroup(resources, sys.UpdateTextResize)
   }
 
   #getEditableTextElement(): TextElement | null {
@@ -107,12 +108,10 @@ class TextExtensionClass extends BaseExtension {
           const element = this.#getEditableTextElement()
           element?.setColor(color)
         },
-        setVerticalAlign: (blockId: string, verticalAlign: VerticalAlign) => {
-          send(CoreCommand.ApplySnapshot, {
+        setText: (blockId: string, text: Partial<TextData>) => {
+          send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {
-              Text: {
-                verticalAlign,
-              },
+              Text: text,
             },
           })
         },
@@ -120,7 +119,7 @@ class TextExtensionClass extends BaseExtension {
     }
   }
 
-  public addStore = (_state: State): Partial<IStore> => {
+  public addStore = (state: State): Partial<IStore> => {
     return {
       text: {
         bold: signal(false),
@@ -128,6 +127,8 @@ class TextExtensionClass extends BaseExtension {
         underline: signal(false),
         alignment: signal(TextAlign.Left),
         color: signal('#000000'),
+        textById: (id: string): ReadonlySignal<Text | undefined> =>
+          computed(() => state.getComponent<Text>(Text, id).value),
       },
     }
   }

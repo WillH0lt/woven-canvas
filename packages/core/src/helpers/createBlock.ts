@@ -18,5 +18,5 @@ export function createBlock(system: System, block: Partial<comps.Block>, rankBou
 
   block.rank = block.rank || rankBounds.genNext().toString()
 
-  return system.createEntity(comps.Block, block, comps.Persistent, { id: block.id })
+  return system.createEntity(comps.Block, block, comps.Persistent)
 }

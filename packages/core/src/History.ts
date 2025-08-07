@@ -1,6 +1,6 @@
 import type { Entity } from '@lastolivegames/becsy'
 import type { BaseComponent } from './BaseComponent'
-import { Persistent } from './components'
+import { Block } from './components'
 
 type Id = string
 type ComponentName = string
@@ -248,7 +248,7 @@ export class History {
 
   public addComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
     for (const entity of entities) {
-      const id = entity.read(Persistent).id
+      const id = entity.read(Block).id
       const comp = entity.read(Comp)
       const model = comp.serialize()
 
@@ -262,7 +262,7 @@ export class History {
 
   public updateComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
     for (const entity of entities) {
-      const id = entity.read(Persistent).id
+      const id = entity.read(Block).id
       const comp = entity.read(Comp)
       const model = comp.serialize()
 
@@ -276,7 +276,7 @@ export class History {
   }
 
   public removeComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
-    const entityIds = new Set(entities.map((entity) => entity.read(Persistent).id))
+    const entityIds = new Set(entities.map((entity) => entity.read(Block).id))
     for (const id of entityIds) {
       const model = this.snapshotBuilder.getRecord(id, Comp.name)
       if (!model) continue

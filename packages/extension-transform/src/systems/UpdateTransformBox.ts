@@ -39,10 +39,12 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
   private readonly transformBoxes = this.query(
     (q) =>
-      q.current
-        .with(TransformBox)
-        .write.using(comps.Block, TransformHandle, DragStart, comps.Hoverable, Locked, comps.Opacity).write,
+      q.current.changed
+        .with(TransformBox, comps.Block)
+        .write.trackWrites.using(TransformHandle, DragStart, comps.Hoverable, Locked, comps.Opacity).write,
   )
+
+  private readonly handles = this.query((q) => q.changed.with(TransformHandle, comps.Block).write.trackWrites)
 
   private readonly blocks = this.query((q) =>
     q.current.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
@@ -56,7 +58,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
   }
 
   public initialize(): void {
-    this.addCommandListener(CoreCommand.UpdateBlock, this.onBlockUpdate.bind(this))
+    this.addCommandListener(TransformCommand.DragBlock, this.dragBlock.bind(this))
     this.addCommandListener(TransformCommand.AddTransformBox, this.addTransformBox.bind(this))
     this.addCommandListener(TransformCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
     this.addCommandListener(TransformCommand.HideTransformBox, this.hideTransformBox.bind(this))
@@ -376,45 +378,43 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     this.updateTransformBox()
   }
 
-  private onBlockUpdate(blockEntity: Entity, updates: Partial<comps.Block>): void {
-    const block = blockEntity.read(comps.Block)
+  private dragBlock(blockEntity: Entity, position: { left: number; top: number }): void {
+    const block = blockEntity.write(comps.Block)
 
-    const position = {
-      left: updates.left ?? block.left,
-      top: updates.top ?? block.top,
-    }
+    block.left = position.left
+    block.top = position.top
 
     if (blockEntity.has(TransformBox)) {
-      this.onTransformBoxMove(blockEntity, position)
+      this.onTransformBoxMove(blockEntity)
     } else if (blockEntity.has(TransformHandle)) {
       const handle = blockEntity.read(TransformHandle)
       const kind = handle.kind
       if (kind === TransformHandleKind.Rotate) {
-        this.onRotateHandleMove(blockEntity, position)
+        this.onRotateHandleMove(blockEntity)
       } else if (kind === TransformHandleKind.Scale) {
-        this.onScaleHandleMove(blockEntity, position)
+        this.onTransformHandleMove(blockEntity, true)
       } else if (kind === TransformHandleKind.Stretch) {
-        this.onStretchHandleMove(blockEntity, position)
+        this.onTransformHandleMove(blockEntity, false)
       }
     }
   }
 
-  private onRotateHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
+  private onRotateHandleMove(handleEntity: Entity): void {
     if (!this.transformBoxes.current.length) {
       console.error('No transform box found')
       return
     }
 
     const boxEntity = this.transformBoxes.current[0]
-    const { width, height, rotateZ } = boxEntity.read(comps.Block)
     const boxCenter = computeCenter(boxEntity)
 
-    const { width: handleWidth, height: handleHeight } = handleEntity.read(comps.Block)
-    const handleCenter = [position.left + handleWidth / 2, position.top + handleHeight / 2]
+    const handleBlock = handleEntity.read(comps.Block)
+    const handleCenter = [handleBlock.left + handleBlock.width / 2, handleBlock.top + handleBlock.height / 2]
     const angleHandle = Math.atan2(handleCenter[1] - boxCenter[1], handleCenter[0] - boxCenter[0])
 
     const { vector } = handleEntity.read(TransformHandle)
-    const handleStartAngle = Math.atan2(height * vector[1], width * vector[0]) + rotateZ
+    const boxBlock = boxEntity.read(comps.Block)
+    const handleStartAngle = Math.atan2(boxBlock.height * vector[1], boxBlock.width * vector[0]) + boxBlock.rotateZ
 
     const delta = angleHandle - handleStartAngle
 
@@ -424,7 +424,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     //   delta += shift;
     // }
 
-    handleEntity.write(comps.Block).rotateZ = (rotateZ + delta) % (2 * Math.PI)
+    handleEntity.write(comps.Block).rotateZ = (boxBlock.rotateZ + delta) % (2 * Math.PI)
 
     for (const blockEntity of this.selectedBlocks.current) {
       const { startLeft, startTop, startWidth, startHeight, startRotateZ } = blockEntity.read(DragStart)
@@ -441,14 +441,17 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
   }
 
-  private onScaleHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
+  private onTransformHandleMove(handleEntity: Entity, maintainAspectRatio: boolean): void {
     if (!this.transformBoxes.current.length) {
       console.error('No transform box found')
       return
     }
 
-    const { width, height } = handleEntity.read(comps.Block)
-    const handleCenter: [number, number] = [position.left + width / 2, position.top + height / 2]
+    const handleBlock = handleEntity.read(comps.Block)
+    const handleCenter: [number, number] = [
+      handleBlock.left + handleBlock.width / 2,
+      handleBlock.top + handleBlock.height / 2,
+    ]
 
     const boxEntity = this.transformBoxes.current[0]
     const {
@@ -479,12 +482,22 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
     let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
 
-    const startAspectRatio = boxStartWidth / boxStartHeight
-    const newAspectRatio = boxEndWidth / boxEndHeight
-    if (newAspectRatio > startAspectRatio) {
-      boxEndHeight = boxEndWidth / startAspectRatio
+    if (maintainAspectRatio) {
+      // Scale mode: maintain aspect ratio
+      const startAspectRatio = boxStartWidth / boxStartHeight
+      const newAspectRatio = boxEndWidth / boxEndHeight
+      if (newAspectRatio > startAspectRatio) {
+        boxEndHeight = boxEndWidth / startAspectRatio
+      } else {
+        boxEndWidth = boxEndHeight * startAspectRatio
+      }
     } else {
-      boxEndWidth = boxEndHeight * startAspectRatio
+      // Stretch mode: allow stretching in one dimension
+      if (handleVec[0] === 0) {
+        boxEndWidth = boxStartWidth
+      } else if (handleVec[1] === 0) {
+        boxEndHeight = boxStartHeight
+      }
     }
 
     const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
@@ -508,6 +521,10 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       const width = startWidth * (boxEndWidth / boxStartWidth)
       const height = startHeight * (boxEndHeight / boxStartHeight)
 
+      if (!maintainAspectRatio) {
+        block.hasStretched = true
+      }
+
       block.left = left
       block.top = top
       block.width = width
@@ -515,87 +532,14 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
   }
 
-  private onStretchHandleMove(handleEntity: Entity, position: { left: number; top: number }): void {
-    if (!this.transformBoxes.current.length) {
-      console.error('No transform box found')
-      return
-    }
-
-    const { width, height } = handleEntity.read(comps.Block)
-    const handleCenter: [number, number] = [position.left + width / 2, position.top + height / 2]
-
-    const boxEntity = this.transformBoxes.current[0]
-    const {
-      startLeft: boxStartLeft,
-      startTop: boxStartTop,
-      startWidth: boxStartWidth,
-      startHeight: boxStartHeight,
-      startRotateZ: boxRotateZ,
-    } = boxEntity.read(DragStart)
-
-    // get the position of the opposite handle of the transform box
-    const { vector, kind: handleKind } = handleEntity.read(TransformHandle)
-    const handleVec: [number, number] = [vector[0], vector[1]]
-
-    const oppositeHandle = boxEntity.read(TransformBox).handles.find((h) => {
-      const { vector, kind } = h.read(TransformHandle)
-      return handleKind === kind && handleVec[0] === -vector[0] && handleVec[1] === -vector[1]
-    })
-    if (!oppositeHandle) {
-      console.error('No opposite handle found for', handleKind, handleVec)
-      return
-    }
-
-    const oppositeCenter = computeCenter(oppositeHandle)
-    let difference: [number, number] = [handleCenter[0] - oppositeCenter[0], handleCenter[1] - oppositeCenter[1]]
-    difference = rotatePoint(difference, [0, 0], -boxRotateZ)
-
-    let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
-    let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
-
-    // //
-    if (handleVec[0] === 0) {
-      boxEndWidth = boxStartWidth
-    } else if (handleVec[1] === 0) {
-      boxEndHeight = boxStartHeight
-    }
-
-    const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
-    const rotatedVector = rotatePoint(vec, [0, 0], boxRotateZ)
-
-    const newBoxCenter = [oppositeCenter[0] + rotatedVector[0] / 2, oppositeCenter[1] + rotatedVector[1] / 2]
-
-    const boxEndLeft = newBoxCenter[0] - boxEndWidth / 2
-    const boxEndTop = newBoxCenter[1] - boxEndHeight / 2
-
-    for (const selectedEntity of this.selectedBlocks.current) {
-      const { startLeft, startTop, startWidth, startHeight } = selectedEntity.read(DragStart)
-
-      const block = selectedEntity.write(comps.Block)
-
-      const left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
-      const top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
-
-      const width = startWidth * (boxEndWidth / boxStartWidth)
-      const height = startHeight * (boxEndHeight / boxStartHeight)
-
-      // TODO this won't work if there are multiple blocks selected
-      block.hasStretched = true
-      block.top = top
-      block.height = height
-      block.left = left
-      block.width = width
-      // if (handleVec[0] === 0) {
-      // } else if (handleVec[1] === 0) {
-      // }
-    }
-  }
-
-  private onTransformBoxMove(transformBoxEntity: Entity, position: { left: number; top: number }): void {
+  private onTransformBoxMove(transformBoxEntity: Entity): void {
     const boxStart = transformBoxEntity.read(DragStart)
+    const transformBoxBlock = transformBoxEntity.read(comps.Block)
 
-    const dx = position.left - boxStart.startLeft
-    const dy = position.top - boxStart.startTop
+    const dx = transformBoxBlock.left - boxStart.startLeft
+    const dy = transformBoxBlock.top - boxStart.startTop
+
+    if (dx === 0 && dy === 0) return
 
     for (const selectedBlock of this.selectedBlocks.current) {
       const blockStart = selectedBlock.read(DragStart)

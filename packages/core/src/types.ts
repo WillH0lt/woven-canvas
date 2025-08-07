@@ -6,7 +6,6 @@ import { BaseExtension } from './BaseExtension'
 import type { History, Snapshot } from './History'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
-import type { Block } from './components'
 // import { standardButtonSet } from './buttonCatalog'
 
 export enum EmitterEventKind {
@@ -146,9 +145,6 @@ export enum CoreCommand {
   SetZoom = 'setZoom',
   MoveCamera = 'moveCamera',
 
-  AddBlock = 'addBlock',
-  UpdateBlock = 'updateBlock',
-
   SetTool = 'setTool',
   SetCursor = 'setCursor',
 
@@ -160,12 +156,12 @@ export enum CoreCommand {
   SendBackwardSelected = 'sendBackwardSelected',
   DuplicateSelected = 'duplicateSelected',
   RemoveSelected = 'removeSelected',
-  ApplySnapshot = 'applySnapshot',
+
+  CreateFromSnapshot = 'createFromSnapshot',
+  UpdateFromSnapshot = 'updateFromSnapshot',
 }
 
 export type CoreCommandArgs = {
-  [CoreCommand.UpdateBlock]: [Entity, Partial<Block>]
-
   [CoreCommand.SetTool]: [
     {
       tool: string
@@ -189,6 +185,7 @@ export type CoreCommandArgs = {
       y: number
     },
   ]
+
   [CoreCommand.Undo]: []
   [CoreCommand.Redo]: []
   [CoreCommand.CreateCheckpoint]: []
@@ -197,8 +194,9 @@ export type CoreCommandArgs = {
   [CoreCommand.SendBackwardSelected]: []
   [CoreCommand.DuplicateSelected]: []
   [CoreCommand.RemoveSelected]: []
-  [CoreCommand.ApplySnapshot]: [Snapshot]
-  [CoreCommand.AddBlock]: [Snapshot]
+
+  [CoreCommand.CreateFromSnapshot]: [Snapshot]
+  [CoreCommand.UpdateFromSnapshot]: [Snapshot]
 }
 
 export type PointerEvent =

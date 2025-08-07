@@ -16,7 +16,8 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
   private readonly removedQueries = new Map<new () => BaseComponent, Query>()
 
   private readonly entities = this.query(
-    (q) => q.current.with(comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Persistent).id)).usingAll.write,
+    (q) =>
+      q.current.with(comps.Block, comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
   )
 
   protected declare readonly resources: CoreResources
