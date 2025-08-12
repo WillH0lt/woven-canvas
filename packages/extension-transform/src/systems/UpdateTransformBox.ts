@@ -9,7 +9,7 @@ import {
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
-import { computeCenter, computeExtentsAlongAngle, rotatePoint } from '../helpers'
+import { computeExtentsAlongAngle, rotatePoint } from '../helpers'
 import { TransformCommand, type TransformCommandArgs, TransformHandleKind, type TransformResources } from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
@@ -166,6 +166,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     const transformBoxBlock = transformBoxEntity.read(comps.Block)
 
     const { left, top, width, height, rotateZ } = transformBoxBlock
+    const center = transformBoxBlock.getCenter()
     const handleSize = 15 / this.camera.zoom
     const rotationHandleSize = 2 * handleSize
     const sideHandleSize = 2 * handleSize
@@ -265,8 +266,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         cursor: CursorIcon.EW,
       })
     }
-
-    const center = computeCenter(transformBoxEntity)
 
     for (const handle of handles) {
       let handleEntity: Entity | undefined
@@ -406,7 +405,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     const boxEntity = this.transformBoxes.current[0]
-    const boxCenter = computeCenter(boxEntity)
+    const boxCenter = boxEntity.read(comps.Block).getCenter()
 
     const handleBlock = handleEntity.read(comps.Block)
     const handleCenter = [handleBlock.left + handleBlock.width / 2, handleBlock.top + handleBlock.height / 2]
@@ -475,7 +474,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       return
     }
 
-    const oppositeCenter = computeCenter(oppositeHandle)
+    const oppositeHandleBlock = oppositeHandle.read(comps.Block)
+    const oppositeCenter = oppositeHandleBlock.getCenter()
     let difference: [number, number] = [handleCenter[0] - oppositeCenter[0], handleCenter[1] - oppositeCenter[1]]
     difference = rotatePoint(difference, [0, 0], -boxRotateZ)
 

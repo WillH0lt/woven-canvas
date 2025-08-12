@@ -6,8 +6,8 @@ import { Block } from '@infinitecanvas/core/components'
 import { Color, ColorExtension } from '@infinitecanvas/extension-color'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { InputExtension } from '@infinitecanvas/extension-input'
-import { LocalStorageExtension } from '@infinitecanvas/extension-local-storage'
-import { RoughShape, RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
+import { PerfectFreehandExtension } from '@infinitecanvas/extension-perfect-freehand'
+import { RoughShape, RoughShapeKind, RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
 // import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
 import { StickyNotesExtension } from '@infinitecanvas/extension-sticky-notes'
 import { Text, TextExtension, VerticalAlign } from '@infinitecanvas/extension-text'
@@ -37,6 +37,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <button id="shapeBtn" class="bg-amber-300 p-2 rounded">
       shape
     </button>
+    <button id="sketchBtn" class="bg-amber-300 p-2 rounded">
+      sketch
+    </button>
   </div>
 `
 
@@ -55,7 +58,8 @@ async function initializeCanvas(container: HTMLDivElement) {
       StickyNotesExtension,
       RoughShapesExtension,
       // MultiplayerExtension,
-      LocalStorageExtension,
+      PerfectFreehandExtension,
+      // LocalStorageExtension,
     ],
   })
 
@@ -120,6 +124,7 @@ document.addEventListener('keydown', (event) => {
   }
 
   if (event.key === 'q') {
+    console.log('Creating checkpoint...')
     infiniteCanvas?.commands.core.createCheckpoint()
   }
 })
@@ -164,8 +169,13 @@ document.querySelector<HTMLDivElement>('#shapeBtn')!.addEventListener('click', (
 
   const roughShape = new RoughShape()
   roughShape.fillRed = 255
+  roughShape.kind = RoughShapeKind.Cloud
 
   infiniteCanvas?.commands.core.addBlock(block, [text, roughShape])
+})
+
+document.querySelector<HTMLDivElement>('#sketchBtn')!.addEventListener('click', () => {
+  infiniteCanvas?.commands.core.setTool('perfect-freehand')
 })
 
 function generateBlock(block: Partial<Block>): Block {

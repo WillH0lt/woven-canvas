@@ -1,6 +1,6 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { BaseElement } from '@infinitecanvas/core/elements'
-import { colorToHex, hexToColor } from '@infinitecanvas/core/helpers'
+import { Color } from '@infinitecanvas/extension-color'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { type HTMLTemplateResult, html } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
@@ -28,12 +28,14 @@ export class StrokeMenuElement extends SignalWatcher(BaseElement) {
     }
 
     const value = this.roughShape.value
-    return colorToHex({
-      red: value.strokeRed,
-      green: value.strokeGreen,
-      blue: value.strokeBlue,
-      alpha: value.strokeAlpha,
-    })
+    return new Color()
+      .fromJson({
+        red: value.strokeRed,
+        green: value.strokeGreen,
+        blue: value.strokeBlue,
+        alpha: value.strokeAlpha,
+      })
+      .toHex()
   }
 
   public connectedCallback(): void {
@@ -94,7 +96,7 @@ export class StrokeMenuElement extends SignalWatcher(BaseElement) {
         withPicker="true"
         .currentColor=${this.strokeColor}
         @change=${(e: CustomEvent<string>) => {
-          const color = hexToColor(e.detail)
+          const color = new Color().fromHex(e.detail)
 
           this.applyUpdate({
             strokeRed: color.red,
@@ -115,7 +117,7 @@ export class StrokeMenuElement extends SignalWatcher(BaseElement) {
       <ic-color-picker
         value=${this.strokeColor}
         @change=${(e: CustomEvent<string>) => {
-          const color = hexToColor(e.detail)
+          const color = new Color().fromHex(e.detail)
           this.applyUpdate({
             strokeRed: color.red,
             strokeGreen: color.green,

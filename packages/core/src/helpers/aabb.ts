@@ -1,5 +1,5 @@
 import type { Entity } from '@lastolivegames/becsy'
-import { type Aabb, Block } from '../components'
+import { Aabb, Block } from '../components'
 
 export function computeAabb(blockEntity: Readonly<Entity>): Aabb {
   const block = blockEntity.read(Block)
@@ -27,5 +27,5 @@ export function computeAabb(blockEntity: Readonly<Entity>): Aabb {
   const top = center[1] - h / 2
   const bottom = center[1] + h / 2
 
-  return { left, right, top, bottom }
+  return new Aabb({ left, right, top, bottom })
 }

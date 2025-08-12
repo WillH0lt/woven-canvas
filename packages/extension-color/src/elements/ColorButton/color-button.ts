@@ -1,6 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { BaseElement } from '@infinitecanvas/core/elements'
-import { colorToHex } from '@infinitecanvas/core/helpers'
 import { SignalWatcher } from '@lit-labs/preact-signals'
 import { html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -13,8 +12,7 @@ export class ColorButtonElement extends SignalWatcher(BaseElement) {
       return nothing
     }
 
-    const hex = colorToHex(color.value)
-
+    const hex = color.value.toHex()
     return html`
       <ic-color-button-content .color=${hex}>
       </ic-color-button-content>

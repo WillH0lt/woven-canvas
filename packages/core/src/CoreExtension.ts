@@ -1,23 +1,28 @@
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
+
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import type { Snapshot } from './History'
 import type { State } from './State'
 import { Block, Persistent, Selected } from './components'
 import * as sys from './systems'
-import type {
-  BaseResources,
-  CoreCommandArgs,
-  CoreResources,
-  EmitterEvents,
-  ICommands,
-  IStore,
-  SendCommandFn,
+import {
+  type BaseResources,
+  type CoreCommandArgs,
+  CoreOptions,
+  type CoreOptionsInput,
+  type CoreResources,
+  type EmitterEvents,
+  type ICommands,
+  type IStore,
+  type SendCommandFn,
 } from './types'
 import { CoreCommand } from './types'
 import './elements'
+import type { System } from '@lastolivegames/becsy'
 import type { BaseComponent } from './BaseComponent'
+import { LocalDB } from './LocalDB'
 import { floatingMenuStandardButtons } from './buttonCatalog'
 
 type BlockData = Omit<Block, keyof BaseComponent>
@@ -34,9 +39,9 @@ declare module '@infinitecanvas/core' {
       sendBackwardSelected: () => void
       duplicateSelected: () => void
       removeSelected: () => void
-      // updateComponent: (blockId: string, component: BaseComponent) => void
       updateBlock: (blockId: string, block: Partial<BlockData>) => void
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
+      setTool: (tool: string) => void
     }
   }
 
@@ -58,11 +63,16 @@ export class CoreExtension extends BaseExtension {
     },
   ]
 
-  constructor(
-    private readonly emitter: Emitter<EmitterEvents>,
-    private readonly state: State,
-  ) {
+  private readonly options: CoreOptions
+  private readonly emitter: Emitter<EmitterEvents>
+  private readonly state: State
+  private initialEntities: Snapshot = {}
+
+  constructor(emitter: Emitter<EmitterEvents>, state: State, options: CoreOptionsInput) {
     super()
+    this.emitter = emitter
+    this.state = state
+    this.options = CoreOptions.parse(options)
   }
 
   public async preBuild(resources: BaseResources): Promise<void> {
@@ -79,11 +89,15 @@ export class CoreExtension extends BaseExtension {
     menuContainer.style.position = 'relative'
     resources.domElement.append(menuContainer)
 
+    const localDB = await LocalDB.New(this.options.persistenceKey)
+    this.initialEntities = await localDB.getAll()
+
     const coreResources: CoreResources = {
       ...resources,
       emitter: this.emitter,
       state: this.state,
       menuContainer,
+      localDB,
     }
 
     this._preInputGroup = this.createGroup(coreResources, sys.PreInputCommandSpawner, sys.PreInputFrameCounter)
@@ -94,6 +108,32 @@ export class CoreExtension extends BaseExtension {
     this._postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
     this._preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
     this._renderGroup = this.createGroup(coreResources, sys.RenderHtml)
+  }
+
+  public build(worldSystem: System, resources: BaseResources): void {
+    for (const [_, entity] of Object.entries(this.initialEntities)) {
+      const args = []
+
+      const tag = entity.Block.tag
+      const components = resources.blockDefs[tag as string]?.components
+
+      if (!components) {
+        console.warn(`Local storage tried to load a block with tag "${tag}" but no blockDefs were found for it.`)
+        continue
+      }
+
+      for (const component of [Block, ...components]) {
+        const model = entity[component.name] || {}
+        const instance = new component().fromJson(model)
+        args.push(component, instance)
+      }
+
+      // @ts-ignore
+      worldSystem.createEntity(...args, Persistent)
+    }
+
+    // clear initialEntities to save on memory
+    this.initialEntities = {}
   }
 
   public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
@@ -128,10 +168,11 @@ export class CoreExtension extends BaseExtension {
 
           for (const component of components) {
             const componentName = component.constructor.name
-            snapshot[block.id][componentName] = component.serialize()
+            snapshot[block.id][componentName] = component.toJson()
           }
           send(CoreCommand.CreateFromSnapshot, snapshot)
         },
+        setTool: (tool: string) => send(CoreCommand.SetTool, { tool }),
       },
     }
   }

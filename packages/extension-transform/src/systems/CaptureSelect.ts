@@ -108,7 +108,6 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
       },
       updateDragged: ({ context, event }) => {
         if (!context.draggedEntity || !('worldPosition' in event)) return
-
         this.emitCommand(TransformCommand.DragBlock, context.draggedEntity, {
           left: context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0],
           top: context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1],

@@ -1,5 +1,5 @@
-import { Aabb } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
+import { Aabb } from '../components'
 
 export function computeExtents(blockEntities: readonly Entity[]): Aabb {
   let minX = Number.POSITIVE_INFINITY
@@ -22,10 +22,10 @@ export function computeExtents(blockEntities: readonly Entity[]): Aabb {
   const left = center[0] - width / 2
   const top = center[1] - height / 2
 
-  return {
+  return new Aabb({
     left,
     top,
     right: left + width,
     bottom: top + height,
-  }
+  })
 }

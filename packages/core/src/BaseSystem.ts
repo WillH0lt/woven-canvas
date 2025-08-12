@@ -137,7 +137,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       button?: PointerButton | undefined
     } = {},
   ): PointerEvent[] {
-    const events = []
+    const events: PointerEvent[] = []
 
     if (pointers.removed.length > 0) {
       this.accessRecentlyDeletedData(true)
@@ -162,11 +162,17 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
         clientPosition: pointer.downPosition,
         worldPosition: camera.toWorld(pointer.downPosition),
         blockEntity: intersect.entity || null,
-      } as PointerEvent)
+      })
     }
 
     if (added.length > 0 && current.length > 1) {
-      events.push({ type: 'cancel' } as PointerEvent)
+      const pointer = current[0].read(comps.Pointer)
+      events.push({
+        type: 'cancel',
+        clientPosition: pointer.position,
+        worldPosition: camera.toWorld(pointer.position),
+        blockEntity: intersect.entity || null,
+      })
     }
 
     if (removed.length > 0 && current.length === 0) {
@@ -176,7 +182,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
         clientPosition: pointer.position,
         worldPosition: camera.toWorld(pointer.position),
         blockEntity: intersect.entity || null,
-      } as PointerEvent)
+      })
 
       const dist = distance(pointer.downPosition, pointer.position)
       const deltaFrame = this.frame.value - pointer.downFrame
@@ -186,7 +192,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
           clientPosition: pointer.position,
           worldPosition: camera.toWorld(pointer.position),
           blockEntity: intersect.entity || null,
-        } as PointerEvent)
+        })
       }
     }
 
@@ -194,10 +200,10 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       const pointer = current[0].read(comps.Pointer)
       events.push({
         type: 'pointerMove',
-        worldPosition: camera.toWorld(pointer.position),
         clientPosition: pointer.position,
+        worldPosition: camera.toWorld(pointer.position),
         blockEntity: intersect.entity || null,
-      } as PointerEvent)
+      })
     }
 
     return events

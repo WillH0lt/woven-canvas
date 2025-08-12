@@ -1,0 +1,1 @@
+export { PerfectFreehandStrokeElement } from './PerfectFreehandStroke'

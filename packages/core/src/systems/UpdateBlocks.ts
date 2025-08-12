@@ -12,14 +12,7 @@ import { UpdateCamera } from './UpdateCamera'
 import { UpdateCursor } from './UpdateCursor'
 
 export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
-  private readonly rankBoundsQuery = this.query((q) => q.current.with(comps.RankBounds).write)
-
-  private get rankBounds(): comps.RankBounds {
-    return this.rankBoundsQuery.current[0].write(comps.RankBounds)
-  }
-
-  // declaring to becsy that rankBounds is a singleton component
-  private readonly _rankBounds = this.singleton.read(comps.RankBounds)
+  private readonly rankBounds = this.singleton.write(comps.RankBounds)
 
   private readonly persistentBlocks = this.query((q) => q.added.with(comps.Block, comps.Persistent))
 
@@ -46,9 +39,11 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
   public execute(): void {
     // update rank bounds
-    for (const blockEntity of this.persistentBlocks.added) {
-      const { rank } = blockEntity.read(comps.Block)
-      this.rankBounds.add(LexoRank.parse(rank))
+    if (this.frame.value === 1) {
+      for (const blockEntity of this.persistentBlocks.added) {
+        const { rank } = blockEntity.read(comps.Block)
+        this.rankBounds.add(LexoRank.parse(rank))
+      }
     }
 
     this.executeCommands()

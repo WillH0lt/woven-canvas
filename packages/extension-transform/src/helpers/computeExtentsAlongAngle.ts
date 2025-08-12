@@ -43,10 +43,10 @@ export function computeExtentsAlongAngle(blockEntities: readonly Entity[], rotat
   const left = newCenter[0] - width / 2
   const top = newCenter[1] - height / 2
 
-  return {
+  return new Aabb({
     left,
     top,
     right: left + width,
     bottom: top + height,
-  }
+  })
 }

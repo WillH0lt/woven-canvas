@@ -1,9 +1,8 @@
-import { System } from '@lastolivegames/becsy'
-
+import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components'
 import { computeAabb, intersectPoint } from '../helpers'
 
-export class PreCaptureIntersect extends System {
+export class PreCaptureIntersect extends BaseSystem {
   private readonly mouse = this.singleton.read(comps.Mouse)
 
   private readonly intersects = this.query((q) => q.current.with(comps.Intersect).write)
@@ -18,7 +17,11 @@ export class PreCaptureIntersect extends System {
   private readonly camera = this.singleton.read(comps.Camera)
 
   private readonly blocks = this.query(
-    (q) => q.addedOrChanged.changed.removed.current.with(comps.Block).trackWrites.using(comps.Aabb).write,
+    (q) =>
+      q.addedOrChanged.changed.removed.current
+        .with(comps.Block)
+        .trackWrites.using(comps.Aabb)
+        .write.using(comps.HitGeometries, comps.HitCapsule).read,
   )
 
   public execute(): void {

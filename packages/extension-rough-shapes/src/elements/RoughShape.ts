@@ -1,6 +1,6 @@
 import type { Snapshot } from '@infinitecanvas/core'
 import { BaseEditable } from '@infinitecanvas/core/elements'
-import { colorToHex } from '@infinitecanvas/core/helpers'
+import { Color } from '@infinitecanvas/extension-color'
 import { type Text, TextAlign, type TextElement, VerticalAlign } from '@infinitecanvas/extension-text'
 import { type PropertyValues, css, html, svg } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
@@ -10,7 +10,7 @@ import type { Drawable, Options, PathInfo as RoughPathInfo } from 'roughjs/bin/c
 
 import type { RoughShape } from '../components/RoughShape'
 import { shapeVertices } from '../shapes'
-import { ShapeFillKind, ShapeKind, ShapeStrokeKind } from '../types'
+import { RoughShapeKind, ShapeFillKind, ShapeStrokeKind } from '../types'
 
 interface PathInfo {
   d: string
@@ -180,21 +180,29 @@ export class RoughShapeElement extends BaseEditable {
 
     const shape = this.roughShape
 
-    const options: Options = {
-      stroke: colorToHex({
+    const strokeHex = new Color()
+      .fromJson({
         red: shape.strokeRed,
         green: shape.strokeGreen,
         blue: shape.strokeBlue,
         alpha: shape.strokeAlpha,
-      }),
-      strokeWidth: shape.strokeWidth,
-      disableMultiStroke: shape.strokeKind !== ShapeStrokeKind.Solid,
-      fill: colorToHex({
+      })
+      .toHex()
+
+    const fillHex = new Color()
+      .fromJson({
         red: shape.fillRed,
         green: shape.fillGreen,
         blue: shape.fillBlue,
         alpha: shape.fillAlpha,
-      }),
+      })
+      .toHex()
+
+    const options: Options = {
+      stroke: strokeHex,
+      strokeWidth: shape.strokeWidth,
+      disableMultiStroke: shape.strokeKind !== ShapeStrokeKind.Solid,
+      fill: fillHex,
       fillStyle: shape.fillKind,
       hachureGap: shape.hachureGap,
       hachureAngle: shape.hachureAngle,
@@ -210,7 +218,7 @@ export class RoughShapeElement extends BaseEditable {
       options.strokeLineDash = [shape.strokeWidth, 3 * shape.strokeWidth]
     }
 
-    if (shape.kind === ShapeKind.Ellipse) {
+    if (shape.kind === RoughShapeKind.Ellipse) {
       shapeNode = this.rc.ellipse(width / 2, height / 2, width, height, options)
     } else {
       const name = shape.kind.toString().toLowerCase() as keyof typeof shapeVertices

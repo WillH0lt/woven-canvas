@@ -1,14 +1,12 @@
 import { Type, component, field } from '@lastolivegames/becsy'
 
 import { BaseComponent } from '@infinitecanvas/core'
-import { ShapeFillKind, ShapeKind, ShapeStrokeKind } from '../types'
-
-console.log(Object.keys(ShapeKind))
+import { RoughShapeKind, ShapeFillKind, ShapeStrokeKind } from '../types'
 
 @component
 export class RoughShape extends BaseComponent {
-  @field({ type: Type.staticString(Object.values(ShapeKind)), default: ShapeKind.Rectangle })
-  public declare kind: ShapeKind
+  @field({ type: Type.staticString(Object.values(RoughShapeKind)), default: RoughShapeKind.Rectangle })
+  public declare kind: RoughShapeKind
 
   @field({ type: Type.staticString(Object.values(ShapeStrokeKind)), default: ShapeStrokeKind.Solid })
   public declare strokeKind: ShapeStrokeKind

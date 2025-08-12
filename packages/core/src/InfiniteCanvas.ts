@@ -82,7 +82,7 @@ export class InfiniteCanvas {
 
     const emitter = new Emitter<EmitterEvents>()
     const state = new State()
-    extensions.unshift(new CoreExtension(emitter, state))
+    extensions.unshift(new CoreExtension(emitter, state, options))
 
     // Register block definitions from extensions and options
     const blockDefs: Record<string, BlockDef> = {}

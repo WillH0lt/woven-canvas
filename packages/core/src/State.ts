@@ -11,7 +11,7 @@ export class State {
     for (const entity of entities) {
       const id = entity.read(Block).id
       const comp = entity.read(Comp)
-      signalComponents[id] = signal(comp.serialize())
+      signalComponents[id] = signal(comp.toJson())
     }
 
     const componentsState = this.getComponents(Comp)
@@ -30,7 +30,7 @@ export class State {
         console.warn(`Component with id ${id} does not exist in state for component ${Component.name}.`)
         continue
       }
-      components.value[id].value = comp.serialize() as any
+      components.value[id].value = comp.toJson() as any
     }
   }
 

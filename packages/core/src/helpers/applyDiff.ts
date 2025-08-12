@@ -9,16 +9,6 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
 
   // added components
   for (const [_, components] of Object.entries(diff.added)) {
-    // let entity = binarySearchForId(Block, id, entities.current)
-    // if (entity) {
-    //   console.warn(`Entity with id ${id} already exists, skipping addition of components.`)
-    //   continue
-    // }
-
-    // if (!entity) {
-    //   entity = system.createEntity(Block, { id })
-    // }
-
     const entity = system.createEntity(Persistent)
     for (const [componentName, model] of Object.entries(components)) {
       const Component = componentNames.get(componentName)
@@ -36,7 +26,7 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
       const Component = componentNames.get(componentName)
       if (!Component) continue
       const writableComponent = entity.write(Component)
-      writableComponent.deserialize(model)
+      writableComponent.fromJson(model)
     }
   }
 

@@ -86,10 +86,12 @@
     "@floating-ui/dom": "^1.7.2",
     "@lastolivegames/becsy": "^0.15.5",
     "@preact/signals-core": "^1.10.0",
+    "idb": "^8.0.3",
     "lexorank": "^1.0.5",
     "lit": "^3.3.0",
+    "mathjs": "^14.6.0",
     "strict-event-emitter": "^0.5.1",
     "xstate": "^5.19.4",
-    "zod": "^3.25.36"
+    "zod": "^4.0.17"
   }
 }

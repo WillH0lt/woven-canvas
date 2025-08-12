@@ -1,6 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { BaseElement } from '@infinitecanvas/core/elements'
-import { colorToHex, hexToColor } from '@infinitecanvas/core/helpers'
 import { SignalWatcher, signal } from '@lit-labs/preact-signals'
 import { html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -17,7 +16,7 @@ export class ColorMenuElement extends SignalWatcher(BaseElement) {
       return nothing
     }
 
-    const hex = colorToHex(color.value)
+    const hex = color.value.toHex()
 
     return html`
         ${
@@ -26,8 +25,7 @@ export class ColorMenuElement extends SignalWatcher(BaseElement) {
               <ic-color-picker
                 value=${hex}
                 @change=${(e: CustomEvent<string>) => {
-                  const c = hexToColor(e.detail)
-                  const color = new Color().deserialize(c)
+                  const color = new Color().fromHex(e.detail)
                   InfiniteCanvas.instance?.commands.color.setColor(this.blockId, color)
                 }}
               ></ic-color-picker>
@@ -38,8 +36,7 @@ export class ColorMenuElement extends SignalWatcher(BaseElement) {
                 withPicker="true"
                 .currentColor=${hex}
                 @change=${(e: CustomEvent<string>) => {
-                  const c = hexToColor(e.detail)
-                  const color = new Color().deserialize(c)
+                  const color = new Color().fromHex(e.detail)
                   InfiniteCanvas.instance?.commands.color.setColor(this.blockId, color)
                 }}
                 @show-picker=${() => {

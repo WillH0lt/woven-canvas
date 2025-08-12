@@ -18,6 +18,12 @@
       "path": "packages/extension-multiplayer"
     },
     {
+      "path": "packages/extension-perfect-freehand"
+    },
+    {
+      "path": "packages/extension-rough-shapes"
+    },
+    {
       "path": "packages/extension-text"
     },
     {

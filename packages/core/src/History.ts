@@ -250,7 +250,7 @@ export class History {
     for (const entity of entities) {
       const id = entity.read(Block).id
       const comp = entity.read(Comp)
-      const model = comp.serialize()
+      const model = comp.toJson()
 
       if (this.snapshotBuilder.recordIsTheSame(id, Comp.name, model)) continue
 
@@ -264,7 +264,7 @@ export class History {
     for (const entity of entities) {
       const id = entity.read(Block).id
       const comp = entity.read(Comp)
-      const model = comp.serialize()
+      const model = comp.toJson()
 
       if (this.snapshotBuilder.recordIsTheSame(id, Comp.name, model)) continue
 

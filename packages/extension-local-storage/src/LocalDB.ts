@@ -4,9 +4,8 @@ const PREFIX = 'InfiniteCanvas-'
 const OBJECT_STORE_NAME = 'blocks'
 
 enum ActionKind {
-  ADD = 0,
-  PUT = 1,
-  DELETE = 2,
+  PUT = 0,
+  DELETE = 1,
 }
 
 interface Action {

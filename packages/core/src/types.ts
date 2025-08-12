@@ -4,6 +4,7 @@ import { z } from 'zod/v4'
 import type { BaseComponent } from './BaseComponent'
 import { BaseExtension } from './BaseExtension'
 import type { History, Snapshot } from './History'
+import type { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
 // import { standardButtonSet } from './buttonCatalog'
@@ -35,7 +36,15 @@ export interface CoreResources extends BaseResources {
   emitter: Emitter<EmitterEvents>
   state: State
   menuContainer: HTMLDivElement
+  localDB: LocalDB
 }
+
+export const CoreOptions = z.object({
+  persistenceKey: z.string().default('default'),
+})
+
+export type CoreOptions = z.infer<typeof CoreOptions>
+export type CoreOptionsInput = z.input<typeof CoreOptions>
 
 export const BlockDef = z.object({
   tag: z.string(),
@@ -44,6 +53,18 @@ export const BlockDef = z.object({
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
   floatingMenu: z.array(Button).default(floatingMenuStandardButtons.map((btn) => Button.parse(btn))),
   editedFloatingMenu: z.array(Button).default([]),
+  // intersectPoint: z
+  //   .custom<(component: Entity, point: [number, number]) => boolean>(
+  //     (val) => {
+  //       if (typeof val !== 'function') return false
+  //       if (val.length !== 2) return false
+  //       return true
+  //     },
+  //     {
+  //       message: 'Must be a valid intersection function',
+  //     },
+  //   )
+  //   .default(() => (_entity: Entity, _point: [number, number]) => true),
 })
 
 export type BlockDef = z.infer<typeof BlockDef>
@@ -79,6 +100,7 @@ export const Options = z.object({
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
   customBlocks: z.array(BlockDef).default([]),
+  persistenceKey: z.string().default('default'),
   theme: Theme.default(Theme.parse({})),
 })
 
@@ -199,32 +221,12 @@ export type CoreCommandArgs = {
   [CoreCommand.UpdateFromSnapshot]: [Snapshot]
 }
 
-export type PointerEvent =
-  | {
-      type: 'pointerDown'
-      worldPosition: [number, number]
-      clientPosition: [number, number]
-      blockEntity: Entity | null
-    }
-  | {
-      type: 'pointerMove'
-      worldPosition: [number, number]
-      clientPosition: [number, number]
-      blockEntity: Entity | null
-    }
-  | {
-      type: 'pointerUp'
-      worldPosition: [number, number]
-      clientPosition: [number, number]
-      blockEntity: Entity | null
-    }
-  | {
-      type: 'click'
-      worldPosition: [number, number]
-      clientPosition: [number, number]
-      blockEntity: Entity | null
-    }
-  | { type: 'cancel' }
+export type PointerEvent = {
+  type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'click' | 'cancel'
+  worldPosition: [number, number]
+  clientPosition: [number, number]
+  blockEntity: Entity | null
+}
 
 export type MouseEvent =
   | {
@@ -237,3 +239,5 @@ export type MouseEvent =
       clientPosition: [number, number]
       blockEntity: Entity | null
     }
+
+export type Transform = [number, number, number, number, number, number]

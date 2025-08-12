@@ -6,14 +6,16 @@ export abstract class BaseComponent {
   static addToHistory = true
 
   constructor(data: Record<string, any> = {}) {
-    this.deserialize(data)
+    this.fromJson(data)
   }
 
-  public serialize(): Record<string, any> {
+  public toJson(): Record<string, any> {
     const data: Record<string, any> = {}
 
-    const schema = (this.constructor as typeof BaseComponent).schema ?? {}
+    const schema = this.getSchema()
     for (const key in schema) {
+      const type = schema[key].type.constructor.name
+      if (type === 'BackrefsType') continue
       if (Object.hasOwn(schema, key)) {
         // @ts-ignore
         data[key] = this[key] ?? schema[key].default ?? schema[key].type.default
@@ -23,14 +25,23 @@ export abstract class BaseComponent {
     return data
   }
 
-  public deserialize(data: Record<string, any>): this {
+  public fromJson(data: Record<string, any>): this {
+    const schema = this.getSchema()
     for (const key in data) {
-      if (Object.hasOwn((this.constructor as typeof BaseComponent).schema ?? {}, key)) {
+      if (Object.hasOwn(schema, key)) {
         // @ts-ignore
         this[key] = data[key]
       }
     }
 
     return this
+  }
+
+  public getSchema(): Record<string, any> {
+    return (this.constructor as typeof BaseComponent).schema ?? {}
+  }
+
+  public isIntersecting(_point: [number, number]): boolean {
+    return true
   }
 }

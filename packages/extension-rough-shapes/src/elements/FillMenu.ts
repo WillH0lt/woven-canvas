@@ -1,6 +1,6 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { BaseElement } from '@infinitecanvas/core/elements'
-import { colorToHex, hexToColor } from '@infinitecanvas/core/helpers'
+import { Color } from '@infinitecanvas/extension-color'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { type HTMLTemplateResult, html, nothing } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
@@ -28,12 +28,15 @@ export class FillMenuElement extends SignalWatcher(BaseElement) {
     }
 
     const value = this.roughShape.value
-    return colorToHex({
-      red: value.fillRed,
-      green: value.fillGreen,
-      blue: value.fillBlue,
-      alpha: value.fillAlpha,
-    })
+
+    return new Color()
+      .fromJson({
+        red: value.fillRed,
+        green: value.fillGreen,
+        blue: value.fillBlue,
+        alpha: value.fillAlpha,
+      })
+      .toHex()
   }
 
   private get showHachureOptions(): boolean {
@@ -78,7 +81,7 @@ export class FillMenuElement extends SignalWatcher(BaseElement) {
         withPicker="true"
         .currentColor=${this.fillColor}
         @change=${(e: CustomEvent<string>) => {
-          const color = hexToColor(e.detail)
+          const color = new Color().fromHex(e.detail)
 
           this.applyUpdate({
             fillRed: color.red,
@@ -137,7 +140,7 @@ export class FillMenuElement extends SignalWatcher(BaseElement) {
       <ic-color-picker
         value=${this.fillColor}
         @change=${(e: CustomEvent<string>) => {
-          const color = hexToColor(e.detail)
+          const color = new Color().fromHex(e.detail)
           this.applyUpdate({
             fillRed: color.red,
             fillGreen: color.green,

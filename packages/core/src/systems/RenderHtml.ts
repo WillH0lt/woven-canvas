@@ -120,13 +120,17 @@ export class RenderHtml extends BaseSystem {
     const rankCache = new Map<HTMLElement, LexoRank>()
 
     for (const element of elements) {
-      const rankStr = element.getAttribute(RANK_ATTRIBUTE) || '0'
+      const rankStr = element.getAttribute(RANK_ATTRIBUTE)
+      if (!rankStr) continue
       rankCache.set(element, LexoRank.parse(rankStr))
     }
 
     elements.sort((a, b) => {
-      const rankA = rankCache.get(a)!
-      const rankB = rankCache.get(b)!
+      const rankA = rankCache.get(a)
+      const rankB = rankCache.get(b)
+
+      if (!rankA || !rankB) return 0
+
       return rankA.compareTo(rankB)
     })
 
@@ -193,6 +197,8 @@ export class RenderHtml extends BaseSystem {
   private updateElementComponentAttribute(element: HTMLElement, entity: Entity, Comp: new () => BaseComponent): void {
     const value = entity.read(Comp)
     const name = lowercaseFirstLetter(Comp.name)
-    ;(element as any)[name] = value.serialize()
+
+    // @ts-ignore
+    ;(element as any)[name] = new Comp(value.toJson())
   }
 }

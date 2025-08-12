@@ -154,7 +154,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
       const entity = binarySearchForId(comps.Block, blockId, entities)
       if (!entity) continue
 
-      snapshotBuilder.putComponent(blockId, Comp.name, entity.read(Comp).serialize())
+      snapshotBuilder.putComponent(blockId, Comp.name, entity.read(Comp).toJson())
     }
 
     element.snapshot = snapshotBuilder.snapshot

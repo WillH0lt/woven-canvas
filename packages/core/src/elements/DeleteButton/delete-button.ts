@@ -1,7 +1,7 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
+import { InfiniteCanvas } from '../../InfiniteCanvas'
 import { AbstractButtonElement } from '../AbstractButton'
 
 @customElement('ic-delete-button')

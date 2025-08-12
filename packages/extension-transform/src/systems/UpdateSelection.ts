@@ -16,7 +16,7 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
       q.current
         .with(comps.Block, comps.Persistent)
         .write.orderBy((e) => uuidToNumber(e.read(comps.Block).id))
-        .using(comps.Aabb).read,
+        .using(comps.Aabb, comps.HitGeometries, comps.HitCapsule).read,
   )
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)

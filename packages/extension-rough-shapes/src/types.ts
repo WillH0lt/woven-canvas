@@ -1,4 +1,4 @@
-export enum ShapeKind {
+export enum RoughShapeKind {
   Ellipse = 'ellipse',
   Rectangle = 'rectangle',
   Triangle = 'triangle',

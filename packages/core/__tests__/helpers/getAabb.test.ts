@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeAabb } from '../../src/helpers/computeAabb'
+import { computeAabb } from '../../src/helpers/aabb'
 import { MockEntity } from './MockEntity'
 
 describe('getAabb', () => {
