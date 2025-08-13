@@ -2,8 +2,8 @@ import type { Snapshot } from '@infinitecanvas/core'
 import { ICEditableBlock } from '@infinitecanvas/core/elements'
 import { Color } from '@infinitecanvas/extension-color'
 import { type ICText, type Text, TextAlign, VerticalAlign } from '@infinitecanvas/extension-text'
-import { type PropertyValues, css, html, svg } from 'lit'
-import { customElement, property, query } from 'lit/decorators.js'
+import { type PropertyValues, css, html, nothing, svg } from 'lit'
+import { customElement, property, query, state } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import rough from 'roughjs'
 import type { Drawable, Options, PathInfo as RoughPathInfo } from 'roughjs/bin/core'
@@ -54,32 +54,49 @@ export class ICRoughShape extends ICEditableBlock {
   @property({ type: Object })
   public roughShape!: RoughShape
 
-  static styles = css`
-    :host * {
-      box-sizing: border-box;
-    }
+  @state()
+  private highlightedPath = ''
 
-    #container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      display: flex;
-    }
+  static styles = [
+    ...super.styles,
+    css`
+      :host * {
+        box-sizing: border-box;
+      }
+      :host([is-hovered]),
+      :host([is-selected]) {
+        outline: none;
+      }
 
-    #text {
-      max-width: 100%;
-      max-height: 100%;
-      min-width: 100%;
-      padding: 16px;
-    }
+      #container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        container-type: inline-size;
+      }
 
-    #shape {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-    }
-  `
+      #text {
+        max-width: 100%;
+        max-height: 100%;
+        min-width: 100%;
+        padding: 16px;
+      }
+
+      @container (max-width: 48px) {
+        #text {
+          padding: 0;
+        }
+      }
+
+      #shape {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+      }
+    `,
+  ]
 
   public firstUpdated(_changedProperties: PropertyValues): void {
     const observer = new ResizeObserver(() => {
@@ -88,7 +105,7 @@ export class ICRoughShape extends ICEditableBlock {
     observer.observe(this)
 
     const textObserver = new ResizeObserver(() => {
-      if (this.editing) {
+      if (this.isEditing) {
         this.requestUpdate()
       }
     })
@@ -110,11 +127,11 @@ export class ICRoughShape extends ICEditableBlock {
         'align-items': alignStyle,
       })}>
         <div id="text" style=${styleMap({
-          overflow: this.editing ? 'visible' : 'hidden',
+          overflow: this.isEditing ? 'visible' : 'hidden',
         })}>
           <ic-text
             blockId=${this.blockId} 
-            .editing=${this.editing} 
+            .isEditing=${this.isEditing} 
             .text=${this.text} 
             .defaultAlignment=${TextAlign.Center}
           ></ic-text>
@@ -127,7 +144,7 @@ export class ICRoughShape extends ICEditableBlock {
   }
 
   private roughShapeSvg(width: number, height: number): unknown {
-    const { strokeInfo, fillInfo } = this.getPathInfo(width, height)
+    const { strokeInfo, fillInfo, highlightInfo } = this.getPathInfo(width, height)
 
     return html`
       <svg
@@ -161,6 +178,18 @@ export class ICRoughShape extends ICEditableBlock {
                 ></path>`
               : ''
           }
+          ${
+            this.isHovered || this.isSelected
+              ? svg`<path
+                d=${highlightInfo.d}
+                fill="none"
+                stroke="var(--ic-highlighted-block-outline-color)"
+                stroke-width="var(--ic-highlighted-block-outline-width)"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>`
+              : nothing
+          }
         </g>
       </svg>
     `
@@ -169,13 +198,21 @@ export class ICRoughShape extends ICEditableBlock {
   public getSnapshot(): Snapshot {
     const snapshot = this.textElement.getSnapshot()
 
-    snapshot[this.blockId].Block.width = this.container.clientWidth
-    snapshot[this.blockId].Block.height = this.container.clientHeight
-
-    return snapshot
+    return {
+      [this.blockId]: {
+        Block: {
+          width: this.container.clientWidth,
+          height: this.container.clientHeight,
+        },
+        Text: snapshot[this.blockId].Text,
+      },
+    }
   }
 
-  private getPathInfo(width: number, height: number): { strokeInfo: PathInfo | null; fillInfo: PathInfo | null } {
+  private getPathInfo(
+    width: number,
+    height: number,
+  ): { strokeInfo: PathInfo | null; fillInfo: PathInfo | null; highlightInfo: PathInfo } {
     let shapeNode: Drawable | null = null
 
     const shape = this.roughShape
@@ -238,18 +275,22 @@ export class ICRoughShape extends ICEditableBlock {
       fillInfo = null
     }
 
-    let strokeInfo: PathInfo | null = toPathInfo(
-      paths[1],
-      options.strokeLineDash ? options.strokeLineDash.join(' ') : undefined,
-      options.strokeWidth,
-    )
-    if (shape.strokeKind === ShapeStrokeKind.None) {
-      strokeInfo = null
+    let strokeInfo: PathInfo | null = null
+
+    if (shape.strokeKind !== ShapeStrokeKind.None) {
+      strokeInfo = toPathInfo(
+        paths[1],
+        options.strokeLineDash ? options.strokeLineDash.join(' ') : undefined,
+        options.strokeWidth,
+      )
     }
+
+    const highlightInfo = toPathInfo(paths[1], undefined, 1)
 
     return {
       fillInfo,
       strokeInfo,
+      highlightInfo,
     }
   }
 }

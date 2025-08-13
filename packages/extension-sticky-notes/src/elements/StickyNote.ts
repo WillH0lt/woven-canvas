@@ -18,19 +18,22 @@ export class ICStickyNote extends ICEditableBlock {
   @property({ type: Object })
   public color!: Color
 
-  static styles = css`
-    #container {
-      width: 100%;
-      display: flex;
-      padding: 8%;
-      aspect-ratio: 1 / 1;
-      box-sizing: border-box;
-      box-shadow:
-        rgba(16, 24, 32, 0.65) 0px 4px 5px -6px,
-        rgba(16, 24, 32, 0.45) 0px 11px 13px -12px,
-        rgba(16, 24, 45, 0.025) 0px 45px 10px -12px inset;
-    }
-  `
+  static styles = [
+    ...super.styles,
+    css`
+      #container {
+        width: 100%;
+        display: flex;
+        padding: 8%;
+        aspect-ratio: 1 / 1;
+        box-sizing: border-box;
+        box-shadow:
+          rgba(16, 24, 32, 0.65) 0px 4px 5px -6px,
+          rgba(16, 24, 32, 0.45) 0px 11px 13px -12px,
+          rgba(16, 24, 45, 0.025) 0px 45px 10px -12px inset;
+      }
+  `,
+  ]
 
   render() {
     const alignStyle =
@@ -47,7 +50,7 @@ export class ICStickyNote extends ICEditableBlock {
       })}>
         <ic-text 
           blockId=${this.blockId}
-          .editing=${this.editing}
+          .isEditing=${this.isEditing}
           .text=${this.text}
           .defaultAlignment=${TextAlign.Center}
         ></ic-text>

@@ -27,9 +27,6 @@ export class ICText extends ICEditableBlock {
   @property({ type: Object })
   text!: Text
 
-  @property({ type: Boolean })
-  editing = false
-
   @property({ type: String })
   defaultAlignment: TextAlignKind = TextAlignKind.Left
 
@@ -39,35 +36,35 @@ export class ICText extends ICEditableBlock {
 
   private _editor: Editor | null = null
 
-  static styles = css`
-    :host {
-      white-space: pre-wrap;
-      word-break: break-word;
-      width: 100%;
-    }
+  static styles = [
+    ...super.styles,
+    css`
+      :host {
+        white-space: pre-wrap;
+        word-break: break-word;
+        width: 100%;
+      }
 
-    p {
-      margin: 0;
-    }
+      p {
+        margin: 0;
+      }
 
-    p:empty::before {
-      content: '';
-      display: inline-block;
-    }
+      p:empty::before {
+        content: '';
+        display: inline-block;
+      }
 
-    .ProseMirror-focused {
-      outline: none;
-    }
-  `
-
-  private startWidth = 0
-  private startHeight = 0
+      .ProseMirror-focused {
+        outline: none;
+      }
+    `,
+  ]
 
   updated(changedProperties: Map<string, any>) {
     super.updated(changedProperties)
 
-    if (changedProperties.has('editing')) {
-      if (this.editing) {
+    if (changedProperties.has('isEditing')) {
+      if (this.isEditing) {
         this.startEditing()
       } else {
         this.endEditing()
@@ -139,9 +136,6 @@ export class ICText extends ICEditableBlock {
     for (const pointerEvent of pointerEvents) {
       this.editorContainer?.addEventListener(pointerEvent, (ev) => ev.stopPropagation())
     }
-
-    this.startWidth = this.editorContainer?.clientWidth ?? 0
-    this.startHeight = this.textContainer?.clientHeight ?? 0
   }
 
   private endEditing(): void {
@@ -152,7 +146,7 @@ export class ICText extends ICEditableBlock {
   }
 
   public getSnapshot(): Snapshot {
-    if (!this.editing || !this.editorContainer) return {}
+    if (!this.isEditing || !this.editorContainer) return {}
 
     const { width, height, left, top } = this.computeBlockDimensions(this.editorContainer)
 
@@ -250,12 +244,12 @@ export class ICText extends ICEditableBlock {
       'font-family': text.fontFamily,
       'line-height': `${text.lineHeight}`,
       'font-size': `${text.fontSize}px`,
-      'pointer-events': this.editing ? 'auto' : 'none',
+      'pointer-events': this.isEditing ? 'auto' : 'none',
       'text-align': this.defaultAlignment.toLowerCase(),
     }
 
     return html`${
-      this.editing
+      this.isEditing
         ? html`<div id="editorContainer" style=${styleMap(styles)}></div>`
         : html`<div id="textContainer" style=${styleMap(styles)}>${unsafeHTML(text.content)}</div>`
     }`

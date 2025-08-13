@@ -68,6 +68,10 @@ async function initializeCanvas(container: HTMLDivElement) {
     console.log('Block count:', count)
   })
 
+  // infiniteCanvas.store.core.hoveredBlockId.subscribe((id) => {
+  //   console.log('Hovered block ID:', id)
+  // })
+
   // infiniteCanvas.store.textEditor.bold.subscribe((isBold) => {
   //   console.log('Text editor bold:', isBold)
   // })

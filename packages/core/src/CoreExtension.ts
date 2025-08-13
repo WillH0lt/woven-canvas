@@ -5,7 +5,7 @@ import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import type { Snapshot } from './History'
 import type { State } from './State'
-import { Block, Persistent, Selected } from './components'
+import { Block, Hovered, Persistent, Selected } from './components'
 import * as sys from './systems'
 import {
   type BaseResources,
@@ -55,6 +55,7 @@ declare module '@infinitecanvas/core' {
       blockCount: ReadonlySignal<number>
       selectedBlockCount: ReadonlySignal<number>
       selectedBlockIds: ReadonlySignal<string[]>
+      hoveredBlockId: ReadonlySignal<string | null>
       blockById: (id: string) => ReadonlySignal<Block | undefined>
     }
   }
@@ -83,6 +84,7 @@ export class CoreExtension extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Block)
     ComponentRegistry.instance.registerComponent(Selected)
+    ComponentRegistry.instance.registerComponent(Hovered)
     ComponentRegistry.instance.registerComponent(Persistent)
 
     const menuContainer = document.createElement('div')
@@ -190,6 +192,11 @@ export class CoreExtension extends BaseExtension {
         selectedBlockIds: computed(() => {
           const selected = state.getComponents(Selected).value
           return Object.keys(selected)
+        }),
+        hoveredBlockId: computed(() => {
+          const hovered = state.getComponents(Hovered).value
+          const ids = Object.keys(hovered)
+          return ids.length > 0 ? ids[0] : null
         }),
         blockById: (id: string): ReadonlySignal<Block | undefined> =>
           computed(() => state.getComponent<Block>(Block, id).value),

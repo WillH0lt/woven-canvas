@@ -515,20 +515,15 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
       const block = selectedEntity.write(comps.Block)
 
-      const left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
-      const top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
+      block.left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
+      block.top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
 
-      const width = startWidth * (boxEndWidth / boxStartWidth)
-      const height = startHeight * (boxEndHeight / boxStartHeight)
+      block.width = startWidth * (boxEndWidth / boxStartWidth)
+      block.height = startHeight * (boxEndHeight / boxStartHeight)
 
       if (!maintainAspectRatio) {
         block.hasStretched = true
       }
-
-      block.left = left
-      block.top = top
-      block.width = width
-      block.height = height
     }
   }
 

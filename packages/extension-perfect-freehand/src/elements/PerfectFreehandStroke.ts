@@ -1,6 +1,6 @@
-import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
+import { ICBaseBlock } from '@infinitecanvas/core/elements'
 import type { Color } from '@infinitecanvas/extension-color'
-import { type PropertyValues, css, html } from 'lit'
+import { type PropertyValues, css, html, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { getStroke } from 'perfect-freehand'
 
@@ -33,18 +33,32 @@ function getSvgPathFromStroke(points: number[][]): string {
 }
 
 @customElement('ic-perfect-freehand-stroke')
-export class ICPerfectFreehandStroke extends ICBaseMenuButton {
-  static styles = css`
+export class ICPerfectFreehandStroke extends ICBaseBlock {
+  static styles = [
+    ...super.styles,
+    css`
     :host * {
       box-sizing: border-box;
       overflow: visible;
     }
+    
+    :host([is-hovered]),
+    :host([is-selected]) {
+      outline: none;
+    }
 
     #container {
+      display: relative;
       width: 100%;
       height: 100%;
     }
-  `
+
+    #highlight {
+      position: absolute;
+      inset: 0;
+    }
+  `,
+  ]
 
   @property({ type: Object })
   public stroke!: Stroke
@@ -54,6 +68,9 @@ export class ICPerfectFreehandStroke extends ICBaseMenuButton {
 
   @state()
   private path = ''
+
+  @state()
+  private highlightedPath = ''
 
   public connectedCallback(): void {
     super.connectedCallback()
@@ -86,6 +103,22 @@ export class ICPerfectFreehandStroke extends ICBaseMenuButton {
             fill="${hex}"
           />
         </svg>
+        ${
+          this.isHovered || this.isSelected
+            ? html`
+              <svg id="highlight" preserveAspectRatio="none">
+                <path
+                  d="${this.highlightedPath}"
+                  stroke="var(--ic-highlighted-block-outline-color)"
+                  stroke-width="1"
+                  fill="none"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            `
+            : nothing
+        }
       </div>
       `
   }
@@ -115,6 +148,14 @@ export class ICPerfectFreehandStroke extends ICBaseMenuButton {
       size: this.stroke.diameter,
     })
     this.path = getSvgPathFromStroke(outlinePoints)
+
+    if (this.stroke.isComplete) {
+      const highlightPoints = getStroke(inputPoints, {
+        last: true,
+        size: 1,
+      })
+      this.highlightedPath = getSvgPathFromStroke(highlightPoints)
+    }
   }
 }
 

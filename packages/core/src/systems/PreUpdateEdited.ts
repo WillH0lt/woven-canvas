@@ -22,7 +22,7 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
 
       const element = this.resources.blockContainer.querySelector<ICEditableBlock>(`[id='${block.id}']`)
       if (!element) continue
-      element.setAttribute('editing', 'true')
+      element.setAttribute('is-editing', 'true')
     }
 
     if (this.editedEntities.removed.length > 0) {
@@ -34,7 +34,7 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
       if (!element) continue
       const snapshot = element.getSnapshot()
 
-      element.removeAttribute('editing')
+      element.removeAttribute('is-editing')
 
       this.emitCommand(CoreCommand.UpdateFromSnapshot, snapshot)
     }

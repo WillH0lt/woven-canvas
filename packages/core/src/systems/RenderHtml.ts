@@ -35,6 +35,10 @@ export class RenderHtml extends BaseSystem {
     (q) => q.addedChangedOrRemoved.with(comps.Block).and.with(comps.Opacity).trackWrites,
   )
 
+  private readonly selectedBlocks = this.query((q) => q.added.removed.with(comps.Block, comps.Selected))
+
+  private readonly hoveredBlocks = this.query((q) => q.added.removed.with(comps.Block, comps.Hovered))
+
   public constructor() {
     super()
 
@@ -60,6 +64,7 @@ export class RenderHtml extends BaseSystem {
       updateCssProperty('--ic-zoom', `${camera.zoom}`)
     }
 
+    // ========================================================
     // render blocks
     let needsSorting = false
     for (const blockEntity of this.blocks.added) {
@@ -90,6 +95,7 @@ export class RenderHtml extends BaseSystem {
       }
     }
 
+    // ========================================================
     // block opacity
     for (const blockEntity of this.opacityBlocks.addedChangedOrRemoved) {
       if (!blockEntity.alive) continue
@@ -99,6 +105,41 @@ export class RenderHtml extends BaseSystem {
       this.updateOpacityBlockHtml(blockEntity, element)
     }
 
+    // ========================================================
+    // selected blocks
+    for (const blockEntity of this.selectedBlocks.added) {
+      const block = blockEntity.read(comps.Block)
+      const element = this.getBlockElementById(block.id)
+      if (!element) continue
+      element.setAttribute('is-selected', 'true')
+    }
+
+    for (const blockEntity of this.selectedBlocks.removed) {
+      if (!blockEntity.alive) continue
+      const block = blockEntity.read(comps.Block)
+      const element = this.getBlockElementById(block.id)
+      if (!element) continue
+      element.removeAttribute('is-selected')
+    }
+
+    // ========================================================
+    // hovered blocks
+    for (const blockEntity of this.hoveredBlocks.added) {
+      const block = blockEntity.read(comps.Block)
+      const element = this.getBlockElementById(block.id)
+      if (!element) continue
+      element.setAttribute('is-hovered', 'true')
+    }
+
+    for (const blockEntity of this.hoveredBlocks.removed) {
+      if (!blockEntity.alive) continue
+      const block = blockEntity.read(comps.Block)
+      const element = this.getBlockElementById(block.id)
+      if (!element) continue
+      element.removeAttribute('is-hovered')
+    }
+
+    // ========================================================
     // remove blocks
     if (this.blocks.removed.length > 0) {
       this.accessRecentlyDeletedData()

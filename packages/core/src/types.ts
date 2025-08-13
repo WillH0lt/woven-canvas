@@ -53,18 +53,6 @@ export const BlockDef = z.object({
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
   floatingMenu: z.array(Button).default(floatingMenuStandardButtons.map((btn) => Button.parse(btn))),
   editedFloatingMenu: z.array(Button).default([]),
-  // intersectPoint: z
-  //   .custom<(component: Entity, point: [number, number]) => boolean>(
-  //     (val) => {
-  //       if (typeof val !== 'function') return false
-  //       if (val.length !== 2) return false
-  //       return true
-  //     },
-  //     {
-  //       message: 'Must be a valid intersection function',
-  //     },
-  //   )
-  //   .default(() => (_entity: Entity, _point: [number, number]) => true),
 })
 
 export type BlockDef = z.infer<typeof BlockDef>
@@ -87,6 +75,11 @@ const Theme = z.object({
   menuTooltipBorderRadius: z.string().default('6px'),
   transitionDuration: z.string().default('150ms'),
   transitionTimingFunction: z.string().default('cubic-bezier(0.4, 0, 0.2, 1)'),
+
+  highlightedBlockOutlineColor: z.string().default('var(--ic-primary-light)'),
+  highlightedBlockOutlineWidth: z.string().default('2px'),
+  highlightedBlockOutlineOffset: z.string().default('-1px'),
+  highlightedBlockBorderRadius: z.string().default('2px'),
 })
 
 export type Theme = z.infer<typeof Theme>

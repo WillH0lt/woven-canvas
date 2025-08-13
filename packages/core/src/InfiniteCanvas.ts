@@ -274,6 +274,11 @@ export class InfiniteCanvas {
     style.setProperty('--ic-menu-tooltip-border-radius', theme.menuTooltipBorderRadius)
     style.setProperty('--ic-transition-duration', theme.transitionDuration)
     style.setProperty('--ic-transition-timing-function', theme.transitionTimingFunction)
+    style.setProperty('--ic-highlighted-block-outline-color', theme.highlightedBlockOutlineColor)
+    style.setProperty('--ic-highlighted-block-outline-width', theme.highlightedBlockOutlineWidth)
+    style.setProperty('--ic-highlighted-block-outline-offset', theme.highlightedBlockOutlineOffset)
+    style.setProperty('--ic-highlighted-block-border-radius', theme.highlightedBlockBorderRadius)
+
     style.setProperty('--ic-zoom', '1')
   }
 }
