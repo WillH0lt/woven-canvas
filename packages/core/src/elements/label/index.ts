@@ -1,1 +1,1 @@
-export { LabelElement } from './label'
+export { ICLabel } from './label'

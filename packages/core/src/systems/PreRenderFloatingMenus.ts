@@ -5,7 +5,7 @@ import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import { SnapshotBuilder } from '../History'
 import * as comps from '../components'
-import type { FloatingMenuElement } from '../elements'
+import type { ICFloatingMenu } from '../elements'
 import { binarySearchForId, clamp, computeExtents, uuidToNumber } from '../helpers'
 import { PointerButton } from '../types'
 import type { CoreResources } from '../types'
@@ -60,12 +60,12 @@ export class PreRenderFloatingMenus extends BaseSystem {
       button: PointerButton.Left,
     })
     if (pointerEvents.find((e) => e.type === 'pointerDown') && this.editedBlocks.current.length === 0) {
-      this.removeFloatingMenuElement()
+      this.removeICFloatingMenu()
     }
 
     if (this.pointers.current.length === 0) {
       if (this.selectedBlocks.addedChangedOrRemoved.length > 0 || pointerEvents.find((e) => e.type === 'pointerUp')) {
-        this.createOrUpdateFloatingMenuElement()
+        this.createOrUpdateICFloatingMenu()
       }
     }
 
@@ -83,23 +83,23 @@ export class PreRenderFloatingMenus extends BaseSystem {
       }
 
       if (blocks.size > 0) {
-        const floatingMenuElement = this.resources.menuContainer.querySelector('ic-floating-menu')
-        if (floatingMenuElement) {
+        const ICFloatingMenu = this.resources.menuContainer.querySelector('ic-floating-menu')
+        if (ICFloatingMenu) {
           for (const [id, tag] of blocks) {
-            this.updateSnapshotAttribute(floatingMenuElement, id, tag)
+            this.updateSnapshotAttribute(ICFloatingMenu, id, tag)
           }
         }
       }
     }
   }
 
-  createOrUpdateFloatingMenuElement(): void {
+  createOrUpdateICFloatingMenu(): void {
     const mySelectedBlocks = this.selectedBlocks.current.filter(
       (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
     )
 
     if (mySelectedBlocks.length === 0) {
-      this.removeFloatingMenuElement()
+      this.removeICFloatingMenu()
       return
     }
 
@@ -142,7 +142,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
     this.updateMenuPosition(element)
   }
 
-  private updateSnapshotAttribute(element: FloatingMenuElement, blockId: string, tag: string): void {
+  private updateSnapshotAttribute(element: ICFloatingMenu, blockId: string, tag: string): void {
     const blockDef = this.getBlockDef(tag)
     if (!blockDef) return
 
@@ -160,12 +160,12 @@ export class PreRenderFloatingMenus extends BaseSystem {
     element.snapshot = snapshotBuilder.snapshot
   }
 
-  private removeFloatingMenuElement(): void {
+  private removeICFloatingMenu(): void {
     const element = this.resources.menuContainer.querySelector('ic-floating-menu')
     element?.remove()
   }
 
-  private updateMenuPosition(element: FloatingMenuElement): void {
+  private updateMenuPosition(element: ICFloatingMenu): void {
     const rect = element.getBoundingClientRect()
 
     const menuWidth = rect.width / this.camera.zoom

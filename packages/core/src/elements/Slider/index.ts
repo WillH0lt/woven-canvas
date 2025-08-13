@@ -1,1 +1,1 @@
-export { SliderElement } from './slider'
+export { ICSlider } from './slider'

@@ -1,1 +1,1 @@
-export { ColorButtonElement } from './color-button'
+export { ICColorButton } from './color-button'

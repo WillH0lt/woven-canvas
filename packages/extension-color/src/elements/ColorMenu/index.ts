@@ -1,1 +1,1 @@
-export { ColorMenuElement } from './color-menu'
+export { ICColorMenu } from './color-menu'

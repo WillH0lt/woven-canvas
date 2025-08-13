@@ -1,1 +1,1 @@
-export { RadioButtonsElement } from './radio-buttons'
+export { ICRadioButtons } from './radio-buttons'

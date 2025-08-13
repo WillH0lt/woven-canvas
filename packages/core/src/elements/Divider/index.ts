@@ -1,1 +1,1 @@
-export { DividerElement } from './divider'
+export { ICDivider } from './divider'

@@ -1,11 +1,11 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { AbstractButtonElement } from '@infinitecanvas/core/elements'
+import { ICMenuIconButton } from '@infinitecanvas/core/elements'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 @customElement('ic-text-bold-button')
-export class BoldButtonElement extends SignalWatcher(AbstractButtonElement) {
+export class BoldButtonElement extends SignalWatcher(ICMenuIconButton) {
   protected icon = html`
     <svg
       xmlns="http://www.w3.org/2000/svg"

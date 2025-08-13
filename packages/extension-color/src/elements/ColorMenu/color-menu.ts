@@ -1,5 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { BaseElement } from '@infinitecanvas/core/elements'
+import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
 import { SignalWatcher, signal } from '@lit-labs/preact-signals'
 import { html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -7,7 +7,7 @@ import { customElement } from 'lit/decorators.js'
 import { Color } from '../../components'
 
 @customElement('ic-color-menu')
-export class ColorMenuElement extends SignalWatcher(BaseElement) {
+export class ICColorMenu extends SignalWatcher(ICBaseMenuButton) {
   private pickerVisible = signal(false)
 
   render() {
@@ -51,6 +51,6 @@ export class ColorMenuElement extends SignalWatcher(BaseElement) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-color-menu': ColorMenuElement
+    'ic-color-menu': ICColorMenu
   }
 }

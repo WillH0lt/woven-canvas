@@ -2,10 +2,10 @@ import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import { InfiniteCanvas } from '../../InfiniteCanvas'
-import { AbstractButtonElement } from '../AbstractButton'
+import { ICMenuIconButton } from '../MenuIconButton'
 
 @customElement('ic-delete-button')
-export class DeleteButton extends AbstractButtonElement {
+export class ICDeleteButton extends ICMenuIconButton {
   protected icon = html`
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -26,6 +26,6 @@ export class DeleteButton extends AbstractButtonElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-delete-button': DeleteButton
+    'ic-delete-button': ICDeleteButton
   }
 }

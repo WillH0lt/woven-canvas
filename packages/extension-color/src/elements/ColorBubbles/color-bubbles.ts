@@ -9,7 +9,7 @@ import { style } from './color-bubbles.style'
 const PALETTE = ['#000000', '#434343', '#ff3e41', '#ff8a43', '#ffeb7f', '#00c9a7', '#007ea7', '#6a58f2', '#ffffff']
 
 @customElement('ic-color-bubbles')
-export class ColorBubblesElement extends LitElement {
+export class ICColorBubbles extends LitElement {
   static styles = style
 
   @property() currentColor = '#000000'
@@ -59,6 +59,6 @@ export class ColorBubblesElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-color-bubbles': ColorBubblesElement
+    'ic-color-bubbles': ICColorBubbles
   }
 }

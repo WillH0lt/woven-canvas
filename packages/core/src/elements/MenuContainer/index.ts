@@ -1,1 +1,1 @@
-export { MenuContainerElement } from './menu-container'
+export { ICMenuContainer } from './menu-container'

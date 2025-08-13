@@ -1,7 +1,7 @@
 import type { Snapshot } from '@infinitecanvas/core'
-import { BaseEditable } from '@infinitecanvas/core/elements'
+import { ICEditableBlock } from '@infinitecanvas/core/elements'
 import { Color } from '@infinitecanvas/extension-color'
-import { type Text, TextAlign, type TextElement, VerticalAlign } from '@infinitecanvas/extension-text'
+import { type ICText, type Text, TextAlign, VerticalAlign } from '@infinitecanvas/extension-text'
 import { type PropertyValues, css, html, svg } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
@@ -44,9 +44,9 @@ function toPathInfo(path: RoughPathInfo, dashArray: string | undefined, strokeWi
 }
 
 @customElement('ic-rough-shape')
-export class RoughShapeElement extends BaseEditable {
+export class ICRoughShape extends ICEditableBlock {
   @query('#container') container!: HTMLElement
-  @query('ic-text') textElement!: TextElement
+  @query('ic-text') textElement!: ICText
 
   @property({ type: Object })
   public text!: Text
@@ -256,6 +256,6 @@ export class RoughShapeElement extends BaseEditable {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-rough-shape': RoughShapeElement
+    'ic-rough-shape': ICRoughShape
   }
 }

@@ -1,1 +1,1 @@
-export { StickyNoteElement } from './StickyNote'
+export { ICStickyNote } from './StickyNote'

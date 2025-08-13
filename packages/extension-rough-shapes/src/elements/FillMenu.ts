@@ -1,5 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { BaseElement } from '@infinitecanvas/core/elements'
+import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
 import { Color } from '@infinitecanvas/extension-color'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { type HTMLTemplateResult, html, nothing } from 'lit'
@@ -17,7 +17,7 @@ const fillStyles = {
 }
 
 @customElement('ic-rough-shape-fill-menu')
-export class FillMenuElement extends SignalWatcher(BaseElement) {
+export class ICFillMenu extends SignalWatcher(ICBaseMenuButton) {
   @state()
   private pickerVisible = false
 
@@ -159,6 +159,6 @@ export class FillMenuElement extends SignalWatcher(BaseElement) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-rough-shape-fill-menu': FillMenuElement
+    'ic-rough-shape-fill-menu': ICFillMenu
   }
 }

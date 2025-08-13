@@ -59,7 +59,6 @@ async function initializeCanvas(container: HTMLDivElement) {
       RoughShapesExtension,
       // MultiplayerExtension,
       PerfectFreehandExtension,
-      // LocalStorageExtension,
     ],
   })
 

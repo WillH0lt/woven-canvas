@@ -17,7 +17,6 @@
     "@infinitecanvas/extension-color": "workspace:^",
     "@infinitecanvas/extension-controls": "workspace:^",
     "@infinitecanvas/extension-input": "workspace:^",
-    "@infinitecanvas/extension-local-storage": "workspace:^",
     "@infinitecanvas/extension-multiplayer": "workspace:^",
     "@infinitecanvas/extension-perfect-freehand": "workspace:^",
     "@infinitecanvas/extension-rough-shapes": "workspace:^",

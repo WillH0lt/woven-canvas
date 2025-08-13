@@ -1,6 +1,6 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import type { Snapshot } from '@infinitecanvas/core'
-import { BaseEditable } from '@infinitecanvas/core/elements'
+import { ICEditableBlock } from '@infinitecanvas/core/elements'
 import { Editor } from '@tiptap/core'
 import Bold from '@tiptap/extension-bold'
 import Document from '@tiptap/extension-document'
@@ -21,7 +21,7 @@ import type { Text } from '../components'
 import { TextAlign as TextAlignKind } from '../types'
 
 @customElement('ic-text')
-export class TextElement extends BaseEditable {
+export class ICText extends ICEditableBlock {
   @property({ type: String }) blockId!: string
 
   @property({ type: Object })
@@ -34,6 +34,8 @@ export class TextElement extends BaseEditable {
   defaultAlignment: TextAlignKind = TextAlignKind.Left
 
   @query('#editorContainer') editorContainer: HTMLElement | undefined
+
+  @query('#textContainer') textContainer: HTMLElement | undefined
 
   private _editor: Editor | null = null
 
@@ -57,6 +59,9 @@ export class TextElement extends BaseEditable {
       outline: none;
     }
   `
+
+  private startWidth = 0
+  private startHeight = 0
 
   updated(changedProperties: Map<string, any>) {
     super.updated(changedProperties)
@@ -134,6 +139,9 @@ export class TextElement extends BaseEditable {
     for (const pointerEvent of pointerEvents) {
       this.editorContainer?.addEventListener(pointerEvent, (ev) => ev.stopPropagation())
     }
+
+    this.startWidth = this.editorContainer?.clientWidth ?? 0
+    this.startHeight = this.textContainer?.clientHeight ?? 0
   }
 
   private endEditing(): void {
@@ -144,13 +152,17 @@ export class TextElement extends BaseEditable {
   }
 
   public getSnapshot(): Snapshot {
-    if (!this.editing) return {}
+    if (!this.editing || !this.editorContainer) return {}
+
+    const { width, height, left, top } = this.computeBlockDimensions(this.editorContainer)
 
     return {
       [this.blockId]: {
         Block: {
-          width: this.editorContainer?.clientWidth ?? 0,
-          height: this.editorContainer?.clientHeight ?? 0,
+          width,
+          height,
+          left,
+          top,
         },
         Text: {
           content: this._editor?.getHTML() ?? '',
@@ -245,7 +257,7 @@ export class TextElement extends BaseEditable {
     return html`${
       this.editing
         ? html`<div id="editorContainer" style=${styleMap(styles)}></div>`
-        : html`<div style=${styleMap(styles)}>${unsafeHTML(text.content)}</div>`
+        : html`<div id="textContainer" style=${styleMap(styles)}>${unsafeHTML(text.content)}</div>`
     }`
   }
 
@@ -269,6 +281,6 @@ export class TextElement extends BaseEditable {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-text': TextElement
+    'ic-text': ICText
   }
 }

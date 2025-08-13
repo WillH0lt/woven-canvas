@@ -1,5 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { AbstractButtonElement } from '@infinitecanvas/core/elements'
+import { ICMenuIconButton } from '@infinitecanvas/core/elements'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -59,7 +59,7 @@ const icons = {
 }
 
 @customElement('ic-text-alignment-button')
-export class AlignmentButtonElement extends SignalWatcher(AbstractButtonElement) {
+export class AlignmentButtonElement extends SignalWatcher(ICMenuIconButton) {
   protected icon = icons[TextAlign.Left] // Default icon, will be updated in connected
 
   protected onClick(): void {

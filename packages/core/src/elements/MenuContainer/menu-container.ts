@@ -4,7 +4,7 @@ import { customElement } from 'lit/decorators.js'
 import { style } from './menu-container.style'
 
 @customElement('ic-menu-container')
-export class MenuContainerElement extends LitElement {
+export class ICMenuContainer extends LitElement {
   static styles = style
 
   render() {
@@ -18,6 +18,6 @@ export class MenuContainerElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-menu-container': MenuContainerElement
+    'ic-menu-container': ICMenuContainer
   }
 }

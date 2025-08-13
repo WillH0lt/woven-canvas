@@ -1,2 +1,2 @@
-export { TextElement } from './Text'
-export { TextColorMenuElement } from './TextColorMenu'
+export { ICText } from './Text'
+export { ICTextColorMenu } from './TextColorMenu'

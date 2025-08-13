@@ -1,6 +1,6 @@
 import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components'
-import type { BaseEditable } from '../elements'
+import type { ICEditableBlock } from '../elements'
 import { CoreCommand, type CoreCommandArgs, type CoreResources } from '../types'
 import { UpdateBlocks } from './UpdateBlocks'
 import { UpdateCamera } from './UpdateCamera'
@@ -20,7 +20,7 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
     for (const entity of this.editedEntities.added) {
       const block = entity.read(comps.Block)
 
-      const element = this.resources.blockContainer.querySelector<BaseEditable>(`[id='${block.id}']`)
+      const element = this.resources.blockContainer.querySelector<ICEditableBlock>(`[id='${block.id}']`)
       if (!element) continue
       element.setAttribute('editing', 'true')
     }
@@ -30,7 +30,7 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
     }
     for (const entity of this.editedEntities.removed) {
       const block = entity.read(comps.Block)
-      const element = this.resources.blockContainer.querySelector<BaseEditable>(`[id='${block.id}']`)
+      const element = this.resources.blockContainer.querySelector<ICEditableBlock>(`[id='${block.id}']`)
       if (!element) continue
       const snapshot = element.getSnapshot()
 

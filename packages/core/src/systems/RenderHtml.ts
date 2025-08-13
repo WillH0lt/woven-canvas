@@ -5,7 +5,7 @@ import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
-import type { BaseElement } from '../elements'
+import type { ICBaseBlock } from '../elements'
 import { binarySearchForId, lowercaseFirstLetter } from '../helpers'
 import { uuidToNumber } from '../helpers/uuidToNumber'
 import type { CoreResources } from '../types'
@@ -139,9 +139,9 @@ export class RenderHtml extends BaseSystem {
     }
   }
 
-  private createBlockElement(entity: Entity): BaseElement {
+  private createBlockElement(entity: Entity): ICBaseBlock {
     const block = entity.read(comps.Block)
-    const element = document.createElement(block.tag) as BaseElement
+    const element = document.createElement(block.tag) as ICBaseBlock
     const blockId = block.id
     element.id = blockId
     element.blockId = blockId

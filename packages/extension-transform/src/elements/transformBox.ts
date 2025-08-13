@@ -1,9 +1,9 @@
-import { BaseElement } from '@infinitecanvas/core/elements'
+import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
 import { css, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 @customElement('ic-transform-box')
-export class TransformBoxElement extends BaseElement {
+export class TransformBoxElement extends ICBaseMenuButton {
   static styles = css`
     div {
       box-sizing: border-box;

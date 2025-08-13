@@ -1,1 +1,1 @@
-export { SendBackwardButton } from './send-backward-button'
+export { ICSendBackwardButton } from './send-backward-button'

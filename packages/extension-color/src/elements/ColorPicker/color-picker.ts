@@ -32,7 +32,7 @@ import { style } from './color-picker.style.js'
  * @cssproperty --slider-handle-size - The diameter of the slider's handle.
  */
 @customElement('ic-color-picker')
-export class ColorPickerElement extends LitElement {
+export class ICColorPicker extends LitElement {
   static styles = style
 
   private isSafeValue = false

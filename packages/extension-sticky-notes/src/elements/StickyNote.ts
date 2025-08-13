@@ -1,16 +1,16 @@
 import type { Snapshot } from '@infinitecanvas/core'
-import { BaseEditable } from '@infinitecanvas/core/elements'
+import { ICEditableBlock } from '@infinitecanvas/core/elements'
 import type { Color } from '@infinitecanvas/extension-color'
-import { type Text, TextAlign, type TextElement, VerticalAlign } from '@infinitecanvas/extension-text'
+import { type ICText, type Text, TextAlign, VerticalAlign } from '@infinitecanvas/extension-text'
 
 import { css, html } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 
 @customElement('ic-sticky-note')
-export class StickyNoteElement extends BaseEditable {
+export class ICStickyNote extends ICEditableBlock {
   @query('#container') container!: HTMLElement
-  @query('ic-text') textElement!: TextElement
+  @query('ic-text') textElement!: ICText
 
   @property({ type: Object })
   public text!: Text
@@ -58,8 +58,12 @@ export class StickyNoteElement extends BaseEditable {
   public getSnapshot(): Snapshot {
     const snapshot = this.textElement.getSnapshot()
 
-    snapshot[this.blockId].Block.width = this.container.clientWidth
-    snapshot[this.blockId].Block.height = this.container.clientHeight
+    const { width, height, left, top } = this.computeBlockDimensions(this.container)
+
+    snapshot[this.blockId].Block.width = width
+    snapshot[this.blockId].Block.height = height
+    snapshot[this.blockId].Block.left = left
+    snapshot[this.blockId].Block.top = top
 
     return snapshot
   }
@@ -67,6 +71,6 @@ export class StickyNoteElement extends BaseEditable {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-sticky-note': StickyNoteElement
+    'ic-sticky-note': ICStickyNote
   }
 }

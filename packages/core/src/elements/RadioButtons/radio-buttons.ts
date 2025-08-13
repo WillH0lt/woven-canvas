@@ -5,7 +5,7 @@ import { classMap } from 'lit/directives/class-map.js'
 import { style } from './radio-buttons.style'
 
 @customElement('ic-radio-buttons')
-export class RadioButtonsElement extends LitElement {
+export class ICRadioButtons extends LitElement {
   static styles = style
 
   @property({ type: Array })
@@ -36,6 +36,6 @@ export class RadioButtonsElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-radio-buttons': RadioButtonsElement
+    'ic-radio-buttons': ICRadioButtons
   }
 }

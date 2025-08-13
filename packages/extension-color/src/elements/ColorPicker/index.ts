@@ -1,1 +1,1 @@
-export { ColorPickerElement } from './color-picker'
+export { ICColorPicker } from './color-picker'

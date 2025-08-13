@@ -1,1 +1,1 @@
-export { ColorBubblesElement } from './color-bubbles'
+export { ICColorBubbles } from './color-bubbles'

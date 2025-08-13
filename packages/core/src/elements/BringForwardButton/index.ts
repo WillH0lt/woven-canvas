@@ -1,1 +1,1 @@
-export { BringForwardButton } from './bring-forward-button'
+export { ICBringForwardButton } from './bring-forward-button'

@@ -1,1 +1,1 @@
-export { DeleteButton } from './delete-button'
+export { ICDeleteButton } from './delete-button'

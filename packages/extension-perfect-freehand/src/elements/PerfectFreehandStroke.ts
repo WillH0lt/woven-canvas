@@ -1,4 +1,4 @@
-import { BaseElement } from '@infinitecanvas/core/elements'
+import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
 import type { Color } from '@infinitecanvas/extension-color'
 import { type PropertyValues, css, html } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
@@ -33,7 +33,7 @@ function getSvgPathFromStroke(points: number[][]): string {
 }
 
 @customElement('ic-perfect-freehand-stroke')
-export class PerfectFreehandStrokeElement extends BaseElement {
+export class ICPerfectFreehandStroke extends ICBaseMenuButton {
   static styles = css`
     :host * {
       box-sizing: border-box;
@@ -120,6 +120,6 @@ export class PerfectFreehandStrokeElement extends BaseElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-perfect-freehand-stroke': PerfectFreehandStrokeElement
+    'ic-perfect-freehand-stroke': ICPerfectFreehandStroke
   }
 }

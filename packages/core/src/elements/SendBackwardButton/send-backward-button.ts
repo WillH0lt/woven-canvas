@@ -2,10 +2,10 @@ import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import { InfiniteCanvas } from '../../InfiniteCanvas'
-import { AbstractButtonElement } from '../AbstractButton'
+import { ICMenuIconButton } from '../MenuIconButton'
 
 @customElement('ic-send-backward-button')
-export class SendBackwardButton extends AbstractButtonElement {
+export class ICSendBackwardButton extends ICMenuIconButton {
   protected viewbox = '0 0 384 512'
   protected icon = html`
     <svg
@@ -26,6 +26,6 @@ export class SendBackwardButton extends AbstractButtonElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-send-backward-button': SendBackwardButton
+    'ic-send-backward-button': ICSendBackwardButton
   }
 }

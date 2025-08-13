@@ -16,7 +16,7 @@ import './elements'
 import './floatingMenuButtons'
 import { TextEditorFloatingMenuButtons } from './buttonCatalog'
 import { Text } from './components'
-import { TextElement } from './elements'
+import { ICText } from './elements'
 import * as sys from './systems'
 import { TextAlign } from './types'
 
@@ -68,15 +68,15 @@ class TextExtensionClass extends BaseExtension {
     this._postUpdateGroup = this.createGroup(resources, sys.UpdateTextResize)
   }
 
-  #getEditableTextElement(): TextElement | null {
+  #getEditableTextElement(): ICText | null {
     // get ic-text element where edited is true
     // ic-text might be a direct child of the blockContainer or inside a shadowRoot
     const element = this.blockContainer.querySelector('[editing="true"]') as HTMLElement | null
-    if (element instanceof TextElement) {
+    if (element instanceof ICText) {
       return element
     }
 
-    const textElement = element?.shadowRoot?.querySelector('ic-text') as TextElement | null
+    const textElement = element?.shadowRoot?.querySelector('ic-text') as ICText | null
     if (textElement) {
       return textElement
     }

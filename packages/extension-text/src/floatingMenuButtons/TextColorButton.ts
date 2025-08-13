@@ -4,7 +4,7 @@ import { LitElement, html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 @customElement('ic-text-color-button')
-export class TextColorButtonElement extends SignalWatcher(LitElement) {
+export class TextICColorButton extends SignalWatcher(LitElement) {
   render() {
     const color = InfiniteCanvas.instance?.store.text.color
     if (!color?.value) {
@@ -20,6 +20,6 @@ export class TextColorButtonElement extends SignalWatcher(LitElement) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-text-color-button': TextColorButtonElement
+    'ic-text-color-button': TextICColorButton
   }
 }

@@ -1,5 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { BaseElement } from '@infinitecanvas/core/elements'
+import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
 import { Color } from '@infinitecanvas/extension-color'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { type HTMLTemplateResult, html } from 'lit'
@@ -17,7 +17,7 @@ const strokeStyles = {
 }
 
 @customElement('ic-rough-shape-stroke-menu')
-export class StrokeMenuElement extends SignalWatcher(BaseElement) {
+export class ICStrokeMenu extends SignalWatcher(ICBaseMenuButton) {
   @state()
   private pickerVisible = false
 
@@ -136,6 +136,6 @@ export class StrokeMenuElement extends SignalWatcher(BaseElement) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-rough-shape-stroke-menu': StrokeMenuElement
+    'ic-rough-shape-stroke-menu': ICStrokeMenu
   }
 }

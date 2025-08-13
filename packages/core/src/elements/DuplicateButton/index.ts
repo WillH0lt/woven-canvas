@@ -1,1 +1,1 @@
-export { DuplicateButton } from './duplicate-button'
+export { ICDuplicateButton } from './duplicate-button'

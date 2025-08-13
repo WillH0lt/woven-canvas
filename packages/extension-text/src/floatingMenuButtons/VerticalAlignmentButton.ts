@@ -1,5 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { AbstractButtonElement } from '@infinitecanvas/core/elements'
+import { ICMenuIconButton } from '@infinitecanvas/core/elements'
 import { type PropertyValues, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { Text } from '../components'
@@ -20,7 +20,7 @@ const icons = {
 }
 
 @customElement('ic-text-vertical-alignment-button')
-export class VerticalAlignmentButtonElement extends AbstractButtonElement {
+export class VerticalAlignmentButtonElement extends ICMenuIconButton {
   protected icon = icons[VerticalAlign.Top] // Default icon, will be updated in connected
 
   public updated(_changedProperties: PropertyValues): void {

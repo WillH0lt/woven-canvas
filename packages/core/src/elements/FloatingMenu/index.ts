@@ -1,1 +1,1 @@
-export { FloatingMenuElement } from './floating-menu'
+export { ICFloatingMenu } from './floating-menu'

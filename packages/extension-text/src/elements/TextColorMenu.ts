@@ -3,7 +3,7 @@ import { SignalWatcher, signal } from '@lit-labs/preact-signals'
 import { LitElement, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 @customElement('ic-text-color-menu')
-export class TextColorMenuElement extends SignalWatcher(LitElement) {
+export class ICTextColorMenu extends SignalWatcher(LitElement) {
   private pickerVisible = signal(false)
 
   render() {
@@ -36,6 +36,6 @@ export class TextColorMenuElement extends SignalWatcher(LitElement) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-text-color-menu': TextColorMenuElement
+    'ic-text-color-menu': ICTextColorMenu
   }
 }

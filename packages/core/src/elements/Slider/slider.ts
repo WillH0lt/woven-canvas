@@ -5,7 +5,7 @@ import { number } from 'zod/v4'
 import { style } from './slider.style'
 
 @customElement('ic-slider')
-export class SliderElement extends LitElement {
+export class ICSlider extends LitElement {
   static styles = style
 
   @property({ type: number })
@@ -42,6 +42,6 @@ export class SliderElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-slider': SliderElement
+    'ic-slider': ICSlider
   }
 }

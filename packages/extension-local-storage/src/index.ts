@@ -1,1 +1,0 @@
-export { LocalStorageExtension } from './LocalStorageExtension'

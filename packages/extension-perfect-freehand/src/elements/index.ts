@@ -1,1 +1,1 @@
-export { PerfectFreehandStrokeElement } from './PerfectFreehandStroke'
+export { ICPerfectFreehandStroke } from './PerfectFreehandStroke'

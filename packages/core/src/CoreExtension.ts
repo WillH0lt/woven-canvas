@@ -25,7 +25,12 @@ import type { BaseComponent } from './BaseComponent'
 import { LocalDB } from './LocalDB'
 import { floatingMenuStandardButtons } from './buttonCatalog'
 
-type BlockData = Omit<Block, keyof BaseComponent>
+// Pick only non-function properties from Block, excluding anything from BaseComponent
+type NonFunctionPropNames<T> = {
+  [K in keyof T]-?: T[K] extends (...args: any) => any ? never : K
+}[keyof T]
+
+type BlockData = Pick<Block, NonFunctionPropNames<Block>>
 
 declare module '@infinitecanvas/core' {
   interface ICommands {

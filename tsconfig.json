@@ -12,9 +12,6 @@
       "path": "packages/extension-input"
     },
     {
-      "path": "packages/extension-local-storage"
-    },
-    {
       "path": "packages/extension-multiplayer"
     },
     {

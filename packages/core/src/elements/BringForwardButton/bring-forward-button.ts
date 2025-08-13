@@ -2,10 +2,10 @@ import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import { InfiniteCanvas } from '../../InfiniteCanvas'
-import { AbstractButtonElement } from '../AbstractButton'
+import { ICMenuIconButton } from '../MenuIconButton'
 
 @customElement('ic-bring-forward-button')
-export class BringForwardButton extends AbstractButtonElement {
+export class ICBringForwardButton extends ICMenuIconButton {
   protected icon = html`
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -25,6 +25,6 @@ export class BringForwardButton extends AbstractButtonElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-bring-forward-button': BringForwardButton
+    'ic-bring-forward-button': ICBringForwardButton
   }
 }

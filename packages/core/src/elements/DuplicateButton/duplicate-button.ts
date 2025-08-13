@@ -2,10 +2,10 @@ import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import { InfiniteCanvas } from '../../InfiniteCanvas'
-import { AbstractButtonElement } from '../AbstractButton'
+import { ICMenuIconButton } from '../MenuIconButton'
 
 @customElement('ic-duplicate-button')
-export class DuplicateButton extends AbstractButtonElement {
+export class ICDuplicateButton extends ICMenuIconButton {
   protected icon = html`
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -26,6 +26,6 @@ export class DuplicateButton extends AbstractButtonElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-duplicate-button': DuplicateButton
+    'ic-duplicate-button': ICDuplicateButton
   }
 }

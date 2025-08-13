@@ -3,7 +3,7 @@ import { customElement } from 'lit/decorators.js'
 import { style } from './label.style'
 
 @customElement('ic-label')
-export class LabelElement extends LitElement {
+export class ICLabel extends LitElement {
   static styles = style
 
   render() {
@@ -17,6 +17,6 @@ export class LabelElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-label': LabelElement
+    'ic-label': ICLabel
   }
 }

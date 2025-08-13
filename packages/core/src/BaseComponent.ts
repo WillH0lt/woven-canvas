@@ -40,8 +40,4 @@ export abstract class BaseComponent {
   public getSchema(): Record<string, any> {
     return (this.constructor as typeof BaseComponent).schema ?? {}
   }
-
-  public isIntersecting(_point: [number, number]): boolean {
-    return true
-  }
 }

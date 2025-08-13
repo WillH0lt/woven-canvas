@@ -8,7 +8,7 @@ import type { Button } from '../../types'
 import { style } from './floating-menu.style'
 
 @customElement('ic-floating-menu')
-export class FloatingMenuElement extends LitElement {
+export class ICFloatingMenu extends LitElement {
   static styles = style
 
   @property({ type: Array })
@@ -176,6 +176,6 @@ export class FloatingMenuElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-floating-menu': FloatingMenuElement
+    'ic-floating-menu': ICFloatingMenu
   }
 }
