@@ -25,10 +25,7 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
     },
     actions: {
       setDragStart: assign({
-        panStart: ({ event, context }) => {
-          if (!('worldPosition' in event)) return context.panStart
-          return event.worldPosition
-        },
+        panStart: ({ event }) => event.worldPosition,
       }),
 
       resetContext: assign({
@@ -56,7 +53,6 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
           pointerMove: [
             {
               actions: ({ context, event }) => {
-                if (!('worldPosition' in event)) return
                 const deltaX = event.worldPosition[0] - context.panStart[0]
                 const deltaY = event.worldPosition[1] - context.panStart[1]
                 const x = this.camera.left - deltaX

@@ -42,12 +42,10 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
     },
     guards: {
       isThresholdReached: ({ context, event }) => {
-        if (!('clientPosition' in event)) return false
         const dist = distance(context.pointingStartClient, event.clientPosition)
         return dist >= POINTING_THRESHOLD
       },
       isOverBlock: ({ event }) => {
-        if (!('blockEntity' in event)) return false
         if (event.blockEntity === null) return false
 
         return event.blockEntity.alive
@@ -59,25 +57,15 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
     },
     actions: {
       setPointingStart: assign({
-        pointingStartClient: ({ context, event }) => {
-          return 'clientPosition' in event ? event.clientPosition : context.pointingStartClient
-        },
-        pointingStartWorld: ({ context, event }) => {
-          return 'worldPosition' in event ? event.worldPosition : context.pointingStartWorld
-        },
+        pointingStartClient: ({ event }) => event.clientPosition,
+        pointingStartWorld: ({ event }) => event.worldPosition,
       }),
       setDragStart: assign({
-        dragStart: ({ context, event }) => {
-          if (!('worldPosition' in event)) return context.dragStart
-          return event.worldPosition
-        },
+        dragStart: ({ event }) => event.worldPosition,
       }),
       setDraggedEntity: assign({
-        draggedEntity: ({ event }) => {
-          return 'blockEntity' in event ? event.blockEntity : null
-        },
-        draggedEntityStart: ({ context, event }): [number, number] => {
-          if (!('blockEntity' in event)) return context.draggedEntityStart
+        draggedEntity: ({ event }) => event.blockEntity,
+        draggedEntityStart: ({ event }): [number, number] => {
           if (!event.blockEntity) return [0, 0]
           const block = event.blockEntity.read(comps.Block)
           return [block.left, block.top] as [number, number]
@@ -107,14 +95,13 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
         this.emitCommand(CoreCommand.CreateCheckpoint)
       },
       updateDragged: ({ context, event }) => {
-        if (!context.draggedEntity || !('worldPosition' in event)) return
+        if (!context.draggedEntity) return
         this.emitCommand(TransformCommand.DragBlock, context.draggedEntity, {
           left: context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0],
           top: context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1],
         })
       },
       resizeSelectionBox: ({ context, event }) => {
-        if (!('worldPosition' in event)) return
         this.emitCommand(TransformCommand.UpdateSelectionBox, {
           left: Math.min(context.pointingStartWorld[0], event.worldPosition[0]),
           top: Math.min(context.pointingStartWorld[1], event.worldPosition[1]),

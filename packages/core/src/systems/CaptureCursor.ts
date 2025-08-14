@@ -46,17 +46,14 @@ export class CaptureCursor extends BaseSystem<CoreCommandArgs> {
     },
     guards: {
       isOverBlock: ({ event }) => {
-        if (!('blockEntity' in event)) return false
         return !!event.blockEntity
       },
       isOverDifferentBlock: ({ context, event }) => {
-        if (!('blockEntity' in event)) return false
         if (!event.blockEntity) return false
         if (!context.hoveredEntity) return true
         return !event.blockEntity.isSame(context.hoveredEntity)
       },
       isOutsideBlock: ({ event }) => {
-        if (!('blockEntity' in event)) return true
         return event.blockEntity === null
       },
     },
@@ -69,20 +66,19 @@ export class CaptureCursor extends BaseSystem<CoreCommandArgs> {
       }),
       setHoveredEntity: assign({
         hoveredEntity: ({ event }) => {
-          if (!('blockEntity' in event) || !event.blockEntity) return null
+          if (!event.blockEntity) return null
           return event.blockEntity
         },
         icon: ({ event }) => {
           let icon = CursorIcon.Pointer
-          if ('blockEntity' in event && event.blockEntity && event.blockEntity.has(comps.Hoverable)) {
+          if (event.blockEntity?.has(comps.Hoverable)) {
             const hoverable = event.blockEntity.read(comps.Hoverable)
             icon = hoverable.cursor
           }
           return icon
         },
         iconRotation: ({ event }) => {
-          if (!('blockEntity' in event) || !event.blockEntity) return 0
-          // if (!context.hoveredEntity) return 0
+          if (!event.blockEntity) return 0
           const block = event.blockEntity.read(comps.Block)
           return block.rotateZ
         },

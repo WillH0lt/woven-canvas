@@ -229,16 +229,12 @@ export type PointerEvent = {
   blockEntity: Entity | null
 }
 
-export type MouseEvent =
-  | {
-      type: 'wheel'
-      delta: number
-    }
-  | {
-      type: 'mouseMove'
-      worldPosition: [number, number]
-      clientPosition: [number, number]
-      blockEntity: Entity | null
-    }
+export type MouseEvent = {
+  type: 'mouseMove' | 'wheel'
+  wheelDelta: number
+  worldPosition: [number, number]
+  clientPosition: [number, number]
+  blockEntity: Entity | null
+}
 
 export type Transform = [number, number, number, number, number, number]

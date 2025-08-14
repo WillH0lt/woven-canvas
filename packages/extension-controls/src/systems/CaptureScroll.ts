@@ -29,7 +29,7 @@ export class CaptureScroll extends BaseSystem<CoreCommandArgs> {
     const wheelEvent = events.find((e) => e.type === 'wheel')
     if (!wheelEvent) return
 
-    const top = this.camera.top + (1 * wheelEvent.delta) / this.camera.zoom
+    const top = this.camera.top + (1 * wheelEvent.wheelDelta) / this.camera.zoom
     this.emitCommand(CoreCommand.MoveCamera, {
       x: this.camera.left,
       y: top,

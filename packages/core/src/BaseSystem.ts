@@ -218,18 +218,22 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
 
     if (mouse.wheelTrigger) {
       events.push({
-        type: 'wheel',
-        delta: mouse.wheelDelta,
-      } as MouseEvent)
+        type: 'wheel' as const,
+        wheelDelta: mouse.wheelDelta,
+        worldPosition: camera.toWorld(mouse.position),
+        clientPosition: mouse.position,
+        blockEntity: intersect.entity || null,
+      })
     }
 
     if (mouse.moveTrigger) {
       events.push({
-        type: 'mouseMove',
+        type: 'mouseMove' as const,
+        wheelDelta: mouse.wheelDelta,
         worldPosition: camera.toWorld(mouse.position),
         clientPosition: mouse.position,
         blockEntity: intersect.entity || null,
-      } as MouseEvent)
+      })
     }
 
     return events
