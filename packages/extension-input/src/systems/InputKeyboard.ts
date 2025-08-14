@@ -1,6 +1,8 @@
-import { type BaseResources, BaseSystem } from '@infinitecanvas/core'
+import { BaseSystem } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
 import { co } from '@lastolivegames/becsy'
+
+import type { InputResources } from '../types'
 
 export class InputKeyboard extends BaseSystem {
   private readonly keyboards = this.query((q) => q.current.with(comps.Keyboard).write)
@@ -12,28 +14,17 @@ export class InputKeyboard extends BaseSystem {
   // declaring to becsy that keyboard is a singleton component
   private readonly _keyboard = this.singleton.read(comps.Keyboard)
 
-  protected declare readonly resources: BaseResources
+  private readonly eventsBuffer: KeyboardEvent[] = []
 
-  private keyUpFrames: { key: string; frame: number }[] = []
-
-  private keyDownFrames: { key: string; frame: number }[] = []
+  protected declare readonly resources: InputResources
 
   private updateKeyboard(field: string, value: boolean): void {
     if (!(field in this.keyboard)) return
     Object.assign(this.keyboard, { [field]: value })
   }
 
-  @co private *onKeyDown(e: KeyboardEvent): Generator {
+  private onKeyDown(e: KeyboardEvent): void {
     const key = e.key.toLowerCase()
-
-    this.keyDownFrames.push({ key, frame: this.frame.value })
-
-    if (this.keyUpFrames.some((kf) => kf.key === key && kf.frame === this.frame.value)) {
-      console.warn(
-        `tried to handle keydown, but keyup has been called this frame for key: ${key} on frame: ${this.frame.value}`,
-      )
-      return
-    }
 
     const keyDown = `${key}Down`
 
@@ -53,22 +44,11 @@ export class InputKeyboard extends BaseSystem {
     if (e.key === 'z' && this.keyboard.modDown) {
       e.preventDefault()
     }
-
-    yield
   }
 
-  @co private *onKeyUp(e: KeyboardEvent): Generator {
+  private onKeyUp(e: KeyboardEvent): void {
     const key = e.key.toLowerCase()
     const keyDown = `${key}Down`
-
-    this.keyUpFrames.push({ key, frame: this.frame.value })
-
-    if (this.keyDownFrames.some((kf) => kf.key === key && kf.frame === this.frame.value)) {
-      console.warn(
-        `tried to handle keyup, but keydown has been called this frame on frame: ${key} at time: ${this.frame.value}`,
-      )
-      return
-    }
 
     const triggerKey = `${key}UpTrigger`
     this.setTrigger(triggerKey)
@@ -84,8 +64,6 @@ export class InputKeyboard extends BaseSystem {
     if (e.key === 'z' && this.keyboard.modDown) {
       e.preventDefault()
     }
-
-    yield
   }
 
   @co private *setTrigger(triggerKey: string): Generator {
@@ -99,7 +77,19 @@ export class InputKeyboard extends BaseSystem {
   public initialize(): void {
     const domElement = this.resources.domElement
 
-    domElement.addEventListener('keydown', this.onKeyDown.bind(this))
-    domElement.addEventListener('keyup', this.onKeyUp.bind(this))
+    domElement.addEventListener('keydown', (e) => this.eventsBuffer.push(e))
+    domElement.addEventListener('keyup', (e) => this.eventsBuffer.push(e))
+  }
+
+  public execute(): void {
+    for (const e of this.eventsBuffer) {
+      if (e.type === 'keydown') {
+        this.onKeyDown(e)
+      } else if (e.type === 'keyup') {
+        this.onKeyUp(e)
+      }
+    }
+
+    this.eventsBuffer.length = 0
   }
 }

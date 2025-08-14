@@ -42,7 +42,8 @@
   },
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
-    "@lastolivegames/becsy": "^0.15.5"
+    "@lastolivegames/becsy": "^0.15.5",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "vitest": "^3.1.4"

@@ -9,8 +9,8 @@ export const TransformOptions = z.object({
   selectionBoxTag: z.string().default('ic-selection-box'),
 })
 
-export type TransformOptions = z.input<typeof TransformOptions>
-
+export type TransformOptionsInput = z.input<typeof TransformOptions>
+export type TransformOptions = z.infer<typeof TransformOptions>
 export type TransformResources = BaseResources & z.Infer<typeof TransformOptions>
 
 export enum SelectionState {

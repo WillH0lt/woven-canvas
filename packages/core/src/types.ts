@@ -165,6 +165,10 @@ export enum CoreCommand {
 
   Undo = 'undo',
   Redo = 'redo',
+  Copy = 'copy',
+  Paste = 'paste',
+  Cut = 'cut',
+
   CreateCheckpoint = 'createCheckpoint',
 
   BringForwardSelected = 'bringForwardSelected',

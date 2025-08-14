@@ -3,17 +3,20 @@ import type { BaseResources } from '@infinitecanvas/core'
 
 import * as sys from './systems'
 import './elements'
-import { TransformOptions, type TransformResources } from './types'
+import { TransformOptions, type TransformOptionsInput, type TransformResources } from './types'
 
 class TransformExtensionClass extends BaseExtension {
-  constructor(public options: TransformOptions = {}) {
+  private options: TransformOptions
+
+  constructor(options: TransformOptionsInput = {}) {
     super()
+    this.options = TransformOptions.parse(options)
   }
 
   public async preBuild(resources: BaseResources): Promise<void> {
     const transformResources: TransformResources = {
       ...resources,
-      ...TransformOptions.parse(this.options),
+      ...this.options,
     }
 
     this._captureGroup = this.createGroup(transformResources, sys.CaptureSelect, sys.CaptureTransformBox)
@@ -21,4 +24,4 @@ class TransformExtensionClass extends BaseExtension {
   }
 }
 
-export const TransformExtension = (options: TransformOptions = {}) => new TransformExtensionClass(options)
+export const TransformExtension = (options: TransformOptionsInput = {}) => new TransformExtensionClass(options)

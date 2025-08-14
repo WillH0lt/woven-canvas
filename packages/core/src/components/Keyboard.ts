@@ -16,11 +16,11 @@ export class Keyboard {
 
   // @field.boolean public declare bUpTrigger: boolean
 
-  // @field.boolean declare public cDown: boolean;
+  @field.boolean public declare cDown: boolean
 
-  // @field.boolean declare public cDownTrigger: boolean;
+  @field.boolean public declare cDownTrigger: boolean
 
-  // @field.boolean declare public cUpTrigger: boolean;
+  @field.boolean public declare cUpTrigger: boolean
 
   // @field.boolean public declare dDown: boolean;
 
@@ -130,11 +130,11 @@ export class Keyboard {
 
   // @field.boolean public declare uUpTrigger: boolean;
 
-  // @field.boolean declare public vDown: boolean;
+  @field.boolean public declare vDown: boolean
 
-  // @field.boolean declare public vDownTrigger: boolean;
+  @field.boolean public declare vDownTrigger: boolean
 
-  // @field.boolean declare public vUpTrigger: boolean;
+  @field.boolean public declare vUpTrigger: boolean
 
   // @field.boolean public declare wDown: boolean;
 
@@ -262,11 +262,11 @@ export class Keyboard {
 
   @field.boolean public declare escapeUpTrigger: boolean
 
-  // @field.boolean declare public shiftDown: boolean;
+  @field.boolean public declare shiftDown: boolean
 
-  // @field.boolean declare public shiftDownTrigger: boolean;
+  @field.boolean public declare shiftDownTrigger: boolean
 
-  // @field.boolean declare public shiftUpTrigger: boolean;
+  @field.boolean public declare shiftUpTrigger: boolean
 
   @field.boolean public declare modDown: boolean
 
@@ -274,11 +274,11 @@ export class Keyboard {
 
   @field.boolean public declare modUpTrigger: boolean
 
-  // @field.boolean declare public deleteDown: boolean;
+  @field.boolean public declare deleteDown: boolean
 
-  // @field.boolean declare public deleteDownTrigger: boolean;
+  @field.boolean public declare deleteDownTrigger: boolean
 
-  // @field.boolean declare public deleteUpTrigger: boolean;
+  @field.boolean public declare deleteUpTrigger: boolean
 
   // @field.boolean public declare arrowleftDown: boolean;
 

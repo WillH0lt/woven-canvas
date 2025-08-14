@@ -113,25 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeCanvas(document.querySelector<HTMLDivElement>('#container')!)
 })
 
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Delete') {
-    infiniteCanvas?.commands.core.removeSelected()
-  }
-
-  if (event.key === 'z' && event.ctrlKey) {
-    infiniteCanvas?.commands.core.undo()
-  }
-
-  if (event.key === 'y' && event.ctrlKey) {
-    infiniteCanvas?.commands.core.redo()
-  }
-
-  if (event.key === 'q') {
-    console.log('Creating checkpoint...')
-    infiniteCanvas?.commands.core.createCheckpoint()
-  }
-})
-
 document.querySelector<HTMLDivElement>('#textBtn')!.addEventListener('click', () => {
   const left = Math.random() * window.innerWidth
   const top = Math.random() * window.innerHeight
