@@ -242,6 +242,8 @@ export class History {
   private readonly undoStack: Diff[] = []
   private readonly redoStack: Diff[] = []
 
+  public clipboard: Snapshot | null = null
+
   public get isClean(): boolean {
     return this.diffSinceCheckpoint.isEmpty
   }

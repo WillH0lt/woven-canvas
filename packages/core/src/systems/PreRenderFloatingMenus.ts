@@ -26,7 +26,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
   private readonly intersect = this.singleton.read(comps.Intersect)
 
   private readonly selectedBlocks = this.query(
-    (q) => q.addedChangedOrRemoved.current.with(comps.Selected).with(comps.Block).trackWrites.using(comps.Aabb).read,
+    (q) => q.addedChangedOrRemoved.current.with(comps.Selected, comps.Aabb).with(comps.Block).trackWrites,
   )
 
   private readonly editedBlocks = this.query((q) => q.current.with(comps.Edited))

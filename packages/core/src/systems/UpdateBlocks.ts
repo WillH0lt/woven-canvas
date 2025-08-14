@@ -28,6 +28,10 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   }
 
   public initialize(): void {
+    this.addCommandListener(CoreCommand.Cut, this.cut.bind(this))
+    this.addCommandListener(CoreCommand.Copy, this.copy.bind(this))
+    this.addCommandListener(CoreCommand.Paste, this.paste.bind(this))
+
     this.addCommandListener(CoreCommand.RemoveSelected, this.removeSelected.bind(this))
     this.addCommandListener(CoreCommand.DuplicateSelected, this.duplicateSelected.bind(this))
     this.addCommandListener(CoreCommand.BringForwardSelected, this.bringForwardSelected.bind(this))
@@ -49,9 +53,24 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     this.executeCommands()
   }
 
-  private updateBlock(blockEntity: Entity, updates: Partial<Block>): void {
-    const block = blockEntity.write(comps.Block)
-    Object.assign(block, updates)
+  private cut(): void {
+    const snapshot = this._getSnapshot(this.selectedBlocks.current)
+    this.resources.history.clipboard = snapshot
+
+    this.removeSelected()
+  }
+
+  private copy(): void {
+    const snapshot = this._getSnapshot(this.selectedBlocks.current)
+    this.resources.history.clipboard = snapshot
+  }
+
+  private paste(): void {
+    const clipboard = this.resources.history.clipboard
+    if (!clipboard) return
+
+    const addedBlocks = this._duplicateSnapshot(clipboard, [25, 25])
+    this._selectBlocks(addedBlocks)
   }
 
   private removeSelected(): void {
@@ -65,39 +84,64 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   }
 
   private duplicateSelected(): void {
-    const mySelectedBlockIds = this.selectedBlocks.current
+    const snapshot = this._getSnapshot(this.selectedBlocks.current)
+    const addedBlocks = this._duplicateSnapshot(snapshot, [25, 25])
+
+    this._selectBlocks(addedBlocks)
+
+    this.emitCommand(CoreCommand.CreateCheckpoint)
+  }
+
+  private _getSnapshot(entities: readonly Entity[]): Snapshot {
+    const mySelectedBlockIds = entities
       .filter((blockEntity) => blockEntity.read(comps.Selected).selectedBy === this.resources.uid)
       .map((blockEntity) => blockEntity.read(comps.Block).id)
 
-    const entities = this.resources.history.getEntities(mySelectedBlockIds)
+    const snapshot = this.resources.history.getEntities(mySelectedBlockIds)
+
+    return snapshot
+  }
+
+  private _duplicateSnapshot(snapshot: Snapshot, offset: [number, number]): Entity[] {
+    const newSnapshot: Snapshot = {}
 
     // sort blocks by rank
     const blocks: Block[] = []
-    for (const entity of Object.values(entities)) {
+    for (const entity of Object.values(snapshot)) {
       blocks.push(entity.Block as unknown as Block)
     }
     blocks.sort((a, b) => LexoRank.parse(a.rank).compareTo(LexoRank.parse(b.rank)))
 
-    // build new entities
-    const newEntities: Snapshot = {}
     for (const block of blocks) {
       const newId = crypto.randomUUID()
-      newEntities[newId] = {
-        ...entities[block.id],
+      newSnapshot[newId] = {
+        ...snapshot[block.id],
         Block: {
           ...block,
           id: newId,
           rank: this.rankBounds.genNext().toString(),
+          left: block.left + offset[0],
+          top: block.top + offset[1],
         },
       }
     }
 
     const diff = new Diff()
-    diff.added = newEntities
+    diff.added = newSnapshot
 
-    applyDiff(this, diff, this.entities)
+    const { added } = applyDiff(this, diff, this.entities)
 
-    this.emitCommand(CoreCommand.CreateCheckpoint)
+    return added
+  }
+
+  private _selectBlocks(blockEntities: Entity[]): void {
+    for (const selectedBlock of this.selectedBlocks.current) {
+      selectedBlock.remove(comps.Selected)
+    }
+
+    for (const blockEntity of blockEntities) {
+      blockEntity.add(comps.Selected, { selectedBy: this.resources.uid })
+    }
   }
 
   private bringForwardSelected(): void {

@@ -1,11 +1,14 @@
-import type { Query, System } from '@lastolivegames/becsy'
+import type { Entity, Query, System } from '@lastolivegames/becsy'
 import { ComponentRegistry } from '../ComponentRegistry'
 import type { Diff } from '../History'
 import { Block, Persistent } from '../components'
 import { binarySearchForId } from '../helpers/binarySearchForId'
 
-export function applyDiff(system: System, diff: Diff, entities: Query): void {
+export function applyDiff(system: System, diff: Diff, entities: Query): { added: Entity[]; changed: Entity[] } {
   const componentNames = new Map(ComponentRegistry.instance.components.map((c) => [c.name, c]))
+
+  const added: Entity[] = []
+  const changed: Entity[] = []
 
   // added components
   for (const [_, components] of Object.entries(diff.added)) {
@@ -13,8 +16,12 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
     for (const [componentName, model] of Object.entries(components)) {
       const Component = componentNames.get(componentName)
       if (!Component) continue
-      entity.add(Component, model)
+
+      entity.add(Component)
+      const writableComponent = entity.write(Component)
+      writableComponent.fromJson(model)
     }
+    added.push(entity)
   }
 
   // changed components
@@ -28,6 +35,7 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
       const writableComponent = entity.write(Component)
       writableComponent.fromJson(model)
     }
+    changed.push(entity)
   }
 
   // removed components
@@ -47,4 +55,6 @@ export function applyDiff(system: System, diff: Diff, entities: Query): void {
       entity.delete()
     }
   }
+
+  return { added, changed }
 }

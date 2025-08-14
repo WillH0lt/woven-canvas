@@ -165,9 +165,9 @@ export enum CoreCommand {
 
   Undo = 'undo',
   Redo = 'redo',
+  Cut = 'cut',
   Copy = 'copy',
   Paste = 'paste',
-  Cut = 'cut',
 
   CreateCheckpoint = 'createCheckpoint',
 
@@ -207,6 +207,10 @@ export type CoreCommandArgs = {
 
   [CoreCommand.Undo]: []
   [CoreCommand.Redo]: []
+  [CoreCommand.Cut]: []
+  [CoreCommand.Copy]: []
+  [CoreCommand.Paste]: []
+
   [CoreCommand.CreateCheckpoint]: []
 
   [CoreCommand.BringForwardSelected]: []
