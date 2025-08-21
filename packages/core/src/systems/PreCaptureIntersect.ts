@@ -8,9 +8,11 @@ export class PreCaptureIntersect extends BaseSystem {
 
   private readonly intersects = this.query((q) => q.current.with(comps.Intersect).write)
 
-  // private readonly intersect = this.singleton.read(comps.Intersect)
+  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly camera = this.singleton.read(comps.Camera)
+
+  private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
   private readonly blocks = this.query(
     (q) =>
@@ -35,21 +37,21 @@ export class PreCaptureIntersect extends BaseSystem {
     }
 
     // update intersected entity
-    if (this.mouse.moveTrigger || this.blocks.addedOrChanged.length > 0) {
+    if (this.mouse.moveTrigger || this.blocks.addedOrChanged.length > 0 || this.cameras.changed.length > 0) {
       const point = this.camera.toWorld(this.mouse.position)
       const intersectedEntity = intersectPoint(point, this.blocks.current)
       if (this.intersectedHasChanged(intersectedEntity)) {
         const writeableIntersect = this.intersects.current[0].write(comps.Intersect)
         writeableIntersect.entity = intersectedEntity
 
-        // update hovered
-        for (const hovered of this.hovered.current) {
-          hovered.remove(comps.Hovered)
-        }
-        if (intersectedEntity?.has(comps.Persistent)) {
-          intersectedEntity.add(comps.Hovered)
-        }
+        this.setHoveredEntity(intersectedEntity)
       }
+    }
+
+    if (this.mouse.leaveTrigger) {
+      const intersect = this.intersects.current[0].write(comps.Intersect)
+      intersect.entity = undefined
+      this.setHoveredEntity(undefined)
     }
   }
 
@@ -64,5 +66,14 @@ export class PreCaptureIntersect extends BaseSystem {
       (currIntersect && !newIntersected) ||
       (currIntersect && newIntersected && !currIntersect.isSame(newIntersected))
     )
+  }
+
+  private setHoveredEntity(entity: Entity | undefined): void {
+    for (const hovered of this.hovered.current) {
+      if (hovered.has(comps.Hovered)) hovered.remove(comps.Hovered)
+    }
+    if (entity?.has(comps.Persistent) && this.controls.leftMouseTool === 'select') {
+      if (!entity.has(comps.Hovered)) entity.add(comps.Hovered)
+    }
   }
 }

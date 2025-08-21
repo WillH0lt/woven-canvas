@@ -12,7 +12,7 @@ import {
 import { Text, TextEditorFloatingMenuButtons } from '@infinitecanvas/extension-text'
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 
-import './elements'
+import './webComponents'
 import { roughShapeFloatingMenuButtons } from './buttonCatalog'
 import { RoughShape } from './components'
 
@@ -33,7 +33,7 @@ declare module '@infinitecanvas/core' {
 }
 
 class RoughShapesExtensionClass extends BaseExtension {
-  public static blockDefs = [
+  public static blocks = [
     {
       tag: 'ic-rough-shape',
       canEdit: true,

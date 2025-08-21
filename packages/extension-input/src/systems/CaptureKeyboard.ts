@@ -12,10 +12,6 @@ export class CaptureKeyboard extends BaseSystem<CommandArgs> {
 
   protected declare readonly resources: InputResources
 
-  public initialize(): void {
-    console.log(this.resources)
-  }
-
   public execute(): void {
     if (!this.keyboards.changed.length) return
 

@@ -1,1 +1,0 @@
-export { ICStickyNote } from './StickyNote'

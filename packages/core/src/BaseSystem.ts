@@ -3,7 +3,7 @@ import { type AnyStateMachine, transition } from 'xstate'
 
 import * as comps from './components'
 import { distance } from './helpers'
-import type { BaseResources, BlockDef, MouseEvent, PointerButton, PointerEvent } from './types'
+import type { BaseResources, BlockDef, MouseEvent, PointerButton, PointerEvent, ToolDef } from './types'
 
 const CLICK_MOVE_THRESHOLD = 1
 const CLICK_FRAME_THRESHOLD = 60
@@ -121,6 +121,10 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     return data
   }
 
+  protected getTool(name: string): ToolDef | undefined {
+    return this.resources.tools[name]
+  }
+
   protected getBlockDef(tag: string): BlockDef | undefined {
     return this.resources.blockDefs[tag]
   }
@@ -133,10 +137,10 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     pointers: Query,
     camera: Readonly<comps.Camera>,
     intersect: Readonly<comps.Intersect>,
-    filters: {
-      button?: PointerButton | undefined
-    } = {},
+    buttons: PointerButton[],
   ): PointerEvent[] {
+    if (buttons.length === 0) return []
+
     const events: PointerEvent[] = []
 
     if (pointers.removed.length > 0) {
@@ -148,12 +152,10 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     let removed = pointers.removed
     let changed = pointers.changed
 
-    if (filters.button !== undefined) {
-      added = added.filter((e) => e.read(comps.Pointer).button === filters.button)
-      current = current.filter((e) => e.read(comps.Pointer).button === filters.button)
-      removed = removed.filter((e) => e.read(comps.Pointer).button === filters.button)
-      changed = changed.filter((e) => e.read(comps.Pointer).button === filters.button)
-    }
+    added = added.filter((e) => buttons.includes(e.read(comps.Pointer).button))
+    current = current.filter((e) => buttons.includes(e.read(comps.Pointer).button))
+    removed = removed.filter((e) => buttons.includes(e.read(comps.Pointer).button))
+    changed = changed.filter((e) => buttons.includes(e.read(comps.Pointer).button))
 
     if (added.length > 0 && current.length === 1) {
       const pointer = current[0].read(comps.Pointer)

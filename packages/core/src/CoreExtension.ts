@@ -1,11 +1,16 @@
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
 
+import type { System } from '@lastolivegames/becsy'
+import type { BaseComponent } from './BaseComponent'
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import type { Snapshot } from './History'
+import { LocalDB } from './LocalDB'
 import type { State } from './State'
-import { Block, Hovered, Persistent, Selected } from './components'
+import { floatingMenuStandardButtons } from './buttonCatalog'
+import { Block, Controls, Hovered, Persistent, Selected } from './components'
+import { getSnapshot } from './helpers'
 import * as sys from './systems'
 import {
   type BaseResources,
@@ -16,21 +21,13 @@ import {
   type EmitterEvents,
   type ICommands,
   type IStore,
+  type NonFunctionPropNames,
   type SendCommandFn,
 } from './types'
 import { CoreCommand } from './types'
-import './elements'
-import type { System } from '@lastolivegames/becsy'
-import type { BaseComponent } from './BaseComponent'
-import { LocalDB } from './LocalDB'
-import { floatingMenuStandardButtons } from './buttonCatalog'
-
-// Pick only non-function properties from Block, excluding anything from BaseComponent
-type NonFunctionPropNames<T> = {
-  [K in keyof T]-?: T[K] extends (...args: any) => any ? never : K
-}[keyof T]
 
 type BlockData = Pick<Block, NonFunctionPropNames<Block>>
+type ControlsData = Pick<Controls, NonFunctionPropNames<Controls>>
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -46,7 +43,7 @@ declare module '@infinitecanvas/core' {
       removeSelected: () => void
       updateBlock: (blockId: string, block: Partial<BlockData>) => void
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
-      setTool: (tool: string) => void
+      setControls: (controls: Partial<ControlsData>) => void
     }
   }
 
@@ -57,15 +54,29 @@ declare module '@infinitecanvas/core' {
       selectedBlockIds: ReadonlySignal<string[]>
       hoveredBlockId: ReadonlySignal<string | null>
       blockById: (id: string) => ReadonlySignal<Block | undefined>
+      controls: ReadonlySignal<Controls | undefined>
     }
   }
 }
 
 export class CoreExtension extends BaseExtension {
-  public static blockDefs = [
+  public static blocks = [
     {
       tag: 'group',
       floatingMenu: floatingMenuStandardButtons,
+    },
+  ]
+
+  public static tools = [
+    {
+      name: 'select',
+      buttonTag: 'ic-select-tool',
+      buttonTooltip: 'Select',
+    },
+    {
+      name: 'hand',
+      buttonTag: 'ic-hand-tool',
+      buttonTooltip: 'Hand',
     },
   ]
 
@@ -86,6 +97,8 @@ export class CoreExtension extends BaseExtension {
     ComponentRegistry.instance.registerComponent(Selected)
     ComponentRegistry.instance.registerComponent(Hovered)
     ComponentRegistry.instance.registerComponent(Persistent)
+
+    ComponentRegistry.instance.registerSingleton(Controls)
 
     const menuContainer = document.createElement('div')
     menuContainer.style.pointerEvents = 'none'
@@ -109,7 +122,7 @@ export class CoreExtension extends BaseExtension {
 
     this._preInputGroup = this.createGroup(coreResources, sys.PreInputCommandSpawner, sys.PreInputFrameCounter)
     this._preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect)
-    this._captureGroup = this.createGroup(coreResources, sys.CaptureCursor)
+    this._captureGroup = this.createGroup(coreResources, sys.CaptureBlockPlacement)
     this._preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited)
     this._updateGroup = this.createGroup(coreResources, sys.UpdateCursor, sys.UpdateBlocks, sys.UpdateCamera)
     this._postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
@@ -125,7 +138,9 @@ export class CoreExtension extends BaseExtension {
       const components = resources.blockDefs[tag as string]?.components
 
       if (!components) {
-        console.warn(`Local storage tried to load a block with tag "${tag}" but no blockDefs were found for it.`)
+        console.warn(
+          `Local storage tried to load a block with tag "${tag}" but no block definitions were found for it.`,
+        )
         continue
       }
 
@@ -163,23 +178,10 @@ export class CoreExtension extends BaseExtension {
           })
         },
         addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => {
-          if (!block.id) {
-            block.id = crypto.randomUUID()
-          }
-
-          const snapshot: Snapshot = {
-            [block.id]: {
-              Block: block,
-            },
-          }
-
-          for (const component of components) {
-            const componentName = component.constructor.name
-            snapshot[block.id][componentName] = component.toJson()
-          }
+          const snapshot = getSnapshot(new Block(block), components)
           send(CoreCommand.CreateFromSnapshot, snapshot)
         },
-        setTool: (tool: string) => send(CoreCommand.SetTool, { tool }),
+        setControls: (controls: Partial<ControlsData>) => send(CoreCommand.SetControls, controls),
       },
     }
   }
@@ -200,6 +202,7 @@ export class CoreExtension extends BaseExtension {
         }),
         blockById: (id: string): ReadonlySignal<Block | undefined> =>
           computed(() => state.getComponent<Block>(Block, id).value),
+        controls: computed(() => state.getSingleton(Controls).value),
       },
     }
   }

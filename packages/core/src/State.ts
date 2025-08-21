@@ -6,6 +6,8 @@ import { Block } from './components'
 export class State {
   private readonly state = new Map<string, Signal<Record<string, Signal<any>>>>()
 
+  private readonly singletons = new Map<string, Signal<any>>()
+
   public addComponents(Comp: new () => BaseComponent, entities: readonly Entity[]): void {
     const signalComponents: Record<string, Signal<any>> = {}
     for (const entity of entities) {
@@ -58,5 +60,20 @@ export class State {
     }
 
     return signal(new Comp(componentData.value))
+  }
+
+  public getSingleton<T>(Comp: new () => T): Signal<T | undefined> {
+    let singleton = this.singletons.get(Comp.name)
+    if (!singleton) {
+      singleton = signal(undefined)
+      this.singletons.set(Comp.name, singleton)
+    }
+
+    return singleton
+  }
+
+  public setSingleton(Component: new () => BaseComponent, entity: Entity): void {
+    const singleton = this.getSingleton(Component)
+    singleton.value = entity.read(Component).toJson() as any
   }
 }

@@ -7,12 +7,12 @@ import {
 } from '@infinitecanvas/core'
 import { Color, floatingMenuButtonColor } from '@infinitecanvas/extension-color'
 
-import './elements'
+import './webComponents'
 import { Stroke } from './components'
 import * as sys from './systems'
 
 class PerfectFreehandExtensionClass extends BaseExtension {
-  public static blockDefs = [
+  public static blocks = [
     {
       tag: 'ic-perfect-freehand-stroke',
       resizeMode: 'free' as const,

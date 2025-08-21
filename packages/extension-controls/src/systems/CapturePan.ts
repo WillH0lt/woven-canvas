@@ -12,7 +12,7 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
-  private readonly tool = this.singleton.read(comps.Tool)
+  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly panState = this.singleton.write(PanStateComp)
 
@@ -76,12 +76,9 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
   }
 
   public execute(): void {
-    const button = this.tool.getButton('pan')
-    if (button === null) return
+    const buttons = this.controls.getButtons('hand')
 
-    const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
-      button,
-    })
+    const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
 
     if (pointerEvents.length === 0) return
 

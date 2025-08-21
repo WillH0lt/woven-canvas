@@ -3,12 +3,11 @@ export { InfiniteCanvas } from './InfiniteCanvas'
 export {
   Options,
   CursorIcon,
-  CursorState,
   PointerType,
   PointerButton,
   CoreCommand,
-  type Button,
-  type ButtonInput,
+  type FloatingMenuButton,
+  type FloatingMenuButtonInput,
   type CoreCommandArgs,
   type PointerEvent,
   type MouseEvent,
@@ -19,6 +18,8 @@ export {
   type BaseResources,
   type BlockDef,
   type BlockDefMap,
+  type ToolDef,
+  // type ToolbarButtonInput,
 } from './types'
 
 export { BaseExtension } from './BaseExtension'

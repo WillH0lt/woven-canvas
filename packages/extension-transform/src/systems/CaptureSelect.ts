@@ -13,11 +13,9 @@ const POINTING_THRESHOLD = 4
 export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
 
-  private readonly tool = this.singleton.read(comps.Tool)
+  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly keyboard = this.singleton.read(comps.Keyboard)
-
-  private readonly cursorState = this.singleton.read(comps.CursorState)
 
   private readonly camera = this.singleton.read(comps.Camera)
 
@@ -112,10 +110,10 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
         if (!context.draggedEntity.has(comps.Persistent)) return
-        this.emitCommand(TransformCommand.SelectBlock, context.draggedEntity, { options: { deselectOthers: true } })
+        this.emitCommand(CoreCommand.SelectBlock, context.draggedEntity, { deselectOthers: true })
       },
       deselectAll: () => {
-        this.emitCommand(TransformCommand.DeselectAll)
+        this.emitCommand(CoreCommand.DeselectAll)
       },
     },
   }).createMachine({
@@ -226,13 +224,9 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
   }
 
   private getSelectionEvents(): PointerEvent[] {
-    const button = this.tool.getButton('select')
+    const buttons = this.controls.getButtons('select')
 
-    if (button === null) return []
-
-    const events = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
-      button,
-    })
+    const events = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
 
     if (this.keyboard.escapeDownTrigger) {
       events.push({ type: 'cancel' } as PointerEvent)

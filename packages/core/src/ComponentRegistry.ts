@@ -12,6 +12,8 @@ export class ComponentRegistry {
 
   private readonly _components: (new () => BaseComponent)[] = []
 
+  private readonly _singletons: (new () => BaseComponent)[] = []
+
   private constructor() {}
 
   public get components(): (new () => BaseComponent)[] {
@@ -21,6 +23,16 @@ export class ComponentRegistry {
   public registerComponent(component: new () => BaseComponent): void {
     if (!this._components.includes(component)) {
       this._components.push(component)
+    }
+  }
+
+  public get singletons(): (new () => BaseComponent)[] {
+    return Object.values(this._singletons)
+  }
+
+  public registerSingleton(singleton: new () => BaseComponent): void {
+    if (!this._singletons.includes(singleton)) {
+      this._singletons.push(singleton)
     }
   }
 }

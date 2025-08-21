@@ -9,7 +9,7 @@ import { PerfectFreehandCommand, type PerfectFreehandCommandArgs, StrokeState } 
 export class CaptureStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.current.changed.with(comps.Pointer).trackWrites)
 
-  private readonly tool = this.singleton.read(comps.Tool)
+  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly camera = this.singleton.read(comps.Camera)
 
@@ -94,12 +94,9 @@ export class CaptureStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreC
   })
 
   public execute(): void {
-    const button = this.tool.getButton('perfect-freehand')
-    if (!button) return
+    const buttons = this.controls.getButtons('perfect-freehand')
 
-    const events = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
-      button,
-    })
+    const events = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
 
     if (!events.length) return
 

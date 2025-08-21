@@ -1,1 +1,2 @@
-export { UpdateTextResize } from './UpdateTextResize'
+export { PostUpdateTextResize } from './PostUpdateTextResize'
+export { UpdateTextDeleteEmpty } from './UpdateTextDeleteEmpty'

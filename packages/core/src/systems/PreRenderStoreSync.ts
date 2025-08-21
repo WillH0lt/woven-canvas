@@ -2,7 +2,7 @@ import { type Query, System } from '@lastolivegames/becsy'
 import { batch } from '@preact/signals-core'
 import type { BaseComponent } from '../BaseComponent'
 import { ComponentRegistry } from '../ComponentRegistry'
-import { Block } from '../components'
+import { Block, Frame } from '../components'
 import type { CoreResources } from '../types'
 
 export class PreRenderStoreSync extends System {
@@ -11,6 +11,10 @@ export class PreRenderStoreSync extends System {
   private readonly changedQueries: Map<new () => BaseComponent, Query> = new Map()
 
   private readonly removedQueries: Map<new () => BaseComponent, Query> = new Map()
+
+  private readonly singletonQueries: Map<new () => BaseComponent, Query> = new Map()
+
+  private readonly frame = this.singleton.read(Frame)
 
   protected declare readonly resources: CoreResources
 
@@ -29,6 +33,12 @@ export class PreRenderStoreSync extends System {
       const removedQuery = this.query((q) => q.removed.with(Block, Comp))
       this.removedQueries.set(Comp, removedQuery)
     }
+
+    const Singletons = ComponentRegistry.instance.singletons
+    for (const SingletonComp of Singletons) {
+      const query = this.query((q) => q.addedOrChanged.current.with(SingletonComp).trackWrites)
+      this.singletonQueries.set(SingletonComp, query)
+    }
   }
 
   public execute(): void {
@@ -38,7 +48,9 @@ export class PreRenderStoreSync extends System {
 
     const hasRemoved = Array.from(this.removedQueries.values()).some((q) => q.removed.length > 0)
 
-    const shouldExecute = hasAdded || hasChanged || hasRemoved
+    const hasSingletons = Array.from(this.singletonQueries.values()).some((q) => q.addedOrChanged.length > 0)
+
+    const shouldExecute = hasAdded || hasChanged || hasRemoved || hasSingletons
 
     if (!shouldExecute) return
 
@@ -62,6 +74,12 @@ export class PreRenderStoreSync extends System {
         const query = this.removedQueries.get(Comp)!
         if (query.removed.length === 0) continue
         this.resources.state.removeComponents(Comp, query.removed)
+      }
+
+      for (const SingletonComp of this.singletonQueries.keys()) {
+        const query = this.singletonQueries.get(SingletonComp)!
+        if (query.addedOrChanged.length === 0) continue
+        this.resources.state.setSingleton(SingletonComp, query.addedOrChanged[0])
       }
     })
   }

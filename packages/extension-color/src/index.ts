@@ -1,4 +1,4 @@
 export { ColorExtension } from './ColorExtension'
-export * from './elements'
+export * from './webComponents'
 export * from './components'
 export * from './buttonCatelog'

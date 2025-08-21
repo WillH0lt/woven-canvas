@@ -13,7 +13,7 @@ import {
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 
 import { Color } from './components'
-import './elements'
+import './webComponents'
 
 type ColorData = Omit<Color, keyof BaseComponent>
 
@@ -40,9 +40,10 @@ class ColorExtensionClass extends BaseExtension {
     return {
       color: {
         setColor: (blockId: string, color: Partial<ColorData>) => {
+          // const snapshot
           send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {
-              Color: color,
+              Color: new Color(color).toJson(),
             },
           })
         },

@@ -11,7 +11,8 @@ export const TransformOptions = z.object({
 
 export type TransformOptionsInput = z.input<typeof TransformOptions>
 export type TransformOptions = z.infer<typeof TransformOptions>
-export type TransformResources = BaseResources & z.Infer<typeof TransformOptions>
+
+export type TransformResources = BaseResources & TransformOptions
 
 export enum SelectionState {
   Idle = 'idle',
@@ -27,18 +28,10 @@ export enum TransformBoxState {
   Editing = 'editing',
 }
 
-export interface SelectBlockOptions {
-  deselectOthers?: boolean
-}
-
 export enum TransformCommand {
   AddSelectionBox = 'addSelectionBox',
   UpdateSelectionBox = 'updateSelectionBox',
   RemoveSelectionBox = 'removeSelectionBox',
-
-  SelectBlock = 'selectBlock',
-  DeselectBlock = 'deselectBlock',
-  DeselectAll = 'deselectAll',
 
   AddTransformBox = 'addTransformBox',
   UpdateTransformBox = 'updateTransformBox',
@@ -55,15 +48,6 @@ export type TransformCommandArgs = {
   [TransformCommand.AddSelectionBox]: []
   [TransformCommand.UpdateSelectionBox]: [Partial<Block>]
   [TransformCommand.RemoveSelectionBox]: []
-
-  [TransformCommand.SelectBlock]: [
-    Entity,
-    {
-      options: SelectBlockOptions
-    },
-  ]
-  [TransformCommand.DeselectBlock]: [Entity]
-  [TransformCommand.DeselectAll]: []
 
   [TransformCommand.AddTransformBox]: []
   [TransformCommand.UpdateTransformBox]: []

@@ -29,3 +29,15 @@ export const floatingMenuStandardButtons = [
   floatingMenuButtonDuplicate,
   floatingMenuButtonDelete,
 ]
+
+// export const toolbarSelectTool = {
+//   tag: 'ic-select-tool',
+//   tooltip: 'Select',
+//   tool: 'select',
+// }
+
+// export const toolbarHandTool = {
+//   tag: 'ic-hand-tool',
+//   tooltip: 'Hand',
+//   tool: 'hand',
+// }

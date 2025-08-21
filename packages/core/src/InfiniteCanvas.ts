@@ -16,7 +16,10 @@ import {
   type IStore,
   Options,
   type Theme,
+  ToolDef,
 } from './types'
+
+import './webComponents'
 
 function scheduleGroups(orderedGroups: SystemGroup[]): void {
   for (let i = 0; i < orderedGroups.length - 1; i++) {
@@ -27,6 +30,49 @@ function scheduleGroups(orderedGroups: SystemGroup[]): void {
   }
 }
 
+function addToolbar(domElement: HTMLElement, tools: Record<string, ToolDef>): void {
+  const toolbarContainer = document.createElement('div')
+  toolbarContainer.style.position = 'absolute'
+  toolbarContainer.style.bottom = '16px'
+  toolbarContainer.style.left = '0'
+  toolbarContainer.style.right = '0'
+  toolbarContainer.style.height = '50px'
+  toolbarContainer.style.display = 'flex'
+  toolbarContainer.style.justifyContent = 'center'
+  toolbarContainer.style.pointerEvents = 'none'
+  domElement.appendChild(toolbarContainer)
+
+  const toolbarElement = document.createElement('ic-toolbar')
+  toolbarElement.style.maxWidth = '100%'
+  toolbarElement.style.height = '100%'
+  toolbarElement.tools = Object.values(tools)
+  // toolbarContainer.style.pointerEvents = 'auto'
+  toolbarContainer.appendChild(toolbarElement)
+}
+
+function applyTheme(theme: Theme): void {
+  const style = document.documentElement.style
+  style.setProperty('--ic-gray-100', theme.gray100)
+  style.setProperty('--ic-gray-200', theme.gray200)
+  style.setProperty('--ic-gray-300', theme.gray300)
+  style.setProperty('--ic-gray-400', theme.gray400)
+  style.setProperty('--ic-gray-500', theme.gray500)
+  style.setProperty('--ic-gray-600', theme.gray600)
+  style.setProperty('--ic-gray-700', theme.gray700)
+  style.setProperty('--ic-primary-light', theme.primaryLight)
+  style.setProperty('--ic-primary', theme.primary)
+  style.setProperty('--ic-menu-border-radius', theme.menuBorderRadius)
+  style.setProperty('--ic-menu-tooltip-border-radius', theme.menuTooltipBorderRadius)
+  style.setProperty('--ic-transition-duration', theme.transitionDuration)
+  style.setProperty('--ic-transition-timing-function', theme.transitionTimingFunction)
+  style.setProperty('--ic-highlighted-block-outline-color', theme.highlightedBlockOutlineColor)
+  style.setProperty('--ic-highlighted-block-outline-width', theme.highlightedBlockOutlineWidth)
+  style.setProperty('--ic-highlighted-block-outline-offset', theme.highlightedBlockOutlineOffset)
+  style.setProperty('--ic-highlighted-block-border-radius', theme.highlightedBlockBorderRadius)
+
+  style.setProperty('--ic-zoom', '1')
+}
+
 export class InfiniteCanvas {
   public static instance: InfiniteCanvas | null = null
 
@@ -35,14 +81,6 @@ export class InfiniteCanvas {
   public store: IStore = {} as IStore
 
   public commands: ICommands = {} as ICommands
-
-  // private readonly state: State
-
-  // private readonly emitter: Emitter<EmitterEvents>
-
-  // private readonly world: World
-
-  // private extensions: Extension[]
 
   public static async New(options: z.input<typeof Options> = {}): Promise<InfiniteCanvas> {
     const parsedOptions = Options.parse(options)
@@ -62,7 +100,7 @@ export class InfiniteCanvas {
       ext.checkDependencies(extensions)
     }
 
-    // Create the main container element
+    // create the main container element
     const domElement = document.createElement('div')
     domElement.id = 'infinite-canvas'
     domElement.style.width = '100%'
@@ -72,6 +110,7 @@ export class InfiniteCanvas {
 
     // create the block container which acts as the camera viewport and holds all blocks
     const blockContainer = document.createElement('div')
+    blockContainer.id = 'block-container'
     blockContainer.style.pointerEvents = 'none'
     blockContainer.style.userSelect = 'none'
     blockContainer.style.transformOrigin = '0 0'
@@ -87,8 +126,7 @@ export class InfiniteCanvas {
     // Register block definitions from extensions and options
     const blockDefs: Record<string, BlockDef> = {}
     for (const ext of extensions) {
-      for (const blockDef of (ext.constructor as typeof BaseExtension).blockDefs) {
-        console.log('Registering block def:', blockDef)
+      for (const blockDef of (ext.constructor as typeof BaseExtension).blocks) {
         blockDefs[blockDef.tag] = BlockDef.parse(blockDef)
       }
     }
@@ -103,10 +141,28 @@ export class InfiniteCanvas {
       }
     }
 
+    // register tool definitions
+    const tools: Record<string, ToolDef> = {}
+    for (const ext of extensions) {
+      for (const toolDef of (ext.constructor as typeof BaseExtension).tools) {
+        tools[toolDef.name] = ToolDef.parse(toolDef)
+      }
+    }
+    for (const tool of parsedOptions.customTools) {
+      tools[tool.name] = ToolDef.parse(tool)
+    }
+
+    // const tools =
+    //   parsedOptions.tools ?? extensions.flatMap((ext) => (ext.constructor as typeof BaseExtension).tools)
+    addToolbar(domElement, tools)
+
+    applyTheme(parsedOptions.theme)
+
     const resources = {
       domElement,
       blockContainer,
       blockDefs,
+      tools,
       uid: crypto.randomUUID(),
       history: new History(),
     }
@@ -182,8 +238,6 @@ export class InfiniteCanvas {
       this.useAutoFocus()
     }
 
-    this.useTheme(options.theme)
-
     this.store = extensions.reduce((stores, ext) => {
       if (!ext.addStore) return stores
 
@@ -257,28 +311,5 @@ export class InfiniteCanvas {
     })
 
     observer.observe(document.body, { childList: true, subtree: true })
-  }
-
-  private useTheme(theme: Theme): void {
-    const style = document.documentElement.style
-    style.setProperty('--ic-gray-100', theme.gray100)
-    style.setProperty('--ic-gray-200', theme.gray200)
-    style.setProperty('--ic-gray-300', theme.gray300)
-    style.setProperty('--ic-gray-400', theme.gray400)
-    style.setProperty('--ic-gray-500', theme.gray500)
-    style.setProperty('--ic-gray-600', theme.gray600)
-    style.setProperty('--ic-gray-700', theme.gray700)
-    style.setProperty('--ic-primary-light', theme.primaryLight)
-    style.setProperty('--ic-primary', theme.primary)
-    style.setProperty('--ic-menu-border-radius', theme.menuBorderRadius)
-    style.setProperty('--ic-menu-tooltip-border-radius', theme.menuTooltipBorderRadius)
-    style.setProperty('--ic-transition-duration', theme.transitionDuration)
-    style.setProperty('--ic-transition-timing-function', theme.transitionTimingFunction)
-    style.setProperty('--ic-highlighted-block-outline-color', theme.highlightedBlockOutlineColor)
-    style.setProperty('--ic-highlighted-block-outline-width', theme.highlightedBlockOutlineWidth)
-    style.setProperty('--ic-highlighted-block-outline-offset', theme.highlightedBlockOutlineOffset)
-    style.setProperty('--ic-highlighted-block-border-radius', theme.highlightedBlockBorderRadius)
-
-    style.setProperty('--ic-zoom', '1')
   }
 }

@@ -1,7 +1,7 @@
 import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components'
-import type { ICEditableBlock } from '../elements'
 import { CoreCommand, type CoreCommandArgs, type CoreResources } from '../types'
+import type { ICEditableBlock } from '../webComponents'
 import { UpdateBlocks } from './UpdateBlocks'
 import { UpdateCamera } from './UpdateCamera'
 import { UpdateCursor } from './UpdateCursor'
@@ -37,6 +37,7 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
       element.removeAttribute('is-editing')
 
       this.emitCommand(CoreCommand.UpdateFromSnapshot, snapshot)
+      this.emitCommand(CoreCommand.CreateCheckpoint)
     }
   }
 }

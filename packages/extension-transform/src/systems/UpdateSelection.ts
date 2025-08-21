@@ -1,12 +1,10 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
+import { BaseSystem, type CoreCommandArgs } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
 import { computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
-
-import type { Entity } from '@lastolivegames/becsy'
 import { SelectionBox } from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
 import { intersectAabb } from '../helpers'
-import { type SelectBlockOptions, TransformCommand, type TransformCommandArgs, type TransformResources } from '../types'
+import { TransformCommand, type TransformCommandArgs, type TransformResources } from '../types'
 
 export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   protected readonly resources!: TransformResources
@@ -27,13 +25,6 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
     this.addCommandListener(TransformCommand.AddSelectionBox, this.addSelectionBox.bind(this))
     this.addCommandListener(TransformCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
     this.addCommandListener(TransformCommand.RemoveSelectionBox, this.removeSelectionBox.bind(this))
-
-    this.addCommandListener(TransformCommand.SelectBlock, this.selectBlock.bind(this))
-    this.addCommandListener(TransformCommand.DeselectBlock, this.deselectBlock.bind(this))
-    this.addCommandListener(TransformCommand.DeselectAll, this.deselectAll.bind(this))
-
-    this.addCommandListener(CoreCommand.Undo, this.deselectAll.bind(this))
-    this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))
   }
 
   private addSelectionBox(): void {
@@ -91,32 +82,5 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
     const selectionBoxEntity = this.selectionBoxes.current[0]
 
     this.deleteEntity(selectionBoxEntity)
-  }
-
-  private deselectAll(): void {
-    for (const blockEntity of this.selectedBlocks.current) {
-      if (blockEntity.has(comps.Selected) && blockEntity.read(comps.Selected).selectedBy === this.resources.uid) {
-        blockEntity.remove(comps.Selected)
-      }
-    }
-  }
-
-  private selectBlock(blockEntity: Entity, { options }: { options?: SelectBlockOptions }): void {
-    if (options?.deselectOthers) {
-      this.deselectAll()
-    }
-
-    if (blockEntity.has(comps.Selected)) return
-
-    blockEntity.add(comps.Selected, {
-      selectedBy: this.resources.uid,
-    })
-  }
-
-  private deselectBlock(blockEntity: Entity): void {
-    if (!blockEntity.has(comps.Selected)) return
-    if (blockEntity.read(comps.Selected).selectedBy !== this.resources.uid) return
-
-    blockEntity.remove(comps.Selected)
   }
 }

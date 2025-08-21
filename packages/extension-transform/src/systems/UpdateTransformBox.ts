@@ -77,10 +77,14 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     const transformBoxEntity = this.transformBoxes.current[0]
 
-    if (transformBoxEntity) {
-      const transformBox = transformBoxEntity.read(TransformBox)
-      this.deleteEntities(transformBox.handles)
-      this.deleteEntity(transformBoxEntity)
+    if (!transformBoxEntity) return
+    const transformBox = transformBoxEntity.read(TransformBox)
+    this.deleteEntities(transformBox.handles)
+    this.deleteEntity(transformBoxEntity)
+
+    const isEditing = this.selectedBlocks.current.every((e) => e.has(comps.Edited))
+    if (isEditing) {
+      this.endTransformBoxEdit()
     }
   }
 
@@ -93,6 +97,14 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     )
 
     this.updateTransformBox(transformBoxEntity)
+
+    // check if all of the blocks are already edited
+    const isEditing = this.selectedBlocks.current.every((e) => e.has(comps.Edited))
+
+    if (isEditing) {
+      this.hideTransformBox(transformBoxEntity)
+      this.startTransformBoxEdit(transformBoxEntity)
+    }
   }
 
   private updateTransformBox(transformBoxEntity: Entity | null = null): void {
@@ -327,17 +339,19 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
   }
 
-  private hideTransformBox(): void {
-    if (this.transformBoxes.current.length === 0) {
-      console.warn('No transform box to hide')
-      return
-    }
+  private hideTransformBox(transformBoxEntity: Entity | undefined = undefined): void {
+    if (transformBoxEntity === undefined) {
+      if (this.transformBoxes.current.length === 0) {
+        console.warn('No transform box to hide')
+        return
+      }
 
-    const transformBoxEntity = this.transformBoxes.current[0]
+      transformBoxEntity = this.transformBoxes.current[0]
 
-    if (!transformBoxEntity) {
-      console.warn('No transform box found to hide')
-      return
+      if (!transformBoxEntity) {
+        console.warn('No transform box found to hide')
+        return
+      }
     }
 
     const transformBox = transformBoxEntity.read(TransformBox)
@@ -518,11 +532,20 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       block.left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
       block.top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
 
-      block.width = startWidth * (boxEndWidth / boxStartWidth)
-      block.height = startHeight * (boxEndHeight / boxStartHeight)
+      const endWidth = startWidth * (boxEndWidth / boxStartWidth)
+      const endHeight = startHeight * (boxEndHeight / boxStartHeight)
 
-      if (!maintainAspectRatio) {
-        block.hasStretched = true
+      const blockDef = this.getBlockDef(block.tag)
+
+      if (maintainAspectRatio || blockDef?.resizeMode === 'free') {
+        block.width = endWidth
+        block.height = endHeight
+      } else {
+        if (handleVec[1] === 0) {
+          block.width = endWidth
+        } else if (handleVec[0] === 0) {
+          block.height = endHeight
+        }
       }
     }
   }
@@ -544,17 +567,19 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
   }
 
-  private startTransformBoxEdit(): void {
-    if (this.transformBoxes.current.length === 0) {
-      console.warn('No transform box to edit')
-      return
-    }
+  private startTransformBoxEdit(transformBoxEntity: Entity | undefined = undefined): void {
+    if (transformBoxEntity === undefined) {
+      if (this.transformBoxes.current.length === 0) {
+        console.warn('No transform box to edit')
+        return
+      }
 
-    const transformBoxEntity = this.transformBoxes.current[0]
+      transformBoxEntity = this.transformBoxes.current[0]
 
-    if (!transformBoxEntity) {
-      console.warn('No transform box found to edit')
-      return
+      if (!transformBoxEntity) {
+        console.warn('No transform box found to edit')
+        return
+      }
     }
 
     if (!transformBoxEntity.has(Locked)) {
@@ -589,7 +614,9 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     for (const blockEntity of this.editedBlocks.current) {
-      blockEntity.remove(comps.Edited)
+      if (blockEntity.has(comps.Edited)) {
+        blockEntity.remove(comps.Edited)
+      }
     }
   }
 

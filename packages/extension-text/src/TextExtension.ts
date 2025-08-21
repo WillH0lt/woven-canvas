@@ -12,13 +12,12 @@ import {
 } from '@infinitecanvas/core'
 import { type ReadonlySignal, type Signal, computed, signal } from '@preact/signals-core'
 
-import './elements'
-import './floatingMenuButtons'
+import './webComponents'
 import { TextEditorFloatingMenuButtons } from './buttonCatalog'
 import { Text } from './components'
-import { ICText } from './elements'
 import * as sys from './systems'
 import { TextAlign } from './types'
+import { ICText } from './webComponents/blocks'
 
 type TextData = Omit<Text, keyof BaseComponent>
 
@@ -49,7 +48,7 @@ declare module '@infinitecanvas/core' {
 export const alignments = [TextAlign.Left, TextAlign.Center, TextAlign.Right, TextAlign.Justify]
 
 class TextExtensionClass extends BaseExtension {
-  public static blockDefs = [
+  public static blocks = [
     {
       tag: 'ic-text',
       canEdit: true,
@@ -59,19 +58,28 @@ class TextExtensionClass extends BaseExtension {
     },
   ]
 
+  public static tools = [
+    {
+      name: 'text',
+      buttonTag: 'ic-text-tool',
+      buttonTooltip: 'Text',
+    },
+  ]
+
   private blockContainer!: HTMLDivElement
 
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Text)
     this.blockContainer = resources.blockContainer
 
-    this._postUpdateGroup = this.createGroup(resources, sys.UpdateTextResize)
+    this._updateGroup = this.createGroup(resources, sys.UpdateTextDeleteEmpty)
+    this._postUpdateGroup = this.createGroup(resources, sys.PostUpdateTextResize)
   }
 
   #getEditableTextElement(): ICText | null {
     // get ic-text element where edited is true
     // ic-text might be a direct child of the blockContainer or inside a shadowRoot
-    const element = this.blockContainer.querySelector('[editing="true"]') as HTMLElement | null
+    const element = this.blockContainer.querySelector('[is-editing="true"]') as HTMLElement | null
     if (element instanceof ICText) {
       return element
     }

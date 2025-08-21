@@ -129,6 +129,9 @@ importers:
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
+      '@lit-labs/preact-signals':
+        specifier: ^1.0.3
+        version: 1.0.3
       '@preact/signals-core':
         specifier: ^1.10.0
         version: 1.10.0

@@ -100,6 +100,7 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
 
   private createCheckpoint(): void {
     const diff = this.resources.history.createCheckpoint()
+    console.log('create checkpoint', diff)
     if (!diff) return
     this.syncLocalDB(diff)
   }

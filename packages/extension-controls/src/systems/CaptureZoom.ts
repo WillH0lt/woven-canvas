@@ -9,7 +9,7 @@ export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
 
   private readonly camera = this.singleton.read(comps.Camera)
 
-  private readonly tool = this.singleton.read(comps.Tool)
+  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly keyboard = this.singleton.read(comps.Keyboard)
 
@@ -21,7 +21,7 @@ export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
   }
 
   public execute(): void {
-    const active = this.tool.wheelActive('zoom', this.keyboard.modDown)
+    const active = this.controls.wheelActive('zoom', this.keyboard.modDown)
     if (!active) return
 
     const events = this.getMouseEvents(this.mouse, this.camera, this.intersect)

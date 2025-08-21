@@ -39,6 +39,13 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     this.addCommandListener(CoreCommand.UpdateFromSnapshot, this.updateFromSnapshot.bind(this))
     this.addCommandListener(CoreCommand.CreateFromSnapshot, this.createFromSnapshot.bind(this))
+
+    this.addCommandListener(CoreCommand.SelectBlock, this.selectBlock.bind(this))
+    this.addCommandListener(CoreCommand.DeselectBlock, this.deselectBlock.bind(this))
+    this.addCommandListener(CoreCommand.DeselectAll, this.deselectAll.bind(this))
+
+    // this.addCommandListener(CoreCommand.Undo, this.deselectAll.bind(this))
+    // this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))
   }
 
   public execute(): void {
@@ -70,7 +77,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     if (!clipboard) return
 
     const addedBlocks = this._duplicateSnapshot(clipboard, [25, 25])
-    this._selectBlocks(addedBlocks)
+    this.selectBlocks(addedBlocks, { deselectOthers: true })
   }
 
   private removeSelected(): void {
@@ -87,7 +94,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     const snapshot = this._getSnapshot(this.selectedBlocks.current)
     const addedBlocks = this._duplicateSnapshot(snapshot, [25, 25])
 
-    this._selectBlocks(addedBlocks)
+    this.selectBlocks(addedBlocks, { deselectOthers: true })
 
     this.emitCommand(CoreCommand.CreateCheckpoint)
   }
@@ -132,16 +139,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     const { added } = applyDiff(this, diff, this.entities)
 
     return added
-  }
-
-  private _selectBlocks(blockEntities: Entity[]): void {
-    for (const selectedBlock of this.selectedBlocks.current) {
-      selectedBlock.remove(comps.Selected)
-    }
-
-    for (const blockEntity of blockEntities) {
-      blockEntity.add(comps.Selected, { selectedBy: this.resources.uid })
-    }
   }
 
   private bringForwardSelected(): void {
@@ -190,7 +187,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     applyDiff(this, diff, this.entities)
 
-    this.emitCommand(CoreCommand.CreateCheckpoint)
+    // this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 
   private createFromSnapshot(snapshot: Snapshot): void {
@@ -222,10 +219,48 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     const diff = new Diff()
     diff.added = snapshot
 
-    console.log('Creating blocks from snapshot:', diff.added)
+    const { added } = applyDiff(this, diff, this.entities)
 
-    applyDiff(this, diff, this.entities)
+    for (const blockEntity of added) {
+      blockEntity.add(comps.Selected, { selectedBy: this.resources.uid })
+
+      const block = blockEntity.read(comps.Block)
+      const blockDef = this.getBlockDef(block.tag)
+      if (blockDef?.canEdit) {
+        blockEntity.add(comps.Edited)
+        break
+      }
+    }
+  }
+
+  private deselectAll(): void {
+    for (const blockEntity of this.selectedBlocks.current) {
+      if (blockEntity.has(comps.Selected) && blockEntity.read(comps.Selected).selectedBy === this.resources.uid) {
+        blockEntity.remove(comps.Selected)
+      }
+    }
 
     this.emitCommand(CoreCommand.CreateCheckpoint)
+  }
+
+  private selectBlock(blockEntity: Entity, options: { deselectOthers?: boolean } = {}): void {
+    this.selectBlocks([blockEntity], options)
+  }
+
+  private selectBlocks(blockEntities: Entity[], options: { deselectOthers?: boolean } = {}): void {
+    if (options.deselectOthers) {
+      this.deselectAll()
+    }
+
+    for (const blockEntity of blockEntities) {
+      blockEntity.add(comps.Selected, { selectedBy: this.resources.uid })
+    }
+  }
+
+  private deselectBlock(blockEntity: Entity): void {
+    if (!blockEntity.has(comps.Selected)) return
+    if (blockEntity.read(comps.Selected).selectedBy !== this.resources.uid) return
+
+    blockEntity.remove(comps.Selected)
   }
 }

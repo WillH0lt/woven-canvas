@@ -5,10 +5,10 @@ import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
-import type { ICBaseBlock } from '../elements'
 import { binarySearchForId, lowercaseFirstLetter } from '../helpers'
 import { uuidToNumber } from '../helpers/uuidToNumber'
 import type { CoreResources } from '../types'
+import type { ICBaseBlock } from '../webComponents'
 
 const RANK_ATTRIBUTE = 'data-ic-rank'
 

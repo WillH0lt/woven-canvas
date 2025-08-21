@@ -23,7 +23,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
     (q) => q.current.with(transformComps.TransformBox).write.using(transformComps.TransformHandle).read,
   )
 
-  private readonly tool = this.singleton.read(comps.Tool)
+  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly camera = this.singleton.read(comps.Camera)
 
@@ -133,7 +133,6 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
         on: {
           pointerDown: {
             guard: and([not('isOverTransformBox'), not('isOverTransformHandle')]),
-            actions: 'endTransformBoxEdit',
             target: TransformBoxState.None,
           },
         },
@@ -183,13 +182,9 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
       }
     }
 
-    const button = this.tool.getButton('select')
-    if (button !== null) {
-      const e = this.getPointerEvents(this.pointers, this.camera, this.intersect, {
-        button,
-      })
-      events.push(...e)
-    }
+    const buttons = this.controls.getButtons('select')
+    const e = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
+    events.push(...e)
 
     return events
   }

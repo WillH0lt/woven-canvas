@@ -1,12 +1,13 @@
 import { type Entity, Type, component, field } from '@lastolivegames/becsy'
+import { BaseComponent } from '../BaseComponent'
 import { CursorIcon, CursorState as State } from '../types'
 
 @component
-export class CursorState {
+export class CursorState extends BaseComponent {
   @field({ type: Type.staticString(Object.values(State)), default: State.Select })
   public declare state: State
 
-  @field({ type: Type.staticString(Object.values(CursorIcon)), default: CursorIcon.Pointer })
+  @field({ type: Type.staticString(Object.values(CursorIcon)), default: CursorIcon.Select })
   public declare icon: CursorIcon
 
   @field.float32 public declare iconRotation: number
@@ -15,14 +16,4 @@ export class CursorState {
 
   // heldBlock is a stringified block that the cursor is currently placing
   @field.dynamicString(512) public declare heldBlock: string
-
-  toModel(): Record<string, any> {
-    return {
-      state: this.state,
-      icon: this.icon,
-      iconRotation: this.iconRotation,
-      hoveredEntity: this.hoveredEntity ?? null,
-      heldBlock: this.heldBlock,
-    }
-  }
 }

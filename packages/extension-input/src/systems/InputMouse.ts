@@ -42,6 +42,22 @@ export class InputMouse extends System {
     yield
   }
 
+  @co private *onMouseLeave(): Generator {
+    // Reset mouse position when leaving the window
+    // this.mouse.position = [0, 0]
+    this.setTrigger('leaveTrigger')
+
+    yield
+  }
+
+  @co private *onMouseEnter(): Generator {
+    // Reset mouse position when entering the window
+    // this.mouse.position = [0, 0]
+    this.setTrigger('enterTrigger')
+
+    yield
+  }
+
   public initialize(): void {
     const domElement = this.resources.domElement
 
@@ -54,6 +70,9 @@ export class InputMouse extends System {
       },
       { passive: false },
     )
+
+    domElement.addEventListener('mouseleave', this.onMouseLeave.bind(this))
+    domElement.addEventListener('mouseenter', this.onMouseEnter.bind(this))
   }
 }
 

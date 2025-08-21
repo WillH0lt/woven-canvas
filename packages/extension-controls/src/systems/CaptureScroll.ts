@@ -9,7 +9,7 @@ export class CaptureScroll extends BaseSystem<CoreCommandArgs> {
 
   private readonly camera = this.singleton.read(comps.Camera)
 
-  private readonly tool = this.singleton.read(comps.Tool)
+  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly intersect = this.singleton.read(comps.Intersect)
 
@@ -21,7 +21,7 @@ export class CaptureScroll extends BaseSystem<CoreCommandArgs> {
   }
 
   public execute(): void {
-    const active = this.tool.wheelActive('scroll', this.keyboard.modDown)
+    const active = this.controls.wheelActive('scroll', this.keyboard.modDown)
     if (!active) return
 
     const events = this.getMouseEvents(this.mouse, this.camera, this.intersect)

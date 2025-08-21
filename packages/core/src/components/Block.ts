@@ -1,19 +1,18 @@
-import { Type, component, field } from '@lastolivegames/becsy'
+import { Type, field } from '@lastolivegames/becsy'
 
 import { BaseComponent } from '../BaseComponent'
 import { multiplyMatrices, newRotationMatrix, newTranslationMatrix, transformPoint } from '../helpers'
 import type { Aabb } from './Aabb'
-@component
+
 export class Block extends BaseComponent {
   @field.dynamicString(36) public declare id: string
   @field({ type: Type.dynamicString(36), default: 'div' }) public declare tag: string
-  @field.float32 declare top: number
-  @field.float32 declare left: number
-  @field.float32 declare width: number
-  @field.float32 declare height: number
-  @field.float32 declare rotateZ: number
+  @field.float64 declare top: number
+  @field.float64 declare left: number
+  @field.float64 declare width: number
+  @field.float64 declare height: number
+  @field.float64 declare rotateZ: number
   @field.dynamicString(36) public declare rank: string
-  @field.boolean public declare hasStretched: boolean
 
   public intersectsPoint(point: [number, number]): boolean {
     const { width, height, left, top, rotateZ } = this
@@ -61,15 +60,7 @@ export class Block extends BaseComponent {
     const D = newTranslationMatrix(cx, cy)
     const M = multiplyMatrices(D, R)
 
-    return corners.map(([x, y]) => {
-      return transformPoint(M, [x, y])
-    })
-
-    // // Rotate and translate corners
-    // const cos = Math.cos(rotateZ)
-    // const sin = Math.sin(rotateZ)
-
-    // return corners.map(([x, y]) => [cx + x * cos - y * sin, cy + x * sin + y * cos])
+    return corners.map((corner) => transformPoint(M, corner))
   }
 
   public intersectsAabb(aabb: Aabb): boolean {

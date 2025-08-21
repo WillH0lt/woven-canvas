@@ -1,0 +1,1 @@
+export { ICText } from './Text'

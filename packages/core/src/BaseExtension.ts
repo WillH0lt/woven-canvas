@@ -1,12 +1,16 @@
 import { System, type SystemGroup } from '@lastolivegames/becsy'
 
 import type { State } from './State'
-import type { BaseResources, BlockDefInput, CommandArgs, ICommands, IStore, SendCommandFn } from './types'
+import type { BaseResources, BlockDefInput, CommandArgs, ICommands, IStore, SendCommandFn, ToolDefInput } from './types'
 
 export class BaseExtension {
-  public static blockDefs: BlockDefInput[] = []
+  public static blocks: BlockDefInput[] = []
+
+  public static tools: ToolDefInput[] = []
 
   public static dependsOn = Array<string>()
+
+  // public static toolbarButtons: ToolbarButtonInput[] = []
 
   // == Input Groups ==
   protected _preInputGroup: SystemGroup | null = null

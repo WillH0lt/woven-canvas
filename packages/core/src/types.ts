@@ -7,7 +7,7 @@ import type { History, Snapshot } from './History'
 import type { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
-// import { standardButtonSet } from './buttonCatalog'
+import type { Controls } from './components'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -22,15 +22,25 @@ export type EmitterEvents = {
   [EmitterEventKind.Command]: [Command]
 }
 
-export const Button = z.object({
+// export const ToolbarButton = z.object({
+//   tag: z.string(),
+//   tooltip: z.string().optional(),
+//   menu: z.string().optional(),
+//   tool: z.string().optional(),
+// })
+
+// export type ToolbarButtonInput = z.input<typeof ToolbarButton>
+// export type ToolbarButton = z.infer<typeof ToolbarButton>
+
+export const FloatingMenuButton = z.object({
   tag: z.string(),
-  tooltip: z.string().default(''),
-  menu: z.string().default(''),
+  tooltip: z.string().optional(),
+  menu: z.string().optional(),
   width: z.number().default(40),
 })
 
-export type ButtonInput = z.input<typeof Button>
-export type Button = z.infer<typeof Button>
+export type FloatingMenuButtonInput = z.input<typeof FloatingMenuButton>
+export type FloatingMenuButton = z.infer<typeof FloatingMenuButton>
 
 export interface CoreResources extends BaseResources {
   emitter: Emitter<EmitterEvents>
@@ -51,13 +61,30 @@ export const BlockDef = z.object({
   canEdit: z.boolean().default(false),
   resizeMode: z.enum(['scale', 'text', 'free']).default('scale'),
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
-  floatingMenu: z.array(Button).default(floatingMenuStandardButtons.map((btn) => Button.parse(btn))),
-  editedFloatingMenu: z.array(Button).default([]),
+  floatingMenu: z
+    .array(FloatingMenuButton)
+    .default(floatingMenuStandardButtons.map((btn) => FloatingMenuButton.parse(btn))),
+  editedFloatingMenu: z.array(FloatingMenuButton).default([]),
 })
 
 export type BlockDef = z.infer<typeof BlockDef>
 
 export type BlockDefInput = z.input<typeof BlockDef>
+
+export type BlockDefMap = Record<string, z.infer<typeof BlockDef>>
+
+export const ToolDef = z.object({
+  name: z.string(),
+  buttonTag: z.string().optional(),
+  buttonTooltip: z.string().optional(),
+  buttonMenuTag: z.string().optional(),
+})
+
+export type ToolDefInput = z.input<typeof ToolDef>
+
+export type ToolDef = z.infer<typeof ToolDef>
+
+export type ToolDefMap = Record<string, z.infer<typeof ToolDef>>
 
 const Theme = z.object({
   gray100: z.string().default('#f8f9f9'),
@@ -93,19 +120,19 @@ export const Options = z.object({
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
   customBlocks: z.array(BlockDef).default([]),
+  customTools: z.array(ToolDef).default([]),
   persistenceKey: z.string().default('default'),
   theme: Theme.default(Theme.parse({})),
 })
 
 export type Options = z.input<typeof Options>
 
-export type BlockDefMap = Record<string, z.infer<typeof BlockDef>>
-
 export interface BaseResources {
   domElement: HTMLElement
   blockContainer: HTMLDivElement
   history: History
   blockDefs: BlockDefMap
+  tools: ToolDefMap
   uid: string
 }
 
@@ -120,7 +147,8 @@ export interface IStore {}
 export type SendCommandFn<T> = <C extends keyof T>(kind: C, ...args: T[C] extends any[] ? T[C] : [T[C]]) => void
 
 export enum CursorIcon {
-  Pointer = 'pointer',
+  Select = 'select',
+  Hand = 'hand',
   NESW = 'nesw',
   NWSE = 'nwse',
   NS = 'ns',
@@ -131,13 +159,6 @@ export enum CursorIcon {
   RotateSW = 'rotateSW',
   Move = 'move',
   Crosshair = 'crosshair',
-}
-
-export enum CursorState {
-  Select = 'select',
-  Interact = 'interact',
-  Dragging = 'dragging',
-  Placing = 'placing',
 }
 
 export enum PointerType {
@@ -159,9 +180,7 @@ export enum PointerButton {
 export enum CoreCommand {
   SetZoom = 'setZoom',
   MoveCamera = 'moveCamera',
-
-  SetTool = 'setTool',
-  SetCursor = 'setCursor',
+  SetControls = 'setControls',
 
   Undo = 'undo',
   Redo = 'redo',
@@ -178,21 +197,14 @@ export enum CoreCommand {
 
   CreateFromSnapshot = 'createFromSnapshot',
   UpdateFromSnapshot = 'updateFromSnapshot',
+
+  SelectBlock = 'selectBlock',
+  DeselectBlock = 'deselectBlock',
+  DeselectAll = 'deselectAll',
 }
 
 export type CoreCommandArgs = {
-  [CoreCommand.SetTool]: [
-    {
-      tool: string
-    },
-  ]
-  [CoreCommand.SetCursor]: [
-    {
-      icon: CursorIcon
-      rotateZ: number
-    },
-  ]
-
+  [CoreCommand.SetControls]: [Partial<Controls>]
   [CoreCommand.SetZoom]: [
     {
       zoom: number
@@ -220,6 +232,18 @@ export type CoreCommandArgs = {
 
   [CoreCommand.CreateFromSnapshot]: [Snapshot]
   [CoreCommand.UpdateFromSnapshot]: [Snapshot]
+
+  [CoreCommand.SelectBlock]: [
+    Entity,
+    (
+      | {
+          deselectOthers?: boolean
+        }
+      | undefined
+    ),
+  ]
+  [CoreCommand.DeselectBlock]: [Entity]
+  [CoreCommand.DeselectAll]: []
 }
 
 export type PointerEvent = {
@@ -238,3 +262,8 @@ export type MouseEvent = {
 }
 
 export type Transform = [number, number, number, number, number, number]
+
+// Pick only non-function properties, excluding anything from BaseComponent
+export type NonFunctionPropNames<T> = {
+  [K in keyof T]-?: T[K] extends (...args: any) => any ? never : K
+}[keyof T]

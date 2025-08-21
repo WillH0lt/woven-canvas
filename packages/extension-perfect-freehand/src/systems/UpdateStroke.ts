@@ -46,12 +46,16 @@ export class UpdateStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreCo
   }
 
   private addStroke(strokeEntity: Entity, position: [number, number]): void {
+    const radius = 4
+
     const block = {
       tag: 'ic-perfect-freehand-stroke',
       id: crypto.randomUUID(),
       rank: this.rankBounds.genNext().toString(),
-      left: position[0],
-      top: position[1],
+      left: position[0] - radius,
+      top: position[1] - radius,
+      width: radius * 2,
+      height: radius * 2,
     }
 
     strokeEntity.add(Block, block)
@@ -67,6 +71,9 @@ export class UpdateStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreCo
       pointCount: 1,
       originalLeft: block.left,
       originalTop: block.top,
+      originalWidth: block.width,
+      originalHeight: block.height,
+      diameter: radius * 2,
     })
 
     strokeEntity.add(Color)
@@ -135,6 +142,15 @@ export class UpdateStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreCo
     }
 
     const simplifiedPoints = simplify(points, stroke.diameter / 2, false)
+
+    // add a second point so the hit capsule gets created
+    if (simplifiedPoints.length === 1) {
+      const pt = simplifiedPoints[0]
+      simplifiedPoints.push({
+        x: pt.x,
+        y: pt.y,
+      })
+    }
 
     // Compose an affine transform matrix to map original stroke points to current block position/size/rotation.
     // M = T(currentCenter) * R(theta) * S(scaleX, scaleY) * T(-originalCenter)
