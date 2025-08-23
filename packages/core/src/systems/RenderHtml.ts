@@ -208,6 +208,13 @@ export class RenderHtml extends BaseSystem {
   private updateBlockElementHtml(entity: Entity, element: HTMLElement): boolean {
     const block = entity.read(comps.Block)
 
+    if (block.tag !== element.tagName.toLowerCase()) {
+      // console.log(block.tag, element.tagName.toLowerCase())
+      this.resources.blockContainer.removeChild(element)
+      this.createBlockElement(entity)
+      return true
+    }
+
     element.style.position = 'absolute'
     element.style.userSelect = 'none'
     element.style.pointerEvents = 'none'

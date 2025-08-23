@@ -13,9 +13,9 @@ import simplify from 'simplify-js'
 
 import { Stroke } from '../components'
 import { POINTS_CAPACITY } from '../constants'
-import { PerfectFreehandCommand, type PerfectFreehandCommandArgs } from '../types'
+import { InkCommand, type InkCommandArgs } from '../types'
 
-export class UpdateStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreCommandArgs> {
+export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
   private readonly rankBounds = this.singleton.write(RankBounds)
 
   private readonly strokes = this.query(
@@ -27,10 +27,10 @@ export class UpdateStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreCo
   )
 
   public initialize(): void {
-    this.addCommandListener(PerfectFreehandCommand.AddStroke, this.addStroke.bind(this))
-    this.addCommandListener(PerfectFreehandCommand.AddStrokePoint, this.addStrokePoint.bind(this))
-    this.addCommandListener(PerfectFreehandCommand.CompleteStroke, this.completeStroke.bind(this))
-    this.addCommandListener(PerfectFreehandCommand.RemoveStroke, this.removeStroke.bind(this))
+    this.addCommandListener(InkCommand.AddStroke, this.addStroke.bind(this))
+    this.addCommandListener(InkCommand.AddStrokePoint, this.addStrokePoint.bind(this))
+    this.addCommandListener(InkCommand.CompleteStroke, this.completeStroke.bind(this))
+    this.addCommandListener(InkCommand.RemoveStroke, this.removeStroke.bind(this))
   }
 
   public execute(): void {
@@ -49,7 +49,7 @@ export class UpdateStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreCo
     const radius = 4
 
     const block = {
-      tag: 'ic-perfect-freehand-stroke',
+      tag: 'ic-ink-stroke',
       id: crypto.randomUUID(),
       rank: this.rankBounds.genNext().toString(),
       left: position[0] - radius,

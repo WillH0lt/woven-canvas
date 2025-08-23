@@ -4,8 +4,8 @@ import './style.css'
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ColorExtension } from '@infinitecanvas/extension-color'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
+import { InkExtension } from '@infinitecanvas/extension-ink'
 import { InputExtension } from '@infinitecanvas/extension-input'
-import { PerfectFreehandExtension } from '@infinitecanvas/extension-perfect-freehand'
 import { RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
 // import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
 import { StickyNotesExtension } from '@infinitecanvas/extension-sticky-notes'
@@ -56,7 +56,7 @@ async function initializeCanvas(container: HTMLDivElement) {
       StickyNotesExtension,
       RoughShapesExtension,
       // MultiplayerExtension,
-      PerfectFreehandExtension,
+      InkExtension,
     ],
   })
 

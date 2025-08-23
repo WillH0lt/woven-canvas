@@ -11,13 +11,21 @@ import './webComponents'
 import { Stroke } from './components'
 import * as sys from './systems'
 
-class PerfectFreehandExtensionClass extends BaseExtension {
+class InkExtensionClass extends BaseExtension {
   public static blocks = [
     {
-      tag: 'ic-perfect-freehand-stroke',
+      tag: 'ic-ink-stroke',
       resizeMode: 'free' as const,
       floatingMenu: [floatingMenuButtonColor, floatingMenuDivider, ...floatingMenuStandardButtons],
       components: [Stroke, Color],
+    },
+  ]
+
+  public static tools = [
+    {
+      name: 'ink',
+      buttonTag: 'ic-ink-tool',
+      buttonTooltip: 'Draw',
     },
   ]
 
@@ -32,4 +40,4 @@ class PerfectFreehandExtensionClass extends BaseExtension {
   }
 }
 
-export const PerfectFreehandExtension = () => new PerfectFreehandExtensionClass()
+export const InkExtension = () => new InkExtensionClass()

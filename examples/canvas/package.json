@@ -18,7 +18,7 @@
     "@infinitecanvas/extension-controls": "workspace:^",
     "@infinitecanvas/extension-input": "workspace:^",
     "@infinitecanvas/extension-multiplayer": "workspace:^",
-    "@infinitecanvas/extension-perfect-freehand": "workspace:^",
+    "@infinitecanvas/extension-ink": "workspace:^",
     "@infinitecanvas/extension-rough-shapes": "workspace:^",
     "@infinitecanvas/extension-sticky-notes": "workspace:^",
     "@infinitecanvas/extension-text": "workspace:^",

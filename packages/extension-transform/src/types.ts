@@ -71,3 +71,15 @@ export enum TransformHandleKind {
   Stretch = 'stretch',
   Rotate = 'rotate',
 }
+
+export enum CursorKind {
+  Drag = 'drag',
+  NESW = 'nesw',
+  NWSE = 'nwse',
+  NS = 'ns',
+  EW = 'ew',
+  RotateNW = 'rotateNW',
+  RotateNE = 'rotateNE',
+  RotateSW = 'rotateSW',
+  RotateSE = 'rotateSE',
+}

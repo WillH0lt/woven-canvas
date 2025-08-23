@@ -1,4 +1,4 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs, CursorIcon } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
 import { uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
@@ -10,22 +10,26 @@ import {
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
 import { computeExtentsAlongAngle, rotatePoint } from '../helpers'
-import { TransformCommand, type TransformCommandArgs, TransformHandleKind, type TransformResources } from '../types'
+import {
+  CursorKind,
+  TransformCommand,
+  type TransformCommandArgs,
+  TransformHandleKind,
+  type TransformResources,
+} from '../types'
 import { UpdateSelection } from './UpdateSelection'
 
 interface TransformHandleDef {
   tag: string
   kind: TransformHandleKind
-  alpha: number
   vector: [number, number]
+  cursorKind: CursorKind
   left: number
   top: number
   width: number
   height: number
   rotateZ: number
   rank: string
-  cursor: CursorIcon
-  // cursorKind: CursorKind
 }
 
 export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
@@ -41,7 +45,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     (q) =>
       q.current.changed
         .with(TransformBox, comps.Block)
-        .write.trackWrites.using(TransformHandle, DragStart, comps.Hoverable, Locked, comps.Opacity).write,
+        .write.trackWrites.using(TransformHandle, DragStart, Locked, comps.Opacity).write,
   )
 
   private readonly handles = this.query((q) => q.changed.with(TransformHandle, comps.Block).write.trackWrites)
@@ -179,13 +183,13 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     const { left, top, width, height, rotateZ } = transformBoxBlock
     const center = transformBoxBlock.getCenter()
-    const handleSize = 15 / this.camera.zoom
+    const handleSize = 12 / this.camera.zoom
     const rotationHandleSize = 2 * handleSize
     const sideHandleSize = 2 * handleSize
 
     const handles: TransformHandleDef[] = []
 
-    const rotateCursorKinds = [CursorIcon.RotateNW, CursorIcon.RotateNE, CursorIcon.RotateSW, CursorIcon.RotateSE]
+    const rotateCursorKinds = [CursorKind.RotateNW, CursorKind.RotateNE, CursorKind.RotateSW, CursorKind.RotateSE]
 
     const selectedBlocks = this.selectedBlocks.current.filter(
       (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
@@ -213,12 +217,23 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     // corners
+    const scaledWidth = width * this.camera.zoom
+    const scaledHeight = height * this.camera.zoom
+    const minDim = Math.min(scaledWidth, scaledHeight)
+    const threshold = 15
     for (let xi = 0; xi < 2; xi++) {
       for (let yi = 0; yi < 2; yi++) {
+        if (xi + yi !== 1 && minDim < threshold / 2) {
+          continue
+        }
+
+        if (xi + yi === 1 && scaledHeight < threshold) {
+          continue
+        }
+
         handles.push({
           tag: this.resources.transformHandleTag,
           kind: handleKind,
-          alpha: 128,
           vector: [xi * 2 - 1, yi * 2 - 1],
           left: left + width * xi - handleSize / 2,
           top: top + height * yi - handleSize / 2,
@@ -226,13 +241,12 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
           height: handleSize,
           rotateZ,
           rank: TRANSFORM_HANDLE_CORNER_RANK,
-          cursor: xi + yi === 1 ? CursorIcon.NESW : CursorIcon.NWSE,
+          cursorKind: xi + yi === 1 ? CursorKind.NESW : CursorKind.NWSE,
         })
 
         handles.push({
           tag: 'div',
           kind: TransformHandleKind.Rotate,
-          alpha: 0,
           vector: [xi * 2 - 1, yi * 2 - 1],
           left: left - rotationHandleSize + handleSize / 2 + xi * (width + rotationHandleSize - handleSize),
           top: top - rotationHandleSize + handleSize / 2 + yi * (height + rotationHandleSize - handleSize),
@@ -240,7 +254,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
           height: rotationHandleSize,
           rotateZ,
           rank: TRANSFORM_HANDLE_ROTATE_RANK,
-          cursor: rotateCursorKinds[xi + yi * 2],
+          cursorKind: rotateCursorKinds[xi + yi * 2],
         })
       }
     }
@@ -250,7 +264,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       handles.push({
         tag: 'div',
         kind: handleKind,
-        alpha: 0,
         vector: [0, yi * 2 - 1],
         left,
         top: top + height * yi - sideHandleSize / 2,
@@ -258,7 +271,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         height: sideHandleSize,
         rotateZ,
         rank: TRANSFORM_HANDLE_EDGE_RANK,
-        cursor: CursorIcon.NS,
+        cursorKind: CursorKind.NS,
       })
     }
 
@@ -267,7 +280,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       handles.push({
         tag: 'div',
         kind: resizeMode === 'text' ? TransformHandleKind.Stretch : handleKind,
-        alpha: 0,
         vector: [xi * 2 - 1, 0],
         left: left + width * xi - sideHandleSize / 2,
         top,
@@ -275,8 +287,22 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         height,
         rotateZ,
         rank: TRANSFORM_HANDLE_EDGE_RANK,
-        cursor: CursorIcon.EW,
+        cursorKind: CursorKind.EW,
       })
+    }
+
+    // remove unused handles
+    const { handles: currentHandles } = transformBoxEntity.read(TransformBox)
+    const handleSet = new Map<string, TransformHandleDef>()
+    for (const handle of handles) {
+      handleSet.set(`${handle.kind}-${handle.vector[0]}-${handle.vector[1]}`, handle)
+    }
+    for (const handleEntity of currentHandles) {
+      const handle = handleEntity.read(TransformHandle)
+      const key = `${handle.kind}-${handle.vector[0]}-${handle.vector[1]}`
+      if (!handleSet.has(key)) {
+        this.deleteEntity(handleEntity)
+      }
     }
 
     for (const handle of handles) {
@@ -286,8 +312,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       const handleEntities = transformBoxEntity.read(TransformBox).handles
       for (const entity of handleEntities) {
         const h = entity.read(TransformHandle)
-        const b = entity.read(comps.Block)
-        if (b.tag === handle.tag && h.vector[0] === handle.vector[0] && h.vector[1] === handle.vector[1]) {
+        if (h.kind === handle.kind && h.vector[0] === handle.vector[0] && h.vector[1] === handle.vector[1]) {
           handleEntity = entity
           break
         }
@@ -295,13 +320,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
       // if no existing handle entity, create a new one
       if (!handleEntity) {
-        handleEntity = this.createEntity(
-          TransformHandle,
-          comps.Block,
-          { id: crypto.randomUUID() },
-          comps.Hoverable,
-          DragStart,
-        )
+        handleEntity = this.createEntity(TransformHandle, comps.Block, { id: crypto.randomUUID() }, DragStart)
       }
 
       const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
@@ -313,6 +332,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         kind: handle.kind,
         vector: handle.vector,
         transformBox: transformBoxEntity,
+        cursorKind: handle.cursorKind,
       })
 
       Object.assign(handleEntity.write(comps.Block), {
@@ -323,10 +343,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         height: handle.height,
         rotateZ: handle.rotateZ,
         rank: handle.rank,
-      })
-
-      Object.assign(handleEntity.write(comps.Hoverable), {
-        cursor: handle.cursor,
       })
 
       Object.assign(handleEntity.write(DragStart), {

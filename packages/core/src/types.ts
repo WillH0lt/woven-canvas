@@ -7,7 +7,8 @@ import type { History, Snapshot } from './History'
 import type { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
-import type { Controls } from './components'
+import type { Controls, Cursor } from './components'
+import {} from './constants'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -42,19 +43,20 @@ export const FloatingMenuButton = z.object({
 export type FloatingMenuButtonInput = z.input<typeof FloatingMenuButton>
 export type FloatingMenuButton = z.infer<typeof FloatingMenuButton>
 
-export interface CoreResources extends BaseResources {
-  emitter: Emitter<EmitterEvents>
-  state: State
-  menuContainer: HTMLDivElement
-  localDB: LocalDB
-}
-
 export const CoreOptions = z.object({
   persistenceKey: z.string().default('default'),
 })
 
 export type CoreOptions = z.infer<typeof CoreOptions>
 export type CoreOptionsInput = z.input<typeof CoreOptions>
+
+export type CoreResources = BaseResources &
+  CoreOptions & {
+    emitter: Emitter<EmitterEvents>
+    state: State
+    menuContainer: HTMLDivElement
+    localDB: LocalDB
+  }
 
 export const BlockDef = z.object({
   tag: z.string(),
@@ -78,6 +80,7 @@ export const ToolDef = z.object({
   buttonTag: z.string().optional(),
   buttonTooltip: z.string().optional(),
   buttonMenuTag: z.string().optional(),
+  cursorIcon: z.string().optional(),
 })
 
 export type ToolDefInput = z.input<typeof ToolDef>
@@ -103,8 +106,8 @@ const Theme = z.object({
   transitionDuration: z.string().default('150ms'),
   transitionTimingFunction: z.string().default('cubic-bezier(0.4, 0, 0.2, 1)'),
 
-  highlightedBlockOutlineColor: z.string().default('var(--ic-primary-light)'),
-  highlightedBlockOutlineWidth: z.string().default('2px'),
+  highlightedBlockOutlineColor: z.string().default('var(--ic-primary)'),
+  highlightedBlockOutlineWidth: z.string().default('1.5px'),
   highlightedBlockOutlineOffset: z.string().default('-1px'),
   highlightedBlockBorderRadius: z.string().default('2px'),
 })
@@ -112,6 +115,7 @@ const Theme = z.object({
 export type Theme = z.infer<typeof Theme>
 
 export const Options = z.object({
+  ...CoreOptions.shape,
   extensions: z
     .array(
       z.union([z.instanceof(BaseExtension), z.custom<(args: any) => BaseExtension>((fn) => typeof fn === 'function')]),
@@ -121,7 +125,6 @@ export const Options = z.object({
   autofocus: z.boolean().default(true),
   customBlocks: z.array(BlockDef).default([]),
   customTools: z.array(ToolDef).default([]),
-  persistenceKey: z.string().default('default'),
   theme: Theme.default(Theme.parse({})),
 })
 
@@ -146,21 +149,6 @@ export interface IStore {}
 
 export type SendCommandFn<T> = <C extends keyof T>(kind: C, ...args: T[C] extends any[] ? T[C] : [T[C]]) => void
 
-export enum CursorIcon {
-  Select = 'select',
-  Hand = 'hand',
-  NESW = 'nesw',
-  NWSE = 'nwse',
-  NS = 'ns',
-  EW = 'ew',
-  RotateNW = 'rotateNW',
-  RotateNE = 'rotateNE',
-  RotateSE = 'rotateSE',
-  RotateSW = 'rotateSW',
-  Move = 'move',
-  Crosshair = 'crosshair',
-}
-
 export enum PointerType {
   Mouse = 'mouse',
   Touch = 'touch',
@@ -181,6 +169,7 @@ export enum CoreCommand {
   SetZoom = 'setZoom',
   MoveCamera = 'moveCamera',
   SetControls = 'setControls',
+  SetCursor = 'setCursor',
 
   Undo = 'undo',
   Redo = 'redo',
@@ -205,6 +194,7 @@ export enum CoreCommand {
 
 export type CoreCommandArgs = {
   [CoreCommand.SetControls]: [Partial<Controls>]
+  [CoreCommand.SetCursor]: [Partial<Cursor>]
   [CoreCommand.SetZoom]: [
     {
       zoom: number

@@ -1,17 +1,27 @@
 import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components'
-import { setCursorSvg } from '../helpers'
-import { CoreCommand, type CoreCommandArgs, CursorIcon } from '../types'
+import { CROSSHAIR_CURSOR } from '../constants'
+import { CoreCommand, type CoreCommandArgs, type CoreResources } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 
-export class UpdateCursor extends BaseSystem<CoreCommandArgs> {
-  private readonly controlsQuery = this.query((q) => q.current.with(comps.Controls).write)
+function setDocumentCursor(cursorSvg: string) {
+  // TODO maybe use block container instead
+  document.body.style.cursor = cursorSvg
+}
 
-  private readonly hovered = this.query((q) => q.added.current.removed.with(comps.Block, comps.Hovered))
+export class UpdateCursor extends BaseSystem<CoreCommandArgs> {
+  protected readonly resources!: CoreResources
+
+  private readonly controlsQuery = this.query((q) => q.current.changed.with(comps.Controls).write.trackWrites)
+
+  private readonly cursorQuery = this.query((q) => q.current.with(comps.Cursor).write)
 
   private readonly controls = this.singleton.read(comps.Controls)
 
-  private readonly intersects = this.query((q) => q.changed.current.with(comps.Intersect).trackWrites)
+  // private readonly frame = this.singleton.read(comps.Frame)
+
+  // let becsy know that cursor is a singleton
+  private readonly _cursor = this.singleton.read(comps.Cursor)
 
   public constructor() {
     super()
@@ -20,31 +30,38 @@ export class UpdateCursor extends BaseSystem<CoreCommandArgs> {
 
   public initialize(): void {
     this.addCommandListener(CoreCommand.SetControls, this.setControls.bind(this))
-    // this.addCommandListener(CoreCommand.SetCursor, this.setCursor.bind(this))
-
-    setCursorSvg(CursorIcon.Select)
+    this.addCommandListener(CoreCommand.SetCursor, this.setCursor.bind(this))
   }
 
-  private setControls(tool: Partial<comps.Controls>): void {
-    const currentControls = this.controlsQuery.current[0].write(comps.Controls)
-    Object.assign(currentControls, tool)
-
-    // handle tool update
-    let cursorIcon = CursorIcon.Crosshair
-    if (currentControls.leftMouseTool === 'select') {
-      cursorIcon = CursorIcon.Select
-    } else if (currentControls.leftMouseTool === 'hand') {
-      cursorIcon = CursorIcon.Hand
+  public execute(): void {
+    if (this.frame.value === 1) {
+      this.setControls({})
     }
 
-    setCursorSvg(cursorIcon)
+    for (const controlsEntity of this.controlsQuery.changed) {
+      const controls = controlsEntity.read(comps.Controls)
+      const toolDef = this.getTool(controls.leftMouseTool)
+      const cursorIcon = toolDef?.cursorIcon || CROSSHAIR_CURSOR
+      this.setCursor({ svg: cursorIcon })
+    }
+
+    this.executeCommands()
+  }
+
+  private setControls(controls: Partial<comps.Controls>): void {
+    const currentControls = this.controlsQuery.current[0].write(comps.Controls)
+    Object.assign(currentControls, controls)
+
     this.emitCommand(CoreCommand.DeselectAll)
   }
 
-  // private setCursor(payload: { icon: CursorIcon; rotateZ: number }): void {
-  //   // TODO rotate the rotation cursor,
-  //   // this should maybe be done in a computed store watcher instead of this system
-  //   const svg = getCursorSvg(payload.icon, payload.rotateZ)
-  //   document.body.style.cursor = svg
-  // }
+  private setCursor(cursor: Partial<comps.Cursor>): void {
+    const currentCursor = this.cursorQuery.current[0].write(comps.Cursor)
+    Object.assign(currentCursor, cursor)
+
+    const toolCursor = this.getTool(this.controls.leftMouseTool)?.cursorIcon
+
+    const svg = currentCursor.contextSvg || toolCursor || CROSSHAIR_CURSOR
+    setDocumentCursor(svg)
+  }
 }

@@ -2,7 +2,6 @@ export { InfiniteCanvas } from './InfiniteCanvas'
 
 export {
   Options,
-  CursorIcon,
   PointerType,
   PointerButton,
   CoreCommand,

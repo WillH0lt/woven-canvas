@@ -5,6 +5,7 @@ import { BaseComponent } from '../BaseComponent'
 export class Cursor extends BaseComponent {
   @field.dynamicString(2048) public declare svg: string
 
-  // heldBlock is a stringified block that the cursor is currently placing
-  @field.dynamicString(512) public declare heldBlock: string
+  @field.dynamicString(2048) public declare contextSvg: string
+
+  // @field.boolean public declare useContext: boolean
 }

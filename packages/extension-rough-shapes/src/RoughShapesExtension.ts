@@ -44,6 +44,14 @@ class RoughShapesExtensionClass extends BaseExtension {
     },
   ]
 
+  public static tools = [
+    {
+      name: 'rough-shapes',
+      buttonTag: 'ic-rough-shapes-tool',
+      buttonTooltip: 'Shape',
+    },
+  ]
+
   public static dependsOn = ['ColorExtension', 'TextExtension']
 
   public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {

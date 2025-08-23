@@ -1,6 +1,6 @@
 {
   "private": false,
-  "name": "@infinitecanvas/extension-perfect-freehand",
+  "name": "@infinitecanvas/extension-ink",
   "version": "0.1.0",
   "description": "Demo library that contains common utility functions",
   "repository": "https://github.com/jkomyno/pnpm-monorepo-example.git",

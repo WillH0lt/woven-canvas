@@ -8,9 +8,13 @@ export class PreCaptureIntersect extends BaseSystem {
 
   private readonly intersects = this.query((q) => q.current.with(comps.Intersect).write)
 
-  private readonly controls = this.singleton.read(comps.Controls)
+  private readonly pointers = this.query((q) => q.added.current.changed.removed.with(comps.Pointer).read.trackWrites)
 
   private readonly camera = this.singleton.read(comps.Camera)
+
+  private readonly intersect = this.singleton.read(comps.Intersect)
+
+  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
@@ -35,6 +39,10 @@ export class PreCaptureIntersect extends BaseSystem {
 
       Object.assign(blockEntity.write(comps.Aabb), aabb)
     }
+
+    // don't let the hovered entity change when pointer is down
+    // this is mostly useful when dragging objects so the hover state doesn't flicker
+    if (this.pointers.current.length) return
 
     // update intersected entity
     if (this.mouse.moveTrigger || this.blocks.addedOrChanged.length > 0 || this.cameras.changed.length > 0) {
@@ -72,7 +80,8 @@ export class PreCaptureIntersect extends BaseSystem {
     for (const hovered of this.hovered.current) {
       if (hovered.has(comps.Hovered)) hovered.remove(comps.Hovered)
     }
-    if (entity?.has(comps.Persistent) && this.controls.leftMouseTool === 'select') {
+    // entity?.has(comps.Persistent) &&
+    if (entity && this.controls.leftMouseTool === 'select') {
       if (!entity.has(comps.Hovered)) entity.add(comps.Hovered)
     }
   }

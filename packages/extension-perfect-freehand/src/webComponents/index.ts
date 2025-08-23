@@ -1,1 +1,0 @@
-export { ICPerfectFreehandStroke } from './PerfectFreehandStroke'

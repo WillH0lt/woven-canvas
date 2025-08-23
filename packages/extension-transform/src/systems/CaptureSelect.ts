@@ -5,7 +5,8 @@ import type { Entity } from '@lastolivegames/becsy'
 import { and, assign, not, setup } from 'xstate'
 
 import * as transformComps from '../components'
-import { SelectionState, TransformCommand, type TransformCommandArgs } from '../types'
+import { getCursorSvg } from '../cursors'
+import { CursorKind, SelectionState, TransformCommand, type TransformCommandArgs } from '../types'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
@@ -61,6 +62,16 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
       setDragStart: assign({
         dragStart: ({ event }) => event.worldPosition,
       }),
+      setDragCursor: () => {
+        this.emitCommand(CoreCommand.SetCursor, {
+          contextSvg: getCursorSvg(CursorKind.Drag, 0),
+        })
+      },
+      unsetDragCursor: () => {
+        this.emitCommand(CoreCommand.SetCursor, {
+          contextSvg: '',
+        })
+      },
       setDraggedEntity: assign({
         draggedEntity: ({ event }) => event.blockEntity,
         draggedEntityStart: ({ event }): [number, number] => {
@@ -159,7 +170,8 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
         },
       },
       [SelectionState.Dragging]: {
-        entry: 'setDragStart',
+        entry: ['setDragStart', 'setDragCursor'],
+        exit: ['unsetDragCursor'],
         on: {
           pointerMove: {
             actions: 'updateDragged',

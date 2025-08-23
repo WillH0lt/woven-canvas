@@ -2,16 +2,17 @@ import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
 import { css, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-@customElement('ic-transform-box')
-export class TransformBoxElement extends ICBaseMenuButton {
+@customElement('ic-selection-box')
+export class SelectionBoxElement extends ICBaseMenuButton {
   static styles = css`
     div {
       box-sizing: border-box;
       width: 100%;
       height: 100%;
-      outline-style: solid;
-      outline-width: calc(4px / var(--ic-zoom));
-      outline-color: var(--ic-primary);
+      background-color: #5865f222;
+      border-style: solid;
+      border-width: calc(3px / var(--ic-zoom));
+      border-color: var(--ic-primary);
     }
   `
 
@@ -24,6 +25,6 @@ export class TransformBoxElement extends ICBaseMenuButton {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-transform-box': TransformBoxElement
+    'ic-selection-box': SelectionBoxElement
   }
 }

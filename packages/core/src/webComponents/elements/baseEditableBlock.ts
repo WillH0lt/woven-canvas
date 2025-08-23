@@ -50,6 +50,8 @@ export abstract class ICEditableBlock extends ICBaseBlock {
     const m2 = new DOMMatrix(transform)
     const rotateZ = Math.atan2(m2.b, m2.a)
 
+    console.log(rect)
+
     const topLeft = m.transformPoint(new DOMPoint(rect.left, rect.top))
     const bottomRight = m.transformPoint(new DOMPoint(rect.right, rect.bottom))
     const aabbWidth = bottomRight.x - topLeft.x

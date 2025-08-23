@@ -1,8 +1,11 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
+import type { ControlsResources } from '../types'
 import { CapturePan } from './CapturePan'
 
 export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
+  protected readonly resources!: ControlsResources
+
   private readonly mouse = this.singleton.read(comps.Mouse)
 
   private readonly screen = this.singleton.read(comps.Screen)
@@ -28,7 +31,8 @@ export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
     const wheelEvent = events.find((e) => e.type === 'wheel')
     if (!wheelEvent) return
 
-    const zoom = 2 ** ((-0.8 * wheelEvent.wheelDelta) / 500) * this.camera.zoom
+    let zoom = 2 ** ((-0.8 * wheelEvent.wheelDelta) / 500) * this.camera.zoom
+    zoom = Math.min(this.resources.maxZoom, Math.max(this.resources.minZoom, zoom))
 
     const cameraWidth = this.screen.width / this.camera.zoom
     const cameraHeight = this.screen.height / this.camera.zoom

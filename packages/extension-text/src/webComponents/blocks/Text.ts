@@ -28,7 +28,7 @@ export class ICText extends ICEditableBlock {
   text!: Text
 
   @property({ type: String })
-  defaultAlignment: TextAlignKind = TextAlignKind.Center
+  defaultAlignment: TextAlignKind = TextAlignKind.Left
 
   @query('#editorContainer') editorContainer: HTMLElement | undefined
 
@@ -241,16 +241,9 @@ export class ICText extends ICEditableBlock {
       'pointer-events': this.isEditing ? 'auto' : 'none',
       'text-align': this.defaultAlignment.toLowerCase(),
       'white-space': this.text.constrainWidth ? 'pre-wrap' : 'pre',
-      display: this.text.constrainWidth ? 'block' : 'inline-block',
+      display: 'block',
       'min-width': '2px',
-    }
-
-    // When width is not constrained, center the inline block so it expands equally left and right
-    if (!this.text.constrainWidth) {
-      styles.position = 'relative'
-      styles.left = '50%'
-      styles.transform = 'translateX(-50%)'
-      styles['transform-origin'] = 'center'
+      width: this.text.constrainWidth ? '100%' : 'fit-content',
     }
 
     return html`${

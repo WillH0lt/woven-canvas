@@ -4,9 +4,9 @@ import type { Entity } from '@lastolivegames/becsy'
 import { assign, setup } from 'xstate'
 
 import { StrokeState as StrokeStateComp } from '../components'
-import { PerfectFreehandCommand, type PerfectFreehandCommandArgs, StrokeState } from '../types'
+import { InkCommand, type InkCommandArgs, StrokeState } from '../types'
 
-export class CaptureStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreCommandArgs> {
+export class CaptureStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
   private readonly pointers = this.query((q) => q.added.removed.current.changed.with(comps.Pointer).trackWrites)
 
   private readonly controls = this.singleton.read(comps.Controls)
@@ -32,25 +32,25 @@ export class CaptureStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreC
       addStroke: assign({
         activeStroke: ({ event }) => {
           const entity = this.createEntity()
-          this.emitCommand(PerfectFreehandCommand.AddStroke, entity, event.worldPosition)
+          this.emitCommand(InkCommand.AddStroke, entity, event.worldPosition)
           return entity
         },
       }),
 
       addStrokePoint: ({ context, event }) => {
         if (!context.activeStroke) return
-        this.emitCommand(PerfectFreehandCommand.AddStrokePoint, context.activeStroke, event.worldPosition)
+        this.emitCommand(InkCommand.AddStrokePoint, context.activeStroke, event.worldPosition)
       },
 
       completeStroke: ({ context }) => {
         if (!context.activeStroke) return
-        this.emitCommand(PerfectFreehandCommand.CompleteStroke, context.activeStroke)
+        this.emitCommand(InkCommand.CompleteStroke, context.activeStroke)
       },
 
       removeStroke: assign({
         activeStroke: ({ context }) => {
           if (!context.activeStroke) return null
-          this.emitCommand(PerfectFreehandCommand.RemoveStroke, context.activeStroke)
+          this.emitCommand(InkCommand.RemoveStroke, context.activeStroke)
           return null
         },
       }),
@@ -60,7 +60,7 @@ export class CaptureStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreC
       },
     },
   }).createMachine({
-    id: 'perfect-freehand',
+    id: 'ink',
     initial: StrokeState.Idle,
     context: {
       activeStroke: null,
@@ -94,7 +94,7 @@ export class CaptureStroke extends BaseSystem<PerfectFreehandCommandArgs & CoreC
   })
 
   public execute(): void {
-    const buttons = this.controls.getButtons('perfect-freehand')
+    const buttons = this.controls.getButtons('ink')
 
     const events = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
 

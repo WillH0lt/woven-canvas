@@ -10,6 +10,7 @@ import { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
 import { Block, Controls, Hovered, Persistent, Selected } from './components'
+import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { getSnapshot } from './helpers'
 import * as sys from './systems'
 import {
@@ -72,11 +73,13 @@ export class CoreExtension extends BaseExtension {
       name: 'select',
       buttonTag: 'ic-select-tool',
       buttonTooltip: 'Select',
+      cursorIcon: SELECT_CURSOR,
     },
     {
       name: 'hand',
       buttonTag: 'ic-hand-tool',
       buttonTooltip: 'Hand',
+      cursorIcon: HAND_CURSOR,
     },
   ]
 
@@ -114,6 +117,7 @@ export class CoreExtension extends BaseExtension {
 
     const coreResources: CoreResources = {
       ...resources,
+      ...this.options,
       emitter: this.emitter,
       state: this.state,
       menuContainer,

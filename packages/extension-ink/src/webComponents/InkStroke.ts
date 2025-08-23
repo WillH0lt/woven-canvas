@@ -43,8 +43,8 @@ function getSvgPathFromStroke(stroke: Stroke, diameter: number, inputPoints: [nu
   return path
 }
 
-@customElement('ic-perfect-freehand-stroke')
-export class ICPerfectFreehandStroke extends ICBaseBlock {
+@customElement('ic-ink-stroke')
+export class ICInkStroke extends ICBaseBlock {
   static styles = [
     ...super.styles,
     css`
@@ -157,6 +157,6 @@ export class ICPerfectFreehandStroke extends ICBaseBlock {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-perfect-freehand-stroke': ICPerfectFreehandStroke
+    'ic-ink-stroke': ICInkStroke
   }
 }

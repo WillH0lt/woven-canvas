@@ -1,5 +1,5 @@
 export { applyDiff } from './applyDiff'
-export { setCursorSvg } from './setCursorSvg'
+// export { setCursorSvg } from './setCursorSvg'
 export { intersectPoint } from './intersectPoint'
 export { uuidToNumber } from './uuidToNumber'
 export { getSnapshot } from './getSnapshot'

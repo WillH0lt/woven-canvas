@@ -77,15 +77,15 @@ importers:
       '@infinitecanvas/extension-controls':
         specifier: workspace:^
         version: link:../../packages/extension-controls
+      '@infinitecanvas/extension-ink':
+        specifier: workspace:^
+        version: link:../../packages/extension-ink
       '@infinitecanvas/extension-input':
         specifier: workspace:^
         version: link:../../packages/extension-input
       '@infinitecanvas/extension-multiplayer':
         specifier: workspace:^
         version: link:../../packages/extension-multiplayer
-      '@infinitecanvas/extension-perfect-freehand':
-        specifier: workspace:^
-        version: link:../../packages/extension-perfect-freehand
       '@infinitecanvas/extension-rough-shapes':
         specifier: workspace:^
         version: link:../../packages/extension-rough-shapes
@@ -199,6 +199,43 @@ importers:
       xstate:
         specifier: ^5.19.4
         version: 5.19.4
+      zod:
+        specifier: ^4.0.17
+        version: 4.0.17
+    devDependencies:
+      vitest:
+        specifier: ^3.1.4
+        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
+
+  packages/extension-ink:
+    dependencies:
+      '@infinitecanvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@infinitecanvas/extension-color':
+        specifier: workspace:^
+        version: link:../extension-color
+      '@lastolivegames/becsy':
+        specifier: ^0.15.5
+        version: 0.15.5
+      '@lit-labs/preact-signals':
+        specifier: ^1.0.3
+        version: 1.0.3
+      '@preact/signals-core':
+        specifier: ^1.10.0
+        version: 1.10.0
+      lit:
+        specifier: ^3.3.0
+        version: 3.3.0
+      perfect-freehand:
+        specifier: ^1.2.2
+        version: 1.2.2
+      simplify-js:
+        specifier: ^1.2.4
+        version: 1.2.4
+      xstate:
+        specifier: ^5.19.4
+        version: 5.19.4
     devDependencies:
       vitest:
         specifier: ^3.1.4
@@ -231,40 +268,6 @@ importers:
       socket.io-client:
         specifier: ^4.8.1
         version: 4.8.1
-    devDependencies:
-      vitest:
-        specifier: ^3.1.4
-        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
-
-  packages/extension-perfect-freehand:
-    dependencies:
-      '@infinitecanvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@infinitecanvas/extension-color':
-        specifier: workspace:^
-        version: link:../extension-color
-      '@lastolivegames/becsy':
-        specifier: ^0.15.5
-        version: 0.15.5
-      '@lit-labs/preact-signals':
-        specifier: ^1.0.3
-        version: 1.0.3
-      '@preact/signals-core':
-        specifier: ^1.10.0
-        version: 1.10.0
-      lit:
-        specifier: ^3.3.0
-        version: 3.3.0
-      perfect-freehand:
-        specifier: ^1.2.2
-        version: 1.2.2
-      simplify-js:
-        specifier: ^1.2.4
-        version: 1.2.4
-      xstate:
-        specifier: ^5.19.4
-        version: 5.19.4
     devDependencies:
       vitest:
         specifier: ^3.1.4

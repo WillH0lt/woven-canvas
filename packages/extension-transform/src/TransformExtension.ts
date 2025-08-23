@@ -2,7 +2,7 @@ import { BaseExtension } from '@infinitecanvas/core'
 import type { BaseResources } from '@infinitecanvas/core'
 
 import * as sys from './systems'
-import './elements'
+import './webComponents'
 import { TransformOptions, type TransformOptionsInput, type TransformResources } from './types'
 
 class TransformExtensionClass extends BaseExtension {
@@ -19,7 +19,12 @@ class TransformExtensionClass extends BaseExtension {
       ...this.options,
     }
 
-    this._captureGroup = this.createGroup(transformResources, sys.CaptureSelect, sys.CaptureTransformBox)
+    this._captureGroup = this.createGroup(
+      transformResources,
+      sys.CaptureSelect,
+      sys.CaptureTransformBox,
+      sys.CaptureHoverCursor,
+    )
     this._updateGroup = this.createGroup(transformResources, sys.UpdateSelection, sys.UpdateTransformBox)
   }
 }
