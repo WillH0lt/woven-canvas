@@ -17,10 +17,12 @@ export function binarySearchForId(
 
   while (left <= right) {
     const mid = Math.floor((left + right) / 2)
-    const componentId = entities[mid].read(Component).id
+
+    const entity = entities[mid]
+    const componentId = entity.read(Component).id
 
     if (componentId === id) {
-      return entities[mid]
+      return entity
     }
     if (uuidToNumber(componentId) < uuidToNumber(id)) {
       left = mid + 1

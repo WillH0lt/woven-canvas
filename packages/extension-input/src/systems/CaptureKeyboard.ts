@@ -26,6 +26,8 @@ export class CaptureKeyboard extends BaseSystem<CommandArgs> {
 
       if (triggered) {
         this.emitCommand(keybind.command)
+        // only 1 keyboard command per frame
+        break
       }
     }
   }

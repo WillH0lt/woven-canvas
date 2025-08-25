@@ -20,3 +20,9 @@ export { CommandRef } from './CommandRef'
 export { HitGeometries } from './HitGeometries'
 export { HitCapsule } from './HitCapsule'
 export { Cursor } from './Cursor'
+
+import { Aabb } from './Aabb'
+import { Block } from './Block'
+import { HitCapsule } from './HitCapsule'
+import { HitGeometries } from './HitGeometries'
+export const allHitGeometriesArray = [Aabb, Block, HitGeometries, HitCapsule]

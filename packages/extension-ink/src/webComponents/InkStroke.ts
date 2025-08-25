@@ -12,6 +12,10 @@ function average(a: number, b: number) {
 
 function getSvgPathFromStroke(stroke: Stroke, diameter: number, inputPoints: [number, number][]): string {
   if (stroke.pointCount <= 4 || !stroke.originalWidth || !stroke.originalHeight) {
+    if (!stroke.isComplete) {
+      return ''
+    }
+
     // draw a dot
     const r = diameter / 2
     return `M ${r},0 a ${r},${r} 0 1 0 0.0001 0`

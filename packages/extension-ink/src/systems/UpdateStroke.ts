@@ -118,20 +118,23 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
   }
 
   @co private *addOrUpdateHitGeometry(strokeEntity: Entity): Generator {
-    co.scope(strokeEntity)
+    const heldStrokeEntity = strokeEntity.hold()
+    co.scope(heldStrokeEntity)
     co.cancelIfCoroutineStarted()
 
     yield co.waitForSeconds(0.25)
 
-    if (!strokeEntity.has(HitGeometries)) {
-      strokeEntity.add(HitGeometries)
+    if (!heldStrokeEntity?.alive || !heldStrokeEntity.has(Stroke)) return
+
+    if (!heldStrokeEntity.has(HitGeometries)) {
+      heldStrokeEntity.add(HitGeometries)
     }
 
-    const hitGeometries = strokeEntity.read(HitGeometries)
+    const hitGeometries = heldStrokeEntity.read(HitGeometries)
     this.deleteEntities(hitGeometries.capsules)
 
-    const stroke = strokeEntity.read(Stroke)
-    const block = strokeEntity.read(Block)
+    const stroke = heldStrokeEntity.read(Stroke)
+    const block = heldStrokeEntity.read(Block)
 
     const points: { x: number; y: number }[] = []
     for (let i = 0; i < stroke.pointCount; i++) {
@@ -177,6 +180,7 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
       ),
     )
 
+    // transform simplifiedPoints via M into transformedPoints
     const transformedPoints: number[] = []
     for (let i = 0; i < simplifiedPoints.length; i++) {
       const { x, y } = simplifiedPoints[i]
@@ -184,6 +188,7 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
       transformedPoints.push(p[0], p[1])
     }
 
+    // create hit capsules from transformedPoints
     for (let i = 0; i < transformedPoints.length - 3; i += 2) {
       this.createEntity(HitCapsule, {
         a: [transformedPoints[i], transformedPoints[i + 1]],

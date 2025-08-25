@@ -3,6 +3,7 @@ import { Type, field } from '@lastolivegames/becsy'
 import { BaseComponent } from '../BaseComponent'
 import { multiplyMatrices, newRotationMatrix, newTranslationMatrix, transformPoint } from '../helpers'
 import type { Aabb } from './Aabb'
+import type { HitCapsule } from './HitCapsule'
 
 export class Block extends BaseComponent {
   @field.dynamicString(36) public declare id: string
@@ -114,6 +115,10 @@ export class Block extends BaseComponent {
     }
 
     return true // No separating axis found, shapes intersect
+  }
+
+  public intersectsCapsule(capsule: HitCapsule): boolean {
+    return capsule.intersectsBlock(this)
   }
 }
 

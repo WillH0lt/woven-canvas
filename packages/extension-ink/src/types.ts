@@ -6,10 +6,10 @@ export enum StrokeState {
 }
 
 export enum InkCommand {
-  AddStroke = 'addStroke',
-  AddStrokePoint = 'addStrokePoint',
-  CompleteStroke = 'completeStroke',
-  RemoveStroke = 'removeStroke',
+  AddStroke = 'inkAddStroke',
+  AddStrokePoint = 'inkAddStrokePoint',
+  CompleteStroke = 'inkCompleteStroke',
+  RemoveStroke = 'inkRemoveStroke',
 }
 
 export type InkCommandArgs = {

@@ -39,14 +39,22 @@ export function applyDiff(system: System, diff: Diff, entities: Query): { added:
   }
 
   // removed components
+  console.log(diff.removed)
+  const current = [...entities.current]
   for (const [id, components] of Object.entries(diff.removed)) {
-    const entity = binarySearchForId(Block, id, entities.current)
+    const entity = binarySearchForId(Block, id, current)
     if (!entity) continue
 
     for (const componentName of Object.keys(components)) {
       const Component = componentNames.get(componentName)
       if (!Component) continue
       entity.remove(Component)
+
+      // When removing block remove the entity from the current list.
+      // Otherwise doing subsequent binarySearchForId will cause problems
+      if (Component === Block) {
+        current.splice(current.indexOf(entity), 1)
+      }
     }
 
     // If the entity has no components left, delete it

@@ -25,7 +25,7 @@ export function intersectAabb(aabb: Aabb, blockEntities: readonly Entity[]): Ent
 
     if (blockEntity.has(HitGeometries)) {
       const hitGeometries = blockEntity.read(HitGeometries)
-      if (!hitGeometries.intersectAabb(aabb)) {
+      if (!hitGeometries.intersectsAabb(aabb)) {
         continue
       }
     }

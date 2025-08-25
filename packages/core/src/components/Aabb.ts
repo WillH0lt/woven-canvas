@@ -1,6 +1,8 @@
 import { component, field } from '@lastolivegames/becsy'
 
 import { BaseComponent } from '../BaseComponent'
+import type { Block } from './Block'
+import type { HitCapsule } from './HitCapsule'
 
 @component
 export class Aabb extends BaseComponent {
@@ -28,5 +30,13 @@ export class Aabb extends BaseComponent {
 
   public surroundsAabb(other: Aabb): boolean {
     return this.left <= other.left && this.top <= other.top && this.right >= other.right && this.bottom >= other.bottom
+  }
+
+  public intersectsBlock(block: Block): boolean {
+    return block.intersectsAabb(this)
+  }
+
+  public intersectsCapsule(capsule: HitCapsule): boolean {
+    return capsule.intersectsAabb(this)
   }
 }

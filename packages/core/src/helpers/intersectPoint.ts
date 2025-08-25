@@ -21,7 +21,7 @@ export function intersectPoint(point: [number, number], blockEntities: readonly 
 
     if (blockEntity.has(HitGeometries)) {
       const hitGeometries = blockEntity.read(HitGeometries)
-      if (!hitGeometries.intersectPoint(point)) {
+      if (!hitGeometries.intersectsPoint(point)) {
         continue
       }
     }

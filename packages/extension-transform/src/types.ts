@@ -29,19 +29,19 @@ export enum TransformBoxState {
 }
 
 export enum TransformCommand {
-  AddSelectionBox = 'addSelectionBox',
-  UpdateSelectionBox = 'updateSelectionBox',
-  RemoveSelectionBox = 'removeSelectionBox',
+  AddSelectionBox = 'transformAddSelectionBox',
+  UpdateSelectionBox = 'transformUpdateSelectionBox',
+  RemoveSelectionBox = 'transformRemoveSelectionBox',
 
-  AddTransformBox = 'addTransformBox',
-  UpdateTransformBox = 'updateTransformBox',
-  HideTransformBox = 'hideTransformBox',
-  ShowTransformBox = 'showTransformBox',
-  RemoveTransformBox = 'removeTransformBox',
-  StartTransformBoxEdit = 'startTransformBoxEdit',
-  EndTransformBoxEdit = 'endTransformBoxEdit',
+  AddTransformBox = 'transformAddTransformBox',
+  UpdateTransformBox = 'transformUpdateTransformBox',
+  HideTransformBox = 'transformHideTransformBox',
+  ShowTransformBox = 'transformShowTransformBox',
+  RemoveTransformBox = 'transformRemoveTransformBox',
+  StartTransformBoxEdit = 'transformStartTransformBoxEdit',
+  EndTransformBoxEdit = 'transformEndTransformBoxEdit',
 
-  DragBlock = 'dragBlock',
+  DragBlock = 'transformDragBlock',
 }
 
 export type TransformCommandArgs = {

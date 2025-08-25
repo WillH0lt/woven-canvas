@@ -1,0 +1,1 @@
+export { EraserExtension } from './EraserExtension'

@@ -1,4 +1,4 @@
-import { type Entity, type Query, System } from '@lastolivegames/becsy'
+import { type ComponentType, type Entity, type Query, System } from '@lastolivegames/becsy'
 import { type AnyStateMachine, transition } from 'xstate'
 
 import * as comps from './components'
@@ -46,6 +46,21 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
   protected deleteEntities(entities: readonly Entity[]): void {
     for (const entity of entities) {
       if (!entity.has(comps.ToBeDeleted)) entity.add(comps.ToBeDeleted)
+    }
+  }
+
+  protected setComponent<C>(entity: Entity, component: ComponentType<C>, args: Partial<C>): void {
+    if (!entity.has(component)) {
+      entity.add(component, args)
+    } else {
+      const c = entity.write(component) as object
+      Object.assign(c, args)
+    }
+  }
+
+  protected unsetComponent<C>(entity: Entity, component: ComponentType<C>): void {
+    if (entity.has(component)) {
+      entity.remove(component)
     }
   }
 

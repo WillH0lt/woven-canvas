@@ -4,6 +4,7 @@ import './style.css'
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ColorExtension } from '@infinitecanvas/extension-color'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
+import { EraserExtension } from '@infinitecanvas/extension-eraser'
 import { InkExtension } from '@infinitecanvas/extension-ink'
 import { InputExtension } from '@infinitecanvas/extension-input'
 import { RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
@@ -57,6 +58,7 @@ async function initializeCanvas(container: HTMLDivElement) {
       RoughShapesExtension,
       // MultiplayerExtension,
       InkExtension,
+      EraserExtension,
     ],
   })
 

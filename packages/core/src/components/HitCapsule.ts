@@ -1,6 +1,7 @@
 import { type Entity, component, field } from '@lastolivegames/becsy'
 
 import { Aabb } from './Aabb'
+import type { Block } from './Block'
 
 @component
 export class HitCapsule {
@@ -8,6 +9,10 @@ export class HitCapsule {
   @field.float32.vector(2) declare b: [number, number]
   @field.float32 declare radius: number
   @field.ref declare blockEntity: Entity
+
+  constructor(data: Record<string, any> = {}) {
+    Object.assign(this, data)
+  }
 
   public intersectsPoint(point: [number, number]): boolean {
     const { a, b, radius } = this
@@ -118,6 +123,55 @@ export class HitCapsule {
     }
 
     return minDistSq <= r ** 2
+  }
+
+  public intersectsBlock(block: Block): boolean {
+    const { a, b, radius } = this
+
+    // Get block corners to work with oriented rectangle
+    const corners = block.getCorners()
+
+    // Quick check: if capsule endpoints are inside the block
+    if (block.intersectsPoint(a) || block.intersectsPoint(b)) {
+      return true
+    }
+
+    // Check if any corner of the block is within the capsule
+    for (const corner of corners) {
+      if (this.intersectsPoint(corner)) {
+        return true
+      }
+    }
+
+    // Check distance from capsule line segment to each edge of the block
+    let minDistanceSq = Number.POSITIVE_INFINITY
+
+    for (let i = 0; i < corners.length; i++) {
+      const edgeStart = corners[i]
+      const edgeEnd = corners[(i + 1) % corners.length]
+
+      const distSq = segmentSegmentDistSq(a[0], a[1], b[0], b[1], edgeStart[0], edgeStart[1], edgeEnd[0], edgeEnd[1])
+
+      minDistanceSq = Math.min(minDistanceSq, distSq)
+    }
+
+    // Intersection occurs if minimum distance is within radius
+    return minDistanceSq <= radius * radius
+  }
+
+  public intersectsCapsule(other: HitCapsule): boolean {
+    const { a: a1, b: b1, radius: r1 } = this
+    const { a: a2, b: b2, radius: r2 } = other
+
+    // Calculate the minimum distance between the two line segments
+    const minDistSq = segmentSegmentDistSq(a1[0], a1[1], b1[0], b1[1], a2[0], a2[1], b2[0], b2[1])
+
+    // Combined radius threshold
+    const combinedRadius = r1 + r2
+    const combinedRadiusSq = combinedRadius * combinedRadius
+
+    // Capsules intersect if the distance between segments is within combined radius
+    return minDistSq <= combinedRadiusSq
   }
 }
 

@@ -166,30 +166,30 @@ export enum PointerButton {
 }
 
 export enum CoreCommand {
-  SetZoom = 'setZoom',
-  MoveCamera = 'moveCamera',
-  SetControls = 'setControls',
-  SetCursor = 'setCursor',
+  SetZoom = 'coreSetZoom',
+  MoveCamera = 'coreMoveCamera',
+  SetControls = 'coreSetControls',
+  SetCursor = 'coreSetCursor',
 
-  Undo = 'undo',
-  Redo = 'redo',
-  Cut = 'cut',
-  Copy = 'copy',
-  Paste = 'paste',
+  Undo = 'coreUndo',
+  Redo = 'coreRedo',
+  Cut = 'coreCut',
+  Copy = 'coreCopy',
+  Paste = 'corePaste',
 
-  CreateCheckpoint = 'createCheckpoint',
+  CreateCheckpoint = 'coreCreateCheckpoint',
 
-  BringForwardSelected = 'bringForwardSelected',
-  SendBackwardSelected = 'sendBackwardSelected',
-  DuplicateSelected = 'duplicateSelected',
-  RemoveSelected = 'removeSelected',
+  BringForwardSelected = 'coreBringForwardSelected',
+  SendBackwardSelected = 'coreSendBackwardSelected',
+  DuplicateSelected = 'coreDuplicateSelected',
+  RemoveSelected = 'coreRemoveSelected',
 
-  CreateFromSnapshot = 'createFromSnapshot',
-  UpdateFromSnapshot = 'updateFromSnapshot',
+  CreateFromSnapshot = 'coreCreateFromSnapshot',
+  UpdateFromSnapshot = 'coreUpdateFromSnapshot',
 
-  SelectBlock = 'selectBlock',
-  DeselectBlock = 'deselectBlock',
-  DeselectAll = 'deselectAll',
+  SelectBlock = 'coreSelectBlock',
+  DeselectBlock = 'coreDeselectBlock',
+  DeselectAll = 'coreDeselectAll',
 }
 
 export type CoreCommandArgs = {
