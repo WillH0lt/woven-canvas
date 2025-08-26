@@ -15,19 +15,11 @@ type SelectionEvent =
     }
 
 export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
-  private readonly pointers = this.query((q) => q.added.removed.current.changed.with(comps.Pointer).trackWrites)
-
   private readonly selectedBlocks = this.query((q) => q.added.removed.current.with(comps.Block, comps.Selected))
 
   private readonly transformBoxes = this.query(
     (q) => q.current.with(transformComps.TransformBox).write.using(transformComps.TransformHandle).read,
   )
-
-  private readonly controls = this.singleton.read(comps.Controls)
-
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
 
   private readonly transformBoxState = this.singleton.write(transformComps.TransformBoxState)
 
@@ -183,7 +175,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
     }
 
     const buttons = this.controls.getButtons('select')
-    const e = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
+    const e = this.getPointerEvents(buttons)
     events.push(...e)
 
     return events

@@ -57,9 +57,9 @@ export class ICInkStroke extends ICBaseBlock {
       overflow: visible;
     }
     
-    :host([is-hovered]),
-    :host([is-selected]) {
-      outline: none;
+    :host([is-hovered="true"]) > :first-child::after,
+    :host([is-selected="true"]) > :first-child::after {
+      border: none;
     }
 
     #container {

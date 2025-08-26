@@ -7,20 +7,15 @@ import type { InputResources } from '../types'
 export class InputKeyboard extends BaseSystem {
   private readonly keyboards = this.query((q) => q.current.with(comps.Keyboard).write)
 
-  private get keyboard(): comps.Keyboard {
-    return this.keyboards.current[0].write(comps.Keyboard)
-  }
-
-  // declaring to becsy that keyboard is a singleton component
-  private readonly _keyboard = this.singleton.read(comps.Keyboard)
-
   private readonly eventsBuffer: KeyboardEvent[] = []
 
   protected declare readonly resources: InputResources
 
   private updateKeyboard(field: string, value: boolean): void {
     if (!(field in this.keyboard)) return
-    Object.assign(this.keyboard, { [field]: value })
+
+    const keyboard = this.keyboards.current[0].write(comps.Keyboard)
+    Object.assign(keyboard, { [field]: value })
   }
 
   private onKeyDown(e: KeyboardEvent): void {
@@ -28,7 +23,8 @@ export class InputKeyboard extends BaseSystem {
 
     const keyDown = `${key}Down`
 
-    if (this.keyboard[keyDown as keyof comps.Keyboard] === false) {
+    const keyboard = this.keyboards.current[0].write(comps.Keyboard)
+    if (keyboard[keyDown as keyof comps.Keyboard] === false) {
       const triggerKey = `${keyDown}Trigger`
       this.setTrigger(triggerKey)
     }

@@ -1,4 +1,4 @@
-import { type ComponentType, type Entity, type Query, System } from '@lastolivegames/becsy'
+import { type ComponentType, type Entity, System } from '@lastolivegames/becsy'
 import { type AnyStateMachine, transition } from 'xstate'
 
 import * as comps from './components'
@@ -19,7 +19,7 @@ type BaseCommands = {
 export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
   protected readonly resources!: BaseResources
 
-  readonly #_toBeDeleted = this.query((q) => q.with(comps.ToBeDeleted).write)
+  readonly #_toBeDeleted = this.query((q) => q.using(comps.ToBeDeleted).write)
 
   readonly #commands = this.query(
     (q) =>
@@ -28,6 +28,20 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
         .write.orderBy((e) => e.ordinal)
         .using(comps.CommandRef).write,
   )
+
+  protected readonly pointers = this.query((q) => q.added.current.changed.removed.with(comps.Pointer).read.trackWrites)
+
+  protected readonly mouse = this.singleton.read(comps.Mouse)
+
+  protected readonly screen = this.singleton.read(comps.Screen)
+
+  protected readonly camera = this.singleton.read(comps.Camera)
+
+  protected readonly controls = this.singleton.read(comps.Controls)
+
+  protected readonly keyboard = this.singleton.read(comps.Keyboard)
+
+  protected readonly intersect = this.singleton.read(comps.Intersect)
 
   protected readonly frame = this.singleton.read(comps.Frame)
 
@@ -148,24 +162,19 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     return this.resources.blockContainer.querySelector<HTMLElement>(`[id='${blockId}']`)
   }
 
-  protected getPointerEvents(
-    pointers: Query,
-    camera: Readonly<comps.Camera>,
-    intersect: Readonly<comps.Intersect>,
-    buttons: PointerButton[],
-  ): PointerEvent[] {
+  protected getPointerEvents(buttons: PointerButton[]): PointerEvent[] {
     if (buttons.length === 0) return []
 
     const events: PointerEvent[] = []
 
-    if (pointers.removed.length > 0) {
+    if (this.pointers.removed.length > 0) {
       this.accessRecentlyDeletedData(true)
     }
 
-    let added = pointers.added
-    let current = pointers.current
-    let removed = pointers.removed
-    let changed = pointers.changed
+    let added = this.pointers.added
+    let current = this.pointers.current
+    let removed = this.pointers.removed
+    let changed = this.pointers.changed
 
     added = added.filter((e) => buttons.includes(e.read(comps.Pointer).button))
     current = current.filter((e) => buttons.includes(e.read(comps.Pointer).button))
@@ -177,18 +186,31 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       events.push({
         type: 'pointerDown',
         clientPosition: pointer.downPosition,
-        worldPosition: camera.toWorld(pointer.downPosition),
-        blockEntity: intersect.entity || null,
+        worldPosition: this.camera.toWorld(pointer.downPosition),
+        blockEntity: this.intersect.entity || null,
       })
     }
 
-    if (added.length > 0 && current.length > 1) {
+    // cancel the action if the pointer is down, and we push another pointer down.
+    if (current.length >= 1 && this.pointers.added.length > 0 && this.pointers.current.length > 1) {
       const pointer = current[0].read(comps.Pointer)
       events.push({
         type: 'cancel',
         clientPosition: pointer.position,
-        worldPosition: camera.toWorld(pointer.position),
-        blockEntity: intersect.entity || null,
+        worldPosition: this.camera.toWorld(pointer.position),
+        blockEntity: this.intersect.entity || null,
+      })
+    }
+
+    // not exactly a pointer event, but if somebody presses escape and the pointer
+    // is down it should cancel the current action
+    if (current.length >= 1 && this.keyboard.escapeDownTrigger) {
+      const pointer = current[0].read(comps.Pointer)
+      events.push({
+        type: 'cancel',
+        clientPosition: pointer.position,
+        worldPosition: this.camera.toWorld(pointer.position),
+        blockEntity: this.intersect.entity || null,
       })
     }
 
@@ -197,8 +219,8 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       events.push({
         type: 'pointerUp',
         clientPosition: pointer.position,
-        worldPosition: camera.toWorld(pointer.position),
-        blockEntity: intersect.entity || null,
+        worldPosition: this.camera.toWorld(pointer.position),
+        blockEntity: this.intersect.entity || null,
       })
 
       const dist = distance(pointer.downPosition, pointer.position)
@@ -207,8 +229,8 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
         events.push({
           type: 'click',
           clientPosition: pointer.position,
-          worldPosition: camera.toWorld(pointer.position),
-          blockEntity: intersect.entity || null,
+          worldPosition: this.camera.toWorld(pointer.position),
+          blockEntity: this.intersect.entity || null,
         })
       }
     }
@@ -218,8 +240,8 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       events.push({
         type: 'pointerMove',
         clientPosition: pointer.position,
-        worldPosition: camera.toWorld(pointer.position),
-        blockEntity: intersect.entity || null,
+        worldPosition: this.camera.toWorld(pointer.position),
+        blockEntity: this.intersect.entity || null,
       })
     }
 

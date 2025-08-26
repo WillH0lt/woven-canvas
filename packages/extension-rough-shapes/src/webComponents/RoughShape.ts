@@ -3,7 +3,7 @@ import { ICEditableBlock } from '@infinitecanvas/core/elements'
 import { Color } from '@infinitecanvas/extension-color'
 import { type ICText, type Text, TextAlign, VerticalAlign } from '@infinitecanvas/extension-text'
 import { type PropertyValues, css, html, nothing, svg } from 'lit'
-import { customElement, property, query, state } from 'lit/decorators.js'
+import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import rough from 'roughjs'
 import type { Drawable, Options, PathInfo as RoughPathInfo } from 'roughjs/bin/core'
@@ -54,18 +54,16 @@ export class ICRoughShape extends ICEditableBlock {
   @property({ type: Object })
   public roughShape!: RoughShape
 
-  @state()
-  private highlightedPath = ''
-
   static styles = [
     ...super.styles,
     css`
       :host * {
         box-sizing: border-box;
       }
-      :host([is-hovered]),
-      :host([is-selected]) {
-        outline: none;
+
+      :host([is-hovered="true"]) > :first-child::after,
+      :host([is-selected="true"]) > :first-child::after {
+        border: none;
       }
 
       #container {

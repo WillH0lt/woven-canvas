@@ -69,11 +69,6 @@ export class ICEraserStroke extends ICBaseBlock {
       width: 100%;
       height: 100%;
     }
-
-    #highlight {
-      position: absolute;
-      inset: 0;
-    }
   `,
   ]
 

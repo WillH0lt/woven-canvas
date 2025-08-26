@@ -16,10 +16,6 @@ export class UpdateCursor extends BaseSystem<CoreCommandArgs> {
 
   private readonly cursorQuery = this.query((q) => q.current.with(comps.Cursor).write)
 
-  private readonly controls = this.singleton.read(comps.Controls)
-
-  // private readonly frame = this.singleton.read(comps.Frame)
-
   // let becsy know that cursor is a singleton
   private readonly _cursor = this.singleton.read(comps.Cursor)
 

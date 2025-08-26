@@ -19,19 +19,11 @@ export class PreRenderFloatingMenus extends BaseSystem {
 
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly screen = this.singleton.read(comps.Screen)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
-
   private readonly selectedBlocks = this.query(
     (q) => q.addedChangedOrRemoved.current.with(comps.Selected, comps.Aabb).with(comps.Block).trackWrites,
   )
 
   private readonly editedBlocks = this.query((q) => q.current.with(comps.Edited))
-
-  private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
 
   public constructor() {
     super()
@@ -56,7 +48,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
       }
     }
 
-    const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, [PointerButton.Left])
+    const pointerEvents = this.getPointerEvents([PointerButton.Left])
     if (pointerEvents.find((e) => e.type === 'pointerDown') && this.editedBlocks.current.length === 0) {
       this.removeFloatingMenu()
     }

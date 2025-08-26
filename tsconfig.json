@@ -6,6 +6,9 @@
       "path": "packages/core"
     },
     {
+      "path": "packages/extension-arrows"
+    },
+    {
       "path": "packages/extension-controls"
     },
     {
@@ -28,6 +31,9 @@
     },
     {
       "path": "packages/extension-transform"
+    },
+    {
+      "path": "packages/extension-sticky-notes"
     },
     {
       "path": "examples/canvas"

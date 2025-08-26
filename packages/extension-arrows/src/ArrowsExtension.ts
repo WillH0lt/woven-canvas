@@ -4,10 +4,10 @@ import { Text, TextEditorFloatingMenuButtons, floatingMenuButtonVerticalAlign } 
 
 import './webComponents'
 
-class StickyNotesExtensionClass extends BaseExtension {
+class ArrowsExtensionClass extends BaseExtension {
   public readonly blocks = [
     {
-      tag: 'ic-sticky-note',
+      tag: 'ic-arrow',
       canEdit: true,
       floatingMenu: [
         floatingMenuButtonColor,
@@ -22,13 +22,13 @@ class StickyNotesExtensionClass extends BaseExtension {
 
   public readonly tools = [
     {
-      name: 'sticky-note',
-      buttonTag: 'ic-sticky-note-tool',
-      buttonTooltip: 'Sticky Note',
+      name: 'arrow',
+      buttonTag: 'ic-arrow-tool',
+      buttonTooltip: 'Arrow',
     },
   ]
 
   public readonly dependsOn = ['ColorExtension', 'TextExtension']
 }
 
-export const StickyNotesExtension = () => new StickyNotesExtensionClass()
+export const ArrowsExtension = () => new ArrowsExtensionClass()

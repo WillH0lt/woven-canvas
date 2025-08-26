@@ -1,22 +1,9 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
 import type { ControlsResources } from '../types'
 import { CapturePan } from './CapturePan'
 
 export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
   protected readonly resources!: ControlsResources
-
-  private readonly mouse = this.singleton.read(comps.Mouse)
-
-  private readonly screen = this.singleton.read(comps.Screen)
-
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly controls = this.singleton.read(comps.Controls)
-
-  private readonly keyboard = this.singleton.read(comps.Keyboard)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
 
   public constructor() {
     super()

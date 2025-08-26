@@ -12,16 +12,6 @@ import { CursorKind, SelectionState, TransformCommand, type TransformCommandArgs
 const POINTING_THRESHOLD = 4
 
 export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
-  private readonly pointers = this.query((q) => q.added.removed.changed.current.with(comps.Pointer).read.trackWrites)
-
-  private readonly controls = this.singleton.read(comps.Controls)
-
-  private readonly keyboard = this.singleton.read(comps.Keyboard)
-
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
-
   private readonly _blocks = this.query(
     (q) => q.with(comps.Block, comps.Persistent).read.using(transformComps.Locked).read,
   )
@@ -220,7 +210,8 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
   })
 
   public execute(): void {
-    const events = this.getSelectionEvents()
+    const buttons = this.controls.getButtons('select')
+    const events = this.getPointerEvents(buttons)
 
     if (events.length === 0) return
 
@@ -233,17 +224,5 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
 
     Object.assign(this.selectionState, context)
     this.selectionState.state = value
-  }
-
-  private getSelectionEvents(): PointerEvent[] {
-    const buttons = this.controls.getButtons('select')
-
-    const events = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
-
-    if (this.keyboard.escapeDownTrigger) {
-      events.push({ type: 'cancel' } as PointerEvent)
-    }
-
-    return events
   }
 }

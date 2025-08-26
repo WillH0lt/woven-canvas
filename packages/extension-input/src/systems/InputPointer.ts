@@ -61,6 +61,10 @@ export class InputPointer extends System {
 
     window.addEventListener('pointermove', (e) => this.eventsBuffer.push(e))
     domElement.addEventListener('pointerdown', (e) => this.eventsBuffer.push(e))
+    domElement.addEventListener('contextmenu', (e) => {
+      e.preventDefault()
+      this.eventsBuffer.push(e)
+    })
     window.addEventListener('pointerup', (e) => this.eventsBuffer.push(e))
     window.addEventListener('pointercancel', (e) => this.eventsBuffer.push(e))
   }
@@ -70,6 +74,13 @@ export class InputPointer extends System {
 
     for (const e of this.eventsBuffer) {
       if (e.type === 'pointerdown') {
+        const pointer = this.onPointerDown(e)
+        pointers.push(pointer)
+      } else if (e.type === 'contextmenu') {
+        // if there's already a pointerdown event in this frame, ignore the contextmenu
+        const hasPointerDown = !!this.eventsBuffer.find((e) => e.type === 'pointerdown')
+        if (hasPointerDown) continue
+
         const pointer = this.onPointerDown(e)
         pointers.push(pointer)
       } else if (e.type === 'pointermove') {

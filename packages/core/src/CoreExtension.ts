@@ -61,14 +61,14 @@ declare module '@infinitecanvas/core' {
 }
 
 export class CoreExtension extends BaseExtension {
-  public static blocks = [
+  public readonly blocks = [
     {
       tag: 'group',
       floatingMenu: floatingMenuStandardButtons,
     },
   ]
 
-  public static tools = [
+  public readonly tools = [
     {
       name: 'select',
       buttonTag: 'ic-select-tool',

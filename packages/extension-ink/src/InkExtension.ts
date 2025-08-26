@@ -12,7 +12,7 @@ import { Stroke } from './components'
 import * as sys from './systems'
 
 class InkExtensionClass extends BaseExtension {
-  public static blocks = [
+  public readonly blocks = [
     {
       tag: 'ic-ink-stroke',
       resizeMode: 'free' as const,
@@ -21,7 +21,7 @@ class InkExtensionClass extends BaseExtension {
     },
   ]
 
-  public static tools = [
+  public readonly tools = [
     {
       name: 'ink',
       buttonTag: 'ic-ink-tool',
@@ -29,7 +29,7 @@ class InkExtensionClass extends BaseExtension {
     },
   ]
 
-  public static dependsOn = ['ColorExtension']
+  public readonly dependsOn = ['ColorExtension']
 
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Stroke)

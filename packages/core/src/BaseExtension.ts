@@ -4,11 +4,11 @@ import type { State } from './State'
 import type { BaseResources, BlockDefInput, CommandArgs, ICommands, IStore, SendCommandFn, ToolDefInput } from './types'
 
 export class BaseExtension {
-  public static blocks: BlockDefInput[] = []
+  public readonly blocks: BlockDefInput[] = []
 
-  public static tools: ToolDefInput[] = []
+  public readonly tools: ToolDefInput[] = []
 
-  public static dependsOn = Array<string>()
+  public readonly dependsOn = Array<string>()
 
   // public static toolbarButtons: ToolbarButtonInput[] = []
 
@@ -77,7 +77,7 @@ export class BaseExtension {
   }
 
   public checkDependencies(dependencies: BaseExtension[]): void {
-    for (const dep of (this.constructor as typeof BaseExtension).dependsOn) {
+    for (const dep of this.dependsOn) {
       if (!dependencies.some((d) => d.constructor.name.startsWith(dep))) {
         console.warn(`Missing dependency for ${this.constructor.name}: ${dep}`)
       }

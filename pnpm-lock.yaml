@@ -160,6 +160,25 @@ importers:
         specifier: ^4.0.17
         version: 4.0.17
 
+  packages/extension-arrows:
+    dependencies:
+      '@infinitecanvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@infinitecanvas/extension-color':
+        specifier: workspace:^
+        version: link:../extension-color
+      '@infinitecanvas/extension-text':
+        specifier: workspace:^
+        version: link:../extension-text
+      lit:
+        specifier: ^3.3.0
+        version: 3.3.0
+    devDependencies:
+      vitest:
+        specifier: ^3.1.4
+        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
+
   packages/extension-color:
     dependencies:
       '@infinitecanvas/core':

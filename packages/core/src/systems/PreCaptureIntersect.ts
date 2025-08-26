@@ -4,17 +4,7 @@ import * as comps from '../components'
 import { computeAabb, intersectPoint } from '../helpers'
 
 export class PreCaptureIntersect extends BaseSystem {
-  private readonly mouse = this.singleton.read(comps.Mouse)
-
   private readonly intersects = this.query((q) => q.current.with(comps.Intersect).write)
-
-  private readonly pointers = this.query((q) => q.added.current.changed.removed.with(comps.Pointer).read.trackWrites)
-
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
-
-  private readonly controls = this.singleton.read(comps.Controls)
 
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 

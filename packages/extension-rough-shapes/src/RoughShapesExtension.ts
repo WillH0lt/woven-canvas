@@ -33,7 +33,7 @@ declare module '@infinitecanvas/core' {
 }
 
 class RoughShapesExtensionClass extends BaseExtension {
-  public static blocks = [
+  public readonly blocks = [
     {
       tag: 'ic-rough-shape',
       canEdit: true,
@@ -44,7 +44,7 @@ class RoughShapesExtensionClass extends BaseExtension {
     },
   ]
 
-  public static tools = [
+  public readonly tools = [
     {
       name: 'rough-shapes',
       buttonTag: 'ic-rough-shapes-tool',
@@ -52,7 +52,7 @@ class RoughShapesExtensionClass extends BaseExtension {
     },
   ]
 
-  public static dependsOn = ['ColorExtension', 'TextExtension']
+  public readonly dependsOn = ['ColorExtension', 'TextExtension']
 
   public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {

@@ -1,5 +1,4 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 import { assign, setup } from 'xstate'
 
@@ -7,14 +6,6 @@ import { StrokeState as StrokeStateComp } from '../components'
 import { InkCommand, type InkCommandArgs, StrokeState } from '../types'
 
 export class CaptureStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
-  private readonly pointers = this.query((q) => q.added.removed.current.changed.with(comps.Pointer).trackWrites)
-
-  private readonly controls = this.singleton.read(comps.Controls)
-
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
-
   private readonly strokeState = this.singleton.write(StrokeStateComp)
 
   private readonly strokeMachine = setup({
@@ -96,7 +87,7 @@ export class CaptureStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> 
   public execute(): void {
     const buttons = this.controls.getButtons('ink')
 
-    const events = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
+    const events = this.getPointerEvents(buttons)
 
     if (!events.length) return
 

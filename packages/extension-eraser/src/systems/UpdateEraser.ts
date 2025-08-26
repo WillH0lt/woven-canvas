@@ -100,8 +100,10 @@ export class UpdateEraser extends BaseSystem<EraserCommandArgs & CoreCommandArgs
   private cancelStroke(strokeEntity: Entity): void {
     const eraserStroke = strokeEntity.read(EraserStroke)
 
-    for (const erasedBlock of eraserStroke.erasedBlocks) {
+    const erasedBlocks = [...eraserStroke.erasedBlocks]
+    for (const erasedBlock of erasedBlocks) {
       this.unsetComponent(erasedBlock, Erased)
+      this.unsetComponent(erasedBlock, Opacity)
     }
 
     this.deleteEntity(strokeEntity)

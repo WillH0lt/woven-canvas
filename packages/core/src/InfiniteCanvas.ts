@@ -126,7 +126,7 @@ export class InfiniteCanvas {
     // Register block definitions from extensions and options
     const blockDefs: Record<string, BlockDef> = {}
     for (const ext of extensions) {
-      for (const blockDef of (ext.constructor as typeof BaseExtension).blocks) {
+      for (const blockDef of ext.blocks) {
         blockDefs[blockDef.tag] = BlockDef.parse(blockDef)
       }
     }
@@ -144,7 +144,7 @@ export class InfiniteCanvas {
     // register tool definitions
     const tools: Record<string, ToolDef> = {}
     for (const ext of extensions) {
-      for (const toolDef of (ext.constructor as typeof BaseExtension).tools) {
+      for (const toolDef of ext.tools) {
         tools[toolDef.name] = ToolDef.parse(toolDef)
       }
     }

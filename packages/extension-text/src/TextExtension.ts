@@ -48,7 +48,7 @@ declare module '@infinitecanvas/core' {
 export const alignments = [TextAlign.Left, TextAlign.Center, TextAlign.Right, TextAlign.Justify]
 
 class TextExtensionClass extends BaseExtension {
-  public static blocks = [
+  public readonly blocks = [
     {
       tag: 'ic-text',
       canEdit: true,
@@ -58,7 +58,7 @@ class TextExtensionClass extends BaseExtension {
     },
   ]
 
-  public static tools = [
+  public readonly tools = [
     {
       name: 'text',
       buttonTag: 'ic-text-tool',

@@ -1,19 +1,10 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
 import { assign, setup } from 'xstate'
 import { PanState as PanStateComp } from '../components'
 import { PanState } from '../types'
 import { CaptureZoom } from './CaptureZoom'
 
 export class CapturePan extends BaseSystem<CoreCommandArgs> {
-  private readonly pointers = this.query((q) => q.added.current.changed.removed.with(comps.Pointer).read.trackWrites)
-
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
-
-  private readonly controls = this.singleton.read(comps.Controls)
-
   private readonly panState = this.singleton.write(PanStateComp)
 
   private readonly panMachine = setup({
@@ -78,7 +69,7 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
   public execute(): void {
     const buttons = this.controls.getButtons('hand')
 
-    const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, buttons)
+    const pointerEvents = this.getPointerEvents(buttons)
 
     if (pointerEvents.length === 0) return
 

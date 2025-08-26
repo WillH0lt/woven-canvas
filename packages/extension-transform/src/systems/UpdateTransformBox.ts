@@ -54,8 +54,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     q.current.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
   )
 
-  private readonly camera = this.singleton.read(comps.Camera)
-
   public constructor() {
     super()
     this.schedule((s) => s.after(UpdateSelection))
@@ -572,8 +570,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     const dx = transformBoxBlock.left - boxStart.startLeft
     const dy = transformBoxBlock.top - boxStart.startTop
-
-    if (dx === 0 && dy === 0) return
 
     for (const selectedBlock of this.selectedBlocks.current) {
       const blockStart = selectedBlock.read(DragStart)

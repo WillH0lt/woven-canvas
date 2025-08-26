@@ -5,7 +5,7 @@ import { EraserStroke } from './components'
 import * as sys from './systems'
 
 class EraserExtensionClass extends BaseExtension {
-  public static blocks = [
+  public readonly blocks = [
     {
       tag: 'ic-eraser-stroke',
       resizeMode: 'free' as const,
@@ -14,7 +14,7 @@ class EraserExtensionClass extends BaseExtension {
     },
   ]
 
-  public static tools = [
+  public readonly tools = [
     {
       name: 'eraser',
       buttonTag: 'ic-eraser-tool',

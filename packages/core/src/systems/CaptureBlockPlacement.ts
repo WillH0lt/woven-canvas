@@ -1,21 +1,12 @@
-import * as comps from '@infinitecanvas/core/components'
 import { Block } from '@infinitecanvas/core/components'
 import { BaseSystem } from '../BaseSystem'
 import { CoreCommand, type CoreCommandArgs, PointerButton } from '../types'
 
 export class CaptureBlockPlacement extends BaseSystem<CoreCommandArgs> {
-  private readonly pointers = this.query((q) => q.added.current.changed.removed.with(comps.Pointer).read.trackWrites)
-
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
-
-  private readonly controls = this.singleton.read(comps.Controls)
-
   public execute(): void {
     if (!this.controls.heldSnapshot) return
 
-    const pointerEvents = this.getPointerEvents(this.pointers, this.camera, this.intersect, [PointerButton.Left])
+    const pointerEvents = this.getPointerEvents([PointerButton.Left])
     if (pointerEvents.length === 0) return
 
     const pointerUpEvent = pointerEvents.find((e) => e.type === 'pointerUp')

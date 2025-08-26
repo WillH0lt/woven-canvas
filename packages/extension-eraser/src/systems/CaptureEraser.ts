@@ -12,14 +12,6 @@ type FrameEvent = {
 }
 
 export class CaptureEraser extends BaseSystem<EraserCommandArgs & CoreCommandArgs> {
-  private readonly pointers = this.query((q) => q.added.removed.current.changed.with(comps.Pointer).trackWrites)
-
-  private readonly controls = this.singleton.read(comps.Controls)
-
-  private readonly camera = this.singleton.read(comps.Camera)
-
-  private readonly intersect = this.singleton.read(comps.Intersect)
-
   private readonly eraserState = this.singleton.write(EraserStateComp)
 
   private readonly eraserMachine = setup({
@@ -101,12 +93,7 @@ export class CaptureEraser extends BaseSystem<EraserCommandArgs & CoreCommandArg
   public execute(): void {
     const buttons = this.controls.getButtons('eraser')
 
-    const events: (PointerEvent | FrameEvent)[] = this.getPointerEvents(
-      this.pointers,
-      this.camera,
-      this.intersect,
-      buttons,
-    )
+    const events: (PointerEvent | FrameEvent)[] = this.getPointerEvents(buttons)
 
     // to get the nice trail effect we need to add a stroke point each frame,
     // we do this with a 'frame' event using the current pointer position
