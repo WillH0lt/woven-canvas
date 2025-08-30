@@ -14,7 +14,7 @@ import { UpdateCursor } from './UpdateCursor'
 export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   private readonly rankBounds = this.singleton.write(comps.RankBounds)
 
-  private readonly persistentBlocks = this.query((q) => q.added.with(comps.Block, comps.Persistent))
+  private readonly persistentBlocks = this.query((q) => q.added.current.with(comps.Block, comps.Persistent))
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
 
@@ -43,6 +43,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     this.addCommandListener(CoreCommand.SelectBlock, this.selectBlock.bind(this))
     this.addCommandListener(CoreCommand.DeselectBlock, this.deselectBlock.bind(this))
     this.addCommandListener(CoreCommand.DeselectAll, this.deselectAll.bind(this))
+    this.addCommandListener(CoreCommand.SelectAll, this.selectAll.bind(this))
 
     // this.addCommandListener(CoreCommand.Undo, this.deselectAll.bind(this))
     // this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))
@@ -262,5 +263,13 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     if (blockEntity.read(comps.Selected).selectedBy !== this.resources.uid) return
 
     blockEntity.remove(comps.Selected)
+  }
+
+  private selectAll(): void {
+    for (const blockEntity of this.persistentBlocks.current) {
+      if (!blockEntity.has(comps.Selected)) {
+        blockEntity.add(comps.Selected, { selectedBy: this.resources.uid })
+      }
+    }
   }
 }

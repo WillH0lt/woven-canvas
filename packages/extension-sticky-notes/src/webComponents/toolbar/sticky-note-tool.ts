@@ -1,7 +1,7 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { Block } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
-import { getSnapshot } from '@infinitecanvas/core/helpers'
+import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { Color } from '@infinitecanvas/extension-color'
 import { Text, VerticalAlign } from '@infinitecanvas/extension-text'
 import { html } from 'lit'
@@ -38,7 +38,7 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
       constrainWidth: true,
     })
 
-    const snapshot = getSnapshot(block, [text, color])
+    const snapshot = createSnapshot(block, [text, color])
 
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'sticky-note',

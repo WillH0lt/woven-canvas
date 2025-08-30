@@ -37,12 +37,22 @@ export class PreCaptureIntersect extends BaseSystem {
     // update intersected entity
     if (this.mouse.moveTrigger || this.blocks.addedOrChanged.length > 0 || this.cameras.changed.length > 0) {
       const point = this.camera.toWorld(this.mouse.position)
-      const intersectedEntity = intersectPoint(point, this.blocks.current)
-      if (this.intersectedHasChanged(intersectedEntity)) {
-        const writeableIntersect = this.intersects.current[0].write(comps.Intersect)
-        writeableIntersect.entity = intersectedEntity
+      const intersected: (Entity | undefined)[] = intersectPoint(point, this.blocks.current)
 
-        this.setHoveredEntity(intersectedEntity)
+      // make intersected 5 entries, if it's less make the extra undefined
+      while (intersected.length < 5) {
+        intersected.push(undefined)
+      }
+
+      if (this.intersectedHasChanged(intersected)) {
+        const writeableIntersect = this.intersects.current[0].write(comps.Intersect)
+        writeableIntersect.entity = intersected[0]
+        writeableIntersect.entity2 = intersected[1]
+        writeableIntersect.entity3 = intersected[2]
+        writeableIntersect.entity4 = intersected[3]
+        writeableIntersect.entity5 = intersected[4]
+
+        this.setHoveredEntity(intersected[0])
       }
     }
 
@@ -53,24 +63,28 @@ export class PreCaptureIntersect extends BaseSystem {
     }
   }
 
-  private intersectedHasChanged(newIntersected: Entity | undefined): boolean {
-    let currIntersect = null
-    if (this.intersects.current.length > 0) {
-      currIntersect = this.intersects.current[0].read(comps.Intersect).entity
-    }
+  private intersectedHasChanged(newIntersected: (Entity | undefined)[]): boolean {
+    const hasChanged = (currEntity: Entity | undefined, newEntity: Entity | undefined) =>
+      !!(
+        (!currEntity && newEntity) ||
+        (currEntity && !newEntity) ||
+        (currEntity && newEntity && !currEntity.isSame(newEntity))
+      )
 
-    return !!(
-      (!currIntersect && newIntersected) ||
-      (currIntersect && !newIntersected) ||
-      (currIntersect && newIntersected && !currIntersect.isSame(newIntersected))
-    )
+    const changed =
+      hasChanged(this.intersect.entity, newIntersected[0]) ||
+      hasChanged(this.intersect.entity2, newIntersected[1]) ||
+      hasChanged(this.intersect.entity3, newIntersected[2]) ||
+      hasChanged(this.intersect.entity4, newIntersected[3]) ||
+      hasChanged(this.intersect.entity5, newIntersected[4])
+
+    return changed
   }
 
   private setHoveredEntity(entity: Entity | undefined): void {
     for (const hovered of this.hovered.current) {
       if (hovered.has(comps.Hovered)) hovered.remove(comps.Hovered)
     }
-    // entity?.has(comps.Persistent) &&
     if (entity && this.controls.leftMouseTool === 'select') {
       if (!entity.has(comps.Hovered)) entity.add(comps.Hovered)
     }

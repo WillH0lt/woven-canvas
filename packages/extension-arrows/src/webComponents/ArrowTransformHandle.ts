@@ -1,8 +1,8 @@
 import { LitElement, css, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-@customElement('ic-transform-box-handle')
-export class TransformBoxHandleElement extends LitElement {
+@customElement('ic-arrow-transform-handle')
+export class ArrowTransformHandleElement extends LitElement {
   static styles = css`
     :host {
       position: relative;
@@ -15,10 +15,6 @@ export class TransformBoxHandleElement extends LitElement {
       box-sizing: border-box;
       width: 100%;
       height: 100%;
-      transition-property: background-color;
-      transition-timing-function: var(--ic-transition-timing-function);
-      transition-duration: var(--ic-transition-duration);
-      pointer-events: auto; /* keep drag/resize interactivity */
     }
 
     /*
@@ -33,13 +29,16 @@ export class TransformBoxHandleElement extends LitElement {
       top: 50%;
       width: calc(100% * var(--ic-zoom));
       height: calc(100% * var(--ic-zoom));
+      border-radius: 50%;
       box-sizing: border-box;
       border: 2px solid var(--ic-primary);
-      border-radius: 2px;
       background-color: var(--ic-gray-100);
       transform: translate(-50%, -50%) scale(calc(1 / var(--ic-zoom)));
       transform-origin: center center;
-      pointer-events: none;
+      transition-property: background-color;
+      transition-timing-function: var(--ic-transition-timing-function);
+      transition-duration: var(--ic-transition-duration);
+      pointer-events: auto; /* keep drag/resize interactivity */
     }
 
     div:hover::before {
@@ -56,6 +55,6 @@ export class TransformBoxHandleElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-transform-box-handle': TransformBoxHandleElement
+    'ic-arrow-transform-handle': ArrowTransformHandleElement
   }
 }

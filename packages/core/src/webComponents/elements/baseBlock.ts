@@ -51,8 +51,8 @@ export class ICBaseBlock extends LitElement {
         radius    = border-radius / zoom
       Pre-scale we use the raw custom property values and add 2*offset to width/height.
     */
-    :host([is-hovered="true"]) > :first-child::after,
-    :host([is-selected="true"]) > :first-child::after {
+    :host([is-hovered]) > :first-child::after,
+    :host([is-selected]) > :first-child::after {
       content: '';
       position: absolute;
       left: 50%;

@@ -1,9 +1,8 @@
-import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
-import { css, html } from 'lit'
+import { LitElement, css, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 @customElement('ic-transform-box')
-export class TransformBoxElement extends ICBaseMenuButton {
+export class TransformBoxElement extends LitElement {
   static styles = css`
     :host {
       position: relative;

@@ -26,7 +26,7 @@ export class PostUpdateTextResize extends BaseSystem {
 
       const blockDef = this.getBlockDef(block.tag)
 
-      if (blockDef?.resizeMode === 'free') continue
+      if (!['scale', 'text'].includes(blockDef?.resizeMode ?? '')) continue
 
       const textDragStart = textEntity.read(TextDragStart)
 

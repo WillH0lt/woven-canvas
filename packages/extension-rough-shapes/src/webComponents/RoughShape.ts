@@ -61,8 +61,8 @@ export class ICRoughShape extends ICEditableBlock {
         box-sizing: border-box;
       }
 
-      :host([is-hovered="true"]) > :first-child::after,
-      :host([is-selected="true"]) > :first-child::after {
+      :host([is-hovered]) > :first-child::after,
+      :host([is-selected]) > :first-child::after {
         border: none;
       }
 
@@ -143,6 +143,8 @@ export class ICRoughShape extends ICEditableBlock {
 
   private roughShapeSvg(width: number, height: number): unknown {
     const { strokeInfo, fillInfo, highlightInfo } = this.getPathInfo(width, height)
+
+    console.log(strokeInfo)
 
     return html`
       <svg

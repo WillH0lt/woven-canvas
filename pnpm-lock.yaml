@@ -71,6 +71,9 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../../packages/core
+      '@infinitecanvas/extension-arrows':
+        specifier: workspace:^
+        version: link:../../packages/extension-arrows
       '@infinitecanvas/extension-color':
         specifier: workspace:^
         version: link:../../packages/extension-color
@@ -171,9 +174,18 @@ importers:
       '@infinitecanvas/extension-text':
         specifier: workspace:^
         version: link:../extension-text
+      '@lastolivegames/becsy':
+        specifier: ^0.15.5
+        version: 0.15.5
+      lexorank:
+        specifier: ^1.0.5
+        version: 1.0.5
       lit:
         specifier: ^3.3.0
         version: 3.3.0
+      xstate:
+        specifier: ^5.19.4
+        version: 5.19.4
     devDependencies:
       vitest:
         specifier: ^3.1.4

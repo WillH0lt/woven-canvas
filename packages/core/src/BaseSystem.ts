@@ -63,7 +63,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     }
   }
 
-  protected setComponent<C>(entity: Entity, component: ComponentType<C>, args: Partial<C>): void {
+  protected setComponent<C>(entity: Entity, component: ComponentType<C>, args: Partial<C> = {}): void {
     if (!entity.has(component)) {
       entity.add(component, args)
     } else {
@@ -165,7 +165,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
   protected getPointerEvents(buttons: PointerButton[]): PointerEvent[] {
     if (buttons.length === 0) return []
 
-    const events: PointerEvent[] = []
+    const events: Partial<PointerEvent>[] = []
 
     if (this.pointers.removed.length > 0) {
       this.accessRecentlyDeletedData(true)
@@ -183,22 +183,22 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
 
     if (added.length > 0 && current.length === 1) {
       const pointer = current[0].read(comps.Pointer)
+      const p = [pointer.downPosition[0], pointer.downPosition[1]] as [number, number]
       events.push({
         type: 'pointerDown',
-        clientPosition: pointer.downPosition,
-        worldPosition: this.camera.toWorld(pointer.downPosition),
-        blockEntity: this.intersect.entity || null,
+        clientPosition: p,
+        worldPosition: this.camera.toWorld(p),
       })
     }
 
     // cancel the action if the pointer is down, and we push another pointer down.
     if (current.length >= 1 && this.pointers.added.length > 0 && this.pointers.current.length > 1) {
       const pointer = current[0].read(comps.Pointer)
+      const p = [pointer.position[0], pointer.position[1]] as [number, number]
       events.push({
         type: 'cancel',
-        clientPosition: pointer.position,
-        worldPosition: this.camera.toWorld(pointer.position),
-        blockEntity: this.intersect.entity || null,
+        clientPosition: p,
+        worldPosition: this.camera.toWorld(p),
       })
     }
 
@@ -206,21 +206,21 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     // is down it should cancel the current action
     if (current.length >= 1 && this.keyboard.escapeDownTrigger) {
       const pointer = current[0].read(comps.Pointer)
+      const p = [pointer.position[0], pointer.position[1]] as [number, number]
       events.push({
         type: 'cancel',
-        clientPosition: pointer.position,
-        worldPosition: this.camera.toWorld(pointer.position),
-        blockEntity: this.intersect.entity || null,
+        clientPosition: p,
+        worldPosition: this.camera.toWorld(p),
       })
     }
 
     if (removed.length > 0 && current.length === 0) {
       const pointer = removed[0].read(comps.Pointer)
+      const p = [pointer.position[0], pointer.position[1]] as [number, number]
       events.push({
         type: 'pointerUp',
-        clientPosition: pointer.position,
-        worldPosition: this.camera.toWorld(pointer.position),
-        blockEntity: this.intersect.entity || null,
+        clientPosition: p,
+        worldPosition: this.camera.toWorld(p),
       })
 
       const dist = distance(pointer.downPosition, pointer.position)
@@ -228,50 +228,53 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       if (dist < CLICK_MOVE_THRESHOLD && deltaFrame < CLICK_FRAME_THRESHOLD) {
         events.push({
           type: 'click',
-          clientPosition: pointer.position,
-          worldPosition: this.camera.toWorld(pointer.position),
-          blockEntity: this.intersect.entity || null,
+          clientPosition: p,
+          worldPosition: this.camera.toWorld(p),
         })
       }
     }
 
     if (changed.length > 0 && current.length === 1) {
       const pointer = current[0].read(comps.Pointer)
+      const p = [pointer.position[0], pointer.position[1]] as [number, number]
       events.push({
         type: 'pointerMove',
-        clientPosition: pointer.position,
-        worldPosition: this.camera.toWorld(pointer.position),
-        blockEntity: this.intersect.entity || null,
+        clientPosition: p,
+        worldPosition: this.camera.toWorld(p),
       })
     }
 
-    return events
+    for (const event of events) {
+      event.intersects = [
+        this.intersect.entity,
+        this.intersect.entity2,
+        this.intersect.entity3,
+        this.intersect.entity4,
+        this.intersect.entity5,
+      ]
+    }
+
+    return events as PointerEvent[]
   }
 
-  protected getMouseEvents(
-    mouse: Readonly<comps.Mouse>,
-    camera: Readonly<comps.Camera>,
-    intersect: Readonly<comps.Intersect>,
-  ): MouseEvent[] {
+  protected getMouseEvents(): MouseEvent[] {
     const events = []
 
-    if (mouse.wheelTrigger) {
+    if (this.mouse.wheelTrigger) {
       events.push({
         type: 'wheel' as const,
-        wheelDelta: mouse.wheelDelta,
-        worldPosition: camera.toWorld(mouse.position),
-        clientPosition: mouse.position,
-        blockEntity: intersect.entity || null,
+        wheelDelta: this.mouse.wheelDelta,
+        worldPosition: this.camera.toWorld(this.mouse.position),
+        clientPosition: this.mouse.position,
       })
     }
 
-    if (mouse.moveTrigger) {
+    if (this.mouse.moveTrigger) {
       events.push({
         type: 'mouseMove' as const,
-        wheelDelta: mouse.wheelDelta,
-        worldPosition: camera.toWorld(mouse.position),
-        clientPosition: mouse.position,
-        blockEntity: intersect.entity || null,
+        wheelDelta: this.mouse.wheelDelta,
+        worldPosition: this.camera.toWorld(this.mouse.position),
+        clientPosition: this.mouse.position,
       })
     }
 

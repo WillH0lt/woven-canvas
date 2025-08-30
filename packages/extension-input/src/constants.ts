@@ -36,4 +36,9 @@ export const defaultKeybinds = [
     command: CoreCommand.RemoveSelected,
     key: 'delete',
   },
+  {
+    command: CoreCommand.SelectAll,
+    key: 'a',
+    mod: true,
+  },
 ]

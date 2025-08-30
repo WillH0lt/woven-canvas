@@ -1,7 +1,7 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { Block } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
-import { getSnapshot } from '@infinitecanvas/core/helpers'
+import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
@@ -31,7 +31,7 @@ export class ICTextTool extends ICToolbarIconButton {
       lineHeight: 1.2,
     })
 
-    const snapshot = getSnapshot(block, [text])
+    const snapshot = createSnapshot(block, [text])
 
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'text',

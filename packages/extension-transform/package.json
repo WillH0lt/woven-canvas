@@ -43,12 +43,6 @@
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
-    "@lit-labs/preact-signals": "^1.0.3",
-    "@tiptap/core": "^3.0.1",
-    "@tiptap/extension-document": "^3.0.1",
-    "@tiptap/extension-history": "^3.0.1",
-    "@tiptap/extension-paragraph": "^3.0.1",
-    "@tiptap/extension-text": "^3.0.1",
     "lexorank": "^1.0.5",
     "lit": "^3.3.0",
     "xstate": "^5.19.4",

@@ -2,6 +2,7 @@ import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
 import { InfiniteCanvas } from '@infinitecanvas/core'
+import { ArrowsExtension } from '@infinitecanvas/extension-arrows'
 import { ColorExtension } from '@infinitecanvas/extension-color'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { EraserExtension } from '@infinitecanvas/extension-eraser'
@@ -49,10 +50,11 @@ async function initializeCanvas(container: HTMLDivElement) {
 
   infiniteCanvas = await InfiniteCanvas.New({
     extensions: [
+      TextExtension,
+      ArrowsExtension,
       InputExtension,
       ControlsExtension,
       TransformExtension,
-      TextExtension,
       ColorExtension,
       StickyNotesExtension,
       RoughShapesExtension,

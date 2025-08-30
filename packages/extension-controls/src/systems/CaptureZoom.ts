@@ -14,7 +14,7 @@ export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
     const active = this.controls.wheelActive('zoom', this.keyboard.modDown)
     if (!active) return
 
-    const events = this.getMouseEvents(this.mouse, this.camera, this.intersect)
+    const events = this.getMouseEvents()
     const wheelEvent = events.find((e) => e.type === 'wheel')
     if (!wheelEvent) return
 

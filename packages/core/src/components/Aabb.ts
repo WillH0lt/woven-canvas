@@ -24,6 +24,25 @@ export class Aabb extends BaseComponent {
     return this
   }
 
+  public setByPoints(points: [number, number][]): this {
+    if (points.length === 0) return this
+    const pt = points[0]
+    this.left = pt[0]
+    this.right = pt[0]
+    this.top = pt[1]
+    this.bottom = pt[1]
+
+    for (let i = 1; i < points.length; i++) {
+      this.expandByPoint(points[i])
+    }
+
+    return this
+  }
+
+  public getCenter(): [number, number] {
+    return [(this.left + this.right) / 2, (this.top + this.bottom) / 2]
+  }
+
   public intersectsAabb(other: Aabb): boolean {
     return !(this.right < other.left || this.left > other.right || this.bottom < other.top || this.top > other.bottom)
   }

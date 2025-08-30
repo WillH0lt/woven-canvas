@@ -61,7 +61,7 @@ export type CoreResources = BaseResources &
 export const BlockDef = z.object({
   tag: z.string(),
   canEdit: z.boolean().default(false),
-  resizeMode: z.enum(['scale', 'text', 'free']).default('scale'),
+  resizeMode: z.enum(['scale', 'text', 'free', 'groupOnly']).default('scale'),
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
   floatingMenu: z
     .array(FloatingMenuButton)
@@ -190,6 +190,7 @@ export enum CoreCommand {
   SelectBlock = 'coreSelectBlock',
   DeselectBlock = 'coreDeselectBlock',
   DeselectAll = 'coreDeselectAll',
+  SelectAll = 'coreSelectAll',
 }
 
 export type CoreCommandArgs = {
@@ -234,13 +235,14 @@ export type CoreCommandArgs = {
   ]
   [CoreCommand.DeselectBlock]: [Entity]
   [CoreCommand.DeselectAll]: []
+  [CoreCommand.SelectAll]: []
 }
 
 export type PointerEvent = {
   type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'click' | 'cancel'
   worldPosition: [number, number]
   clientPosition: [number, number]
-  blockEntity: Entity | null
+  intersects: [Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined]
 }
 
 export type MouseEvent = {
@@ -248,7 +250,6 @@ export type MouseEvent = {
   wheelDelta: number
   worldPosition: [number, number]
   clientPosition: [number, number]
-  blockEntity: Entity | null
 }
 
 export type Transform = [number, number, number, number, number, number]

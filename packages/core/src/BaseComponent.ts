@@ -15,8 +15,26 @@ export abstract class BaseComponent {
     const schema = this.getSchema()
     for (const key in schema) {
       const type = schema[key].type.constructor.name
-      if (type === 'BackrefsType') continue
-      if (Object.hasOwn(schema, key)) {
+
+      if (!Object.hasOwn(schema, key)) continue
+
+      if (type === 'VectorType') {
+        // working around becsy's vector binding behavior
+        // @ts-ignore
+        if (this[key]) {
+          // @ts-ignore
+          const vec = this[key]
+          const clone = new Array(vec.length)
+          for (let i = 0; i < vec.length; i++) {
+            clone[i] = vec[i]
+          }
+          data[key] = clone
+        } else {
+          data[key] = schema[key].default ?? schema[key].type.default
+        }
+      } else if (type === 'BackrefsType') {
+        // no-op
+      } else {
         // @ts-ignore
         data[key] = this[key] ?? schema[key].default ?? schema[key].type.default
       }

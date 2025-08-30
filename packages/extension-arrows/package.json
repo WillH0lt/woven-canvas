@@ -44,7 +44,10 @@
     "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/extension-color": "workspace:^",
     "@infinitecanvas/extension-text": "workspace:^",
-    "lit": "^3.3.0"
+    "@lastolivegames/becsy": "^0.15.5",
+    "lexorank": "^1.0.5",
+    "lit": "^3.3.0",
+    "xstate": "^5.19.4"
   },
   "devDependencies": {
     "vitest": "^3.1.4"

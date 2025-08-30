@@ -1,7 +1,7 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { Block } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
-import { getSnapshot } from '@infinitecanvas/core/helpers'
+import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { Text, VerticalAlign } from '@infinitecanvas/extension-text'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -42,7 +42,7 @@ export class ICRoughShapesTool extends ICToolbarIconButton {
       roughness: 0,
     })
 
-    const snapshot = getSnapshot(block, [text, shape])
+    const snapshot = createSnapshot(block, [text, shape])
 
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'rough-shapes',

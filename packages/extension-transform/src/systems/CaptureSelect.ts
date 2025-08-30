@@ -25,7 +25,7 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
         pointingStartWorld: [number, number]
         dragStart: [number, number]
         draggedEntityStart: [number, number]
-        draggedEntity: Entity | null
+        draggedEntity: Entity | undefined
       },
       events: {} as PointerEvent,
     },
@@ -35,9 +35,20 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
         return dist >= POINTING_THRESHOLD
       },
       isOverBlock: ({ event }) => {
-        if (event.blockEntity === null) return false
+        if (event.intersects[0] === undefined) return false
+        return event.intersects[0].alive
+      },
+      isOverPersistentBlock: ({ event }) => {
+        let intersect: Entity | undefined
+        for (const entity of event.intersects) {
+          if (entity?.has(comps.Persistent)) {
+            intersect = entity
+            break
+          }
+        }
 
-        return event.blockEntity.alive
+        if (!intersect) return false
+        return intersect.has(comps.Persistent) && intersect.alive
       },
       draggedEntityIsLocked: ({ context }) => {
         if (!context.draggedEntity) return false
@@ -63,10 +74,10 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
         })
       },
       setDraggedEntity: assign({
-        draggedEntity: ({ event }) => event.blockEntity,
+        draggedEntity: ({ event }) => event.intersects[0],
         draggedEntityStart: ({ event }): [number, number] => {
-          if (!event.blockEntity) return [0, 0]
-          const block = event.blockEntity.read(comps.Block)
+          if (!event.intersects[0]) return [0, 0]
+          const block = event.intersects[0].read(comps.Block)
           return [block.left, block.top] as [number, number]
         },
       }),
@@ -82,7 +93,7 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
         pointingStartClient: [0, 0],
         pointingStartWorld: [0, 0],
         draggedEntityStart: [0, 0],
-        draggedEntity: null,
+        draggedEntity: undefined,
       }),
       createSelectionBox: () => {
         this.emitCommand(TransformCommand.AddSelectionBox)
@@ -108,6 +119,18 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
           height: Math.abs(context.pointingStartWorld[1] - event.worldPosition[1]),
         })
       },
+      selectIntersect: ({ event }) => {
+        let intersect: Entity | undefined
+        for (const entity of event.intersects) {
+          if (entity?.has(comps.Persistent)) {
+            intersect = entity
+            break
+          }
+        }
+
+        if (!intersect) return
+        this.emitCommand(CoreCommand.SelectBlock, intersect, { deselectOthers: true })
+      },
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
         if (!context.draggedEntity.has(comps.Persistent)) return
@@ -125,7 +148,7 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
       pointingStartClient: [0, 0],
       pointingStartWorld: [0, 0],
       draggedEntityStart: [0, 0],
-      draggedEntity: null,
+      draggedEntity: undefined,
     },
     states: {
       [SelectionState.Idle]: {
@@ -150,10 +173,17 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
             guard: and(['isThresholdReached', not('draggedEntityIsLocked')]),
             target: SelectionState.Dragging,
           },
-          pointerUp: {
-            actions: 'selectDragged',
-            target: SelectionState.Idle,
-          },
+          pointerUp: [
+            {
+              guard: 'isOverPersistentBlock',
+              actions: 'selectIntersect',
+              target: SelectionState.Idle,
+            },
+            {
+              actions: 'deselectAll',
+              target: SelectionState.Idle,
+            },
+          ],
           cancel: {
             target: SelectionState.Idle,
           },

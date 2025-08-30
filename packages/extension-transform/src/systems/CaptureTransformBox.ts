@@ -25,7 +25,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureSelect))
+    this.schedule((s) => s.after(CaptureSelect))
   }
 
   private readonly transformBoxMachine = setup({
@@ -33,7 +33,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
       events: {} as SelectionEvent,
     },
     guards: {
-      isSelectingEditable: () => {
+      isSelectionEditable: () => {
         const selectedEntities = this.selectedBlocks.current.filter(
           (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
         )
@@ -45,14 +45,30 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
         return blockDef?.canEdit ?? false
       },
       isOverTransformBox: ({ event }) => {
-        if (!('blockEntity' in event)) return false
-        if (!event.blockEntity?.has(transformComps.TransformBox)) return false
+        if (!('intersects' in event)) return false
+        const intersect = event.intersects[0]
+        if (!intersect?.has(transformComps.TransformBox)) return false
 
         return true
       },
       isOverTransformHandle: ({ event }) => {
-        if (!('blockEntity' in event)) return false
-        if (!event.blockEntity?.has(transformComps.TransformHandle)) return false
+        if (!('intersects' in event)) return false
+        const intersect = event.intersects[0]
+        if (!intersect?.has(transformComps.TransformHandle)) return false
+
+        return true
+      },
+      selectionIsTransformable: ({ event }) => {
+        if (!('selectedEntities' in event)) return false
+        if (event.selectedEntities.length > 1) return true
+        if (event.selectedEntities.length === 0) return false
+
+        const entity = event.selectedEntities[0]
+        const block = entity.read(comps.Block)
+        const blockDef = this.getBlockDef(block.tag)
+        if (blockDef?.resizeMode === 'groupOnly') {
+          return false
+        }
 
         return true
       },
@@ -89,7 +105,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
         on: {
           selectionChanged: [
             {
-              guard: ({ event }) => event.selectedEntities.length > 0,
+              guard: 'selectionIsTransformable',
               target: TransformBoxState.Idle,
             },
           ],
@@ -100,11 +116,10 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
         on: {
           selectionChanged: [
             {
-              guard: ({ event }) => event.selectedEntities.length === 0,
+              guard: not('selectionIsTransformable'),
               target: TransformBoxState.None,
             },
             {
-              guard: ({ event }) => event.selectedEntities.length > 0,
               actions: 'updateTransformBox',
             },
           ],
@@ -115,7 +130,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
             actions: 'showTransformBox',
           },
           click: {
-            guard: and(['isOverTransformBox', 'isSelectingEditable']),
+            guard: and(['isOverTransformBox', 'isSelectionEditable']),
             target: TransformBoxState.Editing,
           },
         },

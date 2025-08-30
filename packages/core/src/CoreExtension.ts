@@ -11,7 +11,7 @@ import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
 import { Block, Controls, Hovered, Persistent, Selected } from './components'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
-import { getSnapshot } from './helpers'
+import { createSnapshot } from './helpers'
 import * as sys from './systems'
 import {
   type BaseResources,
@@ -182,7 +182,7 @@ export class CoreExtension extends BaseExtension {
           })
         },
         addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => {
-          const snapshot = getSnapshot(new Block(block), components)
+          const snapshot = createSnapshot(new Block(block), components)
           send(CoreCommand.CreateFromSnapshot, snapshot)
         },
         setControls: (controls: Partial<ControlsData>) => send(CoreCommand.SetControls, controls),

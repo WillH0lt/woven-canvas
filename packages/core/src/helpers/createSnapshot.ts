@@ -2,7 +2,7 @@ import type { BaseComponent } from '../BaseComponent'
 import type { Snapshot } from '../History'
 import type { Block } from '../components'
 
-export function getSnapshot(block: Block, components: BaseComponent[]): Snapshot {
+export function createSnapshot(block: Block, components: BaseComponent[]): Snapshot {
   if (!block.id) {
     block.id = crypto.randomUUID()
   }

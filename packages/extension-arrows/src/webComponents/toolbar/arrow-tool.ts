@@ -1,14 +1,11 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { Block } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
-import { getSnapshot } from '@infinitecanvas/core/helpers'
-import { Color } from '@infinitecanvas/extension-color'
-import { Text, VerticalAlign } from '@infinitecanvas/extension-text'
+import {} from '@infinitecanvas/extension-text'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-@customElement('ic-sticky-note-tool')
-export class ICStickyNoteTool extends ICToolbarIconButton {
+@customElement('ic-arrow-tool')
+export class ICArrowTool extends ICToolbarIconButton {
   protected icon = html`
     <?xml version="1.0" encoding="UTF-8" standalone="no"?>
     <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
@@ -20,35 +17,35 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
   `
 
   protected onClick() {
-    const block = new Block({
-      tag: 'ic-sticky-note',
-      width: 300,
-      height: 300,
-    })
+    // const block = new Block({
+    //   tag: 'ic-arrow',
+    //   width: 300,
+    //   height: 300,
+    // })
 
-    const color = new Color({
-      red: Math.floor(Math.random() * 256),
-      green: Math.floor(Math.random() * 256),
-      blue: Math.floor(Math.random() * 256),
-    })
+    // const color = new Color({
+    //   red: Math.floor(Math.random() * 256),
+    //   green: Math.floor(Math.random() * 256),
+    //   blue: Math.floor(Math.random() * 256),
+    // })
 
-    const text = new Text({
-      fontSize: 40,
-      verticalAlign: VerticalAlign.Top,
-      constrainWidth: true,
-    })
+    // const text = new Text({
+    //   fontSize: 40,
+    //   verticalAlign: VerticalAlign.Top,
+    //   constrainWidth: true,
+    // })
 
-    const snapshot = getSnapshot(block, [text, color])
+    // const snapshot = createSnapshot(block, [text, color])
 
     InfiniteCanvas.instance?.commands.core.setControls({
-      leftMouseTool: 'sticky-note',
-      heldSnapshot: JSON.stringify(snapshot),
+      leftMouseTool: 'arrow',
+      // heldSnapshot: JSON.stringify(snapshot),
     })
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-sticky-note-tool': ICStickyNoteTool
+    'ic-arrow-tool': ICArrowTool
   }
 }

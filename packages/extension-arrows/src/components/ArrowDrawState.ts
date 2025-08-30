@@ -1,12 +1,11 @@
+import { BaseComponent } from '@infinitecanvas/core'
 import { type Entity, component, field } from '@lastolivegames/becsy'
-import { SelectionState as State } from '../types'
+import { ArrowDrawState as State } from '../types'
 
 @component
-export class SelectionState {
+export class ArrowDrawState extends BaseComponent {
   @field.staticString(Object.values(State)) public declare state: State
-  @field.int32.vector(2) public declare dragStart: [number, number]
   @field.int32.vector(2) public declare pointingStartClient: [number, number]
   @field.int32.vector(2) public declare pointingStartWorld: [number, number]
-  @field.int32.vector(2) public declare draggedEntityStart: [number, number]
-  @field.ref public declare draggedEntity: Entity | undefined
+  @field.ref public declare activeArrow: Entity | null
 }

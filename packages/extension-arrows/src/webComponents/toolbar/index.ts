@@ -1,1 +1,1 @@
-export { ICStickyNoteTool } from './sticky-note-tool'
+export { ICArrowTool } from './arrow-tool'

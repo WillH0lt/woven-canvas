@@ -1,7 +1,12 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
-import { uuidToNumber } from '@infinitecanvas/core/helpers'
-import type { Entity } from '@lastolivegames/becsy'
+import {
+  newRotationMatrix,
+  newRotationMatrixAroundPoint,
+  transformPoint,
+  uuidToNumber,
+} from '@infinitecanvas/core/helpers'
+import { type Entity, co } from '@lastolivegames/becsy'
 import { DragStart, Locked, TransformBox, TransformHandle } from '../components'
 import {
   TRANSFORM_BOX_RANK,
@@ -9,7 +14,6 @@ import {
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
-import { computeExtentsAlongAngle, rotatePoint } from '../helpers'
 import {
   CursorKind,
   TransformCommand,
@@ -137,27 +141,21 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     // size the transform box to selected blocks
-    const extents = computeExtentsAlongAngle(selectedBlocks, rotateZ)
-
-    const left = extents.left
-    const top = extents.top
-    const width = extents.right - extents.left
-    const height = extents.bottom - extents.top
-
-    Object.assign(transformBoxEntity.write(comps.Block), {
-      left,
-      top,
-      width,
-      height,
-      rotateZ,
+    const corners = selectedBlocks.flatMap((e) => {
+      const block = e.read(comps.Block)
+      return block.getCorners()
     })
 
+    const boxBlock = transformBoxEntity.write(comps.Block)
+    boxBlock.rotateZ = rotateZ
+    boxBlock.boundPoints(corners)
+
     Object.assign(transformBoxEntity.write(DragStart), {
-      startLeft: left,
-      startTop: top,
-      startWidth: width,
-      startHeight: height,
-      startRotateZ: rotateZ,
+      startLeft: boxBlock.left,
+      startTop: boxBlock.top,
+      startWidth: boxBlock.width,
+      startHeight: boxBlock.height,
+      startRotateZ: boxBlock.rotateZ,
     })
 
     for (const blockEntity of selectedBlocks) {
@@ -303,6 +301,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       }
     }
 
+    const M = newRotationMatrixAroundPoint(rotateZ, center)
     for (const handle of handles) {
       let handleEntity: Entity | undefined
 
@@ -322,7 +321,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       }
 
       const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
-      const position = rotatePoint(handleCenter, center, rotateZ)
+      const position = transformPoint(M, handleCenter)
+      // const position = rotatePoint(handleCenter, center, rotateZ)
       const left = position[0] - handle.width / 2
       const top = position[1] - handle.height / 2
 
@@ -385,13 +385,22 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     boxOpacity.value = 0
   }
 
-  private showTransformBox(): void {
+  @co private *showTransformBox(): Generator {
     if (this.transformBoxes.current.length === 0) {
       console.warn('No transform box to show')
       return
     }
 
+    // waiting 1 frame - this is to prevent flickering that occurs when
+    // selection changes on the same frame as showTransformBox
+    yield
+
+    if (!this.transformBoxes.current[0]) return
+
     const transformBoxEntity = this.transformBoxes.current[0]
+
+    if (transformBoxEntity.has(Locked)) return
+
     const transformBox = transformBoxEntity.read(TransformBox)
     for (const handleEntity of transformBox.handles) {
       if (handleEntity.has(comps.Opacity)) {
@@ -505,7 +514,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     const oppositeHandleBlock = oppositeHandle.read(comps.Block)
     const oppositeCenter = oppositeHandleBlock.getCenter()
     let difference: [number, number] = [handleCenter[0] - oppositeCenter[0], handleCenter[1] - oppositeCenter[1]]
-    difference = rotatePoint(difference, [0, 0], -boxRotateZ)
+    const R0 = newRotationMatrix(-boxRotateZ)
+    difference = transformPoint(R0, difference) // rotatePoint(difference, [0, 0], -boxRotateZ)
 
     let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
     let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
@@ -529,7 +539,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
-    const rotatedVector = rotatePoint(vec, [0, 0], boxRotateZ)
+    const R1 = newRotationMatrix(boxRotateZ)
+    const rotatedVector = transformPoint(R1, vec) // rotatePoint(vec, [0, 0], boxRotateZ)
 
     const newBoxCenter = [oppositeCenter[0] + rotatedVector[0] / 2, oppositeCenter[1] + rotatedVector[1] / 2]
 
@@ -594,18 +605,14 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       }
     }
 
-    if (!transformBoxEntity.has(Locked)) {
-      transformBoxEntity.add(Locked)
-    }
+    this.setComponent(transformBoxEntity, Locked)
 
     const selectedBlocks = this.selectedBlocks.current.filter(
       (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
     )
 
     for (const blockEntity of selectedBlocks) {
-      if (!blockEntity.has(comps.Edited)) {
-        blockEntity.add(comps.Edited)
-      }
+      this.setComponent(blockEntity, comps.Edited)
     }
   }
 

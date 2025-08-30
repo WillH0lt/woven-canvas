@@ -1,9 +1,8 @@
-import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
-import { css, html } from 'lit'
+import { LitElement, css, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 @customElement('ic-selection-box')
-export class SelectionBoxElement extends ICBaseMenuButton {
+export class SelectionBoxElement extends LitElement {
   static styles = css`
     div {
       box-sizing: border-box;

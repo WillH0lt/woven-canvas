@@ -4,11 +4,11 @@ import { component, field } from '@lastolivegames/becsy'
 
 @component
 export class Keyboard {
-  // @field.boolean public declare aDown: boolean
+  @field.boolean public declare aDown: boolean
 
-  // @field.boolean public declare aDownTrigger: boolean
+  @field.boolean public declare aDownTrigger: boolean
 
-  // @field.boolean public declare aUpTrigger: boolean
+  @field.boolean public declare aUpTrigger: boolean
 
   // @field.boolean public declare bDown: boolean
 

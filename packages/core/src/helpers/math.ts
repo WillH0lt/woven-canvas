@@ -47,3 +47,12 @@ export function clamp(value: number, min: number, max: number) {
 
   return noNegativeZero(value)
 }
+
+export function newRotationMatrixAroundPoint(angle: number, point: [number, number]): Mat3 {
+  return multiplyMatrices(
+    newTranslationMatrix(point[0], point[1]),
+    multiplyMatrices(newRotationMatrix(angle), newTranslationMatrix(-point[0], -point[1])),
+  )
+
+  // return transformPoint(M, point)
+}

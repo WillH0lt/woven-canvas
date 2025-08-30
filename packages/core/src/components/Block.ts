@@ -1,8 +1,14 @@
 import { Type, field } from '@lastolivegames/becsy'
 
 import { BaseComponent } from '../BaseComponent'
-import { multiplyMatrices, newRotationMatrix, newTranslationMatrix, transformPoint } from '../helpers'
-import type { Aabb } from './Aabb'
+import {
+  multiplyMatrices,
+  newRotationMatrix,
+  newRotationMatrixAroundPoint,
+  newTranslationMatrix,
+  transformPoint,
+} from '../helpers'
+import { Aabb } from './Aabb'
 import type { HitCapsule } from './HitCapsule'
 
 export class Block extends BaseComponent {
@@ -119,6 +125,64 @@ export class Block extends BaseComponent {
 
   public intersectsCapsule(capsule: HitCapsule): boolean {
     return capsule.intersectsBlock(this)
+  }
+
+  public uvToWorld(uv: [number, number]): [number, number] {
+    const world: [number, number] = [this.left + uv[0] * this.width, this.top + uv[1] * this.height]
+
+    const center = this.getCenter()
+
+    const m = newRotationMatrixAroundPoint(this.rotateZ, center)
+    return transformPoint(m, world)
+  }
+
+  public worldToUv(world: [number, number]): [number, number] {
+    // rotate around center
+    const center = this.getCenter()
+
+    const m = newRotationMatrixAroundPoint(-this.rotateZ, center)
+    const p = transformPoint(m, world)
+
+    // Convert to UV coordinates
+    return [(p[0] - this.left) / this.width, (p[1] - this.top) / this.height]
+  }
+
+  // update left, top, width, height so that the block bounds the given points
+  public boundPoints(points: [number, number][]): void {
+    if (this.rotateZ === 0) {
+      const aabb = new Aabb().setByPoints(points)
+      this.left = aabb.left
+      this.top = aabb.top
+      this.width = aabb.right - aabb.left
+      this.height = aabb.bottom - aabb.top
+      return
+    }
+
+    let minX = Number.POSITIVE_INFINITY
+    let minY = Number.POSITIVE_INFINITY
+    let maxX = Number.NEGATIVE_INFINITY
+    let maxY = Number.NEGATIVE_INFINITY
+
+    const R0 = newRotationMatrix(-this.rotateZ)
+    for (const point of points) {
+      const p = transformPoint(R0, point)
+      minX = Math.min(minX, p[0])
+      minY = Math.min(minY, p[1])
+      maxX = Math.max(maxX, p[0])
+      maxY = Math.max(maxY, p[1])
+    }
+
+    const center: [number, number] = [(minX + maxX) / 2, (minY + maxY) / 2]
+    const width = maxX - minX
+    const height = maxY - minY
+
+    const R1 = newRotationMatrix(this.rotateZ)
+    const newCenter = transformPoint(R1, center)
+    this.left = newCenter[0] - width / 2
+    this.top = newCenter[1] - height / 2
+
+    this.width = width
+    this.height = height
   }
 }
 

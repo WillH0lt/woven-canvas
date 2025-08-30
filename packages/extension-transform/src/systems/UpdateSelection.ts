@@ -3,7 +3,7 @@ import * as comps from '@infinitecanvas/core/components'
 import { computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
 import { SelectionBox } from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
-import { intersectAabb } from '../helpers'
+import { fastIntersectAabb } from '../helpers'
 import { TransformCommand, type TransformCommandArgs, type TransformResources } from '../types'
 
 export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
@@ -55,7 +55,7 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
 
     // const aabb = { left: block.left, top: block.top, right: block.left + block.width, bottom: block.bottom }
     const aabb = computeAabb(selectionBoxEntity)
-    const intersectedEntities = intersectAabb(aabb, this.blocks.current)
+    const intersectedEntities = fastIntersectAabb(aabb, this.blocks.current)
     for (const selectedEntity of this.selectedBlocks.current) {
       const shouldDeselect = !intersectedEntities.some((entity) => entity.isSame(selectedEntity))
       if (shouldDeselect) {

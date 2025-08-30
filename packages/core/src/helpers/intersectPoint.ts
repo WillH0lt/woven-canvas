@@ -3,9 +3,8 @@ import { LexoRank } from 'lexorank'
 
 import { Aabb, Block, HitGeometries } from '../components'
 
-export function intersectPoint(point: [number, number], blockEntities: readonly Entity[]): Entity | undefined {
-  let intersect: Entity | undefined = undefined
-  let maxRank: LexoRank = LexoRank.min()
+export function intersectPoint(point: [number, number], blockEntities: readonly Entity[]): Entity[] {
+  const intersects: Entity[] = []
 
   for (const blockEntity of blockEntities) {
     const aabb = blockEntity.read(Aabb)
@@ -26,13 +25,13 @@ export function intersectPoint(point: [number, number], blockEntities: readonly 
       }
     }
 
-    // If we have an intersection, check if it has a higher rank
-    const rank = LexoRank.parse(blockEntity.read(Block).rank)
-    if (!intersect || rank.compareTo(maxRank) > 0) {
-      intersect = blockEntity
-      maxRank = rank
-    }
+    intersects.push(blockEntity)
   }
 
-  return intersect
+  // Sort intersections by rank
+  return intersects.sort((a, b) => {
+    const rankA = LexoRank.parse(a.read(Block).rank)
+    const rankB = LexoRank.parse(b.read(Block).rank)
+    return rankB.compareTo(rankA)
+  })
 }
