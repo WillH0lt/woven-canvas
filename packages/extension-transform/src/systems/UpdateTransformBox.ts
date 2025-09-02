@@ -65,7 +65,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
   public initialize(): void {
     this.addCommandListener(TransformCommand.DragBlock, this.dragBlock.bind(this))
-    this.addCommandListener(TransformCommand.AddTransformBox, this.addTransformBox.bind(this))
+    this.addCommandListener(TransformCommand.AddOrUpdateTransformBox, this.addOrUpdateTransformBox.bind(this))
     this.addCommandListener(TransformCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
     this.addCommandListener(TransformCommand.HideTransformBox, this.hideTransformBox.bind(this))
     this.addCommandListener(TransformCommand.ShowTransformBox, this.showTransformBox.bind(this))
@@ -82,9 +82,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     const transformBoxEntity = this.transformBoxes.current[0]
-
-    if (!transformBoxEntity) return
     const transformBox = transformBoxEntity.read(TransformBox)
+
     this.deleteEntities(transformBox.handles)
     this.deleteEntity(transformBoxEntity)
 
@@ -94,13 +93,19 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
   }
 
-  private addTransformBox(): void {
-    const transformBoxEntity = this.createEntity(
-      TransformBox,
-      comps.Block,
-      { id: crypto.randomUUID(), tag: this.resources.transformBoxTag, rank: TRANSFORM_BOX_RANK },
-      DragStart,
-    )
+  private addOrUpdateTransformBox(): void {
+    let transformBoxEntity: Entity | null = null
+
+    if (this.transformBoxes.current.length) {
+      transformBoxEntity = this.transformBoxes.current[0]
+    } else {
+      transformBoxEntity = this.createEntity(
+        TransformBox,
+        comps.Block,
+        { id: crypto.randomUUID(), tag: this.resources.transformBoxTag, rank: TRANSFORM_BOX_RANK },
+        DragStart,
+      )
+    }
 
     this.updateTransformBox(transformBoxEntity)
 
@@ -399,6 +404,9 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     const transformBoxEntity = this.transformBoxes.current[0]
 
+    // make sure the transform box hasn't been deleted in the meantime
+    if (!transformBoxEntity.alive || transformBoxEntity.has(comps.ToBeDeleted)) return
+
     if (transformBoxEntity.has(Locked)) return
 
     const transformBox = transformBoxEntity.read(TransformBox)
@@ -427,7 +435,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       const kind = handle.kind
       if (kind === TransformHandleKind.Rotate) {
         this.onRotateHandleMove(blockEntity)
-      } else if (kind === TransformHandleKind.Scale) {
+      } else if (kind === TransformHandleKind.Scale || this.keyboard.shiftDown) {
         this.onTransformHandleMove(blockEntity, true)
       } else if (kind === TransformHandleKind.Stretch) {
         this.onTransformHandleMove(blockEntity, false)
@@ -454,12 +462,6 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     const delta = angleHandle - handleStartAngle
 
-    // const { rotateZ } = boxEntity.read(comps.Block)
-    // if (!this.input.modDown) {
-    //   const shift = this.updateRotationSnapLines(rotateZ + delta, boxEntity);
-    //   delta += shift;
-    // }
-
     handleEntity.write(comps.Block).rotateZ = (boxBlock.rotateZ + delta) % (2 * Math.PI)
 
     for (const blockEntity of this.selectedBlocks.current) {
@@ -467,6 +469,11 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
       const block = blockEntity.write(comps.Block)
       block.rotateZ = (startRotateZ + delta) % (2 * Math.PI)
+
+      if (this.keyboard.shiftDown) {
+        // snap to nearest 15 degrees
+        block.rotateZ = Math.round(block.rotateZ / (Math.PI / 12)) * (Math.PI / 12)
+      }
 
       const startCenter = [startLeft + startWidth / 2, startTop + startHeight / 2]
 

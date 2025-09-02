@@ -168,6 +168,7 @@ export enum PointerButton {
 export enum CoreCommand {
   SetZoom = 'coreSetZoom',
   MoveCamera = 'coreMoveCamera',
+  SetCameraVelocity = 'coreSetCameraVelocity',
   SetControls = 'coreSetControls',
   SetCursor = 'coreSetCursor',
 
@@ -189,6 +190,7 @@ export enum CoreCommand {
 
   SelectBlock = 'coreSelectBlock',
   DeselectBlock = 'coreDeselectBlock',
+  ToggleSelect = 'coreToggleSelect',
   DeselectAll = 'coreDeselectAll',
   SelectAll = 'coreSelectAll',
 }
@@ -202,6 +204,12 @@ export type CoreCommandArgs = {
     },
   ]
   [CoreCommand.MoveCamera]: [
+    {
+      x: number
+      y: number
+    },
+  ]
+  [CoreCommand.SetCameraVelocity]: [
     {
       x: number
       y: number
@@ -234,6 +242,7 @@ export type CoreCommandArgs = {
     ),
   ]
   [CoreCommand.DeselectBlock]: [Entity]
+  [CoreCommand.ToggleSelect]: [Entity]
   [CoreCommand.DeselectAll]: []
   [CoreCommand.SelectAll]: []
 }
@@ -242,12 +251,15 @@ export type PointerEvent = {
   type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'click' | 'cancel'
   worldPosition: [number, number]
   clientPosition: [number, number]
+  velocity: [number, number]
   intersects: [Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined]
+  shiftDown: boolean
 }
 
 export type MouseEvent = {
   type: 'mouseMove' | 'wheel'
-  wheelDelta: number
+  wheelDeltaX: number
+  wheelDeltaY: number
   worldPosition: [number, number]
   clientPosition: [number, number]
 }

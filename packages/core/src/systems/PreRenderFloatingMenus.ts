@@ -9,6 +9,9 @@ import { binarySearchForId, clamp, computeExtents, uuidToNumber } from '../helpe
 import { PointerButton } from '../types'
 import type { CoreResources } from '../types'
 import type { ICFloatingMenu } from '../webComponents'
+import { PreRenderStoreSync } from './PreRenderStoreSync'
+
+const FLOATING_MENU_TAG = 'ic-floating-menu'
 
 export class PreRenderFloatingMenus extends BaseSystem {
   protected declare readonly resources: CoreResources
@@ -28,6 +31,8 @@ export class PreRenderFloatingMenus extends BaseSystem {
   public constructor() {
     super()
 
+    this.schedule((s) => s.inAnyOrderWith(PreRenderStoreSync))
+
     const Components = ComponentRegistry.instance.components
     for (const Comp of Components) {
       const current = this.query((q) =>
@@ -42,7 +47,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
 
   public execute(): void {
     if (this.cameras.changed.length > 0) {
-      const element = this.resources.menuContainer.querySelector('ic-floating-menu')
+      const element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
       if (element) {
         this.updateMenuPosition(element)
       }
@@ -73,7 +78,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
       }
 
       if (blocks.size > 0) {
-        const icFloatingMenu = this.resources.menuContainer.querySelector('ic-floating-menu')
+        const icFloatingMenu = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
         if (icFloatingMenu) {
           for (const [id, tag] of blocks) {
             this.updateSnapshotAttribute(icFloatingMenu, id, tag)
@@ -109,9 +114,9 @@ export class PreRenderFloatingMenus extends BaseSystem {
       buttons = blockDef?.editedFloatingMenu ?? []
     }
 
-    let element = this.resources.menuContainer.querySelector('ic-floating-menu')
+    let element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
     if (!element) {
-      element = document.createElement('ic-floating-menu')
+      element = document.createElement(FLOATING_MENU_TAG)
       this.resources.menuContainer.appendChild(element)
     }
 
@@ -151,7 +156,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
   }
 
   private removeFloatingMenu(): void {
-    const element = this.resources.menuContainer.querySelector('ic-floating-menu')
+    const element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
     element?.remove()
   }
 

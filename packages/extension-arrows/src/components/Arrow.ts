@@ -1,5 +1,6 @@
 import { BaseComponent } from '@infinitecanvas/core'
-import { Type, component, field } from '@lastolivegames/becsy'
+import { Connection } from '@infinitecanvas/core/components'
+import { type Entity, Type, component, field } from '@lastolivegames/becsy'
 
 @component
 export class Arrow extends BaseComponent {
@@ -9,6 +10,13 @@ export class Arrow extends BaseComponent {
   // @field.dynamicString(36) declare connectionA: string
   // @field.dynamicString(36) declare connectionC: string
   // @field.boolean declare isCurved: boolean
+
+  @field.backrefs(Connection, 'sourceEntity', true) declare connections: Entity[]
+  @field.float64.vector(2) declare startConnectionUv: [number, number]
+  @field.dynamicString(36) declare startConnectionBlockId: string
+  @field.float64.vector(2) declare endConnectionUv: [number, number]
+  @field.dynamicString(36) declare endConnectionBlockId: string
+
   @field({ type: Type.float32, default: 8 }) declare diameter: number
   @field.uint32 public declare seed: number
 

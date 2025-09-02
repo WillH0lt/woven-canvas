@@ -3,7 +3,6 @@ import { Block, Cursor, Hovered } from '@infinitecanvas/core/components'
 import { TransformHandle } from '../components'
 import { getCursorSvg } from '../cursors'
 import type { TransformResources } from '../types'
-import { CaptureSelect } from './CaptureSelect'
 import { CaptureTransformBox } from './CaptureTransformBox'
 
 export class CaptureHoverCursor extends BaseSystem<CoreCommandArgs> {
@@ -17,7 +16,7 @@ export class CaptureHoverCursor extends BaseSystem<CoreCommandArgs> {
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureSelect, CaptureTransformBox))
+    this.schedule((s) => s.inAnyOrderWith(CaptureTransformBox))
   }
 
   public execute(): void {

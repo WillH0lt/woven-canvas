@@ -19,6 +19,22 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
         panStart: ({ event }) => event.worldPosition,
       }),
 
+      moveCamera: ({ context, event }) => {
+        const deltaX = event.worldPosition[0] - context.panStart[0]
+        const deltaY = event.worldPosition[1] - context.panStart[1]
+        const x = this.camera.left - deltaX
+        const y = this.camera.top - deltaY
+
+        this.emitCommand(CoreCommand.MoveCamera, { x, y })
+      },
+
+      flingCamera: ({ event }) => {
+        this.emitCommand(CoreCommand.SetCameraVelocity, {
+          x: -event.velocity[0] / this.camera.zoom,
+          y: -event.velocity[1] / this.camera.zoom,
+        })
+      },
+
       resetContext: assign({
         panStart: [0, 0],
       }),
@@ -40,20 +56,15 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
         },
       },
       [PanState.Panning]: {
+        entry: 'moveCamera',
         on: {
           pointerMove: [
             {
-              actions: ({ context, event }) => {
-                const deltaX = event.worldPosition[0] - context.panStart[0]
-                const deltaY = event.worldPosition[1] - context.panStart[1]
-                const x = this.camera.left - deltaX
-                const y = this.camera.top - deltaY
-
-                this.emitCommand(CoreCommand.MoveCamera, { x, y })
-              },
+              actions: 'moveCamera',
             },
           ],
           pointerUp: {
+            actions: 'flingCamera',
             target: PanState.Idle,
           },
         },
@@ -69,15 +80,15 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
   public execute(): void {
     const buttons = this.controls.getButtons('hand')
 
-    const pointerEvents = this.getPointerEvents(buttons)
+    const events = this.getPointerEvents(buttons)
 
-    if (pointerEvents.length === 0) return
+    if (events.length === 0) return
 
     const { value, context } = this.runMachine<PanState>(
       this.panMachine,
       this.panState.state,
-      this.panState,
-      pointerEvents,
+      this.panState.toJson(),
+      events,
     )
 
     Object.assign(this.panState, context)

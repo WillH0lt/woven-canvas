@@ -1,21 +1,27 @@
-import type { BaseResources } from '@infinitecanvas/core'
+import { BaseSystem } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
-import { System, co } from '@lastolivegames/becsy'
+import { co } from '@lastolivegames/becsy'
+import { InputKeyboard } from './InputKeyboard'
+import { InputPointer } from './InputPointer'
+import { InputScreen } from './InputScreen'
 
-export class InputMouse extends System {
+export class InputMouse extends BaseSystem {
   private readonly mice = this.query((q) => q.current.with(comps.Mouse).write)
 
-  private get mouse(): comps.Mouse {
+  private get writeableMouse(): comps.Mouse {
     return this.mice.current[0].write(comps.Mouse)
   }
 
   // declaring to becsy that mouse is a singleton component
   private readonly _mouse = this.singleton.read(comps.Mouse)
 
-  protected declare readonly resources: BaseResources
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(InputKeyboard, InputScreen, InputPointer))
+  }
 
   @co private *onMouseMove(e: MouseEvent): Generator {
-    this.mouse.position = [e.clientX, e.clientY]
+    this.writeableMouse.position = [e.clientX, e.clientY]
     this.setTrigger('moveTrigger')
 
     yield
@@ -26,17 +32,18 @@ export class InputMouse extends System {
       throw new Error(`Invalid trigger key: ${triggerKey}`)
     }
 
-    Object.assign(this.mouse, { [triggerKey]: true })
+    Object.assign(this.writeableMouse, { [triggerKey]: true })
 
     yield co.waitForFrames(1)
 
-    Object.assign(this.mouse, { [triggerKey]: false })
+    Object.assign(this.writeableMouse, { [triggerKey]: false })
   }
 
   @co private *onWheel(e: WheelEvent): Generator {
     e.preventDefault()
 
-    this.mouse.wheelDelta = normalizedDeltaY(e)
+    this.writeableMouse.wheelDeltaY = normalizedDeltaY(e)
+    this.writeableMouse.wheelDeltaX = e.deltaX
     this.setTrigger('wheelTrigger')
 
     yield

@@ -215,6 +215,8 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     arrow.a = arrowBlock.worldToUv(aWorld)
     arrow.b = arrowBlock.worldToUv(bWorld)
     arrow.c = arrowBlock.worldToUv(cWorld)
+
+    //
   }
 
   // private startTransformBoxEdit(transformBoxEntity: Entity | undefined = undefined): void {

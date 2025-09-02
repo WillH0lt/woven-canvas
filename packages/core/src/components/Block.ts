@@ -1,4 +1,4 @@
-import { Type, field } from '@lastolivegames/becsy'
+import { type Entity, Type, field } from '@lastolivegames/becsy'
 
 import { BaseComponent } from '../BaseComponent'
 import {
@@ -9,6 +9,7 @@ import {
   transformPoint,
 } from '../helpers'
 import { Aabb } from './Aabb'
+import { Connection } from './Connection'
 import type { HitCapsule } from './HitCapsule'
 
 export class Block extends BaseComponent {
@@ -20,6 +21,7 @@ export class Block extends BaseComponent {
   @field.float64 declare height: number
   @field.float64 declare rotateZ: number
   @field.dynamicString(36) public declare rank: string
+  @field.backrefs(Connection, 'targetEntity', true) public declare connections: Entity[]
 
   public intersectsPoint(point: [number, number]): boolean {
     const { width, height, left, top, rotateZ } = this

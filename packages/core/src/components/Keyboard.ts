@@ -1,9 +1,10 @@
 import { component, field } from '@lastolivegames/becsy'
+import { BaseComponent } from '../BaseComponent'
 
 // having a field for each key is too much for becsy, so we'll just use the keys that are needed
 
 @component
-export class Keyboard {
+export class Keyboard extends BaseComponent {
   @field.boolean public declare aDown: boolean
 
   @field.boolean public declare aDownTrigger: boolean

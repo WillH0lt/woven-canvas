@@ -144,8 +144,6 @@ export class ICRoughShape extends ICEditableBlock {
   private roughShapeSvg(width: number, height: number): unknown {
     const { strokeInfo, fillInfo, highlightInfo } = this.getPathInfo(width, height)
 
-    console.log(strokeInfo)
-
     return html`
       <svg
         viewBox="0 0 ${width} ${height}"

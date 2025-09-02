@@ -19,12 +19,9 @@ class TransformExtensionClass extends BaseExtension {
       ...this.options,
     }
 
-    this._captureGroup = this.createGroup(
-      transformResources,
-      sys.CaptureSelect,
-      sys.CaptureTransformBox,
-      sys.CaptureHoverCursor,
-    )
+    this._preCaptureGroup = this.createGroup(transformResources, sys.PreCaptureSelect)
+
+    this._captureGroup = this.createGroup(transformResources, sys.CaptureTransformBox, sys.CaptureHoverCursor)
     this._updateGroup = this.createGroup(transformResources, sys.UpdateSelection, sys.UpdateTransformBox)
   }
 }

@@ -11,9 +11,9 @@ import { CursorKind, SelectionState, TransformCommand, type TransformCommandArgs
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
 
-export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
+export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
   private readonly _blocks = this.query(
-    (q) => q.with(comps.Block, comps.Persistent).read.using(transformComps.Locked).read,
+    (q) => q.with(comps.Block, comps.Persistent).read.using(transformComps.Locked, transformComps.TransformBox).read,
   )
 
   private readonly selectionState = this.singleton.write(transformComps.SelectionState)
@@ -106,9 +106,29 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
       },
       updateDragged: ({ context, event }) => {
         if (!context.draggedEntity) return
+
+        let left = context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0]
+        let top = context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1]
+
+        if (
+          event.shiftDown &&
+          (context.draggedEntity.has(comps.Persistent) || context.draggedEntity.has(transformComps.TransformBox))
+        ) {
+          // if shift is down then limit the movement to the x-axis or y-axis
+          // this only applies when dragging persistent blocks or transform boxes
+          // (handles need to manage their own logic for this)
+          const dx = Math.abs(event.worldPosition[0] - context.dragStart[0])
+          const dy = Math.abs(event.worldPosition[1] - context.dragStart[1])
+          if (dx > dy) {
+            top = context.draggedEntityStart[1]
+          } else {
+            left = context.draggedEntityStart[0]
+          }
+        }
+
         this.emitCommand(TransformCommand.DragBlock, context.draggedEntity, {
-          left: context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0],
-          top: context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1],
+          left,
+          top,
         })
       },
       resizeSelectionBox: ({ context, event }) => {
@@ -129,14 +149,20 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
         }
 
         if (!intersect) return
-        this.emitCommand(CoreCommand.SelectBlock, intersect, { deselectOthers: true })
+
+        if (event.shiftDown) {
+          this.emitCommand(CoreCommand.ToggleSelect, intersect)
+        } else {
+          this.emitCommand(CoreCommand.SelectBlock, intersect, { deselectOthers: true })
+        }
       },
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
         if (!context.draggedEntity.has(comps.Persistent)) return
         this.emitCommand(CoreCommand.SelectBlock, context.draggedEntity, { deselectOthers: true })
       },
-      deselectAll: () => {
+      deselectAllIfShiftNotDown: ({ event }) => {
+        if (event.shiftDown) return
         this.emitCommand(CoreCommand.DeselectAll)
       },
     },
@@ -160,7 +186,7 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
               target: SelectionState.Pointing,
             },
             {
-              actions: 'deselectAll',
+              actions: 'deselectAllIfShiftNotDown',
               target: SelectionState.SelectionBoxPointing,
             },
           ],
@@ -180,7 +206,7 @@ export class CaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommand
               target: SelectionState.Idle,
             },
             {
-              actions: 'deselectAll',
+              actions: 'deselectAllIfShiftNotDown',
               target: SelectionState.Idle,
             },
           ],

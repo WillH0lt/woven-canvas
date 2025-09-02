@@ -58,4 +58,14 @@ export abstract class BaseComponent {
   public getSchema(): Record<string, any> {
     return (this.constructor as typeof BaseComponent).schema ?? {}
   }
+
+  public reset(): void {
+    const schema = this.getSchema()
+    for (const key in schema) {
+      if (Object.hasOwn(schema, key)) {
+        // @ts-ignore
+        this[key] = schema[key].default ?? schema[key].type.default
+      }
+    }
+  }
 }

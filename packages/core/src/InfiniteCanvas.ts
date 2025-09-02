@@ -27,6 +27,7 @@ function scheduleGroups(orderedGroups: SystemGroup[]): void {
     const nextGroup = orderedGroups[i + 1]
 
     currentGroup.schedule((s) => s.before(nextGroup))
+    // nextGroup.schedule((s) => s.after(currentGroup))
   }
 }
 
@@ -202,6 +203,8 @@ export class InfiniteCanvas {
       ...renderGroups,
       ...postRenderGroups,
     ]
+
+    console.log(orderedGroups)
 
     scheduleGroups(orderedGroups)
 

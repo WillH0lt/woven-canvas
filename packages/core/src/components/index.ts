@@ -20,6 +20,7 @@ export { CommandRef } from './CommandRef'
 export { HitGeometries } from './HitGeometries'
 export { HitCapsule } from './HitCapsule'
 export { Cursor } from './Cursor'
+export { Connection } from './Connection'
 
 import { Aabb } from './Aabb'
 import { Block } from './Block'

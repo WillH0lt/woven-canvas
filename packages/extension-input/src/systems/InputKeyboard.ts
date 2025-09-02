@@ -62,6 +62,13 @@ export class InputKeyboard extends BaseSystem {
     }
   }
 
+  @co private *resetKeyboard(): Generator {
+    yield
+
+    const keyboard = this.keyboards.current[0].write(comps.Keyboard)
+    keyboard.reset()
+  }
+
   @co private *setTrigger(triggerKey: string): Generator {
     this.updateKeyboard(triggerKey, true)
 
@@ -75,6 +82,7 @@ export class InputKeyboard extends BaseSystem {
 
     domElement.addEventListener('keydown', (e) => this.eventsBuffer.push(e))
     domElement.addEventListener('keyup', (e) => this.eventsBuffer.push(e))
+    domElement.addEventListener('blur', () => this.resetKeyboard())
   }
 
   public execute(): void {

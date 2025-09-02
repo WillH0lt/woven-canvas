@@ -1,11 +1,11 @@
-import { System } from '@lastolivegames/becsy'
-
+import { BaseSystem } from '../BaseSystem'
 import { Frame } from '../components'
 
-export class PreInputFrameCounter extends System {
-  private readonly frame = this.singleton.write(Frame)
+export class PreInputFrameCounter extends BaseSystem {
+  private readonly frames = this.query((q) => q.current.with(Frame).write)
 
   public execute(): void {
-    this.frame.value++
+    const frame = this.frames.current[0].write(Frame)
+    frame.value++
   }
 }

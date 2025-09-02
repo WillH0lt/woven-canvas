@@ -42,6 +42,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     this.addCommandListener(CoreCommand.SelectBlock, this.selectBlock.bind(this))
     this.addCommandListener(CoreCommand.DeselectBlock, this.deselectBlock.bind(this))
+    this.addCommandListener(CoreCommand.ToggleSelect, this.toggleSelect.bind(this))
     this.addCommandListener(CoreCommand.DeselectAll, this.deselectAll.bind(this))
     this.addCommandListener(CoreCommand.SelectAll, this.selectAll.bind(this))
 
@@ -234,16 +235,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     }
   }
 
-  private deselectAll(): void {
-    for (const blockEntity of this.selectedBlocks.current) {
-      if (blockEntity.has(comps.Selected) && blockEntity.read(comps.Selected).selectedBy === this.resources.uid) {
-        blockEntity.remove(comps.Selected)
-      }
-    }
-
-    this.emitCommand(CoreCommand.CreateCheckpoint)
-  }
-
   private selectBlock(blockEntity: Entity, options: { deselectOthers?: boolean } = {}): void {
     this.selectBlocks([blockEntity], options)
   }
@@ -265,11 +256,29 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     blockEntity.remove(comps.Selected)
   }
 
+  private toggleSelect(blockEntity: Entity): void {
+    if (blockEntity.has(comps.Selected)) {
+      this.deselectBlock(blockEntity)
+    } else {
+      this.selectBlock(blockEntity)
+    }
+  }
+
   private selectAll(): void {
     for (const blockEntity of this.persistentBlocks.current) {
       if (!blockEntity.has(comps.Selected)) {
         blockEntity.add(comps.Selected, { selectedBy: this.resources.uid })
       }
     }
+  }
+
+  private deselectAll(): void {
+    for (const blockEntity of this.selectedBlocks.current) {
+      if (blockEntity.has(comps.Selected) && blockEntity.read(comps.Selected).selectedBy === this.resources.uid) {
+        blockEntity.remove(comps.Selected)
+      }
+    }
+
+    this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 }

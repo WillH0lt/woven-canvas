@@ -1,12 +1,19 @@
-import { System, co } from '@lastolivegames/becsy'
+import { co } from '@lastolivegames/becsy'
 
-import type { BaseResources } from '@infinitecanvas/core'
+import { type BaseResources, BaseSystem } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
 
-export class InputScreen extends System {
+import { InputKeyboard } from './InputKeyboard'
+
+export class InputScreen extends BaseSystem {
   private readonly screens = this.query((q) => q.current.with(comps.Screen).write)
 
   protected declare readonly resources: BaseResources
+
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(InputKeyboard))
+  }
 
   @co private *handleResize(): Generator {
     const screen = this.screens.current[0].write(comps.Screen)

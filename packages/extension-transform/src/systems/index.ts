@@ -1,4 +1,4 @@
-export { CaptureSelect } from './CaptureSelect'
+export { PreCaptureSelect } from './PreCaptureSelect'
 export { CaptureTransformBox } from './CaptureTransformBox'
 export { UpdateSelection } from './UpdateSelection'
 export { UpdateTransformBox } from './UpdateTransformBox'

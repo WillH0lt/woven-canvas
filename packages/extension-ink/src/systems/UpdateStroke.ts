@@ -144,7 +144,7 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
       })
     }
 
-    const simplifiedPoints = simplify(points, stroke.diameter / 2, false)
+    const simplifiedPoints = simplify(points, stroke.diameter, false)
 
     // add a second point so the hit capsule gets created
     if (simplifiedPoints.length === 1) {
@@ -193,7 +193,7 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
       this.createEntity(HitCapsule, {
         a: [transformedPoints[i], transformedPoints[i + 1]],
         b: [transformedPoints[i + 2], transformedPoints[i + 3]],
-        radius: stroke.diameter,
+        radius: stroke.diameter * 2,
         blockEntity: strokeEntity,
       })
     }

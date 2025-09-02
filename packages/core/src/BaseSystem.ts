@@ -183,22 +183,22 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
 
     if (added.length > 0 && current.length === 1) {
       const pointer = current[0].read(comps.Pointer)
-      const p = [pointer.downPosition[0], pointer.downPosition[1]] as [number, number]
       events.push({
         type: 'pointerDown',
-        clientPosition: p,
-        worldPosition: this.camera.toWorld(p),
+        clientPosition: [pointer.downPosition[0], pointer.downPosition[1]],
+        worldPosition: [pointer.downWorldPosition[0], pointer.downWorldPosition[1]],
+        velocity: [pointer.velocity[0], pointer.velocity[1]],
       })
     }
 
     // cancel the action if the pointer is down, and we push another pointer down.
     if (current.length >= 1 && this.pointers.added.length > 0 && this.pointers.current.length > 1) {
       const pointer = current[0].read(comps.Pointer)
-      const p = [pointer.position[0], pointer.position[1]] as [number, number]
       events.push({
         type: 'cancel',
-        clientPosition: p,
-        worldPosition: this.camera.toWorld(p),
+        clientPosition: [pointer.position[0], pointer.position[1]],
+        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
+        velocity: [pointer.velocity[0], pointer.velocity[1]],
       })
     }
 
@@ -206,21 +206,21 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     // is down it should cancel the current action
     if (current.length >= 1 && this.keyboard.escapeDownTrigger) {
       const pointer = current[0].read(comps.Pointer)
-      const p = [pointer.position[0], pointer.position[1]] as [number, number]
       events.push({
         type: 'cancel',
-        clientPosition: p,
-        worldPosition: this.camera.toWorld(p),
+        clientPosition: [pointer.position[0], pointer.position[1]],
+        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
+        velocity: [pointer.velocity[0], pointer.velocity[1]],
       })
     }
 
     if (removed.length > 0 && current.length === 0) {
       const pointer = removed[0].read(comps.Pointer)
-      const p = [pointer.position[0], pointer.position[1]] as [number, number]
       events.push({
         type: 'pointerUp',
-        clientPosition: p,
-        worldPosition: this.camera.toWorld(p),
+        clientPosition: [pointer.position[0], pointer.position[1]],
+        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
+        velocity: [pointer.velocity[0], pointer.velocity[1]],
       })
 
       const dist = distance(pointer.downPosition, pointer.position)
@@ -228,19 +228,23 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       if (dist < CLICK_MOVE_THRESHOLD && deltaFrame < CLICK_FRAME_THRESHOLD) {
         events.push({
           type: 'click',
-          clientPosition: p,
-          worldPosition: this.camera.toWorld(p),
+          clientPosition: [pointer.position[0], pointer.position[1]],
+          worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
+          velocity: [pointer.velocity[0], pointer.velocity[1]],
         })
       }
     }
 
-    if (changed.length > 0 && current.length === 1) {
+    if (
+      (changed.length > 0 || this.keyboard.shiftUpTrigger || this.keyboard.shiftDownTrigger) &&
+      current.length === 1
+    ) {
       const pointer = current[0].read(comps.Pointer)
-      const p = [pointer.position[0], pointer.position[1]] as [number, number]
       events.push({
         type: 'pointerMove',
-        clientPosition: p,
-        worldPosition: this.camera.toWorld(p),
+        clientPosition: [pointer.position[0], pointer.position[1]],
+        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
+        velocity: [pointer.velocity[0], pointer.velocity[1]],
       })
     }
 
@@ -252,6 +256,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
         this.intersect.entity4,
         this.intersect.entity5,
       ]
+      event.shiftDown = this.keyboard.shiftDown
     }
 
     return events as PointerEvent[]
@@ -263,7 +268,8 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     if (this.mouse.wheelTrigger) {
       events.push({
         type: 'wheel' as const,
-        wheelDelta: this.mouse.wheelDelta,
+        wheelDeltaX: this.mouse.wheelDeltaX,
+        wheelDeltaY: this.mouse.wheelDeltaY,
         worldPosition: this.camera.toWorld(this.mouse.position),
         clientPosition: this.mouse.position,
       })
@@ -272,7 +278,8 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     if (this.mouse.moveTrigger) {
       events.push({
         type: 'mouseMove' as const,
-        wheelDelta: this.mouse.wheelDelta,
+        wheelDeltaX: this.mouse.wheelDeltaX,
+        wheelDeltaY: this.mouse.wheelDeltaY,
         worldPosition: this.camera.toWorld(this.mouse.position),
         clientPosition: this.mouse.position,
       })

@@ -3,11 +3,17 @@ import { co } from '@lastolivegames/becsy'
 import { BaseSystem } from '../BaseSystem'
 import * as comps from '../components/index'
 import { type Command, type CoreResources, EmitterEventKind } from '../types'
+import { PreInputFrameCounter } from './PreInputFrameCounter'
 
 export class PreInputCommandSpawner extends BaseSystem<Record<string, Array<unknown>>> {
   private readonly _commands = this.query((q) => q.current.with(comps.Command).write)
 
   protected declare readonly resources: CoreResources
+
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(PreInputFrameCounter))
+  }
 
   @co private *spawnCommand(command: Command): Generator {
     const args = JSON.parse(command.payload)

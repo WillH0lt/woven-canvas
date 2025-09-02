@@ -1,6 +1,8 @@
-import { type BaseResources, PointerButton } from '@infinitecanvas/core'
+import { BaseSystem, PointerButton } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
-import { type Entity, System } from '@lastolivegames/becsy'
+import type { Entity } from '@lastolivegames/becsy'
+import { InputKeyboard } from './InputKeyboard'
+import { InputScreen } from './InputScreen'
 
 function getPointerButton(b: number): PointerButton {
   if (b === -1) return PointerButton.None
@@ -13,37 +15,50 @@ function getPointerButton(b: number): PointerButton {
   return PointerButton.None
 }
 
-export class InputPointer extends System {
-  private readonly pointers = this.query((q) => q.current.with(comps.Pointer).write)
-
-  protected declare readonly resources: BaseResources
-
-  private readonly frame = this.singleton.read(comps.Frame)
+export class InputPointer extends BaseSystem {
+  private readonly writablePointers = this.query((q) => q.current.with(comps.Pointer).write)
 
   private readonly eventsBuffer: PointerEvent[] = []
 
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(InputKeyboard, InputScreen))
+  }
+
   private onPointerDown(e: PointerEvent): Entity {
-    return this.createEntity(comps.Pointer, {
+    const p: [number, number] = [e.clientX, e.clientY]
+    const w: [number, number] = this.camera.toWorld(p)
+    const pointer = this.createEntity(comps.Pointer, {
       id: e.pointerId,
-      downPosition: [e.clientX, e.clientY],
+      downPosition: p,
+      downWorldPosition: w,
       downFrame: this.frame.value,
-      position: [e.clientX, e.clientY],
+      worldPosition: w,
       button: getPointerButton(e.button),
     })
+
+    pointer.write(comps.Pointer).addPositionSample(p, this.time)
+
+    return pointer
   }
 
   private onPointerMove(e: PointerEvent, pointers: Entity[]): void {
     const pointerEntity = pointers.find((p) => p.alive && p.read(comps.Pointer).id === e.pointerId)
     if (!pointerEntity) return
 
-    pointerEntity.write(comps.Pointer).position = [e.clientX, e.clientY]
+    const p: [number, number] = [e.clientX, e.clientY]
+    const pointer = pointerEntity.write(comps.Pointer)
+    pointer.addPositionSample(p, this.time)
+    pointer.worldPosition = this.camera.toWorld(p)
   }
 
   private onPointerUp(e: PointerEvent, pointers: Entity[]): void {
     for (const pointerEntity of pointers) {
       if (pointerEntity.read(comps.Pointer).id === e.pointerId) {
+        const p: [number, number] = [e.clientX, e.clientY]
         const pointer = pointerEntity.write(comps.Pointer)
-        pointer.position = [e.clientX, e.clientY]
+        pointer.addPositionSample(p, this.time)
+        pointer.worldPosition = this.camera.toWorld(p)
         pointerEntity.delete()
       }
     }
@@ -70,7 +85,7 @@ export class InputPointer extends System {
   }
 
   public execute(): void {
-    const pointers = [...this.pointers.current]
+    const pointers = [...this.writablePointers.current]
 
     for (const e of this.eventsBuffer) {
       if (e.type === 'pointerdown') {

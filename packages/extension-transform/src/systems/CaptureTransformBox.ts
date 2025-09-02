@@ -5,7 +5,6 @@ import { and, not, setup } from 'xstate'
 import type { Entity } from '@lastolivegames/becsy'
 import * as transformComps from '../components'
 import { TransformBoxState, TransformCommand, type TransformCommandArgs } from '../types'
-import { CaptureSelect } from './CaptureSelect'
 
 type SelectionEvent =
   | PointerEvent
@@ -23,10 +22,10 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
 
   private readonly transformBoxState = this.singleton.write(transformComps.TransformBoxState)
 
-  public constructor() {
-    super()
-    this.schedule((s) => s.after(CaptureSelect))
-  }
+  // public constructor() {
+  //   super()
+  //   this.schedule((s) => s.after(CaptureSelect))
+  // }
 
   private readonly transformBoxMachine = setup({
     types: {
@@ -74,8 +73,8 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
       },
     },
     actions: {
-      addTransformBox: () => {
-        this.emitCommand(TransformCommand.AddTransformBox)
+      addOrUpdateTransformBox: () => {
+        this.emitCommand(TransformCommand.AddOrUpdateTransformBox)
       },
       updateTransformBox: () => {
         this.emitCommand(TransformCommand.UpdateTransformBox)
@@ -112,7 +111,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
         },
       },
       [TransformBoxState.Idle]: {
-        entry: 'addTransformBox',
+        entry: 'addOrUpdateTransformBox',
         on: {
           selectionChanged: [
             {

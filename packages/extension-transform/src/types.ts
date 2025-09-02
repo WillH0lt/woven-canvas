@@ -33,7 +33,7 @@ export enum TransformCommand {
   UpdateSelectionBox = 'transformUpdateSelectionBox',
   RemoveSelectionBox = 'transformRemoveSelectionBox',
 
-  AddTransformBox = 'transformAddTransformBox',
+  AddOrUpdateTransformBox = 'transformAddOrUpdateTransformBox',
   UpdateTransformBox = 'transformUpdateTransformBox',
   HideTransformBox = 'transformHideTransformBox',
   ShowTransformBox = 'transformShowTransformBox',
@@ -49,7 +49,7 @@ export type TransformCommandArgs = {
   [TransformCommand.UpdateSelectionBox]: [Partial<Block>]
   [TransformCommand.RemoveSelectionBox]: []
 
-  [TransformCommand.AddTransformBox]: []
+  [TransformCommand.AddOrUpdateTransformBox]: []
   [TransformCommand.UpdateTransformBox]: []
   [TransformCommand.HideTransformBox]: []
   [TransformCommand.ShowTransformBox]: []

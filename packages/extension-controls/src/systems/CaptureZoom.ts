@@ -18,7 +18,7 @@ export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
     const wheelEvent = events.find((e) => e.type === 'wheel')
     if (!wheelEvent) return
 
-    let zoom = 2 ** ((-0.8 * wheelEvent.wheelDelta) / 500) * this.camera.zoom
+    let zoom = 2 ** ((-0.8 * wheelEvent.wheelDeltaY) / 500) * this.camera.zoom
     zoom = Math.min(this.resources.maxZoom, Math.max(this.resources.minZoom, zoom))
 
     const cameraWidth = this.screen.width / this.camera.zoom
