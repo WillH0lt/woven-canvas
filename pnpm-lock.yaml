@@ -101,9 +101,6 @@ importers:
       '@infinitecanvas/extension-text':
         specifier: workspace:^
         version: link:../../packages/extension-text
-      '@infinitecanvas/extension-transform':
-        specifier: workspace:^
-        version: link:../../packages/extension-transform
       '@preact/signals-core':
         specifier: ^1.10.0
         version: 1.10.0
@@ -451,49 +448,6 @@ importers:
       '@types/tinycolor2':
         specifier: ^1.4.6
         version: 1.4.6
-      vitest:
-        specifier: ^3.1.4
-        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
-
-  packages/extension-transform:
-    dependencies:
-      '@infinitecanvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@lastolivegames/becsy':
-        specifier: ^0.15.5
-        version: 0.15.5
-      '@lit-labs/preact-signals':
-        specifier: ^1.0.3
-        version: 1.0.3
-      '@tiptap/core':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/pm@3.0.7)
-      '@tiptap/extension-document':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.1)
-      '@tiptap/extension-history':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/extensions@3.0.1)
-      '@tiptap/extension-paragraph':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.1)
-      '@tiptap/extension-text':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.1)
-      lexorank:
-        specifier: ^1.0.5
-        version: 1.0.5
-      lit:
-        specifier: ^3.3.0
-        version: 3.3.0
-      xstate:
-        specifier: ^5.19.4
-        version: 5.19.4
-      zod:
-        specifier: ^3.25.36
-        version: 3.25.36
-    devDependencies:
       vitest:
         specifier: ^3.1.4
         version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
@@ -1491,14 +1445,6 @@ packages:
       '@testing-library/dom': 10.4.0
     dev: true
 
-  /@tiptap/core@3.0.1(@tiptap/pm@3.0.7):
-    resolution: {integrity: sha512-H0xOnDE5TF3bsCLq2FiFg69TWTzyHxyJdQ9D5m/P++QgLN8t2olGGznk4s1I+lxI3FB1YtIKMwBggRQuSQsclg==}
-    peerDependencies:
-      '@tiptap/pm': ^3.0.1
-    dependencies:
-      '@tiptap/pm': 3.0.7
-    dev: false
-
   /@tiptap/core@3.0.7(@tiptap/pm@3.0.7):
     resolution: {integrity: sha512-/NC0BbekWzi5sC+s7gRrGIv33cUfuiZUG5DWx8TNedA6b6aTFPHUe+2wKRPaPQ0pfGdOWU0nsOkboUJ9dAjl4g==}
     peerDependencies:
@@ -1521,14 +1467,6 @@ packages:
       '@tiptap/extension-text-style': ^3.0.7
     dependencies:
       '@tiptap/extension-text-style': 3.0.7(@tiptap/core@3.0.7)
-    dev: false
-
-  /@tiptap/extension-document@3.0.1(@tiptap/core@3.0.1):
-    resolution: {integrity: sha512-93JuaoT3QfdTvLr8frtBS7DczXHKToU5WDpzEefUtMNCnJCKhnTMcDGSGuU8aKq5zNNzppNywEL/2+KyGwLS1A==}
-    peerDependencies:
-      '@tiptap/core': ^3.0.1
-    dependencies:
-      '@tiptap/core': 3.0.1(@tiptap/pm@3.0.7)
     dev: false
 
   /@tiptap/extension-document@3.0.1(@tiptap/core@3.0.7):
@@ -1555,14 +1493,6 @@ packages:
       '@tiptap/core': 3.0.7(@tiptap/pm@3.0.7)
     dev: false
 
-  /@tiptap/extension-paragraph@3.0.1(@tiptap/core@3.0.1):
-    resolution: {integrity: sha512-+kr6F67+LSDdbRfdPtuAJQj4MWVWEoKQSahsP1w29qScHXGBAjzadGcgm5mqyagywKL8tE5EcAZOObIffA73EQ==}
-    peerDependencies:
-      '@tiptap/core': ^3.0.1
-    dependencies:
-      '@tiptap/core': 3.0.1(@tiptap/pm@3.0.7)
-    dev: false
-
   /@tiptap/extension-paragraph@3.0.1(@tiptap/core@3.0.7):
     resolution: {integrity: sha512-+kr6F67+LSDdbRfdPtuAJQj4MWVWEoKQSahsP1w29qScHXGBAjzadGcgm5mqyagywKL8tE5EcAZOObIffA73EQ==}
     peerDependencies:
@@ -1585,14 +1515,6 @@ packages:
       '@tiptap/core': ^3.0.7
     dependencies:
       '@tiptap/core': 3.0.7(@tiptap/pm@3.0.7)
-    dev: false
-
-  /@tiptap/extension-text@3.0.1(@tiptap/core@3.0.1):
-    resolution: {integrity: sha512-biaqRKuXOEu2fkVVya0LNLf8UnNFuGkF2zFiwaDUJkPSF+0BXg9nAeGKcmTwThgsllQbQzOuHNXWWS0slDi6SQ==}
-    peerDependencies:
-      '@tiptap/core': ^3.0.1
-    dependencies:
-      '@tiptap/core': 3.0.1(@tiptap/pm@3.0.7)
     dev: false
 
   /@tiptap/extension-text@3.0.1(@tiptap/core@3.0.7):

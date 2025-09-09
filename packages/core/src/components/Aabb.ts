@@ -58,4 +58,13 @@ export class Aabb extends BaseComponent {
   public intersectsCapsule(capsule: HitCapsule): boolean {
     return capsule.intersectsAabb(this)
   }
+
+  public getCorners(): [number, number][] {
+    return [
+      [this.left, this.top],
+      [this.right, this.top],
+      [this.right, this.bottom],
+      [this.left, this.bottom],
+    ]
+  }
 }

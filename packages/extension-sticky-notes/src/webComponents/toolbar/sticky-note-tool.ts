@@ -40,6 +40,7 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
 
     const snapshot = createSnapshot(block, [text, color])
 
+    InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'sticky-note',
       heldSnapshot: JSON.stringify(snapshot),

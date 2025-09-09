@@ -1,24 +1,17 @@
 import { BaseComponent } from '@infinitecanvas/core'
-import { Connection } from '@infinitecanvas/core/components'
-import { type Entity, Type, component, field } from '@lastolivegames/becsy'
+import { Type, component, field } from '@lastolivegames/becsy'
+
+import { ArrowHeadKind } from '../types'
 
 @component
 export class Arrow extends BaseComponent {
   @field.float64.vector(2) declare a: [number, number]
   @field.float64.vector(2) declare b: [number, number]
   @field.float64.vector(2) declare c: [number, number]
-  // @field.dynamicString(36) declare connectionA: string
-  // @field.dynamicString(36) declare connectionC: string
-  // @field.boolean declare isCurved: boolean
 
-  @field.backrefs(Connection, 'sourceEntity', true) declare connections: Entity[]
-  @field.float64.vector(2) declare startConnectionUv: [number, number]
-  @field.dynamicString(36) declare startConnectionBlockId: string
-  @field.float64.vector(2) declare endConnectionUv: [number, number]
-  @field.dynamicString(36) declare endConnectionBlockId: string
-
-  @field({ type: Type.float32, default: 8 }) declare diameter: number
-  @field.uint32 public declare seed: number
+  @field({ type: Type.float32, default: 4 }) declare thickness: number
+  @field.staticString(Object.values(ArrowHeadKind)) public declare startArrowHead: ArrowHeadKind
+  @field.staticString(Object.values(ArrowHeadKind)) public declare endArrowHead: ArrowHeadKind
 
   public isCurved(): boolean {
     const { a, b, c } = this

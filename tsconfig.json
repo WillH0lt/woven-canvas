@@ -30,9 +30,6 @@
       "path": "packages/extension-text"
     },
     {
-      "path": "packages/extension-transform"
-    },
-    {
       "path": "packages/extension-sticky-notes"
     },
     {

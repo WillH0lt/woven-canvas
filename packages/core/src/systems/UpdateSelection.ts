@@ -1,46 +1,51 @@
-import { BaseSystem, type CoreCommandArgs } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
-import { computeAabb, uuidToNumber } from '@infinitecanvas/core/helpers'
-import { SelectionBox } from '../components'
+import { BaseSystem } from '../BaseSystem'
+import { Block, Persistent, Selected, SelectionBox, allHitGeometriesArray } from '../components'
 import { SELECTION_BOX_RANK } from '../constants'
+import { computeAabb, uuidToNumber } from '../helpers'
 import { fastIntersectAabb } from '../helpers'
-import { TransformCommand, type TransformCommandArgs, type TransformResources } from '../types'
+import { CoreCommand, type CoreCommandArgs } from '../types'
+import { UpdateBlocks } from './UpdateBlocks'
+import { UpdateCamera } from './UpdateCamera'
+import { UpdateCursor } from './UpdateCursor'
 
-export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
-  protected readonly resources!: TransformResources
-
+export class UpdateSelection extends BaseSystem<CoreCommandArgs> {
   private readonly blocks = this.query(
     (q) =>
       q.current
-        .with(comps.Block, comps.Persistent)
-        .write.orderBy((e) => uuidToNumber(e.read(comps.Block).id))
-        .using(comps.Aabb, comps.HitGeometries, comps.HitCapsule).read,
+        .with(Block, Persistent)
+        .write.orderBy((e) => uuidToNumber(e.read(Block).id))
+        .using(...allHitGeometriesArray).read,
   )
 
-  private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
+  private readonly selectedBlocks = this.query((q) => q.current.with(Block, Selected).write)
 
-  private readonly selectionBoxes = this.query((q) => q.current.with(comps.Block, SelectionBox).write)
+  private readonly selectionBoxes = this.query((q) => q.current.with(Block, SelectionBox).write)
+
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(UpdateCursor, UpdateBlocks, UpdateCamera))
+  }
 
   public initialize(): void {
-    this.addCommandListener(TransformCommand.AddSelectionBox, this.addSelectionBox.bind(this))
-    this.addCommandListener(TransformCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
-    this.addCommandListener(TransformCommand.RemoveSelectionBox, this.removeSelectionBox.bind(this))
+    this.addCommandListener(CoreCommand.AddSelectionBox, this.addSelectionBox.bind(this))
+    this.addCommandListener(CoreCommand.UpdateSelectionBox, this.updateSelectionBox.bind(this))
+    this.addCommandListener(CoreCommand.RemoveSelectionBox, this.removeSelectionBox.bind(this))
   }
 
   private addSelectionBox(): void {
     const id = crypto.randomUUID()
     this.createEntity(
-      comps.Block,
+      Block,
       {
         id,
-        tag: this.resources.selectionBoxTag,
+        tag: this.resources.tags.selectionBox,
         rank: SELECTION_BOX_RANK,
       },
       SelectionBox,
     )
   }
 
-  private updateSelectionBox(blockPartial: Partial<comps.Block>): void {
+  private updateSelectionBox(blockPartial: Partial<Block>): void {
     if (this.selectionBoxes.current.length === 0) {
       console.warn(`Can't update selection box. Selection box not found for user ${this.resources.uid}`)
       return
@@ -48,7 +53,7 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
     // TODO somehow reference which selection box to update (ie by uid)
     const selectionBoxEntity = this.selectionBoxes.current[0]
 
-    const block = selectionBoxEntity.write(comps.Block)
+    const block = selectionBoxEntity.write(Block)
     Object.assign(block, blockPartial)
 
     // if (meta.uid !== this.resources.uid) return
@@ -59,13 +64,13 @@ export class UpdateSelection extends BaseSystem<TransformCommandArgs & CoreComma
     for (const selectedEntity of this.selectedBlocks.current) {
       const shouldDeselect = !intersectedEntities.some((entity) => entity.isSame(selectedEntity))
       if (shouldDeselect) {
-        if (selectedEntity.has(comps.Selected)) selectedEntity.remove(comps.Selected)
+        if (selectedEntity.has(Selected)) selectedEntity.remove(Selected)
       }
     }
 
     for (const entity of intersectedEntities) {
-      if (!entity.has(comps.Selected)) {
-        entity.add(comps.Selected, {
+      if (!entity.has(Selected)) {
+        entity.add(Selected, {
           selectedBy: this.resources.uid,
         })
       }

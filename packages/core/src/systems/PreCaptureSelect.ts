@@ -1,22 +1,26 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
-import { distance } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 import { and, assign, not, setup } from 'xstate'
 
-import * as transformComps from '../components'
+import { BaseSystem } from '../BaseSystem'
+import { Block, Locked, Persistent, Selected, SelectionState as SelectionStateComp, TransformBox } from '../components'
 import { getCursorSvg } from '../cursors'
-import { CursorKind, SelectionState, TransformCommand, type TransformCommandArgs } from '../types'
+import { distance } from '../helpers'
+import { CoreCommand, type CoreCommandArgs, type PointerEvent } from '../types'
+import { CursorKind, SelectionState } from '../types'
+import { PreCaptureIntersect } from './PreCaptureIntersect'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
 
-export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
-  private readonly _blocks = this.query(
-    (q) => q.with(comps.Block, comps.Persistent).read.using(transformComps.Locked, transformComps.TransformBox).read,
-  )
+export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
+  private readonly _blocks = this.query((q) => q.with(Block, Persistent).read.using(Locked, TransformBox).read)
 
-  private readonly selectionState = this.singleton.write(transformComps.SelectionState)
+  private readonly selectionState = this.singleton.write(SelectionStateComp)
+
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(PreCaptureIntersect))
+  }
 
   private readonly selectionMachine = setup({
     types: {
@@ -41,18 +45,18 @@ export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreComm
       isOverPersistentBlock: ({ event }) => {
         let intersect: Entity | undefined
         for (const entity of event.intersects) {
-          if (entity?.has(comps.Persistent)) {
+          if (entity?.has(Persistent)) {
             intersect = entity
             break
           }
         }
 
         if (!intersect) return false
-        return intersect.has(comps.Persistent) && intersect.alive
+        return intersect.has(Persistent) && intersect.alive
       },
       draggedEntityIsLocked: ({ context }) => {
         if (!context.draggedEntity) return false
-        return context.draggedEntity.has(transformComps.Locked)
+        return context.draggedEntity.has(Locked)
       },
     },
     actions: {
@@ -77,13 +81,13 @@ export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreComm
         draggedEntity: ({ event }) => event.intersects[0],
         draggedEntityStart: ({ event }): [number, number] => {
           if (!event.intersects[0]) return [0, 0]
-          const block = event.intersects[0].read(comps.Block)
+          const block = event.intersects[0].read(Block)
           return [block.left, block.top] as [number, number]
         },
       }),
       resetDragged: ({ context }) => {
         if (!context.draggedEntity) return
-        this.emitCommand(TransformCommand.DragBlock, context.draggedEntity, {
+        this.emitCommand(CoreCommand.DragBlock, context.draggedEntity, {
           left: context.draggedEntityStart[0],
           top: context.draggedEntityStart[1],
         })
@@ -96,10 +100,10 @@ export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreComm
         draggedEntity: undefined,
       }),
       createSelectionBox: () => {
-        this.emitCommand(TransformCommand.AddSelectionBox)
+        this.emitCommand(CoreCommand.AddSelectionBox)
       },
       removeSelectionBox: () => {
-        this.emitCommand(TransformCommand.RemoveSelectionBox)
+        this.emitCommand(CoreCommand.RemoveSelectionBox)
       },
       createCheckpoint: () => {
         this.emitCommand(CoreCommand.CreateCheckpoint)
@@ -110,10 +114,7 @@ export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreComm
         let left = context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0]
         let top = context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1]
 
-        if (
-          event.shiftDown &&
-          (context.draggedEntity.has(comps.Persistent) || context.draggedEntity.has(transformComps.TransformBox))
-        ) {
+        if (event.shiftDown && (context.draggedEntity.has(Persistent) || context.draggedEntity.has(TransformBox))) {
           // if shift is down then limit the movement to the x-axis or y-axis
           // this only applies when dragging persistent blocks or transform boxes
           // (handles need to manage their own logic for this)
@@ -126,13 +127,13 @@ export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreComm
           }
         }
 
-        this.emitCommand(TransformCommand.DragBlock, context.draggedEntity, {
+        this.emitCommand(CoreCommand.DragBlock, context.draggedEntity, {
           left,
           top,
         })
       },
       resizeSelectionBox: ({ context, event }) => {
-        this.emitCommand(TransformCommand.UpdateSelectionBox, {
+        this.emitCommand(CoreCommand.UpdateSelectionBox, {
           left: Math.min(context.pointingStartWorld[0], event.worldPosition[0]),
           top: Math.min(context.pointingStartWorld[1], event.worldPosition[1]),
           width: Math.abs(context.pointingStartWorld[0] - event.worldPosition[0]),
@@ -142,7 +143,7 @@ export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreComm
       selectIntersect: ({ event }) => {
         let intersect: Entity | undefined
         for (const entity of event.intersects) {
-          if (entity?.has(comps.Persistent)) {
+          if (entity?.has(Persistent)) {
             intersect = entity
             break
           }
@@ -158,11 +159,16 @@ export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreComm
       },
       selectDragged: ({ context }) => {
         if (!context.draggedEntity) return
-        if (!context.draggedEntity.has(comps.Persistent)) return
+        if (!context.draggedEntity.has(Persistent)) return
         this.emitCommand(CoreCommand.SelectBlock, context.draggedEntity, { deselectOthers: true })
       },
       deselectAllIfShiftNotDown: ({ event }) => {
         if (event.shiftDown) return
+        this.emitCommand(CoreCommand.DeselectAll)
+      },
+      deselectAllIfDraggedNotSelected: ({ context }) => {
+        if (!context.draggedEntity) return
+        if (context.draggedEntity.has(Selected)) return
         this.emitCommand(CoreCommand.DeselectAll)
       },
     },
@@ -216,7 +222,7 @@ export class PreCaptureSelect extends BaseSystem<TransformCommandArgs & CoreComm
         },
       },
       [SelectionState.Dragging]: {
-        entry: ['setDragStart', 'setDragCursor'],
+        entry: ['setDragStart', 'setDragCursor', 'deselectAllIfDraggedNotSelected'],
         exit: ['unsetDragCursor'],
         on: {
           pointerMove: {

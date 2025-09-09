@@ -1,5 +1,6 @@
-import { Aabb, Block, HitGeometries } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
+
+import { Aabb, Block, HitGeometries } from '../components'
 
 export function fastIntersectAabb(aabb: Aabb, blockEntities: readonly Entity[]): Entity[] {
   const intersecting: Entity[] = []

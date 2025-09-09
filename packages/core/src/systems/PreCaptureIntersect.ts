@@ -1,38 +1,34 @@
 import type { Entity } from '@lastolivegames/becsy'
 import { BaseSystem } from '../BaseSystem'
-import * as comps from '../components'
+import { Aabb, Block, Camera, Hovered, Intersect, Persistent, allHitGeometriesArray } from '../components'
 import { computeAabb, intersectPoint } from '../helpers'
 
 export class PreCaptureIntersect extends BaseSystem {
-  private readonly intersects = this.query((q) => q.current.with(comps.Intersect).write)
+  private readonly intersects = this.query((q) => q.current.with(Intersect).write)
 
-  private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
+  private readonly cameras = this.query((q) => q.changed.with(Camera).trackWrites)
 
   private readonly blocks = this.query(
     (q) =>
       q.addedOrChanged.changed.removed.current
-        .with(comps.Block)
-        .trackWrites.using(comps.Aabb)
-        .write.using(comps.HitGeometries, comps.HitCapsule).read,
+        .with(Block)
+        .trackWrites.using(Aabb)
+        .write.using(...allHitGeometriesArray).read,
   )
 
-  private readonly hovered = this.query((q) => q.current.with(comps.Hovered).write.using(comps.Persistent).read)
+  private readonly hovered = this.query((q) => q.current.with(Hovered).write.using(Persistent).read)
 
   public execute(): void {
     // update aabb
     for (const blockEntity of this.blocks.addedOrChanged) {
       const aabb = computeAabb(blockEntity)
 
-      if (!blockEntity.has(comps.Aabb)) {
-        blockEntity.add(comps.Aabb)
+      if (!blockEntity.has(Aabb)) {
+        blockEntity.add(Aabb)
       }
 
-      Object.assign(blockEntity.write(comps.Aabb), aabb)
+      Object.assign(blockEntity.write(Aabb), aabb)
     }
-
-    // don't let the hovered entity change when pointer is down
-    // this is mostly useful when dragging objects so the hover state doesn't flicker
-    if (this.pointers.current.length) return
 
     // update intersected entity
     if (this.mouse.moveTrigger || this.blocks.addedOrChanged.length > 0 || this.cameras.changed.length > 0) {
@@ -45,19 +41,23 @@ export class PreCaptureIntersect extends BaseSystem {
       }
 
       if (this.intersectedHasChanged(intersected)) {
-        const writeableIntersect = this.intersects.current[0].write(comps.Intersect)
+        const writeableIntersect = this.intersects.current[0].write(Intersect)
         writeableIntersect.entity = intersected[0]
         writeableIntersect.entity2 = intersected[1]
         writeableIntersect.entity3 = intersected[2]
         writeableIntersect.entity4 = intersected[3]
         writeableIntersect.entity5 = intersected[4]
 
-        this.setHoveredEntity(intersected[0])
+        // don't let the hovered entity change when pointer is down
+        // this is mostly useful when dragging objects so the hover state doesn't flicker
+        if (this.pointers.current.length === 0) {
+          this.setHoveredEntity(intersected[0])
+        }
       }
     }
 
     if (this.mouse.leaveTrigger) {
-      const intersect = this.intersects.current[0].write(comps.Intersect)
+      const intersect = this.intersects.current[0].write(Intersect)
       intersect.entity = undefined
       this.setHoveredEntity(undefined)
     }
@@ -83,10 +83,10 @@ export class PreCaptureIntersect extends BaseSystem {
 
   private setHoveredEntity(entity: Entity | undefined): void {
     for (const hovered of this.hovered.current) {
-      if (hovered.has(comps.Hovered)) hovered.remove(comps.Hovered)
+      if (hovered.has(Hovered)) hovered.remove(Hovered)
     }
     if (entity && this.controls.leftMouseTool === 'select') {
-      if (!entity.has(comps.Hovered)) entity.add(comps.Hovered)
+      if (!entity.has(Hovered)) entity.add(Hovered)
     }
   }
 }

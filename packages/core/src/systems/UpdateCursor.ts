@@ -31,6 +31,7 @@ export class UpdateCursor extends BaseSystem<CoreCommandArgs> {
 
   public execute(): void {
     if (this.frame.value === 1) {
+      // triggers cursor to update on first frame
       this.setControls({})
     }
 
@@ -48,7 +49,9 @@ export class UpdateCursor extends BaseSystem<CoreCommandArgs> {
     const currentControls = this.controlsQuery.current[0].write(comps.Controls)
     Object.assign(currentControls, controls)
 
-    this.emitCommand(CoreCommand.DeselectAll)
+    // if (currentControls.leftMouseTool !== 'select') {
+    //   this.emitCommand(CoreCommand.DeselectAll)
+    // }
   }
 
   private setCursor(cursor: Partial<comps.Cursor>): void {

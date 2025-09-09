@@ -16,6 +16,7 @@ export class ICInkTool extends ICToolbarIconButton {
   `
 
   protected onClick() {
+    InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'ink',
     })

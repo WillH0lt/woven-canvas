@@ -1,15 +1,18 @@
 import { BaseSystem, type CoreCommandArgs } from '@infinitecanvas/core'
-import { Block, Persistent, RankBounds } from '@infinitecanvas/core/components'
+import { Block, Connector, Persistent, RankBounds } from '@infinitecanvas/core/components'
 import { Color } from '@infinitecanvas/extension-color'
 import { Text } from '@infinitecanvas/extension-text'
 import type { Entity } from '@lastolivegames/becsy'
-import { Arrow } from '../components'
-import { ArrowCommand, type ArrowCommandArgs } from '../types'
+
+import { Arrow, ArrowTrim } from '../components'
+import { ArrowCommand, type ArrowCommandArgs, ArrowHeadKind } from '../types'
 
 export class UpdateArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandArgs> {
   private readonly rankBounds = this.singleton.write(RankBounds)
 
-  private readonly _arrows = this.query((q) => q.using(Block, Persistent, Color, Text, Arrow).write)
+  private readonly _arrows = this.query(
+    (q) => q.using(Block, Persistent, Color, Text, Arrow, Connector, ArrowTrim).write,
+  )
 
   public initialize(): void {
     this.addCommandListener(ArrowCommand.AddArrow, this.addArrow.bind(this))
@@ -18,16 +21,16 @@ export class UpdateArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandAr
   }
 
   private addArrow(arrowEntity: Entity, position: [number, number]): void {
-    const radius = 4
+    const thickness = 6
 
     const block = {
       tag: 'ic-arrow',
       id: crypto.randomUUID(),
       rank: this.rankBounds.genNext().toString(),
-      left: position[0] - radius,
-      top: position[1] - radius,
-      width: radius * 2,
-      height: radius * 2,
+      left: position[0] - thickness / 2,
+      top: position[1] - thickness / 2,
+      width: thickness,
+      height: thickness,
     }
 
     arrowEntity.add(Block, block)
@@ -37,11 +40,15 @@ export class UpdateArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandAr
       a: [0, 0],
       b: [0.5, 0.5],
       c: [1, 1],
-      diameter: radius * 2,
+      thickness,
+      startArrowHead: ArrowHeadKind.None,
+      endArrowHead: ArrowHeadKind.V,
     })
 
     arrowEntity.add(Color)
     arrowEntity.add(Text)
+    arrowEntity.add(Connector)
+    arrowEntity.add(ArrowTrim)
   }
 
   private dragArrow(arrowEntity: Entity, start: [number, number], end: [number, number]): void {

@@ -78,6 +78,10 @@ export class ICBaseBlock extends LitElement {
   @property({ type: Boolean, reflect: true, attribute: 'is-selected' })
   public isSelected = false
 
+  public get isEmphasized(): boolean {
+    return this.isHovered || this.isSelected
+  }
+
   protected computeBlockDimensions(element: HTMLElement): { width: number; height: number; left: number; top: number } {
     const blockContainer = document.querySelector('#block-container') as HTMLElement
     const cameraTransform = window.getComputedStyle(blockContainer).transform

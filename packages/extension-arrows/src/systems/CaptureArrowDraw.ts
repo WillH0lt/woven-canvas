@@ -62,6 +62,9 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
         if (!context.activeArrow) return
         this.emitCommand(CoreCommand.SelectBlock, context.activeArrow, { deselectOthers: true })
       },
+      exitArrowControl: () => {
+        this.emitCommand(CoreCommand.SetControls, { leftMouseTool: 'select' })
+      },
       deselectAll: () => {
         this.emitCommand(CoreCommand.DeselectAll)
       },
@@ -102,8 +105,8 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
         },
       },
       [ArrowDrawState.Dragging]: {
-        entry: 'addArrow',
-        exit: 'selectActiveArrow',
+        entry: ['addArrow', 'selectActiveArrow'],
+        exit: ['exitArrowControl', 'deselectAll'],
         on: {
           pointerMove: {
             actions: 'dragArrow',
@@ -128,7 +131,7 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
     const { value, context } = this.runMachine<ArrowDrawState>(
       this.arrowDrawMachine,
       this.arrowDrawState.state,
-      this.arrowDrawState.toJson(),
+      this.arrowDrawState.toContext(),
       events,
     )
 

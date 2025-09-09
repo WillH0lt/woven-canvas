@@ -6,7 +6,7 @@ import { Diff } from '../History'
 import type { Snapshot } from '../History'
 import * as comps from '../components'
 import type { Block } from '../components'
-import { applyDiff, uuidToNumber } from '../helpers'
+import { applyDiff, binarySearchForId, uuidToNumber } from '../helpers'
 import { CoreCommand, type CoreCommandArgs } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 import { UpdateCursor } from './UpdateCursor'
@@ -21,6 +21,8 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   private readonly entities = this.query(
     (q) => q.current.with(comps.Block).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
   )
+
+  private readonly connectors = this.query((q) => q.added.with(comps.Connector).write)
 
   public constructor() {
     super()
@@ -56,6 +58,19 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       for (const blockEntity of this.persistentBlocks.added) {
         const { rank } = blockEntity.read(comps.Block)
         this.rankBounds.add(LexoRank.parse(rank))
+      }
+    }
+
+    // update refs in connectors
+    for (const connectorEntity of this.connectors.added) {
+      const connector = connectorEntity.write(comps.Connector)
+      if (connector.startBlockId) {
+        const startBlockEntity = binarySearchForId(comps.Block, connector.startBlockId, this.entities.current)
+        connector.startBlockEntity = startBlockEntity || undefined
+      }
+      if (connector.endBlockId) {
+        const endBlockEntity = binarySearchForId(comps.Block, connector.endBlockId, this.entities.current)
+        connector.endBlockEntity = endBlockEntity || undefined
       }
     }
 
@@ -126,8 +141,8 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       newSnapshot[newId] = {
         ...snapshot[block.id],
         Block: {
-          ...block,
-          id: newId,
+          ...block.toJson(),
+          id: newId as string,
           rank: this.rankBounds.genNext().toString(),
           left: block.left + offset[0],
           top: block.top + offset[1],

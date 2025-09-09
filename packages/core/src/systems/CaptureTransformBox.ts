@@ -1,10 +1,16 @@
-import { BaseSystem, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
+import type { Entity } from '@lastolivegames/becsy'
 import { and, not, setup } from 'xstate'
 
-import type { Entity } from '@lastolivegames/becsy'
-import * as transformComps from '../components'
-import { TransformBoxState, TransformCommand, type TransformCommandArgs } from '../types'
+import { BaseSystem } from '../BaseSystem'
+import {
+  Block,
+  Selected,
+  TransformBox,
+  TransformBoxState as TransformBoxStateComp,
+  TransformHandle,
+} from '../components'
+import { CoreCommand, type CoreCommandArgs, type PointerEvent, TransformBoxState } from '../types'
+import { CaptureBlockPlacement } from './CaptureBlockPlacement'
 
 type SelectionEvent =
   | PointerEvent
@@ -13,19 +19,17 @@ type SelectionEvent =
       selectedEntities: Entity[]
     }
 
-export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
-  private readonly selectedBlocks = this.query((q) => q.added.removed.current.with(comps.Block, comps.Selected))
+export class CaptureTransformBox extends BaseSystem<CoreCommandArgs> {
+  private readonly selectedBlocks = this.query((q) => q.added.removed.current.with(Block, Selected))
 
-  private readonly transformBoxes = this.query(
-    (q) => q.current.with(transformComps.TransformBox).write.using(transformComps.TransformHandle).read,
-  )
+  private readonly transformBoxes = this.query((q) => q.using(TransformBox).write.using(TransformHandle).read)
 
-  private readonly transformBoxState = this.singleton.write(transformComps.TransformBoxState)
+  private readonly transformBoxState = this.singleton.write(TransformBoxStateComp)
 
-  // public constructor() {
-  //   super()
-  //   this.schedule((s) => s.after(CaptureSelect))
-  // }
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(CaptureBlockPlacement))
+  }
 
   private readonly transformBoxMachine = setup({
     types: {
@@ -34,26 +38,26 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
     guards: {
       isSelectionEditable: () => {
         const selectedEntities = this.selectedBlocks.current.filter(
-          (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
+          (e) => e.read(Selected).selectedBy === this.resources.uid,
         )
 
         if (selectedEntities.length !== 1) return false
 
-        const block = selectedEntities[0].read(comps.Block)
+        const block = selectedEntities[0].read(Block)
         const blockDef = this.getBlockDef(block.tag)
         return blockDef?.canEdit ?? false
       },
       isOverTransformBox: ({ event }) => {
         if (!('intersects' in event)) return false
         const intersect = event.intersects[0]
-        if (!intersect?.has(transformComps.TransformBox)) return false
+        if (!intersect?.has(TransformBox)) return false
 
         return true
       },
       isOverTransformHandle: ({ event }) => {
         if (!('intersects' in event)) return false
         const intersect = event.intersects[0]
-        if (!intersect?.has(transformComps.TransformHandle)) return false
+        if (!intersect?.has(TransformHandle)) return false
 
         return true
       },
@@ -63,7 +67,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
         if (event.selectedEntities.length === 0) return false
 
         const entity = event.selectedEntities[0]
-        const block = entity.read(comps.Block)
+        const block = entity.read(Block)
         const blockDef = this.getBlockDef(block.tag)
         if (blockDef?.resizeMode === 'groupOnly') {
           return false
@@ -74,25 +78,25 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
     },
     actions: {
       addOrUpdateTransformBox: () => {
-        this.emitCommand(TransformCommand.AddOrUpdateTransformBox)
+        this.emitCommand(CoreCommand.AddOrUpdateTransformBox)
       },
       updateTransformBox: () => {
-        this.emitCommand(TransformCommand.UpdateTransformBox)
+        this.emitCommand(CoreCommand.UpdateTransformBox)
       },
       hideTransformBox: () => {
-        this.emitCommand(TransformCommand.HideTransformBox)
+        this.emitCommand(CoreCommand.HideTransformBox)
       },
       showTransformBox: () => {
-        this.emitCommand(TransformCommand.ShowTransformBox)
+        this.emitCommand(CoreCommand.ShowTransformBox)
       },
       removeTransformBox: () => {
-        this.emitCommand(TransformCommand.RemoveTransformBox)
+        this.emitCommand(CoreCommand.RemoveTransformBox)
       },
       startTransformBoxEdit: () => {
-        this.emitCommand(TransformCommand.StartTransformBoxEdit)
+        this.emitCommand(CoreCommand.StartTransformBoxEdit)
       },
       endTransformBoxEdit: () => {
-        this.emitCommand(TransformCommand.EndTransformBoxEdit)
+        this.emitCommand(CoreCommand.EndTransformBoxEdit)
       },
     },
   }).createMachine({
@@ -166,11 +170,11 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
     const events: SelectionEvent[] = []
 
     const addedCount = this.selectedBlocks.added.filter(
-      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
+      (e) => e.read(Selected).selectedBy === this.resources.uid,
     ).length
 
     const selectedEntities = this.selectedBlocks.current.filter(
-      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
+      (e) => e.read(Selected).selectedBy === this.resources.uid,
     )
 
     if (addedCount > 0) {
@@ -180,7 +184,7 @@ export class CaptureTransformBox extends BaseSystem<TransformCommandArgs & CoreC
         this.accessRecentlyDeletedData()
       }
       const removedCount = this.selectedBlocks.removed.filter(
-        (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
+        (e) => e.read(Selected).selectedBy === this.resources.uid,
       ).length
 
       if (removedCount > 0) {

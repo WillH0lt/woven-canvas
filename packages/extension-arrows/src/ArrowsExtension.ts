@@ -5,10 +5,11 @@ import {
   floatingMenuDivider,
   floatingMenuStandardButtons,
 } from '@infinitecanvas/core'
+import { Connector } from '@infinitecanvas/core/components'
 import { Color, floatingMenuButtonColor } from '@infinitecanvas/extension-color'
 import { Text, TextEditorFloatingMenuButtons, floatingMenuButtonVerticalAlign } from '@infinitecanvas/extension-text'
 
-import { Arrow } from './components'
+import { Arrow, ArrowTrim } from './components'
 import * as sys from './systems'
 import './webComponents'
 
@@ -25,7 +26,9 @@ class ArrowsExtensionClass extends BaseExtension {
       ],
       editedFloatingMenu: TextEditorFloatingMenuButtons,
       resizeMode: 'groupOnly' as const,
-      components: [Arrow, Color, Text],
+      placementMode: 'arrow' as const,
+      components: [Arrow, Color, Text, Connector, ArrowTrim],
+      // attachmentNames: ['start', 'end']
     },
   ]
 
@@ -44,7 +47,7 @@ class ArrowsExtensionClass extends BaseExtension {
 
     this._captureGroup = this.createGroup(resources, sys.CaptureArrowDraw, sys.CaptureArrowTransform)
 
-    this._updateGroup = this.createGroup(resources, sys.UpdateArrowDraw, sys.UpdateArrowTransform)
+    this._updateGroup = this.createGroup(resources, sys.UpdateArrowTransform)
   }
 }
 

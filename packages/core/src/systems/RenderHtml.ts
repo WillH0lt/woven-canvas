@@ -186,8 +186,6 @@ export class RenderHtml extends BaseSystem {
     const blockId = block.id
     element.id = blockId
     element.blockId = blockId
-    // element.block = block
-    element.setAttribute(RANK_ATTRIBUTE, block.rank)
 
     const blockDef = this.resources.blockDefs[block.tag]
     if (blockDef) {
@@ -201,6 +199,9 @@ export class RenderHtml extends BaseSystem {
         this.updateElementComponentAttribute(element, entity, Comp)
       }
     }
+
+    const rank = this.getRank(entity)
+    element.setAttribute(RANK_ATTRIBUTE, rank)
 
     return element
   }
@@ -226,10 +227,14 @@ export class RenderHtml extends BaseSystem {
     element.style.height = `${block.height}px`
     element.style.transform = `rotateZ(${block.rotateZ}rad)`
 
-    const rank = element.getAttribute(RANK_ATTRIBUTE)
-    const rankUpdate = rank !== block.rank
+    const elementRank = element.getAttribute(RANK_ATTRIBUTE)
 
-    element.setAttribute(RANK_ATTRIBUTE, block.rank)
+    const blockRank = this.getRank(entity)
+    const rankUpdate = elementRank !== blockRank
+
+    if (rankUpdate) {
+      element.setAttribute(RANK_ATTRIBUTE, blockRank)
+    }
 
     return rankUpdate
   }
@@ -248,5 +253,37 @@ export class RenderHtml extends BaseSystem {
 
     // @ts-ignore
     ;(element as any)[name] = new Comp(value.toJson())
+  }
+
+  private getRank(blockEntity: Entity): string {
+    const block = blockEntity.read(comps.Block)
+
+    // if there's no connector just use the block's rank
+    if (!blockEntity.has(comps.Connector)) {
+      return block.rank
+    }
+
+    let rank = LexoRank.parse(block.rank)
+
+    // if it has a connector use the highest rank of the connecting blocks
+    if (blockEntity.has(comps.Connector)) {
+      const connector = blockEntity.read(comps.Connector)
+
+      const { startBlockEntity, endBlockEntity } = connector
+      for (const block of [startBlockEntity, endBlockEntity]) {
+        if (block) {
+          const b = block.read(comps.Block)
+
+          // TODO need a way to generate with a bit of randomness to avoid collisions
+          const otherRank = LexoRank.parse(b.rank).genNext()
+
+          if (otherRank.compareTo(rank) > 0) {
+            rank = otherRank
+          }
+        }
+      }
+    }
+
+    return rank.toString()
   }
 }

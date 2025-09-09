@@ -8,7 +8,7 @@ import type { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
 import type { Controls, Cursor } from './components'
-import {} from './constants'
+import type { Block } from './components'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -114,6 +114,14 @@ const Theme = z.object({
 
 export type Theme = z.infer<typeof Theme>
 
+const CustomTags = z.object({
+  transformBox: z.string().default('ic-transform-box'),
+  transformHandle: z.string().default('ic-transform-box-handle'),
+  selectionBox: z.string().default('ic-selection-box'),
+})
+
+export type CustomTags = z.infer<typeof CustomTags>
+
 export const Options = z.object({
   ...CoreOptions.shape,
   extensions: z
@@ -125,6 +133,7 @@ export const Options = z.object({
   autofocus: z.boolean().default(true),
   customBlocks: z.array(BlockDef).default([]),
   customTools: z.array(ToolDef).default([]),
+  customTags: CustomTags.default(CustomTags.parse({})),
   theme: Theme.default(Theme.parse({})),
 })
 
@@ -135,6 +144,7 @@ export interface BaseResources {
   blockContainer: HTMLDivElement
   history: History
   blockDefs: BlockDefMap
+  tags: CustomTags
   tools: ToolDefMap
   uid: string
 }
@@ -193,6 +203,20 @@ export enum CoreCommand {
   ToggleSelect = 'coreToggleSelect',
   DeselectAll = 'coreDeselectAll',
   SelectAll = 'coreSelectAll',
+
+  AddSelectionBox = 'coreAddSelectionBox',
+  UpdateSelectionBox = 'coreUpdateSelectionBox',
+  RemoveSelectionBox = 'coreRemoveSelectionBox',
+
+  AddOrUpdateTransformBox = 'coreAddOrUpdateTransformBox',
+  UpdateTransformBox = 'coreUpdateTransformBox',
+  HideTransformBox = 'coreHideTransformBox',
+  ShowTransformBox = 'coreShowTransformBox',
+  RemoveTransformBox = 'coreRemoveTransformBox',
+  StartTransformBoxEdit = 'coreStartTransformBoxEdit',
+  EndTransformBoxEdit = 'coreEndTransformBoxEdit',
+
+  DragBlock = 'coreDragBlock',
 }
 
 export type CoreCommandArgs = {
@@ -245,6 +269,26 @@ export type CoreCommandArgs = {
   [CoreCommand.ToggleSelect]: [Entity]
   [CoreCommand.DeselectAll]: []
   [CoreCommand.SelectAll]: []
+
+  [CoreCommand.AddSelectionBox]: []
+  [CoreCommand.UpdateSelectionBox]: [Partial<Block>]
+  [CoreCommand.RemoveSelectionBox]: []
+
+  [CoreCommand.AddOrUpdateTransformBox]: []
+  [CoreCommand.UpdateTransformBox]: []
+  [CoreCommand.HideTransformBox]: []
+  [CoreCommand.ShowTransformBox]: []
+  [CoreCommand.RemoveTransformBox]: []
+  [CoreCommand.StartTransformBoxEdit]: []
+  [CoreCommand.EndTransformBoxEdit]: []
+
+  [CoreCommand.DragBlock]: [
+    Entity,
+    {
+      left: number
+      top: number
+    },
+  ]
 }
 
 export type PointerEvent = {
@@ -266,7 +310,45 @@ export type MouseEvent = {
 
 export type Transform = [number, number, number, number, number, number]
 
-// Pick only non-function properties, excluding anything from BaseComponent
-export type NonFunctionPropNames<T> = {
-  [K in keyof T]-?: T[K] extends (...args: any) => any ? never : K
+// Pick only serializable properties, excluding functions, Entity values, and Entity[] values
+export type SerializablePropNames<T> = {
+  [K in keyof T]-?: T[K] extends (...args: any) => any
+    ? never
+    : T[K] extends Entity[]
+      ? never
+      : T[K] extends Entity
+        ? never
+        : K
 }[keyof T]
+
+export enum SelectionState {
+  Idle = 'idle',
+  Pointing = 'pointing',
+  Dragging = 'dragging',
+  SelectionBoxPointing = 'selectionBoxPointing',
+  SelectionBoxDragging = 'selectionBoxDragging',
+}
+
+export enum TransformBoxState {
+  None = 'none',
+  Idle = 'idle',
+  Editing = 'editing',
+}
+
+export enum TransformHandleKind {
+  Scale = 'scale',
+  Stretch = 'stretch',
+  Rotate = 'rotate',
+}
+
+export enum CursorKind {
+  Drag = 'drag',
+  NESW = 'nesw',
+  NWSE = 'nwse',
+  NS = 'ns',
+  EW = 'ew',
+  RotateNW = 'rotateNW',
+  RotateNE = 'rotateNE',
+  RotateSW = 'rotateSW',
+  RotateSE = 'rotateSE',
+}

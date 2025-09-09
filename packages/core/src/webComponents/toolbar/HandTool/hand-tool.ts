@@ -25,6 +25,7 @@ export class ICHandTool extends ICToolbarIconButton {
   `
 
   protected onClick() {
+    InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'hand',
     })

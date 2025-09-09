@@ -10,14 +10,17 @@ export enum ArrowTransformState {
   None = 'none',
   Idle = 'idle',
   Editing = 'editing',
-  // Pointing = 'pointing',
-  // Dragging = 'dragging',
 }
 
 export enum ArrowHandleKind {
   Start = 'start',
   Middle = 'middle',
   End = 'end',
+}
+
+export enum ArrowHeadKind {
+  None = 'none',
+  V = 'v',
 }
 
 export enum ArrowCommand {

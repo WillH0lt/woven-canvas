@@ -9,7 +9,7 @@ import type { Snapshot } from './History'
 import { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
-import { Block, Controls, Hovered, Persistent, Selected } from './components'
+import { Block, Connector, Controls, Hovered, Persistent, Selected } from './components'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
@@ -22,13 +22,13 @@ import {
   type EmitterEvents,
   type ICommands,
   type IStore,
-  type NonFunctionPropNames,
   type SendCommandFn,
+  type SerializablePropNames,
 } from './types'
 import { CoreCommand } from './types'
 
-type BlockData = Pick<Block, NonFunctionPropNames<Block>>
-type ControlsData = Pick<Controls, NonFunctionPropNames<Controls>>
+type BlockData = Pick<Block, SerializablePropNames<Block>>
+type ControlsData = Pick<Controls, SerializablePropNames<Controls>>
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -42,6 +42,7 @@ declare module '@infinitecanvas/core' {
       sendBackwardSelected: () => void
       duplicateSelected: () => void
       removeSelected: () => void
+      deselectAll: () => void
       updateBlock: (blockId: string, block: Partial<BlockData>) => void
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
       setControls: (controls: Partial<ControlsData>) => void
@@ -100,6 +101,7 @@ export class CoreExtension extends BaseExtension {
     ComponentRegistry.instance.registerComponent(Selected)
     ComponentRegistry.instance.registerComponent(Hovered)
     ComponentRegistry.instance.registerComponent(Persistent)
+    ComponentRegistry.instance.registerComponent(Connector)
 
     ComponentRegistry.instance.registerSingleton(Controls)
 
@@ -125,10 +127,22 @@ export class CoreExtension extends BaseExtension {
     }
 
     this._preInputGroup = this.createGroup(coreResources, sys.PreInputCommandSpawner, sys.PreInputFrameCounter)
-    this._preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect)
-    this._captureGroup = this.createGroup(coreResources, sys.CaptureBlockPlacement)
+    this._preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect, sys.PreCaptureSelect)
+    this._captureGroup = this.createGroup(
+      coreResources,
+      sys.CaptureBlockPlacement,
+      sys.CaptureTransformBox,
+      sys.CaptureHoverCursor,
+    )
     this._preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited)
-    this._updateGroup = this.createGroup(coreResources, sys.UpdateCursor, sys.UpdateBlocks, sys.UpdateCamera)
+    this._updateGroup = this.createGroup(
+      coreResources,
+      sys.UpdateCursor,
+      sys.UpdateBlocks,
+      sys.UpdateCamera,
+      sys.UpdateSelection,
+      sys.UpdateTransformBox,
+    )
     this._postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
     this._preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
     this._renderGroup = this.createGroup(coreResources, sys.RenderHtml)
@@ -174,6 +188,7 @@ export class CoreExtension extends BaseExtension {
         sendBackwardSelected: () => send(CoreCommand.SendBackwardSelected),
         duplicateSelected: () => send(CoreCommand.DuplicateSelected),
         removeSelected: () => send(CoreCommand.RemoveSelected),
+        deselectAll: () => send(CoreCommand.DeselectAll),
         updateBlock: (blockId: string, block: Partial<BlockData>) => {
           send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {

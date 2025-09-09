@@ -1,26 +1,31 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
-import {
-  newRotationMatrix,
-  newRotationMatrixAroundPoint,
-  transformPoint,
-  uuidToNumber,
-} from '@infinitecanvas/core/helpers'
 import { type Entity, co } from '@lastolivegames/becsy'
-import { DragStart, Locked, TransformBox, TransformHandle } from '../components'
+
+import { BaseSystem } from '../BaseSystem'
+import {
+  Aabb,
+  Block,
+  DragStart,
+  Edited,
+  Locked,
+  Opacity,
+  Selected,
+  ToBeDeleted,
+  TransformBox,
+  TransformHandle,
+} from '../components'
 import {
   TRANSFORM_BOX_RANK,
   TRANSFORM_HANDLE_CORNER_RANK,
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
-import {
-  CursorKind,
-  TransformCommand,
-  type TransformCommandArgs,
-  TransformHandleKind,
-  type TransformResources,
-} from '../types'
+// import * as comps from '@infinitecanvas/core/components'
+import { newRotationMatrix, newRotationMatrixAroundPoint, transformPoint, uuidToNumber } from '../helpers'
+import { CoreCommand, type CoreCommandArgs } from '../types'
+import { CursorKind, TransformHandleKind } from '../types'
+import { UpdateBlocks } from './UpdateBlocks'
+import { UpdateCamera } from './UpdateCamera'
+import { UpdateCursor } from './UpdateCursor'
 import { UpdateSelection } from './UpdateSelection'
 
 interface TransformHandleDef {
@@ -36,42 +41,39 @@ interface TransformHandleDef {
   rank: string
 }
 
-export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCommandArgs> {
-  protected readonly resources!: TransformResources
-
+export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
   private readonly selectedBlocks = this.query(
-    (q) => q.added.removed.current.with(comps.Block, comps.Selected).write.using(comps.Aabb).read,
+    (q) => q.added.removed.current.with(Block, Selected).write.using(Aabb).read,
   )
 
-  private readonly editedBlocks = this.query((q) => q.current.with(comps.Block, comps.Edited).write)
+  private readonly editedBlocks = this.query((q) => q.current.with(Block, Edited).write)
 
   private readonly transformBoxes = this.query(
     (q) =>
-      q.current.changed
-        .with(TransformBox, comps.Block)
-        .write.trackWrites.using(TransformHandle, DragStart, Locked, comps.Opacity).write,
+      q.current.changed.with(TransformBox, Block).write.trackWrites.using(TransformHandle, DragStart, Locked, Opacity)
+        .write,
   )
 
-  private readonly handles = this.query((q) => q.changed.with(TransformHandle, comps.Block).write.trackWrites)
+  private readonly handles = this.query((q) => q.changed.with(TransformHandle, Block).write.trackWrites)
 
   private readonly blocks = this.query((q) =>
-    q.current.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
+    q.current.with(Block).write.orderBy((e) => uuidToNumber(e.read(Block).id)),
   )
 
   public constructor() {
     super()
-    this.schedule((s) => s.after(UpdateSelection))
+    this.schedule((s) => s.after(UpdateSelection, UpdateCursor, UpdateBlocks, UpdateCamera))
   }
 
   public initialize(): void {
-    this.addCommandListener(TransformCommand.DragBlock, this.dragBlock.bind(this))
-    this.addCommandListener(TransformCommand.AddOrUpdateTransformBox, this.addOrUpdateTransformBox.bind(this))
-    this.addCommandListener(TransformCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
-    this.addCommandListener(TransformCommand.HideTransformBox, this.hideTransformBox.bind(this))
-    this.addCommandListener(TransformCommand.ShowTransformBox, this.showTransformBox.bind(this))
-    this.addCommandListener(TransformCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
-    this.addCommandListener(TransformCommand.StartTransformBoxEdit, this.startTransformBoxEdit.bind(this))
-    this.addCommandListener(TransformCommand.EndTransformBoxEdit, this.endTransformBoxEdit.bind(this))
+    this.addCommandListener(CoreCommand.DragBlock, this.dragBlock.bind(this))
+    this.addCommandListener(CoreCommand.AddOrUpdateTransformBox, this.addOrUpdateTransformBox.bind(this))
+    this.addCommandListener(CoreCommand.UpdateTransformBox, this.updateTransformBox.bind(this))
+    this.addCommandListener(CoreCommand.HideTransformBox, this.hideTransformBox.bind(this))
+    this.addCommandListener(CoreCommand.ShowTransformBox, this.showTransformBox.bind(this))
+    this.addCommandListener(CoreCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
+    this.addCommandListener(CoreCommand.StartTransformBoxEdit, this.startTransformBoxEdit.bind(this))
+    this.addCommandListener(CoreCommand.EndTransformBoxEdit, this.endTransformBoxEdit.bind(this))
     this.addCommandListener(CoreCommand.SetZoom, this.onZoom.bind(this))
   }
 
@@ -87,7 +89,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     this.deleteEntities(transformBox.handles)
     this.deleteEntity(transformBoxEntity)
 
-    const isEditing = this.selectedBlocks.current.every((e) => e.has(comps.Edited))
+    const isEditing = this.selectedBlocks.current.every((e) => e.has(Edited))
     if (isEditing) {
       this.endTransformBoxEdit()
     }
@@ -101,8 +103,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     } else {
       transformBoxEntity = this.createEntity(
         TransformBox,
-        comps.Block,
-        { id: crypto.randomUUID(), tag: this.resources.transformBoxTag, rank: TRANSFORM_BOX_RANK },
+        Block,
+        { id: crypto.randomUUID(), tag: this.resources.tags.transformBox, rank: TRANSFORM_BOX_RANK },
         DragStart,
       )
     }
@@ -110,7 +112,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     this.updateTransformBox(transformBoxEntity)
 
     // check if all of the blocks are already edited
-    const isEditing = this.selectedBlocks.current.every((e) => e.has(comps.Edited))
+    const isEditing = this.selectedBlocks.current.every((e) => e.has(Edited))
 
     if (isEditing) {
       this.hideTransformBox(transformBoxEntity)
@@ -130,15 +132,13 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     let rotateZ = 0
     if (this.selectedBlocks.current.length > 0) {
-      rotateZ = this.selectedBlocks.current[0].read(comps.Block).rotateZ
+      rotateZ = this.selectedBlocks.current[0].read(Block).rotateZ
     }
 
-    const selectedBlocks = this.selectedBlocks.current.filter(
-      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
-    )
+    const selectedBlocks = this.selectedBlocks.current.filter((e) => e.read(Selected).selectedBy === this.resources.uid)
 
     for (let i = 1; i < selectedBlocks.length; i++) {
-      const block = selectedBlocks[i].read(comps.Block)
+      const block = selectedBlocks[i].read(Block)
       if (Math.abs(rotateZ - block.rotateZ) > 0.01) {
         rotateZ = 0
         break
@@ -147,11 +147,11 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     // size the transform box to selected blocks
     const corners = selectedBlocks.flatMap((e) => {
-      const block = e.read(comps.Block)
+      const block = e.read(Block)
       return block.getCorners()
     })
 
-    const boxBlock = transformBoxEntity.write(comps.Block)
+    const boxBlock = transformBoxEntity.write(Block)
     boxBlock.rotateZ = rotateZ
     boxBlock.boundPoints(corners)
 
@@ -164,7 +164,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     })
 
     for (const blockEntity of selectedBlocks) {
-      const block = blockEntity.read(comps.Block)
+      const block = blockEntity.read(Block)
       if (!blockEntity.has(DragStart)) {
         blockEntity.add(DragStart)
       }
@@ -180,7 +180,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
   }
 
   private addOrUpdateTransformHandles(transformBoxEntity: Entity): void {
-    const transformBoxBlock = transformBoxEntity.read(comps.Block)
+    const transformBoxBlock = transformBoxEntity.read(Block)
 
     const { left, top, width, height, rotateZ } = transformBoxBlock
     const center = transformBoxBlock.getCenter()
@@ -192,13 +192,11 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     const rotateCursorKinds = [CursorKind.RotateNW, CursorKind.RotateNE, CursorKind.RotateSW, CursorKind.RotateSE]
 
-    const selectedBlocks = this.selectedBlocks.current.filter(
-      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
-    )
-    let singularSelectedBlock: comps.Block | null = null
+    const selectedBlocks = this.selectedBlocks.current.filter((e) => e.read(Selected).selectedBy === this.resources.uid)
+    let singularSelectedBlock: Block | null = null
     let resizeMode = 'scale'
     if (selectedBlocks.length === 1) {
-      singularSelectedBlock = selectedBlocks[0].read(comps.Block)
+      singularSelectedBlock = selectedBlocks[0].read(Block)
       const blockDef = this.getBlockDef(singularSelectedBlock.tag)
       resizeMode = blockDef?.resizeMode ?? resizeMode
     }
@@ -233,7 +231,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         }
 
         handles.push({
-          tag: this.resources.transformHandleTag,
+          tag: this.resources.tags.transformHandle,
           kind: handleKind,
           vector: [xi * 2 - 1, yi * 2 - 1],
           left: left + width * xi - handleSize / 2,
@@ -322,7 +320,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
       // if no existing handle entity, create a new one
       if (!handleEntity) {
-        handleEntity = this.createEntity(TransformHandle, comps.Block, { id: crypto.randomUUID() }, DragStart)
+        handleEntity = this.createEntity(TransformHandle, Block, { id: crypto.randomUUID() }, DragStart)
       }
 
       const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
@@ -338,7 +336,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
         cursorKind: handle.cursorKind,
       })
 
-      Object.assign(handleEntity.write(comps.Block), {
+      Object.assign(handleEntity.write(Block), {
         left,
         top,
         tag: handle.tag,
@@ -375,18 +373,18 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     const transformBox = transformBoxEntity.read(TransformBox)
     for (const handleEntity of transformBox.handles) {
-      if (!handleEntity.has(comps.Opacity)) {
-        handleEntity.add(comps.Opacity)
+      if (!handleEntity.has(Opacity)) {
+        handleEntity.add(Opacity)
       }
 
-      const handleOpacity = handleEntity.write(comps.Opacity)
+      const handleOpacity = handleEntity.write(Opacity)
       handleOpacity.value = 0
     }
 
-    if (!transformBoxEntity.has(comps.Opacity)) {
-      transformBoxEntity.add(comps.Opacity)
+    if (!transformBoxEntity.has(Opacity)) {
+      transformBoxEntity.add(Opacity)
     }
-    const boxOpacity = transformBoxEntity.write(comps.Opacity)
+    const boxOpacity = transformBoxEntity.write(Opacity)
     boxOpacity.value = 0
   }
 
@@ -405,28 +403,36 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     const transformBoxEntity = this.transformBoxes.current[0]
 
     // make sure the transform box hasn't been deleted in the meantime
-    if (!transformBoxEntity.alive || transformBoxEntity.has(comps.ToBeDeleted)) return
+    if (!transformBoxEntity.alive || transformBoxEntity.has(ToBeDeleted)) return
 
     if (transformBoxEntity.has(Locked)) return
 
     const transformBox = transformBoxEntity.read(TransformBox)
     for (const handleEntity of transformBox.handles) {
-      if (handleEntity.has(comps.Opacity)) {
-        handleEntity.remove(comps.Opacity)
+      if (handleEntity.has(Opacity)) {
+        handleEntity.remove(Opacity)
       }
     }
-    if (transformBoxEntity.has(comps.Opacity)) {
-      transformBoxEntity.remove(comps.Opacity)
+    if (transformBoxEntity.has(Opacity)) {
+      transformBoxEntity.remove(Opacity)
     }
 
     this.updateTransformBox()
   }
 
   private dragBlock(blockEntity: Entity, position: { left: number; top: number }): void {
-    const block = blockEntity.write(comps.Block)
+    const block = blockEntity.write(Block)
 
     block.left = position.left
     block.top = position.top
+
+    // if (block.connections.length) {
+    //   // Update connection position
+    //    for (const connEntity of block.connections) {
+    //      const connection = connEntity.write(Connection)
+    //      connection.position = [block.left, block.top]
+    //    }
+    // }
 
     if (blockEntity.has(TransformBox)) {
       this.onTransformBoxMove(blockEntity)
@@ -450,24 +456,24 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     const boxEntity = this.transformBoxes.current[0]
-    const boxCenter = boxEntity.read(comps.Block).getCenter()
+    const boxCenter = boxEntity.read(Block).getCenter()
 
-    const handleBlock = handleEntity.read(comps.Block)
+    const handleBlock = handleEntity.read(Block)
     const handleCenter = [handleBlock.left + handleBlock.width / 2, handleBlock.top + handleBlock.height / 2]
     const angleHandle = Math.atan2(handleCenter[1] - boxCenter[1], handleCenter[0] - boxCenter[0])
 
     const { vector } = handleEntity.read(TransformHandle)
-    const boxBlock = boxEntity.read(comps.Block)
+    const boxBlock = boxEntity.read(Block)
     const handleStartAngle = Math.atan2(boxBlock.height * vector[1], boxBlock.width * vector[0]) + boxBlock.rotateZ
 
     const delta = angleHandle - handleStartAngle
 
-    handleEntity.write(comps.Block).rotateZ = (boxBlock.rotateZ + delta) % (2 * Math.PI)
+    handleEntity.write(Block).rotateZ = (boxBlock.rotateZ + delta) % (2 * Math.PI)
 
     for (const blockEntity of this.selectedBlocks.current) {
       const { startLeft, startTop, startWidth, startHeight, startRotateZ } = blockEntity.read(DragStart)
 
-      const block = blockEntity.write(comps.Block)
+      const block = blockEntity.write(Block)
       block.rotateZ = (startRotateZ + delta) % (2 * Math.PI)
 
       if (this.keyboard.shiftDown) {
@@ -490,7 +496,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       return
     }
 
-    const handleBlock = handleEntity.read(comps.Block)
+    const handleBlock = handleEntity.read(Block)
     const handleCenter: [number, number] = [
       handleBlock.left + handleBlock.width / 2,
       handleBlock.top + handleBlock.height / 2,
@@ -518,7 +524,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
       return
     }
 
-    const oppositeHandleBlock = oppositeHandle.read(comps.Block)
+    const oppositeHandleBlock = oppositeHandle.read(Block)
     const oppositeCenter = oppositeHandleBlock.getCenter()
     let difference: [number, number] = [handleCenter[0] - oppositeCenter[0], handleCenter[1] - oppositeCenter[1]]
     const R0 = newRotationMatrix(-boxRotateZ)
@@ -559,7 +565,7 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     for (const selectedEntity of this.selectedBlocks.current) {
       const { startLeft, startTop, startWidth, startHeight } = selectedEntity.read(DragStart)
 
-      const block = selectedEntity.write(comps.Block)
+      const block = selectedEntity.write(Block)
 
       block.left = (startLeft - boxStartLeft) * (boxEndWidth / boxStartWidth) + boxEndLeft
       block.top = (startTop - boxStartTop) * (boxEndHeight / boxStartHeight) + boxEndTop
@@ -584,14 +590,14 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
   private onTransformBoxMove(transformBoxEntity: Entity): void {
     const boxStart = transformBoxEntity.read(DragStart)
-    const transformBoxBlock = transformBoxEntity.read(comps.Block)
+    const transformBoxBlock = transformBoxEntity.read(Block)
 
     const dx = transformBoxBlock.left - boxStart.startLeft
     const dy = transformBoxBlock.top - boxStart.startTop
 
     for (const selectedBlock of this.selectedBlocks.current) {
       const blockStart = selectedBlock.read(DragStart)
-      const block = selectedBlock.write(comps.Block)
+      const block = selectedBlock.write(Block)
       block.left = blockStart.startLeft + dx
       block.top = blockStart.startTop + dy
     }
@@ -614,12 +620,10 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
 
     this.setComponent(transformBoxEntity, Locked)
 
-    const selectedBlocks = this.selectedBlocks.current.filter(
-      (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
-    )
+    const selectedBlocks = this.selectedBlocks.current.filter((e) => e.read(Selected).selectedBy === this.resources.uid)
 
     for (const blockEntity of selectedBlocks) {
-      this.setComponent(blockEntity, comps.Edited)
+      this.setComponent(blockEntity, Edited)
     }
   }
 
@@ -640,8 +644,8 @@ export class UpdateTransformBox extends BaseSystem<TransformCommandArgs & CoreCo
     }
 
     for (const blockEntity of this.editedBlocks.current) {
-      if (blockEntity.has(comps.Edited)) {
-        blockEntity.remove(comps.Edited)
+      if (blockEntity.has(Edited)) {
+        blockEntity.remove(Edited)
       }
     }
   }

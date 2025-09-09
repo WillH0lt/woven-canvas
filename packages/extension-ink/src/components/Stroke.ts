@@ -8,7 +8,7 @@ export class Stroke extends BaseComponent {
   @field.float32.vector(POINTS_CAPACITY) declare points: number[]
   @field.int32 declare pointCount: number
 
-  @field({ type: Type.float32, default: 8 }) declare diameter: number
+  @field({ type: Type.float32, default: 8 }) declare thickness: number
   @field.float32 declare originalLeft: number
   @field.float32 declare originalTop: number
   @field.float32 declare originalWidth: number
@@ -26,7 +26,7 @@ export class Stroke extends BaseComponent {
     return {
       points,
       pointCount: this.pointCount,
-      diameter: this.diameter,
+      thickness: this.thickness,
       originalWidth: this.originalWidth,
       originalHeight: this.originalHeight,
       originalLeft: this.originalLeft,
@@ -38,7 +38,7 @@ export class Stroke extends BaseComponent {
   public fromJson(data: Record<string, any>): this {
     this.points = new Array(POINTS_CAPACITY).fill(0)
     this.pointCount = data.pointCount
-    this.diameter = data.diameter
+    this.thickness = data.thickness
     this.originalWidth = data.originalWidth
     this.originalHeight = data.originalHeight
     this.originalLeft = data.originalLeft

@@ -10,20 +10,20 @@ function average(a: number, b: number) {
   return (a + b) / 2
 }
 
-function getSvgPathFromStroke(stroke: Stroke, diameter: number, inputPoints: [number, number][]): string {
+function getSvgPathFromStroke(stroke: Stroke, thickness: number, inputPoints: [number, number][]): string {
   if (stroke.pointCount <= 4 || !stroke.originalWidth || !stroke.originalHeight) {
     if (!stroke.isComplete) {
       return ''
     }
 
     // draw a dot
-    const r = diameter / 2
+    const r = thickness / 2
     return `M ${r},0 a ${r},${r} 0 1 0 0.0001 0`
   }
 
   const outlinePoints = getStroke(inputPoints, {
     last: stroke.isComplete,
-    size: diameter,
+    size: thickness,
   })
 
   let a = outlinePoints[0]
@@ -118,7 +118,7 @@ export class ICInkStroke extends ICBaseBlock {
           />
         </svg>
         ${
-          this.isHovered || this.isSelected
+          this.isEmphasized
             ? html`
               <svg id="highlight" preserveAspectRatio="none">
                 <path
@@ -150,11 +150,11 @@ export class ICInkStroke extends ICBaseBlock {
       ])
     }
 
-    this.path = getSvgPathFromStroke(this.stroke, this.stroke.diameter, inputPoints)
+    this.path = getSvgPathFromStroke(this.stroke, this.stroke.thickness, inputPoints)
 
     if (this.stroke.isComplete) {
-      const diameter = inputPoints.length === 1 ? this.stroke.diameter : 1
-      this.highlightedPath = getSvgPathFromStroke(this.stroke, diameter, inputPoints)
+      const thickness = inputPoints.length === 1 ? this.stroke.thickness : 1
+      this.highlightedPath = getSvgPathFromStroke(this.stroke, thickness, inputPoints)
     }
   }
 }

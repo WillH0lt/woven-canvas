@@ -8,4 +8,16 @@ export class ArrowDrawState extends BaseComponent {
   @field.int32.vector(2) public declare pointingStartClient: [number, number]
   @field.int32.vector(2) public declare pointingStartWorld: [number, number]
   @field.ref public declare activeArrow: Entity | null
+
+  public toContext(): {
+    pointingStartClient: [number, number]
+    pointingStartWorld: [number, number]
+    activeArrow: Entity | null
+  } {
+    return {
+      pointingStartClient: [this.pointingStartClient[0], this.pointingStartClient[1]],
+      pointingStartWorld: [this.pointingStartWorld[0], this.pointingStartWorld[1]],
+      activeArrow: this.activeArrow,
+    }
+  }
 }

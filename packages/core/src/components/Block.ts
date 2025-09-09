@@ -9,7 +9,7 @@ import {
   transformPoint,
 } from '../helpers'
 import { Aabb } from './Aabb'
-import { Connection } from './Connection'
+import { Connector } from './Connector'
 import type { HitCapsule } from './HitCapsule'
 
 export class Block extends BaseComponent {
@@ -21,7 +21,7 @@ export class Block extends BaseComponent {
   @field.float64 declare height: number
   @field.float64 declare rotateZ: number
   @field.dynamicString(36) public declare rank: string
-  @field.backrefs(Connection, 'targetEntity', true) public declare connections: Entity[]
+  @field.backrefs(Connector) public declare connectors: Entity[]
 
   public intersectsPoint(point: [number, number]): boolean {
     const { width, height, left, top, rotateZ } = this
@@ -145,8 +145,14 @@ export class Block extends BaseComponent {
     const m = newRotationMatrixAroundPoint(-this.rotateZ, center)
     const p = transformPoint(m, world)
 
+    const w = Math.max(this.width, 1)
+    const h = Math.max(this.height, 1)
+
+    const x = Math.max(p[0] - this.left, 0)
+    const y = Math.max(p[1] - this.top, 0)
+
     // Convert to UV coordinates
-    return [(p[0] - this.left) / this.width, (p[1] - this.top) / this.height]
+    return [x / w, y / h]
   }
 
   // update left, top, width, height so that the block bounds the given points

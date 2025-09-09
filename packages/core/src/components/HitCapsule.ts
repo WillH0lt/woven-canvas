@@ -57,7 +57,7 @@ export class HitCapsule {
     return distanceSq <= radius * radius
   }
 
-  public getAabb(): Aabb {
+  private getAabb(): Aabb {
     const { a, b, radius } = this
 
     return new Aabb({
@@ -172,6 +172,22 @@ export class HitCapsule {
 
     // Capsules intersect if the distance between segments is within combined radius
     return minDistSq <= combinedRadiusSq
+  }
+
+  public trim(tStart: number, tEnd: number): void {
+    const newA = this.parametricToPoint(tStart)
+    const newB = this.parametricToPoint(tEnd)
+
+    // Update the capsule with new points
+    this.a = newA
+    this.b = newB
+  }
+
+  public parametricToPoint(t: number): [number, number] {
+    const { a, b } = this
+    const x = a[0] + t * (b[0] - a[0])
+    const y = a[1] + t * (b[1] - a[1])
+    return [x, y]
   }
 }
 

@@ -10,13 +10,13 @@ function average(a: number, b: number) {
   return (a + b) / 2
 }
 
-function getSvgPathFromStroke(stroke: EraserStroke, diameter: number, inputPoints: [number, number][]): string {
+function getSvgPathFromStroke(stroke: EraserStroke, thickness: number, inputPoints: [number, number][]): string {
   if (stroke.pointCount <= 4) {
     return ''
   }
 
   const outlinePoints = getStroke(inputPoints, {
-    size: diameter,
+    size: thickness,
     start: {
       taper: 66,
       cap: true,

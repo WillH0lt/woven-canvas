@@ -12,7 +12,6 @@ import { RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
 // import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
 import { StickyNotesExtension } from '@infinitecanvas/extension-sticky-notes'
 import { TextExtension } from '@infinitecanvas/extension-text'
-import { TransformExtension } from '@infinitecanvas/extension-transform'
 
 const lorem = new LoremIpsum({
   sentencesPerParagraph: {
@@ -50,7 +49,7 @@ async function initializeCanvas(container: HTMLDivElement) {
 
   infiniteCanvas = await InfiniteCanvas.New({
     extensions: [
-      TransformExtension,
+      // TransformExtension,
       ControlsExtension,
       InputExtension,
       TextExtension,

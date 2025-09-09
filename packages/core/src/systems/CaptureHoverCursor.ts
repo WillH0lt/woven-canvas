@@ -1,13 +1,12 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
-import { Block, Cursor, Hovered } from '@infinitecanvas/core/components'
-import { TransformHandle } from '../components'
+import { BaseSystem } from '../BaseSystem'
+import { CoreCommand, type CoreCommandArgs } from '../types'
+
+import { Block, Cursor, Hovered, TransformHandle } from '../components'
 import { getCursorSvg } from '../cursors'
-import type { TransformResources } from '../types'
+import { CaptureBlockPlacement } from './CaptureBlockPlacement'
 import { CaptureTransformBox } from './CaptureTransformBox'
 
 export class CaptureHoverCursor extends BaseSystem<CoreCommandArgs> {
-  protected readonly resources!: TransformResources
-
   private readonly hovered = this.query((q) =>
     q.addedOrChanged.current.removed.with(Block).trackWrites.and.with(Hovered, TransformHandle),
   )
@@ -16,7 +15,7 @@ export class CaptureHoverCursor extends BaseSystem<CoreCommandArgs> {
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureTransformBox))
+    this.schedule((s) => s.inAnyOrderWith(CaptureTransformBox, CaptureBlockPlacement))
   }
 
   public execute(): void {

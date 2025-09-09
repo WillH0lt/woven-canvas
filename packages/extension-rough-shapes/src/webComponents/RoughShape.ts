@@ -177,7 +177,7 @@ export class ICRoughShape extends ICEditableBlock {
               : ''
           }
           ${
-            this.isHovered || this.isSelected
+            this.isEmphasized
               ? svg`<path
                 d=${highlightInfo.d}
                 fill="none"

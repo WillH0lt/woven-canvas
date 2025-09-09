@@ -164,6 +164,7 @@ export class InfiniteCanvas {
       blockContainer,
       blockDefs,
       tools,
+      tags: parsedOptions.customTags,
       uid: crypto.randomUUID(),
       history: new History(),
     }
@@ -203,8 +204,6 @@ export class InfiniteCanvas {
       ...renderGroups,
       ...postRenderGroups,
     ]
-
-    console.log(orderedGroups)
 
     scheduleGroups(orderedGroups)
 

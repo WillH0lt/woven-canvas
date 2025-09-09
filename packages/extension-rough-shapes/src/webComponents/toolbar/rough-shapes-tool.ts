@@ -44,6 +44,7 @@ export class ICRoughShapesTool extends ICToolbarIconButton {
 
     const snapshot = createSnapshot(block, [text, shape])
 
+    InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'rough-shapes',
       heldSnapshot: JSON.stringify(snapshot),

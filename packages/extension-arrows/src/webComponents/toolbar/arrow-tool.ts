@@ -37,6 +37,7 @@ export class ICArrowTool extends ICToolbarIconButton {
 
     // const snapshot = createSnapshot(block, [text, color])
 
+    InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'arrow',
       // heldSnapshot: JSON.stringify(snapshot),
