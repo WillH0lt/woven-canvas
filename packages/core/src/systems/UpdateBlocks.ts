@@ -68,6 +68,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     // update refs in connectors
     for (const connectorEntity of this.connectors.added) {
+      console.log("SETTING UP CONNECTOR'S BLOCK REFS")
       const connector = connectorEntity.write(comps.Connector)
       if (connector.startBlockId) {
         const startBlockEntity = binarySearchForId(comps.Block, connector.startBlockId, this.entities.current)
@@ -139,6 +140,10 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   ): Entity[] {
     const newSnapshot: Snapshot = {}
 
+    if (cloneGeneratorSeed === null) {
+      cloneGeneratorSeed = crypto.randomUUID().slice(0, 8)
+    }
+
     // sort blocks by rank
     const blocks: Record<string, any>[] = []
     for (const entity of Object.values(snapshot)) {
@@ -168,7 +173,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i]
-      const newId = cloneGeneratorSeed ? generateUuidBySeed(block.id + cloneGeneratorSeed) : crypto.randomUUID()
+      const newId = generateUuidBySeed(block.id + cloneGeneratorSeed)
       newSnapshot[newId] = {
         ...snapshot[block.id],
         Block: {
@@ -178,6 +183,31 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
           left: block.left + offset[0],
           top: block.top + offset[1],
         },
+      }
+
+      // update the connector references if any
+      if (newSnapshot[newId].Connector) {
+        const connector = newSnapshot[newId].Connector as Partial<comps.Connector>
+        if (connector.startBlockId) {
+          if (snapshot[connector.startBlockId]) {
+            // we're duplicating the arrow and it's connected blocks, so we need to update the references
+            const newStartBlockId = generateUuidBySeed(connector.startBlockId + cloneGeneratorSeed)
+            connector.startBlockId = newStartBlockId
+          } else {
+            // the start block isn't being duplicated, so just disconnect
+            connector.startBlockId = undefined
+          }
+        }
+
+        // and do the same for the end block
+        if (connector.endBlockId) {
+          if (snapshot[connector.endBlockId]) {
+            const newEndBlockId = generateUuidBySeed(connector.endBlockId + cloneGeneratorSeed)
+            connector.endBlockId = newEndBlockId
+          } else {
+            connector.endBlockId = undefined
+          }
+        }
       }
     }
 
@@ -282,7 +312,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   }
 
   private cloneEntities(entities: Entity[], offset: [number, number], cloneGeneratorSeed: string): void {
-    console.log('CLONING', entities.length, 'blocks with seed', cloneGeneratorSeed)
     const snapshot = this._getSnapshot(entities)
     this._duplicateSnapshot(snapshot, offset, 'backward', cloneGeneratorSeed)
   }

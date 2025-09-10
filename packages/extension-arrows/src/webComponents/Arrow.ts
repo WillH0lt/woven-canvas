@@ -164,19 +164,6 @@ export class ICArrow extends ICEditableBlock {
       return svg``
     }
 
-    console.log(
-      'vec',
-      vec,
-      'a',
-      a,
-      'c',
-      c,
-      'this.arrowTrim.tStart',
-      this.arrowTrim.tStart,
-      'this.arrowTrim.tEnd',
-      this.arrowTrim.tEnd,
-    )
-
     let tStart = 0
     let tEnd = 1
     if (trim) {

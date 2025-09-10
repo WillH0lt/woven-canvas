@@ -40,9 +40,9 @@ declare module '@infinitecanvas/core' {
       createCheckpoint: () => void
       bringForwardSelected: () => void
       sendBackwardSelected: () => void
+      deselectAll: () => void
       duplicateSelected: () => void
       removeSelected: () => void
-      deselectAll: () => void
       updateBlock: (blockId: string, block: Partial<BlockData>) => void
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
       setControls: (controls: Partial<ControlsData>) => void
@@ -186,9 +186,9 @@ export class CoreExtension extends BaseExtension {
         createCheckpoint: () => send(CoreCommand.CreateCheckpoint),
         bringForwardSelected: () => send(CoreCommand.BringForwardSelected),
         sendBackwardSelected: () => send(CoreCommand.SendBackwardSelected),
+        deselectAll: () => send(CoreCommand.DeselectAll),
         duplicateSelected: () => send(CoreCommand.DuplicateSelected),
         removeSelected: () => send(CoreCommand.RemoveSelected),
-        deselectAll: () => send(CoreCommand.DeselectAll),
         updateBlock: (blockId: string, block: Partial<BlockData>) => {
           send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {

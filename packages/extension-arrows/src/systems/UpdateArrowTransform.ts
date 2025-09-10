@@ -68,8 +68,8 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     (q) =>
       q.current.addedOrChanged
         .with(Arrow, Block)
-        .write.trackWrites.with(Connector, ArrowTrim)
-        .write.using(HitGeometries, HitArc, HitCapsule, Persistent, Color, Text)
+        .write.trackWrites.with(Connector)
+        .write.using(HitGeometries, HitArc, HitCapsule, Persistent, Color, Text, ArrowTrim)
         .write.using(...allHitGeometriesArray).read,
   )
 
@@ -111,6 +111,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     for (const blockEntity of this.blocks.changed) {
       for (const connectorEntity of blockEntity.read(Block).connectors) {
         if (connectorEntity.has(Arrow)) {
+          console.log('UPDATING CONNECTOR')
           const block = blockEntity.read(Block)
           const connector = connectorEntity.read(Connector)
           const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
@@ -156,7 +157,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     arrowEntity.add(Color)
     arrowEntity.add(Text)
     arrowEntity.add(Connector)
-    arrowEntity.add(ArrowTrim)
 
     this.updateConnector(arrowEntity, ArrowHandleKind.Start, position)
   }
@@ -395,6 +395,10 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     const aWorld = arrowBlock.uvToWorld(arrow.a)
     const bWorld = arrowBlock.uvToWorld(arrow.b)
     const cWorld = arrowBlock.uvToWorld(arrow.c)
+
+    if (!arrowEntity.has(ArrowTrim)) {
+      arrowEntity.add(ArrowTrim)
+    }
     const trim = arrowEntity.write(ArrowTrim)
 
     // create geometry
@@ -451,83 +455,13 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     return t ?? defaultValue
   }
 
-  // private updateArrowTrimForStraightLine(arrowEntity: Entity): void {
-  //   const connector = arrowEntity.read(Connector)
-  //   const arrow = arrowEntity.read(Arrow)
-
-  //   const arrowBlock = arrowEntity.read(Block)
-  //   const aWorld = arrowBlock.uvToWorld(arrow.a)
-  //   const cWorld = arrowBlock.uvToWorld(arrow.c)
-  //   const segment = new Segment(aWorld, cWorld)
-  //   const trim = arrowEntity.write(ArrowTrim)
-
-  //   let startTrim = 0
-  //   if (connector.startBlockEntity) {
-  //     const startBlock = connector.startBlockEntity.read(Block)
-  //     const intersects = segment.intersectBlock(startBlock)
-  //     if (intersects.length > 0) {
-  //       const t = segment.pointToParametric(intersects[0])
-  //       if (t !== null) startTrim = t
-  //     }
-  //   }
-
-  //   let endTrim = 1
-  //   if (connector.endBlockEntity) {
-  //     const endBlock = connector.endBlockEntity.read(Block)
-  //     const intersects = segment.intersectBlock(endBlock)
-  //     if (intersects.length > 0) {
-  //       const t = segment.pointToParametric(intersects[0])
-  //       if (t !== null) endTrim = t
-  //     }
-  //   }
-
-  //   trim.tStart = startTrim
-  //   trim.tEnd = endTrim
-
-  //   // reset if the trim is too small
-  //   if (endTrim - startTrim < 0.1) {
-  //     trim.tStart = 0
-  //     trim.tEnd = 1
-  //   }
-  // }
-
-  // private updateArrowTrimForCurvedArrow(arrowEntity: Entity, arc: HitArc): void {
-  //   const connector = arrowEntity.read(Connector)
-  //   const trim = arrowEntity.write(ArrowTrim)
-
-  //   let startTrim = 0
-  //   if (connector.startBlockEntity) {
-  //     const points = arcIntersectEntity(arc, connector.startBlockEntity)
-  //     const closestPoint = closestPointToPoint(points, arc.a)
-  //     if (closestPoint) {
-  //       const t = arc.pointToParametric(closestPoint)
-  //       if (t !== null) startTrim = t
-  //     }
-  //   }
-
-  //   let endTrim = 1
-  //   if (connector.endBlockEntity) {
-  //     const points = arcIntersectEntity(arc, connector.endBlockEntity)
-  //     const closestPoint = closestPointToPoint(points, arc.c)
-  //     if (closestPoint) {
-  //       const t = arc.pointToParametric(closestPoint)
-  //       if (t !== null) endTrim = t
-  //     }
-  //   }
-
-  //   trim.tStart = startTrim
-  //   trim.tEnd = endTrim
-
-  //   // reset if the trim is too small
-  //   if (endTrim - startTrim < 0.1) {
-  //     trim.tStart = 0
-  //     trim.tEnd = 1
-  //   }
-  // }
-
   private addOrUpdateHitGeometry(arrowEntity: Entity): void {
     if (!arrowEntity.has(HitGeometries)) {
       arrowEntity.add(HitGeometries)
+    }
+
+    if (!arrowEntity.has(ArrowTrim)) {
+      arrowEntity.add(ArrowTrim)
     }
 
     const hitGeometries = arrowEntity.read(HitGeometries)
