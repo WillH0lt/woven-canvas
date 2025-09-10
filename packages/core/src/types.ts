@@ -194,6 +194,11 @@ export enum CoreCommand {
   SendBackwardSelected = 'coreSendBackwardSelected',
   DuplicateSelected = 'coreDuplicateSelected',
   RemoveSelected = 'coreRemoveSelected',
+  CloneSelected = 'coreCloneSelected',
+  UncloneSelected = 'coreUncloneSelected',
+
+  CloneEntities = 'coreCloneEntities',
+  UncloneEntities = 'coreUncloneEntities',
 
   CreateFromSnapshot = 'coreCreateFromSnapshot',
   UpdateFromSnapshot = 'coreUpdateFromSnapshot',
@@ -252,6 +257,11 @@ export type CoreCommandArgs = {
   [CoreCommand.SendBackwardSelected]: []
   [CoreCommand.DuplicateSelected]: []
   [CoreCommand.RemoveSelected]: []
+  [CoreCommand.CloneSelected]: [[number, number], string]
+  [CoreCommand.UncloneSelected]: [string]
+
+  [CoreCommand.CloneEntities]: [Entity[], [number, number], string]
+  [CoreCommand.UncloneEntities]: [Entity[], string]
 
   [CoreCommand.CreateFromSnapshot]: [Snapshot]
   [CoreCommand.UpdateFromSnapshot]: [Snapshot]
@@ -298,6 +308,8 @@ export type PointerEvent = {
   velocity: [number, number]
   intersects: [Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined]
   shiftDown: boolean
+  altDown: boolean
+  modDown: boolean
 }
 
 export type MouseEvent = {

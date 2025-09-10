@@ -1,5 +1,5 @@
 import type { Entity } from '@lastolivegames/becsy'
-import { LexoRank } from 'lexorank'
+import { LexoRank } from '@dalet-oss/lexorank'
 
 import { Aabb, Block, HitGeometries } from '../components'
 

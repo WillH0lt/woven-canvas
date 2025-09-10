@@ -88,6 +88,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
         entities.push(value)
         return { kind: 'EntityRef', index: entities.length - 1 }
       }
+
       return value
     })
 
@@ -236,7 +237,13 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     }
 
     if (
-      (changed.length > 0 || this.keyboard.shiftUpTrigger || this.keyboard.shiftDownTrigger) &&
+      (changed.length > 0 ||
+        this.keyboard.shiftUpTrigger ||
+        this.keyboard.shiftDownTrigger ||
+        this.keyboard.altDownTrigger ||
+        this.keyboard.altUpTrigger ||
+        this.keyboard.modDownTrigger ||
+        this.keyboard.modUpTrigger) &&
       current.length === 1
     ) {
       const pointer = current[0].read(comps.Pointer)
@@ -257,6 +264,8 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
         this.intersect.entity5,
       ]
       event.shiftDown = this.keyboard.shiftDown
+      event.altDown = this.keyboard.altDown
+      event.modDown = this.keyboard.modDown
     }
 
     return events as PointerEvent[]

@@ -126,6 +126,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@dalet-oss/lexorank':
+        specifier: ^1.1.0
+        version: 1.1.0
       '@floating-ui/dom':
         specifier: ^1.7.2
         version: 1.7.2
@@ -141,9 +144,6 @@ importers:
       idb:
         specifier: ^8.0.3
         version: 8.0.3
-      lexorank:
-        specifier: ^1.0.5
-        version: 1.0.5
       lit:
         specifier: ^3.3.0
         version: 3.3.0
@@ -162,6 +162,9 @@ importers:
 
   packages/extension-arrows:
     dependencies:
+      '@dalet-oss/lexorank':
+        specifier: ^1.1.0
+        version: 1.1.0
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
@@ -174,9 +177,6 @@ importers:
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
-      lexorank:
-        specifier: ^1.0.5
-        version: 1.0.5
       lit:
         specifier: ^3.3.0
         version: 3.3.0
@@ -667,6 +667,10 @@ packages:
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
     engines: {node: '>=18'}
     dev: true
+
+  /@dalet-oss/lexorank@1.1.0:
+    resolution: {integrity: sha512-V7kSZKd6LHvI1J+7BUmmd5YanTMgSAwoOreiLe2ayPpDjJxUWXL8Ddcwmv+K9e+E82jotctvOY9CsB+hUEp2tA==}
+    dev: false
 
   /@esbuild/aix-ppc64@0.25.4:
     resolution: {integrity: sha512-1VCICWypeQKhVbE9oW/sJaAmjLxhVqacdkvPLEjwlttjfwENRSClS8EjBz0KzRyFSCPDIkuXW34Je/vk7zdB7Q==}
@@ -2594,10 +2598,6 @@ packages:
     optionalDependencies:
       graceful-fs: 4.2.11
     dev: true
-
-  /lexorank@1.0.5:
-    resolution: {integrity: sha512-K1B/Yr/gIU0wm68hk/yB0p/mv6xM3ShD5aci42vOwcjof8slG8Kpo3Q7+1WTv7DaRHKWRgLPqrFDt+4GtuFAtA==}
-    dev: false
 
   /lightningcss-darwin-arm64@1.30.1:
     resolution: {integrity: sha512-c8JK7hyE65X1MHMN+Viq9n11RRC7hgin3HhYKhrMyaXflk5GVplZ60IxyoVtzILeKr+xAJwg6zK6sjTBJ0FKYQ==}

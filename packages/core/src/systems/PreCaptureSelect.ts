@@ -13,7 +13,9 @@ import { PreCaptureIntersect } from './PreCaptureIntersect'
 const POINTING_THRESHOLD = 4
 
 export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
-  private readonly _blocks = this.query((q) => q.with(Block, Persistent).read.using(Locked, TransformBox).read)
+  private readonly _blocks = this.query(
+    (q) => q.with(Block, Persistent).read.using(Locked, TransformBox, Selected).read,
+  )
 
   private readonly selectionState = this.singleton.write(SelectionStateComp)
 
@@ -30,6 +32,7 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         dragStart: [number, number]
         draggedEntityStart: [number, number]
         draggedEntity: Entity | undefined
+        cloneGeneratorSeed: string
       },
       events: {} as PointerEvent,
     },
@@ -82,6 +85,8 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         draggedEntityStart: ({ event }): [number, number] => {
           if (!event.intersects[0]) return [0, 0]
           const block = event.intersects[0].read(Block)
+
+          console.log('dragged entity start', block.left, block.top)
           return [block.left, block.top] as [number, number]
         },
       }),
@@ -91,6 +96,14 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
           left: context.draggedEntityStart[0],
           top: context.draggedEntityStart[1],
         })
+
+        if (context.cloneGeneratorSeed) {
+          if (context.draggedEntity.has(TransformBox)) {
+            this.emitCommand(CoreCommand.UncloneSelected, context.cloneGeneratorSeed)
+          } else {
+            this.emitCommand(CoreCommand.UncloneEntities, [context.draggedEntity], context.cloneGeneratorSeed)
+          }
+        }
       },
       resetContext: assign({
         dragStart: [0, 0],
@@ -98,6 +111,7 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         pointingStartWorld: [0, 0],
         draggedEntityStart: [0, 0],
         draggedEntity: undefined,
+        cloneGeneratorSeed: '',
       }),
       createSelectionBox: () => {
         this.emitCommand(CoreCommand.AddSelectionBox)
@@ -108,30 +122,61 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
       createCheckpoint: () => {
         this.emitCommand(CoreCommand.CreateCheckpoint)
       },
-      updateDragged: ({ context, event }) => {
-        if (!context.draggedEntity) return
+      updateDragged: assign({
+        cloneGeneratorSeed: ({ context, event }) => {
+          if (!context.draggedEntity) return ''
 
-        let left = context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0]
-        let top = context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1]
+          let left = context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0]
+          let top = context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1]
 
-        if (event.shiftDown && (context.draggedEntity.has(Persistent) || context.draggedEntity.has(TransformBox))) {
-          // if shift is down then limit the movement to the x-axis or y-axis
-          // this only applies when dragging persistent blocks or transform boxes
-          // (handles need to manage their own logic for this)
-          const dx = Math.abs(event.worldPosition[0] - context.dragStart[0])
-          const dy = Math.abs(event.worldPosition[1] - context.dragStart[1])
-          if (dx > dy) {
-            top = context.draggedEntityStart[1]
-          } else {
-            left = context.draggedEntityStart[0]
+          const draggingPersistent = context.draggedEntity.has(Persistent) || context.draggedEntity.has(TransformBox)
+
+          if (event.shiftDown && draggingPersistent) {
+            // if shift is down then limit the movement to the x-axis or y-axis
+            // this only applies when dragging persistent blocks or transform boxes
+            // (handles need to manage their own logic for this)
+            const dx = Math.abs(event.worldPosition[0] - context.dragStart[0])
+            const dy = Math.abs(event.worldPosition[1] - context.dragStart[1])
+            if (dx > dy) {
+              top = context.draggedEntityStart[1]
+            } else {
+              left = context.draggedEntityStart[0]
+            }
           }
-        }
 
-        this.emitCommand(CoreCommand.DragBlock, context.draggedEntity, {
-          left,
-          top,
-        })
-      },
+          this.emitCommand(CoreCommand.DragBlock, context.draggedEntity, {
+            left,
+            top,
+          })
+
+          // if alt is down then clone the entity if it hasn't already been cloned
+          let cloneGeneratorSeed = context.cloneGeneratorSeed
+          if (event.altDown && draggingPersistent && !cloneGeneratorSeed) {
+            const block = context.draggedEntity.read(Block)
+
+            const dx = context.draggedEntityStart[0] - block.left
+            const dy = context.draggedEntityStart[1] - block.top
+
+            cloneGeneratorSeed = crypto.randomUUID().slice(0, 8)
+
+            if (context.draggedEntity.has(TransformBox)) {
+              this.emitCommand(CoreCommand.CloneSelected, [dx, dy], cloneGeneratorSeed)
+            } else {
+              this.emitCommand(CoreCommand.CloneEntities, [context.draggedEntity], [dx, dy], cloneGeneratorSeed)
+            }
+          } else if (!event.altDown && cloneGeneratorSeed) {
+            // if alt was released then unclone the entity
+            if (context.draggedEntity.has(TransformBox)) {
+              this.emitCommand(CoreCommand.UncloneSelected, cloneGeneratorSeed)
+            } else {
+              this.emitCommand(CoreCommand.UncloneEntities, [context.draggedEntity], cloneGeneratorSeed)
+            }
+            cloneGeneratorSeed = ''
+          }
+
+          return cloneGeneratorSeed
+        },
+      }),
       resizeSelectionBox: ({ context, event }) => {
         this.emitCommand(CoreCommand.UpdateSelectionBox, {
           left: Math.min(context.pointingStartWorld[0], event.worldPosition[0]),
@@ -181,6 +226,7 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
       pointingStartWorld: [0, 0],
       draggedEntityStart: [0, 0],
       draggedEntity: undefined,
+      cloneGeneratorSeed: '',
     },
     states: {
       [SelectionState.Idle]: {

@@ -269,6 +269,12 @@ export class Keyboard extends BaseComponent {
 
   @field.boolean public declare shiftUpTrigger: boolean
 
+  @field.boolean public declare altDown: boolean
+
+  @field.boolean public declare altDownTrigger: boolean
+
+  @field.boolean public declare altUpTrigger: boolean
+
   @field.boolean public declare modDown: boolean
 
   @field.boolean public declare modDownTrigger: boolean

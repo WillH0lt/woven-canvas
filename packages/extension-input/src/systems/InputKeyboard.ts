@@ -36,10 +36,6 @@ export class InputKeyboard extends BaseSystem {
       this.setTrigger('modDownTrigger')
     }
     this.updateKeyboard('modDown', modDown)
-
-    if (e.key === 'z' && this.keyboard.modDown) {
-      e.preventDefault()
-    }
   }
 
   private onKeyUp(e: KeyboardEvent): void {
@@ -56,10 +52,6 @@ export class InputKeyboard extends BaseSystem {
       this.setTrigger('modUpTrigger')
     }
     this.updateKeyboard('modDown', modDown)
-
-    if (e.key === 'z' && this.keyboard.modDown) {
-      e.preventDefault()
-    }
   }
 
   @co private *resetKeyboard(): Generator {
@@ -80,8 +72,24 @@ export class InputKeyboard extends BaseSystem {
   public initialize(): void {
     const domElement = this.resources.domElement
 
-    domElement.addEventListener('keydown', (e) => this.eventsBuffer.push(e))
-    domElement.addEventListener('keyup', (e) => this.eventsBuffer.push(e))
+    domElement.addEventListener('keydown', (e) => {
+      if (e.key === 'z' && this.keyboard.modDown) {
+        e.preventDefault()
+      }
+
+      if (e.key === 'Alt') {
+        e.preventDefault()
+      }
+
+      this.eventsBuffer.push(e)
+    })
+    domElement.addEventListener('keyup', (e) => {
+      if (e.key === 'z' && this.keyboard.modDown) {
+        e.preventDefault()
+      }
+
+      this.eventsBuffer.push(e)
+    })
     domElement.addEventListener('blur', () => this.resetKeyboard())
   }
 

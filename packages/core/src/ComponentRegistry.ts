@@ -20,6 +20,10 @@ export class ComponentRegistry {
     return Object.values(this._components)
   }
 
+  public get componentNamesMap(): Map<string, new () => BaseComponent> {
+    return new Map(this.components.map((c) => [c.name, c]))
+  }
+
   public registerComponent(component: new () => BaseComponent): void {
     if (!this._components.includes(component)) {
       this._components.push(component)

@@ -9,4 +9,6 @@ export class SelectionState {
   @field.int32.vector(2) public declare pointingStartWorld: [number, number]
   @field.int32.vector(2) public declare draggedEntityStart: [number, number]
   @field.ref public declare draggedEntity: Entity | undefined
+  @field.dynamicString(24) public declare cloneGeneratorSeed: string
+  // @field({ type: Type.dynamicString(1024), default: '[]' }) public declare clonedEntityIds: string
 }

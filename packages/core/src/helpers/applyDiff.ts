@@ -5,7 +5,7 @@ import { Block, Persistent } from '../components'
 import { binarySearchForId } from '../helpers/binarySearchForId'
 
 export function applyDiff(system: System, diff: Diff, entities: Query): { added: Entity[]; changed: Entity[] } {
-  const componentNames = new Map(ComponentRegistry.instance.components.map((c) => [c.name, c]))
+  const componentNames = ComponentRegistry.instance.componentNamesMap
 
   const added: Entity[] = []
   const changed: Entity[] = []
@@ -39,7 +39,6 @@ export function applyDiff(system: System, diff: Diff, entities: Query): { added:
   }
 
   // removed components
-  console.log(diff.removed)
   const current = [...entities.current]
   for (const [id, components] of Object.entries(diff.removed)) {
     const entity = binarySearchForId(Block, id, current)

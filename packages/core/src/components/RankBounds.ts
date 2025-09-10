@@ -1,6 +1,6 @@
 import { Type, component, field } from '@lastolivegames/becsy'
 
-import { LexoRank } from 'lexorank'
+import { LexoRank } from '@dalet-oss/lexorank'
 
 @component
 export class RankBounds {

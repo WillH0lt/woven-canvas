@@ -41,11 +41,11 @@
     "test:watch": "vitest  --config ../../vitest.config.ts run --watch"
   },
   "dependencies": {
+    "@dalet-oss/lexorank": "^1.1.0",
     "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/extension-color": "workspace:^",
     "@infinitecanvas/extension-text": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
-    "lexorank": "^1.0.5",
     "lit": "^3.3.0",
     "xstate": "^5.19.4"
   },

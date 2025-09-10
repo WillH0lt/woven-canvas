@@ -1,12 +1,12 @@
+import { LexoRank } from '@dalet-oss/lexorank'
 import type { Entity } from '@lastolivegames/becsy'
-import { LexoRank } from 'lexorank'
 
 import { BaseSystem } from '../BaseSystem'
 import { Diff } from '../History'
 import type { Snapshot } from '../History'
 import * as comps from '../components'
 import type { Block } from '../components'
-import { applyDiff, binarySearchForId, uuidToNumber } from '../helpers'
+import { applyDiff, binarySearchForId, generateUuidBySeed, uuidToNumber } from '../helpers'
 import { CoreCommand, type CoreCommandArgs } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 import { UpdateCursor } from './UpdateCursor'
@@ -41,6 +41,11 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     this.addCommandListener(CoreCommand.UpdateFromSnapshot, this.updateFromSnapshot.bind(this))
     this.addCommandListener(CoreCommand.CreateFromSnapshot, this.createFromSnapshot.bind(this))
+
+    this.addCommandListener(CoreCommand.CloneEntities, this.cloneEntities.bind(this))
+    this.addCommandListener(CoreCommand.CloneSelected, this.cloneSelected.bind(this))
+    this.addCommandListener(CoreCommand.UncloneEntities, this.uncloneEntities.bind(this))
+    this.addCommandListener(CoreCommand.UncloneSelected, this.uncloneSelected.bind(this))
 
     this.addCommandListener(CoreCommand.SelectBlock, this.selectBlock.bind(this))
     this.addCommandListener(CoreCommand.DeselectBlock, this.deselectBlock.bind(this))
@@ -118,7 +123,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
   private _getSnapshot(entities: readonly Entity[]): Snapshot {
     const mySelectedBlockIds = entities
-      .filter((blockEntity) => blockEntity.read(comps.Selected).selectedBy === this.resources.uid)
+      // .filter((blockEntity) => blockEntity.read(comps.Selected).selectedBy === this.resources.uid)
       .map((blockEntity) => blockEntity.read(comps.Block).id)
 
     const snapshot = this.resources.history.getEntities(mySelectedBlockIds)
@@ -126,24 +131,50 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     return snapshot
   }
 
-  private _duplicateSnapshot(snapshot: Snapshot, offset: [number, number]): Entity[] {
+  private _duplicateSnapshot(
+    snapshot: Snapshot,
+    offset: [number, number],
+    rankShiftDirection: 'forward' | 'backward' = 'forward',
+    cloneGeneratorSeed: string | null = null,
+  ): Entity[] {
     const newSnapshot: Snapshot = {}
 
     // sort blocks by rank
-    const blocks: Block[] = []
+    const blocks: Record<string, any>[] = []
     for (const entity of Object.values(snapshot)) {
-      blocks.push(entity.Block as unknown as Block)
+      blocks.push(entity.Block)
     }
+    if (blocks.length === 0) return []
+
     blocks.sort((a, b) => LexoRank.parse(a.rank).compareTo(LexoRank.parse(b.rank)))
 
-    for (const block of blocks) {
-      const newId = crypto.randomUUID()
+    const sorted = this.entities.current.slice().sort((a, b) => {
+      const rankA = LexoRank.parse(a.read(comps.Block).rank)
+      const rankB = LexoRank.parse(b.read(comps.Block).rank)
+      return rankA.compareTo(rankB)
+    })
+
+    let rankStart: LexoRank
+    let rankEnd: LexoRank
+    if (rankShiftDirection === 'forward') {
+      rankStart = LexoRank.parse(blocks[blocks.length - 1].rank)
+      rankEnd = this._getNextRank(rankStart, sorted)
+    } else {
+      rankEnd = LexoRank.parse(blocks[0].rank)
+      rankStart = this._getPrevRank(rankEnd, sorted)
+    }
+
+    const ranks = rankStart.multipleBetween(rankEnd, blocks.length)
+
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i]
+      const newId = cloneGeneratorSeed ? generateUuidBySeed(block.id + cloneGeneratorSeed) : crypto.randomUUID()
       newSnapshot[newId] = {
         ...snapshot[block.id],
         Block: {
-          ...block.toJson(),
+          ...block,
           id: newId as string,
-          rank: this.rankBounds.genNext().toString(),
+          rank: ranks[i].toString(),
           left: block.left + offset[0],
           top: block.top + offset[1],
         },
@@ -250,6 +281,40 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     }
   }
 
+  private cloneEntities(entities: Entity[], offset: [number, number], cloneGeneratorSeed: string): void {
+    console.log('CLONING', entities.length, 'blocks with seed', cloneGeneratorSeed)
+    const snapshot = this._getSnapshot(entities)
+    this._duplicateSnapshot(snapshot, offset, 'backward', cloneGeneratorSeed)
+  }
+
+  private cloneSelected(offset: [number, number], cloneGeneratorSeed: string): void {
+    const mySelectedBlocks = this.selectedBlocks.current.filter(
+      (blockEntity) => blockEntity.read(comps.Selected).selectedBy === this.resources.uid,
+    )
+
+    this.cloneEntities(mySelectedBlocks, offset, cloneGeneratorSeed)
+  }
+
+  private uncloneEntities(blockEntities: Entity[], cloneGeneratorSeed: string): void {
+    console.log('UNCLONING', blockEntities.length, 'blocks with seed', cloneGeneratorSeed)
+    for (const blockEntity of blockEntities) {
+      const block = blockEntity.read(comps.Block)
+      const expectedId = generateUuidBySeed(block.id + cloneGeneratorSeed)
+      const clonedBlockEntity = binarySearchForId(comps.Block, expectedId, this.entities.current)
+      if (clonedBlockEntity) {
+        this.deleteEntity(clonedBlockEntity)
+      }
+    }
+  }
+
+  private uncloneSelected(cloneGeneratorSeed: string): void {
+    const mySelectedBlocks = this.selectedBlocks.current.filter(
+      (blockEntity) => blockEntity.read(comps.Selected).selectedBy === this.resources.uid,
+    )
+
+    this.uncloneEntities(mySelectedBlocks, cloneGeneratorSeed)
+  }
+
   private selectBlock(blockEntity: Entity, options: { deselectOthers?: boolean } = {}): void {
     this.selectBlocks([blockEntity], options)
   }
@@ -295,5 +360,26 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     }
 
     this.emitCommand(CoreCommand.CreateCheckpoint)
+  }
+
+  private _getNextRank(rank: LexoRank, sortedBlocks: Entity[]): LexoRank {
+    for (const blockEntity of sortedBlocks) {
+      const block = blockEntity.read(comps.Block)
+      if (LexoRank.parse(block.rank).compareTo(rank) > 0) {
+        return LexoRank.parse(block.rank)
+      }
+    }
+    return this.rankBounds.genNext()
+  }
+
+  private _getPrevRank(rank: LexoRank, sortedBlocks: Entity[]): LexoRank {
+    for (let i = sortedBlocks.length - 1; i >= 0; i--) {
+      const blockEntity = sortedBlocks[i]
+      const block = blockEntity.read(comps.Block)
+      if (LexoRank.parse(block.rank).compareTo(rank) < 0) {
+        return LexoRank.parse(block.rank)
+      }
+    }
+    return this.rankBounds.genPrev()
   }
 }

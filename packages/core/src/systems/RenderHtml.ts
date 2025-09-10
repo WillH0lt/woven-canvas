@@ -1,5 +1,5 @@
 import type { Entity, Query } from '@lastolivegames/becsy'
-import { LexoRank } from 'lexorank'
+import { LexoRank } from '@dalet-oss/lexorank'
 
 import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
