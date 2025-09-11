@@ -17,6 +17,8 @@ export class ICToolbar extends SignalWatcher(LitElement) {
   private tooltipTimeout: number | null = null
   private isTooltipVisible = false
 
+  private heldTool: ToolDef | null = null
+
   private menuElement: HTMLElement | null = null
   private cleanupMenu: (() => void) | null = null
 
@@ -56,7 +58,7 @@ export class ICToolbar extends SignalWatcher(LitElement) {
 
     return html`
       <div class="container" 
-        @mouseleave="${() => this.hideTooltip()}"
+        @mouseleave="${() => this.onMouseLeave()}"
       >
         ${this.tools.map((tool) =>
           tool.buttonTag
@@ -65,6 +67,7 @@ export class ICToolbar extends SignalWatcher(LitElement) {
               class="button"
               ?selected="${controls?.value?.leftMouseTool === tool.name}"
               @mouseenter="${() => this.onMouseEnter(tool)}"
+              @mousedown="${() => this.onMouseDown(tool)}"
               @click="${() => this.onClick(tool)}"
             />
           `
@@ -136,6 +139,21 @@ export class ICToolbar extends SignalWatcher(LitElement) {
         this.tooltipTimeout = null
       }, 500)
     }
+  }
+
+  onMouseDown(tool: ToolDef) {
+    this.heldTool = tool
+  }
+
+  onMouseLeave() {
+    this.hideTooltip()
+
+    if (this.heldTool) {
+      const toolElement = this.shadowRoot?.querySelector(this.heldTool.buttonTag || '')
+      toolElement?.dispatchEvent(new MouseEvent('tool-drag-out'))
+    }
+
+    this.heldTool = null
   }
 
   showTooltip(tool: ToolDef, tooltip: HTMLElement) {

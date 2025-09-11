@@ -56,7 +56,7 @@ export class ICArrow extends ICEditableBlock {
   public arrow!: Arrow
 
   @property({ type: Object })
-  public arrowTrim!: ArrowTrim
+  public arrowTrim: ArrowTrim | undefined = undefined
 
   private arc = new HitArc()
 
@@ -109,7 +109,7 @@ export class ICArrow extends ICEditableBlock {
     let arcAngle = arc._arcAngle
     let tStart = 0
     let tEnd = 1
-    if (trim) {
+    if (trim && this.arrowTrim) {
       const gap = ARROW_HEAD_GAP / arc.length()
 
       tStart = this.arrowTrim.tStart
@@ -166,7 +166,7 @@ export class ICArrow extends ICEditableBlock {
 
     let tStart = 0
     let tEnd = 1
-    if (trim) {
+    if (trim && this.arrowTrim) {
       const gap = ARROW_HEAD_GAP / length
 
       tStart = this.arrowTrim.tStart

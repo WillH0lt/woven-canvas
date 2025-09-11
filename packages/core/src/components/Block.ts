@@ -21,7 +21,7 @@ export class Block extends BaseComponent {
   @field.float64 declare height: number
   @field.float64 declare rotateZ: number
   @field.dynamicString(36) public declare rank: string
-  @field.backrefs(Connector) public declare connectors: Entity[]
+  @field.backrefs(Connector, undefined, true) public declare connectors: Entity[]
 
   public intersectsPoint(point: [number, number]): boolean {
     const { width, height, left, top, rotateZ } = this

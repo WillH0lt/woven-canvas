@@ -17,30 +17,9 @@ export class ICArrowTool extends ICToolbarIconButton {
   `
 
   protected onClick() {
-    // const block = new Block({
-    //   tag: 'ic-arrow',
-    //   width: 300,
-    //   height: 300,
-    // })
-
-    // const color = new Color({
-    //   red: Math.floor(Math.random() * 256),
-    //   green: Math.floor(Math.random() * 256),
-    //   blue: Math.floor(Math.random() * 256),
-    // })
-
-    // const text = new Text({
-    //   fontSize: 40,
-    //   verticalAlign: VerticalAlign.Top,
-    //   constrainWidth: true,
-    // })
-
-    // const snapshot = createSnapshot(block, [text, color])
-
     InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'arrow',
-      // heldSnapshot: JSON.stringify(snapshot),
     })
   }
 }

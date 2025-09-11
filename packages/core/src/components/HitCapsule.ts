@@ -189,6 +189,24 @@ export class HitCapsule {
     const y = a[1] + t * (b[1] - a[1])
     return [x, y]
   }
+
+  public pointToParametric(point: [number, number]): number {
+    const abx = this.b[0] - this.a[0]
+    const aby = this.b[1] - this.a[1]
+    const abLengthSq = abx * abx + aby * aby
+
+    if (abLengthSq === 0) return 0 // a and b are the same point
+
+    const apx = point[0] - this.a[0]
+    const apy = point[1] - this.a[1]
+    const t = (apx * abx + apy * aby) / abLengthSq
+    return Math.max(0, Math.min(1, t))
+  }
+
+  public centerLineIntersectBlock(block: Block): [number, number][] {
+    const corners = block.getCorners()
+    return centerLineIntersectPolygon(corners, this)
+  }
 }
 
 function segmentsIntersect(
@@ -215,6 +233,35 @@ function segmentsIntersect(
   if (o4 === 0 && onSegment(cx, cy, bx, by, dx, dy)) return true
 
   return false
+}
+
+function getSegmentIntersection(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  cx: number,
+  cy: number,
+  dx: number,
+  dy: number,
+): [number, number] | null {
+  const denom = (ax - bx) * (cy - dy) - (ay - by) * (cx - dx)
+
+  if (Math.abs(denom) < 1e-10) {
+    return null // Lines are parallel
+  }
+
+  const t = ((ax - cx) * (cy - dy) - (ay - cy) * (cx - dx)) / denom
+  const u = -((ax - bx) * (ay - cy) - (ay - by) * (ax - cx)) / denom
+
+  // Check if intersection is within both line segments
+  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+    const x = ax + t * (bx - ax)
+    const y = ay + t * (by - ay)
+    return [x, y]
+  }
+
+  return null
 }
 
 function orientation(ax: number, ay: number, bx: number, by: number, cx: number, cy: number): number {
@@ -263,4 +310,29 @@ function segmentSegmentDistSq(
   const d3 = pointSegmentDistSq(cx, cy, ax, ay, bx, by)
   const d4 = pointSegmentDistSq(dx, dy, ax, ay, bx, by)
   return Math.min(d1, d2, d3, d4)
+}
+
+function centerLineIntersectPolygon(corners: [number, number][], capsule: HitCapsule): [number, number][] {
+  const points: [number, number][] = []
+
+  // Check intersection with each edge of the polygon
+  for (let i = 0; i < corners.length; i++) {
+    const start = corners[i]
+    const end = corners[(i + 1) % corners.length]
+    const intersection = getSegmentIntersection(
+      start[0],
+      start[1],
+      end[0],
+      end[1],
+      capsule.a[0],
+      capsule.a[1],
+      capsule.b[0],
+      capsule.b[1],
+    )
+    if (intersection) {
+      points.push(intersection)
+    }
+  }
+
+  return points
 }

@@ -105,8 +105,8 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
         },
       },
       [ArrowDrawState.Dragging]: {
-        entry: ['addArrow', 'selectActiveArrow'],
-        exit: ['exitArrowControl', 'deselectAll'],
+        entry: 'addArrow',
+        exit: ['exitArrowControl', 'selectActiveArrow'],
         on: {
           pointerMove: {
             actions: 'dragArrow',

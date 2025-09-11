@@ -16,7 +16,7 @@ import type { Entity } from '@lastolivegames/becsy'
 
 import { Arrow, ArrowHandle, ArrowTrim } from '../components'
 import { TRANSFORM_HANDLE_RANK, TRANSFORM_HANDLE_SIZE } from '../constants'
-import { Segment, arcIntersectEntity, closestPointToPoint } from '../helpers'
+import { arcIntersectEntity, closestPointToPoint } from '../helpers'
 import { ArrowCommand, type ArrowCommandArgs, ArrowHandleKind, ArrowHeadKind } from '../types'
 
 function polarDelta(
@@ -60,16 +60,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
   private readonly rankBounds = this.singleton.write(RankBounds)
 
-  // private readonly _arrows = this.query(
-  //   (q) => q.using(Block, Persistent, Color, Text, Arrow, Connector, ArrowTrim).write,
-  // )
-
   private readonly arrows = this.query(
     (q) =>
       q.current.addedOrChanged
-        .with(Arrow, Block)
-        .write.trackWrites.with(Connector)
-        .write.using(HitGeometries, HitArc, HitCapsule, Persistent, Color, Text, ArrowTrim)
+        .with(Arrow, Block, Connector)
+        .write.trackWrites.using(HitGeometries, HitArc, HitCapsule, Persistent, Color, Text, ArrowTrim)
         .write.using(...allHitGeometriesArray).read,
   )
 
@@ -78,15 +73,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   )
 
   private readonly blocks = this.query((q) => q.changed.with(Block).trackWrites)
-
-  // private readonly blocks = this.query((q) =>
-  //   q.current.with(comps.Block).write.orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
-  // )
-
-  // public constructor() {
-  //   super()
-  //   this.schedule((s) => s.inAnyOrderWith(UpdateArrowDraw))
-  // }
 
   public initialize(): void {
     this.addCommandListener(ArrowCommand.AddArrow, this.addArrow.bind(this))
@@ -111,7 +97,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     for (const blockEntity of this.blocks.changed) {
       for (const connectorEntity of blockEntity.read(Block).connectors) {
         if (connectorEntity.has(Arrow)) {
-          console.log('UPDATING CONNECTOR')
           const block = blockEntity.read(Block)
           const connector = connectorEntity.read(Connector)
           const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
@@ -125,7 +110,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     // sync hit geometry
     for (const arrowEntity of this.arrows.addedOrChanged) {
       this.addOrUpdateHitGeometry(arrowEntity)
-      this.updateArrowTrim(arrowEntity)
     }
   }
 
@@ -193,9 +177,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private addTransformHandles(arrowEntity: Entity): void {
-    // TODO this is kind of a bad way to prevent adding handles while dragging
-    if (this.pointers.current.length > 0) return
-
     const handleKinds = [ArrowHandleKind.Start, ArrowHandleKind.Middle, ArrowHandleKind.End]
 
     const handles = handleKinds.map((handleKind) =>
@@ -210,10 +191,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     )
 
     this.updateTransformHandles(arrowEntity, handles)
-
-    // if (this.pointers.current.length > 0) {
-    //   this.hideTransformHandles()
-    // }
   }
 
   private updateTransformHandles(arrowEntity: Entity, handles: readonly Entity[] = this.handles.current): void {
@@ -263,7 +240,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     const hitCapsuleEntity = hitGeometries.capsules[0]
     if (!hitCapsuleEntity) return null
     const hitCapsule = hitCapsuleEntity.read(HitCapsule)
-    return [(hitCapsule.a[0] + hitCapsule.b[0]) / 2, (hitCapsule.a[1] + hitCapsule.b[1]) / 2]
+    return hitCapsule.parametricToPoint(0.5)
   }
 
   private hideTransformHandles(): void {
@@ -393,7 +370,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
     const arrowBlock = arrowEntity.read(Block)
     const aWorld = arrowBlock.uvToWorld(arrow.a)
-    const bWorld = arrowBlock.uvToWorld(arrow.b)
     const cWorld = arrowBlock.uvToWorld(arrow.c)
 
     if (!arrowEntity.has(ArrowTrim)) {
@@ -401,18 +377,12 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     }
     const trim = arrowEntity.write(ArrowTrim)
 
-    // create geometry
-    let hitArc: HitArc | null = null
-    let segment: Segment | null = null
-    if (arrow.isCurved()) {
-      hitArc = new HitArc()
-      hitArc.update(aWorld, bWorld, cWorld)
-    } else {
-      segment = new Segment(aWorld, cWorld)
-    }
+    const hitGeometries = arrowEntity.read(HitGeometries)
+    const arc = hitGeometries.arcs.length > 0 ? hitGeometries.arcs[0].write(HitArc) : null
+    const capsule = hitGeometries.capsules.length > 0 ? hitGeometries.capsules[0].write(HitCapsule) : null
 
-    const startTrim = this.calculateTrim(connector.startBlockEntity, hitArc, segment, aWorld, 0)
-    const endTrim = this.calculateTrim(connector.endBlockEntity, hitArc, segment, cWorld, 1)
+    const startTrim = this.calculateTrim(connector.startBlockEntity, arc, capsule, aWorld, 0)
+    const endTrim = this.calculateTrim(connector.endBlockEntity, arc, capsule, cWorld, 1)
 
     trim.tStart = startTrim
     trim.tEnd = endTrim
@@ -422,12 +392,19 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       trim.tStart = 0
       trim.tEnd = 1
     }
+
+    // trim the hit geometry
+    if (arc) {
+      arc.trim(trim.tStart, trim.tEnd)
+    } else if (capsule) {
+      capsule.trim(trim.tStart, trim.tEnd)
+    }
   }
 
   private calculateTrim(
     blockEntity: Entity | undefined,
-    hitArc: HitArc | null,
-    segment: Segment | null,
+    hitArc: Readonly<HitArc> | null,
+    capsule: Readonly<HitCapsule> | null,
     referencePoint: [number, number],
     defaultValue: number,
   ): number {
@@ -438,8 +415,8 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
     if (hitArc) {
       points = arcIntersectEntity(hitArc, blockEntity)
-    } else if (segment) {
-      points = segment.intersectBlock(block)
+    } else if (capsule) {
+      points = capsule.centerLineIntersectBlock(block)
     }
 
     const intersect = closestPointToPoint(points, referencePoint)
@@ -448,8 +425,8 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     let t: number | null = null
     if (hitArc) {
       t = hitArc.pointToParametric(intersect)
-    } else if (segment) {
-      t = segment.pointToParametric(intersect)
+    } else if (capsule) {
+      t = capsule.pointToParametric(intersect)
     }
 
     return t ?? defaultValue
@@ -468,7 +445,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
     const arrow = arrowEntity.read(Arrow)
     const block = arrowEntity.read(Block)
-    const trim = arrowEntity.read(ArrowTrim)
 
     if (arrow.isCurved()) {
       this.deleteEntities(hitGeometries.capsules)
@@ -486,7 +462,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       const hitArc = arcEntity.write(HitArc)
       hitArc.thickness = arrow.thickness * 2
       hitArc.update(a, b, c)
-      hitArc.trim(trim.tStart, trim.tEnd)
     } else {
       this.deleteEntities(hitGeometries.arcs)
 
@@ -505,8 +480,9 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
       hitCapsule.a = a
       hitCapsule.b = c
-      hitCapsule.trim(trim.tStart, trim.tEnd)
     }
+
+    this.updateArrowTrim(arrowEntity)
   }
 
   // private startTransformBoxEdit(transformBoxEntity: Entity | undefined = undefined): void {

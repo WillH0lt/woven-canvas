@@ -14,7 +14,7 @@ import { UpdateCursor } from './UpdateCursor'
 export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   private readonly rankBounds = this.singleton.write(comps.RankBounds)
 
-  private readonly persistentBlocks = this.query((q) => q.added.current.with(comps.Block, comps.Persistent))
+  private readonly persistentBlocks = this.query((q) => q.added.current.removed.with(comps.Block, comps.Persistent))
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
 
@@ -53,8 +53,8 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     this.addCommandListener(CoreCommand.DeselectAll, this.deselectAll.bind(this))
     this.addCommandListener(CoreCommand.SelectAll, this.selectAll.bind(this))
 
-    // this.addCommandListener(CoreCommand.Undo, this.deselectAll.bind(this))
-    // this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))
+    this.addCommandListener(CoreCommand.Undo, this.deselectAll.bind(this))
+    this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))
   }
 
   public execute(): void {
@@ -68,7 +68,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     // update refs in connectors
     for (const connectorEntity of this.connectors.added) {
-      console.log("SETTING UP CONNECTOR'S BLOCK REFS")
       const connector = connectorEntity.write(comps.Connector)
       if (connector.startBlockId) {
         const startBlockEntity = binarySearchForId(comps.Block, connector.startBlockId, this.entities.current)
@@ -77,6 +76,23 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       if (connector.endBlockId) {
         const endBlockEntity = binarySearchForId(comps.Block, connector.endBlockId, this.entities.current)
         connector.endBlockEntity = endBlockEntity || undefined
+      }
+    }
+
+    // clean up connectors when blocks are deleted
+    if (this.persistentBlocks.removed.length) {
+      this.accessRecentlyDeletedData()
+    }
+    for (const blockEntity of this.persistentBlocks.removed) {
+      const block = blockEntity.read(comps.Block)
+      for (const connectorEntity of block.connectors) {
+        const connector = connectorEntity.write(comps.Connector)
+        if (connector.startBlockId === block.id) {
+          connector.startBlockId = ''
+        }
+        if (connector.endBlockId === block.id) {
+          connector.endBlockId = ''
+        }
       }
     }
 
