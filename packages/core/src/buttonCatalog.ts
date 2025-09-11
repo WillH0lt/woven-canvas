@@ -37,14 +37,44 @@ export const floatingMenuStandardButtons = [
   floatingMenuButtonDelete,
 ]
 
-// export const toolbarSelectTool = {
-//   tag: 'ic-select-tool',
-//   tooltip: 'Select',
-//   tool: 'select',
-// }
+export const textColorButton = {
+  tag: 'ic-text-color-button',
+  width: 56,
+  tooltip: 'Color',
+  menu: 'ic-text-color-menu',
+}
 
-// export const toolbarHandTool = {
-//   tag: 'ic-hand-tool',
-//   tooltip: 'Hand',
-//   tool: 'hand',
-// }
+export const boldButton = {
+  tag: 'ic-text-bold-button',
+  tooltip: 'Bold',
+}
+
+export const italicButton = {
+  tag: 'ic-text-italic-button',
+  tooltip: 'Italic',
+}
+
+export const underlineButton = {
+  tag: 'ic-text-underline-button',
+  tooltip: 'Underline',
+}
+
+export const alignmentButton = {
+  tag: 'ic-text-alignment-button',
+  tooltip: 'Alignment',
+}
+
+export const floatingMenuButtonVerticalAlign = {
+  tag: 'ic-text-vertical-alignment-button',
+  tooltip: 'Vertical Alignment',
+}
+
+export const textEditorFloatingMenuButtons = [
+  textColorButton,
+  floatingMenuDivider,
+  boldButton,
+  italicButton,
+  underlineButton,
+  floatingMenuDivider,
+  alignmentButton,
+]

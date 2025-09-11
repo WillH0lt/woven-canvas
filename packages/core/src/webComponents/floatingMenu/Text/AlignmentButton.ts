@@ -4,8 +4,9 @@ import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { alignments } from '../../TextExtension'
-import { TextAlign } from '../../types'
+import { TextAlign } from '../../../types'
+
+const alignments = [TextAlign.Left, TextAlign.Center, TextAlign.Right, TextAlign.Justify]
 
 const icons = {
   [TextAlign.Left]: html`
@@ -64,13 +65,13 @@ export class ICTextAlignmentButton extends SignalWatcher(ICMenuIconButton) {
 
   protected onClick(): void {
     const nextAlignment = alignments[(alignments.indexOf(this.alignment.value) + 1) % alignments.length]
-    InfiniteCanvas.instance?.commands.text.setAlignment(nextAlignment)
+    InfiniteCanvas.instance?.commands.textEditor.setAlignment(nextAlignment)
   }
 
   private alignment!: ReadonlySignal<TextAlign>
 
   public firstUpdated(): void {
-    this.alignment = InfiniteCanvas.instance?.store.text.alignment as ReadonlySignal<TextAlign>
+    this.alignment = InfiniteCanvas.instance?.store.textEditor.alignment as ReadonlySignal<TextAlign>
 
     this.alignment.subscribe(this.updateIcon.bind(this))
     this.updateIcon(this.alignment.value)

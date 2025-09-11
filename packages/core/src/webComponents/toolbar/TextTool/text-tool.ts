@@ -5,7 +5,7 @@ import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { Text } from '../../components'
+import { Text } from '../../../components'
 
 @customElement('ic-text-tool')
 export class ICTextTool extends ICToolbarIconButton {

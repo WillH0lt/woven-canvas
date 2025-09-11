@@ -1,11 +1,12 @@
 import {
   BaseExtension,
   floatingMenuButtonColor,
+  floatingMenuButtonVerticalAlign,
   floatingMenuDivider,
   floatingMenuStandardButtons,
+  textEditorFloatingMenuButtons,
 } from '@infinitecanvas/core'
-import { Color } from '@infinitecanvas/core/components'
-import { Text, TextEditorFloatingMenuButtons, floatingMenuButtonVerticalAlign } from '@infinitecanvas/extension-text'
+import { Color, Text } from '@infinitecanvas/core/components'
 
 import './webComponents'
 
@@ -20,7 +21,7 @@ class StickyNotesExtensionClass extends BaseExtension {
         floatingMenuDivider,
         ...floatingMenuStandardButtons,
       ],
-      editedFloatingMenu: TextEditorFloatingMenuButtons,
+      editedFloatingMenu: textEditorFloatingMenuButtons,
       components: [Color, Text],
     },
   ]

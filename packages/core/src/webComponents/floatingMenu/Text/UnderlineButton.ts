@@ -20,11 +20,11 @@ export class ICTextUnderlineButton extends SignalWatcher(ICMenuIconButton) {
   `
 
   protected onClick(): void {
-    InfiniteCanvas.instance?.commands.text.toggleUnderline()
+    InfiniteCanvas.instance?.commands.textEditor.toggleUnderline()
   }
 
   public firstUpdated(): void {
-    const isActive = InfiniteCanvas.instance?.store.text.underline as ReadonlySignal<boolean>
+    const isActive = InfiniteCanvas.instance?.store.textEditor.underline as ReadonlySignal<boolean>
 
     isActive.subscribe(this.setButtonActive.bind(this))
 

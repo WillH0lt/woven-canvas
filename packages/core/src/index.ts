@@ -16,6 +16,8 @@ export {
   type BlockDef,
   type BlockDefMap,
   type ToolDef,
+  TextAlign,
+  VerticalAlign,
   // type ToolbarButtonInput,
 } from './types'
 
@@ -28,3 +30,4 @@ export { Diff, type Snapshot } from './History'
 export type { State } from './State'
 export { BaseComponent } from './BaseComponent'
 export * from './buttonCatalog'
+export { ICText } from './webComponents/blocks'

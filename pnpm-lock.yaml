@@ -135,6 +135,39 @@ importers:
       '@preact/signals-core':
         specifier: ^1.10.0
         version: 1.10.0
+      '@tiptap/core':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/pm@3.0.7)
+      '@tiptap/extension-bold':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-color':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/extension-text-style@3.0.7)
+      '@tiptap/extension-document':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-history':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/extensions@3.0.1)
+      '@tiptap/extension-italic':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-paragraph':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-text':
+        specifier: ^3.0.1
+        version: 3.0.1(@tiptap/core@3.0.7)
+      '@tiptap/extension-text-align':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-text-style':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
+      '@tiptap/extension-underline':
+        specifier: ^3.0.7
+        version: 3.0.7(@tiptap/core@3.0.7)
       idb:
         specifier: ^8.0.3
         version: 8.0.3
@@ -262,22 +295,6 @@ importers:
       xstate:
         specifier: ^5.19.4
         version: 5.19.4
-    devDependencies:
-      vitest:
-        specifier: ^3.1.4
-        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
-
-  packages/extension-input:
-    dependencies:
-      '@infinitecanvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@lastolivegames/becsy':
-        specifier: ^0.15.5
-        version: 0.15.5
-      zod:
-        specifier: ^4.0.17
-        version: 4.0.17
     devDependencies:
       vitest:
         specifier: ^3.1.4

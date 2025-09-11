@@ -10,6 +10,7 @@ import {
   Locked,
   Opacity,
   Selected,
+  Text,
   ToBeDeleted,
   TransformBox,
   TransformHandle,
@@ -43,7 +44,7 @@ interface TransformHandleDef {
 
 export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
   private readonly selectedBlocks = this.query(
-    (q) => q.added.removed.current.with(Block, Selected).write.using(Aabb).read,
+    (q) => q.added.removed.current.with(Block, Selected).write.using(Text).write.using(Aabb).read,
   )
 
   private readonly editedBlocks = this.query((q) => q.current.with(Block, Edited).write)
@@ -174,6 +175,10 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
       dragStart.startWidth = block.width
       dragStart.startHeight = block.height
       dragStart.startRotateZ = block.rotateZ
+
+      if (blockEntity.has(Text)) {
+        dragStart.startFontSize = blockEntity.read(Text).fontSize
+      }
     }
 
     this.addOrUpdateTransformHandles(transformBoxEntity)
@@ -590,7 +595,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     // TODO snapping
 
     for (const selectedEntity of this.selectedBlocks.current) {
-      const { startLeft, startTop, startWidth, startHeight } = selectedEntity.read(DragStart)
+      const { startLeft, startTop, startWidth, startHeight, startFontSize } = selectedEntity.read(DragStart)
 
       const block = selectedEntity.write(Block)
 
@@ -599,20 +604,56 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
 
       const endWidth = startWidth * (boxEndWidth / boxStartWidth)
       const endHeight = startHeight * (boxEndHeight / boxStartHeight)
+      const endFontSize = startFontSize * (boxEndHeight / boxStartHeight)
 
       const blockDef = this.getBlockDef(block.tag)
 
+      let didStretch = false
       if (maintainAspectRatio || blockDef?.resizeMode === 'free') {
         block.width = endWidth
         block.height = endHeight
       } else {
         if (handleVec[1] === 0) {
           block.width = endWidth
+          didStretch = true
         } else if (handleVec[0] === 0) {
           block.height = endHeight
         }
       }
+
+      // update text
+      if (selectedEntity.has(Text) && ['scale', 'text'].includes(blockDef?.resizeMode ?? '')) {
+        if (didStretch) {
+          this.stretchTextEntity(selectedEntity)
+        } else {
+          // scale text font size
+          selectedEntity.write(Text).fontSize = endFontSize
+        }
+      }
     }
+  }
+
+  private stretchTextEntity(textEntity: Entity): void {
+    const block = textEntity.read(Block)
+    const element = this.getBlockElementById(block.id)
+    const root = element?.shadowRoot?.firstElementChild
+    if (!root) return
+
+    // go ahead and update the element size with the new block size
+    // and ensure it has the same size as the shadow root
+    element.style.width = `${block.width}px`
+    element.style.height = `${block.height}px`
+
+    const rect = root.getBoundingClientRect()
+
+    if (rect.height !== block.height || rect.width !== block.width) {
+      const writableBlock = textEntity.write(Block)
+      writableBlock.height = rect.height
+      writableBlock.width = rect.width
+    }
+
+    const text = textEntity.write(Text)
+    text.constrainWidth = true
   }
 
   private onTransformBoxMove(transformBoxEntity: Entity): void {

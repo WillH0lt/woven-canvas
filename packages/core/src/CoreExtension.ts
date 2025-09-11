@@ -1,16 +1,16 @@
-import { type ReadonlySignal, computed } from '@preact/signals-core'
+import type { System } from '@lastolivegames/becsy'
+import { type ReadonlySignal, type Signal, computed, signal } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
 
-import type { System } from '@lastolivegames/becsy'
 import type { BaseComponent } from './BaseComponent'
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import type { Snapshot } from './History'
 import { LocalDB } from './LocalDB'
 import type { State } from './State'
-import { floatingMenuStandardButtons } from './buttonCatalog'
+import { floatingMenuStandardButtons, textEditorFloatingMenuButtons } from './buttonCatalog'
 import { CoreCommand, type CoreCommandArgs } from './commands'
-import { Block, Color, Connector, Controls, Hovered, Persistent, Selected } from './components'
+import { Block, Color, Connector, Controls, Hovered, Persistent, Selected, Text } from './components'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
@@ -24,10 +24,13 @@ import {
   type IStore,
   type SendCommandFn,
   type SerializablePropNames,
+  TextAlign,
 } from './types'
+import { ICText } from './webComponents/blocks'
 
 type BlockData = Pick<Block, SerializablePropNames<Block>>
 type ColorData = Omit<Color, SerializablePropNames<Block>>
+type TextData = Pick<Text, SerializablePropNames<Text>>
 type ControlsData = Pick<Controls, SerializablePropNames<Controls>>
 
 declare module '@infinitecanvas/core' {
@@ -48,6 +51,14 @@ declare module '@infinitecanvas/core' {
       setControls: (controls: Partial<ControlsData>) => void
       setColor: (blockId: string, color: Partial<ColorData>) => void
     }
+    textEditor: {
+      toggleBold: () => void
+      toggleItalic: () => void
+      toggleUnderline: () => void
+      setAlignment: (alignment: TextAlign) => void
+      setColor: (color: string) => void
+      setText: (blockId: string, text: Partial<TextData>) => void
+    }
   }
 
   interface IStore {
@@ -58,7 +69,15 @@ declare module '@infinitecanvas/core' {
       hoveredBlockId: ReadonlySignal<string | null>
       blockById: (id: string) => ReadonlySignal<Block | undefined>
       colorById: (id: string) => ReadonlySignal<Color | undefined>
+      textById: (id: string) => ReadonlySignal<Text | undefined>
       controls: ReadonlySignal<Controls | undefined>
+    }
+    textEditor: {
+      bold: Signal<boolean>
+      italic: Signal<boolean>
+      underline: Signal<boolean>
+      alignment: Signal<TextAlign>
+      color: Signal<string>
     }
   }
 }
@@ -68,6 +87,13 @@ export class CoreExtension extends BaseExtension {
     {
       tag: 'group',
       floatingMenu: floatingMenuStandardButtons,
+    },
+    {
+      tag: 'ic-text',
+      canEdit: true,
+      resizeMode: 'text' as const,
+      editedFloatingMenu: textEditorFloatingMenuButtons,
+      components: [Text],
     },
   ]
 
@@ -84,12 +110,18 @@ export class CoreExtension extends BaseExtension {
       buttonTooltip: 'Hand',
       cursorIcon: HAND_CURSOR,
     },
+    {
+      name: 'text',
+      buttonTag: 'ic-text-tool',
+      buttonTooltip: 'Text',
+    },
   ]
 
   private readonly options: CoreOptions
   private readonly emitter: Emitter<EmitterEvents>
   private readonly state: State
   private initialEntities: Snapshot = {}
+  private blockContainer: HTMLDivElement | null = null
 
   constructor(emitter: Emitter<EmitterEvents>, state: State, options: CoreOptionsInput) {
     super()
@@ -101,12 +133,15 @@ export class CoreExtension extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Block)
     ComponentRegistry.instance.registerComponent(Color)
+    ComponentRegistry.instance.registerComponent(Text)
     ComponentRegistry.instance.registerComponent(Selected)
     ComponentRegistry.instance.registerComponent(Hovered)
     ComponentRegistry.instance.registerComponent(Persistent)
     ComponentRegistry.instance.registerComponent(Connector)
 
     ComponentRegistry.instance.registerSingleton(Controls)
+
+    this.blockContainer = resources.blockContainer
 
     const menuContainer = document.createElement('div')
     menuContainer.style.pointerEvents = 'none'
@@ -154,10 +189,28 @@ export class CoreExtension extends BaseExtension {
       sys.UpdateCamera,
       sys.UpdateSelection,
       sys.UpdateTransformBox,
+      sys.UpdateTextDeleteEmpty,
     )
     this._postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
     this._preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
     this._renderGroup = this.createGroup(coreResources, sys.RenderHtml)
+  }
+
+  #getEditableTextElement(): ICText | null {
+    // get ic-text element where edited is true
+    // ic-text might be a direct child of the blockContainer or inside a shadowRoot
+    const element = this.blockContainer?.querySelector('[is-editing="true"]') as HTMLElement | null
+    if (element instanceof ICText) {
+      return element
+    }
+
+    const textElement = element?.shadowRoot?.querySelector('ic-text') as ICText | null
+    if (textElement) {
+      return textElement
+    }
+
+    console.warn('No editable text element found')
+    return null
   }
 
   public build(worldSystem: System, resources: BaseResources): void {
@@ -221,6 +274,35 @@ export class CoreExtension extends BaseExtension {
           })
         },
       },
+      textEditor: {
+        toggleBold: () => {
+          const element = this.#getEditableTextElement()
+          element?.toggleBold()
+        },
+        toggleItalic: () => {
+          const element = this.#getEditableTextElement()
+          element?.toggleItalic()
+        },
+        toggleUnderline: () => {
+          const element = this.#getEditableTextElement()
+          element?.toggleUnderline()
+        },
+        setAlignment: (alignment: TextAlign) => {
+          const element = this.#getEditableTextElement()
+          element?.setAlignment(alignment)
+        },
+        setColor: (color: string) => {
+          const element = this.#getEditableTextElement()
+          element?.setColor(color)
+        },
+        setText: (blockId: string, text: Partial<TextData>) => {
+          send(CoreCommand.UpdateFromSnapshot, {
+            [blockId]: {
+              Text: text,
+            },
+          })
+        },
+      },
     }
   }
 
@@ -243,6 +325,15 @@ export class CoreExtension extends BaseExtension {
         colorById: (id: string): ReadonlySignal<Color | undefined> =>
           computed(() => state.getComponent<Color>(Color, id).value),
         controls: computed(() => state.getSingleton(Controls).value),
+        textById: (id: string): ReadonlySignal<Text | undefined> =>
+          computed(() => state.getComponent<Text>(Text, id).value),
+      },
+      textEditor: {
+        bold: signal(false),
+        italic: signal(false),
+        underline: signal(false),
+        alignment: signal(TextAlign.Left),
+        color: signal('#000000'),
       },
     }
   }

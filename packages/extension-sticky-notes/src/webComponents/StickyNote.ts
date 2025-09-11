@@ -1,7 +1,6 @@
-import type { Snapshot } from '@infinitecanvas/core'
+import { type ICText, type Snapshot, TextAlign, VerticalAlign } from '@infinitecanvas/core'
+import type { Color, Text } from '@infinitecanvas/core/components'
 import { ICEditableBlock } from '@infinitecanvas/core/elements'
-import type { Color } from '@infinitecanvas/core/components'
-import { type ICText, type Text, TextAlign, VerticalAlign } from '@infinitecanvas/extension-text'
 
 import { css, html } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'

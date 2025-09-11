@@ -42,7 +42,6 @@
   },
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
-    "@infinitecanvas/extension-text": "workspace:^",
     "lit": "^3.3.0"
   },
   "devDependencies": {

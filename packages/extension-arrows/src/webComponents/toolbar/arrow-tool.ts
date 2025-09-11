@@ -1,6 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
-import {} from '@infinitecanvas/extension-text'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 

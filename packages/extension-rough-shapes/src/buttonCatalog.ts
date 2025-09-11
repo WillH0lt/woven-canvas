@@ -1,5 +1,8 @@
-import { type FloatingMenuButtonInput, floatingMenuDivider } from '@infinitecanvas/core'
-import { floatingMenuButtonVerticalAlign } from '@infinitecanvas/extension-text'
+import {
+  type FloatingMenuButtonInput,
+  floatingMenuButtonVerticalAlign,
+  floatingMenuDivider,
+} from '@infinitecanvas/core'
 
 export const strokeButton: FloatingMenuButtonInput = {
   tag: 'ic-rough-shape-stroke-button',

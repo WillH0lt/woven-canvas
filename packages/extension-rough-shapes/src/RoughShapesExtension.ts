@@ -8,8 +8,9 @@ import {
   type SendCommandFn,
   type State,
   floatingMenuStandardButtons,
+  textEditorFloatingMenuButtons,
 } from '@infinitecanvas/core'
-import { Text, TextEditorFloatingMenuButtons } from '@infinitecanvas/extension-text'
+import { Text } from '@infinitecanvas/core/components'
 import { type ReadonlySignal, computed } from '@preact/signals-core'
 
 import './webComponents'
@@ -39,7 +40,7 @@ class RoughShapesExtensionClass extends BaseExtension {
       canEdit: true,
       resizeMode: 'free' as const,
       floatingMenu: [...roughShapeFloatingMenuButtons, ...floatingMenuStandardButtons],
-      editedFloatingMenu: TextEditorFloatingMenuButtons,
+      editedFloatingMenu: textEditorFloatingMenuButtons,
       components: [Text, RoughShape],
     },
   ]

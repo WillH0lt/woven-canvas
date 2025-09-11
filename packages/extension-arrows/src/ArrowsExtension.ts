@@ -6,8 +6,8 @@ import {
   floatingMenuDivider,
   floatingMenuStandardButtons,
 } from '@infinitecanvas/core'
-import { Color, Connector } from '@infinitecanvas/core/components'
-import { Text, TextEditorFloatingMenuButtons, floatingMenuButtonVerticalAlign } from '@infinitecanvas/extension-text'
+import { floatingMenuButtonVerticalAlign, textEditorFloatingMenuButtons } from '@infinitecanvas/core'
+import { Color, Connector, Text } from '@infinitecanvas/core/components'
 
 import { Arrow, ArrowTrim } from './components'
 import * as sys from './systems'
@@ -24,7 +24,7 @@ class ArrowsExtensionClass extends BaseExtension {
         floatingMenuDivider,
         ...floatingMenuStandardButtons,
       ],
-      editedFloatingMenu: TextEditorFloatingMenuButtons,
+      editedFloatingMenu: textEditorFloatingMenuButtons,
       resizeMode: 'groupOnly' as const,
       placementMode: 'arrow' as const,
       components: [Arrow, Color, Text, Connector, ArrowTrim],

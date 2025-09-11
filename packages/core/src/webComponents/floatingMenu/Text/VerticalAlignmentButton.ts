@@ -2,8 +2,9 @@ import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ICMenuIconButton } from '@infinitecanvas/core/elements'
 import { type PropertyValues, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
-import { Text } from '../../components'
-import { VerticalAlign } from '../../types'
+
+import { Text } from '../../../components'
+import { VerticalAlign } from '../../../types'
 
 const alignments = [VerticalAlign.Top, VerticalAlign.Center, VerticalAlign.Bottom]
 
@@ -35,7 +36,7 @@ export class ICTextVerticalAlignmentButton extends ICMenuIconButton {
     const text = this.readSnapshot<Text>(Text)
     const currAlign = text?.verticalAlign ?? VerticalAlign.Top
     const nextAlign = alignments[(alignments.indexOf(currAlign) + 1) % alignments.length]
-    InfiniteCanvas.instance?.commands.text.setText(this.blockId, { verticalAlign: nextAlign })
+    InfiniteCanvas.instance?.commands.textEditor.setText(this.blockId, { verticalAlign: nextAlign })
   }
 }
 

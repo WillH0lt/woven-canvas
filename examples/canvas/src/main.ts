@@ -9,7 +9,6 @@ import { InkExtension } from '@infinitecanvas/extension-ink'
 import { RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
 // import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
 import { StickyNotesExtension } from '@infinitecanvas/extension-sticky-notes'
-import { TextExtension } from '@infinitecanvas/extension-text'
 
 const lorem = new LoremIpsum({
   sentencesPerParagraph: {
@@ -43,13 +42,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 let infiniteCanvas: InfiniteCanvas | null = null
 
 async function initializeCanvas(container: HTMLDivElement) {
-  await loadFont('Figtree')
+  // await loadFont('Figtree')
+  // await loadFont('Indie Flower')
 
   infiniteCanvas = await InfiniteCanvas.New({
     extensions: [
       // TransformExtension,
       ControlsExtension,
-      TextExtension,
       ArrowsExtension,
       StickyNotesExtension,
       RoughShapesExtension,
@@ -136,7 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadFont(fontFamily: string): Promise<void> {
   return new Promise((resolve) => {
-    const href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@300&display=swap`
+    // const href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@300&display=swap`
+    const href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}&display=swap`
     const link = document.createElement('link')
     link.rel = 'stylesheet'
     link.href = href

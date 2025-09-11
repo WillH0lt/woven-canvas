@@ -1,6 +1,7 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
 import {
   Block,
+  Color,
   Connector,
   HitArc,
   HitCapsule,
@@ -8,10 +9,9 @@ import {
   Opacity,
   Persistent,
   RankBounds,
+  Text,
   allHitGeometriesArray,
-  Color
 } from '@infinitecanvas/core/components'
-import { Text } from '@infinitecanvas/extension-text'
 import type { Entity } from '@lastolivegames/becsy'
 
 import { Arrow, ArrowHandle, ArrowTrim } from '../components'

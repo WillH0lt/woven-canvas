@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  text-rendering: geometricPrecision;
+  /* font-family: "Figtree", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal; */
   /* font-kerning: none;
   word-break: break-word; */
   /* word-break: break-all; */

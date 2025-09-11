@@ -16,9 +16,10 @@ import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 
-import { alignments } from '../../TextExtension'
 import type { Text } from '../../components'
 import { TextAlign as TextAlignKind } from '../../types'
+
+const alignments = [TextAlignKind.Left, TextAlignKind.Center, TextAlignKind.Right, TextAlignKind.Justify]
 
 @customElement('ic-text')
 export class ICText extends ICEditableBlock {
@@ -257,7 +258,7 @@ export class ICText extends ICEditableBlock {
     const editor = this._editor
     if (!editor) return
 
-    const store = InfiniteCanvas.instance?.store.text
+    const store = InfiniteCanvas.instance?.store.textEditor
     if (!store) return
 
     store.color.value = editor.getAttributes('textStyle').color ?? '#000000'

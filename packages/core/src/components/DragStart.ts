@@ -7,4 +7,5 @@ export class DragStart {
   @field.float64 public declare startWidth: number
   @field.float64 public declare startHeight: number
   @field.float64 public declare startRotateZ: number
+  @field.float64 public declare startFontSize: number
 }

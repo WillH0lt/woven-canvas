@@ -6,7 +6,7 @@ import { customElement } from 'lit/decorators.js'
 @customElement('ic-text-color-button')
 export class ICTextColorButton extends SignalWatcher(LitElement) {
   render() {
-    const color = InfiniteCanvas.instance?.store.text.color
+    const color = InfiniteCanvas.instance?.store.textEditor.color
     if (!color?.value) {
       return nothing
     }

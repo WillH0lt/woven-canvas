@@ -1,7 +1,6 @@
-import type { Snapshot } from '@infinitecanvas/core'
-import { type Color, HitArc } from '@infinitecanvas/core/components'
+import type { ICText, Snapshot } from '@infinitecanvas/core'
+import { type Color, HitArc, type Text } from '@infinitecanvas/core/components'
 import { ICEditableBlock } from '@infinitecanvas/core/elements'
-import type { ICText, Text } from '@infinitecanvas/extension-text'
 import { type SVGTemplateResult, css, html, nothing, svg } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 
