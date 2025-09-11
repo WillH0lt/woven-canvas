@@ -43,7 +43,6 @@
   "dependencies": {
     "@dalet-oss/lexorank": "^1.1.0",
     "@infinitecanvas/core": "workspace:^",
-    "@infinitecanvas/extension-color": "workspace:^",
     "@infinitecanvas/extension-text": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
     "lit": "^3.3.0",

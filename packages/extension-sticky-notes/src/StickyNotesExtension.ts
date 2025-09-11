@@ -1,5 +1,10 @@
-import { BaseExtension, floatingMenuDivider, floatingMenuStandardButtons } from '@infinitecanvas/core'
-import { Color, floatingMenuButtonColor } from '@infinitecanvas/extension-color'
+import {
+  BaseExtension,
+  floatingMenuButtonColor,
+  floatingMenuDivider,
+  floatingMenuStandardButtons,
+} from '@infinitecanvas/core'
+import { Color } from '@infinitecanvas/core/components'
 import { Text, TextEditorFloatingMenuButtons, floatingMenuButtonVerticalAlign } from '@infinitecanvas/extension-text'
 
 import './webComponents'
@@ -28,7 +33,7 @@ class StickyNotesExtensionClass extends BaseExtension {
     },
   ]
 
-  public readonly dependsOn = ['ColorExtension', 'TextExtension']
+  public readonly dependsOn = ['TextExtension']
 }
 
 export const StickyNotesExtension = () => new StickyNotesExtensionClass()

@@ -1,5 +1,5 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
-import { Aabb, Block, HitCapsule, HitGeometries, Persistent, RankBounds } from '@infinitecanvas/core/components'
+import { Aabb, Block, HitCapsule, HitGeometries, Persistent, RankBounds, Color } from '@infinitecanvas/core/components'
 import {
   multiplyMatrices,
   newRotationMatrix,
@@ -7,7 +7,6 @@ import {
   newTranslationMatrix,
   transformPoint,
 } from '@infinitecanvas/core/helpers'
-import { Color } from '@infinitecanvas/extension-color'
 import { type Entity, co } from '@lastolivegames/becsy'
 import simplify from 'simplify-js'
 

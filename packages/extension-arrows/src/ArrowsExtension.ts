@@ -2,11 +2,11 @@ import {
   BaseExtension,
   type BaseResources,
   ComponentRegistry,
+  floatingMenuButtonColor,
   floatingMenuDivider,
   floatingMenuStandardButtons,
 } from '@infinitecanvas/core'
-import { Connector } from '@infinitecanvas/core/components'
-import { Color, floatingMenuButtonColor } from '@infinitecanvas/extension-color'
+import { Color, Connector } from '@infinitecanvas/core/components'
 import { Text, TextEditorFloatingMenuButtons, floatingMenuButtonVerticalAlign } from '@infinitecanvas/extension-text'
 
 import { Arrow, ArrowTrim } from './components'
@@ -40,7 +40,7 @@ class ArrowsExtensionClass extends BaseExtension {
     },
   ]
 
-  public readonly dependsOn = ['ColorExtension', 'TextExtension']
+  public readonly dependsOn = ['TextExtension']
 
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Arrow)

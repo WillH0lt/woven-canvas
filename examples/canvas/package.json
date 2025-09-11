@@ -15,7 +15,6 @@
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/extension-arrows": "workspace:^",
-    "@infinitecanvas/extension-color": "workspace:^",
     "@infinitecanvas/extension-controls": "workspace:^",
     "@infinitecanvas/extension-eraser": "workspace:^",
     "@infinitecanvas/extension-ink": "workspace:^",

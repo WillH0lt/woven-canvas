@@ -1,17 +1,17 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
-import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
 import { SignalWatcher, signal } from '@lit-labs/preact-signals'
 import { html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { Color } from '../../components'
+import { InfiniteCanvas } from '../../../../InfiniteCanvas'
+import { Color } from '../../../../components'
+import { ICBaseMenuButton } from '../../../elements'
 
 @customElement('ic-color-menu')
 export class ICColorMenu extends SignalWatcher(ICBaseMenuButton) {
   private pickerVisible = signal(false)
 
   render() {
-    const color = InfiniteCanvas.instance?.store.color.colorById(this.blockId)
+    const color = InfiniteCanvas.instance?.store.core.colorById(this.blockId)
     if (!color?.value) {
       return nothing
     }
@@ -26,7 +26,7 @@ export class ICColorMenu extends SignalWatcher(ICBaseMenuButton) {
                 value=${hex}
                 @change=${(e: CustomEvent<string>) => {
                   const color = new Color().fromHex(e.detail)
-                  InfiniteCanvas.instance?.commands.color.setColor(this.blockId, color)
+                  InfiniteCanvas.instance?.commands.core.setColor(this.blockId, color)
                 }}
               ></ic-color-picker>
             `
@@ -37,7 +37,7 @@ export class ICColorMenu extends SignalWatcher(ICBaseMenuButton) {
                 .currentColor=${hex}
                 @change=${(e: CustomEvent<string>) => {
                   const color = new Color().fromHex(e.detail)
-                  InfiniteCanvas.instance?.commands.color.setColor(this.blockId, color)
+                  InfiniteCanvas.instance?.commands.core.setColor(this.blockId, color)
                 }}
                 @show-picker=${() => {
                   this.pickerVisible.value = true

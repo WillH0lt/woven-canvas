@@ -1,9 +1,10 @@
-import { HitArc } from '@infinitecanvas/core/components'
+import type { Snapshot } from '@infinitecanvas/core'
+import { type Color, HitArc } from '@infinitecanvas/core/components'
 import { ICEditableBlock } from '@infinitecanvas/core/elements'
-import type { Color } from '@infinitecanvas/extension-color'
 import type { ICText, Text } from '@infinitecanvas/extension-text'
 import { type SVGTemplateResult, css, html, nothing, svg } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
+
 import type { Arrow, ArrowTrim } from '../components'
 import { ArrowHeadKind } from '../types'
 

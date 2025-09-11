@@ -8,7 +8,6 @@ import type { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
 import type { Controls, Cursor } from './components'
-import type { Block } from './components'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -281,7 +280,20 @@ export type CoreCommandArgs = {
   [CoreCommand.SelectAll]: []
 
   [CoreCommand.AddSelectionBox]: []
-  [CoreCommand.UpdateSelectionBox]: [Partial<Block>]
+  [CoreCommand.UpdateSelectionBox]: [
+    {
+      left: number
+      top: number
+      width: number
+      height: number
+    },
+    (
+      | {
+          deselectOthers?: boolean
+        }
+      | undefined
+    ),
+  ]
   [CoreCommand.RemoveSelectionBox]: []
 
   [CoreCommand.AddOrUpdateTransformBox]: []

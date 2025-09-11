@@ -45,7 +45,10 @@ export class UpdateSelection extends BaseSystem<CoreCommandArgs> {
     )
   }
 
-  private updateSelectionBox(blockPartial: Partial<Block>): void {
+  private updateSelectionBox(
+    blockPartial: { left: number; top: number; width: number; height: number },
+    options: { deselectOthers?: boolean } = {},
+  ): void {
     if (this.selectionBoxes.current.length === 0) {
       console.warn(`Can't update selection box. Selection box not found for user ${this.resources.uid}`)
       return
@@ -58,13 +61,17 @@ export class UpdateSelection extends BaseSystem<CoreCommandArgs> {
 
     // if (meta.uid !== this.resources.uid) return
 
+    console.log(options?.deselectOthers)
+
     // const aabb = { left: block.left, top: block.top, right: block.left + block.width, bottom: block.bottom }
     const aabb = computeAabb(selectionBoxEntity)
     const intersectedEntities = fastIntersectAabb(aabb, this.blocks.current)
-    for (const selectedEntity of this.selectedBlocks.current) {
-      const shouldDeselect = !intersectedEntities.some((entity) => entity.isSame(selectedEntity))
-      if (shouldDeselect) {
-        if (selectedEntity.has(Selected)) selectedEntity.remove(Selected)
+    if (options?.deselectOthers) {
+      for (const selectedEntity of this.selectedBlocks.current) {
+        const shouldDeselect = !intersectedEntities.some((entity) => entity.isSame(selectedEntity))
+        if (shouldDeselect && selectedEntity.has(Selected)) {
+          selectedEntity.remove(Selected)
+        }
       }
     }
 

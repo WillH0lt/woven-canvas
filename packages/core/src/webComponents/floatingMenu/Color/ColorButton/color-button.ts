@@ -7,7 +7,7 @@ import { customElement } from 'lit/decorators.js'
 @customElement('ic-color-button')
 export class ICColorButton extends SignalWatcher(ICBaseMenuButton) {
   render() {
-    const color = InfiniteCanvas.instance?.store.color.colorById(this.blockId)
+    const color = InfiniteCanvas.instance?.store.core.colorById(this.blockId)
     if (!color?.value) {
       return nothing
     }

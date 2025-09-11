@@ -1,6 +1,6 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
-import { Color } from '@infinitecanvas/extension-color'
+import { Color } from '@infinitecanvas/core/components'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { type HTMLTemplateResult, html, nothing } from 'lit'
 import { customElement, state } from 'lit/decorators.js'

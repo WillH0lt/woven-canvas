@@ -74,9 +74,6 @@ importers:
       '@infinitecanvas/extension-arrows':
         specifier: workspace:^
         version: link:../../packages/extension-arrows
-      '@infinitecanvas/extension-color':
-        specifier: workspace:^
-        version: link:../../packages/extension-color
       '@infinitecanvas/extension-controls':
         specifier: workspace:^
         version: link:../../packages/extension-controls
@@ -153,12 +150,19 @@ importers:
       strict-event-emitter:
         specifier: ^0.5.1
         version: 0.5.1
+      tinycolor2:
+        specifier: ^1.6.0
+        version: 1.6.0
       xstate:
         specifier: ^5.19.4
         version: 5.19.4
       zod:
         specifier: ^4.0.17
         version: 4.0.17
+    devDependencies:
+      '@types/tinycolor2':
+        specifier: ^1.4.6
+        version: 1.4.6
 
   packages/extension-arrows:
     dependencies:
@@ -168,9 +172,6 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
-      '@infinitecanvas/extension-color':
-        specifier: workspace:^
-        version: link:../extension-color
       '@infinitecanvas/extension-text':
         specifier: workspace:^
         version: link:../extension-text
@@ -243,9 +244,6 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
-      '@infinitecanvas/extension-color':
-        specifier: workspace:^
-        version: link:../extension-color
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
@@ -277,9 +275,6 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
-      '@infinitecanvas/extension-color':
-        specifier: workspace:^
-        version: link:../extension-color
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
@@ -343,9 +338,6 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
-      '@infinitecanvas/extension-color':
-        specifier: workspace:^
-        version: link:../extension-color
       '@infinitecanvas/extension-text':
         specifier: workspace:^
         version: link:../extension-text
@@ -374,9 +366,6 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
-      '@infinitecanvas/extension-color':
-        specifier: workspace:^
-        version: link:../extension-color
       '@infinitecanvas/extension-text':
         specifier: workspace:^
         version: link:../extension-text

@@ -515,23 +515,50 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     const { vector, kind: handleKind } = handleEntity.read(TransformHandle)
     const handleVec: [number, number] = [vector[0], vector[1]]
 
-    const oppositeHandle = boxEntity.read(TransformBox).handles.find((h) => {
+    const transformBox = boxEntity.read(TransformBox)
+    const oppositeHandleEntity = transformBox.handles.find((h) => {
       const { vector, kind } = h.read(TransformHandle)
       return handleKind === kind && handleVec[0] === -vector[0] && handleVec[1] === -vector[1]
     })
-    if (!oppositeHandle) {
+    if (!oppositeHandleEntity) {
       console.error('No opposite handle found for', handleKind, handleVec)
       return
     }
 
-    const oppositeHandleBlock = oppositeHandle.read(Block)
+    // remove other handles that are not the current handle or opposite handle
+    for (const h of transformBox.handles) {
+      if (!h.isSame(handleEntity) && !h.isSame(oppositeHandleEntity)) {
+        this.deleteEntity(h)
+      }
+    }
+
+    const oppositeHandleBlock = oppositeHandleEntity.read(Block)
     const oppositeCenter = oppositeHandleBlock.getCenter()
     let difference: [number, number] = [handleCenter[0] - oppositeCenter[0], handleCenter[1] - oppositeCenter[1]]
     const R0 = newRotationMatrix(-boxRotateZ)
-    difference = transformPoint(R0, difference) // rotatePoint(difference, [0, 0], -boxRotateZ)
+    difference = transformPoint(R0, difference)
 
-    let boxEndWidth = Math.max(Math.abs(difference[0]), 10)
-    let boxEndHeight = Math.max(Math.abs(difference[1]), 10)
+    let boxEndWidth = Math.max(Math.abs(difference[0]), 1)
+    let boxEndHeight = Math.max(Math.abs(difference[1]), 1)
+
+    // flip handle vectors when crossing over
+    for (let i = 0; i < 2; i++) {
+      if (Math.sign(difference[i]) !== handleVec[i]) {
+        const handle = handleEntity.write(TransformHandle)
+        handle.vector[i] = -handle.vector[i]
+
+        const oppositeHandle = oppositeHandleEntity.write(TransformHandle)
+        oppositeHandle.vector[i] = -oppositeHandle.vector[i]
+      }
+    }
+
+    // if (difference[1] < 0) {
+    //   const handle = handleEntity.write(TransformHandle)
+    //   handle.vector[1] = -handle.vector[1]
+
+    //   const oppositeHandle = oppositeHandleEntity.write(TransformHandle)
+    //   oppositeHandle.vector[1] = -oppositeHandle.vector[1]
+    // }
 
     if (maintainAspectRatio) {
       // Scale mode: maintain aspect ratio
@@ -553,7 +580,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
 
     const vec: [number, number] = [handleVec[0] * boxEndWidth, handleVec[1] * boxEndHeight]
     const R1 = newRotationMatrix(boxRotateZ)
-    const rotatedVector = transformPoint(R1, vec) // rotatePoint(vec, [0, 0], boxRotateZ)
+    const rotatedVector = transformPoint(R1, vec)
 
     const newBoxCenter = [oppositeCenter[0] + rotatedVector[0] / 2, oppositeCenter[1] + rotatedVector[1] / 2]
 

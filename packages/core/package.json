@@ -92,7 +92,11 @@
     "lit": "^3.3.0",
     "mathjs": "^14.6.0",
     "strict-event-emitter": "^0.5.1",
+    "tinycolor2": "^1.6.0",
     "xstate": "^5.19.4",
     "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@types/tinycolor2": "^1.4.6"
   }
 }

@@ -23,6 +23,13 @@ export const floatingMenuDivider = {
   width: 8.75,
 }
 
+export const floatingMenuButtonColor = {
+  tag: 'ic-color-button',
+  width: 56,
+  tooltip: 'Color',
+  menu: 'ic-color-menu',
+}
+
 export const floatingMenuStandardButtons = [
   floatingMenuButtonBringForward,
   floatingMenuButtonSendBackward,

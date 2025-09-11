@@ -9,7 +9,7 @@ import type { Snapshot } from './History'
 import { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
-import { Block, Connector, Controls, Hovered, Persistent, Selected } from './components'
+import { Block, Color, Connector, Controls, Hovered, Persistent, Selected } from './components'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
@@ -28,6 +28,7 @@ import {
 import { CoreCommand } from './types'
 
 type BlockData = Pick<Block, SerializablePropNames<Block>>
+type ColorData = Omit<Color, SerializablePropNames<Block>>
 type ControlsData = Pick<Controls, SerializablePropNames<Controls>>
 
 declare module '@infinitecanvas/core' {
@@ -46,6 +47,7 @@ declare module '@infinitecanvas/core' {
       updateBlock: (blockId: string, block: Partial<BlockData>) => void
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
       setControls: (controls: Partial<ControlsData>) => void
+      setColor: (blockId: string, color: Partial<ColorData>) => void
     }
   }
 
@@ -56,6 +58,7 @@ declare module '@infinitecanvas/core' {
       selectedBlockIds: ReadonlySignal<string[]>
       hoveredBlockId: ReadonlySignal<string | null>
       blockById: (id: string) => ReadonlySignal<Block | undefined>
+      colorById: (id: string) => ReadonlySignal<Color | undefined>
       controls: ReadonlySignal<Controls | undefined>
     }
   }
@@ -98,6 +101,7 @@ export class CoreExtension extends BaseExtension {
 
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Block)
+    ComponentRegistry.instance.registerComponent(Color)
     ComponentRegistry.instance.registerComponent(Selected)
     ComponentRegistry.instance.registerComponent(Hovered)
     ComponentRegistry.instance.registerComponent(Persistent)
@@ -201,6 +205,13 @@ export class CoreExtension extends BaseExtension {
           send(CoreCommand.CreateFromSnapshot, snapshot)
         },
         setControls: (controls: Partial<ControlsData>) => send(CoreCommand.SetControls, controls),
+        setColor: (blockId: string, color: Partial<ColorData>) => {
+          send(CoreCommand.UpdateFromSnapshot, {
+            [blockId]: {
+              Color: new Color(color).toJson(),
+            },
+          })
+        },
       },
     }
   }
@@ -221,6 +232,8 @@ export class CoreExtension extends BaseExtension {
         }),
         blockById: (id: string): ReadonlySignal<Block | undefined> =>
           computed(() => state.getComponent<Block>(Block, id).value),
+        colorById: (id: string): ReadonlySignal<Color | undefined> =>
+          computed(() => state.getComponent<Color>(Color, id).value),
         controls: computed(() => state.getSingleton(Controls).value),
       },
     }

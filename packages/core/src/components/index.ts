@@ -29,6 +29,7 @@ export { TransformBoxState } from './TransformBoxState'
 export { Locked } from './Locked'
 export { SelectionBox } from './SelectionBox'
 export { HitArc } from './HitArc'
+export { Color } from './Color'
 
 import { Aabb } from './Aabb'
 import { Block } from './Block'

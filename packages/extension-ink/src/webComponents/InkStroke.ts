@@ -1,5 +1,5 @@
 import { ICBaseBlock } from '@infinitecanvas/core/elements'
-import type { Color } from '@infinitecanvas/extension-color'
+import type { Color } from '@infinitecanvas/core/components'
 import { type PropertyValues, css, html, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { getStroke } from 'perfect-freehand'

@@ -9,8 +9,8 @@ import {
   Persistent,
   RankBounds,
   allHitGeometriesArray,
+  Color
 } from '@infinitecanvas/core/components'
-import { Color } from '@infinitecanvas/extension-color'
 import { Text } from '@infinitecanvas/extension-text'
 import type { Entity } from '@lastolivegames/becsy'
 

@@ -3,7 +3,6 @@ import { LoremIpsum } from 'lorem-ipsum'
 import './style.css'
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ArrowsExtension } from '@infinitecanvas/extension-arrows'
-import { ColorExtension } from '@infinitecanvas/extension-color'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { EraserExtension } from '@infinitecanvas/extension-eraser'
 import { InkExtension } from '@infinitecanvas/extension-ink'
@@ -54,7 +53,6 @@ async function initializeCanvas(container: HTMLDivElement) {
       InputExtension,
       TextExtension,
       ArrowsExtension,
-      ColorExtension,
       StickyNotesExtension,
       RoughShapesExtension,
       // MultiplayerExtension,

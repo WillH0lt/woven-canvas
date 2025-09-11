@@ -52,7 +52,7 @@ class RoughShapesExtensionClass extends BaseExtension {
     },
   ]
 
-  public readonly dependsOn = ['ColorExtension', 'TextExtension']
+  public readonly dependsOn = ['TextExtension']
 
   public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {

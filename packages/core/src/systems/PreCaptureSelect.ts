@@ -86,7 +86,6 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
           if (!event.intersects[0]) return [0, 0]
           const block = event.intersects[0].read(Block)
 
-          console.log('dragged entity start', block.left, block.top)
           return [block.left, block.top] as [number, number]
         },
       }),
@@ -178,12 +177,16 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         },
       }),
       resizeSelectionBox: ({ context, event }) => {
-        this.emitCommand(CoreCommand.UpdateSelectionBox, {
-          left: Math.min(context.pointingStartWorld[0], event.worldPosition[0]),
-          top: Math.min(context.pointingStartWorld[1], event.worldPosition[1]),
-          width: Math.abs(context.pointingStartWorld[0] - event.worldPosition[0]),
-          height: Math.abs(context.pointingStartWorld[1] - event.worldPosition[1]),
-        })
+        this.emitCommand(
+          CoreCommand.UpdateSelectionBox,
+          {
+            left: Math.min(context.pointingStartWorld[0], event.worldPosition[0]),
+            top: Math.min(context.pointingStartWorld[1], event.worldPosition[1]),
+            width: Math.abs(context.pointingStartWorld[0] - event.worldPosition[0]),
+            height: Math.abs(context.pointingStartWorld[1] - event.worldPosition[1]),
+          },
+          { deselectOthers: !event.shiftDown },
+        )
       },
       selectIntersect: ({ event }) => {
         let intersect: Entity | undefined
@@ -329,6 +332,10 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
       this.selectionState,
       events,
     )
+
+    if (value !== this.selectionState.state) {
+      console.log(this.selectionState.state, '->', value)
+    }
 
     Object.assign(this.selectionState, context)
     this.selectionState.state = value

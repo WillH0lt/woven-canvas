@@ -2,10 +2,11 @@ import {
   BaseExtension,
   type BaseResources,
   ComponentRegistry,
+  floatingMenuButtonColor,
   floatingMenuDivider,
   floatingMenuStandardButtons,
 } from '@infinitecanvas/core'
-import { Color, floatingMenuButtonColor } from '@infinitecanvas/extension-color'
+import { Color } from '@infinitecanvas/core/components'
 
 import './webComponents'
 import { Stroke } from './components'
@@ -28,8 +29,6 @@ class InkExtensionClass extends BaseExtension {
       buttonTooltip: 'Draw',
     },
   ]
-
-  public readonly dependsOn = ['ColorExtension']
 
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Stroke)

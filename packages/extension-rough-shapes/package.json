@@ -42,7 +42,6 @@
   },
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
-    "@infinitecanvas/extension-color": "workspace:^",
     "@infinitecanvas/extension-text": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
     "@lit-labs/preact-signals": "^1.0.3",
