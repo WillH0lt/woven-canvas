@@ -1,7 +1,6 @@
-import { BaseSystem } from '@infinitecanvas/core'
-import { Keyboard } from '@infinitecanvas/core/components'
-
-import type { InputResources } from '../types'
+import { BaseSystem } from '../BaseSystem'
+import { Keyboard } from '../components'
+import type { CoreResources } from '../types'
 
 type CommandArgs = {
   [key: string]: []
@@ -10,7 +9,7 @@ type CommandArgs = {
 export class CaptureKeyboard extends BaseSystem<CommandArgs> {
   private readonly keyboards = this.query((q) => q.changed.with(Keyboard).trackWrites)
 
-  protected declare readonly resources: InputResources
+  protected declare readonly resources: CoreResources
 
   public execute(): void {
     if (!this.keyboards.changed.length) return

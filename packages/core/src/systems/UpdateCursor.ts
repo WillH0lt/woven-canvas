@@ -1,7 +1,8 @@
 import { BaseSystem } from '../BaseSystem'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
 import { CROSSHAIR_CURSOR } from '../constants'
-import { CoreCommand, type CoreCommandArgs, type CoreResources } from '../types'
+import type { CoreResources } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 
 function setDocumentCursor(cursorSvg: string) {

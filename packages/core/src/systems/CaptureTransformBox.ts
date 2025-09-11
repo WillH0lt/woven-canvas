@@ -2,6 +2,7 @@ import type { Entity } from '@lastolivegames/becsy'
 import { and, not, setup } from 'xstate'
 
 import { BaseSystem } from '../BaseSystem'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
 import {
   Block,
   Selected,
@@ -9,8 +10,9 @@ import {
   TransformBoxState as TransformBoxStateComp,
   TransformHandle,
 } from '../components'
-import { CoreCommand, type CoreCommandArgs, type PointerEvent, TransformBoxState } from '../types'
+import { type PointerEvent, TransformBoxState } from '../types'
 import { CaptureBlockPlacement } from './CaptureBlockPlacement'
+import { CaptureKeyboard } from './CaptureKeyboard'
 
 type SelectionEvent =
   | PointerEvent
@@ -28,7 +30,7 @@ export class CaptureTransformBox extends BaseSystem<CoreCommandArgs> {
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureBlockPlacement))
+    this.schedule((s) => s.inAnyOrderWith(CaptureBlockPlacement, CaptureKeyboard))
   }
 
   private readonly transformBoxMachine = setup({

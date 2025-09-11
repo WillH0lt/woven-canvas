@@ -1,6 +1,7 @@
 import { BaseSystem } from '../BaseSystem'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
-import { CoreCommand, type CoreCommandArgs, type CoreResources } from '../types'
+import type { CoreResources } from '../types'
 import type { ICEditableBlock } from '../webComponents'
 import { UpdateBlocks } from './UpdateBlocks'
 import { UpdateCamera } from './UpdateCamera'

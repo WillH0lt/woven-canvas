@@ -18,7 +18,6 @@
     "@infinitecanvas/extension-controls": "workspace:^",
     "@infinitecanvas/extension-eraser": "workspace:^",
     "@infinitecanvas/extension-ink": "workspace:^",
-    "@infinitecanvas/extension-input": "workspace:^",
     "@infinitecanvas/extension-multiplayer": "workspace:^",
     "@infinitecanvas/extension-rough-shapes": "workspace:^",
     "@infinitecanvas/extension-sticky-notes": "workspace:^",

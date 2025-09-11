@@ -4,10 +4,8 @@ export {
   Options,
   PointerType,
   PointerButton,
-  CoreCommand,
   type FloatingMenuButton,
   type FloatingMenuButtonInput,
-  type CoreCommandArgs,
   type PointerEvent,
   type MouseEvent,
   type CommandArgs,
@@ -20,6 +18,8 @@ export {
   type ToolDef,
   // type ToolbarButtonInput,
 } from './types'
+
+export { CoreCommand, type CoreCommandArgs } from './commands'
 
 export { BaseExtension } from './BaseExtension'
 export { BaseSystem } from './BaseSystem'

@@ -1,5 +1,7 @@
 import { LexoRank } from '@dalet-oss/lexorank'
 
+import { CoreCommand } from './commands'
+
 const maxRank = LexoRank.max().toString()
 
 export const SELECTION_BOX_RANK = maxRank
@@ -15,3 +17,46 @@ const CROSSHAIR_CURSOR_SVG = `<svg  xmlns="http://www.w3.org/2000/svg" width="24
 export const SELECT_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(SELECT_CURSOR_SVG)}") 1 0, auto`
 export const HAND_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(HAND_CURSOR_SVG)}") 12 12, auto`
 export const CROSSHAIR_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(CROSSHAIR_CURSOR_SVG)}") 12 12, auto`
+
+export const defaultKeybinds = [
+  {
+    command: CoreCommand.Undo,
+    key: 'z',
+    mod: true,
+  },
+  {
+    command: CoreCommand.Redo,
+    key: 'y',
+    mod: true,
+  },
+  {
+    command: CoreCommand.Redo,
+    key: 'z',
+    mod: true,
+    shift: true,
+  },
+  {
+    command: CoreCommand.Cut,
+    key: 'x',
+    mod: true,
+  },
+  {
+    command: CoreCommand.Copy,
+    key: 'c',
+    mod: true,
+  },
+  {
+    command: CoreCommand.Paste,
+    key: 'v',
+    mod: true,
+  },
+  {
+    command: CoreCommand.RemoveSelected,
+    key: 'delete',
+  },
+  {
+    command: CoreCommand.SelectAll,
+    key: 'a',
+    mod: true,
+  },
+]

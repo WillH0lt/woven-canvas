@@ -15,9 +15,6 @@
       "path": "packages/extension-eraser"
     },
     {
-      "path": "packages/extension-input"
-    },
-    {
       "path": "packages/extension-multiplayer"
     },
     {

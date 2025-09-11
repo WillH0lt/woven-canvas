@@ -2,10 +2,11 @@ import type { Entity } from '@lastolivegames/becsy'
 import { and, assign, not, setup } from 'xstate'
 
 import { BaseSystem } from '../BaseSystem'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
 import { Block, Locked, Persistent, Selected, SelectionState as SelectionStateComp, TransformBox } from '../components'
 import { getCursorSvg } from '../cursors'
 import { distance } from '../helpers'
-import { CoreCommand, type CoreCommandArgs, type PointerEvent } from '../types'
+import type { PointerEvent } from '../types'
 import { CursorKind, SelectionState } from '../types'
 import { PreCaptureIntersect } from './PreCaptureIntersect'
 

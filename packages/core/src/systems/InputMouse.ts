@@ -1,19 +1,20 @@
-import { BaseSystem } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
 import { co } from '@lastolivegames/becsy'
 import { InputKeyboard } from './InputKeyboard'
 import { InputPointer } from './InputPointer'
 import { InputScreen } from './InputScreen'
 
-export class InputMouse extends BaseSystem {
-  private readonly mice = this.query((q) => q.current.with(comps.Mouse).write)
+import { BaseSystem } from '../BaseSystem'
+import { Mouse } from '../components'
 
-  private get writeableMouse(): comps.Mouse {
-    return this.mice.current[0].write(comps.Mouse)
+export class InputMouse extends BaseSystem {
+  private readonly mice = this.query((q) => q.current.with(Mouse).write)
+
+  private get writeableMouse(): Mouse {
+    return this.mice.current[0].write(Mouse)
   }
 
   // declaring to becsy that mouse is a singleton component
-  private readonly _mouse = this.singleton.read(comps.Mouse)
+  private readonly _mouse = this.singleton.read(Mouse)
 
   public constructor() {
     super()

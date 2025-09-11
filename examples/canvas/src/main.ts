@@ -6,7 +6,6 @@ import { ArrowsExtension } from '@infinitecanvas/extension-arrows'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { EraserExtension } from '@infinitecanvas/extension-eraser'
 import { InkExtension } from '@infinitecanvas/extension-ink'
-import { InputExtension } from '@infinitecanvas/extension-input'
 import { RoughShapesExtension } from '@infinitecanvas/extension-rough-shapes'
 // import { Multiplayer } from '@infinitecanvas/extension-multiplayer'
 import { StickyNotesExtension } from '@infinitecanvas/extension-sticky-notes'
@@ -50,7 +49,6 @@ async function initializeCanvas(container: HTMLDivElement) {
     extensions: [
       // TransformExtension,
       ControlsExtension,
-      InputExtension,
       TextExtension,
       ArrowsExtension,
       StickyNotesExtension,

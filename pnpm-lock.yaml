@@ -83,9 +83,6 @@ importers:
       '@infinitecanvas/extension-ink':
         specifier: workspace:^
         version: link:../../packages/extension-ink
-      '@infinitecanvas/extension-input':
-        specifier: workspace:^
-        version: link:../../packages/extension-input
       '@infinitecanvas/extension-multiplayer':
         specifier: workspace:^
         version: link:../../packages/extension-multiplayer
@@ -185,37 +182,6 @@ importers:
         specifier: ^5.19.4
         version: 5.19.4
     devDependencies:
-      vitest:
-        specifier: ^3.1.4
-        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
-
-  packages/extension-color:
-    dependencies:
-      '@infinitecanvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@lastolivegames/becsy':
-        specifier: ^0.15.5
-        version: 0.15.5
-      '@lit-labs/preact-signals':
-        specifier: ^1.0.3
-        version: 1.0.3
-      '@preact/signals-core':
-        specifier: ^1.10.0
-        version: 1.10.0
-      lit:
-        specifier: ^3.3.0
-        version: 3.3.0
-      tinycolor2:
-        specifier: ^1.6.0
-        version: 1.6.0
-      zod:
-        specifier: ^3.25.36
-        version: 3.25.36
-    devDependencies:
-      '@types/tinycolor2':
-        specifier: ^1.4.6
-        version: 1.4.6
       vitest:
         specifier: ^3.1.4
         version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)

@@ -1,9 +1,10 @@
 import { BaseSystem } from '../BaseSystem'
-import { CoreCommand, type CoreCommandArgs } from '../types'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
 
 import { Block, Cursor, Hovered, TransformHandle } from '../components'
 import { getCursorSvg } from '../cursors'
 import { CaptureBlockPlacement } from './CaptureBlockPlacement'
+import { CaptureKeyboard } from './CaptureKeyboard'
 import { CaptureTransformBox } from './CaptureTransformBox'
 
 export class CaptureHoverCursor extends BaseSystem<CoreCommandArgs> {
@@ -15,7 +16,7 @@ export class CaptureHoverCursor extends BaseSystem<CoreCommandArgs> {
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(CaptureTransformBox, CaptureBlockPlacement))
+    this.schedule((s) => s.inAnyOrderWith(CaptureTransformBox, CaptureBlockPlacement, CaptureKeyboard))
   }
 
   public execute(): void {

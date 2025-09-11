@@ -1,8 +1,15 @@
-import { Block } from '@infinitecanvas/core/components'
 import { BaseSystem } from '../BaseSystem'
-import { CoreCommand, type CoreCommandArgs, PointerButton } from '../types'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
+import { Block } from '../components'
+import { PointerButton } from '../types'
+import { CaptureKeyboard } from './CaptureKeyboard'
 
 export class CaptureBlockPlacement extends BaseSystem<CoreCommandArgs> {
+  public constructor() {
+    super()
+    this.schedule((s) => s.inAnyOrderWith(CaptureKeyboard))
+  }
+
   public execute(): void {
     if (!this.controls.heldSnapshot) return
 

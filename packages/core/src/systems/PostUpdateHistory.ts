@@ -4,9 +4,10 @@ import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import type { Diff } from '../History'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
 import { applyDiff, uuidToNumber } from '../helpers'
-import { CoreCommand, type CoreCommandArgs, type CoreResources } from '../types'
+import type { CoreResources } from '../types'
 import { PostUpdateDeleter } from './PostUpdateDeleter'
 
 export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {

@@ -1,8 +1,7 @@
 import { BaseSystem } from '../BaseSystem'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
 import { Camera } from '../components'
 import { smoothDamp } from '../helpers'
-
-import { CoreCommand, type CoreCommandArgs } from '../types'
 
 export class UpdateCamera extends BaseSystem<CoreCommandArgs> {
   private readonly cameras = this.query((q) => q.current.with(Camera).write)

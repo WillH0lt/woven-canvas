@@ -1,12 +1,12 @@
 import { co } from '@lastolivegames/becsy'
 
-import { type BaseResources, BaseSystem } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
-
+import { BaseSystem } from '../BaseSystem'
+import { Screen } from '../components'
+import type { BaseResources } from '../types'
 import { InputKeyboard } from './InputKeyboard'
 
 export class InputScreen extends BaseSystem {
-  private readonly screens = this.query((q) => q.current.with(comps.Screen).write)
+  private readonly screens = this.query((q) => q.current.with(Screen).write)
 
   protected declare readonly resources: BaseResources
 
@@ -16,7 +16,7 @@ export class InputScreen extends BaseSystem {
   }
 
   @co private *handleResize(): Generator {
-    const screen = this.screens.current[0].write(comps.Screen)
+    const screen = this.screens.current[0].write(Screen)
     screen.width = this.resources.domElement.clientWidth
     screen.height = this.resources.domElement.clientHeight
 

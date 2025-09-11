@@ -9,13 +9,13 @@ import type { Snapshot } from './History'
 import { LocalDB } from './LocalDB'
 import type { State } from './State'
 import { floatingMenuStandardButtons } from './buttonCatalog'
+import { CoreCommand, type CoreCommandArgs } from './commands'
 import { Block, Color, Connector, Controls, Hovered, Persistent, Selected } from './components'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
 import {
   type BaseResources,
-  type CoreCommandArgs,
   CoreOptions,
   type CoreOptionsInput,
   type CoreResources,
@@ -25,7 +25,6 @@ import {
   type SendCommandFn,
   type SerializablePropNames,
 } from './types'
-import { CoreCommand } from './types'
 
 type BlockData = Pick<Block, SerializablePropNames<Block>>
 type ColorData = Omit<Color, SerializablePropNames<Block>>
@@ -131,12 +130,21 @@ export class CoreExtension extends BaseExtension {
     }
 
     this._preInputGroup = this.createGroup(coreResources, sys.PreInputCommandSpawner, sys.PreInputFrameCounter)
+    this._inputGroup = this.createGroup(
+      coreResources,
+      sys.InputScreen,
+      sys.InputPointer,
+      sys.InputKeyboard,
+      sys.InputMouse,
+    )
+
     this._preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect, sys.PreCaptureSelect)
     this._captureGroup = this.createGroup(
       coreResources,
       sys.CaptureBlockPlacement,
       sys.CaptureTransformBox,
       sys.CaptureHoverCursor,
+      sys.CaptureKeyboard,
     )
     this._preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited)
     this._updateGroup = this.createGroup(

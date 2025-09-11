@@ -1,5 +1,0 @@
-export { InputPointer } from './InputPointer'
-export { InputScreen } from './InputScreen'
-export { InputKeyboard } from './InputKeyboard'
-export { InputMouse } from './InputMouse'
-export { CaptureKeyboard } from './CaptureKeyboard'

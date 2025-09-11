@@ -1,20 +1,17 @@
-import { BaseSystem } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
 import { co } from '@lastolivegames/becsy'
 
-import type { InputResources } from '../types'
+import { BaseSystem } from '../BaseSystem'
+import { Keyboard } from '../components'
 
 export class InputKeyboard extends BaseSystem {
-  private readonly keyboards = this.query((q) => q.current.with(comps.Keyboard).write)
+  private readonly keyboards = this.query((q) => q.current.with(Keyboard).write)
 
   private readonly eventsBuffer: KeyboardEvent[] = []
-
-  protected declare readonly resources: InputResources
 
   private updateKeyboard(field: string, value: boolean): void {
     if (!(field in this.keyboard)) return
 
-    const keyboard = this.keyboards.current[0].write(comps.Keyboard)
+    const keyboard = this.keyboards.current[0].write(Keyboard)
     Object.assign(keyboard, { [field]: value })
   }
 
@@ -23,8 +20,8 @@ export class InputKeyboard extends BaseSystem {
 
     const keyDown = `${key}Down`
 
-    const keyboard = this.keyboards.current[0].write(comps.Keyboard)
-    if (keyboard[keyDown as keyof comps.Keyboard] === false) {
+    const keyboard = this.keyboards.current[0].write(Keyboard)
+    if (keyboard[keyDown as keyof Keyboard] === false) {
       const triggerKey = `${keyDown}Trigger`
       this.setTrigger(triggerKey)
     }
@@ -57,7 +54,7 @@ export class InputKeyboard extends BaseSystem {
   @co private *resetKeyboard(): Generator {
     yield
 
-    const keyboard = this.keyboards.current[0].write(comps.Keyboard)
+    const keyboard = this.keyboards.current[0].write(Keyboard)
     keyboard.reset()
   }
 

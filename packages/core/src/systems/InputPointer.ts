@@ -1,6 +1,8 @@
-import { BaseSystem, PointerButton } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
+
+import { BaseSystem } from '../BaseSystem'
+import { Pointer } from '../components'
+import { PointerButton } from '../types'
 import { InputKeyboard } from './InputKeyboard'
 import { InputScreen } from './InputScreen'
 
@@ -16,7 +18,7 @@ function getPointerButton(b: number): PointerButton {
 }
 
 export class InputPointer extends BaseSystem {
-  private readonly writablePointers = this.query((q) => q.current.with(comps.Pointer).write)
+  private readonly writablePointers = this.query((q) => q.current.with(Pointer).write)
 
   private readonly eventsBuffer: PointerEvent[] = []
 
@@ -28,7 +30,7 @@ export class InputPointer extends BaseSystem {
   private onPointerDown(e: PointerEvent): Entity {
     const p: [number, number] = [e.clientX, e.clientY]
     const w: [number, number] = this.camera.toWorld(p)
-    const pointer = this.createEntity(comps.Pointer, {
+    const pointer = this.createEntity(Pointer, {
       id: e.pointerId,
       downPosition: p,
       downWorldPosition: w,
@@ -37,26 +39,26 @@ export class InputPointer extends BaseSystem {
       button: getPointerButton(e.button),
     })
 
-    pointer.write(comps.Pointer).addPositionSample(p, this.time)
+    pointer.write(Pointer).addPositionSample(p, this.time)
 
     return pointer
   }
 
   private onPointerMove(e: PointerEvent, pointers: Entity[]): void {
-    const pointerEntity = pointers.find((p) => p.alive && p.read(comps.Pointer).id === e.pointerId)
+    const pointerEntity = pointers.find((p) => p.alive && p.read(Pointer).id === e.pointerId)
     if (!pointerEntity) return
 
     const p: [number, number] = [e.clientX, e.clientY]
-    const pointer = pointerEntity.write(comps.Pointer)
+    const pointer = pointerEntity.write(Pointer)
     pointer.addPositionSample(p, this.time)
     pointer.worldPosition = this.camera.toWorld(p)
   }
 
   private onPointerUp(e: PointerEvent, pointers: Entity[]): void {
     for (const pointerEntity of pointers) {
-      if (pointerEntity.read(comps.Pointer).id === e.pointerId) {
+      if (pointerEntity.read(Pointer).id === e.pointerId) {
         const p: [number, number] = [e.clientX, e.clientY]
-        const pointer = pointerEntity.write(comps.Pointer)
+        const pointer = pointerEntity.write(Pointer)
         pointer.addPositionSample(p, this.time)
         pointer.worldPosition = this.camera.toWorld(p)
         pointerEntity.delete()
