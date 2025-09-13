@@ -33,8 +33,6 @@ class StickyNotesExtensionClass extends BaseExtension {
       buttonTooltip: 'Sticky Note',
     },
   ]
-
-  public readonly dependsOn = ['TextExtension']
 }
 
 export const StickyNotesExtension = () => new StickyNotesExtensionClass()

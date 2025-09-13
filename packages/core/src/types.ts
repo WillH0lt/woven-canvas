@@ -184,7 +184,7 @@ export enum PointerButton {
 }
 
 export type PointerEvent = {
-  type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'click' | 'cancel'
+  type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'click' | 'cancel' | 'frame'
   worldPosition: [number, number]
   clientPosition: [number, number]
   velocity: [number, number]

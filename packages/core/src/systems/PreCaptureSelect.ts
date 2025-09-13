@@ -3,7 +3,15 @@ import { and, assign, not, setup } from 'xstate'
 
 import { BaseSystem } from '../BaseSystem'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
-import { Block, Locked, Persistent, Selected, SelectionState as SelectionStateComp, TransformBox } from '../components'
+import {
+  Block,
+  Camera,
+  Locked,
+  Persistent,
+  Selected,
+  SelectionState as SelectionStateComp,
+  TransformBox,
+} from '../components'
 import { getCursorSvg } from '../cursors'
 import { distance } from '../helpers'
 import type { PointerEvent } from '../types'
@@ -17,6 +25,8 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
   private readonly _blocks = this.query(
     (q) => q.with(Block, Persistent).read.using(Locked, TransformBox, Selected).read,
   )
+
+  private readonly cameras = this.query((q) => q.changed.with(Camera).trackWrites)
 
   private readonly selectionState = this.singleton.write(SelectionStateComp)
 
@@ -333,10 +343,6 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
       this.selectionState,
       events,
     )
-
-    if (value !== this.selectionState.state) {
-      console.log(this.selectionState.state, '->', value)
-    }
 
     Object.assign(this.selectionState, context)
     this.selectionState.state = value

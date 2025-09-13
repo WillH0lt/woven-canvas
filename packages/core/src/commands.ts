@@ -6,6 +6,7 @@ import type { Controls, Cursor } from './components'
 export enum CoreCommand {
   SetZoom = 'coreSetZoom',
   MoveCamera = 'coreMoveCamera',
+  TranslateCamera = 'coreTranslateCamera',
   SetCameraVelocity = 'coreSetCameraVelocity',
   SetControls = 'coreSetControls',
   SetCursor = 'coreSetCursor',
@@ -61,6 +62,12 @@ export type CoreCommandArgs = {
     },
   ]
   [CoreCommand.MoveCamera]: [
+    {
+      x: number
+      y: number
+    },
+  ]
+  [CoreCommand.TranslateCamera]: [
     {
       x: number
       y: number

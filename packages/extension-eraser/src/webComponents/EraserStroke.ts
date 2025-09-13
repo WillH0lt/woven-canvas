@@ -58,11 +58,6 @@ export class ICEraserStroke extends ICBaseBlock {
       overflow: visible;
       display: block;
     }
-    
-    :host([is-hovered]),
-    :host([is-selected]) {
-      outline: none;
-    }
 
     #container {
       display: relative;

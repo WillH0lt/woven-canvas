@@ -1,7 +1,7 @@
 import type { Entity } from '@lastolivegames/becsy'
 
 import { BaseSystem } from '../BaseSystem'
-import { Pointer } from '../components'
+import { Camera, Pointer } from '../components'
 import { PointerButton } from '../types'
 import { InputKeyboard } from './InputKeyboard'
 import { InputScreen } from './InputScreen'
@@ -19,6 +19,8 @@ function getPointerButton(b: number): PointerButton {
 
 export class InputPointer extends BaseSystem {
   private readonly writablePointers = this.query((q) => q.current.with(Pointer).write)
+
+  private readonly cameras = this.query((q) => q.changed.with(Camera).trackWrites)
 
   private readonly eventsBuffer: PointerEvent[] = []
 
@@ -110,5 +112,13 @@ export class InputPointer extends BaseSystem {
     }
 
     this.eventsBuffer.length = 0
+
+    if (this.cameras.changed.length > 0) {
+      for (const pointerEntity of pointers) {
+        if (!pointerEntity.has(Pointer)) continue
+        const pointer = pointerEntity.write(Pointer)
+        pointer.worldPosition = this.camera.toWorld(pointer.position)
+      }
+    }
   }
 }

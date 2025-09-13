@@ -47,7 +47,6 @@ async function initializeCanvas(container: HTMLDivElement) {
 
   infiniteCanvas = await InfiniteCanvas.New({
     extensions: [
-      // TransformExtension,
       ControlsExtension,
       ArrowsExtension,
       StickyNotesExtension,

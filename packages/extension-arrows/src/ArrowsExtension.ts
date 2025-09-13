@@ -40,8 +40,6 @@ class ArrowsExtensionClass extends BaseExtension {
     },
   ]
 
-  public readonly dependsOn = ['TextExtension']
-
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Arrow)
 

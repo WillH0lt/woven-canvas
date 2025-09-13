@@ -17,7 +17,13 @@ class ControlsExtensionClass extends BaseExtension {
       ...this.options,
     }
 
-    this._captureGroup = this.createGroup(controlsResources, sys.CaptureZoom, sys.CaptureScroll, sys.CapturePan)
+    this._captureGroup = this.createGroup(
+      controlsResources,
+      sys.CaptureZoom,
+      sys.CaptureScroll,
+      sys.CapturePan,
+      sys.CaptureScrollEdges,
+    )
   }
 }
 

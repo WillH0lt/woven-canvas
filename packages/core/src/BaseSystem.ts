@@ -163,7 +163,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     return this.resources.blockContainer.querySelector<HTMLElement>(`[id='${blockId}']`)
   }
 
-  protected getPointerEvents(buttons: PointerButton[]): PointerEvent[] {
+  protected getPointerEvents(buttons: PointerButton[], options: { includeFrameEvent?: boolean } = {}): PointerEvent[] {
     if (buttons.length === 0) return []
 
     const events: Partial<PointerEvent>[] = []
@@ -255,6 +255,16 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       })
     }
 
+    if (options.includeFrameEvent && current.length === 1) {
+      const pointer = current[0].read(comps.Pointer)
+      events.push({
+        type: 'frame',
+        clientPosition: [pointer.position[0], pointer.position[1]],
+        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
+        velocity: [pointer.velocity[0], pointer.velocity[1]],
+      })
+    }
+
     for (const event of events) {
       event.intersects = [
         this.intersect.entity,
@@ -270,6 +280,17 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
 
     return events as PointerEvent[]
   }
+
+  // protected getPointerPosition(buttons: PointerButton[]): [number, number] | null {
+  //   for (const button of buttons) {
+  //     const pointer = this.pointers.current.find((e) => e.read(comps.Pointer).button === button)
+  //     if (pointer) {
+  //       const p = pointer.read(comps.Pointer)
+  //       return [p.position[0], p.position[1]]
+  //     }
+  //   }
+  //   return null
+  // }
 
   protected getMouseEvents(): MouseEvent[] {
     const events = []

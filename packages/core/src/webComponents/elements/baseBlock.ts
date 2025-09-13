@@ -8,13 +8,6 @@ function getUnrotatedDimensions(
   aabbHeight: number,
   angle: number,
 ): { width: number; height: number } {
-  if (angle === 0) {
-    return { width: aabbWidth, height: aabbHeight }
-  }
-
-  const c = Math.abs(Math.cos(angle))
-  const s = Math.abs(Math.sin(angle))
-
   const A = aabbWidth
   const B = aabbHeight
 
@@ -25,6 +18,9 @@ function getUnrotatedDimensions(
   if (angle === Math.PI / 2) {
     return { width: B, height: A }
   }
+
+  const c = Math.abs(Math.cos(angle))
+  const s = Math.abs(Math.sin(angle))
 
   const b = (B - (s / c) * A) / (c - (s * s) / c)
   const a = A / c - (b * s) / c

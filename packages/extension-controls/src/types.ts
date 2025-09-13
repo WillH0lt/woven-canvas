@@ -21,3 +21,9 @@ export enum PanState {
   Idle = 'idle',
   Panning = 'panning',
 }
+
+export enum ScrollEdgesState {
+  Idle = 'idle',
+  Waiting = 'waiting',
+  Scrolling = 'scrolling',
+}

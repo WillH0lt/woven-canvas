@@ -9,6 +9,7 @@ export class UpdateCamera extends BaseSystem<CoreCommandArgs> {
   public initialize(): void {
     this.addCommandListener(CoreCommand.SetZoom, this.setZoom.bind(this))
     this.addCommandListener(CoreCommand.MoveCamera, this.moveCamera.bind(this))
+    this.addCommandListener(CoreCommand.TranslateCamera, this.translateCamera.bind(this))
     this.addCommandListener(CoreCommand.SetCameraVelocity, this.setCameraVelocity.bind(this))
   }
 
@@ -44,6 +45,14 @@ export class UpdateCamera extends BaseSystem<CoreCommandArgs> {
     const camera = this.cameras.current[0].write(Camera)
     camera.left = position.x
     camera.top = position.y
+
+    camera.velocity = [0, 0]
+  }
+
+  private translateCamera(delta: { x: number; y: number }): void {
+    const camera = this.cameras.current[0].write(Camera)
+    camera.left += delta.x
+    camera.top += delta.y
 
     camera.velocity = [0, 0]
   }
