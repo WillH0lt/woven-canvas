@@ -50,6 +50,7 @@ declare module '@infinitecanvas/core' {
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
       setControls: (controls: Partial<ControlsData>) => void
       setColor: (blockId: string, color: Partial<ColorData>) => void
+      createAndDragOntoCanvas: (snapshot: Snapshot) => void
     }
     textEditor: {
       toggleBold: () => void
@@ -184,7 +185,6 @@ export class CoreExtension extends BaseExtension {
     this._preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited)
     this._updateGroup = this.createGroup(
       coreResources,
-      sys.UpdateCursor,
       sys.UpdateBlocks,
       sys.UpdateCamera,
       sys.UpdateSelection,
@@ -272,6 +272,9 @@ export class CoreExtension extends BaseExtension {
               Color: new Color(color).toJson(),
             },
           })
+        },
+        createAndDragOntoCanvas: (snapshot: Snapshot) => {
+          send(CoreCommand.CreateAndDragOntoCanvas, snapshot)
         },
       },
       textEditor: {

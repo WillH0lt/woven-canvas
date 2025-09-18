@@ -189,6 +189,7 @@ export type PointerEvent = {
   clientPosition: [number, number]
   velocity: [number, number]
   intersects: [Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined]
+  obscured: boolean
   shiftDown: boolean
   altDown: boolean
   modDown: boolean

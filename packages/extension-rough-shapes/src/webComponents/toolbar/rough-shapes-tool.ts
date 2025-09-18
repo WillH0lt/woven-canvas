@@ -4,6 +4,7 @@ import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
+import type { Snapshot } from 'packages/core/build'
 import { RoughShape } from '../..'
 
 @customElement('ic-rough-shapes-tool')
@@ -18,7 +19,7 @@ export class ICRoughShapesTool extends ICToolbarIconButton {
     </svg>
   `
 
-  protected onClick() {
+  private getSnapshot(): Snapshot {
     const block = new Block({
       tag: 'ic-rough-shape',
       width: 300,
@@ -41,13 +42,21 @@ export class ICRoughShapesTool extends ICToolbarIconButton {
       roughness: 0,
     })
 
-    const snapshot = createSnapshot(block, [text, shape])
+    return createSnapshot(block, [text, shape])
+  }
 
-    InfiniteCanvas.instance?.commands.core.deselectAll()
+  protected onClick() {
+    const snapshot = this.getSnapshot()
+
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'rough-shapes',
       heldSnapshot: JSON.stringify(snapshot),
     })
+  }
+
+  protected onToolDragOut(): void {
+    const snapshot = this.getSnapshot()
+    InfiniteCanvas.instance?.commands.core.createAndDragOntoCanvas(snapshot)
   }
 }
 

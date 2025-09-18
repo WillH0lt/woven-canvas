@@ -96,7 +96,13 @@ export class ICText extends ICEditableBlock {
   }
 
   private async startEditing(): Promise<void> {
-    this.addEventListener('pointerenter', this.handlePointerEnter.bind(this), { once: true })
+    const _handlePointer = this.handlePointerEnter.bind(this)
+    this.addEventListener('pointerenter', _handlePointer, { once: true })
+
+    // remove listener after a short delay so prevent cursor from jumping
+    setTimeout(() => {
+      this.removeEventListener('pointerenter', _handlePointer)
+    }, 50)
 
     await this.updateComplete
 
@@ -126,6 +132,10 @@ export class ICText extends ICEditableBlock {
     this._editor.on('selectionUpdate', () => {
       this.syncStore()
     })
+
+    // this._editor.on('update', () => {
+    //   this.centerMenuToFitContent()
+    // })
 
     this.syncStore()
 

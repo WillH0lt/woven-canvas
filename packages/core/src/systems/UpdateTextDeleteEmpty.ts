@@ -4,7 +4,6 @@ import * as comps from '@infinitecanvas/core/components'
 import { Text } from '../components'
 import { UpdateBlocks } from './UpdateBlocks'
 import { UpdateCamera } from './UpdateCamera'
-import { UpdateCursor } from './UpdateCursor'
 import { UpdateSelection } from './UpdateSelection'
 import { UpdateTransformBox } from './UpdateTransformBox'
 
@@ -13,7 +12,7 @@ export class UpdateTextDeleteEmpty extends BaseSystem<CoreCommandArgs> {
 
   public constructor() {
     super()
-    this.schedule((s) => s.after(UpdateSelection, UpdateCursor, UpdateBlocks, UpdateCamera, UpdateTransformBox))
+    this.schedule((s) => s.after(UpdateSelection, UpdateBlocks, UpdateCamera, UpdateTransformBox))
   }
 
   public execute(): void {

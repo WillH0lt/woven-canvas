@@ -4,16 +4,16 @@ import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import { SnapshotBuilder } from '../History'
+import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
 import { binarySearchForId, clamp, computeExtents, uuidToNumber } from '../helpers'
-import { PointerButton } from '../types'
 import type { CoreResources } from '../types'
 import type { ICFloatingMenu } from '../webComponents'
 import { PreRenderStoreSync } from './PreRenderStoreSync'
 
 const FLOATING_MENU_TAG = 'ic-floating-menu'
 
-export class PreRenderFloatingMenus extends BaseSystem {
+export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
   protected declare readonly resources: CoreResources
 
   private readonly currentQueries = new Map<new () => BaseComponent, Query>()
@@ -27,6 +27,10 @@ export class PreRenderFloatingMenus extends BaseSystem {
   )
 
   private readonly editedBlocks = this.query((q) => q.current.with(comps.Edited))
+
+  private readonly floatingMenuState = this.singleton.read(comps.FloatingMenuState)
+
+  private readonly floatingMenuStateQuery = this.query((q) => q.current.with(comps.FloatingMenuState).write)
 
   public constructor() {
     super()
@@ -45,6 +49,11 @@ export class PreRenderFloatingMenus extends BaseSystem {
     }
   }
 
+  public initialize(): void {
+    this.addCommandListener(CoreCommand.HideFloatingMenu, this.hideFloatingMenu.bind(this))
+    this.addCommandListener(CoreCommand.ShowFloatingMenu, this.showFloatingMenu.bind(this))
+  }
+
   public execute(): void {
     if (this.cameras.changed.length > 0) {
       const element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
@@ -53,15 +62,8 @@ export class PreRenderFloatingMenus extends BaseSystem {
       }
     }
 
-    const pointerEvents = this.getPointerEvents([PointerButton.Left])
-    if (pointerEvents.find((e) => e.type === 'pointerDown') && this.editedBlocks.current.length === 0) {
-      this.removeFloatingMenu()
-    }
-
-    if (this.pointers.current.length === 0) {
-      if (this.selectedBlocks.addedChangedOrRemoved.length > 0 || pointerEvents.find((e) => e.type === 'pointerUp')) {
-        this.createOrUpdateFloatingMenu()
-      }
+    if (this.selectedBlocks.addedChangedOrRemoved.length > 0) {
+      this.createUpdateOrRemoveFloatingMenu()
     }
 
     if (this.selectedBlocks.current.length > 0) {
@@ -86,9 +88,11 @@ export class PreRenderFloatingMenus extends BaseSystem {
         }
       }
     }
+
+    this.executeCommands()
   }
 
-  createOrUpdateFloatingMenu(): void {
+  createUpdateOrRemoveFloatingMenu(): void {
     const mySelectedBlocks = this.selectedBlocks.current.filter(
       (e) => e.read(comps.Selected).selectedBy === this.resources.uid,
     )
@@ -117,6 +121,7 @@ export class PreRenderFloatingMenus extends BaseSystem {
     let element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
     if (!element) {
       element = document.createElement(FLOATING_MENU_TAG)
+      this.updateFloatingMenuVisibility(element, this.floatingMenuState.visible)
       this.resources.menuContainer.appendChild(element)
     }
 
@@ -184,14 +189,38 @@ export class PreRenderFloatingMenus extends BaseSystem {
     element.style.left = `${left}px`
     element.style.top = `${top}px`
 
-    // hide menu if selection is off screen
-    if (
-      this.camera.zoom * (extents.right - this.camera.left) < 0 ||
-      this.camera.zoom * (extents.left - this.camera.left) > screenWidth
-    ) {
-      element.style.display = 'none'
-    } else {
-      element.style.display = 'block'
+    if (this.floatingMenuState.visible) {
+      // hide menu if selection is off screen
+      const hidden =
+        this.camera.zoom * (extents.right - this.camera.left) < 0 ||
+        this.camera.zoom * (extents.left - this.camera.left) > screenWidth
+      this.updateFloatingMenuVisibility(element, !hidden)
     }
+  }
+
+  private hideFloatingMenu(): void {
+    const floatingMenuStateEntity = this.floatingMenuStateQuery.current[0]
+    const floatingMenuState = floatingMenuStateEntity.write(comps.FloatingMenuState)
+    floatingMenuState.visible = false
+
+    const element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
+    if (element) {
+      this.updateFloatingMenuVisibility(element, false)
+    }
+  }
+
+  private showFloatingMenu(): void {
+    const floatingMenuStateEntity = this.floatingMenuStateQuery.current[0]
+    const floatingMenuState = floatingMenuStateEntity.write(comps.FloatingMenuState)
+    floatingMenuState.visible = true
+
+    const element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
+    if (element) {
+      this.updateFloatingMenuVisibility(element, true)
+    }
+  }
+
+  private updateFloatingMenuVisibility(element: ICFloatingMenu, isVisible: boolean): void {
+    element.style.opacity = isVisible ? '1' : '0'
   }
 }

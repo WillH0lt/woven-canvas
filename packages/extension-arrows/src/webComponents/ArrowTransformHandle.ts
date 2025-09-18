@@ -38,10 +38,9 @@ export class ArrowTransformHandleElement extends LitElement {
       transition-property: background-color;
       transition-timing-function: var(--ic-transition-timing-function);
       transition-duration: var(--ic-transition-duration);
-      pointer-events: auto; /* keep drag/resize interactivity */
     }
 
-    div:hover::before {
+    :host([is-hovered]) > div::before {
       background-color: var(--ic-primary);
     }
   `

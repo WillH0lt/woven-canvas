@@ -26,7 +26,6 @@ import { newRotationMatrix, newRotationMatrixAroundPoint, transformPoint, uuidTo
 import { CursorKind, TransformHandleKind } from '../types'
 import { UpdateBlocks } from './UpdateBlocks'
 import { UpdateCamera } from './UpdateCamera'
-import { UpdateCursor } from './UpdateCursor'
 import { UpdateSelection } from './UpdateSelection'
 
 interface TransformHandleDef {
@@ -63,7 +62,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
 
   public constructor() {
     super()
-    this.schedule((s) => s.after(UpdateSelection, UpdateCursor, UpdateBlocks, UpdateCamera))
+    this.schedule((s) => s.after(UpdateSelection, UpdateBlocks, UpdateCamera))
   }
 
   public initialize(): void {

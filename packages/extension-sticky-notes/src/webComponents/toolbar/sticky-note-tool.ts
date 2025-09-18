@@ -2,7 +2,7 @@ import { InfiniteCanvas, VerticalAlign } from '@infinitecanvas/core'
 import { Block, Color, Text } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
-import { type PropertyValues, html } from 'lit'
+import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import type { Snapshot } from 'packages/core/build'
 
@@ -17,12 +17,6 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
         </g>
     </svg>
   `
-
-  protected firstUpdated(_changedProperties: PropertyValues): void {
-    super.firstUpdated(_changedProperties)
-
-    this.addEventListener('tool-drag-out', () => this.onToolDragOut())
-  }
 
   private getSnapshot(): Snapshot {
     const block = new Block({
@@ -39,7 +33,7 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
 
     const text = new Text({
       fontSize: 40,
-      verticalAlign: VerticalAlign.Top,
+      verticalAlign: VerticalAlign.Center,
       constrainWidth: true,
     })
 
@@ -51,17 +45,15 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
   protected onClick() {
     const snapshot = this.getSnapshot()
 
-    InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'sticky-note',
       heldSnapshot: JSON.stringify(snapshot),
     })
   }
 
-  private onToolDragOut() {
+  protected onToolDragOut(): void {
     const snapshot = this.getSnapshot()
-    InfiniteCanvas.instance?.commands.core.deselectAll()
-    console.log('drag out snapshot', snapshot)
+    InfiniteCanvas.instance?.commands.core.createAndDragOntoCanvas(snapshot)
   }
 }
 

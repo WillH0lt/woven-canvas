@@ -230,6 +230,12 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         if (context.draggedEntity.has(Selected)) return
         this.emitCommand(CoreCommand.DeselectAll)
       },
+      hideFloatingMenu: () => {
+        this.emitCommand(CoreCommand.HideFloatingMenu)
+      },
+      showFloatingMenu: () => {
+        this.emitCommand(CoreCommand.ShowFloatingMenu)
+      },
     },
   }).createMachine({
     id: 'selection',
@@ -244,7 +250,7 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
     },
     states: {
       [SelectionState.Idle]: {
-        entry: 'resetContext',
+        entry: ['resetContext', 'showFloatingMenu'],
         on: {
           pointerDown: [
             {
@@ -259,7 +265,7 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         },
       },
       [SelectionState.Pointing]: {
-        entry: ['setPointingStart', 'setDraggedEntity'],
+        entry: ['setPointingStart', 'setDraggedEntity', 'hideFloatingMenu'],
         on: {
           pointerMove: {
             guard: and(['isThresholdReached', not('draggedEntityIsLocked')]),
@@ -299,7 +305,7 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         },
       },
       [SelectionState.SelectionBoxPointing]: {
-        entry: 'setPointingStart',
+        entry: ['setPointingStart', 'hideFloatingMenu'],
         on: {
           pointerMove: {
             guard: 'isThresholdReached',

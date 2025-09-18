@@ -3,19 +3,11 @@ import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
 import type { CoreResources } from '../types'
 import type { ICEditableBlock } from '../webComponents'
-import { UpdateBlocks } from './UpdateBlocks'
-import { UpdateCamera } from './UpdateCamera'
-import { UpdateCursor } from './UpdateCursor'
 
 export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
   protected declare readonly resources: CoreResources
 
   private readonly editedEntities = this.query((q) => q.added.removed.with(comps.Block, comps.Edited))
-
-  public constructor() {
-    super()
-    this.schedule((s) => s.inAnyOrderWith(UpdateCursor, UpdateCamera, UpdateBlocks))
-  }
 
   public execute(): void {
     for (const entity of this.editedEntities.added) {

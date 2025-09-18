@@ -163,10 +163,19 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     return this.resources.blockContainer.querySelector<HTMLElement>(`[id='${blockId}']`)
   }
 
+  protected getPointerPosition(): [number, number] | null {
+    if (this.pointers.current.length === 1) {
+      const pointer = this.pointers.current[0].read(comps.Pointer)
+      return [pointer.position[0], pointer.position[1]]
+    }
+
+    return null
+  }
+
   protected getPointerEvents(buttons: PointerButton[], options: { includeFrameEvent?: boolean } = {}): PointerEvent[] {
     if (buttons.length === 0) return []
 
-    const events: Partial<PointerEvent>[] = []
+    const events: PointerEvent[] = []
 
     if (this.pointers.removed.length > 0) {
       this.accessRecentlyDeletedData(true)
@@ -177,62 +186,57 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     let removed = this.pointers.removed
     let changed = this.pointers.changed
 
-    added = added.filter((e) => buttons.includes(e.read(comps.Pointer).button))
-    current = current.filter((e) => buttons.includes(e.read(comps.Pointer).button))
-    removed = removed.filter((e) => buttons.includes(e.read(comps.Pointer).button))
-    changed = changed.filter((e) => buttons.includes(e.read(comps.Pointer).button))
+    const shouldIncludePointer = (e: Entity) => {
+      const pointer = e.read(comps.Pointer)
+      return buttons.includes(pointer.button)
+    }
+
+    added = added.filter(shouldIncludePointer)
+    current = current.filter(shouldIncludePointer)
+    removed = removed.filter(shouldIncludePointer)
+    changed = changed.filter(shouldIncludePointer)
+
+    const intersects: PointerEvent['intersects'] = [
+      this.intersect.entity,
+      this.intersect.entity2,
+      this.intersect.entity3,
+      this.intersect.entity4,
+      this.intersect.entity5,
+    ]
 
     if (added.length > 0 && current.length === 1) {
       const pointer = current[0].read(comps.Pointer)
-      events.push({
-        type: 'pointerDown',
-        clientPosition: [pointer.downPosition[0], pointer.downPosition[1]],
-        worldPosition: [pointer.downWorldPosition[0], pointer.downWorldPosition[1]],
-        velocity: [pointer.velocity[0], pointer.velocity[1]],
-      })
+      if (!pointer.obscured) {
+        const ev = pointer.toEvent('pointerDown', intersects, this.keyboard)
+        events.push(ev)
+      }
     }
 
     // cancel the action if the pointer is down, and we push another pointer down.
     if (current.length >= 1 && this.pointers.added.length > 0 && this.pointers.current.length > 1) {
       const pointer = current[0].read(comps.Pointer)
-      events.push({
-        type: 'cancel',
-        clientPosition: [pointer.position[0], pointer.position[1]],
-        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
-        velocity: [pointer.velocity[0], pointer.velocity[1]],
-      })
+      const ev = pointer.toEvent('cancel', intersects, this.keyboard)
+      events.push(ev)
     }
 
     // not exactly a pointer event, but if somebody presses escape and the pointer
     // is down it should cancel the current action
     if (current.length >= 1 && this.keyboard.escapeDownTrigger) {
       const pointer = current[0].read(comps.Pointer)
-      events.push({
-        type: 'cancel',
-        clientPosition: [pointer.position[0], pointer.position[1]],
-        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
-        velocity: [pointer.velocity[0], pointer.velocity[1]],
-      })
+      const ev = pointer.toEvent('cancel', intersects, this.keyboard)
+      events.push(ev)
     }
 
     if (removed.length > 0 && current.length === 0) {
       const pointer = removed[0].read(comps.Pointer)
-      events.push({
-        type: 'pointerUp',
-        clientPosition: [pointer.position[0], pointer.position[1]],
-        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
-        velocity: [pointer.velocity[0], pointer.velocity[1]],
-      })
+      const ev = pointer.toEvent('pointerUp', intersects, this.keyboard)
+      events.push(ev)
 
       const dist = distance(pointer.downPosition, pointer.position)
       const deltaFrame = this.frame.value - pointer.downFrame
       if (dist < CLICK_MOVE_THRESHOLD && deltaFrame < CLICK_FRAME_THRESHOLD) {
-        events.push({
-          type: 'click',
-          clientPosition: [pointer.position[0], pointer.position[1]],
-          worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
-          velocity: [pointer.velocity[0], pointer.velocity[1]],
-        })
+        const clickEvent = pointer.toEvent('click', intersects, this.keyboard)
+        events.push(clickEvent)
       }
     }
 
@@ -247,38 +251,30 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       current.length === 1
     ) {
       const pointer = current[0].read(comps.Pointer)
-      events.push({
-        type: 'pointerMove',
-        clientPosition: [pointer.position[0], pointer.position[1]],
-        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
-        velocity: [pointer.velocity[0], pointer.velocity[1]],
-      })
+      const ev = pointer.toEvent('pointerMove', intersects, this.keyboard)
+      events.push(ev)
     }
 
     if (options.includeFrameEvent && current.length === 1) {
       const pointer = current[0].read(comps.Pointer)
-      events.push({
-        type: 'frame',
-        clientPosition: [pointer.position[0], pointer.position[1]],
-        worldPosition: [pointer.worldPosition[0], pointer.worldPosition[1]],
-        velocity: [pointer.velocity[0], pointer.velocity[1]],
-      })
+      const ev = pointer.toEvent('frame', intersects, this.keyboard)
+      events.push(ev)
     }
 
-    for (const event of events) {
-      event.intersects = [
-        this.intersect.entity,
-        this.intersect.entity2,
-        this.intersect.entity3,
-        this.intersect.entity4,
-        this.intersect.entity5,
-      ]
-      event.shiftDown = this.keyboard.shiftDown
-      event.altDown = this.keyboard.altDown
-      event.modDown = this.keyboard.modDown
-    }
+    // for (const event of events) {
+    //   event.intersects = [
+    //     this.intersect.entity,
+    //     this.intersect.entity2,
+    //     this.intersect.entity3,
+    //     this.intersect.entity4,
+    //     this.intersect.entity5,
+    //   ]
+    //   event.shiftDown = this.keyboard.shiftDown
+    //   event.altDown = this.keyboard.altDown
+    //   event.modDown = this.keyboard.modDown
+    // }
 
-    return events as PointerEvent[]
+    return events
   }
 
   // protected getPointerPosition(buttons: PointerButton[]): [number, number] | null {

@@ -8,7 +8,7 @@ import { CapturePan } from './CapturePan'
 import { CaptureScroll } from './CaptureScroll'
 import { CaptureZoom } from './CaptureZoom'
 
-const EDGE_SIZE = 5
+const EDGE_SIZE = 10
 const EDGE_SCROLL_SPEED = 15
 const EDGE_SCROLL_DELAY = 250
 
@@ -137,7 +137,7 @@ export class CaptureScrollEdges extends BaseSystem<CoreCommandArgs> {
   })
 
   public execute(): void {
-    if (this.selectionState.state !== 'dragging') return
+    if (!['dragging', 'selectionBoxDragging'].includes(this.selectionState.state)) return
 
     const buttons = this.controls.getButtons('select')
     const events = this.getPointerEvents(buttons, { includeFrameEvent: true })

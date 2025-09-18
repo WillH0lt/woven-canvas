@@ -15,10 +15,6 @@ export class TransformBoxHandleElement extends LitElement {
       box-sizing: border-box;
       width: 100%;
       height: 100%;
-      transition-property: background-color;
-      transition-timing-function: var(--ic-transition-timing-function);
-      transition-duration: var(--ic-transition-duration);
-      pointer-events: auto; /* keep drag/resize interactivity */
     }
 
     /*
@@ -40,11 +36,15 @@ export class TransformBoxHandleElement extends LitElement {
       transform: translate(-50%, -50%) scale(calc(1 / var(--ic-zoom)));
       transform-origin: center center;
       pointer-events: none;
+      transition-property: background-color;
+      transition-timing-function: var(--ic-transition-timing-function);
+      transition-duration: var(--ic-transition-duration);
     }
 
-    div:hover::before {
+    :host([is-hovered]) > div::before {
       background-color: var(--ic-primary);
     }
+
   `
 
   render() {

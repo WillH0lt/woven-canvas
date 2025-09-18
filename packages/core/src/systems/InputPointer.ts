@@ -39,6 +39,7 @@ export class InputPointer extends BaseSystem {
       downFrame: this.frame.value,
       worldPosition: w,
       button: getPointerButton(e.button),
+      obscured: e.target !== this.resources.domElement,
     })
 
     pointer.write(Pointer).addPositionSample(p, this.time)
@@ -54,6 +55,7 @@ export class InputPointer extends BaseSystem {
     const pointer = pointerEntity.write(Pointer)
     pointer.addPositionSample(p, this.time)
     pointer.worldPosition = this.camera.toWorld(p)
+    pointer.obscured = e.target !== this.resources.domElement
   }
 
   private onPointerUp(e: PointerEvent, pointers: Entity[]): void {

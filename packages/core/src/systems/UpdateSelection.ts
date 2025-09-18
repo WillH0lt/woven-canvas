@@ -6,7 +6,6 @@ import { computeAabb, uuidToNumber } from '../helpers'
 import { fastIntersectAabb } from '../helpers'
 import { UpdateBlocks } from './UpdateBlocks'
 import { UpdateCamera } from './UpdateCamera'
-import { UpdateCursor } from './UpdateCursor'
 
 export class UpdateSelection extends BaseSystem<CoreCommandArgs> {
   private readonly blocks = this.query(
@@ -23,7 +22,7 @@ export class UpdateSelection extends BaseSystem<CoreCommandArgs> {
 
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(UpdateCursor, UpdateBlocks, UpdateCamera))
+    this.schedule((s) => s.inAnyOrderWith(UpdateBlocks, UpdateCamera))
   }
 
   public initialize(): void {
@@ -60,8 +59,6 @@ export class UpdateSelection extends BaseSystem<CoreCommandArgs> {
     Object.assign(block, blockPartial)
 
     // if (meta.uid !== this.resources.uid) return
-
-    console.log(options?.deselectOthers)
 
     // const aabb = { left: block.left, top: block.top, right: block.left + block.width, bottom: block.bottom }
     const aabb = computeAabb(selectionBoxEntity)

@@ -1,4 +1,4 @@
-import { type HTMLTemplateResult, LitElement, html } from 'lit'
+import { type HTMLTemplateResult, LitElement, type PropertyValues, html } from 'lit'
 import { property } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
 import { style } from './toolbar-icon-button.style'
@@ -14,8 +14,18 @@ export abstract class ICToolbarIconButton extends LitElement {
   @property()
   public tool = ''
 
+  protected firstUpdated(_changedProperties: PropertyValues): void {
+    super.firstUpdated(_changedProperties)
+
+    this.addEventListener('tool-drag-out', () => this.onToolDragOut())
+  }
+
   protected onClick(): void {
     // InfiniteCanvas.instance?.commands.core.setTool(this.tool)
+  }
+
+  protected onToolDragOut(): void {
+    // no-op
   }
 
   render() {

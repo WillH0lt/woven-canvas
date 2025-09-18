@@ -33,11 +33,28 @@ export class ICTextTool extends ICToolbarIconButton {
 
     const snapshot = createSnapshot(block, [text])
 
-    InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'text',
       heldSnapshot: JSON.stringify(snapshot),
     })
+  }
+
+  protected onToolDragOut(): void {
+    const block = new Block({
+      tag: 'ic-text',
+      height: 24 * 1.2,
+      width: 40,
+    })
+
+    const text = new Text({
+      content: 'text',
+      fontSize: 24,
+      lineHeight: 1.2,
+    })
+
+    const snapshot = createSnapshot(block, [text])
+
+    InfiniteCanvas.instance?.commands.core.createAndDragOntoCanvas(snapshot)
   }
 }
 

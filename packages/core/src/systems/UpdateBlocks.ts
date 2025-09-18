@@ -7,9 +7,11 @@ import type { Snapshot } from '../History'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
 import type { Block } from '../components'
+import { CROSSHAIR_CURSOR } from '../constants'
+import { getCursorSvg } from '../cursors'
 import { applyDiff, binarySearchForId, generateUuidBySeed, uuidToNumber } from '../helpers'
+import { CursorKind, SelectionState } from '../types'
 import { UpdateCamera } from './UpdateCamera'
-import { UpdateCursor } from './UpdateCursor'
 
 export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   private readonly rankBounds = this.singleton.write(comps.RankBounds)
@@ -18,15 +20,24 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
   private readonly selectedBlocks = this.query((q) => q.current.with(comps.Block, comps.Selected).write)
 
+  private readonly selectionStateQuery = this.query((q) => q.current.with(comps.SelectionState).read)
+
+  private readonly controlsQuery = this.query((q) => q.current.changed.with(comps.Controls).write.trackWrites)
+
+  private readonly cursorQuery = this.query((q) => q.current.with(comps.Cursor).write)
+
   private readonly entities = this.query(
     (q) => q.current.with(comps.Block).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
   )
 
   private readonly connectors = this.query((q) => q.added.with(comps.Connector).write)
 
+  // let becsy know that cursor is a singleton
+  private readonly _cursor = this.singleton.read(comps.Cursor)
+
   public constructor() {
     super()
-    this.schedule((s) => s.inAnyOrderWith(UpdateCursor, UpdateCamera))
+    this.schedule((s) => s.inAnyOrderWith(UpdateCamera))
   }
 
   public initialize(): void {
@@ -55,11 +66,18 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     this.addCommandListener(CoreCommand.Undo, this.deselectAll.bind(this))
     this.addCommandListener(CoreCommand.Redo, this.deselectAll.bind(this))
+
+    this.addCommandListener(CoreCommand.CreateAndDragOntoCanvas, this.createAndDragOntoCanvas.bind(this))
+    this.addCommandListener(CoreCommand.SetControls, this.setControls.bind(this))
+    this.addCommandListener(CoreCommand.SetCursor, this.setCursor.bind(this))
   }
 
   public execute(): void {
-    // update rank bounds
     if (this.frame.value === 1) {
+      // triggers cursor to update on first frame
+      this.setControls({})
+
+      // initialize rank bounds
       for (const blockEntity of this.persistentBlocks.added) {
         const { rank } = blockEntity.read(comps.Block)
         this.rankBounds.add(LexoRank.parse(rank))
@@ -94,6 +112,13 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
           connector.endBlockId = ''
         }
       }
+    }
+
+    for (const controlsEntity of this.controlsQuery.changed) {
+      const controls = controlsEntity.read(comps.Controls)
+      const toolDef = this.getTool(controls.leftMouseTool)
+      const cursorIcon = toolDef?.cursorIcon || CROSSHAIR_CURSOR
+      this.setCursor({ svg: cursorIcon })
     }
 
     this.executeCommands()
@@ -284,7 +309,10 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     // this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 
-  private createFromSnapshot(snapshot: Snapshot): void {
+  private createFromSnapshot(
+    snapshot: Snapshot,
+    options: { selectCreated?: boolean; editCreated?: boolean } = { selectCreated: true, editCreated: true },
+  ): Entity[] {
     for (const id of Object.keys(snapshot)) {
       if (!snapshot[id].Block) {
         console.error(`Block with id ${id} does not have a Block component. Skipping.`)
@@ -315,16 +343,21 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     const { added } = applyDiff(this, diff, this.entities)
 
-    for (const blockEntity of added) {
-      blockEntity.add(comps.Selected, { selectedBy: this.resources.uid })
+    if (options.selectCreated) {
+      for (const blockEntity of added) {
+        blockEntity.add(comps.Selected, { selectedBy: this.resources.uid })
 
-      const block = blockEntity.read(comps.Block)
-      const blockDef = this.getBlockDef(block.tag)
-      if (blockDef?.canEdit) {
+        if (!options.editCreated) continue
+
+        const block = blockEntity.read(comps.Block)
+        const blockDef = this.getBlockDef(block.tag)
+        if (!blockDef?.canEdit) continue
+
         blockEntity.add(comps.Edited)
-        break
       }
     }
+
+    return added
   }
 
   private cloneEntities(entities: Entity[], offset: [number, number], cloneGeneratorSeed: string): void {
@@ -405,6 +438,60 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     }
 
     this.emitCommand(CoreCommand.CreateCheckpoint)
+  }
+
+  private createAndDragOntoCanvas(snapshot: Snapshot): void {
+    if (this.pointers.current.length === 0) {
+      console.warn('pointer must be down to drag onto canvas')
+      return
+    }
+
+    if (Object.keys(snapshot).length !== 1) {
+      console.warn('can only drag one block onto canvas at a time')
+      return
+    }
+
+    this.deselectAll()
+
+    const pointer = this.pointers.current[0].read(comps.Pointer)
+
+    const selectionState = this.selectionStateQuery.current[0].write(comps.SelectionState)
+
+    const entities = this.createFromSnapshot(snapshot, { selectCreated: false, editCreated: false })
+
+    const entity = entities[0]
+
+    const block = entity.write(comps.Block)
+    block.left = pointer.worldPosition[0] - block.width / 2
+    block.top = pointer.worldPosition[1] - block.height / 2
+
+    // update selection state to dragging
+    selectionState.state = SelectionState.Dragging
+    selectionState.dragStart = pointer.worldPosition
+    selectionState.draggedEntityStart = [block.left, block.top]
+    selectionState.draggedEntity = entity
+
+    this.setCursor({ contextSvg: getCursorSvg(CursorKind.Drag, 0) })
+  }
+
+  private setControls(controls: Partial<comps.Controls>): void {
+    const currentControls = this.controlsQuery.current[0].write(comps.Controls)
+    Object.assign(currentControls, controls)
+
+    if (currentControls.leftMouseTool !== 'select') {
+      this.deselectAll()
+    }
+  }
+
+  private setCursor(cursor: Partial<comps.Cursor>): void {
+    const currentCursor = this.cursorQuery.current[0].write(comps.Cursor)
+    Object.assign(currentCursor, cursor)
+
+    const toolCursor = this.getTool(this.controls.leftMouseTool)?.cursorIcon
+
+    const svg = currentCursor.contextSvg || toolCursor || CROSSHAIR_CURSOR
+
+    document.body.style.cursor = svg
   }
 
   private _getNextRank(rank: LexoRank, sortedBlocks: Entity[]): LexoRank {

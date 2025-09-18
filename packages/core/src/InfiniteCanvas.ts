@@ -40,7 +40,7 @@ function addToolbar(domElement: HTMLElement, tools: Record<string, ToolDef>): vo
   toolbarContainer.style.height = '50px'
   toolbarContainer.style.display = 'flex'
   toolbarContainer.style.justifyContent = 'center'
-  toolbarContainer.style.pointerEvents = 'none'
+  // toolbarContainer.style.pointerEvents = 'none'
   domElement.appendChild(toolbarContainer)
 
   const toolbarElement = document.createElement('ic-toolbar')

@@ -17,7 +17,7 @@ export class CaptureBlockPlacement extends BaseSystem<CoreCommandArgs> {
     if (pointerEvents.length === 0) return
 
     const pointerUpEvent = pointerEvents.find((e) => e.type === 'pointerUp')
-    if (!pointerUpEvent) return
+    if (!pointerUpEvent || pointerUpEvent.obscured) return
 
     const snapshot = JSON.parse(this.controls.heldSnapshot)
 

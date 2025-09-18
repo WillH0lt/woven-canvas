@@ -31,6 +31,7 @@ export { SelectionBox } from './SelectionBox'
 export { HitArc } from './HitArc'
 export { Color } from './Color'
 export { Text } from './Text'
+export { FloatingMenuState } from './FloatingMenuState'
 
 import { Aabb } from './Aabb'
 import { Block } from './Block'

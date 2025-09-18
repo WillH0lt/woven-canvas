@@ -25,18 +25,18 @@ export class ICToolbar extends SignalWatcher(LitElement) {
   protected firstUpdated(_changedProperties: PropertyValues): void {
     super.firstUpdated(_changedProperties)
 
-    const events = ['pointerdown', 'pointerup', 'pointermove', 'mousemove']
-    for (const event of events) {
-      this.addEventListener(event, (e) => e.stopPropagation(), { passive: true })
-    }
+    // const events = ['pointerdown', 'pointerup', 'pointermove', 'mousemove']
+    // for (const event of events) {
+    //   this.addEventListener(event, (e) => e.stopPropagation(), { passive: true })
+    // }
 
-    // send mouseleave event to the parent when mouseenter is called
-    this.addEventListener('mouseenter', () => {
-      const mouseLeaveEvent = new MouseEvent('mouseleave', {
-        bubbles: true,
-      })
-      this.dispatchEvent(mouseLeaveEvent)
-    })
+    // // send mouseleave event to the parent when mouseenter is called
+    // this.addEventListener('mouseenter', () => {
+    //   const mouseLeaveEvent = new MouseEvent('mouseleave', {
+    //     bubbles: true,
+    //   })
+    //   this.dispatchEvent(mouseLeaveEvent)
+    // })
   }
 
   private handleClickOutside() {

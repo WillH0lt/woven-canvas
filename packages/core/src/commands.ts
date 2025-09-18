@@ -51,6 +51,10 @@ export enum CoreCommand {
   EndTransformBoxEdit = 'coreEndTransformBoxEdit',
 
   DragBlock = 'coreDragBlock',
+  CreateAndDragOntoCanvas = 'coreCreateAndDragOntoCanvas',
+
+  HideFloatingMenu = 'coreHideFloatingMenu',
+  ShowFloatingMenu = 'coreShowFloatingMenu',
 }
 
 export type CoreCommandArgs = {
@@ -98,7 +102,7 @@ export type CoreCommandArgs = {
   [CoreCommand.CloneEntities]: [Entity[], [number, number], string]
   [CoreCommand.UncloneEntities]: [Entity[], string]
 
-  [CoreCommand.CreateFromSnapshot]: [Snapshot]
+  [CoreCommand.CreateFromSnapshot]: [Snapshot, { selectCreated?: boolean; editCreated?: boolean }?]
   [CoreCommand.UpdateFromSnapshot]: [Snapshot]
 
   [CoreCommand.SelectBlock]: [
@@ -147,4 +151,7 @@ export type CoreCommandArgs = {
       top: number
     },
   ]
+  [CoreCommand.CreateAndDragOntoCanvas]: [Snapshot]
+  [CoreCommand.HideFloatingMenu]: []
+  [CoreCommand.ShowFloatingMenu]: []
 }

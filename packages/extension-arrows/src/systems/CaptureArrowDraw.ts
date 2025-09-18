@@ -54,9 +54,9 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
           return null
         },
       }),
-      dragArrow: ({ context, event }) => {
+      drawArrow: ({ context, event }) => {
         if (!context.activeArrow) return
-        this.emitCommand(ArrowCommand.DragArrow, context.activeArrow, context.pointingStartWorld, event.worldPosition)
+        this.emitCommand(ArrowCommand.DrawArrow, context.activeArrow, context.pointingStartWorld, event.worldPosition)
       },
       selectActiveArrow: ({ context }) => {
         if (!context.activeArrow) return
@@ -109,7 +109,7 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
         exit: ['exitArrowControl', 'selectActiveArrow'],
         on: {
           pointerMove: {
-            actions: 'dragArrow',
+            actions: 'drawArrow',
           },
           pointerUp: {
             target: ArrowDrawState.Idle,

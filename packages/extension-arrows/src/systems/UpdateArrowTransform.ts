@@ -12,6 +12,7 @@ import {
   Text,
   allHitGeometriesArray,
 } from '@infinitecanvas/core/components'
+import { intersectPoint } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
 import { Arrow, ArrowHandle, ArrowTrim } from '../components'
@@ -72,11 +73,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     (q) => q.current.changed.with(ArrowHandle).write.and.with(Block).write.trackWrites.using(Opacity).write,
   )
 
-  private readonly blocks = this.query((q) => q.changed.with(Block).trackWrites)
+  private readonly blocks = this.query((q) => q.changed.and.current.with(Block).trackWrites)
 
   public initialize(): void {
     this.addCommandListener(ArrowCommand.AddArrow, this.addArrow.bind(this))
-    this.addCommandListener(ArrowCommand.DragArrow, this.dragArrow.bind(this))
+    this.addCommandListener(ArrowCommand.DrawArrow, this.drawArrow.bind(this))
     this.addCommandListener(ArrowCommand.RemoveArrow, this.removeArrow.bind(this))
 
     this.addCommandListener(ArrowCommand.AddTransformHandles, this.addTransformHandles.bind(this))
@@ -114,7 +115,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private addArrow(arrowEntity: Entity, position: [number, number]): void {
-    const thickness = 6
+    const thickness = 4
 
     const block = {
       tag: 'ic-arrow',
@@ -145,7 +146,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     this.updateConnector(arrowEntity, ArrowHandleKind.Start, position)
   }
 
-  private dragArrow(arrowEntity: Entity, start: [number, number], end: [number, number]): void {
+  private drawArrow(arrowEntity: Entity, start: [number, number], end: [number, number]): void {
     const block = arrowEntity.write(Block)
     block.left = Math.min(start[0], end[0])
     block.top = Math.min(start[1], end[1])
@@ -262,6 +263,30 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private onBlockDrag(blockEntity: Entity): void {
+    if (blockEntity.has(Arrow)) {
+      this.onArrowDrag(blockEntity)
+    } else if (blockEntity.has(ArrowHandle)) {
+      this.onArrowHandleDrag(blockEntity)
+    }
+  }
+
+  private onArrowDrag(arrowEntity: Entity): void {
+    if (arrowEntity.read(Connector).startBlockEntity) {
+      const block = arrowEntity.read(Block)
+      const arrow = arrowEntity.read(Arrow)
+      const start = block.uvToWorld(arrow.a)
+      this.updateConnector(arrowEntity, ArrowHandleKind.Start, start)
+    }
+
+    if (arrowEntity.read(Connector).endBlockEntity) {
+      const block = arrowEntity.read(Block)
+      const arrow = arrowEntity.read(Arrow)
+      const end = block.uvToWorld(arrow.c)
+      this.updateConnector(arrowEntity, ArrowHandleKind.End, end)
+    }
+  }
+
+  private onArrowHandleDrag(blockEntity: Entity): void {
     if (!blockEntity.has(ArrowHandle)) return
 
     const handle = blockEntity.read(ArrowHandle)
@@ -335,8 +360,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private updateConnector(arrowEntity: Entity, handleKind: ArrowHandleKind, handlePosition: [number, number]): void {
-    // update the connector
-    const attachment = this.getAttachmentBlock()
+    const attachment = this.getAttachmentBlock(handlePosition)
     const attachmentBlock = attachment?.read(Block)
 
     const connector = arrowEntity.write(Connector)
@@ -352,8 +376,22 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     }
   }
 
-  private getAttachmentBlock(): Entity | null {
-    const intersects = this.intersect.getIntersectArray()
+  private getAttachmentBlock(handlePosition: [number, number]): Entity | null {
+    let intersects: Entity[]
+
+    // const pointerPosition = this.getPointerPosition()
+
+    // if (pointerPosition === null) return null
+
+    // const dist = Math.hypot(handlePosition[0] - pointerPosition[0], handlePosition[1] - pointerPosition[1])
+    // console.log(dist)
+    // if (dist < 2) {
+    //   // use the precalculated intersects from PreCaptureIntersect system
+    //   intersects = this.intersect.getIntersectArray()
+    //   console.log('USING PRECALCULATED INTERSECTS')
+    // } else {
+    // }
+    intersects = intersectPoint(handlePosition, this.blocks.current)
 
     for (const intersect of intersects) {
       if (!intersect.has(ArrowHandle) && !intersect.has(Arrow)) {
@@ -446,8 +484,13 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     const arrow = arrowEntity.read(Arrow)
     const block = arrowEntity.read(Block)
 
+    const minThickness = 20
+
     if (arrow.isCurved()) {
-      this.deleteEntities(hitGeometries.capsules)
+      for (const capsule of hitGeometries.capsules) {
+        capsule.delete()
+      }
+
       const a = block.uvToWorld(arrow.a)
       const b = block.uvToWorld(arrow.b)
       const c = block.uvToWorld(arrow.c)
@@ -460,10 +503,12 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       }
 
       const hitArc = arcEntity.write(HitArc)
-      hitArc.thickness = arrow.thickness * 2
+      hitArc.thickness = Math.max(arrow.thickness, minThickness)
       hitArc.update(a, b, c)
     } else {
-      this.deleteEntities(hitGeometries.arcs)
+      for (const arc of hitGeometries.arcs) {
+        arc.delete()
+      }
 
       const a = block.uvToWorld(arrow.a)
       const c = block.uvToWorld(arrow.c)
@@ -476,7 +521,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       }
 
       const hitCapsule = hitCapsuleEntity.write(HitCapsule)
-      hitCapsule.radius = arrow.thickness * 2
+      hitCapsule.radius = Math.max(arrow.thickness / 2, minThickness / 2)
 
       hitCapsule.a = a
       hitCapsule.b = c

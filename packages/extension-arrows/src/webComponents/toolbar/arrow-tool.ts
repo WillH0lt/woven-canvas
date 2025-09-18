@@ -1,7 +1,12 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
+import { Block, Color, Connector, Text } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
+import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
+
+import { Arrow } from '../../components'
+import { ArrowHeadKind } from '../../types'
 
 @customElement('ic-arrow-tool')
 export class ICArrowTool extends ICToolbarIconButton {
@@ -16,10 +21,41 @@ export class ICArrowTool extends ICToolbarIconButton {
   `
 
   protected onClick() {
-    InfiniteCanvas.instance?.commands.core.deselectAll()
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'arrow',
     })
+  }
+
+  protected onToolDragOut(): void {
+    const block = new Block({
+      tag: 'ic-arrow',
+      width: 150,
+      height: 150,
+    })
+
+    const text = new Text({
+      fontSize: 40,
+    })
+
+    const color = new Color({
+      red: 0,
+      green: 0,
+      blue: 0,
+      alpha: 255,
+    })
+
+    const arrow = new Arrow({
+      a: [0, 1],
+      b: [0.5, 0.5],
+      c: [1, 0],
+      endArrowHead: ArrowHeadKind.V,
+    })
+
+    const connector = new Connector()
+
+    const snapshot = createSnapshot(block, [text, color, arrow, connector])
+
+    InfiniteCanvas.instance?.commands.core.createAndDragOntoCanvas(snapshot)
   }
 }
 
