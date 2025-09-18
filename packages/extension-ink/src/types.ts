@@ -13,8 +13,8 @@ export enum InkCommand {
 }
 
 export type InkCommandArgs = {
-  [InkCommand.AddStroke]: [Entity, [number, number]]
-  [InkCommand.AddStrokePoint]: [Entity, [number, number]]
+  [InkCommand.AddStroke]: [Entity, [number, number], number | null]
+  [InkCommand.AddStrokePoint]: [Entity, [number, number], number | null]
   [InkCommand.RemoveStroke]: [Entity]
   [InkCommand.CompleteStroke]: [Entity]
 }

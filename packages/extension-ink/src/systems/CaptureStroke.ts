@@ -1,4 +1,4 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
+import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent, PointerType } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 import { assign, setup } from 'xstate'
 
@@ -23,14 +23,17 @@ export class CaptureStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> 
       addStroke: assign({
         activeStroke: ({ event }) => {
           const entity = this.createEntity()
-          this.emitCommand(InkCommand.AddStroke, entity, event.worldPosition)
+          const pressure = event.pointerType === PointerType.Pen ? event.pressure : null
+          console.log('pressure', pressure)
+          this.emitCommand(InkCommand.AddStroke, entity, event.worldPosition, pressure)
           return entity
         },
       }),
 
       addStrokePoint: ({ context, event }) => {
         if (!context.activeStroke) return
-        this.emitCommand(InkCommand.AddStrokePoint, context.activeStroke, event.worldPosition)
+        const pressure = event.pointerType === PointerType.Pen ? event.pressure : null
+        this.emitCommand(InkCommand.AddStrokePoint, context.activeStroke, event.worldPosition, pressure)
       },
 
       completeStroke: ({ context }) => {

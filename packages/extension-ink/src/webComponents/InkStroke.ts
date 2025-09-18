@@ -1,5 +1,5 @@
-import { ICBaseBlock } from '@infinitecanvas/core/elements'
 import type { Color } from '@infinitecanvas/core/components'
+import { ICBaseBlock } from '@infinitecanvas/core/elements'
 import { type PropertyValues, css, html, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { getStroke } from 'perfect-freehand'
@@ -10,7 +10,7 @@ function average(a: number, b: number) {
   return (a + b) / 2
 }
 
-function getSvgPathFromStroke(stroke: Stroke, thickness: number, inputPoints: [number, number][]): string {
+function getSvgPathFromStroke(stroke: Stroke, thickness: number, inputPoints: number[][]): string {
   if (stroke.pointCount <= 4 || !stroke.originalWidth || !stroke.originalHeight) {
     if (!stroke.isComplete) {
       return ''
@@ -24,6 +24,7 @@ function getSvgPathFromStroke(stroke: Stroke, thickness: number, inputPoints: [n
   const outlinePoints = getStroke(inputPoints, {
     last: stroke.isComplete,
     size: thickness,
+    simulatePressure: !stroke.hasPressure,
   })
 
   let a = outlinePoints[0]
@@ -138,16 +139,20 @@ export class ICInkStroke extends ICBaseBlock {
   }
 
   private generatePath() {
-    const inputPoints: [number, number][] = []
+    const inputPoints: number[][] = []
 
     const scaleX = this.clientWidth / this.stroke.originalWidth
     const scaleY = this.clientHeight / this.stroke.originalHeight
 
     for (let i = 0; i < this.stroke.pointCount; i++) {
-      inputPoints.push([
-        (this.stroke.points[i * 2] - this.stroke.originalLeft) * scaleX,
-        (this.stroke.points[i * 2 + 1] - this.stroke.originalTop) * scaleY,
-      ])
+      const x = (this.stroke.points[i * 2] - this.stroke.originalLeft) * scaleX
+      const y = (this.stroke.points[i * 2 + 1] - this.stroke.originalTop) * scaleY
+
+      if (this.stroke.hasPressure) {
+        inputPoints.push([x, y, this.stroke.pressures[i]])
+      } else {
+        inputPoints.push([x, y])
+      }
     }
 
     this.path = getSvgPathFromStroke(this.stroke, this.stroke.thickness, inputPoints)

@@ -190,6 +190,8 @@ export type PointerEvent = {
   velocity: [number, number]
   intersects: [Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined]
   obscured: boolean
+  pressure: number
+  pointerType: PointerType
   shiftDown: boolean
   altDown: boolean
   modDown: boolean

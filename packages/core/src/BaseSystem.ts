@@ -9,8 +9,7 @@ const CLICK_MOVE_THRESHOLD = 1
 const CLICK_FRAME_THRESHOLD = 60
 
 function isEntity(item: any): boolean {
-  // Adjust this check based on the actual structure of your Entity objects
-  return typeof item === 'object' && item.alive && typeof item.__id === 'number'
+  return item !== null && typeof item === 'object' && item.alive && typeof item.__id === 'number'
 }
 
 type BaseCommands = {

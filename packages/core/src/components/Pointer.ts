@@ -11,9 +11,11 @@ export class Pointer {
   @field.float32.vector(2) public declare downWorldPosition: [number, number]
   @field.uint32 public declare downFrame: number
   @field.boolean public declare obscured: boolean
+  @field.float32 public declare pressure: number
+
+  @field.float32.vector(2) public declare worldPosition: [number, number]
   @field.float32.vector(2) public declare _position: [number, number]
   @field.float32.vector(2) public declare _velocity: [number, number]
-  @field.float32.vector(2) public declare worldPosition: [number, number]
   @field.float32.vector(2 * PREV_COUNT) public declare _prevPositionsVec: number[]
   @field.float32.vector(PREV_COUNT) public declare _prevTimesVec: number[]
   @field.int32 public declare _prevPositionsCount: number
@@ -123,6 +125,8 @@ export class Pointer {
       velocity: [this.velocity[0], this.velocity[1]],
       intersects,
       obscured: this.obscured,
+      pressure: this.pressure,
+      pointerType: this.pointerType,
       shiftDown: keyboard.shiftDown,
       altDown: keyboard.altDown,
       modDown: keyboard.modDown,

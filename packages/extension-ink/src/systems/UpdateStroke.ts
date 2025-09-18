@@ -1,5 +1,5 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs } from '@infinitecanvas/core'
-import { Aabb, Block, HitCapsule, HitGeometries, Persistent, RankBounds, Color } from '@infinitecanvas/core/components'
+import { Aabb, Block, Color, HitCapsule, HitGeometries, Persistent, RankBounds } from '@infinitecanvas/core/components'
 import {
   multiplyMatrices,
   newRotationMatrix,
@@ -44,7 +44,7 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
     this.executeCommands()
   }
 
-  private addStroke(strokeEntity: Entity, position: [number, number]): void {
+  private addStroke(strokeEntity: Entity, position: [number, number], pressure: number | null): void {
     const radius = 4
 
     const block = {
@@ -59,26 +59,27 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
 
     strokeEntity.add(Block, block)
     strokeEntity.add(Persistent)
+    strokeEntity.add(Color)
 
-    const points = new Array(POINTS_CAPACITY).fill(0)
+    const points = [position[0], position[1]]
+    const pressures = pressure !== null ? [pressure] : []
 
-    points[0] = position[0]
-    points[1] = position[1]
-
-    strokeEntity.add(Stroke, {
+    strokeEntity.add(Stroke)
+    const stroke = strokeEntity.write(Stroke)
+    stroke.fromJson({
       points,
+      pressures,
       pointCount: 1,
       originalLeft: block.left,
       originalTop: block.top,
       originalWidth: block.width,
       originalHeight: block.height,
       thickness: radius * 2,
+      hasPressure: pressure !== null,
     })
-
-    strokeEntity.add(Color)
   }
 
-  private addStrokePoint(strokeEntity: Entity, point: [number, number]): void {
+  private addStrokePoint(strokeEntity: Entity, point: [number, number], pressure: number | null): void {
     const stroke = strokeEntity.write(Stroke)
 
     const nextIndex = stroke.pointCount
@@ -87,6 +88,11 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
 
     stroke.points[nextIndex * 2] = point[0]
     stroke.points[nextIndex * 2 + 1] = point[1]
+
+    if (pressure !== null) {
+      stroke.pressures[nextIndex] = pressure
+    }
+
     stroke.pointCount++
 
     const aabb = strokeEntity.write(Aabb)

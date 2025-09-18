@@ -107,6 +107,7 @@ export class InfiniteCanvas {
     domElement.style.width = '100%'
     domElement.style.height = '100%'
     domElement.style.overflow = 'hidden'
+    domElement.style.touchAction = 'none'
     domElement.tabIndex = 0
 
     // create the block container which acts as the camera viewport and holds all blocks
