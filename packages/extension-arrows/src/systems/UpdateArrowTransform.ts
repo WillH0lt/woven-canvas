@@ -9,7 +9,10 @@ import {
   Opacity,
   Persistent,
   RankBounds,
+  Selected,
   Text,
+  TransformBox,
+  TransformHandle,
   allHitGeometriesArray,
 } from '@infinitecanvas/core/components'
 import { intersectPoint } from '@infinitecanvas/core/helpers'
@@ -73,7 +76,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     (q) => q.current.changed.with(ArrowHandle).write.and.with(Block).write.trackWrites.using(Opacity).write,
   )
 
-  private readonly blocks = this.query((q) => q.changed.and.current.with(Block).trackWrites)
+  private readonly blocks = this.query(
+    (q) => q.changed.and.current.with(Block).trackWrites.using(TransformBox, TransformHandle).read,
+  )
+
+  private readonly selectedArrows = this.query((q) => q.current.with(Arrow, Selected).read)
 
   public initialize(): void {
     this.addCommandListener(ArrowCommand.AddArrow, this.addArrow.bind(this))
@@ -187,7 +194,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
           kind: handleKind,
         },
         Block,
-        { id: crypto.randomUUID(), tag: 'ic-arrow-transform-handle', rank: TRANSFORM_HANDLE_RANK },
+        { id: crypto.randomUUID(), tag: 'ic-circular-handle', rank: TRANSFORM_HANDLE_RANK },
       ),
     )
 
@@ -268,6 +275,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     } else if (blockEntity.has(ArrowHandle)) {
       this.onArrowHandleDrag(blockEntity)
     }
+    // else if (blockEntity.has(TransformBox) || blockEntity.has(TransformHandle)) {
+    //   for (const selectedArrow of this.selectedArrows.current) {
+    //     this.onArrowDrag(selectedArrow)
+    //   }
+    // }
   }
 
   private onArrowDrag(arrowEntity: Entity): void {
@@ -377,21 +389,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private getAttachmentBlock(handlePosition: [number, number]): Entity | null {
-    let intersects: Entity[]
-
-    // const pointerPosition = this.getPointerPosition()
-
-    // if (pointerPosition === null) return null
-
-    // const dist = Math.hypot(handlePosition[0] - pointerPosition[0], handlePosition[1] - pointerPosition[1])
-    // console.log(dist)
-    // if (dist < 2) {
-    //   // use the precalculated intersects from PreCaptureIntersect system
-    //   intersects = this.intersect.getIntersectArray()
-    //   console.log('USING PRECALCULATED INTERSECTS')
-    // } else {
-    // }
-    intersects = intersectPoint(handlePosition, this.blocks.current)
+    const intersects = intersectPoint(handlePosition, this.blocks.current)
 
     for (const intersect of intersects) {
       if (!intersect.has(ArrowHandle) && !intersect.has(Arrow)) {

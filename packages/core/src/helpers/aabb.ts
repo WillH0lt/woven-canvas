@@ -1,31 +1,43 @@
 import type { Entity } from '@lastolivegames/becsy'
-import { Aabb, Block } from '../components'
+import { Aabb, Block, HitArc, HitCapsule, HitGeometries } from '../components'
 
 export function computeAabb(blockEntity: Readonly<Entity>): Aabb {
   const block = blockEntity.read(Block)
-  const halfWidth = block.width / 2
-  const halfHeight = block.height / 2
-  const center = [block.left + halfWidth, block.top + halfHeight]
+  let aabb: Aabb
 
-  let w = block.width
-  let h = block.height
-  let angle = block.rotateZ % Math.PI
+  if (blockEntity.has(HitGeometries)) {
+    aabb = new Aabb()
+    const hitGeometries = blockEntity.read(HitGeometries)
+    const pts: [number, number][] = []
+    for (const capsuleEntity of hitGeometries.capsules) {
+      const capsule = capsuleEntity.read(HitCapsule)
+      const r = capsule.radius
 
-  if (angle !== 0) {
-    angle = Math.abs(angle)
-    angle = Math.min(angle, Math.PI - angle)
+      for (const pt of [capsule.a, capsule.b]) {
+        pts.push([pt[0] - r, pt[1] - r])
+        pts.push([pt[0] - r, pt[1] + r])
+        pts.push([pt[0] + r, pt[1] - r])
+        pts.push([pt[0] + r, pt[1] + r])
+      }
+    }
 
-    const cos = Math.cos(angle)
-    const sin = Math.sin(angle)
+    for (const arcEntity of hitGeometries.arcs) {
+      const arc = arcEntity.read(HitArc)
+      const extrema = arc.getExtremaPoints(block.rotateZ)
+      const r = arc.thickness / 2
+      for (const pt of extrema) {
+        pts.push([pt[0] - r, pt[1] - r])
+        pts.push([pt[0] - r, pt[1] + r])
+        pts.push([pt[0] + r, pt[1] - r])
+        pts.push([pt[0] + r, pt[1] + r])
+      }
+    }
 
-    w = block.width * cos + block.height * sin
-    h = block.width * sin + block.height * cos
+    aabb.setByPoints(pts)
+  } else {
+    const corners = block.getCorners()
+    aabb = new Aabb().setByPoints(corners)
   }
 
-  const left = center[0] - w / 2
-  const right = center[0] + w / 2
-  const top = center[1] - h / 2
-  const bottom = center[1] + h / 2
-
-  return new Aabb({ left, right, top, bottom })
+  return aabb
 }

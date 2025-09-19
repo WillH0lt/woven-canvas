@@ -124,7 +124,7 @@ export type Theme = z.infer<typeof Theme>
 
 const CustomTags = z.object({
   transformBox: z.string().default('ic-transform-box'),
-  transformHandle: z.string().default('ic-transform-box-handle'),
+  transformHandle: z.string().default('ic-rectangular-handle'),
   selectionBox: z.string().default('ic-selection-box'),
 })
 

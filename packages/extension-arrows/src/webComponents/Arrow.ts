@@ -104,6 +104,10 @@ export class ICArrow extends ICEditableBlock {
   private getCurvedPath(thickness: number, color: string, dasharray: string, trim: boolean): SVGTemplateResult {
     const arc = this.arc
 
+    if (arc.length() === 0) {
+      return svg``
+    }
+
     let start = arc.a
     let end = arc.c
     let arcAngle = arc._arcAngle

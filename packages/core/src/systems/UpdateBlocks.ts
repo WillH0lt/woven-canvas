@@ -104,6 +104,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     for (const blockEntity of this.persistentBlocks.removed) {
       const block = blockEntity.read(comps.Block)
       for (const connectorEntity of block.connectors) {
+        if (!connectorEntity.has(comps.Connector)) continue
         const connector = connectorEntity.write(comps.Connector)
         if (connector.startBlockId === block.id) {
           connector.startBlockId = ''
@@ -374,7 +375,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   }
 
   private uncloneEntities(blockEntities: Entity[], cloneGeneratorSeed: string): void {
-    console.log('UNCLONING', blockEntities.length, 'blocks with seed', cloneGeneratorSeed)
     for (const blockEntity of blockEntities) {
       const block = blockEntity.read(comps.Block)
       const expectedId = generateUuidBySeed(block.id + cloneGeneratorSeed)

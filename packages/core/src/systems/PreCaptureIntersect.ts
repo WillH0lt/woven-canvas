@@ -13,7 +13,7 @@ export class PreCaptureIntersect extends BaseSystem {
       q.addedOrChanged.changed.removed.current
         .with(Block)
         .trackWrites.using(Aabb)
-        .write.using(...allHitGeometriesArray).read,
+        .write.using(...allHitGeometriesArray).trackWrites.read,
   )
 
   private readonly hovered = this.query((q) => q.current.with(Hovered).write.using(Persistent).read)

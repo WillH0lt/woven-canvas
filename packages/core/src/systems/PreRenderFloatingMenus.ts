@@ -134,7 +134,6 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
     const height = 40
 
     element.style.position = 'absolute'
-    element.style.pointerEvents = 'auto'
     element.style.width = `${width}px`
     element.style.height = `${height}px`
     element.requestUpdate()
@@ -222,5 +221,6 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
 
   private updateFloatingMenuVisibility(element: ICFloatingMenu, isVisible: boolean): void {
     element.style.opacity = isVisible ? '1' : '0'
+    element.style.pointerEvents = isVisible ? 'auto' : 'none'
   }
 }

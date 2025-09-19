@@ -5,6 +5,7 @@ import { CoreCommand, type CoreCommandArgs } from '../commands'
 import {
   Aabb,
   Block,
+  Connector,
   DragStart,
   Edited,
   Locked,
@@ -21,7 +22,6 @@ import {
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
-// import * as comps from '@infinitecanvas/core/components'
 import { newRotationMatrix, newRotationMatrixAroundPoint, transformPoint, uuidToNumber } from '../helpers'
 import { CursorKind, TransformHandleKind } from '../types'
 import { UpdateBlocks } from './UpdateBlocks'
@@ -43,7 +43,7 @@ interface TransformHandleDef {
 
 export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
   private readonly selectedBlocks = this.query(
-    (q) => q.added.removed.current.with(Block, Selected).write.using(Text).write.using(Aabb).read,
+    (q) => q.added.removed.current.with(Block, Selected).write.using(Text).write.using(Aabb, Connector).read,
   )
 
   private readonly editedBlocks = this.query((q) => q.current.with(Block, Edited).write)
@@ -475,6 +475,8 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     handleEntity.write(Block).rotateZ = (boxBlock.rotateZ + delta) % (2 * Math.PI)
 
     for (const blockEntity of this.selectedBlocks.current) {
+      if (!this._canBeMoved(blockEntity)) continue
+
       const { startLeft, startTop, startWidth, startHeight, startRotateZ } = blockEntity.read(DragStart)
 
       const block = blockEntity.write(Block)
@@ -556,14 +558,6 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
       }
     }
 
-    // if (difference[1] < 0) {
-    //   const handle = handleEntity.write(TransformHandle)
-    //   handle.vector[1] = -handle.vector[1]
-
-    //   const oppositeHandle = oppositeHandleEntity.write(TransformHandle)
-    //   oppositeHandle.vector[1] = -oppositeHandle.vector[1]
-    // }
-
     if (maintainAspectRatio) {
       // Scale mode: maintain aspect ratio
       const startAspectRatio = boxStartWidth / boxStartHeight
@@ -594,6 +588,8 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     // TODO snapping
 
     for (const selectedEntity of this.selectedBlocks.current) {
+      if (!this._canBeMoved(selectedEntity)) continue
+
       const { startLeft, startTop, startWidth, startHeight, startFontSize } = selectedEntity.read(DragStart)
 
       const block = selectedEntity.write(Block)
@@ -663,6 +659,8 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     const dy = transformBoxBlock.top - boxStart.startTop
 
     for (const selectedBlock of this.selectedBlocks.current) {
+      if (!this._canBeMoved(selectedBlock)) continue
+
       const blockStart = selectedBlock.read(DragStart)
       const block = selectedBlock.write(Block)
       block.left = blockStart.startLeft + dx
@@ -715,6 +713,12 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
         blockEntity.remove(Edited)
       }
     }
+  }
+
+  private _canBeMoved(blockEntity: Entity): boolean {
+    if (!blockEntity.has(Connector)) return true
+    const connector = blockEntity.read(Connector)
+    return !(connector.startBlockEntity || connector.endBlockEntity)
   }
 
   public onZoom(): void {

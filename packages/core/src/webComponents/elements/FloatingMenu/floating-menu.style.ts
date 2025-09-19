@@ -4,7 +4,6 @@ export const style = css`
     :host {
       display: block;
       position: absolute;
-      pointer-events: auto;
     }
 
     .container {

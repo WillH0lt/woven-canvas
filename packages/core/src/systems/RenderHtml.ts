@@ -1,5 +1,5 @@
-import type { Entity, Query } from '@lastolivegames/becsy'
 import { LexoRank } from '@dalet-oss/lexorank'
+import type { Entity, Query } from '@lastolivegames/becsy'
 
 import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
@@ -114,8 +114,10 @@ export class RenderHtml extends BaseSystem {
       element.setAttribute('is-selected', 'true')
     }
 
+    if (this.selectedBlocks.removed.length > 0) {
+      this.accessRecentlyDeletedData()
+    }
     for (const blockEntity of this.selectedBlocks.removed) {
-      if (!blockEntity.alive) continue
       const block = blockEntity.read(comps.Block)
       const element = this.getBlockElementById(block.id)
       if (!element) continue
@@ -131,8 +133,11 @@ export class RenderHtml extends BaseSystem {
       element.setAttribute('is-hovered', 'true')
     }
 
+    if (this.hoveredBlocks.removed.length > 0) {
+      this.accessRecentlyDeletedData()
+    }
     for (const blockEntity of this.hoveredBlocks.removed) {
-      if (!blockEntity.alive) continue
+      if (!blockEntity.alive || !blockEntity.has(comps.Block)) continue
       const block = blockEntity.read(comps.Block)
       const element = this.getBlockElementById(block.id)
       if (!element) continue
