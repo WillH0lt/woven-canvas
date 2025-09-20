@@ -12,6 +12,8 @@ export function binarySearchForId(
   id: string,
   entities: readonly Entity[],
 ): Entity | null {
+  entities = entities.filter((e) => e.has(Component))
+
   let left = 0
   let right = entities.length - 1
 
@@ -19,6 +21,7 @@ export function binarySearchForId(
     const mid = Math.floor((left + right) / 2)
 
     const entity = entities[mid]
+
     const componentId = entity.read(Component).id
 
     if (componentId === id) {

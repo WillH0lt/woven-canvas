@@ -112,11 +112,7 @@ export class UpdateEraser extends BaseSystem<EraserCommandArgs & CoreCommandArgs
   private completeStroke(strokeEntity: Entity): void {
     const eraserStroke = strokeEntity.read(EraserStroke)
 
-    for (const erasedBlock of eraserStroke.erasedBlocks) {
-      if (!erasedBlock.alive) continue
-      this.deleteEntity(erasedBlock)
-    }
-
+    this.deleteEntities(eraserStroke.erasedBlocks)
     this.deleteEntity(strokeEntity)
 
     if (eraserStroke.erasedBlocks.length > 0) {

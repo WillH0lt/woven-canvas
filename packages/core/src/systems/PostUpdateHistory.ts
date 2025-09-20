@@ -1,5 +1,4 @@
 import type { Query } from '@lastolivegames/becsy'
-
 import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
@@ -90,6 +89,7 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
     if (!diff) return
 
     applyDiff(this, diff, this.entities)
+    this.syncLocalDB(diff)
   }
 
   private redo(): void {
@@ -97,6 +97,7 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
     if (!diff) return
 
     applyDiff(this, diff, this.entities)
+    this.syncLocalDB(diff)
   }
 
   private createCheckpoint(): void {

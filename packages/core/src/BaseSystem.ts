@@ -58,7 +58,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
 
   protected deleteEntities(entities: readonly Entity[]): void {
     for (const entity of entities) {
-      if (!entity.has(comps.ToBeDeleted)) entity.add(comps.ToBeDeleted)
+      if (!entity.has(comps.ToBeDeleted) && entity.alive) entity.add(comps.ToBeDeleted)
     }
   }
 

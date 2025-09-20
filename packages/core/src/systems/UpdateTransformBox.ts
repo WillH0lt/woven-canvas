@@ -475,7 +475,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     handleEntity.write(Block).rotateZ = (boxBlock.rotateZ + delta) % (2 * Math.PI)
 
     for (const blockEntity of this.selectedBlocks.current) {
-      if (!this._canBeMoved(blockEntity)) continue
+      if (!this._canBeMoved(blockEntity, this.selectedBlocks.current)) continue
 
       const { startLeft, startTop, startWidth, startHeight, startRotateZ } = blockEntity.read(DragStart)
 
@@ -588,7 +588,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     // TODO snapping
 
     for (const selectedEntity of this.selectedBlocks.current) {
-      if (!this._canBeMoved(selectedEntity)) continue
+      if (!this._canBeMoved(selectedEntity, this.selectedBlocks.current)) continue
 
       const { startLeft, startTop, startWidth, startHeight, startFontSize } = selectedEntity.read(DragStart)
 
@@ -659,7 +659,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     const dy = transformBoxBlock.top - boxStart.startTop
 
     for (const selectedBlock of this.selectedBlocks.current) {
-      if (!this._canBeMoved(selectedBlock)) continue
+      if (!this._canBeMoved(selectedBlock, this.selectedBlocks.current)) continue
 
       const blockStart = selectedBlock.read(DragStart)
       const block = selectedBlock.write(Block)
@@ -715,10 +715,23 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     }
   }
 
-  private _canBeMoved(blockEntity: Entity): boolean {
+  private _canBeMoved(blockEntity: Entity, otherMovedEntities: readonly Entity[]): boolean {
     if (!blockEntity.has(Connector)) return true
     const connector = blockEntity.read(Connector)
-    return !(connector.startBlockEntity || connector.endBlockEntity)
+
+    if (connector.startBlockEntity) {
+      const movingStartBlock = otherMovedEntities.some((e) => e.isSame(connector.startBlockEntity!))
+      if (!movingStartBlock) return false
+    }
+
+    if (connector.endBlockEntity) {
+      const movingEndBlock = otherMovedEntities.some((e) => e.isSame(connector.endBlockEntity!))
+      if (!movingEndBlock) return false
+    }
+
+    return true
+
+    // return !(connector.startBlockEntity || connector.endBlockEntity)
   }
 
   public onZoom(): void {

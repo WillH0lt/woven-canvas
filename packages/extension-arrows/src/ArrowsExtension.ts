@@ -46,6 +46,8 @@ class ArrowsExtensionClass extends BaseExtension {
     this._captureGroup = this.createGroup(resources, sys.CaptureArrowDraw, sys.CaptureArrowTransform)
 
     this._updateGroup = this.createGroup(resources, sys.UpdateArrowTransform)
+
+    this._postUpdateGroup = this.createGroup(resources, sys.PostUpdateArrowHitGeometry)
   }
 }
 

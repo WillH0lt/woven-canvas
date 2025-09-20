@@ -1,4 +1,4 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent, PointerType } from '@infinitecanvas/core'
+import { BaseSystem, type CoreCommandArgs, type PointerEvent, PointerType } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
 import { assign, setup } from 'xstate'
 
@@ -48,10 +48,6 @@ export class CaptureStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> 
           return null
         },
       }),
-
-      createCheckpoint: () => {
-        this.emitCommand(CoreCommand.CreateCheckpoint)
-      },
     },
   }).createMachine({
     id: 'ink',

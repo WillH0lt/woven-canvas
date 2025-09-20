@@ -1,4 +1,4 @@
-import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
+import { BaseSystem, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
 import * as comps from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 import { assign, setup } from 'xstate'
@@ -51,10 +51,6 @@ export class CaptureEraser extends BaseSystem<EraserCommandArgs & CoreCommandArg
           return null
         },
       }),
-
-      createCheckpoint: () => {
-        this.emitCommand(CoreCommand.CreateCheckpoint)
-      },
     },
   }).createMachine({
     id: 'eraser',

@@ -5,8 +5,7 @@ import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
-import { binarySearchForId, lowercaseFirstLetter } from '../helpers'
-import { uuidToNumber } from '../helpers/uuidToNumber'
+import { lowercaseFirstLetter } from '../helpers'
 import type { CoreResources } from '../types'
 import type { ICBaseBlock } from '../webComponents'
 
@@ -44,9 +43,7 @@ export class RenderHtml extends BaseSystem {
 
     const Components = ComponentRegistry.instance.components
     for (const Comp of Components) {
-      const current = this.query((q) =>
-        q.current.with(comps.Block, Comp).orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
-      )
+      const current = this.query((q) => q.current.with(comps.Block, Comp))
       this.currentQueries.set(Comp, current)
 
       const changedQuery = this.query((q) => q.changed.with(comps.Block).and.with(Comp).trackWrites)
@@ -195,11 +192,11 @@ export class RenderHtml extends BaseSystem {
     const blockDef = this.resources.blockDefs[block.tag]
     if (blockDef) {
       for (const Comp of blockDef.components) {
-        const entities = this.currentQueries.get(Comp)?.current
-        if (!entities) continue
+        // const entities = this.currentQueries.get(Comp)?.current
+        // if (!entities) continue
 
-        const entity = binarySearchForId(comps.Block, blockId, entities)
-        if (!entity) continue
+        // const entity = binarySearchForId(comps.Block, blockId, entities)
+        // if (!entity) continue
 
         this.updateElementComponentAttribute(element, entity, Comp)
       }
@@ -215,7 +212,6 @@ export class RenderHtml extends BaseSystem {
     const block = entity.read(comps.Block)
 
     if (block.tag !== element.tagName.toLowerCase()) {
-      // console.log(block.tag, element.tagName.toLowerCase())
       this.resources.blockContainer.removeChild(element)
       this.createBlockElement(entity)
       return true

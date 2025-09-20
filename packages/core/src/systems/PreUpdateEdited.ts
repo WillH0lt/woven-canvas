@@ -29,6 +29,11 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
 
       element.removeAttribute('is-editing')
 
+      // if (element.tag === 'ic-text' && snapshot.content.trim() === '') {
+      //   this.emitCommand(CoreCommand.DeleteBlock, block.id)
+      //   continue
+      // }
+
       this.emitCommand(CoreCommand.UpdateFromSnapshot, snapshot)
       this.emitCommand(CoreCommand.CreateCheckpoint)
     }

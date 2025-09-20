@@ -82,18 +82,18 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
         const { rank } = blockEntity.read(comps.Block)
         this.rankBounds.add(LexoRank.parse(rank))
       }
-    }
 
-    // update refs in connectors
-    for (const connectorEntity of this.connectors.added) {
-      const connector = connectorEntity.write(comps.Connector)
-      if (connector.startBlockId) {
-        const startBlockEntity = binarySearchForId(comps.Block, connector.startBlockId, this.entities.current)
-        connector.startBlockEntity = startBlockEntity || undefined
-      }
-      if (connector.endBlockId) {
-        const endBlockEntity = binarySearchForId(comps.Block, connector.endBlockId, this.entities.current)
-        connector.endBlockEntity = endBlockEntity || undefined
+      // update refs in connectors
+      for (const connectorEntity of this.connectors.added) {
+        const connector = connectorEntity.write(comps.Connector)
+        if (connector.startBlockId) {
+          const startBlockEntity = binarySearchForId(comps.Block, connector.startBlockId, this.entities.current)
+          connector.startBlockEntity = startBlockEntity || undefined
+        }
+        if (connector.endBlockId) {
+          const endBlockEntity = binarySearchForId(comps.Block, connector.endBlockId, this.entities.current)
+          connector.endBlockEntity = endBlockEntity || undefined
+        }
       }
     }
 
@@ -436,8 +436,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
         blockEntity.remove(comps.Selected)
       }
     }
-
-    this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 
   private createAndDragOntoCanvas(snapshot: Snapshot): void {
