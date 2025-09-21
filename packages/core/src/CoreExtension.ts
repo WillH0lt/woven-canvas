@@ -168,8 +168,8 @@ export class CoreExtension extends BaseExtension {
       localDB,
     }
 
-    this._preInputGroup = this.createGroup(coreResources, sys.PreInputCommandSpawner, sys.PreInputFrameCounter)
-    this._inputGroup = this.createGroup(
+    this.preInputGroup = this.createGroup(coreResources, sys.PreInputCommandSpawner, sys.PreInputFrameCounter)
+    this.inputGroup = this.createGroup(
       coreResources,
       sys.InputScreen,
       sys.InputPointer,
@@ -177,25 +177,25 @@ export class CoreExtension extends BaseExtension {
       sys.InputMouse,
     )
 
-    this._preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect, sys.PreCaptureSelect)
-    this._captureGroup = this.createGroup(
+    this.preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect, sys.PreCaptureSelect)
+    this.captureGroup = this.createGroup(
       coreResources,
       sys.CaptureBlockPlacement,
       sys.CaptureTransformBox,
       sys.CaptureHoverCursor,
       sys.CaptureKeyboard,
     )
-    this._preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited)
-    this._updateGroup = this.createGroup(
+    this.preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited, sys.PreUpdateUndoRedo)
+    this.updateGroup = this.createGroup(
       coreResources,
       sys.UpdateBlocks,
       sys.UpdateCamera,
       sys.UpdateSelection,
       sys.UpdateTransformBox,
     )
-    this._postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
-    this._preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
-    this._renderGroup = this.createGroup(coreResources, sys.RenderHtml)
+    this.postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
+    this.preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
+    this.renderGroup = this.createGroup(coreResources, sys.RenderHtml)
   }
 
   #getEditableTextElement(): ICText | null {

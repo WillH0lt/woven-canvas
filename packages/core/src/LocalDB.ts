@@ -1,5 +1,5 @@
 import { type IDBPDatabase, openDB } from 'idb'
-import type { Snapshot } from './History'
+import type { Diff, Snapshot } from './History'
 
 const PREFIX = 'InfiniteCanvas-'
 const OBJECT_STORE_NAME = 'blocks'
@@ -37,6 +37,29 @@ export class LocalDB {
     setInterval(() => {
       this.commit().catch((err) => console.error('Error committing to LocalDB:', err))
     }, COMMIT_INTERVAL)
+  }
+
+  public applyDiff(diff: Diff): void {
+    // added components
+    for (const [id, components] of Object.entries(diff.added)) {
+      for (const [componentName, model] of Object.entries(components)) {
+        this.put(id, componentName, model)
+      }
+    }
+
+    // changed components
+    for (const [id, components] of Object.entries(diff.changedTo)) {
+      for (const [componentName, model] of Object.entries(components)) {
+        this.put(id, componentName, model)
+      }
+    }
+
+    // removed components
+    for (const [id, components] of Object.entries(diff.removed)) {
+      for (const componentName of Object.keys(components)) {
+        this.delete(id, componentName)
+      }
+    }
   }
 
   public put(id: string, componentName: string, value: any): void {

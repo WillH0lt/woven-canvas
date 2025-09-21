@@ -25,9 +25,9 @@ class EraserExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(EraserStroke)
 
-    this._captureGroup = this.createGroup(resources, sys.CaptureEraser)
+    this.captureGroup = this.createGroup(resources, sys.CaptureEraser)
 
-    this._updateGroup = this.createGroup(resources, sys.UpdateEraser)
+    this.updateGroup = this.createGroup(resources, sys.UpdateEraser)
   }
 }
 

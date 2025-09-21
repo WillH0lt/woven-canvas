@@ -33,9 +33,9 @@ class InkExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Stroke)
 
-    this._captureGroup = this.createGroup(resources, sys.CaptureStroke)
+    this.captureGroup = this.createGroup(resources, sys.CaptureStroke)
 
-    this._updateGroup = this.createGroup(resources, sys.UpdateStroke)
+    this.updateGroup = this.createGroup(resources, sys.UpdateStroke)
   }
 }
 

@@ -2,10 +2,9 @@ import type { Query } from '@lastolivegames/becsy'
 import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
-import type { Diff } from '../History'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
-import { applyDiff, uuidToNumber } from '../helpers'
+import { uuidToNumber } from '../helpers'
 import type { CoreResources } from '../types'
 import { PostUpdateDeleter } from './PostUpdateDeleter'
 
@@ -45,8 +44,6 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
   }
 
   public initialize(): void {
-    this.addCommandListener(CoreCommand.Undo, this.undo.bind(this))
-    this.addCommandListener(CoreCommand.Redo, this.redo.bind(this))
     this.addCommandListener(CoreCommand.CreateCheckpoint, this.createCheckpoint.bind(this))
   }
 
@@ -84,51 +81,10 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
     this.executeCommands()
   }
 
-  private undo(): void {
-    const diff = this.resources.history.undo()
-    if (!diff) return
-
-    applyDiff(this, diff, this.entities)
-    this.syncLocalDB(diff)
-  }
-
-  private redo(): void {
-    const diff = this.resources.history.redo()
-    if (!diff) return
-
-    applyDiff(this, diff, this.entities)
-    this.syncLocalDB(diff)
-  }
-
   private createCheckpoint(): void {
     const diff = this.resources.history.createCheckpoint()
     console.log('create checkpoint', diff)
     if (!diff) return
-    this.syncLocalDB(diff)
-  }
-
-  private syncLocalDB(diff: Diff): void {
-    const localDB = this.resources.localDB
-
-    // added components
-    for (const [id, components] of Object.entries(diff.added)) {
-      for (const [componentName, model] of Object.entries(components)) {
-        localDB.put(id, componentName, model)
-      }
-    }
-
-    // changed components
-    for (const [id, components] of Object.entries(diff.changedTo)) {
-      for (const [componentName, model] of Object.entries(components)) {
-        localDB.put(id, componentName, model)
-      }
-    }
-
-    // removed components
-    for (const [id, components] of Object.entries(diff.removed)) {
-      for (const componentName of Object.keys(components)) {
-        localDB.delete(id, componentName)
-      }
-    }
+    this.resources.localDB.applyDiff(diff)
   }
 }

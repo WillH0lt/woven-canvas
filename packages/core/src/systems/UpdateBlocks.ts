@@ -88,6 +88,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       // update refs in connectors
       for (const connectorEntity of this.connectors.added) {
         const connector = connectorEntity.write(comps.Connector)
+
         if (connector.startBlockId) {
           const startBlockEntity = binarySearchForId(comps.Block, connector.startBlockId, this.entities.current)
           connector.startBlockEntity = startBlockEntity || undefined
@@ -97,31 +98,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
           connector.endBlockEntity = endBlockEntity || undefined
         }
       }
-    }
-
-    // clean up connectors when blocks are deleted
-    if (this.persistentBlocks.removed.length) {
-      this.accessRecentlyDeletedData()
-    }
-    for (const blockEntity of this.persistentBlocks.removed) {
-      const block = blockEntity.read(comps.Block)
-      for (const connectorEntity of block.connectors) {
-        if (!connectorEntity.has(comps.Connector)) continue
-        const connector = connectorEntity.write(comps.Connector)
-        if (connector.startBlockId === block.id) {
-          connector.startBlockId = ''
-        }
-        if (connector.endBlockId === block.id) {
-          connector.endBlockId = ''
-        }
-      }
-    }
-
-    for (const controlsEntity of this.controlsQuery.changed) {
-      const controls = controlsEntity.read(comps.Controls)
-      const toolDef = this.getTool(controls.leftMouseTool)
-      const cursorIcon = toolDef?.cursorIcon || CROSSHAIR_CURSOR
-      this.setCursor({ svg: cursorIcon })
     }
 
     this.executeCommands()
@@ -490,6 +466,11 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     if (currentControls.leftMouseTool !== 'select') {
       this.deselectAll()
     }
+
+    // const controls = controlsEntity.read(comps.Controls)
+    const toolDef = this.getTool(currentControls.leftMouseTool)
+    const cursorIcon = toolDef?.cursorIcon || CROSSHAIR_CURSOR
+    this.setCursor({ svg: cursorIcon })
   }
 
   private setCursor(cursor: Partial<comps.Cursor>): void {

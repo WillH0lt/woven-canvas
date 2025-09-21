@@ -15,8 +15,9 @@ import type { Entity } from '@lastolivegames/becsy'
 import { Arrow, ArrowTrim } from '../components'
 import { arcIntersectEntity, closestPointToPoint } from '../helpers'
 import type { ArrowCommandArgs } from '../types'
+import { UpdateArrowTransform } from './UpdateArrowTransform'
 
-export class PostUpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCommandArgs> {
+export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCommandArgs> {
   private readonly arrows = this.query(
     (q) =>
       q.current.addedOrChanged
@@ -24,6 +25,11 @@ export class PostUpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & Co
         .write.trackWrites.using(HitGeometries, HitArc, HitCapsule, Persistent, Color, Text, ArrowTrim)
         .write.using(...allHitGeometriesArray).read,
   )
+
+  public constructor() {
+    super()
+    this.schedule((s) => s.after(UpdateArrowTransform))
+  }
 
   public execute(): void {
     for (const arrowEntity of this.arrows.addedOrChanged) {
@@ -135,7 +141,7 @@ export class PostUpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & Co
     referencePoint: [number, number],
     defaultValue: number,
   ): number {
-    if (!blockEntity) return defaultValue
+    if (!blockEntity || !blockEntity.has(Block)) return defaultValue
 
     const block = blockEntity.read(Block)
     let points: [number, number][] = []

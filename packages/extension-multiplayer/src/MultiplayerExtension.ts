@@ -5,7 +5,7 @@ import * as sys from './systems'
 
 class MultiplayerExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
-    this._preUpdateGroup = System.group(sys.PreUpdateSync, { resources })
+    this.preUpdateGroup = System.group(sys.PreUpdateSync, { resources })
   }
 }
 

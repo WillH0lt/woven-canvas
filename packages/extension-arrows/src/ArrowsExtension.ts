@@ -45,11 +45,9 @@ class ArrowsExtensionClass extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Arrow)
 
-    this._captureGroup = this.createGroup(resources, sys.CaptureArrowDraw, sys.CaptureArrowTransform)
+    this.captureGroup = this.createGroup(resources, sys.CaptureArrowDraw, sys.CaptureArrowTransform)
 
-    this._updateGroup = this.createGroup(resources, sys.UpdateArrowTransform)
-
-    this._postUpdateGroup = this.createGroup(resources, sys.PostUpdateArrowHitGeometry)
+    this.updateGroup = this.createGroup(resources, sys.UpdateArrowTransform, sys.UpdateArrowHitGeometry)
   }
 }
 

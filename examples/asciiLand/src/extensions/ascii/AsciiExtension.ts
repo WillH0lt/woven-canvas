@@ -62,7 +62,7 @@ class AsciiExtensionClass extends BaseExtension {
 
     const asciiResources = { ...resources, app, viewport }
 
-    this._renderGroup = this.createGroup(asciiResources, sys.RenderPixi)
+    this.renderGroup = this.createGroup(asciiResources, sys.RenderPixi)
 
     // const group = System.group(sys.RenderPixi, {
     //   resources: {
