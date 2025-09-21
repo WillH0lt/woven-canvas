@@ -22,7 +22,7 @@ import {
   TRANSFORM_HANDLE_EDGE_RANK,
   TRANSFORM_HANDLE_ROTATE_RANK,
 } from '../constants'
-import { newRotationMatrix, newRotationMatrixAroundPoint, transformPoint, uuidToNumber } from '../helpers'
+import { newRotationMatrix, newRotationMatrixAroundPoint, transformPoint } from '../helpers'
 import { CursorKind, TransformHandleKind } from '../types'
 import { UpdateBlocks } from './UpdateBlocks'
 import { UpdateCamera } from './UpdateCamera'
@@ -52,12 +52,6 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     (q) =>
       q.current.changed.with(TransformBox, Block).write.trackWrites.using(TransformHandle, DragStart, Locked, Opacity)
         .write,
-  )
-
-  private readonly handles = this.query((q) => q.changed.with(TransformHandle, Block).write.trackWrites)
-
-  private readonly blocks = this.query((q) =>
-    q.current.with(Block).write.orderBy((e) => uuidToNumber(e.read(Block).id)),
   )
 
   public constructor() {

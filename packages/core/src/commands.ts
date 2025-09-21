@@ -4,12 +4,14 @@ import type { Snapshot } from './History'
 import type { Controls, Cursor } from './components'
 
 export enum CoreCommand {
+  SetControls = 'coreSetControls',
+  SetCursor = 'coreSetCursor',
   SetZoom = 'coreSetZoom',
   MoveCamera = 'coreMoveCamera',
   TranslateCamera = 'coreTranslateCamera',
   SetCameraVelocity = 'coreSetCameraVelocity',
-  SetControls = 'coreSetControls',
-  SetCursor = 'coreSetCursor',
+
+  RemoveBlock = 'coreRemoveBlock',
 
   Undo = 'coreUndo',
   Redo = 'coreRedo',
@@ -83,6 +85,8 @@ export type CoreCommandArgs = {
       y: number
     },
   ]
+
+  [CoreCommand.RemoveBlock]: [string]
 
   [CoreCommand.Undo]: []
   [CoreCommand.Redo]: []

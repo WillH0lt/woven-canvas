@@ -14,7 +14,9 @@ class StickyNotesExtensionClass extends BaseExtension {
   public readonly blocks = [
     {
       tag: 'ic-sticky-note',
-      canEdit: true,
+      editOptions: {
+        canEdit: true,
+      },
       floatingMenu: [
         floatingMenuButtonColor,
         floatingMenuButtonVerticalAlign,

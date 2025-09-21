@@ -47,7 +47,7 @@ export class CaptureTransformBox extends BaseSystem<CoreCommandArgs> {
 
         const block = selectedEntities[0].read(Block)
         const blockDef = this.getBlockDef(block.tag)
-        return blockDef?.canEdit ?? false
+        return blockDef?.editOptions.canEdit ?? false
       },
       isOverTransformBox: ({ event }) => {
         if (!('intersects' in event)) return false

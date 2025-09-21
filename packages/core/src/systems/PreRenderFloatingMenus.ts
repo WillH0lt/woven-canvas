@@ -222,5 +222,13 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
   private updateFloatingMenuVisibility(element: ICFloatingMenu, isVisible: boolean): void {
     element.style.opacity = isVisible ? '1' : '0'
     element.style.pointerEvents = isVisible ? 'auto' : 'none'
+
+    // restart animation
+    const container = element.shadowRoot?.querySelector('.container')
+    if (!(container instanceof HTMLElement)) return
+
+    container.style.animation = 'none'
+    container.offsetHeight /* trigger reflow */
+    container.style.animation = ''
   }
 }

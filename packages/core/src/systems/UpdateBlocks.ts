@@ -41,6 +41,8 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   }
 
   public initialize(): void {
+    this.addCommandListener(CoreCommand.RemoveBlock, this.removeBlock.bind(this))
+
     this.addCommandListener(CoreCommand.Cut, this.cut.bind(this))
     this.addCommandListener(CoreCommand.Copy, this.copy.bind(this))
     this.addCommandListener(CoreCommand.Paste, this.paste.bind(this))
@@ -123,6 +125,15 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     }
 
     this.executeCommands()
+  }
+
+  private removeBlock(blockId: string): void {
+    const blockEntity = binarySearchForId(comps.Block, blockId, this.entities.current)
+    if (!blockEntity) return
+
+    this.deleteEntity(blockEntity)
+
+    this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 
   private cut(): void {
@@ -352,7 +363,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
         const block = blockEntity.read(comps.Block)
         const blockDef = this.getBlockDef(block.tag)
-        if (!blockDef?.canEdit) continue
+        if (!blockDef?.editOptions.canEdit) continue
 
         blockEntity.add(comps.Edited)
       }

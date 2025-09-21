@@ -37,7 +37,9 @@ class RoughShapesExtensionClass extends BaseExtension {
   public readonly blocks = [
     {
       tag: 'ic-rough-shape',
-      canEdit: true,
+      editOptions: {
+        canEdit: true,
+      },
       resizeMode: 'free' as const,
       floatingMenu: [...roughShapeFloatingMenuButtons, ...floatingMenuStandardButtons],
       editedFloatingMenu: textEditorFloatingMenuButtons,

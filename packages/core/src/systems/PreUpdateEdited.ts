@@ -29,10 +29,20 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
 
       element.removeAttribute('is-editing')
 
-      // if (element.tag === 'ic-text' && snapshot.content.trim() === '') {
-      //   this.emitCommand(CoreCommand.DeleteBlock, block.id)
-      //   continue
-      // }
+      const blockDef = this.getBlockDef(block.tag)
+      if (!blockDef) {
+        console.warn(`No block definition found for tag: ${block.tag}`)
+        continue
+      }
+
+      if (blockDef.editOptions.removeWhenTextEmpty && snapshot[block.id].Text) {
+        const content = snapshot[block.id].Text.content as string
+        const textContent = content.replace(/<\/?[^>]+(>|$)/g, '').trim()
+        if (textContent === '') {
+          this.emitCommand(CoreCommand.RemoveBlock, block.id)
+          continue
+        }
+      }
 
       this.emitCommand(CoreCommand.UpdateFromSnapshot, snapshot)
       this.emitCommand(CoreCommand.CreateCheckpoint)

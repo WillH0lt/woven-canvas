@@ -17,7 +17,9 @@ class ArrowsExtensionClass extends BaseExtension {
   public readonly blocks = [
     {
       tag: 'ic-arrow',
-      canEdit: true,
+      editOptions: {
+        canEdit: true,
+      },
       floatingMenu: [
         floatingMenuButtonColor,
         floatingMenuButtonVerticalAlign,

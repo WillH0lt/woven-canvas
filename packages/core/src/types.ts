@@ -66,9 +66,14 @@ export type CoreResources = BaseResources &
     localDB: LocalDB
   }
 
+const BlockDefEditOptions = z.object({
+  canEdit: z.boolean().default(false),
+  removeWhenTextEmpty: z.boolean().default(false),
+})
+
 export const BlockDef = z.object({
   tag: z.string(),
-  canEdit: z.boolean().default(false),
+  editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
   resizeMode: z.enum(['scale', 'text', 'free', 'groupOnly']).default('scale'),
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
   floatingMenu: z

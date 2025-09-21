@@ -98,24 +98,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     this.addCommandListener(CoreCommand.SetZoom, this.onZoom.bind(this))
   }
 
-  // public execute(): void {
-  //   this.executeCommands()
-
-  //   // when a block is moved recalculate the arrow endpoints
-  //   for (const blockEntity of this.blocks.changed) {
-  //     for (const connectorEntity of blockEntity.read(Block).connectors) {
-  //       if (connectorEntity.has(Arrow)) {
-  //         const block = blockEntity.read(Block)
-  //         const connector = connectorEntity.read(Connector)
-  //         const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
-  //         const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
-  //         const position = block.uvToWorld(uv)
-  //         this.updateArrow(connectorEntity, handleKind, position)
-  //       }
-  //     }
-  //   }
-  // }
-
   private addArrow(arrowEntity: Entity, position: [number, number]): void {
     const thickness = 4
 

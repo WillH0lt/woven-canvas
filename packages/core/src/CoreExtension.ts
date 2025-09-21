@@ -91,7 +91,10 @@ export class CoreExtension extends BaseExtension {
     },
     {
       tag: 'ic-text',
-      canEdit: true,
+      editOptions: {
+        canEdit: true,
+        removeWhenTextEmpty: true,
+      },
       resizeMode: 'text' as const,
       editedFloatingMenu: textEditorFloatingMenuButtons,
       components: [Text],
@@ -189,7 +192,6 @@ export class CoreExtension extends BaseExtension {
       sys.UpdateCamera,
       sys.UpdateSelection,
       sys.UpdateTransformBox,
-      sys.UpdateTextDeleteEmpty,
     )
     this._postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
     this._preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
