@@ -8,7 +8,7 @@ import { ComponentRegistry } from './ComponentRegistry'
 import type { Snapshot } from './History'
 import { LocalDB } from './LocalDB'
 import type { State } from './State'
-import { floatingMenuStandardButtons, textEditorFloatingMenuButtons } from './buttonCatalog'
+import { floatingMenuButtonColor, floatingMenuStandardButtons, textEditorFloatingMenuButtons } from './buttonCatalog'
 import { CoreCommand, type CoreCommandArgs } from './commands'
 import { Block, Color, Connector, Controls, Hovered, Persistent, Selected, Text } from './components'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
@@ -20,6 +20,7 @@ import {
   type CoreOptionsInput,
   type CoreResources,
   type EmitterEvents,
+  FloatingMenuButton,
   type ICommands,
   type IStore,
   type SendCommandFn,
@@ -29,7 +30,7 @@ import {
 import { ICText } from './webComponents/blocks'
 
 type BlockData = Pick<Block, SerializablePropNames<Block>>
-type ColorData = Omit<Color, SerializablePropNames<Block>>
+type ColorData = Pick<Color, SerializablePropNames<Color>>
 type TextData = Pick<Text, SerializablePropNames<Text>>
 type ControlsData = Pick<Controls, SerializablePropNames<Controls>>
 
@@ -50,6 +51,7 @@ declare module '@infinitecanvas/core' {
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
       setControls: (controls: Partial<ControlsData>) => void
       setColor: (blockId: string, color: Partial<ColorData>) => void
+      applyColorToSelected: (color: ColorData) => void
       createAndDragOntoCanvas: (snapshot: Snapshot) => void
     }
     textEditor: {
@@ -96,8 +98,19 @@ export class CoreExtension extends BaseExtension {
         removeWhenTextEmpty: true,
       },
       resizeMode: 'text' as const,
-      editedFloatingMenu: textEditorFloatingMenuButtons,
+      editedFloatingMenu: textEditorFloatingMenuButtons.map((btn) => FloatingMenuButton.parse(btn)),
       components: [Text],
+    },
+  ]
+
+  public readonly floatingMenus = [
+    {
+      component: Color,
+      buttons: [FloatingMenuButton.parse(floatingMenuButtonColor)],
+    },
+    {
+      component: Text,
+      buttons: textEditorFloatingMenuButtons.map((btn) => FloatingMenuButton.parse(btn)),
     },
   ]
 
@@ -275,6 +288,18 @@ export class CoreExtension extends BaseExtension {
               Color: new Color(color).toJson(),
             },
           })
+        },
+        applyColorToSelected: (color: ColorData) => {
+          const selectedIds = this.state.getComponents(Selected).value
+          if (Object.keys(selectedIds).length === 0) return
+
+          const snapshot: Snapshot = {}
+          for (const id of Object.keys(selectedIds)) {
+            snapshot[id] = {
+              Color: color,
+            }
+          }
+          send(CoreCommand.UpdateFromSnapshot, snapshot)
         },
         createAndDragOntoCanvas: (snapshot: Snapshot) => {
           send(CoreCommand.CreateAndDragOntoCanvas, snapshot)

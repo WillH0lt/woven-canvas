@@ -1,13 +1,12 @@
-import type { Entity, Query } from '@lastolivegames/becsy'
+import type { Query } from '@lastolivegames/becsy'
 
 import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
-import { SnapshotBuilder } from '../History'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
-import { binarySearchForId, clamp, computeExtents, uuidToNumber } from '../helpers'
-import type { CoreResources } from '../types'
+import { clamp, computeExtents, uuidToNumber } from '../helpers'
+import type { CoreResources, FloatingMenuButton } from '../types'
 import type { ICFloatingMenu } from '../webComponents'
 import { PreRenderStoreSync } from './PreRenderStoreSync'
 
@@ -66,28 +65,28 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
       this.createUpdateOrRemoveFloatingMenu()
     }
 
-    if (this.selectedBlocks.current.length > 0) {
-      const blocks = new Map<string, string>()
+    // if (this.selectedBlocks.current.length > 0) {
+    //   const blocks = new Map<string, string>()
 
-      for (const Comp of this.changedQueries.keys()) {
-        const query = this.changedQueries.get(Comp)!
-        if (query.changed.length === 0) continue
+    //   for (const Comp of this.changedQueries.keys()) {
+    //     const query = this.changedQueries.get(Comp)!
+    //     if (query.changed.length === 0) continue
 
-        for (const entity of query.changed) {
-          const block = entity.read(comps.Block)
-          blocks.set(block.id, block.tag)
-        }
-      }
+    //     for (const entity of query.changed) {
+    //       const block = entity.read(comps.Block)
+    //       blocks.set(block.id, block.tag)
+    //     }
+    //   }
 
-      if (blocks.size > 0) {
-        const icFloatingMenu = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
-        if (icFloatingMenu) {
-          for (const [id, tag] of blocks) {
-            this.updateSnapshotAttribute(icFloatingMenu, id, tag)
-          }
-        }
-      }
-    }
+    //   if (blocks.size > 0) {
+    //     const icFloatingMenu = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
+    //     if (icFloatingMenu) {
+    //       for (const [id, tag] of blocks) {
+    //         this.updateSnapshotAttribute(icFloatingMenu, id, tag)
+    //       }
+    //     }
+    //   }
+    // }
 
     this.executeCommands()
   }
@@ -102,21 +101,74 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
       return
     }
 
-    let tag = 'group'
-    let blockId = ''
-    let singularSelectedEntity: Entity | undefined = undefined
-    if (mySelectedBlocks.length === 1) {
-      const block = mySelectedBlocks[0].read(comps.Block)
-      tag = block.tag
-      blockId = block.id
-      singularSelectedEntity = mySelectedBlocks[0]
+    const commonComponents = new Set<new () => BaseComponent>()
+    if (mySelectedBlocks.length > 0) {
+      const firstBlock = mySelectedBlocks[0].read(comps.Block)
+      const firstBlockDef = this.getBlockDef(firstBlock.tag)
+      if (firstBlockDef) {
+        for (const Comp of firstBlockDef.components) {
+          commonComponents.add(Comp)
+        }
+      }
+
+      for (let i = 1; i < mySelectedBlocks.length; i++) {
+        const block = mySelectedBlocks[i].read(comps.Block)
+        const blockDef = this.getBlockDef(block.tag)
+        if (blockDef) {
+          for (const Comp of Array.from(commonComponents)) {
+            if (!blockDef.components.includes(Comp)) {
+              commonComponents.delete(Comp)
+            }
+          }
+        }
+      }
     }
 
-    const blockDef = this.getBlockDef(tag)
-    let buttons = blockDef?.floatingMenu ?? []
-    if (singularSelectedEntity?.has(comps.Edited)) {
-      buttons = blockDef?.editedFloatingMenu ?? []
+    const buttons: FloatingMenuButton[] = []
+    for (const Comp of commonComponents) {
+      const floatingMenu = this.resources.floatingMenus[Comp.name]
+      if (floatingMenu) {
+        buttons.push(...floatingMenu.buttons)
+      }
     }
+
+    // const block = mySelectedBlocks[0].read(comps.Block)
+    // const blockDefs = new Set<BlockDef>()
+    // for (const blockEntity of mySelectedBlocks) {
+    //   const block = blockEntity.read(comps.Block)
+    //   const blockDef = this.getBlockDef(block.tag)
+    //   if (blockDef) {
+    //     blockDefs.add(blockDef)
+    //   }
+    // }
+
+    // const buttons = []
+    // for (const blockDef of blockDefs) {
+    //   buttons.push(...blockDef.floatingMenu)
+    // }
+
+    // for (const component of blockDef?.components ?? []) {
+    //   const floatingMenu = this.resources.floatingMenus[component.name]
+    //   if (floatingMenu) {
+    //     buttons.push(...floatingMenu.buttons)
+    //   }
+    // }
+
+    // let tag = 'group'
+    // let blockId = ''
+    // let singularSelectedEntity: Entity | undefined = undefined
+    // if (mySelectedBlocks.length === 1) {
+    //   const block = mySelectedBlocks[0].read(comps.Block)
+    //   tag = block.tag
+    //   blockId = block.id
+    //   singularSelectedEntity = mySelectedBlocks[0]
+    // }
+
+    // const blockDef = this.getBlockDef(tag)
+    // let buttons = blockDef?.floatingMenu ?? []
+    // if (singularSelectedEntity?.has(comps.Edited)) {
+    //   buttons = blockDef?.editedFloatingMenu ?? []
+    // }
 
     let element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
     if (!element) {
@@ -126,9 +178,16 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
     }
 
     element.buttons = buttons
-    element.blockId = blockId
+    // element.blockId = block.id
 
-    this.updateSnapshotAttribute(element, blockId, tag)
+    const ids = mySelectedBlocks.map((e) => e.read(comps.Block).id)
+    const snapshot = this.resources.history.getEntities(ids)
+
+    console.log(snapshot)
+
+    element.snapshot = snapshot
+
+    // this.updateSnapshotAttribute(element, snapshot)
 
     const width = element.buttons.reduce((acc, button) => acc + button.width, 0)
     const height = 40
@@ -141,23 +200,23 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
     this.updateMenuPosition(element)
   }
 
-  private updateSnapshotAttribute(element: ICFloatingMenu, blockId: string, tag: string): void {
-    const blockDef = this.getBlockDef(tag)
-    if (!blockDef) return
+  // private updateSnapshotAttribute(element: ICFloatingMenu, blockId: string, tag: string): void {
+  //   const blockDef = this.getBlockDef(tag)
+  //   if (!blockDef) return
 
-    const snapshotBuilder = new SnapshotBuilder()
-    for (const Comp of blockDef.components) {
-      const entities = this.currentQueries.get(Comp)?.current
-      if (!entities) continue
+  //   const snapshotBuilder = new SnapshotBuilder()
+  //   for (const Comp of blockDef.components) {
+  //     const entities = this.currentQueries.get(Comp)?.current
+  //     if (!entities) continue
 
-      const entity = binarySearchForId(comps.Block, blockId, entities)
-      if (!entity) continue
+  //     const entity = binarySearchForId(comps.Block, blockId, entities)
+  //     if (!entity) continue
 
-      snapshotBuilder.putComponent(blockId, Comp.name, entity.read(Comp).toJson())
-    }
+  //     snapshotBuilder.putComponent(blockId, Comp.name, entity.read(Comp).toJson())
+  //   }
 
-    element.snapshot = snapshotBuilder.snapshot
-  }
+  //   element.snapshot = snapshotBuilder.snapshot
+  // }
 
   private removeFloatingMenu(): void {
     const element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)

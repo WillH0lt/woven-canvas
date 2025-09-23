@@ -16,7 +16,6 @@ function createDotPattern(xSpacing: number, ySpacing: number, background: Backgr
 
   const width = xSpacing * background.subdivisionStep
   const height = ySpacing * background.subdivisionStep
-
   patternCanvas.width = width
   patternCanvas.height = height
 
@@ -123,6 +122,7 @@ export class RenderBackground extends BaseSystem {
       this.backgrounds.changed.length > 0 ||
       this.screens.changed.length > 0
     ) {
+      console.log('render')
       this.renderBackground()
     }
   }
@@ -131,7 +131,12 @@ export class RenderBackground extends BaseSystem {
     const ctx = this.resources.backgroundCanvas.getContext('2d')
     if (!ctx) return
 
-    const { width, height } = this.resources.backgroundCanvas
+    const { width, height } = this.screen
+
+    // Resize the canvas to match screen dimensions
+    this.resources.backgroundCanvas.width = width
+    this.resources.backgroundCanvas.height = height
+
     ctx.clearRect(0, 0, width, height)
 
     // fill the background
@@ -139,7 +144,6 @@ export class RenderBackground extends BaseSystem {
     ctx.fillRect(0, 0, width, height)
 
     if (this.background.kind === 'dots') {
-      // this.renderGrid(ctx)
       this.renderDots(ctx)
     } else if (this.background.kind === 'grid') {
       this.renderGrid(ctx)
@@ -201,12 +205,7 @@ export class RenderBackground extends BaseSystem {
     ctx.save()
     ctx.translate(offsetX, offsetY)
     ctx.fillStyle = pattern
-    ctx.fillRect(
-      0,
-      0,
-      this.screen.width + patternWidth * this.camera.zoom,
-      this.screen.height + patternHeight * this.camera.zoom,
-    )
+    ctx.fillRect(0, 0, w + patternWidth * this.camera.zoom, h + patternHeight * this.camera.zoom)
     ctx.restore()
   }
 
@@ -265,12 +264,7 @@ export class RenderBackground extends BaseSystem {
     ctx.save()
     ctx.translate(offsetX, offsetY)
     ctx.fillStyle = pattern
-    ctx.fillRect(
-      0,
-      0,
-      this.screen.width + patternWidth * this.camera.zoom,
-      this.screen.height + patternHeight * this.camera.zoom,
-    )
+    ctx.fillRect(0, 0, w + patternWidth * this.camera.zoom, h + patternHeight * this.camera.zoom)
     ctx.restore()
   }
 }

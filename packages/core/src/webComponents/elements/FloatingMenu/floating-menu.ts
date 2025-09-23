@@ -3,7 +3,6 @@ import { LitElement, type PropertyValues } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { html, unsafeStatic } from 'lit/static-html.js'
 
-import type { Snapshot } from '../../../History'
 import type { FloatingMenuButton } from '../../../types'
 import { style } from './floating-menu.style'
 
@@ -14,11 +13,8 @@ export class ICFloatingMenu extends LitElement {
   @property({ type: Array })
   public buttons: FloatingMenuButton[] = []
 
-  @property({ type: String })
-  public blockId = ''
-
-  @property({ type: Object })
-  public snapshot: Snapshot = {}
+  // @property({ type: String })
+  // public blockId = ''
 
   private tooltipTimeout: number | null = null
   private isTooltipVisible = false
@@ -71,8 +67,6 @@ export class ICFloatingMenu extends LitElement {
           <${unsafeStatic(button.tag)}
             ?divider="${button.tag === 'ic-divider'}"
             style="width: ${button.width}px"
-            blockId="${this.blockId}"
-            .snapshot="${this.snapshot}"
             @mouseenter="${() => this.onMouseEnter(button)}"
             @click="${() => this.onClick(button)}"
           />
@@ -100,7 +94,6 @@ export class ICFloatingMenu extends LitElement {
     if (button.menu) {
       // If the button has a menu, create the menu element if it doesn't exist
       const menuElement = document.createElement(button.menu)
-      menuElement.setAttribute('blockId', this.blockId)
       menuElement.style.position = 'absolute'
       menuElement.classList.add('menu')
       this.shadowRoot?.appendChild(menuElement)

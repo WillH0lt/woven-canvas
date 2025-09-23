@@ -1,12 +1,11 @@
-import { type HTMLTemplateResult, html } from 'lit'
+import { type HTMLTemplateResult, LitElement, html } from 'lit'
 import { property } from 'lit/decorators.js'
 
 import type { BaseComponent } from '../../../BaseComponent'
 import type { Snapshot } from '../../../History'
-import { ICBaseMenuButton } from '../baseMenuButton'
 import { style } from './menu-icon-button.style'
 
-export abstract class ICMenuIconButton extends ICBaseMenuButton {
+export abstract class ICMenuIconButton extends LitElement {
   static styles = style
 
   @property({ type: Object })

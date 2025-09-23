@@ -1,6 +1,5 @@
 export { ICBaseBlock } from './baseBlock'
 export { ICEditableBlock } from './baseEditableBlock'
-export { ICBaseMenuButton } from './baseMenuButton'
 export { ICFloatingMenu } from './FloatingMenu'
 export { ICDivider } from './Divider'
 export { ICMenuIconButton } from './MenuIconButton'

@@ -18,12 +18,12 @@ export const style = css`
     outline-width: 1px;
     outline-color: #ffffff55;
   }
+  
   .chevron-down {
     width: 8px !important;
     margin-bottom: 2px;
     color: var(--ic-gray-300);
   }
-
   #color-menu {
     display: none;
     width: max-content;

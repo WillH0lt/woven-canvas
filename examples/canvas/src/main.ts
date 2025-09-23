@@ -57,8 +57,6 @@ async function initializeCanvas(container: HTMLDivElement) {
     ],
     grid: {
       enabled: true,
-      xSpacing: 20,
-      ySpacing: 20,
     },
     background: {
       kind: 'dots',

@@ -1,5 +1,4 @@
-import { ICBaseMenuButton } from '@infinitecanvas/core/elements'
-import { html, svg } from 'lit'
+import { LitElement, html, svg } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 
@@ -10,7 +9,7 @@ const chevronDownIcon = svg`
   <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/>
 `
 @customElement('ic-color-button-content')
-export class ICColorButtonContent extends ICBaseMenuButton {
+export class ICColorButtonContent extends LitElement {
   static styles = style
 
   @property({ type: String })

@@ -13,6 +13,7 @@ import {
   BlockDef,
   EmitterEventKind,
   type EmitterEvents,
+  type FloatingMenuDef,
   type ICommands,
   type IStore,
   Options,
@@ -159,6 +160,14 @@ export class InfiniteCanvas {
       }
     }
 
+    // register floating menus
+    const floatingMenus: Record<string, FloatingMenuDef> = {}
+    for (const ext of extensions) {
+      for (const floatingMenu of ext.floatingMenus) {
+        floatingMenus[floatingMenu.component.name] = floatingMenu
+      }
+    }
+
     // register tool definitions
     const tools: Record<string, ToolDef> = {}
     for (const ext of extensions) {
@@ -179,6 +188,7 @@ export class InfiniteCanvas {
       blockContainer,
       backgroundCanvas,
       blockDefs,
+      floatingMenus,
       tools,
       tags: parsedOptions.customTags,
       uid: crypto.randomUUID(),

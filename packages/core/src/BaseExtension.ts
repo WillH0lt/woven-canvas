@@ -1,10 +1,21 @@
 import { System, type SystemGroup } from '@lastolivegames/becsy'
 
 import type { State } from './State'
-import type { BaseResources, BlockDefInput, CommandArgs, ICommands, IStore, SendCommandFn, ToolDefInput } from './types'
+import type {
+  BaseResources,
+  BlockDefInput,
+  CommandArgs,
+  FloatingMenuDef,
+  ICommands,
+  IStore,
+  SendCommandFn,
+  ToolDefInput,
+} from './types'
 
 export class BaseExtension {
   public readonly blocks: BlockDefInput[] = []
+
+  public readonly floatingMenus: FloatingMenuDef[] = []
 
   public readonly tools: ToolDefInput[] = []
 

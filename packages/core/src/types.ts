@@ -102,6 +102,19 @@ export type ToolDef = z.infer<typeof ToolDef>
 
 export type ToolDefMap = Record<string, z.infer<typeof ToolDef>>
 
+export const FloatingMenuDef = z.object({
+  component: z.custom<new () => BaseComponent>(() => true),
+  buttons: z.array(FloatingMenuButton),
+})
+
+export type FloatingMenuDefInput = z.input<typeof FloatingMenuDef>
+
+export type FloatingMenuDef = z.infer<typeof FloatingMenuDef>
+
+export type FloatingMenuMap = Record<string, FloatingMenuDef>
+
+// export type ToolDefMap = Record<string, z.infer<typeof ToolDef>>
+
 const Theme = z.object({
   gray100: z.string().default('#f8f9f9'),
   gray200: z.string().default('#e3e5e8'),
@@ -137,12 +150,12 @@ type CustomTags = z.infer<typeof CustomTags>
 
 const Grid = z.object({
   enabled: z.boolean().default(false),
-  xSpacing: z.number().default(20),
-  ySpacing: z.number().default(20),
+  xSpacing: z.number().default(15),
+  ySpacing: z.number().default(15),
 })
 
 const Background = z.object({
-  kind: z.string().default('blank'),
+  kind: z.enum(['blank', 'dots', 'grid']).default('blank'),
   color: z.string().default('#f4f4f4'),
   strokeColor: z.string().default('#a1a1a1'),
   subdivisionStep: z.number().default(5),
@@ -173,6 +186,7 @@ export interface BaseResources {
   backgroundCanvas: HTMLCanvasElement
   history: History
   blockDefs: BlockDefMap
+  floatingMenus: FloatingMenuMap
   tags: CustomTags
   tools: ToolDefMap
   uid: string

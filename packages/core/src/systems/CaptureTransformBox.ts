@@ -100,6 +100,9 @@ export class CaptureTransformBox extends BaseSystem<CoreCommandArgs> {
       endTransformBoxEdit: () => {
         this.emitCommand(CoreCommand.EndTransformBoxEdit)
       },
+      createCheckpoint: () => {
+        this.emitCommand(CoreCommand.CreateCheckpoint)
+      },
     },
   }).createMachine({
     id: 'transformBox',
@@ -122,6 +125,7 @@ export class CaptureTransformBox extends BaseSystem<CoreCommandArgs> {
           selectionChanged: [
             {
               guard: not('selectionIsTransformable'),
+              actions: 'createCheckpoint',
               target: TransformBoxState.None,
             },
             {

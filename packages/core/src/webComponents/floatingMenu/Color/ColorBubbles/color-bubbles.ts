@@ -18,6 +18,8 @@ export class ICColorBubbles extends LitElement {
 
   @property({ type: Boolean }) withPicker = false
 
+  @property({ type: Boolean }) hideHighlight = false
+
   render() {
     return html`
       <div class="container">
@@ -26,7 +28,7 @@ export class ICColorBubbles extends LitElement {
             <div
               class="${classMap({
                 'color-bubble': true,
-                selected: tinycolor.equals(this.currentColor, color),
+                selected: !this.hideHighlight && tinycolor.equals(this.currentColor, color),
               })}"
               style=${styleMap({
                 backgroundColor: color,
@@ -44,7 +46,7 @@ export class ICColorBubbles extends LitElement {
               class="${classMap({
                 'color-bubble': true,
                 rainbow: true,
-                selected: !this.palette.find((c) => tinycolor.equals(this.currentColor, c)),
+                selected: !this.hideHighlight && !this.palette.find((c) => tinycolor.equals(this.currentColor, c)),
               })}"
               @click=${() => {
                 this.dispatchEvent(new CustomEvent('show-picker', { bubbles: true, composed: true }))

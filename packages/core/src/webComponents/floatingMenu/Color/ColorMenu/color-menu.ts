@@ -1,22 +1,30 @@
 import { SignalWatcher, signal } from '@lit-labs/preact-signals'
-import { html, nothing } from 'lit'
+import { LitElement, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import { InfiniteCanvas } from '../../../../InfiniteCanvas'
 import { Color } from '../../../../components'
-import { ICBaseMenuButton } from '../../../elements'
 
 @customElement('ic-color-menu')
-export class ICColorMenu extends SignalWatcher(ICBaseMenuButton) {
+export class ICColorMenu extends SignalWatcher(LitElement) {
   private pickerVisible = signal(false)
 
   render() {
-    const color = InfiniteCanvas.instance?.store.core.colorById(this.blockId)
-    if (!color?.value) {
-      return nothing
+    const ids = InfiniteCanvas.instance?.store.core.selectedBlockIds
+
+    const colors = new Set<string>()
+
+    for (const id of ids?.value || []) {
+      const color = InfiniteCanvas.instance?.store.core.colorById(id)
+      if (color?.value) {
+        colors.add(color.value.toHex())
+      }
     }
 
-    const hex = color.value.toHex()
+    const colorArray = Array.from(colors)
+    const hex = colorArray[0]
+
+    const hasMultipleColors = colors.size > 1
 
     return html`
         ${
@@ -26,8 +34,9 @@ export class ICColorMenu extends SignalWatcher(ICBaseMenuButton) {
                 value=${hex}
                 @change=${(e: CustomEvent<string>) => {
                   const color = new Color().fromHex(e.detail)
-                  InfiniteCanvas.instance?.commands.core.setColor(this.blockId, color)
+                  InfiniteCanvas.instance?.commands.core.applyColorToSelected(color)
                 }}
+
               ></ic-color-picker>
             `
             : html`
@@ -35,9 +44,10 @@ export class ICColorMenu extends SignalWatcher(ICBaseMenuButton) {
                 id="color-bubbles"
                 withPicker="true"
                 .currentColor=${hex}
+                .hideHighlight=${hasMultipleColors}
                 @change=${(e: CustomEvent<string>) => {
                   const color = new Color().fromHex(e.detail)
-                  InfiniteCanvas.instance?.commands.core.setColor(this.blockId, color)
+                  InfiniteCanvas.instance?.commands.core.applyColorToSelected(color)
                 }}
                 @show-picker=${() => {
                   this.pickerVisible.value = true

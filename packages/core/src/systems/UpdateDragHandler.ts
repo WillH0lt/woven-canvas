@@ -82,9 +82,16 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
     const boxBlock = boxEntity.read(Block)
     const handleStartAngle = Math.atan2(boxBlock.height * vector[1], boxBlock.width * vector[0]) + boxBlock.rotateZ
 
-    const delta = angleHandle - handleStartAngle
+    let delta = angleHandle - handleStartAngle
+    if (this.keyboard.shiftDown) {
+      // snap to nearest 15 degrees
+      const snapAngle = Math.PI / 12
+      const offset = boxBlock.rotateZ % snapAngle
+      delta = Math.round(delta / snapAngle) * snapAngle - offset
+    }
 
-    // handleEntity.write(Block).rotateZ = (boxBlock.rotateZ + delta) % (2 * Math.PI)
+    // signal to the cursorIcon to rotate
+    handleEntity.write(Block).rotateZ = delta
 
     for (const blockEntity of this.selectedBlocks.current) {
       if (!this._canBeMoved(blockEntity, this.selectedBlocks.current)) continue
@@ -93,12 +100,6 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
       const block = blockEntity.write(Block)
 
       block.rotateZ = (startRotateZ + delta) % (2 * Math.PI)
-
-      if (this.keyboard.shiftDown) {
-        // snap to nearest 15 degrees
-        block.rotateZ = Math.round(block.rotateZ / (Math.PI / 12)) * (Math.PI / 12)
-      }
-
       const startCenter = [startLeft + startWidth / 2, startTop + startHeight / 2]
 
       const r = Math.hypot(startCenter[1] - boxCenter[1], startCenter[0] - boxCenter[0])
