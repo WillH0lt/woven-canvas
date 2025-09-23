@@ -32,6 +32,8 @@ export { HitArc } from './HitArc'
 export { Color } from './Color'
 export { Text } from './Text'
 export { FloatingMenuState } from './FloatingMenuState'
+export { Grid } from './Grid'
+export { Background } from './Background'
 
 import { Aabb } from './Aabb'
 import { Block } from './Block'

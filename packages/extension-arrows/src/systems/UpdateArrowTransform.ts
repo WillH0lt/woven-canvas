@@ -20,7 +20,6 @@ import type { Entity } from '@lastolivegames/becsy'
 
 import { Arrow, ArrowHandle, ArrowTrim } from '../components'
 import { TRANSFORM_HANDLE_RANK, TRANSFORM_HANDLE_SIZE } from '../constants'
-import {} from '../helpers'
 import { ArrowCommand, type ArrowCommandArgs, ArrowHandleKind, ArrowHeadKind } from '../types'
 
 function polarDelta(

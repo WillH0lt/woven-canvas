@@ -22,9 +22,9 @@ type SelectionEvent =
     }
 
 export class CaptureTransformBox extends BaseSystem<CoreCommandArgs> {
-  private readonly selectedBlocks = this.query((q) => q.added.removed.current.with(Block, Selected))
-
-  private readonly transformBoxes = this.query((q) => q.using(TransformBox).write.using(TransformHandle).read)
+  private readonly selectedBlocks = this.query(
+    (q) => q.added.removed.current.with(Block, Selected).using(TransformBox, TransformHandle).read,
+  )
 
   private readonly transformBoxState = this.singleton.write(TransformBoxStateComp)
 

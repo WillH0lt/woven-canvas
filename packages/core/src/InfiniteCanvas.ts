@@ -7,6 +7,7 @@ import { ComponentRegistry } from './ComponentRegistry'
 import { CoreExtension } from './CoreExtension'
 import { History } from './History'
 import { State } from './State'
+import { Background, Grid } from './components'
 import {
   type BaseResources,
   BlockDef,
@@ -110,6 +111,21 @@ export class InfiniteCanvas {
     domElement.style.touchAction = 'none'
     domElement.tabIndex = 0
 
+    // create the background canvas if needed
+    const backgroundCanvas = document.createElement('canvas')
+    backgroundCanvas.id = 'background-canvas'
+    backgroundCanvas.width = window.innerWidth
+    backgroundCanvas.height = window.innerHeight
+    backgroundCanvas.style.position = 'absolute'
+    backgroundCanvas.style.top = '0'
+    backgroundCanvas.style.left = '0'
+    backgroundCanvas.style.width = '100%'
+    backgroundCanvas.style.height = '100%'
+    backgroundCanvas.style.pointerEvents = 'none'
+    backgroundCanvas.style.userSelect = 'none'
+
+    domElement.appendChild(backgroundCanvas)
+
     // create the block container which acts as the camera viewport and holds all blocks
     const blockContainer = document.createElement('div')
     blockContainer.id = 'block-container'
@@ -154,8 +170,6 @@ export class InfiniteCanvas {
       tools[tool.name] = ToolDef.parse(tool)
     }
 
-    // const tools =
-    //   parsedOptions.tools ?? extensions.flatMap((ext) => (ext.constructor as typeof BaseExtension).tools)
     addToolbar(domElement, tools)
 
     applyTheme(parsedOptions.theme)
@@ -163,6 +177,7 @@ export class InfiniteCanvas {
     const resources = {
       domElement,
       blockContainer,
+      backgroundCanvas,
       blockDefs,
       tools,
       tags: parsedOptions.customTags,
@@ -214,8 +229,11 @@ export class InfiniteCanvas {
       maxLimboComponents: 100_000,
     })
 
-    world.build((system) => {
-      extensions.map((ext) => ext.build(system, resources))
+    world.build((worldSys) => {
+      Object.assign(worldSys.singleton.write(Grid), parsedOptions.grid ?? {})
+      Object.assign(worldSys.singleton.write(Background), parsedOptions.background ?? {})
+
+      extensions.map((ext) => ext.build(worldSys, resources))
     })
 
     const infiniteCanvas = new InfiniteCanvas(extensions, world, emitter, state, resources, parsedOptions)

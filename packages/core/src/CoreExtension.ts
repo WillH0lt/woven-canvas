@@ -192,10 +192,11 @@ export class CoreExtension extends BaseExtension {
       sys.UpdateCamera,
       sys.UpdateSelection,
       sys.UpdateTransformBox,
+      sys.UpdateDragHandler,
     )
     this.postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
     this.preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
-    this.renderGroup = this.createGroup(coreResources, sys.RenderHtml)
+    this.renderGroup = this.createGroup(coreResources, sys.RenderHtml, sys.RenderBackground)
   }
 
   #getEditableTextElement(): ICText | null {

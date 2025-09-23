@@ -39,7 +39,7 @@ export class PreUpdateEdited extends BaseSystem<CoreCommandArgs> {
         const content = snapshot[block.id].Text.content as string
         const textContent = content.replace(/<\/?[^>]+(>|$)/g, '').trim()
         if (textContent === '') {
-          this.emitCommand(CoreCommand.RemoveBlock, block.id)
+          this.emitCommand(CoreCommand.RemoveBlock, entity)
           continue
         }
       }

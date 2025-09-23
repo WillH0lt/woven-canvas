@@ -103,12 +103,8 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     this.executeCommands()
   }
 
-  private removeBlock(blockId: string): void {
-    const blockEntity = binarySearchForId(comps.Block, blockId, this.entities.current)
-    if (!blockEntity) return
-
+  private removeBlock(blockEntity: Entity): void {
     this.deleteEntity(blockEntity)
-
     this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 

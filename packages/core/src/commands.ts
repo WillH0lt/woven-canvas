@@ -86,7 +86,8 @@ export type CoreCommandArgs = {
     },
   ]
 
-  [CoreCommand.RemoveBlock]: [string]
+  [CoreCommand.RemoveBlock]: [Entity]
+  // [CoreCommand.UpdateText]: [Entity, Partial<string>]
 
   [CoreCommand.Undo]: []
   [CoreCommand.Redo]: []

@@ -55,6 +55,15 @@ async function initializeCanvas(container: HTMLDivElement) {
       InkExtension,
       EraserExtension,
     ],
+    grid: {
+      enabled: true,
+      xSpacing: 20,
+      ySpacing: 20,
+    },
+    background: {
+      kind: 'dots',
+      subdivisionStep: 5,
+    },
   })
 
   container.appendChild(infiniteCanvas.domElement)

@@ -133,7 +133,20 @@ const CustomTags = z.object({
   selectionBox: z.string().default('ic-selection-box'),
 })
 
-export type CustomTags = z.infer<typeof CustomTags>
+type CustomTags = z.infer<typeof CustomTags>
+
+const Grid = z.object({
+  enabled: z.boolean().default(false),
+  xSpacing: z.number().default(20),
+  ySpacing: z.number().default(20),
+})
+
+const Background = z.object({
+  kind: z.string().default('blank'),
+  color: z.string().default('#f4f4f4'),
+  strokeColor: z.string().default('#a1a1a1'),
+  subdivisionStep: z.number().default(5),
+})
 
 export const Options = z.object({
   ...CoreOptions.shape,
@@ -148,6 +161,8 @@ export const Options = z.object({
   customTools: z.array(ToolDef).default([]),
   customTags: CustomTags.default(CustomTags.parse({})),
   theme: Theme.default(Theme.parse({})),
+  grid: Grid.default(Grid.parse({})),
+  background: Background.default(Background.parse({})),
 })
 
 export type Options = z.input<typeof Options>
@@ -155,6 +170,7 @@ export type Options = z.input<typeof Options>
 export interface BaseResources {
   domElement: HTMLElement
   blockContainer: HTMLDivElement
+  backgroundCanvas: HTMLCanvasElement
   history: History
   blockDefs: BlockDefMap
   tags: CustomTags

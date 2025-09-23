@@ -21,8 +21,8 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
   private getSnapshot(): Snapshot {
     const block = new Block({
       tag: 'ic-sticky-note',
-      width: 300,
-      height: 300,
+      width: 200,
+      height: 200,
     })
 
     const color = new Color({

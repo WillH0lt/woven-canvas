@@ -44,6 +44,10 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
 
   protected readonly frame = this.singleton.read(comps.Frame)
 
+  protected readonly grid = this.singleton.read(comps.Grid)
+
+  protected readonly background = this.singleton.read(comps.Background)
+
   private commandListeners: {
     [K in keyof TCommands]?: ((...data: TCommands[K]) => void)[]
   } = {}

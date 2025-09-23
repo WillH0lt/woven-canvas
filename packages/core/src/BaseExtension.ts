@@ -13,24 +13,24 @@ export class BaseExtension {
   // public static toolbarButtons: ToolbarButtonInput[] = []
 
   // == Input Groups ==
-  protected preInputGroup: SystemGroup | null = null
-  protected inputGroup: SystemGroup | null = null
-  protected postInputGroup: SystemGroup | null = null
+  public preInputGroup: SystemGroup | null = null
+  public inputGroup: SystemGroup | null = null
+  public postInputGroup: SystemGroup | null = null
 
   // == Capture Groups ==
-  protected preCaptureGroup: SystemGroup | null = null
-  protected captureGroup: SystemGroup | null = null
-  protected postCaptureGroup: SystemGroup | null = null
+  public preCaptureGroup: SystemGroup | null = null
+  public captureGroup: SystemGroup | null = null
+  public postCaptureGroup: SystemGroup | null = null
 
   // == Update Groups ==
-  protected preUpdateGroup: SystemGroup | null = null
-  protected updateGroup: SystemGroup | null = null
-  protected postUpdateGroup: SystemGroup | null = null
+  public preUpdateGroup: SystemGroup | null = null
+  public updateGroup: SystemGroup | null = null
+  public postUpdateGroup: SystemGroup | null = null
 
   // == Render Groups ==
-  protected preRenderGroup: SystemGroup | null = null
-  protected renderGroup: SystemGroup | null = null
-  protected postRenderGroup: SystemGroup | null = null
+  public preRenderGroup: SystemGroup | null = null
+  public renderGroup: SystemGroup | null = null
+  public postRenderGroup: SystemGroup | null = null
 
   public checkDependencies(dependencies: BaseExtension[]): void {
     for (const dep of this.dependsOn) {
