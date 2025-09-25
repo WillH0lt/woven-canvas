@@ -1,15 +1,15 @@
 import { type HTMLTemplateResult, LitElement, html } from 'lit'
-import { property } from 'lit/decorators.js'
+import { state } from 'lit/decorators.js'
+import { classMap } from 'lit/directives/class-map.js'
 
 import type { BaseComponent } from '../../../BaseComponent'
-import type { Snapshot } from '../../../History'
 import { style } from './menu-icon-button.style'
 
 export abstract class ICMenuIconButton extends LitElement {
   static styles = style
 
-  @property({ type: Object })
-  public snapshot!: Snapshot
+  @state()
+  active = false
 
   protected abstract icon: HTMLTemplateResult
 
@@ -19,7 +19,10 @@ export abstract class ICMenuIconButton extends LitElement {
 
   render() {
     return html`
-      <div class="button" @click="${this.onClick}">
+      <div class="${classMap({
+        button: true,
+        active: this.active,
+      })}" @click="${this.onClick}">
         ${this.icon}
       </div>
     `
@@ -30,15 +33,15 @@ export abstract class ICMenuIconButton extends LitElement {
     return this.snapshot[this.blockId]?.[comp.name] as T | undefined
   }
 
-  protected setButtonActive(active: boolean): void {
-    const button = this.shadowRoot?.querySelector('.button') as HTMLElement | null
+  // protected setButtonActive(active: boolean): void {
+  //   const button = this.shadowRoot?.querySelector('.button') as HTMLElement | null
 
-    if (active) {
-      button?.classList.add('active')
-    } else {
-      button?.classList.remove('active')
-    }
+  //   if (active) {
+  //     button?.classList.add('active')
+  //   } else {
+  //     button?.classList.remove('active')
+  //   }
 
-    this.requestUpdate()
-  }
+  //   this.requestUpdate()
+  // }
 }

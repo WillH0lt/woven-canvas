@@ -200,8 +200,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(@tiptap/core@3.0.7)
       '@tiptap/extension-text-align':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
+        specifier: ^3.5.2
+        version: 3.5.2(@tiptap/core@3.0.7)
       '@tiptap/extension-text-style':
         specifier: ^3.0.7
         version: 3.0.7(@tiptap/core@3.0.7)
@@ -1652,6 +1652,14 @@ packages:
     resolution: {integrity: sha512-3XywI2+dvb5IIO5NnZqyoXrRnikGyCIN7wWymTI7eqD213Ovs19/sfbW5kXLPsBYiNBb12nbG6pmPhr21mPvoA==}
     peerDependencies:
       '@tiptap/core': ^3.0.7
+    dependencies:
+      '@tiptap/core': 3.0.7(@tiptap/pm@3.0.7)
+    dev: false
+
+  /@tiptap/extension-text-align@3.5.2(@tiptap/core@3.0.7):
+    resolution: {integrity: sha512-Ka8aFP24gx3Yk+Q4SOmpc+QHfAoj+x/VnOuYxtLfiyqX1yG0UwyRNRjTSmltfc9D2kefFB/SFPSSBVqSutWuDw==}
+    peerDependencies:
+      '@tiptap/core': ^3.5.2
     dependencies:
       '@tiptap/core': 3.0.7(@tiptap/pm@3.0.7)
     dev: false

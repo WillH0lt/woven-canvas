@@ -1,5 +1,5 @@
 import type { System } from '@lastolivegames/becsy'
-import { type ReadonlySignal, type Signal, computed, signal } from '@preact/signals-core'
+import { type ReadonlySignal, computed } from '@preact/signals-core'
 import type { Emitter } from 'strict-event-emitter'
 
 import type { BaseComponent } from './BaseComponent'
@@ -8,12 +8,13 @@ import { ComponentRegistry } from './ComponentRegistry'
 import type { Snapshot } from './History'
 import { LocalDB } from './LocalDB'
 import type { State } from './State'
-import { floatingMenuButtonColor, floatingMenuStandardButtons, textEditorFloatingMenuButtons } from './buttonCatalog'
+import { floatingMenuButtonColor } from './buttonCatalog'
 import { CoreCommand, type CoreCommandArgs } from './commands'
-import { Block, Color, Connector, Controls, Hovered, Persistent, Selected, Text } from './components'
+import { Block, Color, Connector, Controls, Edited, Hovered, Persistent, Selected, Text } from './components'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
+import {} from './textUtils'
 import {
   type BaseResources,
   CoreOptions,
@@ -25,9 +26,7 @@ import {
   type IStore,
   type SendCommandFn,
   type SerializablePropNames,
-  TextAlign,
 } from './types'
-import { ICText } from './webComponents/blocks'
 
 type BlockData = Pick<Block, SerializablePropNames<Block>>
 type ColorData = Pick<Color, SerializablePropNames<Color>>
@@ -54,14 +53,6 @@ declare module '@infinitecanvas/core' {
       applyColorToSelected: (color: ColorData) => void
       createAndDragOntoCanvas: (snapshot: Snapshot) => void
     }
-    textEditor: {
-      toggleBold: () => void
-      toggleItalic: () => void
-      toggleUnderline: () => void
-      setAlignment: (alignment: TextAlign) => void
-      setColor: (color: string) => void
-      setText: (blockId: string, text: Partial<TextData>) => void
-    }
   }
 
   interface IStore {
@@ -75,42 +66,14 @@ declare module '@infinitecanvas/core' {
       textById: (id: string) => ReadonlySignal<Text | undefined>
       controls: ReadonlySignal<Controls | undefined>
     }
-    textEditor: {
-      bold: Signal<boolean>
-      italic: Signal<boolean>
-      underline: Signal<boolean>
-      alignment: Signal<TextAlign>
-      color: Signal<string>
-    }
   }
 }
 
 export class CoreExtension extends BaseExtension {
-  public readonly blocks = [
-    {
-      tag: 'group',
-      floatingMenu: floatingMenuStandardButtons,
-    },
-    {
-      tag: 'ic-text',
-      editOptions: {
-        canEdit: true,
-        removeWhenTextEmpty: true,
-      },
-      resizeMode: 'text' as const,
-      editedFloatingMenu: textEditorFloatingMenuButtons.map((btn) => FloatingMenuButton.parse(btn)),
-      components: [Text],
-    },
-  ]
-
   public readonly floatingMenus = [
     {
       component: Color,
       buttons: [FloatingMenuButton.parse(floatingMenuButtonColor)],
-    },
-    {
-      component: Text,
-      buttons: textEditorFloatingMenuButtons.map((btn) => FloatingMenuButton.parse(btn)),
     },
   ]
 
@@ -150,7 +113,7 @@ export class CoreExtension extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Block)
     ComponentRegistry.instance.registerComponent(Color)
-    ComponentRegistry.instance.registerComponent(Text)
+    ComponentRegistry.instance.registerComponent(Edited)
     ComponentRegistry.instance.registerComponent(Selected)
     ComponentRegistry.instance.registerComponent(Hovered)
     ComponentRegistry.instance.registerComponent(Persistent)
@@ -210,23 +173,6 @@ export class CoreExtension extends BaseExtension {
     this.postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
     this.preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
     this.renderGroup = this.createGroup(coreResources, sys.RenderHtml, sys.RenderBackground)
-  }
-
-  #getEditableTextElement(): ICText | null {
-    // get ic-text element where edited is true
-    // ic-text might be a direct child of the blockContainer or inside a shadowRoot
-    const element = this.blockContainer?.querySelector('[is-editing="true"]') as HTMLElement | null
-    if (element instanceof ICText) {
-      return element
-    }
-
-    const textElement = element?.shadowRoot?.querySelector('ic-text') as ICText | null
-    if (textElement) {
-      return textElement
-    }
-
-    console.warn('No editable text element found')
-    return null
   }
 
   public build(worldSystem: System, resources: BaseResources): void {
@@ -305,35 +251,6 @@ export class CoreExtension extends BaseExtension {
           send(CoreCommand.CreateAndDragOntoCanvas, snapshot)
         },
       },
-      textEditor: {
-        toggleBold: () => {
-          const element = this.#getEditableTextElement()
-          element?.toggleBold()
-        },
-        toggleItalic: () => {
-          const element = this.#getEditableTextElement()
-          element?.toggleItalic()
-        },
-        toggleUnderline: () => {
-          const element = this.#getEditableTextElement()
-          element?.toggleUnderline()
-        },
-        setAlignment: (alignment: TextAlign) => {
-          const element = this.#getEditableTextElement()
-          element?.setAlignment(alignment)
-        },
-        setColor: (color: string) => {
-          const element = this.#getEditableTextElement()
-          element?.setColor(color)
-        },
-        setText: (blockId: string, text: Partial<TextData>) => {
-          send(CoreCommand.UpdateFromSnapshot, {
-            [blockId]: {
-              Text: text,
-            },
-          })
-        },
-      },
     }
   }
 
@@ -358,13 +275,6 @@ export class CoreExtension extends BaseExtension {
         controls: computed(() => state.getSingleton(Controls).value),
         textById: (id: string): ReadonlySignal<Text | undefined> =>
           computed(() => state.getComponent<Text>(Text, id).value),
-      },
-      textEditor: {
-        bold: signal(false),
-        italic: signal(false),
-        underline: signal(false),
-        alignment: signal(TextAlign.Left),
-        color: signal('#000000'),
       },
     }
   }

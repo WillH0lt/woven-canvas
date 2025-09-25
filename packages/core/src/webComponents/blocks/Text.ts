@@ -156,15 +156,16 @@ export class ICText extends ICEditableBlock {
   }
 
   public getSnapshot(): Snapshot {
-    if (!this.isEditing || !this.editorContainer) return {}
-
-    const block = this.computeBlockDimensions(this.editorContainer)
+    const element = this.editorContainer || this.textContainer
+    if (!element) {
+      return {}
+    }
 
     return {
       [this.blockId]: {
-        Block: block,
+        Block: this.computeBlockDimensions(element),
         Text: {
-          content: this._editor?.getHTML() ?? '',
+          content: this._editor?.getHTML() ?? this.text.content,
         },
       },
     }
@@ -193,43 +194,86 @@ export class ICText extends ICEditableBlock {
     this.syncStore()
   }
 
-  public toggleBold(): void {
+  public setBold(bold: boolean): void {
     if (!this._editor) return
 
     const { from, to } = this._editor.state.selection
 
-    if (from === to) {
-      this._editor.chain().focus().selectAll().toggleBold().setTextSelection(to).run()
-    } else {
-      this._editor.chain().focus().toggleBold().run()
+    let cmd = this._editor.chain().focus()
+
+    const updateAllText = from === to
+
+    if (updateAllText) {
+      cmd = cmd.selectAll()
     }
+
+    if (bold) {
+      cmd = cmd.setBold()
+    } else {
+      cmd = cmd.unsetBold()
+    }
+
+    if (updateAllText) {
+      cmd = cmd.setTextSelection(to)
+    }
+
+    cmd.run()
 
     this.syncStore()
   }
 
-  public toggleItalic(): void {
+  public setItalic(italic: boolean): void {
     if (!this._editor) return
 
     const { from, to } = this._editor.state.selection
 
-    if (from === to) {
-      this._editor.chain().focus().selectAll().toggleItalic().setTextSelection(to).run()
-    } else {
-      this._editor.chain().focus().toggleItalic().run()
+    let cmd = this._editor.chain().focus()
+
+    const updateAllText = from === to
+
+    if (updateAllText) {
+      cmd = cmd.selectAll()
     }
+
+    if (italic) {
+      cmd = cmd.setItalic()
+    } else {
+      cmd = cmd.unsetItalic()
+    }
+
+    if (updateAllText) {
+      cmd = cmd.setTextSelection(to)
+    }
+
+    cmd.run()
 
     this.syncStore()
   }
 
-  public toggleUnderline(): void {
+  public setUnderline(underline: boolean): void {
     if (!this._editor) return
+
     const { from, to } = this._editor.state.selection
 
-    if (from === to) {
-      this._editor.chain().focus().selectAll().toggleUnderline().setTextSelection(to).run()
-    } else {
-      this._editor.chain().focus().toggleUnderline().run()
+    let cmd = this._editor.chain().focus()
+
+    const updateAllText = from === to
+
+    if (updateAllText) {
+      cmd = cmd.selectAll()
     }
+
+    if (underline) {
+      cmd = cmd.setUnderline()
+    } else {
+      cmd = cmd.unsetUnderline()
+    }
+
+    if (updateAllText) {
+      cmd = cmd.setTextSelection(to)
+    }
+
+    cmd.run()
 
     this.syncStore()
   }
@@ -273,12 +317,12 @@ export class ICText extends ICEditableBlock {
 
     store.color.value = editor.getAttributes('textStyle').color ?? '#000000'
 
-    store.bold.value = editor.isActive('bold')
-    store.italic.value = editor.isActive('italic')
-    store.underline.value = editor.isActive('underline')
+    store.cursorBold.value = editor.isActive('bold')
+    store.cursorItalic.value = editor.isActive('italic')
+    store.cursorUnderline.value = editor.isActive('underline')
 
     const currentAlignment = alignments.find((alignment) => editor.isActive({ textAlign: alignment }))
-    store.alignment.value = currentAlignment ?? TextAlignKind.Left
+    store.cursorAlignment.value = currentAlignment ?? TextAlignKind.Left
   }
 }
 

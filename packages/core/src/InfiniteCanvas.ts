@@ -7,6 +7,7 @@ import { ComponentRegistry } from './ComponentRegistry'
 import { CoreExtension } from './CoreExtension'
 import { History } from './History'
 import { State } from './State'
+import { TextEditorExtension } from './TextEditorExtension'
 import { Background, Grid } from './components'
 import {
   type BaseResources,
@@ -140,6 +141,7 @@ export class InfiniteCanvas {
 
     const emitter = new Emitter<EmitterEvents>()
     const state = new State()
+    extensions.unshift(new TextEditorExtension(state))
     extensions.unshift(new CoreExtension(emitter, state, options))
 
     // Register block definitions from extensions and options

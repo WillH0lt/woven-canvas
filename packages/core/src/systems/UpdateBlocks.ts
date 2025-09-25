@@ -289,8 +289,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     diff.changedTo = snapshot
 
     applyDiff(this, diff, this.entities)
-
-    // this.emitCommand(CoreCommand.CreateCheckpoint)
   }
 
   private createFromSnapshot(

@@ -1,11 +1,9 @@
-import type { Query } from '@lastolivegames/becsy'
-
 import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
-import { ComponentRegistry } from '../ComponentRegistry'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
-import { clamp, computeExtents, uuidToNumber } from '../helpers'
+import { clamp, computeExtents } from '../helpers'
+import {} from '../textUtils'
 import type { CoreResources, FloatingMenuButton } from '../types'
 import type { ICFloatingMenu } from '../webComponents'
 import { PreRenderStoreSync } from './PreRenderStoreSync'
@@ -15,14 +13,14 @@ const FLOATING_MENU_TAG = 'ic-floating-menu'
 export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
   protected declare readonly resources: CoreResources
 
-  private readonly currentQueries = new Map<new () => BaseComponent, Query>()
-
-  private readonly changedQueries = new Map<new () => BaseComponent, Query>()
-
   private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
 
   private readonly selectedBlocks = this.query(
     (q) => q.addedChangedOrRemoved.current.with(comps.Selected, comps.Aabb).with(comps.Block).trackWrites,
+  )
+
+  private readonly selectedTextBlocks = this.query(
+    (q) => q.addedChangedOrRemoved.current.with(comps.Selected, comps.Block).and.with(comps.Text).trackWrites,
   )
 
   private readonly editedBlocks = this.query((q) => q.current.with(comps.Edited))
@@ -33,19 +31,7 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
 
   public constructor() {
     super()
-
     this.schedule((s) => s.inAnyOrderWith(PreRenderStoreSync))
-
-    const Components = ComponentRegistry.instance.components
-    for (const Comp of Components) {
-      const current = this.query((q) =>
-        q.current.with(comps.Block, Comp).orderBy((e) => uuidToNumber(e.read(comps.Block).id)),
-      )
-      this.currentQueries.set(Comp, current)
-
-      const changedQuery = this.query((q) => q.changed.with(comps.Block, comps.Selected).and.with(Comp).trackWrites)
-      this.changedQueries.set(Comp, changedQuery)
-    }
   }
 
   public initialize(): void {
@@ -65,31 +51,41 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
       this.createUpdateOrRemoveFloatingMenu()
     }
 
-    // if (this.selectedBlocks.current.length > 0) {
-    //   const blocks = new Map<string, string>()
-
-    //   for (const Comp of this.changedQueries.keys()) {
-    //     const query = this.changedQueries.get(Comp)!
-    //     if (query.changed.length === 0) continue
-
-    //     for (const entity of query.changed) {
-    //       const block = entity.read(comps.Block)
-    //       blocks.set(block.id, block.tag)
-    //     }
-    //   }
-
-    //   if (blocks.size > 0) {
-    //     const icFloatingMenu = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
-    //     if (icFloatingMenu) {
-    //       for (const [id, tag] of blocks) {
-    //         this.updateSnapshotAttribute(icFloatingMenu, id, tag)
-    //       }
-    //     }
-    //   }
+    // if (this.selectedTextBlocks.addedChangedOrRemoved.length > 0) {
+    //   this.syncTextEditor()
     // }
 
     this.executeCommands()
   }
+
+  // // TODO refactor this so it's not handled here
+  // private syncTextEditor(): void {
+  //   if (this.selectedTextBlocks.current.length === 0) {
+  //     return
+  //   }
+
+  //   const isBold = this.selectedTextBlocks.current.every((entity) => {
+  //     const text = entity.read(comps.Text)
+  //     return isEntirelyBold(text.content)
+  //   })
+
+  //   const isItalic = this.selectedTextBlocks.current.every((entity) => {
+  //     const text = entity.read(comps.Text)
+  //     return isEntirelyItalic(text.content)
+  //   })
+
+  //   const isUnderline = this.selectedTextBlocks.current.every((entity) => {
+  //     const text = entity.read(comps.Text)
+  //     return isEntirelyUnderlined(text.content)
+  //   })
+
+  //   // Update text editor state
+  //   if (InfiniteCanvas.instance?.store.textEditor) {
+  //     InfiniteCanvas.instance.store.textEditor.bold.value = isBold
+  //     InfiniteCanvas.instance.store.textEditor.italic.value = isItalic
+  //     InfiniteCanvas.instance.store.textEditor.underline.value = isUnderline
+  //   }
+  // }
 
   createUpdateOrRemoveFloatingMenu(): void {
     const mySelectedBlocks = this.selectedBlocks.current.filter(
@@ -132,44 +128,6 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
       }
     }
 
-    // const block = mySelectedBlocks[0].read(comps.Block)
-    // const blockDefs = new Set<BlockDef>()
-    // for (const blockEntity of mySelectedBlocks) {
-    //   const block = blockEntity.read(comps.Block)
-    //   const blockDef = this.getBlockDef(block.tag)
-    //   if (blockDef) {
-    //     blockDefs.add(blockDef)
-    //   }
-    // }
-
-    // const buttons = []
-    // for (const blockDef of blockDefs) {
-    //   buttons.push(...blockDef.floatingMenu)
-    // }
-
-    // for (const component of blockDef?.components ?? []) {
-    //   const floatingMenu = this.resources.floatingMenus[component.name]
-    //   if (floatingMenu) {
-    //     buttons.push(...floatingMenu.buttons)
-    //   }
-    // }
-
-    // let tag = 'group'
-    // let blockId = ''
-    // let singularSelectedEntity: Entity | undefined = undefined
-    // if (mySelectedBlocks.length === 1) {
-    //   const block = mySelectedBlocks[0].read(comps.Block)
-    //   tag = block.tag
-    //   blockId = block.id
-    //   singularSelectedEntity = mySelectedBlocks[0]
-    // }
-
-    // const blockDef = this.getBlockDef(tag)
-    // let buttons = blockDef?.floatingMenu ?? []
-    // if (singularSelectedEntity?.has(comps.Edited)) {
-    //   buttons = blockDef?.editedFloatingMenu ?? []
-    // }
-
     let element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
     if (!element) {
       element = document.createElement(FLOATING_MENU_TAG)
@@ -178,16 +136,6 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
     }
 
     element.buttons = buttons
-    // element.blockId = block.id
-
-    const ids = mySelectedBlocks.map((e) => e.read(comps.Block).id)
-    const snapshot = this.resources.history.getEntities(ids)
-
-    console.log(snapshot)
-
-    element.snapshot = snapshot
-
-    // this.updateSnapshotAttribute(element, snapshot)
 
     const width = element.buttons.reduce((acc, button) => acc + button.width, 0)
     const height = 40
@@ -199,24 +147,6 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
 
     this.updateMenuPosition(element)
   }
-
-  // private updateSnapshotAttribute(element: ICFloatingMenu, blockId: string, tag: string): void {
-  //   const blockDef = this.getBlockDef(tag)
-  //   if (!blockDef) return
-
-  //   const snapshotBuilder = new SnapshotBuilder()
-  //   for (const Comp of blockDef.components) {
-  //     const entities = this.currentQueries.get(Comp)?.current
-  //     if (!entities) continue
-
-  //     const entity = binarySearchForId(comps.Block, blockId, entities)
-  //     if (!entity) continue
-
-  //     snapshotBuilder.putComponent(blockId, Comp.name, entity.read(Comp).toJson())
-  //   }
-
-  //   element.snapshot = snapshotBuilder.snapshot
-  // }
 
   private removeFloatingMenu(): void {
     const element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)
@@ -252,7 +182,7 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
       const hidden =
         this.camera.zoom * (extents.right - this.camera.left) < 0 ||
         this.camera.zoom * (extents.left - this.camera.left) > screenWidth
-      this.updateFloatingMenuVisibility(element, !hidden)
+      this.updateFloatingMenuVisibility(element, !hidden, false)
     }
   }
 
@@ -278,9 +208,11 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
     }
   }
 
-  private updateFloatingMenuVisibility(element: ICFloatingMenu, isVisible: boolean): void {
+  private updateFloatingMenuVisibility(element: ICFloatingMenu, isVisible: boolean, withAnimation = true): void {
     element.style.opacity = isVisible ? '1' : '0'
     element.style.pointerEvents = isVisible ? 'auto' : 'none'
+
+    if (!withAnimation) return
 
     // restart animation
     const container = element.shadowRoot?.querySelector('.container')

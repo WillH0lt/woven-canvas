@@ -20,15 +20,16 @@ export class ICTextBoldButton extends SignalWatcher(ICMenuIconButton) {
 `
 
   protected onClick(): void {
-    InfiniteCanvas.instance?.commands.textEditor.toggleBold()
+    InfiniteCanvas.instance?.commands.textEditor.setBold(!this.active)
   }
 
   public firstUpdated(): void {
     const isActive = InfiniteCanvas.instance?.store.textEditor.bold as ReadonlySignal<boolean>
 
-    isActive.subscribe(this.setButtonActive.bind(this))
-
-    this.setButtonActive(isActive.value)
+    isActive.subscribe(() => {
+      this.active = isActive.value
+      this.requestUpdate()
+    })
   }
 }
 
