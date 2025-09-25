@@ -10,7 +10,9 @@ import {} from './constants'
 import {
   alignSelected,
   boldSelected,
+  colorSelected,
   getSelectionAlignment,
+  getSelectionColor,
   isSelectionBold,
   isSelectionItalic,
   isSelectionUnderlined,
@@ -55,7 +57,8 @@ declare module '@infinitecanvas/core' {
       underline: ReadonlySignal<boolean>
       cursorAlignment: Signal<TextAlign>
       alignment: ReadonlySignal<TextAlign>
-      color: Signal<string>
+      cursorColor: Signal<string>
+      color: ReadonlySignal<string>
     }
   }
 }
@@ -195,9 +198,19 @@ export class TextEditorExtension extends BaseExtension {
           // update the transform box in case the size of the text block changed
           send(CoreCommand.UpdateTransformBox)
         },
-        setColor: (color: string) => {
+        setColor: async (color: string) => {
           const element = this.#getEditableTextElement()
-          element?.setColor(color)
+          if (element) {
+            element.setColor(color)
+            return
+          }
+
+          if (!this.blockContainer) return
+
+          const snapshot = await colorSelected(this.state, this.blockContainer, color)
+          send(CoreCommand.UpdateFromSnapshot, snapshot)
+          // update the transform box in case the size of the text block changed
+          send(CoreCommand.UpdateTransformBox)
         },
         setText: (blockId: string, text: Partial<TextData>) => {
           send(CoreCommand.UpdateFromSnapshot, {
@@ -247,7 +260,14 @@ export class TextEditorExtension extends BaseExtension {
           return alignment ?? TextAlign.Left
         }),
 
-        color: signal('#000000'),
+        cursorColor: signal('#000000'),
+        color: computed(() => {
+          if (this.#isEditingTextComputed().value) {
+            return InfiniteCanvas.instance!.store.textEditor.cursorColor.value
+          }
+          const color = getSelectionColor(state)
+          return color ?? '#000000'
+        }),
       },
     }
   }

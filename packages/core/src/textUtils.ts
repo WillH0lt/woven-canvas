@@ -4,13 +4,14 @@ import { Selected, Text as TextComp } from './components'
 import { TextAlign } from './types'
 import type { ICText } from './webComponents/blocks'
 
-type FormatType = 'bold' | 'italic' | 'underline' | 'align'
+type FormatType = 'bold' | 'italic' | 'underline' | 'align' | 'color'
 
 const FORMAT_TAG_MAP = {
   bold: 'STRONG',
   italic: 'EM',
   underline: 'U',
-  align: 'P', // Text alignment uses <p> tags with style attributes
+  align: 'P',
+  color: 'SPAN',
 } as const
 
 // Reusable DOM parser for efficiency
@@ -63,7 +64,7 @@ export async function alignSelected(
   blockContainer: HTMLElement,
   alignment: TextAlign,
 ): Promise<Snapshot> {
-  return formatSelectedCSS(state, blockContainer, `text-align: ${alignment}`)
+  return formatSelectedCSS(state, blockContainer, 'align', `text-align: ${alignment}`)
 }
 
 export function getSelectionAlignment(state: State): TextAlign | null {
@@ -87,6 +88,34 @@ export function getSelectionAlignment(state: State): TextAlign | null {
   }
 
   return firstAlignment || TextAlign.Left // Default to left if no alignment found
+}
+
+export function colorSelected(state: State, blockContainer: HTMLElement, color: string): Promise<Snapshot> {
+  return formatSelectedCSS(state, blockContainer, 'color', `color: ${color}`)
+}
+
+export function getSelectionColor(state: State): string | null {
+  const selectedIdsMap = state.getComponents(Selected).value
+  const ids = Object.keys(selectedIdsMap)
+  if (ids.length === 0) return null
+
+  let firstColor: string | null = null
+
+  for (const id of ids) {
+    const text = state.getComponent(TextComp, id).value
+    if (!text) continue
+
+    const color = getCSSPropertyValue(text.content, 'color')
+    if (!color) continue
+
+    if (firstColor === null) {
+      firstColor = color
+    } else if (firstColor.toLowerCase() !== color.toLowerCase()) {
+      return null // Different colors across selection
+    }
+  }
+
+  return firstColor
 }
 
 /**
@@ -161,7 +190,12 @@ async function formatSelected(
   return snapshot
 }
 
-async function formatSelectedCSS(state: State, blockContainer: HTMLElement, cssStyle: string): Promise<Snapshot> {
+async function formatSelectedCSS(
+  state: State,
+  blockContainer: HTMLElement,
+  formatType: FormatType,
+  cssStyle: string,
+): Promise<Snapshot> {
   const selectedIdsMap = state.getComponents(Selected).value
   const ids = Object.keys(selectedIdsMap)
 
@@ -174,7 +208,7 @@ async function formatSelectedCSS(state: State, blockContainer: HTMLElement, cssS
     const element = blockContainer.querySelector(`[id="${id}"]`) as ICText
     if (!element) continue
 
-    const content = applyCSSFormatting(text.content, cssStyle)
+    const content = applyCSSFormatting(text.content, formatType, cssStyle)
 
     element.text = new TextComp({
       ...element.text,
@@ -301,7 +335,7 @@ function isEntirelyFormatted(htmlContent: string, formatType: FormatType, cssSty
 function addFormatting(htmlContent: string, formatType: FormatType, cssStyle?: string): string {
   // If CSS style is provided, apply CSS-based formatting
   if (cssStyle) {
-    return applyCSSFormatting(htmlContent, cssStyle)
+    return applyCSSFormatting(htmlContent, formatType, cssStyle)
   }
 
   // Tag-based formatting (existing logic)
@@ -354,7 +388,7 @@ function removeFormatting(htmlContent: string, formatType: FormatType, cssStyle?
 /**
  * Applies CSS-based formatting to HTML content
  */
-function applyCSSFormatting(htmlContent: string, cssStyle: string): string {
+function applyCSSFormatting(htmlContent: string, formatType: FormatType, cssStyle: string): string {
   const tempDiv = getTempDiv()
   tempDiv.innerHTML = htmlContent.trim()
 
@@ -364,21 +398,35 @@ function applyCSSFormatting(htmlContent: string, cssStyle: string): string {
   const cleanedContent = removeCSSFormatting(htmlContent, cssStyle)
   tempDiv.innerHTML = cleanedContent
 
-  // Check if content is already wrapped in a <p> tag
-  let pElement = tempDiv.querySelector('p') as HTMLParagraphElement
+  // Get the appropriate tag name for the format type
+  const tagName = FORMAT_TAG_MAP[formatType]
+  const elementTagName = tagName.toLowerCase()
 
-  if (!pElement) {
-    // If no <p> tag exists, wrap the entire content in one
-    const newP = document.createElement('p')
-    while (tempDiv.firstChild) {
-      newP.appendChild(tempDiv.firstChild)
-    }
-    tempDiv.appendChild(newP)
-    pElement = newP
+  // Always create a new wrapper element to ensure all content gets the formatting
+  const wrapperElement = document.createElement(elementTagName)
+
+  // Move all content into the wrapper
+  while (tempDiv.firstChild) {
+    wrapperElement.appendChild(tempDiv.firstChild)
   }
 
-  // Apply the CSS style
-  pElement.style.setProperty(property, value)
+  // Remove any conflicting styles from nested elements to prevent style conflicts
+  const nestedElementsWithSameProperty = wrapperElement.querySelectorAll(`*[style*="${property}"]`)
+  for (const element of Array.from(nestedElementsWithSameProperty)) {
+    const htmlElement = element as HTMLElement
+    htmlElement.style.removeProperty(property)
+
+    // If no other styles exist, remove the style attribute entirely
+    if (!htmlElement.getAttribute('style') || htmlElement.getAttribute('style')?.trim() === '') {
+      htmlElement.removeAttribute('style')
+    }
+  }
+
+  // Apply the CSS style to the wrapper
+  wrapperElement.style.setProperty(property, value)
+
+  // Add the wrapper back to the container
+  tempDiv.appendChild(wrapperElement)
 
   return tempDiv.innerHTML
 }
@@ -392,15 +440,23 @@ function removeCSSFormatting(htmlContent: string, cssStyle: string): string {
 
   const [property] = cssStyle.split(':').map((s) => s.trim())
 
-  // Find all elements with this CSS property and remove it
-  const elementsWithStyle = tempDiv.querySelectorAll(`*[style*="${property}"]`)
+  // Find all elements that have any inline styles and check each one
+  const elementsWithStyle = tempDiv.querySelectorAll('*[style]')
   for (const element of Array.from(elementsWithStyle)) {
     const htmlElement = element as HTMLElement
-    htmlElement.style.removeProperty(property)
 
-    // If no other styles exist, remove the style attribute entirely
-    if (!htmlElement.getAttribute('style') || htmlElement.getAttribute('style')?.trim() === '') {
-      htmlElement.removeAttribute('style')
+    // Check if this element has the property we want to remove
+    if (htmlElement.style.getPropertyValue(property)) {
+      htmlElement.style.removeProperty(property)
+
+      // If no other styles exist, remove the element
+      if (!htmlElement.getAttribute('style') || htmlElement.getAttribute('style')?.trim() === '') {
+        const parent = htmlElement.parentNode
+        while (htmlElement.firstChild) {
+          parent?.insertBefore(htmlElement.firstChild, htmlElement)
+        }
+        parent?.removeChild(htmlElement)
+      }
     }
   }
 

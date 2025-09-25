@@ -443,6 +443,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     const block = entity.write(comps.Block)
     block.left = pointer.worldPosition[0] - block.width / 2
     block.top = pointer.worldPosition[1] - block.height / 2
+    block.rank = this.rankBounds.genNext().toString()
 
     // update selection state to dragging
     selectionState.state = SelectionState.Dragging
@@ -496,6 +497,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
         return LexoRank.parse(block.rank)
       }
     }
+
     return this.rankBounds.genPrev()
   }
 }

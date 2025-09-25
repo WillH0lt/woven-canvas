@@ -9,7 +9,10 @@ export class RankBounds {
 
   public genNext(): LexoRank {
     if (LexoRank.parse(this.minRank).compareTo(LexoRank.max()) === 0) {
-      return LexoRank.middle()
+      const middle = LexoRank.middle()
+      this.minRank = middle.toString()
+      this.maxRank = middle.toString()
+      return middle
     }
 
     const next = LexoRank.parse(this.maxRank).genNext()
@@ -20,7 +23,10 @@ export class RankBounds {
 
   public genPrev(): LexoRank {
     if (LexoRank.parse(this.maxRank).compareTo(LexoRank.min()) === 0) {
-      return LexoRank.middle()
+      const middle = LexoRank.middle()
+      this.minRank = middle.toString()
+      this.maxRank = middle.toString()
+      return middle
     }
 
     const prev = LexoRank.parse(this.minRank).genPrev()

@@ -6,7 +6,7 @@ import {
   floatingMenuStandardButtons,
   textEditorFloatingMenuButtons,
 } from '@infinitecanvas/core'
-import { Application, Container } from 'pixi.js'
+import { Application, Assets, Container } from 'pixi.js'
 
 import { Shape } from './components'
 import * as sys from './systems'
@@ -50,15 +50,16 @@ class AsciiExtensionClass extends BaseExtension {
     app.renderer.canvas.style.width = '100%'
     app.renderer.canvas.style.height = '100%'
     app.renderer.canvas.style.pointerEvents = 'none'
+    app.renderer.canvas.style.userSelect = 'none'
 
     const viewport = new Container()
     app.stage.addChild(viewport)
 
+    // append after background-canvas
     resources.domElement.prepend(app.renderer.canvas)
 
-    // await Assets.load('./Figtree.fnt')
-
-    // await Assets.addBundle('fonts', [{ alias: 'Figtree', src: './Figtree.ttf' }])
+    await Assets.load('CourierPrimeSans.fnt')
+    // await Assets.addBundle('fonts', [{ alias: 'Courier Prime Sans', src: './Courier Prime Sans.ttf' }])
 
     const asciiResources = { ...resources, app, viewport }
 

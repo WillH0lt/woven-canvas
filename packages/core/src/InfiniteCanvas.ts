@@ -125,6 +125,7 @@ export class InfiniteCanvas {
     backgroundCanvas.style.height = '100%'
     backgroundCanvas.style.pointerEvents = 'none'
     backgroundCanvas.style.userSelect = 'none'
+    backgroundCanvas.style.zIndex = '-1'
 
     domElement.appendChild(backgroundCanvas)
 

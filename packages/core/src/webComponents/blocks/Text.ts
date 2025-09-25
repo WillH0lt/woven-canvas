@@ -315,7 +315,7 @@ export class ICText extends ICEditableBlock {
     const store = InfiniteCanvas.instance?.store.textEditor
     if (!store) return
 
-    store.color.value = editor.getAttributes('textStyle').color ?? '#000000'
+    store.cursorColor.value = editor.getAttributes('textStyle').color ?? '#000000'
 
     store.cursorBold.value = editor.isActive('bold')
     store.cursorItalic.value = editor.isActive('italic')

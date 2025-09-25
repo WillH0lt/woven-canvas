@@ -37,13 +37,6 @@ export const floatingMenuStandardButtons = [
   floatingMenuButtonDelete,
 ]
 
-export const textColorButton = {
-  tag: 'ic-text-color-button',
-  width: 56,
-  tooltip: 'Color',
-  menu: 'ic-text-color-menu',
-}
-
 export const boldButton = {
   tag: 'ic-text-bold-button',
   tooltip: 'Bold',
@@ -59,6 +52,12 @@ export const underlineButton = {
   tooltip: 'Underline',
 }
 
+export const textColorButton = {
+  tag: 'ic-text-color-button',
+  tooltip: 'Text Color',
+  menu: 'ic-text-color-menu',
+}
+
 export const alignmentButton = {
   tag: 'ic-text-alignment-button',
   tooltip: 'Alignment',
@@ -70,11 +69,10 @@ export const floatingMenuButtonVerticalAlign = {
 }
 
 export const textEditorFloatingMenuButtons = [
-  textColorButton,
-  floatingMenuDivider,
   boldButton,
   italicButton,
   underlineButton,
+  textColorButton,
   floatingMenuDivider,
   alignmentButton,
 ]
