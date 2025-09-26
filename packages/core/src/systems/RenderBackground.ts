@@ -122,7 +122,6 @@ export class RenderBackground extends BaseSystem {
       this.backgrounds.changed.length > 0 ||
       this.screens.changed.length > 0
     ) {
-      console.log('render')
       this.renderBackground()
     }
   }

@@ -1,5 +1,5 @@
 import { type ICText, type Snapshot, TextAlign, VerticalAlign } from '@infinitecanvas/core'
-import { Color, type Text } from '@infinitecanvas/core/components'
+import { Color, type Text, type VerticalAlign as VerticalAlignComp } from '@infinitecanvas/core/components'
 import { ICEditableBlock } from '@infinitecanvas/core/elements'
 import { type PropertyValues, css, html, nothing, svg } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
@@ -49,6 +49,9 @@ export class ICRoughShape extends ICEditableBlock {
 
   @property({ type: Object })
   public text!: Text
+
+  @property({ type: Object })
+  public verticalAlign!: VerticalAlignComp
 
   @property({ type: Object })
   public roughShape!: RoughShape
@@ -117,7 +120,7 @@ export class ICRoughShape extends ICEditableBlock {
         [VerticalAlign.Top]: 'flex-start',
         [VerticalAlign.Center]: 'center',
         [VerticalAlign.Bottom]: 'flex-end',
-      }[this.text.verticalAlign] || 'flex-start'
+      }[this.verticalAlign.value] || 'flex-start'
 
     return html`
       <div id="container" style=${styleMap({

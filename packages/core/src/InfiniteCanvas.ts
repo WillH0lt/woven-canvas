@@ -14,7 +14,7 @@ import {
   BlockDef,
   EmitterEventKind,
   type EmitterEvents,
-  type FloatingMenuDef,
+  FloatingMenuDef,
   type ICommands,
   type IStore,
   Options,
@@ -142,7 +142,7 @@ export class InfiniteCanvas {
 
     const emitter = new Emitter<EmitterEvents>()
     const state = new State()
-    extensions.unshift(new TextEditorExtension(state))
+    extensions.unshift(new TextEditorExtension())
     extensions.unshift(new CoreExtension(emitter, state, options))
 
     // Register block definitions from extensions and options
@@ -167,7 +167,7 @@ export class InfiniteCanvas {
     const floatingMenus: Record<string, FloatingMenuDef> = {}
     for (const ext of extensions) {
       for (const floatingMenu of ext.floatingMenus) {
-        floatingMenus[floatingMenu.component.name] = floatingMenu
+        floatingMenus[floatingMenu.component.name] = FloatingMenuDef.parse(floatingMenu)
       }
     }
 
@@ -293,7 +293,7 @@ export class InfiniteCanvas {
     this.commands = extensions.reduce((commands, ext) => {
       if (!ext.addCommands) return commands
 
-      const extCommands = ext.addCommands(send)
+      const extCommands = ext.addCommands(this.state, send)
       if (!extCommands) return commands
 
       for (const key of Object.keys(extCommands)) {

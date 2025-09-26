@@ -37,6 +37,13 @@ export const floatingMenuStandardButtons = [
   floatingMenuButtonDelete,
 ]
 
+export const fontSizeButton = {
+  tag: 'ic-font-size-button',
+  width: 75,
+  tooltip: 'Font Size',
+  menu: 'ic-font-size-menu',
+}
+
 export const boldButton = {
   tag: 'ic-text-bold-button',
   tooltip: 'Bold',
@@ -64,15 +71,15 @@ export const alignmentButton = {
 }
 
 export const floatingMenuButtonVerticalAlign = {
-  tag: 'ic-text-vertical-alignment-button',
+  tag: 'ic-vertical-alignment-button',
   tooltip: 'Vertical Alignment',
 }
 
 export const textEditorFloatingMenuButtons = [
+  fontSizeButton,
   boldButton,
   italicButton,
   underlineButton,
   textColorButton,
-  floatingMenuDivider,
   alignmentButton,
 ]

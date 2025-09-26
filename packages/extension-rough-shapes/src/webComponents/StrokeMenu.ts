@@ -1,7 +1,7 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { Color } from '@infinitecanvas/core/components'
-import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
-import { type HTMLTemplateResult, LitElement, html } from 'lit'
+import { SignalWatcher } from '@lit-labs/preact-signals'
+import { type HTMLTemplateResult, LitElement, html, nothing } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 
 import type { RoughShape } from '../components'
@@ -15,43 +15,36 @@ const strokeStyles = {
   [ShapeStrokeKind.None]: none,
 }
 
+function getStrokeHex(roughShape: RoughShape): string {
+  return new Color({
+    red: roughShape.strokeRed,
+    green: roughShape.strokeGreen,
+    blue: roughShape.strokeBlue,
+    alpha: roughShape.strokeAlpha,
+  }).toHex()
+}
+
 @customElement('ic-rough-shape-stroke-menu')
 export class ICStrokeMenu extends SignalWatcher(LitElement) {
   @state()
   private pickerVisible = false
 
-  private roughShape!: ReadonlySignal<RoughShape | undefined>
-  private get strokeColor(): string {
-    if (!this.roughShape.value) {
-      return '#000000'
-    }
-
-    const value = this.roughShape.value
-    return new Color()
-      .fromJson({
-        red: value.strokeRed,
-        green: value.strokeGreen,
-        blue: value.strokeBlue,
-        alpha: value.strokeAlpha,
-      })
-      .toHex()
-  }
-
-  public connectedCallback(): void {
-    super.connectedCallback()
-    this.roughShape = InfiniteCanvas.instance!.store.roughShapes.roughShapeById(this.blockId)
-  }
-
   render() {
+    const roughShapes = InfiniteCanvas.instance?.store.roughShapes.selectedRoughShapes.value
+    if (!roughShapes?.length) return nothing
+    const roughShape = roughShapes[0]
+
     return html`
       <ic-menu-container>
-        ${this.pickerVisible ? this.colorPicker() : this.strokeMenu()}      
+        ${this.pickerVisible ? this.colorPicker(roughShape) : this.strokeMenu(roughShape)}
       </ic-menu-container>
     `
   }
 
-  private strokeMenu(): HTMLTemplateResult {
+  private strokeMenu(roughShape: RoughShape): HTMLTemplateResult {
     const strokeKinds = Object.values(ShapeStrokeKind)
+
+    const color = getStrokeHex(roughShape)
 
     return html`
       <ic-label>Stroke Style</ic-label>
@@ -60,7 +53,7 @@ export class ICStrokeMenu extends SignalWatcher(LitElement) {
           icon: strokeStyles[kind],
           value: kind,
         }))}
-        .value=${this.roughShape.value?.strokeKind}
+        .value=${roughShape.strokeKind}
         @change=${(e: CustomEvent<string>) => {
           this.applyUpdate({ strokeKind: e.detail as ShapeStrokeKind })
         }}
@@ -68,7 +61,7 @@ export class ICStrokeMenu extends SignalWatcher(LitElement) {
 
       <ic-label>Stroke Width</ic-label>
       <ic-slider
-        .value=${this.roughShape.value?.strokeWidth}
+        .value=${roughShape.strokeWidth}
         min="1"
         max="20"
         @change=${(e: CustomEvent<number>) => {
@@ -79,7 +72,7 @@ export class ICStrokeMenu extends SignalWatcher(LitElement) {
       ></ic-slider>
       <ic-label>Sloppiness</ic-label>
       <ic-slider
-        .value=${this.roughShape.value?.roughness}
+        .value=${roughShape.roughness}
         min="0"
         max="10"
         @change=${(e: CustomEvent<number>) => {
@@ -93,7 +86,7 @@ export class ICStrokeMenu extends SignalWatcher(LitElement) {
 
       <ic-color-bubbles
         withPicker="true"
-        .currentColor=${this.strokeColor}
+        .currentColor=${color}
         @change=${(e: CustomEvent<string>) => {
           const color = new Color().fromHex(e.detail)
 
@@ -111,10 +104,12 @@ export class ICStrokeMenu extends SignalWatcher(LitElement) {
     `
   }
 
-  private colorPicker(): HTMLTemplateResult {
+  private colorPicker(roughShape: RoughShape): HTMLTemplateResult {
+    const hex = getStrokeHex(roughShape)
+
     return html`
       <ic-color-picker
-        value=${this.strokeColor}
+        value=${hex}
         @change=${(e: CustomEvent<string>) => {
           const color = new Color().fromHex(e.detail)
           this.applyUpdate({
@@ -128,8 +123,8 @@ export class ICStrokeMenu extends SignalWatcher(LitElement) {
     `
   }
 
-  private applyUpdate(updates: Partial<RoughShape>): void {
-    InfiniteCanvas.instance!.commands.roughShapes.setRoughShape(this.blockId, updates)
+  private applyUpdate(roughShape: Partial<RoughShape>): void {
+    InfiniteCanvas.instance!.commands.roughShapes.applyRoughShapeToSelection(roughShape)
   }
 }
 

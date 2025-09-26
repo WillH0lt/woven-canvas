@@ -1,5 +1,5 @@
 import { type ICText, type Snapshot, TextAlign, VerticalAlign } from '@infinitecanvas/core'
-import type { Color, Text } from '@infinitecanvas/core/components'
+import type { Color, Text, VerticalAlign as VerticalAlignComp } from '@infinitecanvas/core/components'
 import { ICEditableBlock } from '@infinitecanvas/core/elements'
 
 import { css, html } from 'lit'
@@ -16,6 +16,9 @@ export class ICStickyNote extends ICEditableBlock {
 
   @property({ type: Object })
   public color!: Color
+
+  @property({ type: Object })
+  public verticalAlign!: VerticalAlignComp
 
   static styles = [
     ...super.styles,
@@ -40,7 +43,7 @@ export class ICStickyNote extends ICEditableBlock {
         [VerticalAlign.Top]: 'flex-start',
         [VerticalAlign.Center]: 'center',
         [VerticalAlign.Bottom]: 'flex-end',
-      }[this.text.verticalAlign] || 'flex-start'
+      }[this.verticalAlign.value] || 'flex-start'
 
     return html`
       <div id="container" style=${styleMap({

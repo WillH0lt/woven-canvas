@@ -34,6 +34,7 @@ export { Text } from './Text'
 export { FloatingMenuState } from './FloatingMenuState'
 export { Grid } from './Grid'
 export { Background } from './Background'
+export { VerticalAlign } from './VerticalAlign'
 
 import { Aabb } from './Aabb'
 import { Block } from './Block'

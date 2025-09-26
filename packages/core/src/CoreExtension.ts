@@ -8,9 +8,20 @@ import { ComponentRegistry } from './ComponentRegistry'
 import type { Snapshot } from './History'
 import { LocalDB } from './LocalDB'
 import type { State } from './State'
-import { floatingMenuButtonColor } from './buttonCatalog'
+import { floatingMenuButtonColor, floatingMenuButtonVerticalAlign } from './buttonCatalog'
 import { CoreCommand, type CoreCommandArgs } from './commands'
-import { Block, Color, Connector, Controls, Edited, Hovered, Persistent, Selected, Text } from './components'
+import {
+  Block,
+  Color,
+  Connector,
+  Controls,
+  Edited,
+  Hovered,
+  Persistent,
+  Selected,
+  Text,
+  VerticalAlign,
+} from './components'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
@@ -21,7 +32,6 @@ import {
   type CoreOptionsInput,
   type CoreResources,
   type EmitterEvents,
-  FloatingMenuButton,
   type ICommands,
   type IStore,
   type SendCommandFn,
@@ -30,7 +40,6 @@ import {
 
 type BlockData = Pick<Block, SerializablePropNames<Block>>
 type ColorData = Pick<Color, SerializablePropNames<Color>>
-type TextData = Pick<Text, SerializablePropNames<Text>>
 type ControlsData = Pick<Controls, SerializablePropNames<Controls>>
 
 declare module '@infinitecanvas/core' {
@@ -51,6 +60,7 @@ declare module '@infinitecanvas/core' {
       setControls: (controls: Partial<ControlsData>) => void
       setColor: (blockId: string, color: Partial<ColorData>) => void
       applyColorToSelected: (color: ColorData) => void
+      applyVerticalAlignToSelected: (verticalAlign: VerticalAlign) => void
       createAndDragOntoCanvas: (snapshot: Snapshot) => void
     }
   }
@@ -64,6 +74,7 @@ declare module '@infinitecanvas/core' {
       blockById: (id: string) => ReadonlySignal<Block | undefined>
       colorById: (id: string) => ReadonlySignal<Color | undefined>
       textById: (id: string) => ReadonlySignal<Text | undefined>
+      verticalAlignById: (id: string) => ReadonlySignal<VerticalAlign | undefined>
       controls: ReadonlySignal<Controls | undefined>
     }
   }
@@ -73,7 +84,13 @@ export class CoreExtension extends BaseExtension {
   public readonly floatingMenus = [
     {
       component: Color,
-      buttons: [FloatingMenuButton.parse(floatingMenuButtonColor)],
+      buttons: [floatingMenuButtonColor],
+      orderIndex: 10,
+    },
+    {
+      component: VerticalAlign,
+      buttons: [floatingMenuButtonVerticalAlign],
+      orderIndex: 100,
     },
   ]
 
@@ -113,6 +130,7 @@ export class CoreExtension extends BaseExtension {
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Block)
     ComponentRegistry.instance.registerComponent(Color)
+    ComponentRegistry.instance.registerComponent(VerticalAlign)
     ComponentRegistry.instance.registerComponent(Edited)
     ComponentRegistry.instance.registerComponent(Selected)
     ComponentRegistry.instance.registerComponent(Hovered)
@@ -203,7 +221,7 @@ export class CoreExtension extends BaseExtension {
     this.initialEntities = {}
   }
 
-  public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
+  public addCommands = (state: State, send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       core: {
         moveCamera: (x: number, y: number) => send(CoreCommand.MoveCamera, { x, y }),
@@ -236,13 +254,25 @@ export class CoreExtension extends BaseExtension {
           })
         },
         applyColorToSelected: (color: ColorData) => {
-          const selectedIds = this.state.getComponents(Selected).value
+          const selectedIds = state.getComponents(Selected).value
           if (Object.keys(selectedIds).length === 0) return
 
           const snapshot: Snapshot = {}
           for (const id of Object.keys(selectedIds)) {
             snapshot[id] = {
               Color: color,
+            }
+          }
+          send(CoreCommand.UpdateFromSnapshot, snapshot)
+        },
+        applyVerticalAlignToSelected: (verticalAlign: VerticalAlign) => {
+          const selectedIds = state.getComponents(Selected).value
+          if (Object.keys(selectedIds).length === 0) return
+
+          const snapshot: Snapshot = {}
+          for (const id of Object.keys(selectedIds)) {
+            snapshot[id] = {
+              VerticalAlign: verticalAlign.toJson(),
             }
           }
           send(CoreCommand.UpdateFromSnapshot, snapshot)
@@ -272,6 +302,8 @@ export class CoreExtension extends BaseExtension {
           computed(() => state.getComponent<Block>(Block, id).value),
         colorById: (id: string): ReadonlySignal<Color | undefined> =>
           computed(() => state.getComponent<Color>(Color, id).value),
+        verticalAlignById: (id: string): ReadonlySignal<VerticalAlign | undefined> =>
+          computed(() => state.getComponent<VerticalAlign>(VerticalAlign, id).value),
         controls: computed(() => state.getSingleton(Controls).value),
         textById: (id: string): ReadonlySignal<Text | undefined> =>
           computed(() => state.getComponent<Text>(Text, id).value),

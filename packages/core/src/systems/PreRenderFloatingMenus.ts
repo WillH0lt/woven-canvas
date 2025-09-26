@@ -1,5 +1,6 @@
 import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
+import { floatingMenuDivider } from '../buttonCatalog'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
 import { clamp, computeExtents } from '../helpers'
@@ -23,7 +24,7 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
     (q) => q.addedChangedOrRemoved.current.with(comps.Selected, comps.Block).and.with(comps.Text).trackWrites,
   )
 
-  private readonly editedBlocks = this.query((q) => q.current.with(comps.Edited))
+  private readonly editedBlocks = this.query((q) => q.addedChangedOrRemoved.with(comps.Edited).trackWrites)
 
   private readonly floatingMenuState = this.singleton.read(comps.FloatingMenuState)
 
@@ -47,45 +48,12 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
       }
     }
 
-    if (this.selectedBlocks.addedChangedOrRemoved.length > 0) {
+    if (this.selectedBlocks.addedChangedOrRemoved.length > 0 || this.editedBlocks.addedChangedOrRemoved.length > 0) {
       this.createUpdateOrRemoveFloatingMenu()
     }
 
-    // if (this.selectedTextBlocks.addedChangedOrRemoved.length > 0) {
-    //   this.syncTextEditor()
-    // }
-
     this.executeCommands()
   }
-
-  // // TODO refactor this so it's not handled here
-  // private syncTextEditor(): void {
-  //   if (this.selectedTextBlocks.current.length === 0) {
-  //     return
-  //   }
-
-  //   const isBold = this.selectedTextBlocks.current.every((entity) => {
-  //     const text = entity.read(comps.Text)
-  //     return isEntirelyBold(text.content)
-  //   })
-
-  //   const isItalic = this.selectedTextBlocks.current.every((entity) => {
-  //     const text = entity.read(comps.Text)
-  //     return isEntirelyItalic(text.content)
-  //   })
-
-  //   const isUnderline = this.selectedTextBlocks.current.every((entity) => {
-  //     const text = entity.read(comps.Text)
-  //     return isEntirelyUnderlined(text.content)
-  //   })
-
-  //   // Update text editor state
-  //   if (InfiniteCanvas.instance?.store.textEditor) {
-  //     InfiniteCanvas.instance.store.textEditor.bold.value = isBold
-  //     InfiniteCanvas.instance.store.textEditor.italic.value = isItalic
-  //     InfiniteCanvas.instance.store.textEditor.underline.value = isUnderline
-  //   }
-  // }
 
   createUpdateOrRemoveFloatingMenu(): void {
     const mySelectedBlocks = this.selectedBlocks.current.filter(
@@ -120,12 +88,37 @@ export class PreRenderFloatingMenus extends BaseSystem<CoreCommandArgs> {
       }
     }
 
+    const showTextMenu = mySelectedBlocks.every((entity) => {
+      if (!entity.has(comps.Text)) return false
+      if (entity.has(comps.Edited)) return true
+      const text = entity.read(comps.Text)
+      return text.hasContent()
+    })
+
+    // sort by orderIndex from FloatingMenuDef
+    const sortedComponents = Array.from(commonComponents).sort((a, b) => {
+      const menuA = this.resources.floatingMenus[a.name]
+      const menuB = this.resources.floatingMenus[b.name]
+      const orderA = menuA?.orderIndex ?? 0
+      const orderB = menuB?.orderIndex ?? 0
+      return orderA - orderB
+    })
+
     const buttons: FloatingMenuButton[] = []
-    for (const Comp of commonComponents) {
+    for (const Comp of sortedComponents) {
+      // special case for text menu - only show if all selected blocks have text
+      if (!showTextMenu && (Comp === comps.Text || Comp === comps.VerticalAlign)) continue
+
       const floatingMenu = this.resources.floatingMenus[Comp.name]
-      if (floatingMenu) {
+      if (floatingMenu && floatingMenu.buttons.length > 0) {
         buttons.push(...floatingMenu.buttons)
+        buttons.push(floatingMenuDivider)
       }
+    }
+
+    // remove the last divider
+    if (buttons.length > 0 && buttons[buttons.length - 1] === floatingMenuDivider) {
+      buttons.pop()
     }
 
     let element = this.resources.menuContainer.querySelector(FLOATING_MENU_TAG)

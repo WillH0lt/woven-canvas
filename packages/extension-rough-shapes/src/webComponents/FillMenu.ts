@@ -1,6 +1,6 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
 import { Color } from '@infinitecanvas/core/components'
-import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
+import { SignalWatcher } from '@lit-labs/preact-signals'
 import { type HTMLTemplateResult, LitElement, html, nothing } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 
@@ -15,50 +15,38 @@ const fillStyles = {
   [ShapeFillKind.None]: none,
 }
 
+function getFillHex(roughShape: RoughShape): string {
+  return new Color({
+    red: roughShape.fillRed,
+    green: roughShape.fillGreen,
+    blue: roughShape.fillBlue,
+    alpha: roughShape.fillAlpha,
+  }).toHex()
+}
+
 @customElement('ic-rough-shape-fill-menu')
 export class ICFillMenu extends SignalWatcher(LitElement) {
   @state()
   private pickerVisible = false
 
-  private roughShape!: ReadonlySignal<RoughShape | undefined>
-  private get fillColor(): string {
-    if (!this.roughShape.value) {
-      return '#000000'
-    }
-
-    const value = this.roughShape.value
-
-    return new Color()
-      .fromJson({
-        red: value.fillRed,
-        green: value.fillGreen,
-        blue: value.fillBlue,
-        alpha: value.fillAlpha,
-      })
-      .toHex()
-  }
-
-  private get showHachureOptions(): boolean {
-    const shape = this.roughShape.value
-    if (!shape) return false
-    return [ShapeFillKind.Hachure, ShapeFillKind.CrossHatch].includes(shape.fillKind)
-  }
-
-  public connectedCallback(): void {
-    super.connectedCallback()
-    this.roughShape = InfiniteCanvas.instance!.store.roughShapes.roughShapeById(this.blockId)
-  }
-
   render() {
+    const roughShapes = InfiniteCanvas.instance?.store.roughShapes.selectedRoughShapes.value
+    if (!roughShapes?.length) return nothing
+    const roughShape = roughShapes[0]
+
     return html`
       <ic-menu-container>
-        ${this.pickerVisible ? this.colorPicker() : this.fillMenu()}      
+        ${this.pickerVisible ? this.colorPicker(roughShape) : this.fillMenu(roughShape)}      
       </ic-menu-container>
     `
   }
 
-  private fillMenu(): HTMLTemplateResult {
+  private fillMenu(roughShape: RoughShape): HTMLTemplateResult {
     const fillKinds = Object.values(ShapeFillKind)
+
+    const hex = getFillHex(roughShape)
+
+    const showHachureOptions = [ShapeFillKind.Hachure, ShapeFillKind.CrossHatch].includes(roughShape.fillKind)
 
     return html`
       <ic-label>Fill Style</ic-label>
@@ -67,18 +55,18 @@ export class ICFillMenu extends SignalWatcher(LitElement) {
           icon: fillStyles[kind],
           value: kind,
         }))}
-        .value=${this.roughShape.value?.fillKind}
+        .value=${roughShape.fillKind}
         @change=${(e: CustomEvent<string>) => {
           this.applyUpdate({ fillKind: e.detail as ShapeFillKind })
         }}
       ></ic-radio-buttons>
 
-      ${this.showHachureOptions ? this.hachureOptions() : nothing}
+      ${showHachureOptions ? this.hachureOptions(roughShape.fillWidth, roughShape.hachureGap, roughShape.hachureAngle) : nothing}
       <ic-label>Fill Color</ic-label>
 
       <ic-color-bubbles
         withPicker="true"
-        .currentColor=${this.fillColor}
+        .currentColor=${hex}
         @change=${(e: CustomEvent<string>) => {
           const color = new Color().fromHex(e.detail)
 
@@ -96,11 +84,11 @@ export class ICFillMenu extends SignalWatcher(LitElement) {
     `
   }
 
-  private hachureOptions(): HTMLTemplateResult {
+  private hachureOptions(fillWidth: number, hachureGap: number, hachureAngle: number): HTMLTemplateResult {
     return html`
       <ic-label>Stroke Width</ic-label>
       <ic-slider
-        .value=${this.roughShape.value?.fillWidth}
+        .value=${fillWidth}
         min="1"
         max="20"
         @change=${(e: CustomEvent<number>) => {
@@ -111,7 +99,7 @@ export class ICFillMenu extends SignalWatcher(LitElement) {
       ></ic-slider>
       <ic-label>Hachure Gap</ic-label>
       <ic-slider
-        .value=${this.roughShape.value?.hachureGap}
+        .value=${hachureGap}
         min="5"
         max="60"
         @change=${(e: CustomEvent<number>) => {
@@ -122,7 +110,7 @@ export class ICFillMenu extends SignalWatcher(LitElement) {
       ></ic-slider>
       <ic-label>Hachure Angle</ic-label>
       <ic-slider
-        .value=${this.roughShape.value?.hachureAngle}
+        .value=${hachureAngle}
         min="0"
         max="180"
         @change=${(e: CustomEvent<number>) => {
@@ -134,10 +122,12 @@ export class ICFillMenu extends SignalWatcher(LitElement) {
     `
   }
 
-  private colorPicker(): HTMLTemplateResult {
+  private colorPicker(roughShape: RoughShape): HTMLTemplateResult {
+    const hex = getFillHex(roughShape)
+
     return html`
       <ic-color-picker
-        value=${this.fillColor}
+        value=${hex}
         @change=${(e: CustomEvent<string>) => {
           const color = new Color().fromHex(e.detail)
           this.applyUpdate({
@@ -151,8 +141,8 @@ export class ICFillMenu extends SignalWatcher(LitElement) {
     `
   }
 
-  private applyUpdate(updates: Partial<RoughShape>): void {
-    InfiniteCanvas.instance!.commands.roughShapes.setRoughShape(this.blockId, updates)
+  private applyUpdate(roughShape: Partial<RoughShape>): void {
+    InfiniteCanvas.instance!.commands.roughShapes.applyRoughShapeToSelection(roughShape)
   }
 }
 

@@ -23,43 +23,39 @@ function getTempDiv(): HTMLDivElement {
   return _tempDiv
 }
 
-export async function boldSelected(state: State, blockContainer: HTMLElement): Promise<Snapshot> {
-  return formatSelected(state, blockContainer, 'bold', true)
-}
-
-export async function unboldSelected(state: State, blockContainer: HTMLElement): Promise<Snapshot> {
-  return formatSelected(state, blockContainer, 'bold', false)
+export async function applyBoldToSelected(state: State, blockContainer: HTMLElement, bold: boolean): Promise<Snapshot> {
+  return formatSelected(state, blockContainer, 'bold', bold)
 }
 
 export function isSelectionBold(state: State): boolean {
   return isSelectionFormatted(state, 'bold')
 }
 
-export async function italicizeSelected(state: State, blockContainer: HTMLElement): Promise<Snapshot> {
-  return formatSelected(state, blockContainer, 'italic', true)
-}
-
-export async function unitalicizeSelected(state: State, blockContainer: HTMLElement): Promise<Snapshot> {
-  return formatSelected(state, blockContainer, 'italic', false)
+export async function applyItalicToSelected(
+  state: State,
+  blockContainer: HTMLElement,
+  italic: boolean,
+): Promise<Snapshot> {
+  return formatSelected(state, blockContainer, 'italic', italic)
 }
 
 export function isSelectionItalic(state: State): boolean {
   return isSelectionFormatted(state, 'italic')
 }
 
-export async function underlineSelected(state: State, blockContainer: HTMLElement): Promise<Snapshot> {
-  return formatSelected(state, blockContainer, 'underline', true)
-}
-
-export async function removeUnderlineSelected(state: State, blockContainer: HTMLElement): Promise<Snapshot> {
-  return formatSelected(state, blockContainer, 'underline', false)
+export async function applyUnderlineToSelected(
+  state: State,
+  blockContainer: HTMLElement,
+  underline: boolean,
+): Promise<Snapshot> {
+  return formatSelected(state, blockContainer, 'underline', underline)
 }
 
 export function isSelectionUnderlined(state: State): boolean {
   return isSelectionFormatted(state, 'underline')
 }
 
-export async function alignSelected(
+export async function applyAlignmentToSelected(
   state: State,
   blockContainer: HTMLElement,
   alignment: TextAlign,
@@ -90,7 +86,7 @@ export function getSelectionAlignment(state: State): TextAlign | null {
   return firstAlignment || TextAlign.Left // Default to left if no alignment found
 }
 
-export function colorSelected(state: State, blockContainer: HTMLElement, color: string): Promise<Snapshot> {
+export function applyColorToSelected(state: State, blockContainer: HTMLElement, color: string): Promise<Snapshot> {
   return formatSelectedCSS(state, blockContainer, 'color', `color: ${color}`)
 }
 
@@ -116,6 +112,38 @@ export function getSelectionColor(state: State): string | null {
   }
 
   return firstColor
+}
+
+export async function applyFontSizeToSelected(
+  state: State,
+  blockContainer: HTMLElement,
+  fontSize: number,
+): Promise<Snapshot> {
+  const selectedIds = state.getComponents(Selected).value
+  const ids = Object.keys(selectedIds)
+
+  const snapshot: Snapshot = {}
+  for (const id of ids) {
+    const text = state.getComponent(TextComp, id).value
+    if (!text) continue
+
+    const element = blockContainer.querySelector(`[id="${id}"]`) as ICText
+    if (!element) continue
+
+    element.text = new TextComp({
+      ...element.text,
+      fontSize,
+    })
+
+    await element.updateComplete
+
+    const blockSnapshot = element.getSnapshot()
+    blockSnapshot[id].Text.fontSize = fontSize
+
+    Object.assign(snapshot, blockSnapshot)
+  }
+
+  return snapshot
 }
 
 /**

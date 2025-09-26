@@ -60,3 +60,26 @@ export const defaultKeybinds = [
     mod: true,
   },
 ]
+
+export const FONT_SIZE_OPTIONS = [
+  {
+    label: 'Small',
+    value: 16,
+    displayValue: 10,
+  },
+  {
+    label: 'Medium',
+    value: 24,
+    displayValue: 12,
+  },
+  {
+    label: 'Large',
+    value: 40,
+    displayValue: 16,
+  },
+  {
+    label: 'Huge',
+    value: 96,
+    displayValue: 20,
+  },
+]

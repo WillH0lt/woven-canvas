@@ -5,7 +5,7 @@ import type {
   BaseResources,
   BlockDefInput,
   CommandArgs,
-  FloatingMenuDef,
+  FloatingMenuDefInput,
   ICommands,
   IStore,
   SendCommandFn,
@@ -15,7 +15,7 @@ import type {
 export class BaseExtension {
   public readonly blocks: BlockDefInput[] = []
 
-  public readonly floatingMenus: FloatingMenuDef[] = []
+  public readonly floatingMenus: FloatingMenuDefInput[] = []
 
   public readonly tools: ToolDefInput[] = []
 
@@ -71,7 +71,7 @@ export class BaseExtension {
     // implementation in subclasses
   }
 
-  public addCommands(_send: SendCommandFn<CommandArgs>): Partial<ICommands> {
+  public addCommands(_state: State, _send: SendCommandFn<CommandArgs>): Partial<ICommands> {
     return {}
   }
 

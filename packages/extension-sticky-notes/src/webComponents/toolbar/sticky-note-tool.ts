@@ -1,5 +1,5 @@
 import { InfiniteCanvas, VerticalAlign } from '@infinitecanvas/core'
-import { Block, Color, Text } from '@infinitecanvas/core/components'
+import { Block, Color, Text, VerticalAlign as VerticalAlignComp } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
@@ -21,8 +21,8 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
   private getSnapshot(): Snapshot {
     const block = new Block({
       tag: 'ic-sticky-note',
-      width: 200,
-      height: 200,
+      width: 195,
+      height: 195,
     })
 
     const color = new Color({
@@ -32,12 +32,13 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
     })
 
     const text = new Text({
-      fontSize: 40,
-      verticalAlign: VerticalAlign.Center,
+      fontSize: 20,
       constrainWidth: true,
     })
 
-    const snapshot = createSnapshot(block, [text, color])
+    const verticalAlign = new VerticalAlignComp({ value: VerticalAlign.Center })
+
+    const snapshot = createSnapshot(block, [text, color, verticalAlign])
 
     return snapshot
   }

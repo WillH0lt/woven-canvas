@@ -6,7 +6,6 @@ import { BaseExtension } from './BaseExtension'
 import type { History } from './History'
 import type { LocalDB } from './LocalDB'
 import type { State } from './State'
-import { floatingMenuStandardButtons } from './buttonCatalog'
 import type {} from './components'
 import { defaultKeybinds } from './constants'
 
@@ -76,10 +75,6 @@ export const BlockDef = z.object({
   editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
   resizeMode: z.enum(['scale', 'text', 'free', 'groupOnly']).default('scale'),
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
-  floatingMenu: z
-    .array(FloatingMenuButton)
-    .default(floatingMenuStandardButtons.map((btn) => FloatingMenuButton.parse(btn))),
-  editedFloatingMenu: z.array(FloatingMenuButton).default([]),
 })
 
 export type BlockDef = z.infer<typeof BlockDef>
@@ -105,6 +100,7 @@ export type ToolDefMap = Record<string, z.infer<typeof ToolDef>>
 export const FloatingMenuDef = z.object({
   component: z.custom<new () => BaseComponent>(() => true),
   buttons: z.array(FloatingMenuButton),
+  orderIndex: z.number().default(0),
 })
 
 export type FloatingMenuDefInput = z.input<typeof FloatingMenuDef>
@@ -149,13 +145,13 @@ const CustomTags = z.object({
 type CustomTags = z.infer<typeof CustomTags>
 
 const Grid = z.object({
-  enabled: z.boolean().default(false),
+  enabled: z.boolean().default(true),
   xSpacing: z.number().default(15),
   ySpacing: z.number().default(15),
 })
 
 const Background = z.object({
-  kind: z.enum(['blank', 'dots', 'grid']).default('blank'),
+  kind: z.enum(['blank', 'dots', 'grid']).default('dots'),
   color: z.string().default('#f4f4f4'),
   strokeColor: z.string().default('#a1a1a1'),
   subdivisionStep: z.number().default(5),

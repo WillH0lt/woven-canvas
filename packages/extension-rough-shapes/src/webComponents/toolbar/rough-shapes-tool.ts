@@ -1,5 +1,5 @@
 import { InfiniteCanvas, VerticalAlign } from '@infinitecanvas/core'
-import { Block, Text } from '@infinitecanvas/core/components'
+import { Block, Text, VerticalAlign as VerticalAlignComp } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
@@ -22,15 +22,16 @@ export class ICRoughShapesTool extends ICToolbarIconButton {
   private getSnapshot(): Snapshot {
     const block = new Block({
       tag: 'ic-rough-shape',
-      width: 300,
-      height: 300,
+      width: 150,
+      height: 150,
     })
 
     const text = new Text({
-      fontSize: 40,
-      verticalAlign: VerticalAlign.Top,
+      fontSize: 16,
       constrainWidth: true,
     })
+
+    const verticalAlign = new VerticalAlignComp({ value: VerticalAlign.Center })
 
     const shape = new RoughShape({
       fillRed: 255 * Math.random(),
@@ -42,7 +43,7 @@ export class ICRoughShapesTool extends ICToolbarIconButton {
       roughness: 0,
     })
 
-    return createSnapshot(block, [text, shape])
+    return createSnapshot(block, [text, verticalAlign, shape])
   }
 
   protected onClick() {

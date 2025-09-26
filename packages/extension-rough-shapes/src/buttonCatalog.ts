@@ -1,8 +1,4 @@
-import {
-  type FloatingMenuButtonInput,
-  floatingMenuButtonVerticalAlign,
-  floatingMenuDivider,
-} from '@infinitecanvas/core'
+import type { FloatingMenuButtonInput } from '@infinitecanvas/core'
 
 export const strokeButton: FloatingMenuButtonInput = {
   tag: 'ic-rough-shape-stroke-button',
@@ -16,9 +12,4 @@ export const fillButton: FloatingMenuButtonInput = {
   menu: 'ic-rough-shape-fill-menu',
 }
 
-export const roughShapeFloatingMenuButtons: FloatingMenuButtonInput[] = [
-  strokeButton,
-  fillButton,
-  floatingMenuButtonVerticalAlign,
-  floatingMenuDivider,
-]
+export const roughShapeFloatingMenuButtons: FloatingMenuButtonInput[] = [strokeButton, fillButton]

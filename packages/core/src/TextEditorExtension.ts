@@ -1,29 +1,28 @@
 import { type ReadonlySignal, type Signal, computed, signal } from '@preact/signals-core'
+
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import { InfiniteCanvas } from './InfiniteCanvas'
 import type { State } from './State'
 import { textEditorFloatingMenuButtons } from './buttonCatalog'
 import { CoreCommand, type CoreCommandArgs } from './commands'
-import { Edited, Text } from './components'
-import {} from './constants'
+import { Edited, Selected, Text } from './components'
 import {
-  alignSelected,
-  boldSelected,
-  colorSelected,
+  applyAlignmentToSelected,
+  applyBoldToSelected,
+  applyColorToSelected,
+  applyFontSizeToSelected,
+  applyItalicToSelected,
+  applyUnderlineToSelected,
   getSelectionAlignment,
   getSelectionColor,
   isSelectionBold,
   isSelectionItalic,
   isSelectionUnderlined,
-  italicizeSelected,
-  removeUnderlineSelected,
-  unboldSelected,
-  underlineSelected,
-  unitalicizeSelected,
 } from './textUtils'
 import {
   type BaseResources,
+  type BlockDefInput,
   FloatingMenuButton,
   type ICommands,
   type IStore,
@@ -43,12 +42,13 @@ declare module '@infinitecanvas/core' {
       setUnderline: (underline: boolean) => void
       setAlignment: (alignment: TextAlign) => void
       setColor: (color: string) => void
-      setText: (blockId: string, text: Partial<TextData>) => void
+      setFontSize: (fontSize: number) => void
     }
   }
 
   interface IStore {
     textEditor: {
+      selectedTexts: ReadonlySignal<Text[]>
       cursorBold: Signal<boolean>
       bold: ReadonlySignal<boolean>
       cursorItalic: Signal<boolean>
@@ -64,7 +64,7 @@ declare module '@infinitecanvas/core' {
 }
 
 export class TextEditorExtension extends BaseExtension {
-  public readonly blocks = [
+  public override readonly blocks: BlockDefInput[] = [
     {
       tag: 'ic-text',
       editOptions: {
@@ -72,25 +72,19 @@ export class TextEditorExtension extends BaseExtension {
         removeWhenTextEmpty: true,
       },
       resizeMode: 'text' as const,
-      editedFloatingMenu: textEditorFloatingMenuButtons.map((btn) => FloatingMenuButton.parse(btn)),
       components: [Text],
     },
   ]
 
-  public readonly floatingMenus = [
+  public override readonly floatingMenus = [
     {
       component: Text,
       buttons: textEditorFloatingMenuButtons.map((btn) => FloatingMenuButton.parse(btn)),
+      orderIndex: 70,
     },
   ]
 
-  private readonly state: State
   private blockContainer: HTMLDivElement | null = null
-
-  constructor(state: State) {
-    super()
-    this.state = state
-  }
 
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Text)
@@ -114,12 +108,12 @@ export class TextEditorExtension extends BaseExtension {
     return null
   }
 
-  #isEditingTextComputed(): ReadonlySignal<boolean> {
+  #isEditingTextComputed(state: State): ReadonlySignal<boolean> {
     return computed(() => {
-      const editedIdsMap = this.state.getComponents(Edited).value
+      const editedIdsMap = state.getComponents(Edited).value
       const ids = Object.keys(editedIdsMap)
       if (ids.length > 0) {
-        const textComp = this.state.getComponent(Text, ids[0]).value
+        const textComp = state.getComponent(Text, ids[0]).value
         if (textComp) {
           return true
         }
@@ -129,7 +123,7 @@ export class TextEditorExtension extends BaseExtension {
     })
   }
 
-  public addCommands = (send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
+  public addCommands = (state: State, send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       textEditor: {
         setBold: async (bold: boolean) => {
@@ -142,9 +136,7 @@ export class TextEditorExtension extends BaseExtension {
 
           if (!this.blockContainer) return
 
-          const snapshot = bold
-            ? await boldSelected(this.state, this.blockContainer)
-            : await unboldSelected(this.state, this.blockContainer)
+          const snapshot = await applyBoldToSelected(state, this.blockContainer, bold)
 
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           // update the transform box in case the size of the text block changed
@@ -159,9 +151,7 @@ export class TextEditorExtension extends BaseExtension {
 
           if (!this.blockContainer) return
 
-          const snapshot = italic
-            ? await italicizeSelected(this.state, this.blockContainer)
-            : await unitalicizeSelected(this.state, this.blockContainer)
+          const snapshot = await applyItalicToSelected(state, this.blockContainer, italic)
 
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           // update the transform box in case the size of the text block changed
@@ -176,9 +166,7 @@ export class TextEditorExtension extends BaseExtension {
 
           if (!this.blockContainer) return
 
-          const snapshot = underline
-            ? await underlineSelected(this.state, this.blockContainer)
-            : await removeUnderlineSelected(this.state, this.blockContainer)
+          const snapshot = await applyUnderlineToSelected(state, this.blockContainer, underline)
 
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           // update the transform box in case the size of the text block changed
@@ -193,7 +181,7 @@ export class TextEditorExtension extends BaseExtension {
 
           if (!this.blockContainer) return
 
-          const snapshot = await alignSelected(this.state, this.blockContainer, alignment)
+          const snapshot = await applyAlignmentToSelected(state, this.blockContainer, alignment)
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           // update the transform box in case the size of the text block changed
           send(CoreCommand.UpdateTransformBox)
@@ -207,17 +195,18 @@ export class TextEditorExtension extends BaseExtension {
 
           if (!this.blockContainer) return
 
-          const snapshot = await colorSelected(this.state, this.blockContainer, color)
+          const snapshot = await applyColorToSelected(state, this.blockContainer, color)
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           // update the transform box in case the size of the text block changed
           send(CoreCommand.UpdateTransformBox)
         },
-        setText: (blockId: string, text: Partial<TextData>) => {
-          send(CoreCommand.UpdateFromSnapshot, {
-            [blockId]: {
-              Text: text,
-            },
-          })
+        setFontSize: async (fontSize: number) => {
+          if (!this.blockContainer) return
+
+          const snapshot = await applyFontSizeToSelected(state, this.blockContainer, fontSize)
+          send(CoreCommand.UpdateFromSnapshot, snapshot)
+          // update the transform box in case the size of the text block changed
+          send(CoreCommand.UpdateTransformBox)
         },
       },
     }
@@ -226,9 +215,21 @@ export class TextEditorExtension extends BaseExtension {
   public addStore = (state: State): Partial<IStore> => {
     return {
       textEditor: {
+        selectedTexts: computed(() => {
+          const selectedIds = state.getComponents(Selected).value
+          const texts: Text[] = []
+          for (const id of Object.keys(selectedIds)) {
+            const text = state.getComponent<Text>(Text, id).value
+            if (text) {
+              texts.push(text)
+            }
+          }
+          return texts
+        }),
+
         cursorBold: signal(false),
         bold: computed(() => {
-          if (this.#isEditingTextComputed().value) {
+          if (this.#isEditingTextComputed(state).value) {
             return InfiniteCanvas.instance!.store.textEditor.cursorBold.value
           }
           return isSelectionBold(state)
@@ -236,7 +237,7 @@ export class TextEditorExtension extends BaseExtension {
 
         cursorItalic: signal(false),
         italic: computed(() => {
-          if (this.#isEditingTextComputed().value) {
+          if (this.#isEditingTextComputed(state).value) {
             return InfiniteCanvas.instance!.store.textEditor.cursorItalic.value
           }
           return isSelectionItalic(state)
@@ -244,7 +245,7 @@ export class TextEditorExtension extends BaseExtension {
 
         cursorUnderline: signal(false),
         underline: computed(() => {
-          if (this.#isEditingTextComputed().value) {
+          if (this.#isEditingTextComputed(state).value) {
             return InfiniteCanvas.instance!.store.textEditor.cursorUnderline.value
           }
           return isSelectionUnderlined(state)
@@ -252,7 +253,7 @@ export class TextEditorExtension extends BaseExtension {
 
         cursorAlignment: signal(TextAlign.Left),
         alignment: computed(() => {
-          if (this.#isEditingTextComputed().value) {
+          if (this.#isEditingTextComputed(state).value) {
             return InfiniteCanvas.instance!.store.textEditor.cursorAlignment.value
           }
 
@@ -262,12 +263,20 @@ export class TextEditorExtension extends BaseExtension {
 
         cursorColor: signal('#000000'),
         color: computed(() => {
-          if (this.#isEditingTextComputed().value) {
+          if (this.#isEditingTextComputed(state).value) {
             return InfiniteCanvas.instance!.store.textEditor.cursorColor.value
           }
           const color = getSelectionColor(state)
           return color ?? '#000000'
         }),
+
+        // fontSize: computed(() => {
+        //   const selectedTexts = InfiniteCanvas.instance?.store.textEditor.selectedTexts.value
+        //   if (selectedTexts && selectedTexts.length === 1) {
+        //     return selectedTexts[0].fontSize
+        //   }
+        //   return 0
+        // }),
       },
     }
   }
