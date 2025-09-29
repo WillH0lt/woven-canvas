@@ -26,16 +26,18 @@ import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
 import {} from './textUtils'
-import {
-  type BaseResources,
-  CoreOptions,
-  type CoreOptionsInput,
-  type CoreResources,
-  type EmitterEvents,
-  type ICommands,
-  type IStore,
-  type SendCommandFn,
-  type SerializablePropNames,
+import type {
+  BaseResources,
+  ColorMenuOptions,
+  CoreResources,
+  EmitterEvents,
+  FontFamily,
+  ICommands,
+  IConfig,
+  IStore,
+  Options,
+  SendCommandFn,
+  SerializablePropNames,
 } from './types'
 
 type BlockData = Pick<Block, SerializablePropNames<Block>>
@@ -73,9 +75,17 @@ declare module '@infinitecanvas/core' {
       hoveredBlockId: ReadonlySignal<string | null>
       blockById: (id: string) => ReadonlySignal<Block | undefined>
       colorById: (id: string) => ReadonlySignal<Color | undefined>
-      textById: (id: string) => ReadonlySignal<Text | undefined>
       verticalAlignById: (id: string) => ReadonlySignal<VerticalAlign | undefined>
       controls: ReadonlySignal<Controls | undefined>
+      textById: (id: string) => ReadonlySignal<Text | undefined>
+      fontFamilies: ReadonlySignal<FontFamily[]>
+      selectedColors: ReadonlySignal<Color[]>
+    }
+  }
+
+  interface IConfig {
+    core: {
+      colorMenu: ColorMenuOptions
     }
   }
 }
@@ -100,6 +110,8 @@ export class CoreExtension extends BaseExtension {
       buttonTag: 'ic-select-tool',
       buttonTooltip: 'Select',
       cursorIcon: SELECT_CURSOR,
+
+      blockContainer: 'asdf',
     },
     {
       name: 'hand',
@@ -114,17 +126,16 @@ export class CoreExtension extends BaseExtension {
     },
   ]
 
-  private readonly options: CoreOptions
+  private readonly options: Options
   private readonly emitter: Emitter<EmitterEvents>
   private readonly state: State
   private initialEntities: Snapshot = {}
-  private blockContainer: HTMLDivElement | null = null
 
-  constructor(emitter: Emitter<EmitterEvents>, state: State, options: CoreOptionsInput) {
+  constructor(emitter: Emitter<EmitterEvents>, state: State, options: Options) {
     super()
     this.emitter = emitter
     this.state = state
-    this.options = CoreOptions.parse(options)
+    this.options = options
   }
 
   public async preBuild(resources: BaseResources): Promise<void> {
@@ -138,8 +149,6 @@ export class CoreExtension extends BaseExtension {
     ComponentRegistry.instance.registerComponent(Connector)
 
     ComponentRegistry.instance.registerSingleton(Controls)
-
-    this.blockContainer = resources.blockContainer
 
     const menuContainer = document.createElement('div')
     menuContainer.style.pointerEvents = 'none'
@@ -221,6 +230,14 @@ export class CoreExtension extends BaseExtension {
     this.initialEntities = {}
   }
 
+  public addConfig = (): Partial<IConfig> => {
+    return {
+      core: {
+        colorMenu: this.options.colorMenu,
+      },
+    }
+  }
+
   public addCommands = (state: State, send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       core: {
@@ -287,6 +304,7 @@ export class CoreExtension extends BaseExtension {
   public addStore = (state: State): Partial<IStore> => {
     return {
       core: {
+        // fonts:
         blockCount: computed(() => Object.keys(state.getComponents(Persistent).value).length),
         selectedBlockCount: computed(() => Object.keys(state.getComponents(Selected).value).length),
         selectedBlockIds: computed(() => {
@@ -307,6 +325,39 @@ export class CoreExtension extends BaseExtension {
         controls: computed(() => state.getSingleton(Controls).value),
         textById: (id: string): ReadonlySignal<Text | undefined> =>
           computed(() => state.getComponent<Text>(Text, id).value),
+        fontFamilies: computed(() => {
+          const texts = state.getComponents(Text).value
+          const names = new Set<string>()
+          for (const text of Object.values(texts)) {
+            if (text.value.fontFamily) {
+              names.add(text.value.fontFamily)
+            }
+          }
+
+          const namesArray = Array.from(names).sort()
+
+          const families = namesArray.map((name) => {
+            return this.options.fontMenu.families.find((family) => family.name === name)
+          })
+
+          return families.filter((family): family is FontFamily => family !== undefined)
+        }),
+        selectedColors: computed(() => {
+          const selected = state.getComponents(Selected).value
+          const ids = Object.keys(selected)
+
+          const colors: Record<string, Color> = {}
+
+          for (const id of ids) {
+            const color = state.getComponent<Color>(Color, id)
+            if (color?.value) {
+              const hex = color.value.toHex()
+              colors[hex] = color.value
+            }
+          }
+
+          return Object.values(colors).sort((a, b) => a.toHex().localeCompare(b.toHex()))
+        }),
       },
     }
   }

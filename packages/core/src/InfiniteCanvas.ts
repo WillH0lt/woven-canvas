@@ -5,6 +5,7 @@ import { Emitter } from 'strict-event-emitter'
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import { CoreExtension } from './CoreExtension'
+import { FontLoader } from './FontLoader'
 import { History } from './History'
 import { State } from './State'
 import { TextEditorExtension } from './TextEditorExtension'
@@ -16,13 +17,16 @@ import {
   type EmitterEvents,
   FloatingMenuDef,
   type ICommands,
+  type IConfig,
   type IStore,
   Options,
+  type OptionsInput,
   type Theme,
   ToolDef,
 } from './types'
 
 import './webComponents'
+import type { ICApp } from './webComponents'
 
 function scheduleGroups(orderedGroups: SystemGroup[]): void {
   for (let i = 0; i < orderedGroups.length - 1; i++) {
@@ -86,7 +90,9 @@ export class InfiniteCanvas {
 
   public commands: ICommands = {} as ICommands
 
-  public static async New(options: z.input<typeof Options> = {}): Promise<InfiniteCanvas> {
+  public config: IConfig = {} as IConfig
+
+  public static async New(options: OptionsInput = {}): Promise<InfiniteCanvas> {
     const parsedOptions = Options.parse(options)
 
     const extensions = parsedOptions.extensions.map((ext) => {
@@ -105,7 +111,7 @@ export class InfiniteCanvas {
     }
 
     // create the main container element
-    const domElement = document.createElement('div')
+    const domElement = document.createElement('ic-app') as ICApp
     domElement.id = 'infinite-canvas'
     domElement.style.width = '100%'
     domElement.style.height = '100%'
@@ -142,8 +148,8 @@ export class InfiniteCanvas {
 
     const emitter = new Emitter<EmitterEvents>()
     const state = new State()
-    extensions.unshift(new TextEditorExtension())
-    extensions.unshift(new CoreExtension(emitter, state, options))
+    extensions.unshift(new TextEditorExtension(parsedOptions))
+    extensions.unshift(new CoreExtension(emitter, state, parsedOptions))
 
     // Register block definitions from extensions and options
     const blockDefs: Record<string, BlockDef> = {}
@@ -181,6 +187,8 @@ export class InfiniteCanvas {
     for (const tool of parsedOptions.customTools) {
       tools[tool.name] = ToolDef.parse(tool)
     }
+
+    // const fontFamilies = Object.fromEntries(parsedOptions.fontFamilies.map((f) => [f.name, f]))
 
     addToolbar(domElement, tools)
 
@@ -249,19 +257,29 @@ export class InfiniteCanvas {
       extensions.map((ext) => ext.build(worldSys, resources))
     })
 
-    const infiniteCanvas = new InfiniteCanvas(extensions, world, emitter, state, resources, parsedOptions)
+    const infiniteCanvas = new InfiniteCanvas(parsedOptions, extensions, world, emitter, state, resources)
     InfiniteCanvas.instance = infiniteCanvas
+
+    // provide context to infinite canvas domElement
+    domElement.store = infiniteCanvas.store
+    domElement.commands = infiniteCanvas.commands
+    domElement.config = infiniteCanvas.config
+
+    // load fonts
+    infiniteCanvas.store.core.fontFamilies.subscribe((fontFamilies) => {
+      FontLoader.loadFonts(fontFamilies)
+    })
 
     return infiniteCanvas
   }
 
   private constructor(
+    public readonly options: z.infer<typeof Options>,
     private readonly extensions: BaseExtension[],
     private readonly world: World,
     private readonly emitter: Emitter<EmitterEvents>,
     private readonly state: State,
     resources: BaseResources,
-    options: z.infer<typeof Options>,
   ) {
     this.domElement = resources.domElement
 
@@ -273,8 +291,6 @@ export class InfiniteCanvas {
     }
 
     this.store = extensions.reduce((stores, ext) => {
-      if (!ext.addStore) return stores
-
       const extStores = ext.addStore(this.state)
       if (!extStores) return stores
 
@@ -291,8 +307,6 @@ export class InfiniteCanvas {
       })
 
     this.commands = extensions.reduce((commands, ext) => {
-      if (!ext.addCommands) return commands
-
       const extCommands = ext.addCommands(this.state, send)
       if (!extCommands) return commands
 
@@ -301,6 +315,13 @@ export class InfiniteCanvas {
       }
       return commands
     }, {} as ICommands)
+
+    this.config = extensions.reduce((configs, ext) => {
+      const extConfig = ext.addConfig()
+      Object.assign(configs, extConfig)
+
+      return configs
+    }, {} as IConfig)
   }
 
   public execute(): Promise<void> {

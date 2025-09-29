@@ -9,6 +9,7 @@ export {
   type PointerEvent,
   type MouseEvent,
   type CommandArgs,
+  type IConfig,
   type ICommands,
   type IStore,
   type SendCommandFn,

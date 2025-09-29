@@ -7,6 +7,7 @@ import type {
   CommandArgs,
   FloatingMenuDefInput,
   ICommands,
+  IConfig,
   IStore,
   SendCommandFn,
   ToolDefInput,
@@ -69,6 +70,10 @@ export class BaseExtension {
 
   public build(_worldSystem: System, _resources: BaseResources): void {
     // implementation in subclasses
+  }
+
+  public addConfig(): Partial<IConfig> {
+    return {}
   }
 
   public addCommands(_state: State, _send: SendCommandFn<CommandArgs>): Partial<ICommands> {

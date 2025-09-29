@@ -7,7 +7,7 @@ import type { History } from './History'
 import type { LocalDB } from './LocalDB'
 import type { State } from './State'
 import type {} from './components'
-import { defaultKeybinds } from './constants'
+import { defaultColorMenuPalette, defaultFontFamilies, defaultKeybinds } from './constants'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -37,6 +37,7 @@ export const FloatingMenuButton = z.object({
   tooltip: z.string().optional(),
   menu: z.string().optional(),
   width: z.number().default(40),
+  params: z.record(z.string(), z.any()).optional(),
 })
 
 export type FloatingMenuButtonInput = z.input<typeof FloatingMenuButton>
@@ -49,16 +50,31 @@ const Keybind = z.object({
   shift: z.boolean().optional(),
 })
 
-export const CoreOptions = z.object({
-  persistenceKey: z.string().default('default'),
-  keybinds: z.array(Keybind).default(defaultKeybinds),
+export const FontFamily = z.object({
+  name: z.string(),
+  url: z.string(),
+  previewImage: z.string(),
+  selectable: z.boolean().default(true),
 })
 
-export type CoreOptions = z.infer<typeof CoreOptions>
-export type CoreOptionsInput = z.input<typeof CoreOptions>
+export type FontFamily = z.infer<typeof FontFamily>
+
+export const FontMenuOptions = z.object({
+  families: z.array(FontFamily).default(defaultFontFamilies),
+  showSearch: z.boolean().default(false),
+})
+
+export type FontMenuOptions = z.infer<typeof FontMenuOptions>
+
+export const ColorMenuOptions = z.object({
+  palette: z.array(z.string()).default(defaultColorMenuPalette),
+  showPicker: z.boolean().default(true),
+})
+
+export type ColorMenuOptions = z.infer<typeof ColorMenuOptions>
 
 export type CoreResources = BaseResources &
-  CoreOptions & {
+  Options & {
     emitter: Emitter<EmitterEvents>
     state: State
     menuContainer: HTMLDivElement
@@ -109,8 +125,6 @@ export type FloatingMenuDef = z.infer<typeof FloatingMenuDef>
 
 export type FloatingMenuMap = Record<string, FloatingMenuDef>
 
-// export type ToolDefMap = Record<string, z.infer<typeof ToolDef>>
-
 const Theme = z.object({
   gray100: z.string().default('#f8f9f9'),
   gray200: z.string().default('#e3e5e8'),
@@ -158,7 +172,6 @@ const Background = z.object({
 })
 
 export const Options = z.object({
-  ...CoreOptions.shape,
   extensions: z
     .array(
       z.union([z.instanceof(BaseExtension), z.custom<(args: any) => BaseExtension>((fn) => typeof fn === 'function')]),
@@ -172,9 +185,16 @@ export const Options = z.object({
   theme: Theme.default(Theme.parse({})),
   grid: Grid.default(Grid.parse({})),
   background: Background.default(Background.parse({})),
+  persistenceKey: z.string().default('default'),
+  keybinds: z.array(Keybind).default(defaultKeybinds),
+  colorMenu: ColorMenuOptions.default(ColorMenuOptions.parse({})),
+  textColorMenu: ColorMenuOptions.default(ColorMenuOptions.parse({})),
+  fontMenu: FontMenuOptions.default(FontMenuOptions.parse({})),
 })
 
-export type Options = z.input<typeof Options>
+export type Options = z.infer<typeof Options>
+
+export type OptionsInput = z.input<typeof Options>
 
 export interface BaseResources {
   domElement: HTMLElement
@@ -189,6 +209,9 @@ export interface BaseResources {
 }
 
 export type CommandArgs = Record<string, Array<unknown>>
+
+// biome-ignore lint/suspicious/noEmptyInterface: this type gets built upon with extensions
+export interface IConfig {}
 
 // biome-ignore lint/suspicious/noEmptyInterface: this type gets built upon with extensions
 export interface ICommands {}

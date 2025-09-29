@@ -83,3 +83,42 @@ export const FONT_SIZE_OPTIONS = [
     displayValue: 20,
   },
 ]
+
+export const defaultFontFamilies = [
+  {
+    name: 'Figtree',
+    url: 'https://fonts.googleapis.com/css2?family=Figtree',
+    previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/Figtree.png',
+    selectable: true,
+  },
+  {
+    name: 'Shantell Sans',
+    url: 'https://fonts.googleapis.com/css2?family=Shantell+Sans',
+    previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/ShantellSans.png',
+    selectable: true,
+  },
+  {
+    name: 'Courier Prime',
+    url: 'https://fonts.googleapis.com/css2?family=Courier+Prime',
+    previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png',
+    selectable: true,
+  },
+  {
+    name: 'EB Garamond',
+    url: 'https://fonts.googleapis.com/css2?family=EB+Garamond',
+    previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/EBGaramond.png',
+    selectable: true,
+  },
+]
+
+export const defaultColorMenuPalette = [
+  '#000000',
+  '#434343',
+  '#ff3e41',
+  '#ff8a43',
+  '#ffeb7f',
+  '#00c9a7',
+  '#007ea7',
+  '#6a58f2',
+  '#ffffff',
+]

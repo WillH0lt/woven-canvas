@@ -6,15 +6,13 @@ import tinycolor from 'tinycolor2'
 
 import { style } from './color-bubbles.style'
 
-const PALETTE = ['#000000', '#434343', '#ff3e41', '#ff8a43', '#ffeb7f', '#00c9a7', '#007ea7', '#6a58f2', '#ffffff']
-
 @customElement('ic-color-bubbles')
 export class ICColorBubbles extends LitElement {
   static styles = style
 
   @property() currentColor = '#000000'
 
-  @property({ type: Array }) palette: string[] = PALETTE
+  @property({ type: Array }) palette: string[] = []
 
   @property({ type: Boolean }) withPicker = false
 

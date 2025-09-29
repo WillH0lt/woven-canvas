@@ -26,7 +26,7 @@ export class PreRenderStoreSync extends BaseSystem {
       const addedQuery = this.query((q) => q.added.with(Block, Comp))
       this.addedQueries.set(Comp, addedQuery)
 
-      const changedQuery = this.query((q) => q.changed.with(Block, Comp).trackWrites)
+      const changedQuery = this.query((q) => q.changed.with(Block).and.with(Comp).trackWrites)
       this.changedQueries.set(Comp, changedQuery)
 
       const removedQuery = this.query((q) => q.removed.with(Block, Comp))
@@ -63,6 +63,7 @@ export class PreRenderStoreSync extends BaseSystem {
       for (const Comp of this.changedQueries.keys()) {
         const query = this.changedQueries.get(Comp)!
         if (query.changed.length === 0) continue
+
         this.resources.state.updateComponents(Comp, query.changed)
       }
 

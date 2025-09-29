@@ -119,33 +119,16 @@ export async function applyFontSizeToSelected(
   blockContainer: HTMLElement,
   fontSize: number,
 ): Promise<Snapshot> {
-  const selectedIds = state.getComponents(Selected).value
-  const ids = Object.keys(selectedIds)
-
-  const snapshot: Snapshot = {}
-  for (const id of ids) {
-    const text = state.getComponent(TextComp, id).value
-    if (!text) continue
-
-    const element = blockContainer.querySelector(`[id="${id}"]`) as ICText
-    if (!element) continue
-
-    element.text = new TextComp({
-      ...element.text,
-      fontSize,
-    })
-
-    await element.updateComplete
-
-    const blockSnapshot = element.getSnapshot()
-    blockSnapshot[id].Text.fontSize = fontSize
-
-    Object.assign(snapshot, blockSnapshot)
-  }
-
-  return snapshot
+  return applyTextPropertyToSelected(state, blockContainer, 'fontSize', fontSize)
 }
 
+export async function applyFontFamilyToSelected(
+  state: State,
+  blockContainer: HTMLElement,
+  fontFamily: string,
+): Promise<Snapshot> {
+  return applyTextPropertyToSelected(state, blockContainer, 'fontFamily', fontFamily)
+}
 /**
  * Gets the value of a CSS property from HTML content
  */
@@ -489,4 +472,37 @@ function removeCSSFormatting(htmlContent: string, cssStyle: string): string {
   }
 
   return tempDiv.innerHTML
+}
+
+async function applyTextPropertyToSelected(
+  state: State,
+  blockContainer: HTMLElement,
+  name: string,
+  value: any,
+): Promise<Snapshot> {
+  const selectedIds = state.getComponents(Selected).value
+  const ids = Object.keys(selectedIds)
+
+  const snapshot: Snapshot = {}
+  for (const id of ids) {
+    const text = state.getComponent(TextComp, id).value
+    if (!text) continue
+
+    const element = blockContainer.querySelector(`[id="${id}"]`) as ICText
+    if (!element) continue
+
+    element.text = new TextComp({
+      ...element.text,
+      [name]: value,
+    })
+
+    await element.updateComplete
+
+    const blockSnapshot = element.getSnapshot()
+    blockSnapshot[id].Text[name] = value
+
+    Object.assign(snapshot, blockSnapshot)
+  }
+
+  return snapshot
 }

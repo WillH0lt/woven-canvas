@@ -28,6 +28,7 @@ export const floatingMenuButtonColor = {
   width: 56,
   tooltip: 'Color',
   menu: 'ic-color-menu',
+  params: { palette: ['#000000', '#ff3e41', '#ff8a43', '#ffeb7f', '#00c9a7', '#007ea7', '#6a58f2'] },
 }
 
 export const floatingMenuStandardButtons = [
@@ -37,9 +38,16 @@ export const floatingMenuStandardButtons = [
   floatingMenuButtonDelete,
 ]
 
+export const fontFamilyButton = {
+  tag: 'ic-font-family-button',
+  width: 90,
+  tooltip: 'Font Family',
+  menu: 'ic-font-family-menu',
+}
+
 export const fontSizeButton = {
   tag: 'ic-font-size-button',
-  width: 75,
+  width: 90,
   tooltip: 'Font Size',
   menu: 'ic-font-size-menu',
 }
@@ -76,6 +84,7 @@ export const floatingMenuButtonVerticalAlign = {
 }
 
 export const textEditorFloatingMenuButtons = [
+  fontFamilyButton,
   fontSizeButton,
   boldButton,
   italicButton,

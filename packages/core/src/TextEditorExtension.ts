@@ -11,6 +11,7 @@ import {
   applyAlignmentToSelected,
   applyBoldToSelected,
   applyColorToSelected,
+  applyFontFamilyToSelected,
   applyFontSizeToSelected,
   applyItalicToSelected,
   applyUnderlineToSelected,
@@ -23,16 +24,17 @@ import {
 import {
   type BaseResources,
   type BlockDefInput,
+  type ColorMenuOptions,
   FloatingMenuButton,
+  type FontMenuOptions,
   type ICommands,
+  type IConfig,
   type IStore,
+  type Options,
   type SendCommandFn,
-  type SerializablePropNames,
   TextAlign,
 } from './types'
 import { ICText } from './webComponents/blocks'
-
-type TextData = Pick<Text, SerializablePropNames<Text>>
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -43,6 +45,7 @@ declare module '@infinitecanvas/core' {
       setAlignment: (alignment: TextAlign) => void
       setColor: (color: string) => void
       setFontSize: (fontSize: number) => void
+      setFontFamily: (fontFamily: string) => void
     }
   }
 
@@ -59,6 +62,13 @@ declare module '@infinitecanvas/core' {
       alignment: ReadonlySignal<TextAlign>
       cursorColor: Signal<string>
       color: ReadonlySignal<string>
+    }
+  }
+
+  interface IConfig {
+    textEditor: {
+      fontMenu: FontMenuOptions
+      fontColorMenu: ColorMenuOptions
     }
   }
 }
@@ -84,7 +94,14 @@ export class TextEditorExtension extends BaseExtension {
     },
   ]
 
+  private options: Options
+
   private blockContainer: HTMLDivElement | null = null
+
+  constructor(options: Options) {
+    super()
+    this.options = options
+  }
 
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(Text)
@@ -123,6 +140,15 @@ export class TextEditorExtension extends BaseExtension {
     })
   }
 
+  public addConfig = (): Partial<IConfig> => {
+    return {
+      textEditor: {
+        fontMenu: this.options.fontMenu,
+        fontColorMenu: this.options.textColorMenu,
+      },
+    }
+  }
+
   public addCommands = (state: State, send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       textEditor: {
@@ -154,7 +180,6 @@ export class TextEditorExtension extends BaseExtension {
           const snapshot = await applyItalicToSelected(state, this.blockContainer, italic)
 
           send(CoreCommand.UpdateFromSnapshot, snapshot)
-          // update the transform box in case the size of the text block changed
           send(CoreCommand.UpdateTransformBox)
         },
         setUnderline: async (underline: boolean) => {
@@ -169,7 +194,6 @@ export class TextEditorExtension extends BaseExtension {
           const snapshot = await applyUnderlineToSelected(state, this.blockContainer, underline)
 
           send(CoreCommand.UpdateFromSnapshot, snapshot)
-          // update the transform box in case the size of the text block changed
           send(CoreCommand.UpdateTransformBox)
         },
         setAlignment: async (alignment: TextAlign) => {
@@ -183,7 +207,6 @@ export class TextEditorExtension extends BaseExtension {
 
           const snapshot = await applyAlignmentToSelected(state, this.blockContainer, alignment)
           send(CoreCommand.UpdateFromSnapshot, snapshot)
-          // update the transform box in case the size of the text block changed
           send(CoreCommand.UpdateTransformBox)
         },
         setColor: async (color: string) => {
@@ -197,7 +220,6 @@ export class TextEditorExtension extends BaseExtension {
 
           const snapshot = await applyColorToSelected(state, this.blockContainer, color)
           send(CoreCommand.UpdateFromSnapshot, snapshot)
-          // update the transform box in case the size of the text block changed
           send(CoreCommand.UpdateTransformBox)
         },
         setFontSize: async (fontSize: number) => {
@@ -205,7 +227,13 @@ export class TextEditorExtension extends BaseExtension {
 
           const snapshot = await applyFontSizeToSelected(state, this.blockContainer, fontSize)
           send(CoreCommand.UpdateFromSnapshot, snapshot)
-          // update the transform box in case the size of the text block changed
+          send(CoreCommand.UpdateTransformBox)
+        },
+        setFontFamily: async (fontFamily: string) => {
+          if (!this.blockContainer) return
+
+          const snapshot = await applyFontFamilyToSelected(state, this.blockContainer, fontFamily)
+          send(CoreCommand.UpdateFromSnapshot, snapshot)
           send(CoreCommand.UpdateTransformBox)
         },
       },

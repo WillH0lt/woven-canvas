@@ -3,6 +3,7 @@ import { SignalWatcher } from '@lit-labs/preact-signals'
 import { LitElement, html, nothing, svg } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
+
 import { style } from './color-button.style'
 
 const chevronDownIcon = svg`
@@ -15,21 +16,13 @@ export class ICColorButton extends SignalWatcher(LitElement) {
   static styles = style
 
   render() {
-    const ids = InfiniteCanvas.instance?.store.core.selectedBlockIds
+    const colors = InfiniteCanvas.instance?.store.core.selectedColors
 
-    const colors = new Set<string>()
+    if (!colors || colors.value.length === 0) return nothing
 
-    for (const id of ids?.value || []) {
-      const color = InfiniteCanvas.instance?.store.core.colorById(id)
-      if (color?.value) {
-        colors.add(color.value.toHex())
-      }
-    }
+    const hexes = colors.value.map((c) => c.toHex())
 
-    if (colors.size === 0) return nothing
-
-    const colorArray = Array.from(colors)
-    const hasMultipleColors = colors.size > 1
+    const hasMultipleColors = colors.value.length > 1
 
     return html`
       <div
@@ -40,10 +33,10 @@ export class ICColorButton extends SignalWatcher(LitElement) {
           style=${styleMap(
             hasMultipleColors
               ? {
-                  background: `linear-gradient(45deg, ${colorArray[0]} 0%, ${colorArray[0]} 50%, ${colorArray[1]} 50%, ${colorArray[1]} 100%)`,
+                  background: `linear-gradient(45deg, ${hexes[0]} 0%, ${hexes[0]} 50%, ${hexes[1]} 50%, ${hexes[1]} 100%)`,
                 }
               : {
-                  'background-color': colorArray[0],
+                  'background-color': hexes[0],
                 },
           )}
         ></div>
