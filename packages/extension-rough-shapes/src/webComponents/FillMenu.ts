@@ -1,9 +1,10 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
+import { type ICommands, type IStore, commandsContext, storeContext } from '@infinitecanvas/core'
 import { Color } from '@infinitecanvas/core/components'
 import { SignalWatcher } from '@lit-labs/preact-signals'
 import { type HTMLTemplateResult, LitElement, html, nothing } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 
+import { consume } from '@lit/context'
 import type { RoughShape } from '../components'
 import { ShapeFillKind } from '../types'
 import { fillCrossHatch, fillHachure, fillSolid, none } from './icons'
@@ -26,11 +27,17 @@ function getFillHex(roughShape: RoughShape): string {
 
 @customElement('ic-rough-shape-fill-menu')
 export class ICFillMenu extends SignalWatcher(LitElement) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
+  @consume({ context: commandsContext })
+  private commands: ICommands = {} as ICommands
+
   @state()
   private pickerVisible = false
 
   render() {
-    const roughShapes = InfiniteCanvas.instance?.store.roughShapes.selectedRoughShapes.value
+    const roughShapes = this.store.roughShapes.selectedRoughShapes.value
     if (!roughShapes?.length) return nothing
     const roughShape = roughShapes[0]
 
@@ -142,7 +149,7 @@ export class ICFillMenu extends SignalWatcher(LitElement) {
   }
 
   private applyUpdate(roughShape: Partial<RoughShape>): void {
-    InfiniteCanvas.instance!.commands.roughShapes.applyRoughShapeToSelection(roughShape)
+    this.commands.roughShapes.applyRoughShapeToSelection(roughShape)
   }
 }
 

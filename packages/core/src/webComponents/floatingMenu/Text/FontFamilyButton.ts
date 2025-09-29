@@ -1,17 +1,22 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
+import type { IStore } from '@infinitecanvas/core'
 import { SignalWatcher } from '@lit-labs/preact-signals'
+import { consume } from '@lit/context'
 import { customElement } from 'lit/decorators.js'
+import { storeContext } from '../../contexts'
 import { ICMenuDropdownButton } from '../../elements'
 
 @customElement('ic-font-family-button')
 export class ICFontFamilyButton extends SignalWatcher(ICMenuDropdownButton) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
   render() {
     this.label = this.getFontFamilyLabel()
     return super.render()
   }
 
   private getFontFamilyLabel(): string {
-    const selectedTexts = InfiniteCanvas.instance?.store.textEditor.selectedTexts.value
+    const selectedTexts = this.store.textEditor.selectedTexts.value
 
     let fontFamily: string | 'mixed' | null = null
     for (const text of selectedTexts ?? []) {

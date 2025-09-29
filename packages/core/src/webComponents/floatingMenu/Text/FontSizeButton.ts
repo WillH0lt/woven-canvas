@@ -1,19 +1,24 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
+import type { IStore } from '@infinitecanvas/core'
 import { SignalWatcher } from '@lit-labs/preact-signals'
 import { customElement } from 'lit/decorators.js'
 
+import { consume } from '@lit/context'
 import { FONT_SIZE_OPTIONS } from '../../../constants'
+import { storeContext } from '../../contexts'
 import { ICMenuDropdownButton } from '../../elements'
 
 @customElement('ic-font-size-button')
 export class ICFontSizeButton extends SignalWatcher(ICMenuDropdownButton) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
   render() {
     this.label = this.getFontSizeLabel()
     return super.render()
   }
 
   private getFontSizeLabel(): string {
-    const selectedTexts = InfiniteCanvas.instance?.store.textEditor.selectedTexts.value
+    const selectedTexts = this.store.textEditor.selectedTexts.value
 
     let fontSize: number | 'mixed' | null = null
     for (const text of selectedTexts ?? []) {

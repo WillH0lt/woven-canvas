@@ -1,10 +1,11 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
 import { ICMenuIconButton } from '@infinitecanvas/core/elements'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { TextAlign } from '../../../types'
+import { consume } from '@lit/context'
+import { type ICommands, type IStore, TextAlign } from '../../../types'
+import { commandsContext, storeContext } from '../../contexts'
 
 const alignments = [TextAlign.Left, TextAlign.Center, TextAlign.Right, TextAlign.Justify]
 
@@ -61,17 +62,23 @@ const icons = {
 
 @customElement('ic-text-alignment-button')
 export class ICTextAlignmentButton extends SignalWatcher(ICMenuIconButton) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
+  @consume({ context: commandsContext })
+  private commands: ICommands = {} as ICommands
+
   protected icon = icons[TextAlign.Left] // Default icon, will be updated in connected
 
   protected onClick(): void {
     const nextAlignment = alignments[(alignments.indexOf(this.alignment.value) + 1) % alignments.length]
-    InfiniteCanvas.instance?.commands.textEditor.setAlignment(nextAlignment)
+    this.commands.textEditor.setAlignment(nextAlignment)
   }
 
   private alignment!: ReadonlySignal<TextAlign>
 
   public firstUpdated(): void {
-    this.alignment = InfiniteCanvas.instance?.store.textEditor.alignment as ReadonlySignal<TextAlign>
+    this.alignment = this.store.textEditor.alignment as ReadonlySignal<TextAlign>
 
     this.alignment.subscribe(this.updateIcon.bind(this))
     this.updateIcon(this.alignment.value)

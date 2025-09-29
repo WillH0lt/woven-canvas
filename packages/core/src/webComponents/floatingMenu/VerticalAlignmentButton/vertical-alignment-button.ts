@@ -1,10 +1,11 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
 import { SignalWatcher } from '@lit-labs/preact-signals'
 import { LitElement, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
+import { consume } from '@lit/context'
 import { VerticalAlign as VerticalAlignComp } from '../../../components'
-import { VerticalAlign } from '../../../types'
+import { type ICommands, type IStore, VerticalAlign } from '../../../types'
+import { commandsContext, storeContext } from '../../contexts'
 import { style } from './vertical-alignment-button.style'
 
 const alignments = [VerticalAlign.Top, VerticalAlign.Center, VerticalAlign.Bottom]
@@ -23,6 +24,12 @@ const icons = {
 
 @customElement('ic-vertical-alignment-button')
 export class ICVerticalAlignmentButton extends SignalWatcher(LitElement) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
+  @consume({ context: commandsContext })
+  private commands: ICommands = {} as ICommands
+
   static styles = style
 
   render() {
@@ -38,12 +45,12 @@ export class ICVerticalAlignmentButton extends SignalWatcher(LitElement) {
   }
 
   private getAlignment(): VerticalAlign {
-    const ids = InfiniteCanvas.instance?.store.core.selectedBlockIds
+    const ids = this.store.core.selectedBlockIds
 
     const alignments = new Set<VerticalAlignComp>()
 
     for (const id of ids?.value || []) {
-      const alignment = InfiniteCanvas.instance?.store.core.verticalAlignById(id)
+      const alignment = this.store.core.verticalAlignById(id)
       if (alignment?.value) {
         alignments.add(alignment.value)
       }
@@ -59,7 +66,7 @@ export class ICVerticalAlignmentButton extends SignalWatcher(LitElement) {
   private onClick(): void {
     const alignment = this.getAlignment()
     const nextAlign = alignments[(alignments.indexOf(alignment) + 1) % alignments.length]
-    InfiniteCanvas.instance?.commands.core.applyVerticalAlignToSelected(new VerticalAlignComp({ value: nextAlign }))
+    this.commands.core.applyVerticalAlignToSelected(new VerticalAlignComp({ value: nextAlign }))
   }
 
   // protected icon = icons[VerticalAlign.Top] // Default icon, will be updated in updated

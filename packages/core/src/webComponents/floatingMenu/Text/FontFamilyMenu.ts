@@ -1,10 +1,10 @@
-import { type IConfig, InfiniteCanvas } from '@infinitecanvas/core'
+import type { IConfig } from '@infinitecanvas/core'
 import { SignalWatcher } from '@lit-labs/preact-signals'
 import { consume } from '@lit/context'
 import { LitElement, css, html, nothing } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
-import type { FontFamily } from 'packages/core/src/types'
-import { configContext } from '../../contexts'
+import type { FontFamily, ICommands, IStore } from 'packages/core/src/types'
+import { commandsContext, configContext, storeContext } from '../../contexts'
 
 const magnifyingGlassIcon = html`
   <svg
@@ -25,6 +25,12 @@ const magnifyingGlassIcon = html`
 
 @customElement('ic-font-family-menu')
 export class ICFontFamilyMenu extends SignalWatcher(LitElement) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
+  @consume({ context: commandsContext })
+  private commands: ICommands = {} as ICommands
+
   @consume({ context: configContext })
   private config: IConfig = {} as IConfig
 
@@ -140,7 +146,7 @@ export class ICFontFamilyMenu extends SignalWatcher(LitElement) {
   }
 
   private getCurrentFontFamily(): string | null {
-    const selectedTexts = InfiniteCanvas.instance?.store.textEditor.selectedTexts.value
+    const selectedTexts = this.store.textEditor.selectedTexts.value
 
     if (!selectedTexts || selectedTexts.length === 0) {
       return null
@@ -153,7 +159,7 @@ export class ICFontFamilyMenu extends SignalWatcher(LitElement) {
   }
 
   private async selectFont(family: string): Promise<void> {
-    InfiniteCanvas.instance?.commands.textEditor.setFontFamily(family)
+    this.commands.textEditor.setFontFamily(family)
   }
 
   private handleSearchInput(e: Event) {

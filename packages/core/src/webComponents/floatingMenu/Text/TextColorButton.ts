@@ -1,9 +1,12 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
 import { SignalWatcher } from '@lit-labs/preact-signals'
+import { consume } from '@lit/context'
 import { LitElement, css, html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import tinycolor from 'tinycolor2'
+
+import type { IStore } from '../../../types'
+import { storeContext } from '../../contexts'
 
 const icon = html`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor">
@@ -14,6 +17,9 @@ const icon = html`
 
 @customElement('ic-text-color-button')
 export class ICTextColorButton extends SignalWatcher(LitElement) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
   static styles = css`
     .button {
       display: flex;
@@ -36,7 +42,7 @@ export class ICTextColorButton extends SignalWatcher(LitElement) {
   `
 
   render() {
-    const color = InfiniteCanvas.instance?.store.textEditor.color
+    const color = this.store.textEditor.color
     if (!color?.value) {
       return nothing
     }

@@ -1,11 +1,19 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
+import type { ICommands, IStore } from '@infinitecanvas/core'
 import { ICMenuIconButton } from '@infinitecanvas/core/elements'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
+import { consume } from '@lit/context'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
+import { commandsContext, storeContext } from '../../contexts'
 
 @customElement('ic-text-bold-button')
 export class ICTextBoldButton extends SignalWatcher(ICMenuIconButton) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
+  @consume({ context: commandsContext })
+  private commands: ICommands = {} as ICommands
+
   protected icon = html`
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -20,11 +28,11 @@ export class ICTextBoldButton extends SignalWatcher(ICMenuIconButton) {
 `
 
   protected onClick(): void {
-    InfiniteCanvas.instance?.commands.textEditor.setBold(!this.active)
+    this.commands.textEditor.setBold(!this.active)
   }
 
   public firstUpdated(): void {
-    const isActive = InfiniteCanvas.instance?.store.textEditor.bold as ReadonlySignal<boolean>
+    const isActive = this.store.textEditor.bold as ReadonlySignal<boolean>
 
     isActive.subscribe(() => {
       this.active = isActive.value

@@ -19,11 +19,9 @@ export {
   type ToolDef,
   TextAlign,
   VerticalAlign,
-  // type ToolbarButtonInput,
 } from './types'
 
 export { CoreCommand, type CoreCommandArgs } from './commands'
-
 export { BaseExtension } from './BaseExtension'
 export { BaseSystem } from './BaseSystem'
 export { ComponentRegistry } from './ComponentRegistry'
@@ -32,3 +30,4 @@ export type { State } from './State'
 export { BaseComponent } from './BaseComponent'
 export * from './buttonCatalog'
 export { ICText } from './webComponents/blocks'
+export { storeContext, commandsContext, configContext } from './webComponents/contexts'

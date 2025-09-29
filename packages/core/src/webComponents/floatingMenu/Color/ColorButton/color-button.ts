@@ -1,9 +1,11 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
 import { SignalWatcher } from '@lit-labs/preact-signals'
+import { consume } from '@lit/context'
 import { LitElement, html, nothing, svg } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 
+import type { IStore } from '../../../../types'
+import { storeContext } from '../../../contexts'
 import { style } from './color-button.style'
 
 const chevronDownIcon = svg`
@@ -15,10 +17,13 @@ const chevronDownIcon = svg`
 export class ICColorButton extends SignalWatcher(LitElement) {
   static styles = style
 
-  render() {
-    const colors = InfiniteCanvas.instance?.store.core.selectedColors
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
 
-    if (!colors || colors.value.length === 0) return nothing
+  render() {
+    const colors = this.store.core.selectedColors
+
+    if (colors.value.length === 0) return nothing
 
     const hexes = colors.value.map((c) => c.toHex())
 

@@ -1,6 +1,6 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
 import type { Snapshot } from '@infinitecanvas/core'
 import { ICEditableBlock } from '@infinitecanvas/core/elements'
+import { consume } from '@lit/context'
 import { Editor } from '@tiptap/core'
 import Bold from '@tiptap/extension-bold'
 import Document from '@tiptap/extension-document'
@@ -17,12 +17,16 @@ import { styleMap } from 'lit/directives/style-map.js'
 import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 
 import type { Text } from '../../components'
-import { TextAlign as TextAlignKind } from '../../types'
+import { type IStore, TextAlign as TextAlignKind } from '../../types'
+import { storeContext } from '../contexts'
 
 const alignments = [TextAlignKind.Left, TextAlignKind.Center, TextAlignKind.Right, TextAlignKind.Justify]
 
 @customElement('ic-text')
 export class ICText extends ICEditableBlock {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
   @property({ type: String }) blockId!: string
 
   @property({ type: Object })
@@ -312,17 +316,14 @@ export class ICText extends ICEditableBlock {
     const editor = this._editor
     if (!editor) return
 
-    const store = InfiniteCanvas.instance?.store.textEditor
-    if (!store) return
+    this.store.textEditor.cursorColor.value = editor.getAttributes('textStyle').color ?? '#000000'
 
-    store.cursorColor.value = editor.getAttributes('textStyle').color ?? '#000000'
-
-    store.cursorBold.value = editor.isActive('bold')
-    store.cursorItalic.value = editor.isActive('italic')
-    store.cursorUnderline.value = editor.isActive('underline')
+    this.store.textEditor.cursorBold.value = editor.isActive('bold')
+    this.store.textEditor.cursorItalic.value = editor.isActive('italic')
+    this.store.textEditor.cursorUnderline.value = editor.isActive('underline')
 
     const currentAlignment = alignments.find((alignment) => editor.isActive({ textAlign: alignment }))
-    store.cursorAlignment.value = currentAlignment ?? TextAlignKind.Left
+    this.store.textEditor.cursorAlignment.value = currentAlignment ?? TextAlignKind.Left
   }
 }
 

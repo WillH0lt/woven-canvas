@@ -1,9 +1,11 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
+import type { ICommands, IStore } from '@infinitecanvas/core'
 import { SignalWatcher } from '@lit-labs/preact-signals'
 import { LitElement, css, html } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 
+import { consume } from '@lit/context'
 import { FONT_SIZE_OPTIONS } from '../../../constants'
+import { commandsContext, storeContext } from '../../contexts'
 
 const checkIcon = html`
   <svg
@@ -22,6 +24,12 @@ const checkIcon = html`
 
 @customElement('ic-font-size-menu')
 export class ICFontSizeMenu extends SignalWatcher(LitElement) {
+  @consume({ context: storeContext })
+  private store: IStore = {} as IStore
+
+  @consume({ context: commandsContext })
+  private commands: ICommands = {} as ICommands
+
   @state()
   private fontSizeText = ''
 
@@ -125,7 +133,7 @@ export class ICFontSizeMenu extends SignalWatcher(LitElement) {
   }
 
   private setFontSize(value: number) {
-    InfiniteCanvas.instance?.commands.textEditor.setFontSize(value)
+    this.commands.textEditor.setFontSize(value)
     this.updateFontSizeText(value)
   }
 
@@ -155,7 +163,7 @@ export class ICFontSizeMenu extends SignalWatcher(LitElement) {
   }
 
   private getCurrentFontSize(): number | null {
-    const selectedTexts = InfiniteCanvas.instance?.store.textEditor.selectedTexts.value
+    const selectedTexts = this.store.textEditor.selectedTexts.value
 
     if (!selectedTexts || selectedTexts.length === 0) {
       return null
