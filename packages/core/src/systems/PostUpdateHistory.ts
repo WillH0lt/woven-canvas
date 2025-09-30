@@ -30,7 +30,10 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
     const Components = ComponentRegistry.instance.components
 
     for (const Comp of Components) {
-      if (!(Comp.prototype.constructor as typeof BaseComponent).addToHistory) continue
+      const c = Comp.prototype.constructor as typeof BaseComponent
+      const addToHistory = c.persistent && !c.singleton
+
+      if (!addToHistory) continue
 
       const added = this.query((q) => q.added.with(comps.Persistent, Comp))
       this.addedQueries.set(Comp, added)

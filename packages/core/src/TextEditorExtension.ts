@@ -2,7 +2,6 @@ import { type ReadonlySignal, type Signal, computed, signal } from '@preact/sign
 
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
-import { InfiniteCanvas } from './InfiniteCanvas'
 import type { State } from './State'
 import { textEditorFloatingMenuButtons } from './buttonCatalog'
 import { CoreCommand, type CoreCommandArgs } from './commands'
@@ -97,6 +96,12 @@ export class TextEditorExtension extends BaseExtension {
   private options: Options
 
   private blockContainer: HTMLDivElement | null = null
+
+  private cursorBold = signal(false)
+  private cursorItalic = signal(false)
+  private cursorUnderline = signal(false)
+  private cursorAlignment = signal(TextAlign.Left)
+  private cursorColor = signal('#000000')
 
   constructor(options: Options) {
     super()
@@ -255,56 +260,48 @@ export class TextEditorExtension extends BaseExtension {
           return texts
         }),
 
-        cursorBold: signal(false),
+        cursorBold: this.cursorBold,
         bold: computed(() => {
           if (this.#isEditingTextComputed(state).value) {
-            return InfiniteCanvas.instance!.store.textEditor.cursorBold.value
+            return this.cursorBold.value
           }
           return isSelectionBold(state)
         }),
 
-        cursorItalic: signal(false),
+        cursorItalic: this.cursorItalic,
         italic: computed(() => {
           if (this.#isEditingTextComputed(state).value) {
-            return InfiniteCanvas.instance!.store.textEditor.cursorItalic.value
+            return this.cursorItalic.value
           }
           return isSelectionItalic(state)
         }),
 
-        cursorUnderline: signal(false),
+        cursorUnderline: this.cursorUnderline,
         underline: computed(() => {
           if (this.#isEditingTextComputed(state).value) {
-            return InfiniteCanvas.instance!.store.textEditor.cursorUnderline.value
+            return this.cursorUnderline.value
           }
           return isSelectionUnderlined(state)
         }),
 
-        cursorAlignment: signal(TextAlign.Left),
+        cursorAlignment: this.cursorAlignment,
         alignment: computed(() => {
           if (this.#isEditingTextComputed(state).value) {
-            return InfiniteCanvas.instance!.store.textEditor.cursorAlignment.value
+            return this.cursorAlignment.value
           }
 
           const alignment = getSelectionAlignment(state)
           return alignment ?? TextAlign.Left
         }),
 
-        cursorColor: signal('#000000'),
+        cursorColor: this.cursorColor,
         color: computed(() => {
           if (this.#isEditingTextComputed(state).value) {
-            return InfiniteCanvas.instance!.store.textEditor.cursorColor.value
+            return this.cursorColor.value
           }
           const color = getSelectionColor(state)
           return color ?? '#000000'
         }),
-
-        // fontSize: computed(() => {
-        //   const selectedTexts = InfiniteCanvas.instance?.store.textEditor.selectedTexts.value
-        //   if (selectedTexts && selectedTexts.length === 1) {
-        //     return selectedTexts[0].fontSize
-        //   }
-        //   return 0
-        // }),
       },
     }
   }

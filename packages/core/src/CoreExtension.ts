@@ -12,6 +12,7 @@ import { floatingMenuButtonColor, floatingMenuButtonVerticalAlign } from './butt
 import { CoreCommand, type CoreCommandArgs } from './commands'
 import {
   Block,
+  Camera,
   Color,
   Connector,
   Controls,
@@ -22,6 +23,7 @@ import {
   Text,
   VerticalAlign,
 } from './components'
+import { SESSION_KEY } from './constants'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
@@ -148,7 +150,8 @@ export class CoreExtension extends BaseExtension {
     ComponentRegistry.instance.registerComponent(Persistent)
     ComponentRegistry.instance.registerComponent(Connector)
 
-    ComponentRegistry.instance.registerSingleton(Controls)
+    ComponentRegistry.instance.registerComponent(Controls)
+    ComponentRegistry.instance.registerComponent(Camera)
 
     const menuContainer = document.createElement('div')
     menuContainer.style.pointerEvents = 'none'
@@ -161,6 +164,8 @@ export class CoreExtension extends BaseExtension {
 
     const localDB = await LocalDB.New(this.options.persistenceKey)
     this.initialEntities = await localDB.getAll()
+
+    // await loadFonts(this.initialEntities, this.options)
 
     const coreResources: CoreResources = {
       ...resources,
@@ -197,33 +202,57 @@ export class CoreExtension extends BaseExtension {
       sys.UpdateTransformBox,
       sys.UpdateDragHandler,
     )
-    this.postUpdateGroup = this.createGroup(coreResources, sys.PostUpdateDeleter, sys.PostUpdateHistory)
+    this.postUpdateGroup = this.createGroup(
+      coreResources,
+      sys.PostUpdateDeleter,
+      sys.PostUpdateHistory,
+      sys.PostUpdateSessionSync,
+    )
     this.preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
     this.renderGroup = this.createGroup(coreResources, sys.RenderHtml, sys.RenderBackground)
   }
 
   public build(worldSystem: System, resources: BaseResources): void {
-    for (const [_, entity] of Object.entries(this.initialEntities)) {
-      const args = []
-
-      const tag = entity.Block.tag
-      const components = resources.blockDefs[tag as string]?.components
-
-      if (!components) {
-        console.warn(
-          `Local storage tried to load a block with tag "${tag}" but no block definitions were found for it.`,
-        )
-        continue
+    for (const [id, entity] of Object.entries(this.initialEntities)) {
+      if (id === SESSION_KEY) {
+        initializeSessionSingletons(worldSystem, entity)
+      } else {
+        initializeBlock(worldSystem, entity, resources)
       }
 
-      for (const component of [Block, ...components]) {
-        const model = entity[component.name] || {}
-        const instance = new component().fromJson(model)
-        args.push(component, instance)
-      }
+      // if (id === SESSION_KEY) {
+      //   // initialize session singletons
+      //   const name = Object.keys(entity)[0]
+      //   const Component = ComponentRegistry.instance.getSingletonByName(name)
+      //   if (Component) {
+      //     const comp = worldSystem.singleton.write(Component)
+      //     comp.fromJson(entity[name])
+      //   }
 
-      // @ts-ignore
-      worldSystem.createEntity(...args, Persistent)
+      //   continue
+      // }
+
+      // // initialize blocks
+      // const args = []
+
+      // const tag = entity.Block.tag
+      // const components = resources.blockDefs[tag as string]?.components
+
+      // if (!components) {
+      //   console.warn(
+      //     `Local storage tried to load a block with tag "${tag}" but no block definitions were found for it.`,
+      //   )
+      //   continue
+      // }
+
+      // for (const component of [Block, ...components]) {
+      //   const model = entity[component.name] || {}
+      //   const instance = new component().fromJson(model)
+      //   args.push(component, instance)
+      // }
+
+      // // @ts-ignore
+      // worldSystem.createEntity(...args, Persistent)
     }
 
     // clear initialEntities to save on memory
@@ -362,3 +391,48 @@ export class CoreExtension extends BaseExtension {
     }
   }
 }
+
+function initializeSessionSingletons(worldSystem: System, entity: any) {
+  const name = Object.keys(entity)[0]
+  const Component = ComponentRegistry.instance.getSingletonByName(name)
+  if (Component && (Component.prototype.constructor as typeof BaseComponent).persistent) {
+    const comp = worldSystem.singleton.write(Component)
+    comp.fromJson(entity[name])
+  }
+}
+
+function initializeBlock(worldSystem: System, entity: any, resources: BaseResources) {
+  const args = []
+
+  const tag = entity.Block.tag
+  const components = resources.blockDefs[tag as string]?.components
+
+  if (!components) {
+    console.warn(`Local storage tried to load a block with tag "${tag}" but no block definitions were found for it.`)
+    return
+  }
+
+  for (const component of [Block, ...components]) {
+    const model = entity[component.name] || {}
+    const instance = new component().fromJson(model)
+    args.push(component, instance)
+  }
+
+  // @ts-ignore
+  worldSystem.createEntity(...args, Persistent)
+}
+
+// async function loadFonts(initialEntities: Snapshot, options: Options): Promise<void> {
+//   const fontFamilies = new Set<FontFamily>()
+//   for (const [_, entity] of Object.entries(initialEntities)) {
+//     if (!entity.Text?.fontFamily) continue
+
+//     const name = entity.Text.fontFamily
+//     const fontFamily = options.fontMenu.families.find((f) => f.name === name)
+//     if (!fontFamily) continue
+
+//     fontFamilies.add(fontFamily)
+//   }
+
+//   await FontLoader.loadFonts(Array.from(fontFamilies))
+// }

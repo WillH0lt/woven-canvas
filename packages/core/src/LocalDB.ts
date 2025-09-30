@@ -1,5 +1,6 @@
 import { type IDBPDatabase, openDB } from 'idb'
 import type { Diff, Snapshot } from './History'
+import { SESSION_KEY } from './constants'
 
 const PREFIX = 'InfiniteCanvas-'
 const OBJECT_STORE_NAME = 'blocks'
@@ -12,7 +13,7 @@ enum ActionKind {
 interface Action {
   kind: ActionKind
   key: string
-  value: any
+  value: Record<string, any>
 }
 
 const COMMIT_INTERVAL = 1000
@@ -62,12 +63,33 @@ export class LocalDB {
     }
   }
 
-  public put(id: string, componentName: string, value: any): void {
-    this.actions.push({ kind: ActionKind.PUT, key: `${id}/${componentName}`, value })
+  public put(id: string, componentName: string, value: Record<string, any>): void {
+    const action = { kind: ActionKind.PUT, key: `${id}/${componentName}`, value }
+    this.addAction(action)
+  }
+
+  public putSession(componentName: string, value: Record<string, any>): void {
+    this.put(SESSION_KEY, componentName, value)
   }
 
   public delete(id: string, componentName: string): void {
-    this.actions.push({ kind: ActionKind.DELETE, key: `${id}/${componentName}`, value: undefined })
+    const action = { kind: ActionKind.DELETE, key: `${id}/${componentName}`, value: {} }
+    this.addAction(action)
+  }
+
+  private addAction(action: Action): void {
+    // merge actions with the same key
+    let value = action.value
+    for (let i = this.actions.length - 1; i >= 0; i--) {
+      const a = this.actions[i]
+      if (a.key === action.key && a.kind === action.kind) {
+        this.actions.splice(i, 1)
+        value = { ...a.value, ...value }
+      }
+    }
+
+    action.value = value
+    this.actions.push(action)
   }
 
   public async getAll(): Promise<Snapshot> {

@@ -26,7 +26,7 @@ export class RenderHtml extends BaseSystem {
 
   protected declare readonly resources: CoreResources
 
-  private readonly cameras = this.query((q) => q.changed.with(comps.Camera).trackWrites)
+  private readonly cameras = this.query((q) => q.addedOrChanged.with(comps.Camera).trackWrites)
 
   private readonly blocks = this.query((q) => q.added.changed.removed.with(comps.Block).trackWrites)
 
@@ -53,8 +53,8 @@ export class RenderHtml extends BaseSystem {
 
   public execute(): void {
     // update viewport
-    if (this.cameras.changed.length > 0) {
-      const camera = this.cameras.changed[0].read(comps.Camera)
+    if (this.cameras.addedOrChanged.length > 0) {
+      const camera = this.cameras.addedOrChanged[0].read(comps.Camera)
       const blockContainer = this.resources.blockContainer
       blockContainer.style.transform = `translate(${-camera.left * camera.zoom}px, ${-camera.top * camera.zoom}px) scale(${camera.zoom})`
 

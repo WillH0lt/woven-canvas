@@ -15,16 +15,25 @@ export class FontLoader {
   }
 
   private static loadSingleFont(family: FontFamily): Promise<void> {
+    FontLoader.loadedFonts.add(family)
+
     return new Promise((resolve, reject) => {
       const link = document.createElement('link')
       link.rel = 'stylesheet'
       link.href = family.url
-      link.onload = () => {
-        FontLoader.loadedFonts.add(family)
-        resolve()
+      link.onload = async () => {
+        try {
+          // Wait for the font to be actually loaded and ready to use
+          await document.fonts.load(`12px "${family.name}"`)
+          // Ensure all fonts are ready
+          await document.fonts.ready
+          resolve()
+        } catch (error) {
+          reject(new Error(`Failed to load font face for: ${family.name}. ${error}`))
+        }
       }
       link.onerror = () => {
-        reject(new Error(`Failed to load font: ${family}`))
+        reject(new Error(`Failed to load font stylesheet: ${family.name}`))
       }
       document.head.appendChild(link)
     })

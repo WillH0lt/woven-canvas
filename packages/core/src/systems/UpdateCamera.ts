@@ -1,6 +1,7 @@
 import { BaseSystem } from '../BaseSystem'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
 import { Camera } from '../components'
+import { CAMERA_SLIDE_SECONDS } from '../constants'
 import { smoothDamp } from '../helpers'
 
 export class UpdateCamera extends BaseSystem<CoreCommandArgs> {
@@ -25,7 +26,7 @@ export class UpdateCamera extends BaseSystem<CoreCommandArgs> {
         [camera.left, camera.top],
         camera.slideTarget,
         camera.velocity,
-        camera.slideTime,
+        CAMERA_SLIDE_SECONDS,
         Number.POSITIVE_INFINITY,
         this.delta,
       )
@@ -62,8 +63,8 @@ export class UpdateCamera extends BaseSystem<CoreCommandArgs> {
     camera.velocity = [velocity.x, velocity.y]
 
     camera.slideTarget = [
-      camera.left + camera.velocity[0] * camera.slideTime,
-      camera.top + camera.velocity[1] * camera.slideTime,
+      camera.left + camera.velocity[0] * CAMERA_SLIDE_SECONDS,
+      camera.top + camera.velocity[1] * CAMERA_SLIDE_SECONDS,
     ]
   }
 }

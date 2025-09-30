@@ -7,7 +7,7 @@ import type { History } from './History'
 import type { LocalDB } from './LocalDB'
 import type { State } from './State'
 import type {} from './components'
-import { defaultColorMenuPalette, defaultFontFamilies, defaultKeybinds } from './constants'
+import { DEFAULT_COLOR_MENU_PALETTE, DEFAULT_FONT_FAMILIES, DEFAULT_KEYBINDS } from './constants'
 
 export enum EmitterEventKind {
   Command = 'command',
@@ -60,14 +60,14 @@ export const FontFamily = z.object({
 export type FontFamily = z.infer<typeof FontFamily>
 
 export const FontMenuOptions = z.object({
-  families: z.array(FontFamily).default(defaultFontFamilies),
+  families: z.array(FontFamily).default(DEFAULT_FONT_FAMILIES),
   showSearch: z.boolean().default(false),
 })
 
 export type FontMenuOptions = z.infer<typeof FontMenuOptions>
 
 export const ColorMenuOptions = z.object({
-  palette: z.array(z.string()).default(defaultColorMenuPalette),
+  palette: z.array(z.string()).default(DEFAULT_COLOR_MENU_PALETTE),
   showPicker: z.boolean().default(true),
 })
 
@@ -179,6 +179,7 @@ export const Options = z.object({
     .default([]),
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
+  persistCameraPosition: z.boolean().default(true),
   customBlocks: z.array(BlockDef).default([]),
   customTools: z.array(ToolDef).default([]),
   customTags: CustomTags.default(CustomTags.parse({})),
@@ -186,7 +187,7 @@ export const Options = z.object({
   grid: Grid.default(Grid.parse({})),
   background: Background.default(Background.parse({})),
   persistenceKey: z.string().default('default'),
-  keybinds: z.array(Keybind).default(defaultKeybinds),
+  keybinds: z.array(Keybind).default(DEFAULT_KEYBINDS),
   colorMenu: ColorMenuOptions.default(ColorMenuOptions.parse({})),
   textColorMenu: ColorMenuOptions.default(ColorMenuOptions.parse({})),
   fontMenu: FontMenuOptions.default(FontMenuOptions.parse({})),

@@ -9,7 +9,7 @@ import { FontLoader } from './FontLoader'
 import { History } from './History'
 import { State } from './State'
 import { TextEditorExtension } from './TextEditorExtension'
-import { Background, Grid } from './components'
+import { Background, Camera, Grid } from './components'
 import {
   type BaseResources,
   BlockDef,
@@ -145,6 +145,9 @@ export class InfiniteCanvas {
     blockContainer.style.transform = 'translate(0, 0) scale(1)'
     blockContainer.style.position = 'relative'
     domElement.appendChild(blockContainer)
+
+    // whether or not to persist camera position between sessions
+    Camera.persistent = parsedOptions.persistCameraPosition
 
     const emitter = new Emitter<EmitterEvents>()
     const state = new State()

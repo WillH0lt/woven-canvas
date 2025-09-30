@@ -18,7 +18,7 @@ export const SELECT_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(SELEC
 export const HAND_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(HAND_CURSOR_SVG)}") 12 12, auto`
 export const CROSSHAIR_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(CROSSHAIR_CURSOR_SVG)}") 12 12, auto`
 
-export const defaultKeybinds = [
+export const DEFAULT_KEYBINDS = [
   {
     command: CoreCommand.Undo,
     key: 'z',
@@ -84,7 +84,7 @@ export const FONT_SIZE_OPTIONS = [
   },
 ]
 
-export const defaultFontFamilies = [
+export const DEFAULT_FONT_FAMILIES = [
   {
     name: 'Figtree',
     url: 'https://fonts.googleapis.com/css2?family=Figtree',
@@ -111,7 +111,7 @@ export const defaultFontFamilies = [
   },
 ]
 
-export const defaultColorMenuPalette = [
+export const DEFAULT_COLOR_MENU_PALETTE = [
   '#000000',
   '#434343',
   '#ff3e41',
@@ -122,3 +122,7 @@ export const defaultColorMenuPalette = [
   '#6a58f2',
   '#ffffff',
 ]
+
+export const CAMERA_SLIDE_SECONDS = 0.1
+
+export const SESSION_KEY = 'session'

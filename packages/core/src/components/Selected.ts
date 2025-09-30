@@ -3,7 +3,7 @@ import { BaseComponent } from '../BaseComponent'
 
 @component
 export class Selected extends BaseComponent {
-  static addToHistory = false
+  static persistent = false
 
   @field.dynamicString(36) public declare selectedBy: string
 }

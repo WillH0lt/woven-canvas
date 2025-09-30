@@ -4,6 +4,9 @@ import { PointerButton } from '../types'
 
 @component
 export class Controls extends BaseComponent {
+  static persistent = false
+  static singleton = true
+
   @field({ type: Type.dynamicString(32), default: 'select' }) public declare leftMouseTool: string
 
   @field({ type: Type.dynamicString(32), default: 'hand' }) public declare middleMouseTool: string

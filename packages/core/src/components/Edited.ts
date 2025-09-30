@@ -4,5 +4,5 @@ import { BaseComponent } from '../BaseComponent'
 
 @component
 export class Edited extends BaseComponent {
-  static addToHistory = false
+  static persistent = false
 }

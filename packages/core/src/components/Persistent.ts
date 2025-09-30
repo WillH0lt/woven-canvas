@@ -3,5 +3,5 @@ import { BaseComponent } from '../BaseComponent'
 
 @component
 export class Persistent extends BaseComponent {
-  static addToHistory = false
+  static persistent = false
 }

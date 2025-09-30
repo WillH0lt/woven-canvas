@@ -3,7 +3,8 @@ export { Type, field, component } from '@lastolivegames/becsy'
 export abstract class BaseComponent {
   static schema: Record<string, any>
 
-  static addToHistory = true
+  static persistent = true
+  static singleton = false
 
   constructor(data: Record<string, any> = {}) {
     this.fromJson(data)

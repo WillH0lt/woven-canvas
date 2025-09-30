@@ -3,7 +3,9 @@ import { SignalWatcher } from '@lit-labs/preact-signals'
 import { consume } from '@lit/context'
 import { LitElement, css, html, nothing } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
-import type { FontFamily, ICommands, IStore } from 'packages/core/src/types'
+
+import { FontLoader } from '../../../FontLoader'
+import type { FontFamily, ICommands, IStore } from '../../../types'
 import { commandsContext, configContext, storeContext } from '../../contexts'
 
 const magnifyingGlassIcon = html`
@@ -158,8 +160,9 @@ export class ICFontFamilyMenu extends SignalWatcher(LitElement) {
     return allSameFontFamily ? firstFontFamily : null
   }
 
-  private async selectFont(family: string): Promise<void> {
-    this.commands.textEditor.setFontFamily(family)
+  private async selectFont(family: FontFamily): Promise<void> {
+    await FontLoader.loadFonts([family])
+    this.commands.textEditor.setFontFamily(family.name)
   }
 
   private handleSearchInput(e: Event) {
@@ -181,7 +184,7 @@ export class ICFontFamilyMenu extends SignalWatcher(LitElement) {
             (family) => html`
               <div
                 class="font-item ${currentFontFamily === family.name ? 'active' : ''}"
-                @click=${() => this.selectFont(family.name)}
+                @click=${() => this.selectFont(family)}
               >
                 <img
                   class="font-preview"

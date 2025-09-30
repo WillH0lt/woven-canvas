@@ -25,7 +25,11 @@ export class ComponentRegistry {
   }
 
   public registerComponent(component: new () => BaseComponent): void {
-    if (!this._components.includes(component)) {
+    if (component.prototype.constructor.singleton) {
+      if (!this._singletons.includes(component)) {
+        this._singletons.push(component)
+      }
+    } else if (!this._components.includes(component)) {
       this._components.push(component)
     }
   }
@@ -34,9 +38,13 @@ export class ComponentRegistry {
     return Object.values(this._singletons)
   }
 
-  public registerSingleton(singleton: new () => BaseComponent): void {
-    if (!this._singletons.includes(singleton)) {
-      this._singletons.push(singleton)
-    }
+  public getSingletonByName(name: string): (new () => BaseComponent) | undefined {
+    return this._singletons.find((c) => c.name === name)
   }
+
+  // public registerSingleton(singleton: new () => BaseComponent): void {
+  //   if (!this._singletons.includes(singleton)) {
+  //     this._singletons.push(singleton)
+  //   }
+  // }
 }
