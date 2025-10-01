@@ -33,10 +33,9 @@ export class CaptureZoom extends BaseSystem<CoreCommandArgs> {
     const percentX = this.mouse.position[0] / this.screen.width
     const percentY = this.mouse.position[1] / this.screen.height
 
-    const x = this.camera.left - percentX * dx
-    const y = this.camera.top - percentY * dy
+    const left = this.camera.left - percentX * dx
+    const top = this.camera.top - percentY * dy
 
-    this.emitCommand(CoreCommand.SetZoom, { zoom })
-    this.emitCommand(CoreCommand.MoveCamera, { x, y })
+    this.emitCommand(CoreCommand.SetCamera, { left, top, zoom }, {})
   }
 }

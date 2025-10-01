@@ -250,6 +250,9 @@ export type PointerEvent = {
   shiftDown: boolean
   altDown: boolean
   modDown: boolean
+  cameraTop: number
+  cameraLeft: number
+  cameraZoom: number
 }
 
 export type MouseEvent = {
@@ -317,3 +320,27 @@ export enum VerticalAlign {
   Center = 'center',
   Bottom = 'bottom',
 }
+
+export enum Easing {
+  Linear = 'linear',
+  EaseInQuad = 'easeInQuad',
+  EaseOutQuad = 'easeOutQuad',
+  EaseInOutQuad = 'easeInOutQuad',
+  EaseInCubic = 'easeInCubic',
+  EaseOutCubic = 'easeOutCubic',
+  EaseInOutSine = 'easeInOutSine',
+}
+
+export enum CameraAnimationKind {
+  Bezier = 'bezier',
+  SmoothDamp = 'smoothDamp',
+}
+
+export const Animation = z.object({
+  durationMs: z.number().min(0).default(0),
+  bezier: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([0.645, 0.045, 0.355, 1.0]),
+})
+
+export type Animation = z.infer<typeof Animation>
+
+export type AnimationInput = z.input<typeof Animation>

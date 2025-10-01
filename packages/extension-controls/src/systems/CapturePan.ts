@@ -22,10 +22,10 @@ export class CapturePan extends BaseSystem<CoreCommandArgs> {
       moveCamera: ({ context, event }) => {
         const deltaX = event.worldPosition[0] - context.panStart[0]
         const deltaY = event.worldPosition[1] - context.panStart[1]
-        const x = this.camera.left - deltaX
-        const y = this.camera.top - deltaY
+        const left = this.camera.left - deltaX
+        const top = this.camera.top - deltaY
 
-        this.emitCommand(CoreCommand.MoveCamera, { x, y })
+        this.emitCommand(CoreCommand.SetCamera, { left, top }, {})
       },
 
       flingCamera: ({ event }) => {

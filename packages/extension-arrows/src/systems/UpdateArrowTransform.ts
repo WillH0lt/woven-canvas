@@ -9,6 +9,7 @@ import {
   Opacity,
   Persistent,
   RankBounds,
+  ScaleWithZoom,
   Selected,
   Text,
   TransformBox,
@@ -72,7 +73,8 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   )
 
   private readonly handles = this.query(
-    (q) => q.current.changed.with(ArrowHandle).write.and.with(Block).write.trackWrites.using(Opacity).write,
+    (q) =>
+      q.current.changed.with(ArrowHandle).write.and.with(Block).write.trackWrites.using(Opacity, ScaleWithZoom).write,
   )
 
   private readonly blocks = this.query(
@@ -94,7 +96,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     // this.addCommandListener(ArrowCommand.StartTransformHandlesEdit, this.startTransformHandlesEdit.bind(this))
     // this.addCommandListener(ArrowCommand.EndTransformHandlesEdit, this.endTransformHandlesEdit.bind(this))
     this.addCommandListener(CoreCommand.DragBlock, this.onBlockDrag.bind(this))
-    this.addCommandListener(CoreCommand.SetZoom, this.onZoom.bind(this))
   }
 
   private addArrow(arrowEntity: Entity, position: [number, number]): void {
@@ -171,6 +172,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
         },
         Block,
         { id: crypto.randomUUID(), tag: 'ic-circular-handle', rank: TRANSFORM_HANDLE_RANK },
+        ScaleWithZoom,
       ),
     )
 
@@ -178,7 +180,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private updateTransformHandles(arrowEntity: Entity, handles: readonly Entity[] = this.handles.current): void {
-    const handleSize = TRANSFORM_HANDLE_SIZE / this.camera.zoom
+    const handleSize = TRANSFORM_HANDLE_SIZE
 
     for (const handleEntity of handles) {
       const arrowBlock = arrowEntity.read(Block)
@@ -205,6 +207,12 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       handleBlock.top = position[1] - handleSize / 2
       handleBlock.width = handleSize
       handleBlock.height = handleSize
+
+      const swz = handleEntity.write(ScaleWithZoom)
+      swz.startWidth = handleSize
+      swz.startHeight = handleSize
+      swz.startLeft = handleBlock.left
+      swz.startTop = handleBlock.top
     }
   }
 
@@ -433,10 +441,4 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   //     }
   //   }
   // }
-
-  public onZoom(): void {
-    if (!this.handles.current.length) return
-    const arrow = this.arrows.current[0]
-    this.updateTransformHandles(arrow)
-  }
 }

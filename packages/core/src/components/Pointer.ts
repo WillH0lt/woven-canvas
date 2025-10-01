@@ -1,5 +1,6 @@
 import { Type, component, field } from '@lastolivegames/becsy'
 import { PointerButton, type PointerEvent, PointerType } from '../types'
+import type { Camera } from './Camera'
 import type { Keyboard } from './Keyboard'
 
 const PREV_COUNT = 6
@@ -117,7 +118,12 @@ export class Pointer {
     this._velocity = [vx, vy]
   }
 
-  public toEvent(type: PointerEvent['type'], intersects: PointerEvent['intersects'], keyboard: Keyboard): PointerEvent {
+  public toEvent(
+    type: PointerEvent['type'],
+    intersects: PointerEvent['intersects'],
+    keyboard: Keyboard,
+    camera: Camera,
+  ): PointerEvent {
     return {
       type,
       worldPosition: [this.worldPosition[0], this.worldPosition[1]],
@@ -130,6 +136,9 @@ export class Pointer {
       shiftDown: keyboard.shiftDown,
       altDown: keyboard.altDown,
       modDown: keyboard.modDown,
+      cameraTop: camera.top,
+      cameraLeft: camera.left,
+      cameraZoom: camera.zoom,
     }
   }
 }

@@ -13,6 +13,7 @@ import { CoreCommand, type CoreCommandArgs } from './commands'
 import {
   Block,
   Camera,
+  CameraState,
   Color,
   Connector,
   Controls,
@@ -29,6 +30,7 @@ import { createSnapshot } from './helpers'
 import * as sys from './systems'
 import {} from './textUtils'
 import type {
+  AnimationInput,
   BaseResources,
   ColorMenuOptions,
   CoreResources,
@@ -49,8 +51,9 @@ type ControlsData = Pick<Controls, SerializablePropNames<Controls>>
 declare module '@infinitecanvas/core' {
   interface ICommands {
     core: {
-      moveCamera: (x: number, y: number) => void
-      setZoom: (zoom: number) => void
+      setCamera: (camera: Partial<Camera>, animation: AnimationInput) => void
+      cancelCameraAnimation: () => void
+      frameCameraToBlocks: (animation: AnimationInput) => void
       undo: () => void
       redo: () => void
       createCheckpoint: () => void
@@ -78,8 +81,10 @@ declare module '@infinitecanvas/core' {
       blockById: (id: string) => ReadonlySignal<Block | undefined>
       colorById: (id: string) => ReadonlySignal<Color | undefined>
       verticalAlignById: (id: string) => ReadonlySignal<VerticalAlign | undefined>
-      controls: ReadonlySignal<Controls | undefined>
       textById: (id: string) => ReadonlySignal<Text | undefined>
+      controls: ReadonlySignal<Controls | undefined>
+      camera: ReadonlySignal<Camera | undefined>
+      cameraState: ReadonlySignal<CameraState | undefined>
       fontFamilies: ReadonlySignal<FontFamily[]>
       selectedColors: ReadonlySignal<Color[]>
     }
@@ -152,6 +157,7 @@ export class CoreExtension extends BaseExtension {
 
     ComponentRegistry.instance.registerComponent(Controls)
     ComponentRegistry.instance.registerComponent(Camera)
+    ComponentRegistry.instance.registerComponent(CameraState)
 
     const menuContainer = document.createElement('div')
     menuContainer.style.pointerEvents = 'none'
@@ -207,6 +213,7 @@ export class CoreExtension extends BaseExtension {
       sys.PostUpdateDeleter,
       sys.PostUpdateHistory,
       sys.PostUpdateSessionSync,
+      sys.PostUpdateScaleWithZoom,
     )
     this.preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
     this.renderGroup = this.createGroup(coreResources, sys.RenderHtml, sys.RenderBackground)
@@ -270,8 +277,10 @@ export class CoreExtension extends BaseExtension {
   public addCommands = (state: State, send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
     return {
       core: {
-        moveCamera: (x: number, y: number) => send(CoreCommand.MoveCamera, { x, y }),
-        setZoom: (zoom: number) => send(CoreCommand.SetZoom, { zoom }),
+        setCamera: (camera: Partial<Camera>, animation: AnimationInput = {}) =>
+          send(CoreCommand.SetCamera, camera, animation),
+        cancelCameraAnimation: () => send(CoreCommand.CancelCameraAnimation),
+        frameCameraToBlocks: (animation: AnimationInput = {}) => send(CoreCommand.FrameCameraToBlocks, animation),
         undo: () => send(CoreCommand.Undo),
         redo: () => send(CoreCommand.Redo),
         createCheckpoint: () => send(CoreCommand.CreateCheckpoint),
@@ -352,6 +361,8 @@ export class CoreExtension extends BaseExtension {
         verticalAlignById: (id: string): ReadonlySignal<VerticalAlign | undefined> =>
           computed(() => state.getComponent<VerticalAlign>(VerticalAlign, id).value),
         controls: computed(() => state.getSingleton(Controls).value),
+        camera: computed(() => state.getSingleton(Camera).value),
+        cameraState: computed(() => state.getSingleton(CameraState).value),
         textById: (id: string): ReadonlySignal<Text | undefined> =>
           computed(() => state.getComponent<Text>(Text, id).value),
         fontFamilies: computed(() => {

@@ -58,7 +58,7 @@ export class CaptureScrollEdges extends BaseSystem<CoreCommandArgs> {
         edgeEnterStartTime: () => performance.now(),
       }),
 
-      moveCamera: ({ event }) => {
+      moveCamera: ({ event, context }) => {
         const viewportWidth = this.screen.width
         const viewportHeight = this.screen.height
 
@@ -84,7 +84,10 @@ export class CaptureScrollEdges extends BaseSystem<CoreCommandArgs> {
 
         if (shiftX === 0 && shiftY === 0) return
 
-        this.emitCommand(CoreCommand.TranslateCamera, { x: shiftX, y: shiftY })
+        const top = event.cameraTop + shiftY
+        const left = event.cameraLeft + shiftX
+
+        this.emitCommand(CoreCommand.SetCamera, { top, left }, {})
       },
 
       resetContext: assign({

@@ -100,6 +100,7 @@
     "@tiptap/extension-text-align": "^3.5.2",
     "@tiptap/extension-text-style": "^3.0.7",
     "@tiptap/extension-underline": "^3.0.7",
+    "bezier-easing": "^2.1.0",
     "idb": "^8.0.3",
     "lit": "^3.3.0",
     "mathjs": "^14.6.0",

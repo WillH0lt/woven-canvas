@@ -20,9 +20,13 @@ export class CaptureScroll extends BaseSystem<CoreCommandArgs> {
 
     const left = this.camera.left + (1 * wheelEvent.wheelDeltaX) / this.camera.zoom
     const top = this.camera.top + (1 * wheelEvent.wheelDeltaY) / this.camera.zoom
-    this.emitCommand(CoreCommand.MoveCamera, {
-      x: left,
-      y: top,
-    })
+    this.emitCommand(
+      CoreCommand.SetCamera,
+      {
+        left,
+        top,
+      },
+      {},
+    )
   }
 }

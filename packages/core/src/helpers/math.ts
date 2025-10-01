@@ -56,3 +56,7 @@ export function newRotationMatrixAroundPoint(angle: number, point: [number, numb
 
   // return transformPoint(M, point)
 }
+
+export function approximatelyEqual(a: number, b: number, epsilon = 0.000001): boolean {
+  return Math.abs(a - b) < epsilon
+}

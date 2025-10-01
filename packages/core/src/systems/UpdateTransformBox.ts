@@ -10,6 +10,7 @@ import {
   Edited,
   Locked,
   Opacity,
+  ScaleWithZoom,
   Selected,
   Text,
   ToBeDeleted,
@@ -50,8 +51,9 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
 
   private readonly transformBoxes = this.query(
     (q) =>
-      q.current.changed.with(TransformBox, Block).write.trackWrites.using(TransformHandle, DragStart, Locked, Opacity)
-        .write,
+      q.current.changed
+        .with(TransformBox, Block)
+        .write.trackWrites.using(TransformHandle, DragStart, Locked, Opacity, ScaleWithZoom).write,
   )
 
   public constructor() {
@@ -67,7 +69,6 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     this.addCommandListener(CoreCommand.RemoveTransformBox, this.removeTransformBox.bind(this))
     this.addCommandListener(CoreCommand.StartTransformBoxEdit, this.startTransformBoxEdit.bind(this))
     this.addCommandListener(CoreCommand.EndTransformBoxEdit, this.endTransformBoxEdit.bind(this))
-    this.addCommandListener(CoreCommand.SetZoom, this.onZoom.bind(this))
   }
 
   private removeTransformBox(): void {
@@ -181,7 +182,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
 
     const { left, top, width, height, rotateZ } = transformBoxBlock
     const center = transformBoxBlock.getCenter()
-    const handleSize = 12 / this.camera.zoom
+    const handleSize = 12
     const rotationHandleSize = 2 * handleSize
     const sideHandleSize = 2 * handleSize
 
@@ -317,7 +318,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
 
       // if no existing handle entity, create a new one
       if (!handleEntity) {
-        handleEntity = this.createEntity(TransformHandle, Block, { id: crypto.randomUUID() }, DragStart)
+        handleEntity = this.createEntity(TransformHandle, Block, { id: crypto.randomUUID() }, DragStart, ScaleWithZoom)
       }
 
       const handleCenter: [number, number] = [handle.left + handle.width / 2, handle.top + handle.height / 2]
@@ -349,6 +350,13 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
         startWidth: handle.width,
         startHeight: handle.height,
         startRotateZ: handle.rotateZ,
+      })
+
+      Object.assign(handleEntity.write(ScaleWithZoom), {
+        startLeft: left,
+        startTop: top,
+        startWidth: handle.width,
+        startHeight: handle.height,
       })
     }
   }
@@ -464,8 +472,8 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     }
   }
 
-  public onZoom(): void {
-    if (!this.transformBoxes.current.length) return
-    this.addOrUpdateTransformHandles(this.transformBoxes.current[0])
-  }
+  // public onZoom(): void {
+  //   if (!this.transformBoxes.current.length) return
+  //   this.addOrUpdateTransformHandles(this.transformBoxes.current[0])
+  // }
 }

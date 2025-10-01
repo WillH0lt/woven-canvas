@@ -210,7 +210,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     if (added.length > 0 && current.length === 1) {
       const pointer = current[0].read(comps.Pointer)
       if (!pointer.obscured) {
-        const ev = pointer.toEvent('pointerDown', intersects, this.keyboard)
+        const ev = pointer.toEvent('pointerDown', intersects, this.keyboard, this.camera)
         events.push(ev)
       }
     }
@@ -218,7 +218,7 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     // cancel the action if the pointer is down, and we push another pointer down.
     if (current.length >= 1 && this.pointers.added.length > 0 && this.pointers.current.length > 1) {
       const pointer = current[0].read(comps.Pointer)
-      const ev = pointer.toEvent('cancel', intersects, this.keyboard)
+      const ev = pointer.toEvent('cancel', intersects, this.keyboard, this.camera)
       events.push(ev)
     }
 
@@ -226,19 +226,19 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
     // is down it should cancel the current action
     if (current.length >= 1 && this.keyboard.escapeDownTrigger) {
       const pointer = current[0].read(comps.Pointer)
-      const ev = pointer.toEvent('cancel', intersects, this.keyboard)
+      const ev = pointer.toEvent('cancel', intersects, this.keyboard, this.camera)
       events.push(ev)
     }
 
     if (removed.length > 0 && current.length === 0) {
       const pointer = removed[0].read(comps.Pointer)
-      const ev = pointer.toEvent('pointerUp', intersects, this.keyboard)
+      const ev = pointer.toEvent('pointerUp', intersects, this.keyboard, this.camera)
       events.push(ev)
 
       const dist = distance(pointer.downPosition, pointer.position)
       const deltaFrame = this.frame.value - pointer.downFrame
       if (dist < CLICK_MOVE_THRESHOLD && deltaFrame < CLICK_FRAME_THRESHOLD) {
-        const clickEvent = pointer.toEvent('click', intersects, this.keyboard)
+        const clickEvent = pointer.toEvent('click', intersects, this.keyboard, this.camera)
         events.push(clickEvent)
       }
     }
@@ -254,28 +254,15 @@ export class BaseSystem<TCommands extends BaseCommands = {}> extends System {
       current.length === 1
     ) {
       const pointer = current[0].read(comps.Pointer)
-      const ev = pointer.toEvent('pointerMove', intersects, this.keyboard)
+      const ev = pointer.toEvent('pointerMove', intersects, this.keyboard, this.camera)
       events.push(ev)
     }
 
     if (options.includeFrameEvent && current.length === 1) {
       const pointer = current[0].read(comps.Pointer)
-      const ev = pointer.toEvent('frame', intersects, this.keyboard)
+      const ev = pointer.toEvent('frame', intersects, this.keyboard, this.camera)
       events.push(ev)
     }
-
-    // for (const event of events) {
-    //   event.intersects = [
-    //     this.intersect.entity,
-    //     this.intersect.entity2,
-    //     this.intersect.entity3,
-    //     this.intersect.entity4,
-    //     this.intersect.entity5,
-    //   ]
-    //   event.shiftDown = this.keyboard.shiftDown
-    //   event.altDown = this.keyboard.altDown
-    //   event.modDown = this.keyboard.modDown
-    // }
 
     return events
   }

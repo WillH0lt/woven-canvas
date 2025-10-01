@@ -1,15 +1,16 @@
 import type { Entity } from '@lastolivegames/becsy'
 
 import type { Snapshot } from './History'
-import type { Controls, Cursor } from './components'
+import type { Camera, Controls, Cursor } from './components'
+import type { AnimationInput } from './types'
 
 export enum CoreCommand {
   SetControls = 'coreSetControls',
   SetCursor = 'coreSetCursor',
-  SetZoom = 'coreSetZoom',
-  MoveCamera = 'coreMoveCamera',
-  TranslateCamera = 'coreTranslateCamera',
+  SetCamera = 'coreSetCamera',
   SetCameraVelocity = 'coreSetCameraVelocity',
+  CancelCameraAnimation = 'coreCancelCameraAnimation',
+  FrameCameraToBlocks = 'coreFrameCameraToBlocks',
 
   RemoveBlock = 'coreRemoveBlock',
 
@@ -62,29 +63,15 @@ export enum CoreCommand {
 export type CoreCommandArgs = {
   [CoreCommand.SetControls]: [Partial<Controls>]
   [CoreCommand.SetCursor]: [Partial<Cursor>]
-  [CoreCommand.SetZoom]: [
-    {
-      zoom: number
-    },
-  ]
-  [CoreCommand.MoveCamera]: [
-    {
-      x: number
-      y: number
-    },
-  ]
-  [CoreCommand.TranslateCamera]: [
-    {
-      x: number
-      y: number
-    },
-  ]
+  [CoreCommand.SetCamera]: [Partial<Camera>, AnimationInput]
   [CoreCommand.SetCameraVelocity]: [
     {
       x: number
       y: number
     },
   ]
+  [CoreCommand.CancelCameraAnimation]: []
+  [CoreCommand.FrameCameraToBlocks]: [AnimationInput]
 
   [CoreCommand.RemoveBlock]: [Entity]
   // [CoreCommand.UpdateText]: [Entity, Partial<string>]

@@ -15,7 +15,7 @@ export class PostUpdateSessionSync extends BaseSystem<CoreCommandArgs> {
   public constructor() {
     super()
 
-    this.schedule((s) => s.after(PostUpdateDeleter, PostUpdateHistory))
+    this.schedule((s) => s.inAnyOrderWith(PostUpdateDeleter, PostUpdateHistory))
 
     const Singletons = ComponentRegistry.instance.singletons
 
@@ -30,18 +30,6 @@ export class PostUpdateSessionSync extends BaseSystem<CoreCommandArgs> {
     }
   }
 
-  // public initialize(): void {
-  //   this.syncSession()
-  // }
-
-  // @co *syncSession(): Generator {
-  //   while (true) {
-  //     yield co.waitForSeconds(1)
-
-  //     console.log('syncing session DB...')
-  //   }
-  // }
-
   public execute(): void {
     for (const Comp of this.addedOrChangedQueries.keys()) {
       const query = this.addedOrChangedQueries.get(Comp)!
@@ -51,11 +39,4 @@ export class PostUpdateSessionSync extends BaseSystem<CoreCommandArgs> {
       this.resources.localDB.putSession(Comp.name, comp.toJson())
     }
   }
-
-  // private createCheckpoint(): void {
-  //   const diff = this.resources.history.createCheckpoint()
-  //   console.log('create checkpoint', diff)
-  //   if (!diff) return
-  //   this.resources.localDB.applyDiff(diff)
-  // }
 }
