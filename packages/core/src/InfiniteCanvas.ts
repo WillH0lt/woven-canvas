@@ -92,7 +92,7 @@ export class InfiniteCanvas {
 
   public config: IConfig = {} as IConfig
 
-  public static async New(options: OptionsInput = {}): Promise<InfiniteCanvas> {
+  public static async New(container: HTMLElement, options: OptionsInput = {}): Promise<InfiniteCanvas> {
     const parsedOptions = Options.parse(options)
 
     const extensions = parsedOptions.extensions.map((ext) => {
@@ -119,6 +119,8 @@ export class InfiniteCanvas {
     domElement.style.touchAction = 'none'
     domElement.tabIndex = 0
 
+    container.appendChild(domElement)
+
     // create the background canvas if needed
     const backgroundCanvas = document.createElement('canvas')
     backgroundCanvas.id = 'background-canvas'
@@ -134,6 +136,12 @@ export class InfiniteCanvas {
     backgroundCanvas.style.zIndex = '-1'
 
     domElement.appendChild(backgroundCanvas)
+
+    // scrolling can happen when text input extends beyond viewport
+    domElement.addEventListener('scroll', (e) => {
+      e.preventDefault()
+      domElement.scrollTo(0, 0)
+    })
 
     // create the block container which acts as the camera viewport and holds all blocks
     const blockContainer = document.createElement('div')

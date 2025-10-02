@@ -81,6 +81,8 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     (q) => q.changed.and.current.with(Block).trackWrites.using(TransformBox, TransformHandle).read,
   )
 
+  private readonly connectors = this.query((q) => q.changed.with(Connector).write.trackWrites.and.with(Arrow))
+
   private readonly selectedArrows = this.query((q) => q.current.with(Arrow, Selected).read)
 
   public initialize(): void {
@@ -96,6 +98,43 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     // this.addCommandListener(ArrowCommand.StartTransformHandlesEdit, this.startTransformHandlesEdit.bind(this))
     // this.addCommandListener(ArrowCommand.EndTransformHandlesEdit, this.endTransformHandlesEdit.bind(this))
     this.addCommandListener(CoreCommand.DragBlock, this.onBlockDrag.bind(this))
+  }
+
+  public execute(): void {
+    this.executeCommands()
+
+    for (const connectorEntity of this.connectors.changed) {
+      const connector = connectorEntity.write(Connector)
+
+      const changedBlocks = []
+      if (connector.startNeedsUpdate) changedBlocks.push(connector.startBlockEntity)
+      if (connector.endNeedsUpdate) changedBlocks.push(connector.endBlockEntity)
+
+      for (const blockEntity of changedBlocks) {
+        if (!blockEntity) continue
+        const block = blockEntity.read(Block)
+        const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
+        const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
+        const position = block.uvToWorld(uv)
+        this.updateArrow(connectorEntity, handleKind, position)
+      }
+
+      connector.startNeedsUpdate = false
+      connector.endNeedsUpdate = false
+    }
+
+    // for (const blockEntity of this.blocks.changed) {
+    //   for (const connectorEntity of blockEntity.read(Block).connectors) {
+    //     if (connectorEntity.has(Arrow)) {
+    //       const block = blockEntity.read(Block)
+    //       const connector = connectorEntity.read(Connector)
+    //       const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
+    //       const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
+    //       const position = block.uvToWorld(uv)
+    //       this.updateArrow(connectorEntity, handleKind, position)
+    //     }
+    //   }
+    // }
   }
 
   private addArrow(arrowEntity: Entity, position: [number, number]): void {
@@ -258,21 +297,22 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       this.onArrowDrag(blockEntity)
     } else if (blockEntity.has(ArrowHandle)) {
       this.onArrowHandleDrag(blockEntity)
-    } else {
-      // when a block is moved recalculate the arrow endpoints
-      for (const blockEntity of this.blocks.changed) {
-        for (const connectorEntity of blockEntity.read(Block).connectors) {
-          if (connectorEntity.has(Arrow)) {
-            const block = blockEntity.read(Block)
-            const connector = connectorEntity.read(Connector)
-            const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
-            const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
-            const position = block.uvToWorld(uv)
-            this.updateArrow(connectorEntity, handleKind, position)
-          }
-        }
-      }
     }
+    // else {
+    //   // when a block is moved recalculate the arrow endpoints
+    //   for (const blockEntity of this.blocks.changed) {
+    //     for (const connectorEntity of blockEntity.read(Block).connectors) {
+    //       if (connectorEntity.has(Arrow)) {
+    //         const block = blockEntity.read(Block)
+    //         const connector = connectorEntity.read(Connector)
+    //         const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
+    //         const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
+    //         const position = block.uvToWorld(uv)
+    //         this.updateArrow(connectorEntity, handleKind, position)
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   private onArrowDrag(arrowEntity: Entity): void {

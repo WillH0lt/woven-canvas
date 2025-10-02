@@ -26,7 +26,12 @@ export class ICRoughShapesTool extends ICToolbarIconButton {
       height: 150,
     })
 
+    const fontFamily =
+      InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
+      InfiniteCanvas.instance!.config.core.defaultFontFamily
+
     const text = new Text({
+      fontFamily: fontFamily.name,
       fontSize: 16,
       constrainWidth: true,
     })

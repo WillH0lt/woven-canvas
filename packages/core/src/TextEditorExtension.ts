@@ -25,6 +25,7 @@ import {
   type BlockDefInput,
   type ColorMenuOptions,
   FloatingMenuButton,
+  type FontFamily,
   type FontMenuOptions,
   type ICommands,
   type IConfig,
@@ -44,7 +45,7 @@ declare module '@infinitecanvas/core' {
       setAlignment: (alignment: TextAlign) => void
       setColor: (color: string) => void
       setFontSize: (fontSize: number) => void
-      setFontFamily: (fontFamily: string) => void
+      setFontFamily: (fontFamily: FontFamily) => void
     }
   }
 
@@ -61,6 +62,7 @@ declare module '@infinitecanvas/core' {
       alignment: ReadonlySignal<TextAlign>
       cursorColor: Signal<string>
       color: ReadonlySignal<string>
+      mostRecentFontFamily: Signal<FontFamily | null>
     }
   }
 
@@ -102,6 +104,7 @@ export class TextEditorExtension extends BaseExtension {
   private cursorUnderline = signal(false)
   private cursorAlignment = signal(TextAlign.Left)
   private cursorColor = signal('#000000')
+  private mostRecentFontFamily = signal<FontFamily | null>(null)
 
   constructor(options: Options) {
     super()
@@ -234,12 +237,14 @@ export class TextEditorExtension extends BaseExtension {
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           send(CoreCommand.UpdateTransformBox)
         },
-        setFontFamily: async (fontFamily: string) => {
+        setFontFamily: async (fontFamily: FontFamily) => {
           if (!this.blockContainer) return
 
-          const snapshot = await applyFontFamilyToSelected(state, this.blockContainer, fontFamily)
+          const snapshot = await applyFontFamilyToSelected(state, this.blockContainer, fontFamily.name)
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           send(CoreCommand.UpdateTransformBox)
+
+          this.mostRecentFontFamily.value = fontFamily
         },
       },
     }
@@ -302,6 +307,8 @@ export class TextEditorExtension extends BaseExtension {
           const color = getSelectionColor(state)
           return color ?? '#000000'
         }),
+
+        mostRecentFontFamily: this.mostRecentFontFamily,
       },
     }
   }

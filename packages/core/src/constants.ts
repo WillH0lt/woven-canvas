@@ -59,6 +59,14 @@ export const DEFAULT_KEYBINDS = [
     key: 'a',
     mod: true,
   },
+  {
+    command: CoreCommand.BringForwardSelected,
+    key: 'rightBracket',
+  },
+  {
+    command: CoreCommand.SendBackwardSelected,
+    key: 'leftBracket',
+  },
 ]
 
 export const FONT_SIZE_OPTIONS = [

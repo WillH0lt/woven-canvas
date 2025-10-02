@@ -26,7 +26,12 @@ export class ICTextTool extends ICToolbarIconButton {
       width: 2,
     })
 
+    const fontFamily =
+      InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
+      InfiniteCanvas.instance!.config.core.defaultFontFamily
+
     const text = new Text({
+      fontFamily: fontFamily.name,
       fontSize: 24,
       lineHeight: 1.2,
     })
@@ -46,8 +51,13 @@ export class ICTextTool extends ICToolbarIconButton {
       width: 40,
     })
 
+    const fontFamily =
+      InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
+      InfiniteCanvas.instance!.config.core.defaultFontFamily
+
     const text = new Text({
       content: 'text',
+      fontFamily: fontFamily.name,
       fontSize: 24,
       lineHeight: 1.2,
     })

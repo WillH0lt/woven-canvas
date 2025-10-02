@@ -162,7 +162,7 @@ export class ICFontFamilyMenu extends SignalWatcher(LitElement) {
 
   private async selectFont(family: FontFamily): Promise<void> {
     await FontLoader.loadFonts([family])
-    this.commands.textEditor.setFontFamily(family.name)
+    this.commands.textEditor.setFontFamily(family)
   }
 
   private handleSearchInput(e: Event) {

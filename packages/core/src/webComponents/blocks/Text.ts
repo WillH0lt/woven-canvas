@@ -1,6 +1,3 @@
-import type { Snapshot } from '@infinitecanvas/core'
-import { ICEditableBlock } from '@infinitecanvas/core/elements'
-import { consume } from '@lit/context'
 import { Editor } from '@tiptap/core'
 import Bold from '@tiptap/extension-bold'
 import Document from '@tiptap/extension-document'
@@ -16,17 +13,15 @@ import { customElement, property, query } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 
+import type { Snapshot } from '../../History'
 import type { Text } from '../../components'
-import { type IStore, TextAlign as TextAlignKind } from '../../types'
-import { storeContext } from '../contexts'
+import { TextAlign as TextAlignKind } from '../../types'
+import { ICEditableBlock } from '../elements'
 
 const alignments = [TextAlignKind.Left, TextAlignKind.Center, TextAlignKind.Right, TextAlignKind.Justify]
 
 @customElement('ic-text')
 export class ICText extends ICEditableBlock {
-  @consume({ context: storeContext })
-  private store: IStore = {} as IStore
-
   @property({ type: String }) blockId!: string
 
   @property({ type: Object })
@@ -40,6 +35,7 @@ export class ICText extends ICEditableBlock {
   @query('#textContainer') textContainer: HTMLElement | undefined
 
   private _editor: Editor | null = null
+  private _rootEditableElement: ICEditableBlock | null = null
 
   static styles = [
     ...super.styles,
@@ -78,6 +74,8 @@ export class ICText extends ICEditableBlock {
 
   public connectedCallback(): void {
     super.connectedCallback()
+
+    this._rootEditableElement = this.findRootEditableElement()
 
     this.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Control' || event.key === 'Meta') return
@@ -137,9 +135,13 @@ export class ICText extends ICEditableBlock {
       this.syncStore()
     })
 
-    // this._editor.on('update', () => {
-    //   this.centerMenuToFitContent()
-    // })
+    this._editor.on('update', () => {
+      if (this._rootEditableElement) {
+        const snapshot = this._rootEditableElement.getSnapshot()
+        console.log(snapshot)
+        this.commands.core.updateFromSnapshot(snapshot)
+      }
+    })
 
     this.syncStore()
 
@@ -150,6 +152,32 @@ export class ICText extends ICEditableBlock {
     for (const pointerEvent of pointerEvents) {
       this.editorContainer?.addEventListener(pointerEvent, (ev) => ev.stopPropagation())
     }
+  }
+
+  /**
+   * Finds the topmost editable block that contains this text element.
+   * Uses multiple approaches to ensure we find the root editable element.
+   */
+  private findRootEditableElement(): ICEditableBlock {
+    let rootEditable: ICEditableBlock = this
+
+    if (rootEditable === this) {
+      let current: Node = this
+      while (current) {
+        const rootNode = current.getRootNode()
+        if (rootNode && rootNode !== current && (rootNode as any).host) {
+          const host = (rootNode as any).host as HTMLElement
+          if (typeof (host as any).getSnapshot === 'function') {
+            rootEditable = host as ICEditableBlock
+            break
+          }
+          current = host
+        } else {
+          break
+        }
+      }
+    }
+    return rootEditable
   }
 
   private endEditing(): void {

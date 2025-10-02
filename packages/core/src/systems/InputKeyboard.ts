@@ -2,6 +2,7 @@ import { co } from '@lastolivegames/becsy'
 
 import { BaseSystem } from '../BaseSystem'
 import { Keyboard } from '../components'
+import { getKeyName } from '../helpers'
 
 export class InputKeyboard extends BaseSystem {
   private readonly keyboards = this.query((q) => q.current.with(Keyboard).write)
@@ -16,7 +17,8 @@ export class InputKeyboard extends BaseSystem {
   }
 
   private onKeyDown(e: KeyboardEvent): void {
-    const key = e.key.toLowerCase()
+    const key = getKeyName(e)
+    console.log(key)
 
     const keyDown = `${key}Down`
 
@@ -36,7 +38,7 @@ export class InputKeyboard extends BaseSystem {
   }
 
   private onKeyUp(e: KeyboardEvent): void {
-    const key = e.key.toLowerCase()
+    const key = getKeyName(e)
     const keyDown = `${key}Down`
 
     const triggerKey = `${key}UpTrigger`

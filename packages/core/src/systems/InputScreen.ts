@@ -15,16 +15,26 @@ export class InputScreen extends BaseSystem {
     this.schedule((s) => s.inAnyOrderWith(InputKeyboard))
   }
 
-  @co private *handleResize(): Generator {
-    const screen = this.screens.current[0].write(Screen)
-    screen.width = this.resources.domElement.clientWidth
-    screen.height = this.resources.domElement.clientHeight
+  @co private *resizeCoroutine(): Generator {
+    this._handleResize()
 
     yield
   }
 
   public initialize(): void {
-    const resizeObserver = new ResizeObserver(this.handleResize.bind(this))
+    const resizeObserver = new ResizeObserver(this.resizeCoroutine.bind(this))
     resizeObserver.observe(this.resources.domElement)
+  }
+
+  public execute(): void {
+    if (this.frame.value === 1) {
+      this._handleResize()
+    }
+  }
+
+  private _handleResize(): void {
+    const screen = this.screens.current[0].write(Screen)
+    screen.width = this.resources.domElement.clientWidth
+    screen.height = this.resources.domElement.clientHeight
   }
 }

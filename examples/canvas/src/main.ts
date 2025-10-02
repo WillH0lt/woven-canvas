@@ -23,16 +23,16 @@ const lorem = new LoremIpsum({
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div id="container" class="absolute inset-0"></div>
-  <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 p-4 bg-white rounded shadow flex gap-4 cursor-pointer">
-    <button id="shiftBtn" class="bg-amber-300 p-2 rounded">
-      shift
-    </button>
-    <button id="frameBtn" class="bg-amber-300 p-2 rounded">
-      frame
-    </button>
-  </div>
-  
 `
+
+// <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 p-4 bg-white rounded shadow flex gap-4 cursor-pointer">
+//   <button id="shiftBtn" class="bg-amber-300 p-2 rounded">
+//     shift
+//   </button>
+//   <button id="frameBtn" class="bg-amber-300 p-2 rounded">
+//     frame
+//   </button>
+// </div>
 
 // <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 p-4 bg-white rounded shadow flex gap-4 cursor-pointer">
 //   <button id="textBtn" class="bg-amber-300 p-2 rounded">
@@ -55,7 +55,7 @@ async function initializeCanvas(container: HTMLDivElement) {
   // await loadFont('Figtree')
   // await loadFont('Indie Flower')
 
-  infiniteCanvas = await InfiniteCanvas.New({
+  infiniteCanvas = await InfiniteCanvas.New(container, {
     extensions: [
       ControlsExtension,
       ArrowsExtension,
@@ -67,7 +67,7 @@ async function initializeCanvas(container: HTMLDivElement) {
     ],
   })
 
-  container.appendChild(infiniteCanvas.domElement)
+  // container.appendChild(infiniteCanvas.domElement)
 
   infiniteCanvas.store.core.blockCount.subscribe((count) => {
     console.log('Block count:', count)
@@ -86,20 +86,20 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeCanvas(document.querySelector<HTMLDivElement>('#container')!)
 })
 
-document.querySelector<HTMLDivElement>('#shiftBtn')!.addEventListener('click', () => {
-  const camera = InfiniteCanvas.instance?.store.core.camera.value
-  if (!camera) return
+// document.querySelector<HTMLDivElement>('#shiftBtn')!.addEventListener('click', () => {
+//   const camera = InfiniteCanvas.instance?.store.core.camera.value
+//   if (!camera) return
 
-  const left = camera.left + 100
-  InfiniteCanvas.instance?.commands.core.setCamera({ left }, { durationMs: 5000 })
-})
+//   const left = camera.left + 100
+//   InfiniteCanvas.instance?.commands.core.setCamera({ left }, { durationMs: 5000 })
+// })
 
-document.querySelector<HTMLDivElement>('#frameBtn')!.addEventListener('click', () => {
-  InfiniteCanvas.instance?.commands.core.frameCameraToBlocks({
-    durationMs: 1500,
-    bezier: [0.22, 1, 0.36, 1], // easeOutQuint
-  })
-})
+// document.querySelector<HTMLDivElement>('#frameBtn')!.addEventListener('click', () => {
+//   InfiniteCanvas.instance?.commands.core.frameCameraToBlocks({
+//     durationMs: 1500,
+//     bezier: [0.22, 1, 0.36, 1], // easeOutQuint
+//   })
+// })
 
 // document.querySelector<HTMLDivElement>('#textBtn')!.addEventListener('click', () => {
 //   const left = Math.random() * window.innerWidth

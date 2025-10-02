@@ -144,21 +144,18 @@ async function runActions(actions: Action[], db: IDBPDatabase): Promise<void> {
   for (const action of actions) {
     switch (action.kind) {
       case ActionKind.PUT:
-        try {
-          await store.put(action.value, action.key)
-        } catch (error) {
-          console.error('Error putting to LocalDB:', error)
-        }
+        store.put(action.value, action.key)
         break
       case ActionKind.DELETE:
-        try {
-          await store.delete(action.key)
-        } catch (error) {
-          console.error('Error deleting from LocalDB:', error)
-        }
+        store.delete(action.key)
         break
     }
   }
 
-  await tx.done
+  try {
+    await tx.done
+  } catch (err) {
+    console.error('Error during transaction:', err)
+    throw err
+  }
 }

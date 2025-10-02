@@ -58,6 +58,11 @@ export class RenderHtml extends BaseSystem {
       const blockContainer = this.resources.blockContainer
       blockContainer.style.transform = `translate(${-camera.left * camera.zoom}px, ${-camera.top * camera.zoom}px) scale(${camera.zoom})`
 
+      // Store camera values as data attributes for precise access
+      blockContainer.dataset.cameraLeft = camera.left.toString()
+      blockContainer.dataset.cameraTop = camera.top.toString()
+      blockContainer.dataset.cameraZoom = camera.zoom.toString()
+
       updateCssProperty('--ic-zoom', `${camera.zoom}`)
     }
 

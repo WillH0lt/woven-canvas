@@ -1,10 +1,9 @@
-import { InfiniteCanvas, VerticalAlign } from '@infinitecanvas/core'
+import { InfiniteCanvas, type Snapshot, VerticalAlign } from '@infinitecanvas/core'
 import { Block, Color, Text, VerticalAlign as VerticalAlignComp } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
-import type { Snapshot } from 'packages/core/build'
 
 @customElement('ic-sticky-note-tool')
 export class ICStickyNoteTool extends ICToolbarIconButton {
@@ -31,8 +30,13 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
       blue: Math.floor(Math.random() * 256),
     })
 
+    const fontFamily =
+      InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
+      InfiniteCanvas.instance!.config.core.defaultFontFamily
+
     const text = new Text({
-      fontSize: 20,
+      fontFamily: fontFamily.name,
+      fontSize: 24,
       constrainWidth: true,
     })
 

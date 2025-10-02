@@ -310,4 +310,16 @@ export class Keyboard extends BaseComponent {
   // @field.boolean public declare arrowdownDownTrigger: boolean;
 
   // @field.boolean public declare arrowdownUpTrigger: boolean;
+
+  @field.boolean public declare leftBracketDown: boolean
+
+  @field.boolean public declare leftBracketDownTrigger: boolean
+
+  @field.boolean public declare leftBracketUpTrigger: boolean
+
+  @field.boolean public declare rightBracketDown: boolean
+
+  @field.boolean public declare rightBracketDownTrigger: boolean
+
+  @field.boolean public declare rightBracketUpTrigger: boolean
 }

@@ -24,7 +24,7 @@ import {
   Text,
   VerticalAlign,
 } from './components'
-import { SESSION_KEY } from './constants'
+import { DEFAULT_FONT_FAMILIES, SESSION_KEY } from './constants'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
@@ -63,6 +63,7 @@ declare module '@infinitecanvas/core' {
       duplicateSelected: () => void
       removeSelected: () => void
       updateBlock: (blockId: string, block: Partial<BlockData>) => void
+      updateFromSnapshot: (snapshot: Snapshot) => void
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
       setControls: (controls: Partial<ControlsData>) => void
       setColor: (blockId: string, color: Partial<ColorData>) => void
@@ -93,6 +94,7 @@ declare module '@infinitecanvas/core' {
   interface IConfig {
     core: {
       colorMenu: ColorMenuOptions
+      defaultFontFamily: FontFamily
     }
   }
 }
@@ -270,6 +272,9 @@ export class CoreExtension extends BaseExtension {
     return {
       core: {
         colorMenu: this.options.colorMenu,
+        defaultFontFamily:
+          this.options.defaultFont ??
+          (this.options.fontMenu.families.length > 0 ? this.options.fontMenu.families[0] : DEFAULT_FONT_FAMILIES[0]),
       },
     }
   }
@@ -289,6 +294,9 @@ export class CoreExtension extends BaseExtension {
         deselectAll: () => send(CoreCommand.DeselectAll),
         duplicateSelected: () => send(CoreCommand.DuplicateSelected),
         removeSelected: () => send(CoreCommand.RemoveSelected),
+        updateFromSnapshot: (snapshot: Snapshot) => {
+          send(CoreCommand.UpdateFromSnapshot, snapshot)
+        },
         updateBlock: (blockId: string, block: Partial<BlockData>) => {
           send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {
@@ -342,7 +350,6 @@ export class CoreExtension extends BaseExtension {
   public addStore = (state: State): Partial<IStore> => {
     return {
       core: {
-        // fonts:
         blockCount: computed(() => Object.keys(state.getComponents(Persistent).value).length),
         selectedBlockCount: computed(() => Object.keys(state.getComponents(Selected).value).length),
         selectedBlockIds: computed(() => {

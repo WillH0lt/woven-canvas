@@ -191,6 +191,7 @@ export const Options = z.object({
   colorMenu: ColorMenuOptions.default(ColorMenuOptions.parse({})),
   textColorMenu: ColorMenuOptions.default(ColorMenuOptions.parse({})),
   fontMenu: FontMenuOptions.default(FontMenuOptions.parse({})),
+  defaultFont: FontFamily.optional(),
 })
 
 export type Options = z.infer<typeof Options>

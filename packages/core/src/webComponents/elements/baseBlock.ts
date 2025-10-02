@@ -1,5 +1,8 @@
+import { consume } from '@lit/context'
 import { LitElement, css } from 'lit'
 import { property } from 'lit/decorators.js'
+import type { ICommands, IStore } from '../../types'
+import { commandsContext, storeContext } from '../contexts'
 
 // calculate the unrotated dimensions of a rotated rectangle based on aabb
 // https://math.stackexchange.com/questions/298299/finding-original-width-and-height-of-aabb
@@ -29,6 +32,12 @@ function getUnrotatedDimensions(
 }
 
 export class ICBaseBlock extends LitElement {
+  @consume({ context: storeContext })
+  protected store: IStore = {} as IStore
+
+  @consume({ context: commandsContext })
+  protected commands: ICommands = {} as ICommands
+
   static styles = [
     css`
     :host {
@@ -79,21 +88,29 @@ export class ICBaseBlock extends LitElement {
   }
 
   protected computeBlockDimensions(element: HTMLElement): { width: number; height: number; left: number; top: number } {
-    const blockContainer = document.querySelector('#block-container') as HTMLElement
-    const cameraTransform = window.getComputedStyle(blockContainer).transform
-    const m = new DOMMatrix(cameraTransform)
-    m.invertSelf()
+    const transform = window.getComputedStyle(this).transform
+    const mElement = new DOMMatrix(transform)
+
+    const rotateZ = Math.atan2(mElement.b, mElement.a)
 
     const rect = element.getBoundingClientRect()
     const center = new DOMPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
-    const worldCenter = m.transformPoint(center)
 
-    const transform = window.getComputedStyle(this).transform
-    const m2 = new DOMMatrix(transform)
-    const rotateZ = Math.atan2(m2.b, m2.a)
+    const camera = this.store.core.camera.value
+    const cameraLeft = camera?.left ?? 0
+    const cameraTop = camera?.top ?? 0
+    const cameraZoom = camera?.zoom ?? 1
 
-    const topLeft = m.transformPoint(new DOMPoint(rect.left, rect.top))
-    const bottomRight = m.transformPoint(new DOMPoint(rect.right, rect.bottom))
+    // Create precise camera transform matrix
+    const mCamera = new DOMMatrix()
+    mCamera.translateSelf(-cameraLeft * cameraZoom, -cameraTop * cameraZoom)
+    mCamera.scaleSelf(cameraZoom, cameraZoom)
+    mCamera.invertSelf()
+
+    const worldCenter = mCamera.transformPoint(center)
+
+    const topLeft = mCamera.transformPoint(new DOMPoint(rect.left, rect.top))
+    const bottomRight = mCamera.transformPoint(new DOMPoint(rect.right, rect.bottom))
     const aabbWidth = bottomRight.x - topLeft.x
     const aabbHeight = bottomRight.y - topLeft.y
 

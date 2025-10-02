@@ -6,7 +6,7 @@ import { Diff } from '../History'
 import type { Snapshot } from '../History'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
-import type { Block } from '../components'
+import { type Block, Connector } from '../components'
 import { CROSSHAIR_CURSOR } from '../constants'
 import { getCursorSvg } from '../cursors'
 import { applyDiff, binarySearchForId, generateUuidBySeed, uuidToNumber } from '../helpers'
@@ -256,6 +256,19 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       return rankA.compareTo(rankB)
     })
 
+    const allSortedBlocks = this.persistentBlocks.current.slice().sort((a, b) => {
+      const rankA = LexoRank.parse(a.read(comps.Block).rank)
+      const rankB = LexoRank.parse(b.read(comps.Block).rank)
+      return rankA.compareTo(rankB)
+    })
+
+    // Check if selected blocks are already at the top (highest ranks)
+    const topBlocksStartIndex = allSortedBlocks.length - mySelectedBlocks.length
+    const alreadyOnTop = allSortedBlocks[topBlocksStartIndex].isSame(mySelectedBlocks[0])
+    if (alreadyOnTop) {
+      return
+    }
+
     for (const blockEntity of mySelectedBlocks) {
       const block = blockEntity.write(comps.Block)
       block.rank = this.rankBounds.genNext().toString()
@@ -269,12 +282,33 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       (blockEntity) => blockEntity.read(comps.Selected).selectedBy === this.resources.uid,
     )
 
-    // sort blocks by rank
+    // sort blocks by reverse rank
     mySelectedBlocks.sort((a, b) => {
       const rankA = LexoRank.parse(a.read(comps.Block).rank)
       const rankB = LexoRank.parse(b.read(comps.Block).rank)
-      return rankB.compareTo(rankA) // reverse order for send backward
+      return rankA.compareTo(rankB)
     })
+
+    const allSortedBlocks = this.persistentBlocks.current.slice().sort((a, b) => {
+      const rankA = LexoRank.parse(a.read(comps.Block).rank)
+      const rankB = LexoRank.parse(b.read(comps.Block).rank)
+      return rankA.compareTo(rankB)
+    })
+
+    // // Check if selected blocks are already at the bottom (lowest ranks)
+    const alreadyOnBottom = allSortedBlocks[mySelectedBlocks.length - 1].isSame(
+      mySelectedBlocks[mySelectedBlocks.length - 1],
+    )
+    // console.log(
+    //   allSortedBlocks[mySelectedBlocks.length - 1].read(comps.Block).toJson(),
+    //   mySelectedBlocks[0].read(comps.Block).toJson(),
+    // )
+    if (alreadyOnBottom) {
+      return
+    }
+
+    // Now reverse for processing (send backward needs to process highest ranks first)
+    mySelectedBlocks.reverse()
 
     for (const blockEntity of mySelectedBlocks) {
       const block = blockEntity.write(comps.Block)
@@ -289,6 +323,20 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     diff.changedTo = snapshot
 
     applyDiff(this, diff, this.entities)
+
+    // mark connectors for update if their connected blocks have changed
+    for (const id of Object.keys(snapshot)) {
+      if (!snapshot[id].Block) continue
+      const blockEntity = binarySearchForId(comps.Block, id, this.entities.current)
+      if (!blockEntity) continue
+
+      const block = blockEntity.read(comps.Block)
+      for (const connectorEntity of block.connectors) {
+        const connector = connectorEntity.write(Connector)
+        if (connector.startBlockEntity?.isSame(blockEntity)) connector.startNeedsUpdate = true
+        if (connector.endBlockEntity?.isSame(blockEntity)) connector.endNeedsUpdate = true
+      }
+    }
   }
 
   private createFromSnapshot(

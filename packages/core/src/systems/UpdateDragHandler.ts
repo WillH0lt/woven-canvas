@@ -23,7 +23,7 @@ import { UpdateTransformBox } from './UpdateTransformBox'
 export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
   private readonly selectedBlocks = this.query(
     (q) =>
-      q.added.removed.current.with(Block).write.and.with(Selected).using(Text).write.using(Aabb, Connector, Persistent)
+      q.added.removed.current.with(Block).write.and.with(Selected).using(Text, Connector).write.using(Aabb, Persistent)
         .read,
   )
 
@@ -49,6 +49,8 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
       block.left = Math.round(block.left / this.grid.xSpacing) * this.grid.xSpacing
       block.top = Math.round(block.top / this.grid.ySpacing) * this.grid.ySpacing
     }
+
+    this._markConnectorsForUpdate(blockEntity)
 
     if (blockEntity.has(TransformBox)) {
       this.onTransformBoxMove(blockEntity)
@@ -106,6 +108,8 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
       const angle = Math.atan2(startCenter[1] - boxCenter[1], startCenter[0] - boxCenter[0]) + delta
       block.left = boxCenter[0] + Math.cos(angle) * r - block.width / 2
       block.top = boxCenter[1] + Math.sin(angle) * r - block.height / 2
+
+      this._markConnectorsForUpdate(blockEntity)
     }
   }
 
@@ -243,6 +247,8 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
           selectedEntity.write(Text).fontSize = endFontSize
         }
       }
+
+      this._markConnectorsForUpdate(selectedEntity)
     }
   }
 
@@ -257,10 +263,13 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
     element.style.width = `${block.width}px`
     element.style.height = `${block.height}px`
 
-    const rect = root.getBoundingClientRect()
+    // Use offsetWidth/offsetHeight instead of getBoundingClientRect()
+    // to get the actual layout dimensions without viewport/transform effects
+    const actualWidth = (root as HTMLElement).offsetWidth
+    const actualHeight = (root as HTMLElement).offsetHeight
 
-    block.height = rect.height
-    block.width = rect.width
+    block.width = actualWidth
+    block.height = actualHeight
 
     const text = textEntity.write(Text)
     text.constrainWidth = true
@@ -273,13 +282,15 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
     const dx = transformBoxBlock.left - boxStart.startLeft
     const dy = transformBoxBlock.top - boxStart.startTop
 
-    for (const selectedBlock of this.selectedBlocks.current) {
-      if (!this._canBeMoved(selectedBlock, this.selectedBlocks.current)) continue
+    for (const blockEntity of this.selectedBlocks.current) {
+      if (!this._canBeMoved(blockEntity, this.selectedBlocks.current)) continue
 
-      const blockStart = selectedBlock.read(DragStart)
-      const block = selectedBlock.write(Block)
+      const blockStart = blockEntity.read(DragStart)
+      const block = blockEntity.write(Block)
       block.left = blockStart.startLeft + dx
       block.top = blockStart.startTop + dy
+
+      this._markConnectorsForUpdate(blockEntity)
     }
   }
 
@@ -298,5 +309,14 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
     }
 
     return true
+  }
+
+  private _markConnectorsForUpdate(blockEntity: Entity): void {
+    const block = blockEntity.read(Block)
+    for (const connectorEntity of block.connectors) {
+      const connector = connectorEntity.write(Connector)
+      if (connector.startBlockEntity?.isSame(blockEntity)) connector.startNeedsUpdate = true
+      if (connector.endBlockEntity?.isSame(blockEntity)) connector.endNeedsUpdate = true
+    }
   }
 }
