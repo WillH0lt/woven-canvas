@@ -127,14 +127,15 @@ export class RenderBackground extends BaseSystem {
   }
 
   private renderBackground(): void {
-    const ctx = this.resources.backgroundCanvas.getContext('2d')
-    if (!ctx) return
+    const backgroundCanvas = this.resources.backgroundCanvas
+    const ctx = backgroundCanvas?.getContext('2d')
+    if (!ctx || !backgroundCanvas) return
 
     const { width, height } = this.screen
 
     // Resize the canvas to match screen dimensions
-    this.resources.backgroundCanvas.width = width
-    this.resources.backgroundCanvas.height = height
+    backgroundCanvas.width = width
+    backgroundCanvas.height = height
 
     ctx.clearRect(0, 0, width, height)
 

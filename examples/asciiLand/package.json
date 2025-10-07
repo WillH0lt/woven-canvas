@@ -11,20 +11,22 @@
   "dependencies": {
     "@dalet-oss/lexorank": "^1.1.0",
     "@infinitecanvas/core": "workspace:^",
+    "@infinitecanvas/extension-controls": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
     "@tailwindcss/vite": "^4.1.7",
     "lit": "^3.3.0",
-    "pixi.js": "^8.13.2",
     "tailwindcss": "^4.1.7",
+    "three": "^0.180.0",
     "vue": "^3.5.18",
-    "wgpu-matrix": "^3.4.0"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@types/three": "^0.180.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.7.0",
-    "@webgpu/types": "^0.1.65",
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
+    "vite-plugin-full-reload": "^1.2.0",
     "vue-tsc": "^3.0.5"
   }
 }

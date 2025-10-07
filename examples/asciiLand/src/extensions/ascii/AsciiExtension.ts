@@ -6,10 +6,12 @@ import {
   floatingMenuStandardButtons,
   textEditorFloatingMenuButtons,
 } from '@infinitecanvas/core'
-import { Application, Assets, Container } from 'pixi.js'
+import { AmbientLight, OrthographicCamera, Scene, TextureLoader } from 'three'
+import { WebGPURenderer } from 'three/webgpu'
 
 import { Shape } from './components'
 import * as sys from './systems'
+import type { AsciiResources, Assets } from './types'
 import './webComponents'
 
 class AsciiExtensionClass extends BaseExtension {
@@ -33,45 +35,56 @@ class AsciiExtensionClass extends BaseExtension {
   ]
 
   public async preBuild(resources: BaseResources): Promise<void> {
-    const app = new Application()
-
-    await app.init({
-      autoStart: false,
-      backgroundAlpha: 0,
-      premultipliedAlpha: true,
-      width: resources.domElement.clientWidth,
-      height: resources.domElement.clientHeight,
-      preference: 'webgpu',
+    const renderer = new WebGPURenderer({
+      antialias: true,
+      requiredLimits: {
+        maxUniformBufferBindingSize: 65536,
+      },
     })
+    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.setClearColor(0x999999, 1)
+    const camera = new OrthographicCamera()
+    const scene = new Scene()
 
-    app.renderer.canvas.removeAttribute('width')
-    app.renderer.canvas.removeAttribute('height')
-    app.renderer.canvas.style.position = 'absolute'
-    app.renderer.canvas.style.width = '100%'
-    app.renderer.canvas.style.height = '100%'
-    app.renderer.canvas.style.pointerEvents = 'none'
-    app.renderer.canvas.style.userSelect = 'none'
+    // Add lighting for MeshStandardNodeMaterial
+    const light = new AmbientLight(0xffffff, 1)
+    scene.add(light)
 
-    const viewport = new Container()
-    app.stage.addChild(viewport)
+    const assets = await this.loadAssets()
+    await renderer.init()
 
-    // append after background-canvas
-    resources.domElement.prepend(app.renderer.canvas)
+    renderer.domElement.removeAttribute('width')
+    renderer.domElement.removeAttribute('height')
+    renderer.domElement.style.position = 'absolute'
+    renderer.domElement.style.width = '100%'
+    renderer.domElement.style.height = '100%'
+    renderer.domElement.style.pointerEvents = 'none'
+    renderer.domElement.style.userSelect = 'none'
+    renderer.domElement.style.overflow = 'hidden'
 
-    await Assets.load('CourierPrimeSans.fnt')
-    // await Assets.addBundle('fonts', [{ alias: 'Courier Prime Sans', src: './Courier Prime Sans.ttf' }])
+    resources.domElement.prepend(renderer.domElement)
 
-    const asciiResources = { ...resources, app, viewport }
+    const asciiResources: AsciiResources = {
+      ...resources,
+      renderer,
+      camera,
+      scene,
+      assets,
+    }
 
-    this.renderGroup = this.createGroup(asciiResources, sys.RenderPixi)
+    this.updateGroup = this.createGroup(asciiResources, sys.UpdateTiles)
 
-    // const group = System.group(sys.RenderPixi, {
-    //   resources: {
-    //     ...resources,
-    //     app,
-    //     viewport,
-    //   },
-    // })
+    this.renderGroup = this.createGroup(asciiResources, sys.RenderScene, sys.RenderShapes)
+  }
+
+  private async loadAssets(): Promise<Assets> {
+    const textureLoader = new TextureLoader()
+
+    const [fontAtlas] = await Promise.all([textureLoader.loadAsync('./fonts/courierPrime/atlas.png')])
+
+    return {
+      fontAtlas,
+    }
   }
 }
 

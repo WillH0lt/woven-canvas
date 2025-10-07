@@ -1,6 +1,6 @@
 import type { Entity } from '@lastolivegames/becsy'
 import { BaseSystem } from '../BaseSystem'
-import { Aabb, Block, Camera, Hovered, Intersect, Persistent, allHitGeometriesArray } from '../components'
+import { Aabb, Block, Camera, HitArc, HitCapsule, HitGeometries, Hovered, Intersect, Persistent } from '../components'
 import { computeAabb, intersectPoint } from '../helpers'
 
 export class PreCaptureIntersect extends BaseSystem {
@@ -13,7 +13,7 @@ export class PreCaptureIntersect extends BaseSystem {
       q.addedOrChanged.changed.removed.current
         .with(Block)
         .trackWrites.using(Aabb)
-        .write.using(...allHitGeometriesArray).trackWrites.read,
+        .write.using(HitGeometries, HitCapsule, HitArc).trackWrites.read,
   )
 
   private readonly hovered = this.query((q) => q.current.with(Hovered).write.using(Persistent).read)

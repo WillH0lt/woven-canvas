@@ -1,9 +1,1 @@
 @import "tailwindcss";
-@font-face {
-  font-family: "Courier Prime Sans";
-  src: url("Courier Prime Sans.ttf");
-}
-
-:root {
-  font-family: "Courier Prime Sans", monospace;
-}

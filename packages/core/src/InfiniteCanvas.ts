@@ -122,20 +122,22 @@ export class InfiniteCanvas {
     container.appendChild(domElement)
 
     // create the background canvas if needed
-    const backgroundCanvas = document.createElement('canvas')
-    backgroundCanvas.id = 'background-canvas'
-    backgroundCanvas.width = window.innerWidth
-    backgroundCanvas.height = window.innerHeight
-    backgroundCanvas.style.position = 'absolute'
-    backgroundCanvas.style.top = '0'
-    backgroundCanvas.style.left = '0'
-    backgroundCanvas.style.width = '100%'
-    backgroundCanvas.style.height = '100%'
-    backgroundCanvas.style.pointerEvents = 'none'
-    backgroundCanvas.style.userSelect = 'none'
-    backgroundCanvas.style.zIndex = '-1'
-
-    domElement.appendChild(backgroundCanvas)
+    let backgroundCanvas: HTMLCanvasElement | null = null
+    if (parsedOptions.background.enabled) {
+      backgroundCanvas = document.createElement('canvas')
+      backgroundCanvas.id = 'background-canvas'
+      backgroundCanvas.width = window.innerWidth
+      backgroundCanvas.height = window.innerHeight
+      backgroundCanvas.style.position = 'absolute'
+      backgroundCanvas.style.top = '0'
+      backgroundCanvas.style.left = '0'
+      backgroundCanvas.style.width = '100%'
+      backgroundCanvas.style.height = '100%'
+      backgroundCanvas.style.pointerEvents = 'none'
+      backgroundCanvas.style.userSelect = 'none'
+      backgroundCanvas.style.zIndex = '-1'
+      domElement.appendChild(backgroundCanvas)
+    }
 
     // scrolling can happen when text input extends beyond viewport
     domElement.addEventListener('scroll', (e) => {

@@ -165,6 +165,7 @@ const Grid = z.object({
 })
 
 const Background = z.object({
+  enabled: z.boolean().default(true),
   kind: z.enum(['blank', 'dots', 'grid']).default('dots'),
   color: z.string().default('#f4f4f4'),
   strokeColor: z.string().default('#a1a1a1'),
@@ -201,7 +202,7 @@ export type OptionsInput = z.input<typeof Options>
 export interface BaseResources {
   domElement: HTMLElement
   blockContainer: HTMLDivElement
-  backgroundCanvas: HTMLCanvasElement
+  backgroundCanvas: HTMLCanvasElement | null
   history: History
   blockDefs: BlockDefMap
   floatingMenus: FloatingMenuMap

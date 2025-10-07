@@ -11,16 +11,18 @@ export class Shape extends BaseComponent {
   @field({ type: Type.staticString(Object.values(ShapeStrokeKind)), default: ShapeStrokeKind.Solid })
   public declare strokeKind: ShapeStrokeKind
 
-  @field.uint8 declare strokeRed: number
-  @field.uint8 declare strokeGreen: number
-  @field.uint8 declare strokeBlue: number
-  @field({ type: Type.uint8, default: 255 }) declare strokeAlpha: number
+  @field.uint32 declare color: number
+
+  // @field.uint8 declare strokeRed: number
+  // @field.uint8 declare strokeGreen: number
+  // @field.uint8 declare strokeBlue: number
+  // @field({ type: Type.uint8, default: 255 }) declare strokeAlpha: number
 
   @field({ type: Type.staticString(Object.values(ShapeFillKind)), default: ShapeFillKind.Solid })
   public declare fillKind: ShapeFillKind
 
-  @field.uint8 declare fillRed: number
-  @field.uint8 declare fillGreen: number
-  @field.uint8 declare fillBlue: number
-  @field({ type: Type.uint8, default: 255 }) declare fillAlpha: number
+  // @field.uint8 declare fillRed: number
+  // @field.uint8 declare fillGreen: number
+  // @field.uint8 declare fillBlue: number
+  // @field({ type: Type.uint8, default: 255 }) declare fillAlpha: number
 }

@@ -127,6 +127,14 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
     co.scope(heldStrokeEntity)
     co.cancelIfCoroutineStarted()
 
+    // remove existing hit geometry
+    // doing this before the delay so other systems can use aabb in the meantime
+    if (strokeEntity.has(HitGeometries)) {
+      const hitGeometries = strokeEntity.read(HitGeometries)
+      this.deleteEntities(hitGeometries.capsules)
+      strokeEntity.remove(HitGeometries)
+    }
+
     yield co.waitForSeconds(0.25)
 
     if (!heldStrokeEntity?.alive || !heldStrokeEntity.has(Stroke)) return
@@ -134,9 +142,6 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
     if (!heldStrokeEntity.has(HitGeometries)) {
       heldStrokeEntity.add(HitGeometries)
     }
-
-    const hitGeometries = heldStrokeEntity.read(HitGeometries)
-    this.deleteEntities(hitGeometries.capsules)
 
     const stroke = heldStrokeEntity.read(Stroke)
     const block = heldStrokeEntity.read(Block)

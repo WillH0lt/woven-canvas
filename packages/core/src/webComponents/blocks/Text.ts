@@ -138,7 +138,6 @@ export class ICText extends ICEditableBlock {
     this._editor.on('update', () => {
       if (this._rootEditableElement) {
         const snapshot = this._rootEditableElement.getSnapshot()
-        console.log(snapshot)
         this.commands.core.updateFromSnapshot(snapshot)
       }
     })
