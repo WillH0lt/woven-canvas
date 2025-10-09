@@ -1,5 +1,5 @@
 import type { BaseResources } from '@infinitecanvas/core'
-import { type OrthographicCamera, type Scene, Texture } from 'three'
+import type { OrthographicCamera, Scene, Texture } from 'three'
 import type { WebGPURenderer } from 'three/webgpu'
 import { z } from 'zod/v4'
 
@@ -21,6 +21,7 @@ export enum ShapeFillKind {
 
 export type Assets = {
   fontAtlas: Texture
+  unicodeMap: Map<number, number>
 }
 
 export type AsciiResources = BaseResources & {
@@ -28,15 +29,22 @@ export type AsciiResources = BaseResources & {
   camera: OrthographicCamera
   scene: Scene
   assets: Assets
+  fontData: FontData
 }
 
-export const TileMaterialOptions = z.object({
+export const FontData = z.object({
   clearColor: z.uint32(),
-  atlas: z.instanceof(Texture),
-  tileGrid: z.tuple([z.number().int().min(1), z.number().int().min(1)]).readonly(),
+  atlasPath: z.string(),
   atlasGrid: z.tuple([z.number().int().min(1), z.number().int().min(1)]).readonly(),
   atlasCellSize: z.tuple([z.number().int().min(1), z.number().int().min(1)]).readonly(),
   clearCharIndex: z.number().int().min(0),
+  lineSpacing: z.number().min(0),
+  charAdvance: z.number().min(0),
+  charShiftLeft: z.number().min(0),
+  charShiftTop: z.number().min(0),
+  unicodeMapPath: z.string(),
+  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
 })
 
-export type TileMaterialOptionsInput = z.input<typeof TileMaterialOptions>
+export type FontDataInput = z.input<typeof FontData>
+export type FontData = z.infer<typeof FontData>

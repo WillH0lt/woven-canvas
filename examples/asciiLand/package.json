@@ -12,6 +12,7 @@
     "@dalet-oss/lexorank": "^1.1.0",
     "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/extension-controls": "workspace:^",
+    "@infinitecanvas/extension-eraser": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
     "@tailwindcss/vite": "^4.1.7",
     "lit": "^3.3.0",

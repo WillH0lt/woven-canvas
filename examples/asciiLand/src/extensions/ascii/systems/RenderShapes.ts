@@ -1,11 +1,10 @@
 import { LexoRank } from '@dalet-oss/lexorank'
 import { BaseSystem } from '@infinitecanvas/core'
-import { Aabb, Block, Camera, Persistent, Screen } from '@infinitecanvas/core/components'
+import { Aabb, Block, Camera, Opacity, Persistent, Screen, Text } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 import type { Mesh } from 'three'
 
 import { Shape, Tile } from '../components'
-import { CLEAR_CHAR_INDEX, CLEAR_COLOR, TILE_GRID, TILE_SIZE } from '../constants'
 import type { TileMaterial } from '../materials'
 import type { AsciiResources } from '../types'
 import { RenderScene } from './RenderScene'
@@ -13,11 +12,13 @@ import { RenderScene } from './RenderScene'
 export class RenderShapes extends BaseSystem {
   protected declare readonly resources: AsciiResources
 
-  private readonly tiles = this.query((q) => q.current.with(Tile, Aabb))
+  private readonly tiles = this.query((q) => q.current.with(Tile))
 
   private readonly blocks = this.query(
-    (q) => q.addedChangedOrRemoved.current.with(Block, Aabb, Persistent, Shape).trackWrites,
+    (q) => q.addedChangedOrRemoved.current.with(Block, Aabb, Persistent).trackWrites.using(Shape, Text).read,
   )
+
+  private readonly texts = this.query((q) => q.added.with(Text).using(Opacity).write)
 
   private readonly screens = this.query((q) => q.addedOrChanged.with(Screen).trackWrites)
 
@@ -48,6 +49,10 @@ export class RenderShapes extends BaseSystem {
         this.render(tileEntity, blocks)
       }
     }
+
+    for (const textEntity of this.texts.added) {
+      textEntity.add(Opacity, { value: 128 })
+    }
   }
 
   private render(tileEntity: Entity, blocks: Entity[]): void {
@@ -64,8 +69,10 @@ export class RenderShapes extends BaseSystem {
     const cameraWorldBottom = this.camera.top + this.screen.height / this.camera.zoom
 
     // Calculate tile bounds
-    const tileRight = tile.left + TILE_SIZE[0]
-    const tileBottom = tile.top + TILE_SIZE[1]
+    const { clearColor, clearCharIndex } = this.resources.fontData
+    // const { tileSize, tileGrid } = this.resources.tileConfig
+    const tileRight = tile.left + tileSize[0]
+    const tileBottom = tile.top + tileSize[1]
 
     // Find intersection of camera viewport with tile
     const intersectLeft = Math.max(cameraWorldLeft, tile.left)
@@ -74,16 +81,16 @@ export class RenderShapes extends BaseSystem {
     const intersectBottom = Math.min(cameraWorldBottom, tileBottom)
 
     // Convert intersection bounds to tile grid coordinates
-    const startCol = Math.floor(((intersectLeft - tile.left) / TILE_SIZE[0]) * TILE_GRID[0])
-    const endCol = Math.ceil(((intersectRight - tile.left) / TILE_SIZE[0]) * TILE_GRID[0])
-    const startRow = Math.floor(((intersectTop - tile.top) / TILE_SIZE[1]) * TILE_GRID[1])
-    const endRow = Math.ceil(((intersectBottom - tile.top) / TILE_SIZE[1]) * TILE_GRID[1])
+    const startCol = Math.floor(((intersectLeft - tile.left) / tileSize[0]) * tileGrid[0])
+    const endCol = Math.ceil(((intersectRight - tile.left) / tileSize[0]) * tileGrid[0])
+    const startRow = Math.floor(((intersectTop - tile.top) / tileSize[1]) * tileGrid[1])
+    const endRow = Math.ceil(((intersectBottom - tile.top) / tileSize[1]) * tileGrid[1])
 
     // Clamp the bounds to valid tile grid coordinates
-    const clampedStartCol = Math.max(0, Math.min(startCol, TILE_GRID[0]))
-    const clampedEndCol = Math.max(0, Math.min(endCol, TILE_GRID[0]))
-    const clampedStartRow = Math.max(0, Math.min(startRow, TILE_GRID[1]))
-    const clampedEndRow = Math.max(0, Math.min(endRow, TILE_GRID[1]))
+    const clampedStartCol = Math.max(0, Math.min(startCol, tileGrid[0]))
+    const clampedEndCol = Math.max(0, Math.min(endCol, tileGrid[0]))
+    const clampedStartRow = Math.max(0, Math.min(startRow, tileGrid[1]))
+    const clampedEndRow = Math.max(0, Math.min(endRow, tileGrid[1]))
 
     if (clampedEndCol <= clampedStartCol || clampedEndRow <= clampedStartRow) {
       // tile is completely off screen or no valid intersection
@@ -94,9 +101,9 @@ export class RenderShapes extends BaseSystem {
     const tileBlocks = blocks.filter((b) => {
       const aabb = b.read(Aabb)
       return (
-        aabb.left < tile.left + TILE_SIZE[0] &&
+        aabb.left < tile.left + tileSize[0] &&
         aabb.right > tile.left &&
-        aabb.top < tile.top + TILE_SIZE[1] &&
+        aabb.top < tile.top + tileSize[1] &&
         aabb.bottom > tile.top
       )
     })
@@ -105,37 +112,77 @@ export class RenderShapes extends BaseSystem {
     material.colors.needsUpdate = true
     if (tileBlocks.length === 0) {
       // no blocks intersect with this tile, so clear it out
-      material.chars.array.fill(CLEAR_CHAR_INDEX)
-      material.colors.array.fill(CLEAR_COLOR)
+      // material.chars.array.fill(clearCharIndex)
+      // material.colors.array.fill(clearColor)
       return
     }
 
     for (let col = clampedStartCol; col < clampedEndCol; col++) {
       for (let row = clampedStartRow; row < clampedEndRow; row++) {
-        const x = tile.left + ((col + 0.5) / TILE_GRID[0]) * TILE_SIZE[0]
-        const y = tile.top + ((row + 0.5) / TILE_GRID[1]) * TILE_SIZE[1]
-        const i = row * TILE_GRID[0] + col
+        const x = tile.left + ((col + 0.5) / tileGrid[0]) * tileSize[0]
+        const y = tile.top + ((row + 0.5) / tileGrid[1]) * tileSize[1]
+        const i = row * tileGrid[0] + col
 
         let hit = false
 
         for (const blockEntity of tileBlocks) {
           const aabb = blockEntity.read(Aabb)
-          if (aabb.containsPoint([x, y])) {
-            const color = blockEntity.read(Shape).color
 
-            material.chars.array[i] = 12
-            material.colors.array[i] = color
+          if (aabb.containsPoint([x, y])) {
+            const block = blockEntity.read(Block)
+            const localX = x - block.left
+            const localY = y - block.top
+
+            let char = clearCharIndex
+            let color = clearColor
+            if (block.tag === 'ic-text') {
+              const result = this.renderText(blockEntity, [localX, localY])
+              char = result.char
+              color = result.color
+            } else if (block.tag === 'ic-shape') {
+              const result = this.renderShape(blockEntity, [localX, localY])
+              char = result.char
+              color = result.color
+            }
+
+            // material.chars.array[i] = char
+            // material.colors.array[i] = color
             hit = true
             break
           }
         }
 
         if (!hit) {
-          material.chars.array[i] = CLEAR_CHAR_INDEX
-          material.colors.array[i] = CLEAR_COLOR
+          // material.chars.array[i] = clearCharIndex
+          // material.colors.array[i] = clearColor
         }
       }
     }
+  }
+
+  private renderText(textEntity: Entity, pos: [number, number]): { char: number; color: number } {
+    const unicodeMap = this.resources.assets.unicodeMap
+    const block = textEntity.read(Block)
+    const text = textEntity.read(Text)
+
+    const colIndex = pos[0]
+    const rowIndex = pos[1]
+    // const textCols = Math.floor(block.width / text.fontSize)
+
+    console.log('renderText', { pos, colIndex, rowIndex })
+
+    const charIndex = colIndex
+    const code = text.getStringContent().charCodeAt(charIndex)
+    const char = unicodeMap.has(code) ? unicodeMap.get(code)! : this.resources.fontData.clearCharIndex
+    const color = 255
+
+    return { char, color }
+  }
+
+  private renderShape(shapeEntity: Entity, pos: [number, number]): { char: number; color: number } {
+    const shape = shapeEntity.read(Shape)
+
+    return { char: shape.char, color: shape.color }
   }
 }
 
@@ -158,20 +205,3 @@ function getVisibleBlocks(allBlocks: readonly Entity[], camera: Camera, screen: 
 
   return visibleBlocks
 }
-
-// function intersectTiles(blockEntity: Entity, tileEntities: readonly Entity[]): Entity[] {
-//   const aabb = new Aabb(blockEntity.read(Aabb).toJson())
-
-//   const intersects: Entity[] = []
-//   for (const tileEntity of tileEntities) {
-//     const tileAabb = tileEntity.read(Aabb)
-
-//     // console.log(tileAabb.toJson(), aabb.toJson())
-
-//     if (tileAabb.intersectsAabb(aabb)) {
-//       intersects.push(tileEntity)
-//     }
-//   }
-
-//   return intersects
-// }

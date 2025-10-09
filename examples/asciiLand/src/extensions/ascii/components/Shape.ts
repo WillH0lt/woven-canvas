@@ -11,6 +11,7 @@ export class Shape extends BaseComponent {
   @field({ type: Type.staticString(Object.values(ShapeStrokeKind)), default: ShapeStrokeKind.Solid })
   public declare strokeKind: ShapeStrokeKind
 
+  @field.uint16 declare char: number
   @field.uint32 declare color: number
 
   // @field.uint8 declare strokeRed: number

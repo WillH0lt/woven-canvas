@@ -5,31 +5,45 @@
 <script setup lang="ts">
 import { InfiniteCanvas } from "@infinitecanvas/core";
 import { ControlsExtension } from "@infinitecanvas/extension-controls";
+import { EraserExtension } from "@infinitecanvas/extension-eraser";
 import { onMounted, ref } from "vue";
 
 import { AsciiExtension } from "./extensions/ascii";
-import { TILE_GRID, TILE_SIZE } from "./extensions/ascii/constants";
-
-// const chars = !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 
 const canvasContainer = ref<HTMLDivElement | null>(null);
 
+const fontData = {
+  atlasPath: "/fonts/courierPrime/atlas.png",
+  atlasGrid: [25, 15] as const,
+  atlasCellSize: [42, 71] as const,
+  clearCharIndex: 94, // space
+  clearColor: 0x00000000,
+  lineSpacing: 0.63, // magic number based on visual alignment
+  charAdvance: 0.52, // magic number based on visual alignment
+  charShiftLeft: 0,
+  charShiftTop: 0,
+  unicodeMapPath: "/fonts/courierPrime/unicodeMap.json",
+  backgroundColor: "#ffffff",
+};
+
 onMounted(async () => {
   await InfiniteCanvas.New(canvasContainer.value!, {
-    extensions: [AsciiExtension, ControlsExtension],
+    extensions: [AsciiExtension(fontData), ControlsExtension, EraserExtension],
     persistenceKey: "asciiLand-example",
     background: {
-      enabled: false,
+      enabled: true,
+      kind: "dots",
+      // color: 0x202020,
     },
     grid: {
-      xSpacing: TILE_SIZE[0] / TILE_GRID[0],
-      ySpacing: TILE_SIZE[1] / TILE_GRID[1],
+      colWidth: 14.5,
+      rowHeight: 29,
     },
     fontMenu: {
       families: [
         {
-          name: "Courier Prime",
-          url: "https://fonts.googleapis.com/css2?family=Courier+Prime",
+          name: "Courier Prime Sans",
+          url: "https://storage.googleapis.com/asciinotes-com-fonts/courierPrimeSans/style.css",
           previewImage:
             "https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png",
           selectable: true,

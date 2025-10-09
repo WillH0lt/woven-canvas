@@ -6,12 +6,12 @@ import {
   floatingMenuStandardButtons,
   textEditorFloatingMenuButtons,
 } from '@infinitecanvas/core'
-import { AmbientLight, OrthographicCamera, Scene, TextureLoader } from 'three'
+import { OrthographicCamera, Scene, TextureLoader } from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 
 import { Shape } from './components'
 import * as sys from './systems'
-import type { AsciiResources, Assets } from './types'
+import { type AsciiResources, type Assets, FontData, type FontDataInput } from './types'
 import './webComponents'
 
 class AsciiExtensionClass extends BaseExtension {
@@ -34,21 +34,21 @@ class AsciiExtensionClass extends BaseExtension {
     },
   ]
 
+  public readonly fontData: FontData
+
+  constructor(fontData: FontDataInput) {
+    super()
+    this.fontData = FontData.parse(fontData)
+  }
+
   public async preBuild(resources: BaseResources): Promise<void> {
     const renderer = new WebGPURenderer({
       antialias: true,
-      requiredLimits: {
-        maxUniformBufferBindingSize: 65536,
-      },
     })
     renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.setClearColor(0x999999, 1)
+    renderer.setClearColor(0xffffff, 0)
     const camera = new OrthographicCamera()
     const scene = new Scene()
-
-    // Add lighting for MeshStandardNodeMaterial
-    const light = new AmbientLight(0xffffff, 1)
-    scene.add(light)
 
     const assets = await this.loadAssets()
     await renderer.init()
@@ -70,22 +70,31 @@ class AsciiExtensionClass extends BaseExtension {
       camera,
       scene,
       assets,
+      fontData: this.fontData,
     }
 
-    this.updateGroup = this.createGroup(asciiResources, sys.UpdateTiles)
+    // this.updateGroup = this.createGroup(asciiResources, sys.UpdateTiles)
 
-    this.renderGroup = this.createGroup(asciiResources, sys.RenderScene, sys.RenderShapes)
+    this.postUpdateGroup = this.createGroup(asciiResources, sys.PostUpdatePrepareScene)
+
+    this.preRenderGroup = this.createGroup(asciiResources, sys.PreRenderShapes, sys.PreRenderText)
+
+    this.renderGroup = this.createGroup(asciiResources, sys.RenderScene) // sys.RenderShapes
   }
 
   private async loadAssets(): Promise<Assets> {
     const textureLoader = new TextureLoader()
 
-    const [fontAtlas] = await Promise.all([textureLoader.loadAsync('./fonts/courierPrime/atlas.png')])
+    const [fontAtlas, unicodeMapRecord] = await Promise.all([
+      textureLoader.loadAsync(this.fontData.atlasPath),
+      fetch(this.fontData.unicodeMapPath).then((res) => res.json()),
+    ])
 
     return {
       fontAtlas,
+      unicodeMap: new Map(Object.entries(unicodeMapRecord).map(([key, value]) => [Number(key), Number(value)])),
     }
   }
 }
 
-export const AsciiExtension = () => new AsciiExtensionClass()
+export const AsciiExtension = (fontData: FontDataInput) => new AsciiExtensionClass(fontData)

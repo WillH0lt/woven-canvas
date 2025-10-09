@@ -1,1 +1,1 @@
-export { TileMaterial } from './TileMaterial'
+export { LetterMaterial } from './LetterMaterial'

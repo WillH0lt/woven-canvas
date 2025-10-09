@@ -11,11 +11,11 @@ function drawDot(ctx: CanvasRenderingContext2D, x: number, y: number, size: numb
   ctx.fill()
 }
 
-function createDotPattern(xSpacing: number, ySpacing: number, background: Background): CanvasPattern | null {
+function createDotPattern(colWidth: number, rowHeight: number, background: Background): CanvasPattern | null {
   const dotSize = 2
 
-  const width = xSpacing * background.subdivisionStep
-  const height = ySpacing * background.subdivisionStep
+  const width = colWidth * background.subdivisionStep
+  const height = rowHeight * background.subdivisionStep
   patternCanvas.width = width
   patternCanvas.height = height
 
@@ -60,11 +60,11 @@ function drawLine(
   ctx.stroke()
 }
 
-function createGridPattern(xSpacing: number, ySpacing: number, background: Background): CanvasPattern | null {
+function createGridPattern(colWidth: number, rowHeight: number, background: Background): CanvasPattern | null {
   const lineSize = 1
 
-  const width = xSpacing * background.subdivisionStep
-  const height = ySpacing * background.subdivisionStep
+  const width = colWidth * background.subdivisionStep
+  const height = rowHeight * background.subdivisionStep
 
   patternCanvas.width = width
   patternCanvas.height = height
@@ -151,7 +151,7 @@ export class RenderBackground extends BaseSystem {
   }
 
   private renderDots(ctx: CanvasRenderingContext2D): void {
-    let { xSpacing, ySpacing } = this.grid
+    let { colWidth, rowHeight } = this.grid
     const step = this.background.subdivisionStep
 
     const w = this.screen.width
@@ -162,45 +162,45 @@ export class RenderBackground extends BaseSystem {
     const right = left + w / this.camera.zoom
     const bottom = top + h / this.camera.zoom
 
-    let patternWidth = xSpacing * step
-    let patternHeight = ySpacing * step
+    let patternWidth = colWidth * step
+    let patternHeight = rowHeight * step
     let startX = 0
     let startY = 0
     let numRows = Number.POSITIVE_INFINITY
     let numCols = Number.POSITIVE_INFINITY
 
     while (true) {
-      patternWidth = step * xSpacing
-      patternHeight = step * ySpacing
+      patternWidth = step * colWidth
+      patternHeight = step * rowHeight
       startX = Math.floor(left / patternWidth) * patternWidth
       startY = Math.floor(top / patternHeight) * patternHeight
       const endX = Math.ceil(right / patternWidth) * patternWidth
       const endY = Math.ceil(bottom / patternHeight) * patternHeight
-      numCols = Math.round((endX - startX) / xSpacing)
-      numRows = Math.round((endY - startY) / ySpacing)
+      numCols = Math.round((endX - startX) / colWidth)
+      numRows = Math.round((endY - startY) / rowHeight)
 
       if (Math.max(numCols, numRows) > 200) {
-        xSpacing *= 2
-        ySpacing *= 2
+        colWidth *= 2
+        rowHeight *= 2
       } else {
         break
       }
     }
 
-    const xSpacingCanvas = xSpacing * this.camera.zoom
-    const ySpacingCanvas = ySpacing * this.camera.zoom
+    const colWidthCanvas = colWidth * this.camera.zoom
+    const rowHeightCanvas = rowHeight * this.camera.zoom
 
-    const roundedX = Math.round(xSpacingCanvas)
-    const roundedY = Math.round(ySpacingCanvas)
+    const roundedX = Math.round(colWidthCanvas)
+    const roundedY = Math.round(rowHeightCanvas)
 
     const pattern = createDotPattern(roundedX, roundedY, this.background)
     if (!pattern) return
 
-    pattern.setTransform(new DOMMatrix().scale(xSpacingCanvas / roundedX, ySpacingCanvas / roundedY))
+    pattern.setTransform(new DOMMatrix().scale(colWidthCanvas / roundedX, rowHeightCanvas / roundedY))
 
     // Calculate pattern offset to align dot centers with grid intersection points
-    const offsetX = (startX - left - xSpacing / 2) * this.camera.zoom
-    const offsetY = (startY - top - ySpacing / 2) * this.camera.zoom
+    const offsetX = (startX - left - colWidth / 2) * this.camera.zoom
+    const offsetY = (startY - top - rowHeight / 2) * this.camera.zoom
 
     ctx.save()
     ctx.translate(offsetX, offsetY)
@@ -210,7 +210,7 @@ export class RenderBackground extends BaseSystem {
   }
 
   private renderGrid(ctx: CanvasRenderingContext2D): void {
-    let { xSpacing, ySpacing } = this.grid
+    let { colWidth, rowHeight } = this.grid
     const step = this.background.subdivisionStep
 
     const w = this.screen.width
@@ -221,41 +221,41 @@ export class RenderBackground extends BaseSystem {
     const right = left + w / this.camera.zoom
     const bottom = top + h / this.camera.zoom
 
-    let patternWidth = xSpacing * step
-    let patternHeight = ySpacing * step
+    let patternWidth = colWidth * step
+    let patternHeight = rowHeight * step
     let startX = 0
     let startY = 0
     let numRows = Number.POSITIVE_INFINITY
     let numCols = Number.POSITIVE_INFINITY
 
     while (true) {
-      patternWidth = step * xSpacing
-      patternHeight = step * ySpacing
+      patternWidth = step * colWidth
+      patternHeight = step * rowHeight
       startX = Math.floor(left / patternWidth) * patternWidth
       startY = Math.floor(top / patternHeight) * patternHeight
       const endX = Math.ceil(right / patternWidth) * patternWidth
       const endY = Math.ceil(bottom / patternHeight) * patternHeight
-      numCols = Math.round((endX - startX) / xSpacing)
-      numRows = Math.round((endY - startY) / ySpacing)
+      numCols = Math.round((endX - startX) / colWidth)
+      numRows = Math.round((endY - startY) / rowHeight)
 
       if (Math.max(numCols, numRows) > 200) {
-        xSpacing *= 2
-        ySpacing *= 2
+        colWidth *= 2
+        rowHeight *= 2
       } else {
         break
       }
     }
 
-    const xSpacingCanvas = xSpacing * this.camera.zoom
-    const ySpacingCanvas = ySpacing * this.camera.zoom
+    const colWidthCanvas = colWidth * this.camera.zoom
+    const rowHeightCanvas = rowHeight * this.camera.zoom
 
-    const roundedX = Math.round(xSpacingCanvas)
-    const roundedY = Math.round(ySpacingCanvas)
+    const roundedX = Math.round(colWidthCanvas)
+    const roundedY = Math.round(rowHeightCanvas)
 
     const pattern = createGridPattern(roundedX, roundedY, this.background)
     if (!pattern) return
 
-    pattern.setTransform(new DOMMatrix().scale(xSpacingCanvas / roundedX, ySpacingCanvas / roundedY))
+    pattern.setTransform(new DOMMatrix().scale(colWidthCanvas / roundedX, rowHeightCanvas / roundedY))
 
     // Calculate pattern offset to align grid lines with grid intersection points
     const offsetX = (startX - left) * this.camera.zoom

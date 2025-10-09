@@ -46,8 +46,8 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
     block.top = position.top
 
     if (this.grid.enabled && blockEntity.hasSomeOf(Persistent, TransformBox)) {
-      block.left = Math.round(block.left / this.grid.xSpacing) * this.grid.xSpacing
-      block.top = Math.round(block.top / this.grid.ySpacing) * this.grid.ySpacing
+      block.left = Math.round(block.left / this.grid.colWidth) * this.grid.colWidth
+      block.top = Math.round(block.top / this.grid.rowHeight) * this.grid.rowHeight
     }
 
     this._markConnectorsForUpdate(blockEntity)
@@ -126,8 +126,8 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
     ]
 
     if (this.grid.enabled) {
-      handleCenter[0] = Math.round(handleCenter[0] / this.grid.xSpacing) * this.grid.xSpacing
-      handleCenter[1] = Math.round(handleCenter[1] / this.grid.ySpacing) * this.grid.ySpacing
+      handleCenter[0] = Math.round(handleCenter[0] / this.grid.colWidth) * this.grid.colWidth
+      handleCenter[1] = Math.round(handleCenter[1] / this.grid.rowHeight) * this.grid.rowHeight
     }
 
     const boxEntity = this.transformBoxes.current[0]

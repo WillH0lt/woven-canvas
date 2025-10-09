@@ -6,7 +6,6 @@ import { BaseExtension } from './BaseExtension'
 import type { History } from './History'
 import type { LocalDB } from './LocalDB'
 import type { State } from './State'
-import type {} from './components'
 import { DEFAULT_COLOR_MENU_PALETTE, DEFAULT_FONT_FAMILIES, DEFAULT_KEYBINDS } from './constants'
 
 export enum EmitterEventKind {
@@ -160,8 +159,8 @@ type CustomTags = z.infer<typeof CustomTags>
 
 const Grid = z.object({
   enabled: z.boolean().default(true),
-  xSpacing: z.number().default(15),
-  ySpacing: z.number().default(15),
+  colWidth: z.number().default(15),
+  rowHeight: z.number().default(15),
 })
 
 const Background = z.object({

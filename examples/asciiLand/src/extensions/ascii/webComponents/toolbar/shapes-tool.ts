@@ -40,7 +40,8 @@ export class ICShapesTool extends ICToolbarIconButton {
     })
 
     const shape = new Shape({
-      color: 0x000000ff,
+      char: Math.floor(Math.random() * 92),
+      color: Math.floor(Math.random() * 0xffffff) | 0x000000ff,
     })
 
     return createSnapshot(block, [shape])

@@ -15,4 +15,9 @@ export class Text extends BaseComponent {
     const text = this.content.replace(/<[^>]*>/g, '').trim()
     return text.length > 0
   }
+
+  public getStringContent(): string {
+    // remove everything between <> and trim whitespace
+    return this.content.replace(/<[^>]*>/g, '').trim()
+  }
 }
