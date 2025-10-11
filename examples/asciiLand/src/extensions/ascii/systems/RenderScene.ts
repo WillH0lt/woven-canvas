@@ -13,12 +13,13 @@ export class RenderScene extends BaseSystem {
   private readonly cameras = this.query((q) => q.addedOrChanged.with(Camera).trackWrites)
 
   public execute(): void {
-    if (
-      this.cameras.addedOrChanged.length ||
-      this.screens.addedOrChanged.length ||
-      this.blocks.addedChangedOrRemoved.length
-    ) {
-      this.resources.renderer.render(this.resources.scene, this.resources.camera)
-    }
+    // if (
+    //   this.cameras.addedOrChanged.length ||
+    //   this.screens.addedOrChanged.length ||
+    //   this.blocks.addedChangedOrRemoved.length
+    // ) {
+    //   console.log('RenderScene')
+    // }
+    this.resources.renderer.render(this.resources.scene, this.resources.camera)
   }
 }

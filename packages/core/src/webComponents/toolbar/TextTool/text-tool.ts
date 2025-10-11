@@ -22,7 +22,9 @@ export class ICTextTool extends ICToolbarIconButton {
   protected onClick() {
     const block = new Block({
       tag: 'ic-text',
-      height: 24 * 1.2,
+      // height: 24 * 1.2,
+      // width: 2,
+      height: 24,
       width: 2,
     })
 
@@ -30,10 +32,11 @@ export class ICTextTool extends ICToolbarIconButton {
       InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
       InfiniteCanvas.instance!.config.core.defaultFontFamily
 
+    const lineHeight = 1.2
     const text = new Text({
       fontFamily: fontFamily.name,
-      fontSize: 24,
-      lineHeight: 1.2,
+      fontSize: 24 / lineHeight,
+      lineHeight,
     })
 
     const snapshot = createSnapshot(block, [text])
@@ -47,19 +50,22 @@ export class ICTextTool extends ICToolbarIconButton {
   protected onToolDragOut(): void {
     const block = new Block({
       tag: 'ic-text',
-      height: 24 * 1.2,
-      width: 40,
+      height: 24,
+      width: 12 * 4,
     })
 
     const fontFamily =
       InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
       InfiniteCanvas.instance!.config.core.defaultFontFamily
 
+    const lineHeight = 1.2
     const text = new Text({
       content: 'text',
       fontFamily: fontFamily.name,
-      fontSize: 24,
-      lineHeight: 1.2,
+      // fontSize: 24,
+      // lineHeight: 1.2,
+      fontSize: 24 / lineHeight,
+      lineHeight,
     })
 
     const snapshot = createSnapshot(block, [text])

@@ -1,18 +1,24 @@
 import { LexoRank } from '@dalet-oss/lexorank'
 import { BaseSystem } from '@infinitecanvas/core'
-import { Block, Camera, Screen } from '@infinitecanvas/core/components'
+import { Block, Camera, Hovered, Screen, Selected } from '@infinitecanvas/core/components'
 import { Mesh, PlaneGeometry } from 'three'
+
+import type { Entity } from '@lastolivegames/becsy'
 import { LetterMaterial } from '../materials'
 import type { AsciiResources } from '../types'
 
 const meshTags = ['ic-shape', 'ic-text']
 
-export class PostUpdatePrepareScene extends BaseSystem {
+export class PreRenderPrepareScene extends BaseSystem {
   protected declare readonly resources: AsciiResources
 
   private readonly screens = this.query((q) => q.addedOrChanged.with(Screen).trackWrites)
 
   private readonly blocks = this.query((q) => q.added.addedOrChanged.current.removed.with(Block).trackWrites)
+
+  private readonly selectedBlocks = this.query((q) => q.added.removed.with(Block, Selected))
+
+  private readonly hoveredBlocks = this.query((q) => q.added.removed.with(Block, Hovered))
 
   private readonly cameras = this.query((q) => q.addedOrChanged.with(Camera).trackWrites)
 
@@ -59,12 +65,6 @@ export class PostUpdatePrepareScene extends BaseSystem {
       mesh.rotation.set(0, 0, block.rotateZ)
 
       mesh.userData.rank = block.rank
-
-      const material = mesh.material as LetterMaterial
-      const rows = Math.round(block.height / this.grid.rowHeight)
-      const cols = Math.round(block.width / this.grid.colWidth)
-      material.grid.value.x = cols
-      material.grid.value.y = rows
     }
 
     if (this.blocks.removed.length) {
@@ -95,12 +95,48 @@ export class PostUpdatePrepareScene extends BaseSystem {
       for (const mesh of this.resources.scene.children) {
         const order = objectOrderMap.get(mesh.name)
         if (order !== undefined) {
-          // mesh.position.z = -order
-
           mesh.renderOrder = order
         }
       }
     }
+
+    // ========================================================
+    // selected blocks
+    for (const blockEntity of this.selectedBlocks.added) {
+      const material = this.getMaterial<LetterMaterial>(blockEntity)
+      if (!material) continue
+      material.selected.value = true
+    }
+
+    if (this.selectedBlocks.removed.length > 0) {
+      this.accessRecentlyDeletedData()
+    }
+    for (const blockEntity of this.selectedBlocks.removed) {
+      if (!blockEntity.alive || !blockEntity.has(Block)) continue
+      const material = this.getMaterial<LetterMaterial>(blockEntity)
+      if (!material) continue
+      material.selected.value = false
+    }
+
+    // ========================================================
+    // hovered blocks
+    for (const blockEntity of this.hoveredBlocks.added) {
+      const material = this.getMaterial<LetterMaterial>(blockEntity)
+      if (!material) continue
+      material.hovered.value = true
+    }
+
+    if (this.hoveredBlocks.removed.length > 0) {
+      this.accessRecentlyDeletedData()
+    }
+    for (const blockEntity of this.hoveredBlocks.removed) {
+      if (!blockEntity.alive || !blockEntity.has(Block)) continue
+      const material = this.getMaterial<LetterMaterial>(blockEntity)
+      if (!material) continue
+      material.hovered.value = false
+    }
+
+    // ========================================================
 
     // Handle domElement resizing
     if (this.screens.addedOrChanged.length) {
@@ -125,5 +161,11 @@ export class PostUpdatePrepareScene extends BaseSystem {
       this.resources.camera.updateProjectionMatrix()
       this.resources.camera.updateMatrixWorld()
     }
+  }
+
+  private getMaterial<T>(blockEntity: Entity): T | null {
+    const mesh = this.resources.scene.getObjectByName(blockEntity.read(Block).id) as Mesh | undefined
+    if (!mesh) return null
+    return mesh.material as T
   }
 }

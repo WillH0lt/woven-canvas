@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { InfiniteCanvas } from "@infinitecanvas/core";
+import { Text } from "@infinitecanvas/core/components";
 import { ControlsExtension } from "@infinitecanvas/extension-controls";
 import { EraserExtension } from "@infinitecanvas/extension-eraser";
 import { onMounted, ref } from "vue";
@@ -14,30 +15,41 @@ const canvasContainer = ref<HTMLDivElement | null>(null);
 
 const fontData = {
   atlasPath: "/fonts/courierPrime/atlas.png",
-  atlasGrid: [25, 15] as const,
-  atlasCellSize: [42, 71] as const,
+  unicodeMapPath: "/fonts/courierPrime/unicodeMap.json",
+  atlasGrid: [21, 18] as const,
+  atlasCellSize: [37, 45] as const,
   clearCharIndex: 94, // space
   clearColor: 0x00000000,
-  lineSpacing: 0.63, // magic number based on visual alignment
-  charAdvance: 0.52, // magic number based on visual alignment
+  lineSpacing: 0.9, // magic number based on visual alignment
+  charAdvance: 0.5, // magic number based on visual alignment
   charShiftLeft: 0,
   charShiftTop: 0,
-  unicodeMapPath: "/fonts/courierPrime/unicodeMap.json",
   backgroundColor: "#ffffff",
 };
 
 onMounted(async () => {
-  await InfiniteCanvas.New(canvasContainer.value!, {
+  const infiniteCanvas = await InfiniteCanvas.New(canvasContainer.value!, {
     extensions: [AsciiExtension(fontData), ControlsExtension, EraserExtension],
     persistenceKey: "asciiLand-example",
     background: {
-      enabled: true,
-      kind: "dots",
-      // color: 0x202020,
+      enabled: false,
     },
+    customBlocks: [
+      {
+        tag: "ic-text",
+        editOptions: {
+          canEdit: true,
+          removeWhenTextEmpty: true,
+        },
+        resizeMode: "text" as const,
+        components: [Text],
+        canRotate: false,
+      },
+    ],
     grid: {
-      colWidth: 14.5,
-      rowHeight: 29,
+      // needs to be 1:2 ratio
+      colWidth: 12,
+      rowHeight: 24, // needs to be an integer when divided by 1.2 (line height)
     },
     fontMenu: {
       families: [
@@ -50,6 +62,10 @@ onMounted(async () => {
         },
       ],
     },
+  });
+
+  infiniteCanvas.store.core.blockCount.subscribe((count) => {
+    console.log("Block count:", count);
   });
 });
 </script>

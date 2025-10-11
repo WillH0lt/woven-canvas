@@ -199,6 +199,12 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
       resizeMode = blockDef?.resizeMode ?? resizeMode
     }
 
+    const canRotate = selectedBlocks.every((e) => {
+      const block = e.read(Block)
+      const blockDef = this.getBlockDef(block.tag)
+      return blockDef?.canRotate ?? true
+    })
+
     let handleKind: TransformHandleKind
     switch (resizeMode) {
       case 'scale':
@@ -241,6 +247,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
           cursorKind: xi + yi === 1 ? CursorKind.NESW : CursorKind.NWSE,
         })
 
+        if (!canRotate) continue
         handles.push({
           tag: 'div',
           kind: TransformHandleKind.Rotate,
@@ -447,6 +454,9 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     for (const blockEntity of selectedBlocks) {
       this.setComponent(blockEntity, Edited)
     }
+
+    const transformBox = transformBoxEntity.read(TransformBox)
+    this.deleteEntities(transformBox.handles)
   }
 
   private endTransformBoxEdit(): void {

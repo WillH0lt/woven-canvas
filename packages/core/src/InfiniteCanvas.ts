@@ -172,7 +172,17 @@ export class InfiniteCanvas {
       }
     }
     for (const blockDef of parsedOptions.customBlocks) {
-      blockDefs[blockDef.tag] = blockDef
+      if (blockDefs[blockDef.tag] == null) {
+        blockDefs[blockDef.tag] = BlockDef.parse(blockDef)
+        continue
+      }
+
+      blockDefs[blockDef.tag] = BlockDef.parse({
+        ...blockDefs[blockDef.tag],
+        ...blockDef,
+      })
+
+      console.log(blockDefs[blockDef.tag])
     }
 
     // Register components for each block definition

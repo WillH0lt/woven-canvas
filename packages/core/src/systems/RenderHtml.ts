@@ -197,12 +197,6 @@ export class RenderHtml extends BaseSystem {
     const blockDef = this.resources.blockDefs[block.tag]
     if (blockDef) {
       for (const Comp of blockDef.components) {
-        // const entities = this.currentQueries.get(Comp)?.current
-        // if (!entities) continue
-
-        // const entity = binarySearchForId(comps.Block, blockId, entities)
-        // if (!entity) continue
-
         this.updateElementComponentAttribute(element, entity, Comp)
       }
     }

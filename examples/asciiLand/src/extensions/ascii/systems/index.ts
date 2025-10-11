@@ -1,6 +1,5 @@
 export { RenderScene } from './RenderScene'
 export { UpdateTiles } from './UpdateTiles'
 export { RenderShapes } from './RenderShapes'
-export { PreRenderShapes } from './PreRenderShapes'
-export { PreRenderText } from './PreRenderText'
-export { PostUpdatePrepareScene } from './PostUpdatePrepareScene'
+export { RenderText } from './RenderText'
+export { PreRenderPrepareScene } from './PreRenderPrepareScene'

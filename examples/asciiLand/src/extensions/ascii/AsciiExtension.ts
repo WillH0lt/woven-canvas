@@ -23,6 +23,7 @@ class AsciiExtensionClass extends BaseExtension {
       floatingMenu: [floatingMenuButtonColor, floatingMenuDivider, ...floatingMenuStandardButtons],
       editedFloatingMenu: textEditorFloatingMenuButtons,
       components: [Shape],
+      canRotate: false,
     },
   ]
 
@@ -73,13 +74,9 @@ class AsciiExtensionClass extends BaseExtension {
       fontData: this.fontData,
     }
 
-    // this.updateGroup = this.createGroup(asciiResources, sys.UpdateTiles)
+    this.preRenderGroup = this.createGroup(asciiResources, sys.PreRenderPrepareScene)
 
-    this.postUpdateGroup = this.createGroup(asciiResources, sys.PostUpdatePrepareScene)
-
-    this.preRenderGroup = this.createGroup(asciiResources, sys.PreRenderShapes, sys.PreRenderText)
-
-    this.renderGroup = this.createGroup(asciiResources, sys.RenderScene) // sys.RenderShapes
+    this.renderGroup = this.createGroup(asciiResources, sys.RenderText, sys.RenderShapes, sys.RenderScene)
   }
 
   private async loadAssets(): Promise<Assets> {
