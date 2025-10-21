@@ -313,6 +313,7 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
 
   private _markConnectorsForUpdate(blockEntity: Entity): void {
     const block = blockEntity.read(Block)
+
     for (const connectorEntity of block.connectors) {
       const connector = connectorEntity.write(Connector)
       if (connector.startBlockEntity?.isSame(blockEntity)) connector.startNeedsUpdate = true

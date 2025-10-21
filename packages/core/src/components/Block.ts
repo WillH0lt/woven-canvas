@@ -192,6 +192,15 @@ export class Block extends BaseComponent {
     this.width = width
     this.height = height
   }
+
+  public computeAabb(): Aabb {
+    const aabb = new Aabb()
+
+    const corners = this.getCorners()
+    aabb.setByPoints(corners)
+
+    return aabb
+  }
 }
 
 function projectRectangleOntoAxis(corners: [number, number][], axis: [number, number]): { min: number; max: number } {

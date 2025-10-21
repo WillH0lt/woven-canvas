@@ -7,7 +7,7 @@ import type { Entity } from '@lastolivegames/becsy'
 import { LetterMaterial } from '../materials'
 import type { AsciiResources } from '../types'
 
-const meshTags = ['ic-shape', 'ic-text']
+const meshTags = ['ascii-shape', 'ic-text']
 
 export class PreRenderPrepareScene extends BaseSystem {
   protected declare readonly resources: AsciiResources
@@ -137,7 +137,6 @@ export class PreRenderPrepareScene extends BaseSystem {
     }
 
     // ========================================================
-
     // Handle domElement resizing
     if (this.screens.addedOrChanged.length) {
       const { camera, renderer } = this.resources

@@ -1,5 +1,5 @@
 import { BaseSystem } from '@infinitecanvas/core'
-import { Block } from '@infinitecanvas/core/components'
+import { Block, Text } from '@infinitecanvas/core/components'
 import type { Mesh } from 'three'
 
 import { Shape } from '../components'
@@ -10,7 +10,7 @@ import { RenderScene } from './RenderScene'
 export class RenderShapes extends BaseSystem {
   protected declare readonly resources: AsciiResources
 
-  private readonly shapes = this.query((q) => q.addedOrChanged.current.with(Shape, Block).trackWrites)
+  private readonly shapes = this.query((q) => q.addedOrChanged.current.with(Shape, Text, Block).trackWrites)
 
   public constructor() {
     super()

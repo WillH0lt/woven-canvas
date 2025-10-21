@@ -104,14 +104,6 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     }
 
     this.updateTransformBox(transformBoxEntity)
-
-    // check if all of the blocks are already edited
-    const isEditing = this.selectedBlocks.current.every((e) => e.has(Edited))
-
-    if (isEditing) {
-      this.hideTransformBox(transformBoxEntity)
-      this.startTransformBoxEdit(transformBoxEntity)
-    }
   }
 
   private updateTransformBox(transformBoxEntity: Entity | null = null): void {
@@ -175,6 +167,12 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
     }
 
     this.addOrUpdateTransformHandles(transformBoxEntity)
+
+    const isEditing = this.selectedBlocks.current.every((e) => e.has(Edited))
+    if (isEditing) {
+      this.hideTransformBox(transformBoxEntity)
+      this.startTransformBoxEdit(transformBoxEntity)
+    }
   }
 
   private addOrUpdateTransformHandles(transformBoxEntity: Entity): void {
@@ -203,6 +201,12 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
       const block = e.read(Block)
       const blockDef = this.getBlockDef(block.tag)
       return blockDef?.canRotate ?? true
+    })
+
+    const canScale = selectedBlocks.every((e) => {
+      const block = e.read(Block)
+      const blockDef = this.getBlockDef(block.tag)
+      return blockDef?.canScale ?? true
     })
 
     let handleKind: TransformHandleKind
@@ -234,65 +238,74 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
           continue
         }
 
-        handles.push({
-          tag: this.resources.tags.transformHandle,
-          kind: handleKind,
-          vector: [xi * 2 - 1, yi * 2 - 1],
-          left: left + width * xi - handleSize / 2,
-          top: top + height * yi - handleSize / 2,
-          width: handleSize,
-          height: handleSize,
-          rotateZ,
-          rank: TRANSFORM_HANDLE_CORNER_RANK,
-          cursorKind: xi + yi === 1 ? CursorKind.NESW : CursorKind.NWSE,
-        })
+        if (canScale) {
+          // corner scale handles
+          handles.push({
+            tag: this.resources.tags.transformHandle,
+            kind: handleKind,
+            vector: [xi * 2 - 1, yi * 2 - 1],
+            left: left + width * xi - handleSize / 2,
+            top: top + height * yi - handleSize / 2,
+            width: handleSize,
+            height: handleSize,
+            rotateZ,
+            rank: TRANSFORM_HANDLE_CORNER_RANK,
+            cursorKind: xi + yi === 1 ? CursorKind.NESW : CursorKind.NWSE,
+          })
+        }
 
-        if (!canRotate) continue
-        handles.push({
-          tag: 'div',
-          kind: TransformHandleKind.Rotate,
-          vector: [xi * 2 - 1, yi * 2 - 1],
-          left: left - rotationHandleSize + handleSize / 2 + xi * (width + rotationHandleSize - handleSize),
-          top: top - rotationHandleSize + handleSize / 2 + yi * (height + rotationHandleSize - handleSize),
-          width: rotationHandleSize,
-          height: rotationHandleSize,
-          rotateZ,
-          rank: TRANSFORM_HANDLE_ROTATE_RANK,
-          cursorKind: rotateCursorKinds[xi + yi * 2],
-        })
+        if (canRotate) {
+          // corner rotation handles
+          handles.push({
+            tag: 'div',
+            kind: TransformHandleKind.Rotate,
+            vector: [xi * 2 - 1, yi * 2 - 1],
+            left: left - rotationHandleSize + handleSize / 2 + xi * (width + rotationHandleSize - handleSize),
+            top: top - rotationHandleSize + handleSize / 2 + yi * (height + rotationHandleSize - handleSize),
+            width: rotationHandleSize,
+            height: rotationHandleSize,
+            rotateZ,
+            rank: TRANSFORM_HANDLE_ROTATE_RANK,
+            cursorKind: rotateCursorKinds[xi + yi * 2],
+          })
+        }
       }
     }
 
     // top & bottom edges
-    for (let yi = 0; yi < 2; yi++) {
-      handles.push({
-        tag: 'div',
-        kind: handleKind,
-        vector: [0, yi * 2 - 1],
-        left,
-        top: top + height * yi - sideHandleSize / 2,
-        width,
-        height: sideHandleSize,
-        rotateZ,
-        rank: TRANSFORM_HANDLE_EDGE_RANK,
-        cursorKind: CursorKind.NS,
-      })
+    if (canScale) {
+      for (let yi = 0; yi < 2; yi++) {
+        handles.push({
+          tag: 'div',
+          kind: handleKind,
+          vector: [0, yi * 2 - 1],
+          left,
+          top: top + height * yi - sideHandleSize / 2,
+          width,
+          height: sideHandleSize,
+          rotateZ,
+          rank: TRANSFORM_HANDLE_EDGE_RANK,
+          cursorKind: CursorKind.NS,
+        })
+      }
     }
 
     // left & right edges
-    for (let xi = 0; xi < 2; xi++) {
-      handles.push({
-        tag: 'div',
-        kind: resizeMode === 'text' ? TransformHandleKind.Stretch : handleKind,
-        vector: [xi * 2 - 1, 0],
-        left: left + width * xi - sideHandleSize / 2,
-        top,
-        width: sideHandleSize,
-        height,
-        rotateZ,
-        rank: TRANSFORM_HANDLE_EDGE_RANK,
-        cursorKind: CursorKind.EW,
-      })
+    if (canScale || resizeMode === 'text') {
+      for (let xi = 0; xi < 2; xi++) {
+        handles.push({
+          tag: 'div',
+          kind: resizeMode === 'text' ? TransformHandleKind.Stretch : handleKind,
+          vector: [xi * 2 - 1, 0],
+          left: left + width * xi - sideHandleSize / 2,
+          top,
+          width: sideHandleSize,
+          height,
+          rotateZ,
+          rank: TRANSFORM_HANDLE_EDGE_RANK,
+          cursorKind: CursorKind.EW,
+        })
+      }
     }
 
     // remove unused handles
@@ -481,9 +494,4 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
       }
     }
   }
-
-  // public onZoom(): void {
-  //   if (!this.transformBoxes.current.length) return
-  //   this.addOrUpdateTransformHandles(this.transformBoxes.current[0])
-  // }
 }

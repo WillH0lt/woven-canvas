@@ -1,12 +1,12 @@
 import {
   BaseExtension,
   type BaseResources,
-  floatingMenuButtonColor,
-  floatingMenuDivider,
-  floatingMenuStandardButtons,
-  textEditorFloatingMenuButtons,
+  floatingMenuFontSizeButton,
+  floatingMenuTextAlignmentButton,
+  floatingMenuTextColorButton,
 } from '@infinitecanvas/core'
-import { OrthographicCamera, Scene, TextureLoader } from 'three'
+import { Text, VerticalAlign } from '@infinitecanvas/core/components'
+import { Color, OrthographicCamera, Scene, TextureLoader } from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 
 import { Shape } from './components'
@@ -17,13 +17,24 @@ import './webComponents'
 class AsciiExtensionClass extends BaseExtension {
   public readonly blocks = [
     {
-      tag: 'ic-shape',
-      // canEdit: true,
+      tag: 'ascii-shape',
+      editOptions: {
+        canEdit: true,
+      },
       resizeMode: 'free' as const,
-      floatingMenu: [floatingMenuButtonColor, floatingMenuDivider, ...floatingMenuStandardButtons],
-      editedFloatingMenu: textEditorFloatingMenuButtons,
-      components: [Shape],
+      components: [Text, VerticalAlign, Shape],
       canRotate: false,
+    },
+    {
+      tag: 'ic-text',
+      editOptions: {
+        canEdit: true,
+        removeWhenTextEmpty: true,
+      },
+      resizeMode: 'text' as const,
+      components: [Text],
+      canRotate: false,
+      canScale: false,
     },
   ]
 
@@ -32,6 +43,24 @@ class AsciiExtensionClass extends BaseExtension {
       name: 'shape',
       buttonTag: 'ic-shapes-tool',
       buttonTooltip: 'Shape',
+    },
+  ]
+
+  public override readonly floatingMenus = [
+    {
+      component: Text,
+      buttons: [
+        {
+          tag: 'ic-font-family-button',
+          width: 90,
+          tooltip: 'Font Family',
+          menu: 'ascii-font-family-menu',
+        },
+        floatingMenuFontSizeButton,
+        floatingMenuTextColorButton,
+        floatingMenuTextAlignmentButton,
+      ],
+      orderIndex: 70,
     },
   ]
 
@@ -47,7 +76,7 @@ class AsciiExtensionClass extends BaseExtension {
       antialias: true,
     })
     renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.setClearColor(0xffffff, 0)
+    renderer.setClearColor(new Color(this.fontData.backgroundColor), 1)
     const camera = new OrthographicCamera()
     const scene = new Scene()
 

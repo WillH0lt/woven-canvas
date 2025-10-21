@@ -23,6 +23,11 @@ export enum ArrowHeadKind {
   V = 'v',
 }
 
+export enum ArrowKind {
+  Arc = 'arc',
+  Elbow = 'elbow',
+}
+
 export enum ArrowCommand {
   AddArrow = 'arrowsAddArrow',
   DrawArrow = 'arrowsDrawArrow',
@@ -37,7 +42,7 @@ export enum ArrowCommand {
 }
 
 export type ArrowCommandArgs = {
-  [ArrowCommand.AddArrow]: [Entity, [number, number]]
+  [ArrowCommand.AddArrow]: [Entity, [number, number], ArrowKind]
   [ArrowCommand.DrawArrow]: [Entity, [number, number], [number, number]]
   [ArrowCommand.RemoveArrow]: [Entity]
   [ArrowCommand.CompleteArrow]: [Entity]

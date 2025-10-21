@@ -5,11 +5,11 @@ import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { Arrow } from '../../components'
+import { ArcArrow } from '../../components'
 import { ArrowHeadKind } from '../../types'
 
-@customElement('ic-arrow-tool')
-export class ICArrowTool extends ICToolbarIconButton {
+@customElement('ic-arc-arrow-tool')
+export class ICArcArrowTool extends ICToolbarIconButton {
   protected icon = html`
     <?xml version="1.0" encoding="UTF-8" standalone="no"?>
     <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
@@ -22,13 +22,13 @@ export class ICArrowTool extends ICToolbarIconButton {
 
   protected onClick() {
     InfiniteCanvas.instance?.commands.core.setControls({
-      leftMouseTool: 'arrow',
+      leftMouseTool: 'arc-arrow',
     })
   }
 
   protected onToolDragOut(): void {
     const block = new Block({
-      tag: 'ic-arrow',
+      tag: 'ic-arc-arrow',
       width: 150,
       height: 150,
     })
@@ -49,7 +49,7 @@ export class ICArrowTool extends ICToolbarIconButton {
       alpha: 255,
     })
 
-    const arrow = new Arrow({
+    const arrow = new ArcArrow({
       a: [0, 1],
       b: [0.5, 0.5],
       c: [1, 0],
@@ -66,6 +66,6 @@ export class ICArrowTool extends ICToolbarIconButton {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-arrow-tool': ICArrowTool
+    'ic-arc-arrow-tool': ICArcArrowTool
   }
 }

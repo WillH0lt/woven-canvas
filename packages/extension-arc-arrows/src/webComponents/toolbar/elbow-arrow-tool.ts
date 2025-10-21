@@ -1,14 +1,15 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { Block } from '@infinitecanvas/core/components'
+import { Block, Color, Connector, Text } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { Text } from '../../../components'
+import { ElbowArrow } from '../../components'
+import { ArrowHeadKind } from '../../types'
 
-@customElement('ic-text-tool')
-export class ICTextTool extends ICToolbarIconButton {
+@customElement('ic-elbow-arrow-tool')
+export class ICElbowArrowTool extends ICToolbarIconButton {
   protected icon = html`
     <?xml version="1.0" encoding="UTF-8" standalone="no"?>
     <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
@@ -20,57 +21,42 @@ export class ICTextTool extends ICToolbarIconButton {
   `
 
   protected onClick() {
-    const block = new Block({
-      tag: 'ic-text',
-      // height: 24 * 1.2,
-      // width: 2,
-      height: 24,
-      width: 2,
-    })
-
-    const fontFamily =
-      InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
-      InfiniteCanvas.instance!.config.core.defaultFontFamily
-
-    const lineHeight = 1.2
-    const text = new Text({
-      fontFamily: fontFamily.name,
-      fontSize: 24 / lineHeight,
-      lineHeight,
-    })
-
-    const snapshot = createSnapshot(block, [text])
-
     InfiniteCanvas.instance?.commands.core.setControls({
-      leftMouseTool: 'text',
-      heldSnapshot: JSON.stringify(snapshot),
+      leftMouseTool: 'elbow-arrow',
     })
   }
 
   protected onToolDragOut(): void {
-    const fontRows = 6
-
+    console.log('here?')
     const block = new Block({
-      tag: 'ic-text',
-      height: fontRows * 24,
-      width: 0.5 * 24 * fontRows * 4,
+      tag: 'ic-elbow-arrow',
+      width: 150,
+      height: 150,
     })
 
     const fontFamily =
       InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
       InfiniteCanvas.instance!.config.core.defaultFontFamily
 
-    // const lineHeight = 1
     const text = new Text({
-      content: 'text',
-      fontFamily: 'Standard', //fontFamily.name,
-      // fontSize: 24,
-      // lineHeight: 1.2,
-      fontSize: fontRows * 24,
-      lineHeight: 1,
+      fontFamily: fontFamily.name,
+      fontSize: 40,
     })
 
-    const snapshot = createSnapshot(block, [text])
+    const color = new Color({
+      red: 0,
+      green: 0,
+      blue: 0,
+      alpha: 255,
+    })
+
+    const arrow = new ElbowArrow({
+      endArrowHead: ArrowHeadKind.V,
+    })
+
+    const connector = new Connector()
+
+    const snapshot = createSnapshot(block, [text, color, arrow, connector])
 
     InfiniteCanvas.instance?.commands.core.createAndDragOntoCanvas(snapshot)
   }
@@ -78,6 +64,6 @@ export class ICTextTool extends ICToolbarIconButton {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-text-tool': ICTextTool
+    'ic-elbow-arrow-tool': ICElbowArrowTool
   }
 }

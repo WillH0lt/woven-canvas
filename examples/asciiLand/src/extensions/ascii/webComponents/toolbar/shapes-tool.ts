@@ -1,5 +1,5 @@
-import { InfiniteCanvas, type Snapshot } from '@infinitecanvas/core'
-import { Block } from '@infinitecanvas/core/components'
+import { InfiniteCanvas, type Snapshot, VerticalAlign } from '@infinitecanvas/core'
+import { Block, Text, VerticalAlign as VerticalAlignComp } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
@@ -34,17 +34,42 @@ export class ICShapesTool extends ICToolbarIconButton {
 
   private getSnapshot(): Snapshot {
     const block = new Block({
-      tag: 'ic-shape',
-      width: 100,
-      height: 100,
+      tag: 'ascii-shape',
+      width: 150,
+      height: 150,
     })
+
+    // const fontFamily =
+    //   InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
+    //   InfiniteCanvas.instance!.config.core.defaultFontFamily
+
+    // const text = new Text({
+    //   fontFamily: fontFamily.name,
+    //   fontSize: 16,
+    //   constrainWidth: true,
+    // })
+
+    // const lineHeight = 1
+    const text = new Text({
+      content: '',
+      fontFamily: 'Standard', //fontFamily.name,
+      fontSize: 6 * 24,
+      lineHeight: 1,
+    })
+
+    const verticalAlign = new VerticalAlignComp({ value: VerticalAlign.Center })
 
     const shape = new Shape({
-      char: Math.floor(Math.random() * 92),
-      color: Math.floor(Math.random() * 0xffffff) | 0x000000ff,
+      fillRed: 255 * Math.random(),
+      fillGreen: 255 * Math.random(),
+      fillBlue: 255 * Math.random(),
+      strokeRed: 255 * Math.random(),
+      strokeGreen: 255 * Math.random(),
+      strokeBlue: 255 * Math.random(),
+      roughness: 0,
     })
 
-    return createSnapshot(block, [shape])
+    return createSnapshot(block, [text, verticalAlign, shape])
   }
 
   protected onClick() {

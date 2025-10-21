@@ -1,0 +1,1 @@
+export { AsciiShape } from './Shape'

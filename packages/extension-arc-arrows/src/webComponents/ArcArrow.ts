@@ -4,13 +4,12 @@ import { ICEditableBlock } from '@infinitecanvas/core/elements'
 import { type SVGTemplateResult, css, html, nothing, svg } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 
-import type { Arrow, ArrowTrim } from '../components'
+import type { ArcArrow, ArrowTrim } from '../components'
 import { ArrowHeadKind } from '../types'
+import { ARROW_HEAD_GAP, getArrowHeadPath } from './common'
 
-const ARROW_HEAD_GAP = 15
-
-@customElement('ic-arrow')
-export class ICArrow extends ICEditableBlock {
+@customElement('ic-arc-arrow')
+export class ICArcArrow extends ICEditableBlock {
   static styles = [
     ...super.styles,
     css`
@@ -53,7 +52,7 @@ export class ICArrow extends ICEditableBlock {
   public color!: Color
 
   @property({ type: Object })
-  public arrow!: Arrow
+  public arcArrow!: ArcArrow
 
   @property({ type: Object })
   public arrowTrim: ArrowTrim | undefined = undefined
@@ -72,11 +71,11 @@ export class ICArrow extends ICEditableBlock {
   render() {
     const hex = this.color.toHex()
 
-    if (this.arrow.isCurved()) {
+    if (this.arcArrow.isCurved()) {
       this.arc.update(
-        [this.arrow.a[0] * this.clientWidth, this.arrow.a[1] * this.clientHeight],
-        [this.arrow.b[0] * this.clientWidth, this.arrow.b[1] * this.clientHeight],
-        [this.arrow.c[0] * this.clientWidth, this.arrow.c[1] * this.clientHeight],
+        [this.arcArrow.a[0] * this.clientWidth, this.arcArrow.a[1] * this.clientHeight],
+        [this.arcArrow.b[0] * this.clientWidth, this.arcArrow.b[1] * this.clientHeight],
+        [this.arcArrow.c[0] * this.clientWidth, this.arcArrow.c[1] * this.clientHeight],
       )
     }
 
@@ -87,7 +86,7 @@ export class ICArrow extends ICEditableBlock {
           preserveAspectRatio="none"
         >
           ${this.isEmphasized ? this.getPath(2, 'var(--ic-gray-600)', '12', false) : null}
-          ${this.getPath(this.arrow.thickness, hex, 'none', true)}
+          ${this.getPath(this.arcArrow.thickness, hex, 'none', true)}
           ${this.isEmphasized ? this.getPath(2, 'var(--ic-highlighted-block-outline-color)', 'none', true) : null}
         </svg>
       </div>
@@ -95,7 +94,7 @@ export class ICArrow extends ICEditableBlock {
   }
 
   private getPath(thickness: number, color: string, dasharray: string, trim: boolean): SVGTemplateResult {
-    if (this.arrow.isCurved()) {
+    if (this.arcArrow.isCurved()) {
       return this.getCurvedPath(thickness, color, dasharray, trim)
     }
     return this.getStraightPath(thickness, color, dasharray, trim)
@@ -117,12 +116,12 @@ export class ICArrow extends ICEditableBlock {
       const gap = ARROW_HEAD_GAP / arc.length()
 
       tStart = this.arrowTrim.tStart
-      if (tStart !== 0 && this.arrow.startArrowHead !== ArrowHeadKind.None) {
+      if (tStart !== 0 && this.arcArrow.startArrowHead !== ArrowHeadKind.None) {
         tStart += gap
       }
 
       tEnd = this.arrowTrim.tEnd
-      if (tEnd !== 1 && this.arrow.endArrowHead !== ArrowHeadKind.None) {
+      if (tEnd !== 1 && this.arcArrow.endArrowHead !== ArrowHeadKind.None) {
         tEnd -= gap
       }
 
@@ -143,20 +142,20 @@ export class ICArrow extends ICEditableBlock {
       stroke-linecap="round"
     />
     ${
-      trim && this.arrow.startArrowHead !== ArrowHeadKind.None
-        ? this.getArrowHeadPath(start, startDir, this.arrow.startArrowHead, thickness, color)
+      trim && this.arcArrow.startArrowHead !== ArrowHeadKind.None
+        ? getArrowHeadPath(start, startDir, this.arcArrow.startArrowHead, thickness, color)
         : nothing
     }
     ${
-      trim && this.arrow.endArrowHead !== ArrowHeadKind.None
-        ? this.getArrowHeadPath(end, endDir, this.arrow.endArrowHead, thickness, color)
+      trim && this.arcArrow.endArrowHead !== ArrowHeadKind.None
+        ? getArrowHeadPath(end, endDir, this.arcArrow.endArrowHead, thickness, color)
         : nothing
     }`
   }
 
   private getStraightPath(thickness: number, color: string, dasharray: string, trim: boolean): SVGTemplateResult {
-    const a = [this.arrow.a[0] * this.clientWidth, this.arrow.a[1] * this.clientHeight]
-    const c = [this.arrow.c[0] * this.clientWidth, this.arrow.c[1] * this.clientHeight]
+    const a = [this.arcArrow.a[0] * this.clientWidth, this.arcArrow.a[1] * this.clientHeight]
+    const c = [this.arcArrow.c[0] * this.clientWidth, this.arcArrow.c[1] * this.clientHeight]
 
     let start: [number, number] = [a[0], a[1]]
     let end: [number, number] = [c[0], c[1]]
@@ -174,12 +173,12 @@ export class ICArrow extends ICEditableBlock {
       const gap = ARROW_HEAD_GAP / length
 
       tStart = this.arrowTrim.tStart
-      if (tStart !== 0 && this.arrow.startArrowHead !== ArrowHeadKind.None) {
+      if (tStart !== 0 && this.arcArrow.startArrowHead !== ArrowHeadKind.None) {
         tStart += gap
       }
 
       tEnd = this.arrowTrim.tEnd
-      if (tEnd !== 1 && this.arrow.endArrowHead !== ArrowHeadKind.None) {
+      if (tEnd !== 1 && this.arcArrow.endArrowHead !== ArrowHeadKind.None) {
         tEnd -= gap
       }
 
@@ -199,63 +198,15 @@ export class ICArrow extends ICEditableBlock {
       stroke-dasharray="${dasharray}"
     />
     ${
-      trim && this.arrow.startArrowHead !== ArrowHeadKind.None
-        ? this.getArrowHeadPath(start, flipDirection(vec), this.arrow.startArrowHead, thickness, color)
+      trim && this.arcArrow.startArrowHead !== ArrowHeadKind.None
+        ? getArrowHeadPath(start, flipDirection(vec), this.arcArrow.startArrowHead, thickness, color)
         : nothing
     }
     ${
-      trim && this.arrow.endArrowHead !== ArrowHeadKind.None
-        ? this.getArrowHeadPath(end, vec, this.arrow.endArrowHead, thickness, color)
+      trim && this.arcArrow.endArrowHead !== ArrowHeadKind.None
+        ? getArrowHeadPath(end, vec, this.arcArrow.endArrowHead, thickness, color)
         : nothing
     }`
-  }
-
-  private getArrowHeadPath(
-    position: [number, number],
-    direction: [number, number],
-    arrowHeadKind: ArrowHeadKind,
-    thickness: number,
-    color: string,
-  ): SVGTemplateResult {
-    const dirLen = Math.hypot(direction[0], direction[1])
-    if (dirLen === 0) {
-      return svg``
-    }
-    const unitDir: [number, number] = [direction[0] / dirLen, direction[1] / dirLen]
-    const perpDir: [number, number] = [-unitDir[1], unitDir[0]]
-
-    const length = 15
-    const width = 20
-
-    const p1: [number, number] = [
-      position[0] - unitDir[0] * length + perpDir[0] * (width / 2),
-      position[1] - unitDir[1] * length + perpDir[1] * (width / 2),
-    ]
-    const p2: [number, number] = [
-      position[0] - unitDir[0] * length - perpDir[0] * (width / 2),
-      position[1] - unitDir[1] * length - perpDir[1] * (width / 2),
-    ]
-
-    return svg`
-      <line
-        x1="${p1[0]}"
-        y1="${p1[1]}"
-        x2="${position[0]}"
-        y2="${position[1]}"
-        stroke="${color}"
-        stroke-width="${thickness}"
-        stroke-linecap="round"
-      />
-      <line
-        x1="${p2[0]}"
-        y1="${p2[1]}"
-        x2="${position[0]}"
-        y2="${position[1]}"
-        stroke="${color}"
-        stroke-width="${thickness}"
-        stroke-linecap="round"
-      />
-      `
   }
 
   public getSnapshot(): Snapshot {
@@ -280,6 +231,6 @@ function flipDirection(direction: [number, number]): [number, number] {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-arrow': ICArrow
+    'ic-arc-arrow': ICArcArrow
   }
 }

@@ -83,12 +83,21 @@ importers:
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
+      '@lit-labs/preact-signals':
+        specifier: ^1.0.3
+        version: 1.0.3
+      '@lit/context':
+        specifier: ^1.1.6
+        version: 1.1.6
       '@manaflair/text-layout':
         specifier: ^0.11.0
         version: 0.11.0
       '@tailwindcss/vite':
         specifier: ^4.1.7
         version: 4.1.7(vite@7.1.5)
+      figlet:
+        specifier: ^1.9.3
+        version: 1.9.3
       lit:
         specifier: ^3.3.0
         version: 3.3.0
@@ -135,9 +144,9 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../../packages/core
-      '@infinitecanvas/extension-arrows':
+      '@infinitecanvas/extension-arc-arrows':
         specifier: workspace:^
-        version: link:../../packages/extension-arrows
+        version: link:../../packages/extension-arc-arrows
       '@infinitecanvas/extension-controls':
         specifier: workspace:^
         version: link:../../packages/extension-controls
@@ -261,7 +270,7 @@ importers:
         specifier: ^1.4.6
         version: 1.4.6
 
-  packages/extension-arrows:
+  packages/extension-arc-arrows:
     dependencies:
       '@dalet-oss/lexorank':
         specifier: ^1.1.0
@@ -420,70 +429,6 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
     devDependencies:
-      vitest:
-        specifier: ^3.1.4
-        version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
-
-  packages/extension-text:
-    dependencies:
-      '@infinitecanvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@lastolivegames/becsy':
-        specifier: ^0.15.5
-        version: 0.15.5
-      '@lit-labs/preact-signals':
-        specifier: ^1.0.3
-        version: 1.0.3
-      '@preact/signals-core':
-        specifier: ^1.10.0
-        version: 1.10.0
-      '@tiptap/core':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/pm@3.0.7)
-      '@tiptap/extension-bold':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-color':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/extension-text-style@3.0.7)
-      '@tiptap/extension-document':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-history':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/extensions@3.0.1)
-      '@tiptap/extension-italic':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-paragraph':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-text':
-        specifier: ^3.0.1
-        version: 3.0.1(@tiptap/core@3.0.7)
-      '@tiptap/extension-text-align':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-text-style':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      '@tiptap/extension-underline':
-        specifier: ^3.0.7
-        version: 3.0.7(@tiptap/core@3.0.7)
-      lit:
-        specifier: ^3.3.0
-        version: 3.3.0
-      tinycolor2:
-        specifier: ^1.6.0
-        version: 1.6.0
-      zod:
-        specifier: ^3.25.36
-        version: 3.25.36
-    devDependencies:
-      '@types/tinycolor2':
-        specifier: ^1.4.6
-        version: 1.4.6
       vitest:
         specifier: ^3.1.4
         version: 3.1.4(@types/node@20.9.0)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jsdom@26.1.0)(tsx@4.19.4)
@@ -1691,14 +1636,6 @@ packages:
       '@tiptap/core': 3.0.7(@tiptap/pm@3.0.7)
     dev: false
 
-  /@tiptap/extension-text-align@3.0.7(@tiptap/core@3.0.7):
-    resolution: {integrity: sha512-3XywI2+dvb5IIO5NnZqyoXrRnikGyCIN7wWymTI7eqD213Ovs19/sfbW5kXLPsBYiNBb12nbG6pmPhr21mPvoA==}
-    peerDependencies:
-      '@tiptap/core': ^3.0.7
-    dependencies:
-      '@tiptap/core': 3.0.7(@tiptap/pm@3.0.7)
-    dev: false
-
   /@tiptap/extension-text-align@3.5.2(@tiptap/core@3.0.7):
     resolution: {integrity: sha512-Ka8aFP24gx3Yk+Q4SOmpc+QHfAoj+x/VnOuYxtLfiyqX1yG0UwyRNRjTSmltfc9D2kefFB/SFPSSBVqSutWuDw==}
     peerDependencies:
@@ -1897,7 +1834,7 @@ packages:
     dependencies:
       '@vitest/spy': 3.1.4
       estree-walker: 3.0.3
-      magic-string: 0.30.17
+      magic-string: 0.30.19
       vite: 6.3.5(@types/node@20.9.0)(tsx@4.19.4)
     dev: true
 
@@ -1918,7 +1855,7 @@ packages:
     resolution: {integrity: sha512-JPHf68DvuO7vilmvwdPr9TS0SuuIzHvxeaCkxYcCD4jTk67XwL45ZhEHFKIuCm8CYstgI6LZ4XbwD6ANrwMpFg==}
     dependencies:
       '@vitest/pretty-format': 3.1.4
-      magic-string: 0.30.17
+      magic-string: 0.30.19
       pathe: 2.0.3
     dev: true
 
@@ -2362,6 +2299,11 @@ packages:
     engines: {node: '>=18'}
     dev: true
 
+  /commander@14.0.1:
+    resolution: {integrity: sha512-2JkV3gUZUVrbNA+1sjBOYLsMZ5cEEl8GTFP2a4AVz5hvasAMCQ1D2l2le/cX+pV4N6ZU17zjUahLpIXRrnWL8A==}
+    engines: {node: '>=20'}
+    dev: false
+
   /commander@4.1.1:
     resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
     engines: {node: '>= 6'}
@@ -2652,6 +2594,14 @@ packages:
   /fflate@0.8.2:
     resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
     dev: true
+
+  /figlet@1.9.3:
+    resolution: {integrity: sha512-majPgOpVtrZN1iyNGbsUP6bOtZ6eaJgg5HHh0vFvm5DJhh8dc+FJpOC4GABvMZ/A7XHAJUuJujhgUY/2jPWgMA==}
+    engines: {node: '>= 17.0.0'}
+    hasBin: true
+    dependencies:
+      commander: 14.0.1
+    dev: false
 
   /fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
@@ -4650,12 +4600,12 @@ packages:
       debug: 4.4.1
       expect-type: 1.2.1
       jsdom: 26.1.0
-      magic-string: 0.30.17
+      magic-string: 0.30.19
       pathe: 2.0.3
       std-env: 3.9.0
       tinybench: 2.9.0
       tinyexec: 0.3.2
-      tinyglobby: 0.2.13
+      tinyglobby: 0.2.15
       tinypool: 1.0.2
       tinyrainbow: 2.0.0
       vite: 6.3.5(@types/node@20.9.0)(tsx@4.19.4)
@@ -4897,10 +4847,6 @@ packages:
       y18n: 5.0.8
       yargs-parser: 21.1.1
     dev: true
-
-  /zod@3.25.36:
-    resolution: {integrity: sha512-eRFS3i8T0IrpGdL8HQyqFAugGOn7jOjyGgGdtv5NY4Wkhi7lJDk732bNZ609YMIGFbLoaj6J69O1Mura23gfIw==}
-    dev: false
 
   /zod@4.0.17:
     resolution: {integrity: sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==}

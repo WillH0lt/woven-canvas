@@ -4,7 +4,6 @@
 
 <script setup lang="ts">
 import { InfiniteCanvas } from "@infinitecanvas/core";
-import { Text } from "@infinitecanvas/core/components";
 import { ControlsExtension } from "@infinitecanvas/extension-controls";
 import { EraserExtension } from "@infinitecanvas/extension-eraser";
 import { onMounted, ref } from "vue";
@@ -24,7 +23,7 @@ const fontData = {
   charAdvance: 0.5, // magic number based on visual alignment
   charShiftLeft: 0,
   charShiftTop: 0,
-  backgroundColor: "#ffffff",
+  backgroundColor: "#ffffff", // jules purple - 1d0245
 };
 
 onMounted(async () => {
@@ -34,18 +33,6 @@ onMounted(async () => {
     background: {
       enabled: false,
     },
-    customBlocks: [
-      {
-        tag: "ic-text",
-        editOptions: {
-          canEdit: true,
-          removeWhenTextEmpty: true,
-        },
-        resizeMode: "text" as const,
-        components: [Text],
-        canRotate: false,
-      },
-    ],
     grid: {
       // needs to be 1:2 ratio
       colWidth: 12,
@@ -56,6 +43,13 @@ onMounted(async () => {
         {
           name: "Courier Prime Sans",
           url: "https://storage.googleapis.com/asciinotes-com-fonts/courierPrimeSans/style.css",
+          previewImage:
+            "https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png",
+          selectable: true,
+        },
+        {
+          name: "Standard",
+          url: "/fonts/standard/style.css",
           previewImage:
             "https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png",
           selectable: true,

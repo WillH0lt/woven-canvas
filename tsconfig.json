@@ -6,10 +6,13 @@
       "path": "packages/core"
     },
     {
-      "path": "packages/extension-arrows"
+      "path": "packages/extension-arc-arrows"
     },
     {
       "path": "packages/extension-controls"
+    },
+    {
+      "path": "packages/extension-elbow-arrows"
     },
     {
       "path": "packages/extension-eraser"

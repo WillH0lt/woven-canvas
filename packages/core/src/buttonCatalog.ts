@@ -38,42 +38,42 @@ export const floatingMenuStandardButtons = [
   floatingMenuButtonDelete,
 ]
 
-export const fontFamilyButton = {
+export const floatingMenuFontFamilyButton = {
   tag: 'ic-font-family-button',
   width: 90,
   tooltip: 'Font Family',
   menu: 'ic-font-family-menu',
 }
 
-export const fontSizeButton = {
+export const floatingMenuFontSizeButton = {
   tag: 'ic-font-size-button',
   width: 90,
   tooltip: 'Font Size',
   menu: 'ic-font-size-menu',
 }
 
-export const boldButton = {
+export const floatingMenuBoldButton = {
   tag: 'ic-text-bold-button',
   tooltip: 'Bold',
 }
 
-export const italicButton = {
+export const floatingMenuItalicButton = {
   tag: 'ic-text-italic-button',
   tooltip: 'Italic',
 }
 
-export const underlineButton = {
+export const floatingMenuUnderlineButton = {
   tag: 'ic-text-underline-button',
   tooltip: 'Underline',
 }
 
-export const textColorButton = {
+export const floatingMenuTextColorButton = {
   tag: 'ic-text-color-button',
   tooltip: 'Text Color',
   menu: 'ic-text-color-menu',
 }
 
-export const alignmentButton = {
+export const floatingMenuTextAlignmentButton = {
   tag: 'ic-text-alignment-button',
   tooltip: 'Alignment',
 }
@@ -84,11 +84,11 @@ export const floatingMenuButtonVerticalAlign = {
 }
 
 export const textEditorFloatingMenuButtons = [
-  fontFamilyButton,
-  fontSizeButton,
-  boldButton,
-  italicButton,
-  underlineButton,
-  textColorButton,
-  alignmentButton,
+  floatingMenuFontFamilyButton,
+  floatingMenuFontSizeButton,
+  floatingMenuBoldButton,
+  floatingMenuItalicButton,
+  floatingMenuUnderlineButton,
+  floatingMenuTextColorButton,
+  floatingMenuTextAlignmentButton,
 ]

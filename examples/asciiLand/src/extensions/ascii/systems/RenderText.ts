@@ -1,18 +1,25 @@
 import { BaseSystem, type ICText } from '@infinitecanvas/core'
 import { Block, Edited, Opacity, Text } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
+import figlet from 'figlet'
+import standard from 'figlet/fonts/Standard'
 import type { Mesh } from 'three'
 
+import { Shape } from '../components'
 import { getLines } from '../helpers/textLayoutCalculator'
 import type { LetterMaterial } from '../materials'
 import type { AsciiResources } from '../types'
 import { RenderScene } from './RenderScene'
 import { RenderShapes } from './RenderShapes'
 
+figlet.parseFont('Standard', standard)
+
 export class RenderText extends BaseSystem {
   protected declare readonly resources: AsciiResources
 
-  private readonly texts = this.query((q) => q.added.addedOrChanged.current.with(Text, Block).trackWrites)
+  private readonly texts = this.query((q) =>
+    q.added.addedOrChanged.current.with(Text, Block).trackWrites.without(Shape),
+  )
 
   private readonly editedTexts = this.query((q) => q.added.removed.with(Text, Block, Edited).using(Opacity).write)
 
@@ -23,6 +30,7 @@ export class RenderText extends BaseSystem {
 
   private async renderText(textEntity: Entity): Promise<void> {
     const { width, height, id } = textEntity.read(Block)
+    const { fontFamily } = textEntity.read(Text)
 
     const mesh = this.resources.scene.getObjectByName(id) as Mesh | undefined
     if (!mesh) return
@@ -45,7 +53,23 @@ export class RenderText extends BaseSystem {
     const textContainer = element?.shadowRoot?.firstElementChild as HTMLElement | null
     if (!textContainer) return
 
-    const lines = getLines(textContainer).map((line) => line.text)
+    const lines = getLines(textContainer)
+      .map((line) => line.text)
+      .flatMap((line) => {
+        if (fontFamily === 'Courier Prime Sans') {
+          return [line]
+        }
+
+        return figlet
+          .textSync(line, {
+            font: fontFamily,
+            horizontalLayout: 'full',
+            verticalLayout: 'full',
+          })
+          .split('\n')
+      })
+
+    console.log({ lines })
 
     // Clear the character array first
     const space = this.resources.assets.unicodeMap.get(' '.charCodeAt(0)) ?? 0
@@ -55,6 +79,7 @@ export class RenderText extends BaseSystem {
     // Fill the grid with characters from the split lines
     for (let row = 0; row < Math.min(rows, lines.length); row++) {
       const line = lines[row]
+
       for (let col = 0; col < Math.min(cols, line.length); col++) {
         const gridIndex = row * chars.image.width + col
 
@@ -62,12 +87,6 @@ export class RenderText extends BaseSystem {
         const unicodeIndex = this.resources.assets.unicodeMap.get(c.charCodeAt(0)) ?? space
         chars.image.data[gridIndex] = unicodeIndex
       }
-
-      // // fill the rest of the row with spaces
-      // for (let col = Math.min(cols, line.length); col < cols; col++) {
-      //   const gridIndex = row * chars.image.width + col
-      //   chars.image.data[gridIndex] = space
-      // }
     }
 
     chars.needsUpdate = true
@@ -85,7 +104,7 @@ export class RenderText extends BaseSystem {
       if (!element) continue
 
       // add some styles for the text element
-      // element.style.backgroundColor = this.resources.fontData.backgroundColor
+      element.style.backgroundColor = this.resources.fontData.backgroundColor
       element.style.outline =
         'var(--ic-highlighted-block-outline-width) solid var(--ic-highlighted-block-outline-color)'
       element.style.borderRadius = 'var(--ic-highlighted-block-border-radius)'
@@ -96,11 +115,11 @@ export class RenderText extends BaseSystem {
       const opacity = editedTextEntity.write(Opacity)
       opacity.value = 255
 
-      // // hide the mesh while editing
-      // const block = editedTextEntity.read(Block)
-      // const mesh = this.resources.scene.getObjectByName(block.id) as Mesh | undefined
-      // if (!mesh) continue
-      // mesh.visible = false
+      // hide the mesh while editing
+      const block = editedTextEntity.read(Block)
+      const mesh = this.resources.scene.getObjectByName(block.id) as Mesh | undefined
+      if (!mesh) continue
+      mesh.visible = false
     }
 
     // when we stop editing the text, fade it out

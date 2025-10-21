@@ -5,7 +5,7 @@ import type { Entity } from '@lastolivegames/becsy'
 import { assign, setup } from 'xstate'
 
 import { ArrowDrawState as ArrowDrawStateComp } from '../components'
-import { ArrowCommand, type ArrowCommandArgs, ArrowDrawState } from '../types'
+import { ArrowCommand, type ArrowCommandArgs, ArrowDrawState, ArrowKind } from '../types'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
@@ -42,7 +42,7 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
       addArrow: assign({
         activeArrow: ({ context }) => {
           const entity = this.createEntity()
-          this.emitCommand(ArrowCommand.AddArrow, entity, context.pointingStartWorld)
+          this.emitCommand(ArrowCommand.AddArrow, entity, context.pointingStartWorld, this.arrowDrawState.kind)
           return entity
         },
       }),
@@ -123,10 +123,14 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
   })
 
   public execute(): void {
-    const buttons = this.controls.getButtons('arrow')
+    const buttons = this.controls.getButtons('arc-arrow', 'elbow-arrow')
     const events = this.getPointerEvents(buttons)
 
     if (events.length === 0) return
+
+    this.arrowDrawState.kind = this.controls.leftMouseTool === 'elbow-arrow' ? ArrowKind.Elbow : ArrowKind.Arc
+
+    // console.log(this.)
 
     const { value, context } = this.runMachine<ArrowDrawState>(
       this.arrowDrawMachine,

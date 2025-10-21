@@ -11,8 +11,11 @@ export class Aabb extends BaseComponent {
   @field.float32 public declare top: number
   @field.float32 public declare bottom: number
 
-  public containsPoint(point: [number, number]): boolean {
-    return point[0] >= this.left && point[0] <= this.right && point[1] >= this.top && point[1] <= this.bottom
+  public containsPoint(point: [number, number], inclusive = true): boolean {
+    if (inclusive) {
+      return point[0] >= this.left && point[0] <= this.right && point[1] >= this.top && point[1] <= this.bottom
+    }
+    return point[0] > this.left && point[0] < this.right && point[1] > this.top && point[1] < this.bottom
   }
 
   public expandByPoint(point: [number, number]): this {
@@ -21,6 +24,13 @@ export class Aabb extends BaseComponent {
     this.top = Math.min(this.top, point[1])
     this.bottom = Math.max(this.bottom, point[1])
 
+    return this
+  }
+
+  public expandByBlock(block: Block): this {
+    const aabb = block.computeAabb()
+    this.expandByPoint([aabb.left, aabb.top])
+    this.expandByPoint([aabb.right, aabb.bottom])
     return this
   }
 
@@ -41,6 +51,20 @@ export class Aabb extends BaseComponent {
 
   public getCenter(): [number, number] {
     return [(this.left + this.right) / 2, (this.top + this.bottom) / 2]
+  }
+
+  public getWidth(): number {
+    return this.right - this.left
+  }
+
+  public getHeight(): number {
+    return this.bottom - this.top
+  }
+
+  public distanceToPoint(point: [number, number]): number {
+    const dx = Math.max(this.left - point[0], 0, point[0] - this.right)
+    const dy = Math.max(this.top - point[1], 0, point[1] - this.bottom)
+    return Math.hypot(dx, dy)
   }
 
   public intersectsAabb(other: Aabb): boolean {
@@ -66,5 +90,13 @@ export class Aabb extends BaseComponent {
       [this.right, this.bottom],
       [this.left, this.bottom],
     ]
+  }
+
+  public applyPadding(padding: number): this {
+    this.left -= padding
+    this.right += padding
+    this.top -= padding
+    this.bottom += padding
+    return this
   }
 }

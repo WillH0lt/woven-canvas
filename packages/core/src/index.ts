@@ -17,6 +17,7 @@ export {
   type BlockDef,
   type BlockDefMap,
   type ToolDef,
+  type FontFamily,
   TextAlign,
   VerticalAlign,
 } from './types'

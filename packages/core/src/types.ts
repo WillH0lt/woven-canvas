@@ -91,6 +91,7 @@ export const BlockDef = z.object({
   resizeMode: z.enum(['scale', 'text', 'free', 'groupOnly']).default('scale'),
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
   canRotate: z.boolean().default(true),
+  canScale: z.boolean().default(true),
 })
 
 export type BlockDef = z.infer<typeof BlockDef>

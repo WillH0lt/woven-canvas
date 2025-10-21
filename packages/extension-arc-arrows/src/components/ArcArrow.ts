@@ -4,7 +4,7 @@ import { Type, component, field } from '@lastolivegames/becsy'
 import { ArrowHeadKind } from '../types'
 
 @component
-export class Arrow extends BaseComponent {
+export class ArcArrow extends BaseComponent {
   @field.float64.vector(2) declare a: [number, number]
   @field.float64.vector(2) declare b: [number, number]
   @field.float64.vector(2) declare c: [number, number]

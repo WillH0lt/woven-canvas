@@ -19,9 +19,10 @@ import {
 import { intersectPoint } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
-import { Arrow, ArrowHandle, ArrowTrim } from '../components'
+import { ArcArrow, ArrowHandle, ArrowTrim, ElbowArrow } from '../components'
 import { TRANSFORM_HANDLE_RANK, TRANSFORM_HANDLE_SIZE } from '../constants'
-import { ArrowCommand, type ArrowCommandArgs, ArrowHandleKind, ArrowHeadKind } from '../types'
+import { calculateElbowPath } from '../helpers/calculateElbowPath'
+import { ArrowCommand, type ArrowCommandArgs, ArrowHandleKind, ArrowHeadKind, ArrowKind } from '../types'
 
 function polarDelta(
   start: [number, number],
@@ -66,9 +67,20 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
   private readonly arrows = this.query(
     (q) =>
-      q.current.addedOrChanged
-        .with(Arrow, Block, Connector)
-        .write.trackWrites.using(HitGeometries, HitArc, HitCapsule, Persistent, Color, Text, ArrowTrim)
+      q
+        .using(
+          Block,
+          Connector,
+          ArcArrow,
+          ElbowArrow,
+          HitGeometries,
+          HitArc,
+          HitCapsule,
+          Persistent,
+          Color,
+          Text,
+          ArrowTrim,
+        )
         .write.using(...allHitGeometriesArray).read,
   )
 
@@ -81,9 +93,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     (q) => q.changed.and.current.with(Block).trackWrites.using(TransformBox, TransformHandle).read,
   )
 
-  private readonly connectors = this.query((q) => q.changed.with(Connector).write.trackWrites.and.with(Arrow))
+  private readonly connectors = this.query((q) =>
+    q.changed.with(Connector).write.trackWrites.and.withAny(ArcArrow, ElbowArrow),
+  )
 
-  private readonly selectedArrows = this.query((q) => q.current.with(Arrow, Selected).read)
+  private readonly selectedArrows = this.query((q) => q.current.with(ArcArrow, Selected).read)
 
   public initialize(): void {
     this.addCommandListener(ArrowCommand.AddArrow, this.addArrow.bind(this))
@@ -104,7 +118,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     this.executeCommands()
 
     for (const connectorEntity of this.connectors.changed) {
-      const connector = connectorEntity.write(Connector)
+      const connector = connectorEntity.read(Connector)
 
       const changedBlocks = []
       if (connector.startNeedsUpdate) changedBlocks.push(connector.startBlockEntity)
@@ -116,32 +130,28 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
         const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
         const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
         const position = block.uvToWorld(uv)
-        this.updateArrow(connectorEntity, handleKind, position)
+        if (connectorEntity.has(ArcArrow)) {
+          this.updateArcArrow(connectorEntity, handleKind, position)
+        } else if (connectorEntity.has(ElbowArrow)) {
+          this.updateElbowArrow(connectorEntity, handleKind, position)
+        }
       }
 
-      connector.startNeedsUpdate = false
-      connector.endNeedsUpdate = false
+      if (changedBlocks.length > 0) {
+        const c = connectorEntity.write(Connector)
+        c.startNeedsUpdate = false
+        c.endNeedsUpdate = false
+      }
     }
-
-    // for (const blockEntity of this.blocks.changed) {
-    //   for (const connectorEntity of blockEntity.read(Block).connectors) {
-    //     if (connectorEntity.has(Arrow)) {
-    //       const block = blockEntity.read(Block)
-    //       const connector = connectorEntity.read(Connector)
-    //       const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
-    //       const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
-    //       const position = block.uvToWorld(uv)
-    //       this.updateArrow(connectorEntity, handleKind, position)
-    //     }
-    //   }
-    // }
   }
 
-  private addArrow(arrowEntity: Entity, position: [number, number]): void {
+  private addArrow(arrowEntity: Entity, position: [number, number], kind: ArrowKind): void {
     const thickness = 4
 
+    const arrowTag = kind === ArrowKind.Elbow ? 'ic-elbow-arrow' : 'ic-arc-arrow'
+
     const block = {
-      tag: 'ic-arrow',
+      tag: arrowTag,
       id: crypto.randomUUID(),
       rank: this.rankBounds.genNext().toString(),
       left: position[0] - thickness / 2,
@@ -153,14 +163,26 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     arrowEntity.add(Block, block)
     arrowEntity.add(Persistent)
 
-    arrowEntity.add(Arrow, {
-      a: [0, 0],
-      b: [0.5, 0.5],
-      c: [1, 1],
-      thickness,
-      startArrowHead: ArrowHeadKind.None,
-      endArrowHead: ArrowHeadKind.V,
-    })
+    if (kind === ArrowKind.Arc) {
+      arrowEntity.add(ArcArrow, {
+        a: [0, 0],
+        b: [0.5, 0.5],
+        c: [1, 1],
+        thickness,
+        startArrowHead: ArrowHeadKind.None,
+        endArrowHead: ArrowHeadKind.V,
+      })
+    } else if (kind === ArrowKind.Elbow) {
+      arrowEntity.add(ElbowArrow)
+
+      const arrow = arrowEntity.write(ElbowArrow)
+      arrow.fromJson({
+        points: [0, 0, 0.5, 0, 0.5, 1, 1, 1],
+        thickness,
+        startArrowHead: ArrowHeadKind.None,
+        endArrowHead: ArrowHeadKind.V,
+      })
+    }
 
     arrowEntity.add(Color)
     arrowEntity.add(Text)
@@ -176,13 +198,24 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     block.width = Math.abs(start[0] - end[0])
     block.height = Math.abs(start[1] - end[1])
 
-    // arrow a and b are in uv coordinates
-    const arrow = arrowEntity.write(Arrow)
-    const ax = start[0] < end[0] ? 0 : 1
-    const ay = start[1] < end[1] ? 0 : 1
-    arrow.a = [ax, ay]
-    arrow.b = [0.5, 0.5]
-    arrow.c = [1 - ax, 1 - ay]
+    if (arrowEntity.has(ArcArrow)) {
+      const arrow = arrowEntity.write(ArcArrow)
+      const ax = start[0] < end[0] ? 0 : 1
+      const ay = start[1] < end[1] ? 0 : 1
+      arrow.a = [ax, ay]
+      arrow.b = [0.5, 0.5]
+      arrow.c = [1 - ax, 1 - ay]
+    } else if (arrowEntity.has(ElbowArrow)) {
+      this.updateElbowArrow(arrowEntity, ArrowHandleKind.End, end)
+      // const arrow = arrowEntity.write(ElbowArrow)
+      // const ax = start[0] < end[0] ? 0 : 1
+      // const ay = start[1] < end[1] ? 0 : 1
+
+      // arrow.a = [ax, ay]
+      // arrow.b = [0.5, ay]
+      // arrow.c = [0.5, 1 - ay]
+      // arrow.d = [1 - ax, 1 - ay]
+    }
 
     this.updateConnector(arrowEntity, ArrowHandleKind.End, end)
   }
@@ -222,24 +255,10 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     const handleSize = TRANSFORM_HANDLE_SIZE
 
     for (const handleEntity of handles) {
-      const arrowBlock = arrowEntity.read(Block)
-      const arrow = arrowEntity.read(Arrow)
       const handle = handleEntity.write(ArrowHandle)
       handle.arrowEntity = arrowEntity
 
-      let position: [number, number]
-
-      switch (handle.kind) {
-        case ArrowHandleKind.Start:
-          position = arrowBlock.uvToWorld(arrow.a)
-          break
-        case ArrowHandleKind.Middle:
-          position = this.getTrimmedCenter(arrowEntity) ?? arrowBlock.uvToWorld(arrow.b)
-          break
-        case ArrowHandleKind.End:
-          position = arrowBlock.uvToWorld(arrow.c)
-          break
-      }
+      const position = this.getHandlePosition(arrowEntity, handle.kind)
 
       const handleBlock = handleEntity.write(Block)
       handleBlock.left = position[0] - handleSize / 2
@@ -255,10 +274,42 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     }
   }
 
+  private getHandlePosition(arrowEntity: Entity, handleKind: ArrowHandleKind): [number, number] {
+    const block = arrowEntity.read(Block)
+
+    if (arrowEntity.has(ArcArrow)) {
+      const arrow = arrowEntity.read(ArcArrow)
+      switch (handleKind) {
+        case ArrowHandleKind.Start:
+          return block.uvToWorld(arrow.a)
+        case ArrowHandleKind.Middle:
+          return this.getTrimmedCenter(arrowEntity) ?? block.uvToWorld(arrow.b)
+        case ArrowHandleKind.End:
+          return block.uvToWorld(arrow.c)
+      }
+    }
+
+    if (arrowEntity.has(ElbowArrow)) {
+      const arrow = arrowEntity.read(ElbowArrow)
+      switch (handleKind) {
+        case ArrowHandleKind.Start:
+          return block.uvToWorld(arrow.getPoint(0))
+        // case ArrowHandleKind.Middle:
+        // return this.getTrimmedCenter(arrowEntity) ?? block.uvToWorld(arrow.b)
+        // return block.uvToWorld(arrow.b)
+        case ArrowHandleKind.End:
+          return block.uvToWorld(arrow.getPoint(arrow.pointCount - 1))
+      }
+    }
+
+    console.warn('Arrow entity has no recognized arrow component')
+    return [0, 0]
+  }
+
   private getTrimmedCenter(arrowEntity: Entity): [number, number] | null {
     // this.addOrUpdateHitGeometry(arrowEntity)
 
-    const arrow = arrowEntity.read(Arrow)
+    const arrow = arrowEntity.read(ArcArrow)
     const hitGeometries = arrowEntity.read(HitGeometries)
 
     if (arrow.isCurved()) {
@@ -293,40 +344,43 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private onBlockDrag(blockEntity: Entity): void {
-    if (blockEntity.has(Arrow)) {
-      this.onArrowDrag(blockEntity)
+    if (blockEntity.has(ArcArrow)) {
+      this.onArcArrowDrag(blockEntity)
+    } else if (blockEntity.has(ElbowArrow)) {
+      this.onElbowArrowDrag(blockEntity)
     } else if (blockEntity.has(ArrowHandle)) {
       this.onArrowHandleDrag(blockEntity)
     }
-    // else {
-    //   // when a block is moved recalculate the arrow endpoints
-    //   for (const blockEntity of this.blocks.changed) {
-    //     for (const connectorEntity of blockEntity.read(Block).connectors) {
-    //       if (connectorEntity.has(Arrow)) {
-    //         const block = blockEntity.read(Block)
-    //         const connector = connectorEntity.read(Connector)
-    //         const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
-    //         const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
-    //         const position = block.uvToWorld(uv)
-    //         this.updateArrow(connectorEntity, handleKind, position)
-    //       }
-    //     }
-    //   }
-    // }
   }
 
-  private onArrowDrag(arrowEntity: Entity): void {
+  private onArcArrowDrag(arrowEntity: Entity): void {
     if (arrowEntity.read(Connector).startBlockEntity) {
       const block = arrowEntity.read(Block)
-      const arrow = arrowEntity.read(Arrow)
+      const arrow = arrowEntity.read(ArcArrow)
       const start = block.uvToWorld(arrow.a)
       this.updateConnector(arrowEntity, ArrowHandleKind.Start, start)
     }
 
     if (arrowEntity.read(Connector).endBlockEntity) {
       const block = arrowEntity.read(Block)
-      const arrow = arrowEntity.read(Arrow)
+      const arrow = arrowEntity.read(ArcArrow)
       const end = block.uvToWorld(arrow.c)
+      this.updateConnector(arrowEntity, ArrowHandleKind.End, end)
+    }
+  }
+
+  private onElbowArrowDrag(arrowEntity: Entity): void {
+    if (arrowEntity.read(Connector).startBlockEntity) {
+      const block = arrowEntity.read(Block)
+      const arrow = arrowEntity.read(ElbowArrow)
+      const start = block.uvToWorld(arrow.getPoint(0))
+      this.updateConnector(arrowEntity, ArrowHandleKind.Start, start)
+    }
+
+    if (arrowEntity.read(Connector).endBlockEntity) {
+      const block = arrowEntity.read(Block)
+      const arrow = arrowEntity.read(ElbowArrow)
+      const end = block.uvToWorld(arrow.getPoint(arrow.pointCount - 1))
       this.updateConnector(arrowEntity, ArrowHandleKind.End, end)
     }
   }
@@ -341,14 +395,19 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     const handleBlock = blockEntity.read(Block)
     const handlePosition = handleBlock.getCenter()
 
-    this.updateArrow(arrowEntity, handle.kind, handlePosition)
+    if (arrowEntity.has(ArcArrow)) {
+      this.updateArcArrow(arrowEntity, handle.kind, handlePosition)
+    } else if (arrowEntity.has(ElbowArrow)) {
+      this.updateElbowArrow(arrowEntity, handle.kind, handlePosition)
+    }
+
     if (handle.kind !== ArrowHandleKind.Middle) {
       this.updateConnector(arrowEntity, handle.kind, handlePosition)
     }
   }
 
-  private updateArrow(arrowEntity: Entity, handleKind: ArrowHandleKind, handlePosition: [number, number]): void {
-    const arrow = arrowEntity.write(Arrow)
+  private updateArcArrow(arrowEntity: Entity, handleKind: ArrowHandleKind, handlePosition: [number, number]): void {
+    const arrow = arrowEntity.write(ArcArrow)
     const arrowBlock = arrowEntity.write(Block)
 
     let aWorld = arrowBlock.uvToWorld(arrow.a)
@@ -404,6 +463,37 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     arrow.c = arrowBlock.worldToUv(cWorld)
   }
 
+  private updateElbowArrow(arrowEntity: Entity, handleKind: ArrowHandleKind, handlePosition: [number, number]): void {
+    const arrow = arrowEntity.write(ElbowArrow)
+    const arrowBlock = arrowEntity.write(Block)
+
+    let start: [number, number]
+    let end: [number, number]
+
+    if (handleKind === ArrowHandleKind.Start) {
+      start = handlePosition
+      const endUv = arrow.getPoint(arrow.pointCount - 1)
+      end = arrowBlock.uvToWorld(endUv)
+    } else {
+      const startUv = arrow.getPoint(0)
+      start = arrowBlock.uvToWorld(startUv)
+      end = handlePosition
+    }
+
+    const connector = arrowEntity.read(Connector)
+
+    const path = calculateElbowPath(start, end, connector.startBlockEntity, connector.endBlockEntity)
+
+    arrowBlock.boundPoints(path)
+
+    for (let i = 0; i < path.length; i++) {
+      const point = path[i]
+      arrow.setPoint(i, arrowBlock.worldToUv(point))
+    }
+
+    arrow.pointCount = path.length
+  }
+
   private updateConnector(arrowEntity: Entity, handleKind: ArrowHandleKind, handlePosition: [number, number]): void {
     const attachment = this.getAttachmentBlock(handlePosition)
     const attachmentBlock = attachment?.read(Block)
@@ -425,7 +515,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     const intersects = intersectPoint(handlePosition, this.blocks.current)
 
     for (const intersect of intersects) {
-      if (!intersect.has(ArrowHandle) && !intersect.has(Arrow)) {
+      if (!intersect.has(ArrowHandle) && !intersect.has(ArcArrow) && !intersect.has(ElbowArrow)) {
         return intersect
       }
     }

@@ -3,7 +3,7 @@ import * as comps from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 import { assign, not, setup } from 'xstate'
 
-import { Arrow, ArrowTransformState as ArrowTransformStateComp } from '../components'
+import { ArcArrow, ArrowTransformState as ArrowTransformStateComp, ElbowArrow } from '../components'
 import { ArrowCommand, type ArrowCommandArgs, ArrowTransformState } from '../types'
 import { CaptureArrowDraw } from './CaptureArrowDraw'
 
@@ -17,7 +17,7 @@ type SelectionEvent =
 export class CaptureArrowTransform extends BaseSystem<ArrowCommandArgs> {
   private readonly selectedBlocks = this.query((q) => q.added.removed.current.with(comps.Block, comps.Selected))
 
-  private readonly arrows = this.query((q) => q.using(Arrow).read)
+  private readonly arrows = this.query((q) => q.using(ArcArrow, ElbowArrow).read)
 
   private readonly arrowTransformState = this.singleton.write(ArrowTransformStateComp)
 
@@ -62,7 +62,7 @@ export class CaptureArrowTransform extends BaseSystem<ArrowCommandArgs> {
         if (event.selectedEntities.length !== 1) return false
 
         const entity = event.selectedEntities[0]
-        return entity.has(Arrow)
+        return entity.has(ArcArrow) || entity.has(ElbowArrow)
       },
     },
     actions: {

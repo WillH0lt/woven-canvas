@@ -65,11 +65,13 @@ declare module '@infinitecanvas/core' {
       updateBlock: (blockId: string, block: Partial<BlockData>) => void
       updateFromSnapshot: (snapshot: Snapshot) => void
       addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
+      scaleBlock: (blockId: string, factor: number) => void
       setControls: (controls: Partial<ControlsData>) => void
       setColor: (blockId: string, color: Partial<ColorData>) => void
       applyColorToSelected: (color: ColorData) => void
       applyVerticalAlignToSelected: (verticalAlign: VerticalAlign) => void
       createAndDragOntoCanvas: (snapshot: Snapshot) => void
+      getSelectedSnapshot: (Components: (new () => BaseComponent)[]) => Snapshot
     }
   }
 
@@ -87,6 +89,7 @@ declare module '@infinitecanvas/core' {
       camera: ReadonlySignal<Camera | undefined>
       cameraState: ReadonlySignal<CameraState | undefined>
       fontFamilies: ReadonlySignal<FontFamily[]>
+      selectedBlocks: ReadonlySignal<Block[]>
       selectedColors: ReadonlySignal<Color[]>
     }
   }
@@ -308,6 +311,22 @@ export class CoreExtension extends BaseExtension {
           const snapshot = createSnapshot(new Block(block), components)
           send(CoreCommand.CreateFromSnapshot, snapshot)
         },
+        scaleBlock: (blockId: string, factor: number) => {
+          const blockComp = state.getComponent<Block>(Block, blockId).value
+          if (!blockComp) return
+
+          const newWidth = blockComp.width * factor
+          const newHeight = blockComp.height * factor
+
+          send(CoreCommand.UpdateFromSnapshot, {
+            [blockId]: {
+              Block: {
+                width: newWidth,
+                height: newHeight,
+              },
+            },
+          })
+        },
         setControls: (controls: Partial<ControlsData>) => send(CoreCommand.SetControls, controls),
         setColor: (blockId: string, color: Partial<ColorData>) => {
           send(CoreCommand.UpdateFromSnapshot, {
@@ -343,6 +362,26 @@ export class CoreExtension extends BaseExtension {
         createAndDragOntoCanvas: (snapshot: Snapshot) => {
           send(CoreCommand.CreateAndDragOntoCanvas, snapshot)
         },
+        getSelectedSnapshot: (Components: (new () => BaseComponent)[]): Snapshot => {
+          const selectedIds = state.getComponents(Selected).value
+
+          const snapshot: Snapshot = {}
+          for (const id of Object.keys(selectedIds)) {
+            const entity: any = {}
+            entity.Block = state.getComponent<Block>(Block, id).value?.toJson() || {}
+
+            for (const Comp of Components) {
+              const compInstance = state.getComponent(Comp, id).value
+              if (compInstance) {
+                entity[Comp.name] = compInstance.toJson()
+              }
+            }
+
+            snapshot[id] = entity
+          }
+
+          return snapshot
+        },
       },
     }
   }
@@ -360,6 +399,21 @@ export class CoreExtension extends BaseExtension {
           const hovered = state.getComponents(Hovered).value
           const ids = Object.keys(hovered)
           return ids.length > 0 ? ids[0] : null
+        }),
+        selectedBlocks: computed(() => {
+          const selected = state.getComponents(Selected).value
+          const ids = Object.keys(selected)
+
+          const blocks: Block[] = []
+
+          for (const id of ids) {
+            const block = state.getComponent<Block>(Block, id)
+            if (block?.value) {
+              blocks.push(block.value)
+            }
+          }
+
+          return blocks
         }),
         blockById: (id: string): ReadonlySignal<Block | undefined> =>
           computed(() => state.getComponent<Block>(Block, id).value),

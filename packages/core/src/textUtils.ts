@@ -129,6 +129,14 @@ export async function applyFontFamilyToSelected(
 ): Promise<Snapshot> {
   return applyTextPropertyToSelected(state, blockContainer, 'fontFamily', fontFamily)
 }
+
+export async function applyLineHeightToSelected(
+  state: State,
+  blockContainer: HTMLElement,
+  lineHeight: number,
+): Promise<Snapshot> {
+  return applyTextPropertyToSelected(state, blockContainer, 'lineHeight', lineHeight)
+}
 /**
  * Gets the value of a CSS property from HTML content
  */

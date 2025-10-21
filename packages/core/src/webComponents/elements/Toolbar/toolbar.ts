@@ -68,6 +68,7 @@ export class ICToolbar extends SignalWatcher(LitElement) {
               ?selected="${controls?.value?.leftMouseTool === tool.name}"
               @mouseenter="${() => this.onMouseEnter(tool)}"
               @mousedown="${() => this.onMouseDown(tool)}"
+              @mouseup="${() => this.onMouseUp()}"
               @click="${() => this.onClick(tool)}"
             />
           `
@@ -143,6 +144,10 @@ export class ICToolbar extends SignalWatcher(LitElement) {
 
   onMouseDown(tool: ToolDef) {
     this.heldTool = tool
+  }
+
+  onMouseUp() {
+    this.heldTool = null
   }
 
   onMouseLeave() {

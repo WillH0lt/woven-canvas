@@ -2,7 +2,7 @@ import { LoremIpsum } from 'lorem-ipsum'
 
 import './style.css'
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { ArrowsExtension } from '@infinitecanvas/extension-arrows'
+import { ArrowsExtension } from '@infinitecanvas/extension-arc-arrows'
 import { ControlsExtension } from '@infinitecanvas/extension-controls'
 import { EraserExtension } from '@infinitecanvas/extension-eraser'
 import { InkExtension } from '@infinitecanvas/extension-ink'
