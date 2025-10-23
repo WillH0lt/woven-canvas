@@ -12,7 +12,8 @@ export class Shape extends BaseComponent {
   public declare strokeKind: ShapeStrokeKind
 
   @field.uint16 declare char: number
-  @field.uint32 declare color: number
+
+  // @field({ type: Type.uint32, default: 0xFF0000FF }) declare color: number // default red with full alpha
 
   // @field.uint8 declare strokeRed: number
   // @field.uint8 declare strokeGreen: number

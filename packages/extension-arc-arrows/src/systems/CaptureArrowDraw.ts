@@ -1,9 +1,8 @@
 import { BaseSystem, CoreCommand, type CoreCommandArgs, type PointerEvent } from '@infinitecanvas/core'
-import * as comps from '@infinitecanvas/core/components'
+import { Block, Persistent } from '@infinitecanvas/core/components'
 import { distance } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 import { assign, setup } from 'xstate'
-
 import { ArrowDrawState as ArrowDrawStateComp } from '../components'
 import { ArrowCommand, type ArrowCommandArgs, ArrowDrawState, ArrowKind } from '../types'
 
@@ -11,7 +10,7 @@ import { ArrowCommand, type ArrowCommandArgs, ArrowDrawState, ArrowKind } from '
 const POINTING_THRESHOLD = 4
 
 export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandArgs> {
-  private readonly _blocks = this.query((q) => q.with(comps.Block, comps.Persistent))
+  private readonly _blocks = this.query((q) => q.with(Block, Persistent))
 
   private readonly arrowDrawState = this.singleton.write(ArrowDrawStateComp)
 
@@ -129,8 +128,6 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
     if (events.length === 0) return
 
     this.arrowDrawState.kind = this.controls.leftMouseTool === 'elbow-arrow' ? ArrowKind.Elbow : ArrowKind.Arc
-
-    // console.log(this.)
 
     const { value, context } = this.runMachine<ArrowDrawState>(
       this.arrowDrawMachine,

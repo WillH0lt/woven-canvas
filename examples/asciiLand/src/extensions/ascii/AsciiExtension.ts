@@ -5,8 +5,8 @@ import {
   floatingMenuTextAlignmentButton,
   floatingMenuTextColorButton,
 } from '@infinitecanvas/core'
-import { Text, VerticalAlign } from '@infinitecanvas/core/components'
-import { Color, OrthographicCamera, Scene, TextureLoader } from 'three'
+import { Color, Text, VerticalAlign } from '@infinitecanvas/core/components'
+import { OrthographicCamera, Scene, TextureLoader, Color as ThreeColor } from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 
 import { Shape } from './components'
@@ -22,19 +22,9 @@ class AsciiExtensionClass extends BaseExtension {
         canEdit: true,
       },
       resizeMode: 'free' as const,
-      components: [Text, VerticalAlign, Shape],
+      components: [Text, VerticalAlign, Shape, Color],
       canRotate: false,
-    },
-    {
-      tag: 'ic-text',
-      editOptions: {
-        canEdit: true,
-        removeWhenTextEmpty: true,
-      },
-      resizeMode: 'text' as const,
-      components: [Text],
-      canRotate: false,
-      canScale: false,
+      noHtml: true,
     },
   ]
 
@@ -76,7 +66,7 @@ class AsciiExtensionClass extends BaseExtension {
       antialias: true,
     })
     renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.setClearColor(new Color(this.fontData.backgroundColor), 1)
+    renderer.setClearColor(new ThreeColor(this.fontData.backgroundColor), 1)
     const camera = new OrthographicCamera()
     const scene = new Scene()
 
@@ -103,9 +93,17 @@ class AsciiExtensionClass extends BaseExtension {
       fontData: this.fontData,
     }
 
+    this.updateGroup = this.createGroup(asciiResources, sys.UpdateEnforceGrid)
+
     this.preRenderGroup = this.createGroup(asciiResources, sys.PreRenderPrepareScene)
 
-    this.renderGroup = this.createGroup(asciiResources, sys.RenderText, sys.RenderShapes, sys.RenderScene)
+    this.renderGroup = this.createGroup(
+      asciiResources,
+      sys.RenderText,
+      sys.RenderShapes,
+      sys.RenderScene,
+      sys.RenderArrows,
+    )
   }
 
   private async loadAssets(): Promise<Assets> {

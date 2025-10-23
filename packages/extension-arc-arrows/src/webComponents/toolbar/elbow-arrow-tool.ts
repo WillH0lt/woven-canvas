@@ -5,7 +5,7 @@ import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { ElbowArrow } from '../../components'
+import { ElbowArrow, ArrowTrim } from '../../components'
 import { ArrowHeadKind } from '../../types'
 
 @customElement('ic-elbow-arrow-tool')
@@ -27,21 +27,20 @@ export class ICElbowArrowTool extends ICToolbarIconButton {
   }
 
   protected onToolDragOut(): void {
-    console.log('here?')
     const block = new Block({
       tag: 'ic-elbow-arrow',
       width: 150,
       height: 150,
     })
 
-    const fontFamily =
-      InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
-      InfiniteCanvas.instance!.config.core.defaultFontFamily
+    // const fontFamily =
+    //   InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
+    //   InfiniteCanvas.instance!.config.core.defaultFontFamily
 
-    const text = new Text({
-      fontFamily: fontFamily.name,
-      fontSize: 40,
-    })
+    // const text = new Text({
+    //   fontFamily: fontFamily.name,
+    //   fontSize: 40,
+    // })
 
     const color = new Color({
       red: 0,
@@ -51,12 +50,16 @@ export class ICElbowArrowTool extends ICToolbarIconButton {
     })
 
     const arrow = new ElbowArrow({
+      points: [0, 1, 0.5, 1, 0.5, 0, 1, 0],
+      pointCount: 4,
       endArrowHead: ArrowHeadKind.V,
     })
 
     const connector = new Connector()
 
-    const snapshot = createSnapshot(block, [text, color, arrow, connector])
+    const arrowTrim = new ArrowTrim()
+
+    const snapshot = createSnapshot(block, [color, arrow, connector, arrowTrim])
 
     InfiniteCanvas.instance?.commands.core.createAndDragOntoCanvas(snapshot)
   }

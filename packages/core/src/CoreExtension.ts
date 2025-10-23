@@ -5,6 +5,7 @@ import type { Emitter } from 'strict-event-emitter'
 import type { BaseComponent } from './BaseComponent'
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
+import { FontLoader } from './FontLoader'
 import type { Snapshot } from './History'
 import { LocalDB } from './LocalDB'
 import type { State } from './State'
@@ -176,7 +177,7 @@ export class CoreExtension extends BaseExtension {
     const localDB = await LocalDB.New(this.options.persistenceKey)
     this.initialEntities = await localDB.getAll()
 
-    // await loadFonts(this.initialEntities, this.options)
+    await loadFonts(this.initialEntities, this.options)
 
     const coreResources: CoreResources = {
       ...resources,
@@ -494,17 +495,24 @@ function initializeBlock(worldSystem: System, entity: any, resources: BaseResour
   worldSystem.createEntity(...args, Persistent)
 }
 
-// async function loadFonts(initialEntities: Snapshot, options: Options): Promise<void> {
-//   const fontFamilies = new Set<FontFamily>()
-//   for (const [_, entity] of Object.entries(initialEntities)) {
-//     if (!entity.Text?.fontFamily) continue
+async function loadFonts(initialEntities: Snapshot, options: Options): Promise<void> {
+  const names = new Set<string>()
+  for (const [_, entity] of Object.entries(initialEntities)) {
+    if (!entity.Text?.fontFamily) continue
 
-//     const name = entity.Text.fontFamily
-//     const fontFamily = options.fontMenu.families.find((f) => f.name === name)
-//     if (!fontFamily) continue
+    const name = entity.Text.fontFamily
+    names.add(name as string)
+  }
 
-//     fontFamilies.add(fontFamily)
-//   }
+  const fontFamilies = Array.from(names).reduce<Set<FontFamily>>((set, name) => {
+    const family = options.fontMenu.families.find((family) => family.name === name)
+    if (family) {
+      set.add(family)
+    }
+    return set
+  }, new Set<FontFamily>())
 
-//   await FontLoader.loadFonts(Array.from(fontFamilies))
-// }
+  await FontLoader.loadFonts(Array.from(fontFamilies))
+
+  await document.fonts.ready
+}

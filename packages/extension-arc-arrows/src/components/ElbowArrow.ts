@@ -31,10 +31,13 @@ export class ElbowArrow extends BaseComponent {
   public toJson(): Record<string, any> {
     const size = this.pointCount * 2
 
-    const points = new Array<number>(size)
+    let points: number[] = []
+    if (size > 0) {
+      points = new Array<number>(size)
 
-    for (let i = 0; i < size; i++) {
-      points[i] = this.points[i]
+      for (let i = 0; i < size; i++) {
+        points[i] = this.points[i]
+      }
     }
 
     return {
@@ -47,14 +50,30 @@ export class ElbowArrow extends BaseComponent {
   }
 
   public fromJson(data: Record<string, any>): this {
-    this.points = new Array(ELBOW_ARROW_CAPACITY * 2).fill(0)
-    this.pointCount = data.pointCount
-    this.thickness = data.thickness
-    this.startArrowHead = data.startArrowHead
-    this.endArrowHead = data.endArrowHead
+    const schema = this.getSchema()
+    for (const key in data) {
+      if (key === 'points' || key === 'pointCount') continue
+      if (Object.hasOwn(schema, key)) {
+        // @ts-ignore
+        this[key] = data[key]
+      }
+    }
 
-    for (let i = 0; i < this.pointCount * 2; i++) {
-      this.points[i] = data.points[i]
+    this.points = new Array(ELBOW_ARROW_CAPACITY * 2).fill(0)
+
+    if ('points' in data && Array.isArray(data.points)) {
+      if (data.points.length / 2 > ELBOW_ARROW_CAPACITY) {
+        throw new Error(`ElbowArrow points exceed capacity of ${ELBOW_ARROW_CAPACITY}`)
+      }
+
+      if (data.points.length % 2 !== 0) {
+        throw new Error('ElbowArrow points array length must be even')
+      }
+
+      this.pointCount = data.points.length / 2
+      for (let i = 0; i < this.pointCount * 2; i++) {
+        this.points[i] = data.points[i]
+      }
     }
 
     return this

@@ -74,6 +74,9 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../../packages/core
+      '@infinitecanvas/extension-arc-arrows':
+        specifier: workspace:^
+        version: link:../../packages/extension-arc-arrows
       '@infinitecanvas/extension-controls':
         specifier: workspace:^
         version: link:../../packages/extension-controls

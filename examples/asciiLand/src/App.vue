@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { InfiniteCanvas } from "@infinitecanvas/core";
+import { ArrowsExtension } from "@infinitecanvas/extension-arc-arrows";
 import { ControlsExtension } from "@infinitecanvas/extension-controls";
 import { EraserExtension } from "@infinitecanvas/extension-eraser";
 import { onMounted, ref } from "vue";
@@ -17,7 +18,6 @@ const fontData = {
   unicodeMapPath: "/fonts/courierPrime/unicodeMap.json",
   atlasGrid: [21, 18] as const,
   atlasCellSize: [37, 45] as const,
-  clearCharIndex: 94, // space
   clearColor: 0x00000000,
   lineSpacing: 0.9, // magic number based on visual alignment
   charAdvance: 0.5, // magic number based on visual alignment
@@ -28,7 +28,12 @@ const fontData = {
 
 onMounted(async () => {
   const infiniteCanvas = await InfiniteCanvas.New(canvasContainer.value!, {
-    extensions: [AsciiExtension(fontData), ControlsExtension, EraserExtension],
+    extensions: [
+      ControlsExtension,
+      ArrowsExtension,
+      EraserExtension,
+      AsciiExtension(fontData),
+    ],
     persistenceKey: "asciiLand-example",
     background: {
       enabled: false,
@@ -56,8 +61,21 @@ onMounted(async () => {
         },
       ],
     },
+    customBlocks: [
+      {
+        tag: "ic-text",
+        canRotate: false,
+        canScale: false,
+        noHtml: true,
+      },
+      {
+        tag: "ic-elbow-arrow",
+        canRotate: false,
+        canScale: false,
+        noHtml: true,
+      },
+    ],
   });
-
   infiniteCanvas.store.core.blockCount.subscribe((count) => {
     console.log("Block count:", count);
   });

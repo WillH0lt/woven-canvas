@@ -70,6 +70,10 @@ export class RenderHtml extends BaseSystem {
     // render blocks
     let needsSorting = false
     for (const blockEntity of this.blocks.added) {
+      const block = blockEntity.read(comps.Block)
+      const blockDef = this.resources.blockDefs[block.tag]
+      if (blockDef?.noHtml) continue
+
       const element = this.createBlockElement(blockEntity)
       this.updateBlockElementHtml(blockEntity, element)
       this.resources.blockContainer.appendChild(element)

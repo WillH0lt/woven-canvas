@@ -182,7 +182,6 @@ export class InfiniteCanvas {
         ...blockDef,
       })
 
-      console.log(blockDefs[blockDef.tag])
     }
 
     // Register components for each block definition

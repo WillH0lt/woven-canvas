@@ -1,3 +1,4 @@
+import type { Color as ColorComp } from '@infinitecanvas/core/components'
 import {
   type ShaderNodeObject,
   add,
@@ -24,6 +25,7 @@ import {
   Color,
   DataTexture,
   NodeMaterial,
+  RGBAFormat,
   RedIntegerFormat,
   type Texture,
   type UniformNode,
@@ -47,21 +49,24 @@ export class LetterMaterial extends NodeMaterial {
   public selected: ShaderNodeObject<UniformNode<boolean>>
   public hovered: ShaderNodeObject<UniformNode<boolean>>
 
-  constructor(fontData: FontData, atlas: Texture) {
+  public fontData: FontData
+  public unicodeMap: Map<number, number>
+
+  constructor(fontData: FontData, atlas: Texture, unicodeMap: Map<number, number>, rows: number, cols: number) {
     super()
 
-    this.transparent = false
+    this.fontData = fontData
+    this.unicodeMap = unicodeMap
+
+    this.transparent = true
 
     this.atlas = uniform(atlas)
 
-    const size = 64
-
     this.chars = uniform<DataTexture>(
-      new DataTexture(new Uint32Array(size ** 2), size, size, RedIntegerFormat, UnsignedIntType),
+      new DataTexture(new Uint32Array(cols * rows), cols, rows, RedIntegerFormat, UnsignedIntType),
     )
-    this.colors = uniform<DataTexture>(new DataTexture(new Uint32Array(size ** 2), size, size))
-
-    this.grid = uniform(new Vector2(), 'vec2')
+    this.colors = uniform<DataTexture>(new DataTexture(new Uint8Array(4 * cols * rows), cols, rows, RGBAFormat))
+    this.grid = uniform(new Vector2(cols, rows), 'vec2')
     this.atlasGrid = uniform(new Vector2().fromArray(fontData.atlasGrid), 'uvec2')
     this.atlasCellSize = uniform(new Vector2().fromArray(fontData.atlasCellSize), 'uvec2')
     this.atlasSize = uniform(new Vector2(atlas.width, atlas.height), 'uvec2')
@@ -75,7 +80,7 @@ export class LetterMaterial extends NodeMaterial {
 
     const vuv = uv()
 
-    const scaledUv = mul(vec2(vuv.x, sub(1.0, vuv.y)), div(this.grid, vec2(size)))
+    const scaledUv = mul(vec2(vuv.x, sub(1.0, vuv.y)), div(this.grid, vec2(cols, rows)))
     const charIndex = uint(texture(this.chars.value, scaledUv).r)
 
     const atlasCol = float(mod(charIndex, this.atlasGrid.x))
@@ -112,15 +117,7 @@ export class LetterMaterial extends NodeMaterial {
 
     const textColor = texture(this.colors.value, scaledUv)
 
-    // const color = 0x000000ff
-    // const r = div(float(mod(shiftRight(color, 24), 256)), 255.0)
-    // const g = div(float(mod(shiftRight(color, 16), 256)), 255.0)
-    // const b = div(float(mod(shiftRight(color, 8), 256)), 255.0)
-    // const a = div(float(mod(color, 256)), 255.0)
-
-    // const textColor = vec4(r, g, b, a)
-
-    const finalColor = mix(vec4(this.backgroundColor, 1.0), textColor, alpha)
+    const finalColor = mix(vec4(this.backgroundColor, textColor.a), textColor, alpha)
 
     // highlight
     const uStrokeOutsetWidth = float(0.4)
@@ -131,10 +128,12 @@ export class LetterMaterial extends NodeMaterial {
 
     const highlighted = or(this.hovered, this.selected)
 
+    this.colorNode = mix(finalColor, textColor, mul(outset, highlighted))
+
     // const highlightColor = vec4(div(106, 255), div(88, 255), div(242, 255), 1.0)
     // const highlightColor = vec4(0.0, 0.0, 0.0, 1.0)
 
-    this.colorNode = mix(finalColor, textColor, mul(outset, highlighted))
+    // this.colorNode = finalColor
 
     // this.colorNode = vec4(0.0, 1.0, 0.0, finalColor.a)
 
@@ -145,5 +144,30 @@ export class LetterMaterial extends NodeMaterial {
 
     // this.colorNode = mix(this.colorNode, vec4(1.0, 1.0, 0.0, 1.0), mul(edgeAlpha, this.highlighted))
     // this.opacityNode = this.colorNode.w
+  }
+
+  public setCharAtPosition(char: string, row: number, col: number): void {
+    const chars = this.chars.value
+    const data = chars.image.data
+
+    const mappedChar = this.unicodeMap.get(char.charCodeAt(0)) || 0
+
+    const index = row * this.chars.value.image.width + col
+    data[index] = mappedChar
+
+    chars.needsUpdate = true
+  }
+
+  public setColorAtPosition(color: ColorComp, row: number, col: number): void {
+    const colors = this.colors.value
+    const data = colors.image.data
+
+    const index = 4 * (row * this.colors.value.image.width + col)
+    data[index + 0] = color.red
+    data[index + 1] = color.green
+    data[index + 2] = color.blue
+    data[index + 3] = color.alpha
+
+    colors.needsUpdate = true
   }
 }

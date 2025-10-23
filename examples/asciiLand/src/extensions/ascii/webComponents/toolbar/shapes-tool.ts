@@ -1,5 +1,5 @@
 import { InfiniteCanvas, type Snapshot, VerticalAlign } from '@infinitecanvas/core'
-import { Block, Text, VerticalAlign as VerticalAlignComp } from '@infinitecanvas/core/components'
+import { Block, Text, VerticalAlign as VerticalAlignComp, Color } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
@@ -59,17 +59,16 @@ export class ICShapesTool extends ICToolbarIconButton {
 
     const verticalAlign = new VerticalAlignComp({ value: VerticalAlign.Center })
 
-    const shape = new Shape({
-      fillRed: 255 * Math.random(),
-      fillGreen: 255 * Math.random(),
-      fillBlue: 255 * Math.random(),
-      strokeRed: 255 * Math.random(),
-      strokeGreen: 255 * Math.random(),
-      strokeBlue: 255 * Math.random(),
-      roughness: 0,
+    const shape = new Shape()
+
+    const color = new Color({
+      red: 128,
+      green: 128,
+      blue: 0,
+      alpha: 255,
     })
 
-    return createSnapshot(block, [text, verticalAlign, shape])
+    return createSnapshot(block, [text, verticalAlign, shape, color])
   }
 
   protected onClick() {

@@ -37,7 +37,6 @@ export const FontData = z.object({
   atlasPath: z.string(),
   atlasGrid: z.tuple([z.number().int().min(1), z.number().int().min(1)]).readonly(),
   atlasCellSize: z.tuple([z.number().int().min(1), z.number().int().min(1)]).readonly(),
-  clearCharIndex: z.number().int().min(0),
   lineSpacing: z.number().min(0),
   charAdvance: z.number().min(0),
   charShiftLeft: z.number().min(0),

@@ -89,7 +89,9 @@ function routeBlockToBlock(
   }
   path.push(endRay.origin)
 
+  removeStraightLinePoints(path)
   removeZigZagPoints(path)
+
   return path
 }
 
@@ -144,6 +146,8 @@ function routeBlockToPoint(blockEntity: Entity, ray: Ray, endPoint: [number, num
     path.push(endPoint)
   }
 
+  removeStraightLinePoints(path)
+
   return path
 }
 
@@ -188,6 +192,27 @@ function routePointToPoint(start: [number, number], end: [number, number]): [num
   path.push(end)
 
   return path
+}
+
+function removeStraightLinePoints(path: [number, number][]): void {
+  if (path.length < 3) return
+
+  // if there's a sequence of three corners that are collinear, remove the middle point
+  const pathIndicesToRemove: number[] = []
+  for (let i = 1; i < path.length - 1; i++) {
+    const prev = path[i - 1]
+    const current = path[i]
+    const next = path[i + 1]
+
+    if ((prev[0] === current[0] && current[0] === next[0]) || (prev[1] === current[1] && current[1] === next[1])) {
+      pathIndicesToRemove.push(i)
+    }
+  }
+
+  // remove points in reverse order so indices don't get messed up
+  for (let i = pathIndicesToRemove.length - 1; i >= 0; i--) {
+    path.splice(pathIndicesToRemove[i], 1)
+  }
 }
 
 function removeZigZagPoints(path: [number, number][]): void {

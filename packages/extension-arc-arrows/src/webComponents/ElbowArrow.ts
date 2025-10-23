@@ -6,7 +6,7 @@ import { customElement, property, query } from 'lit/decorators.js'
 
 import type { ArrowTrim, ElbowArrow } from '../components'
 import { ArrowHeadKind } from '../types'
-import { getArrowHeadPath } from './common'
+import { ARROW_HEAD_GAP, getArrowHeadPath } from './common'
 
 @customElement('ic-elbow-arrow')
 export class ICElbowArrow extends ICEditableBlock {
@@ -96,90 +96,60 @@ export class ICElbowArrow extends ICEditableBlock {
       points.push(point)
     }
 
-    // let a: [number, number] = [this.elbowArrow.a[0] * this.clientWidth, this.elbowArrow.a[1] * this.clientHeight]
-    // const b: [number, number] = [this.elbowArrow.b[0] * this.clientWidth, this.elbowArrow.b[1] * this.clientHeight]
-    // const c: [number, number] = [this.elbowArrow.c[0] * this.clientWidth, this.elbowArrow.c[1] * this.clientHeight]
-    // let d: [number, number] = [this.elbowArrow.d[0] * this.clientWidth, this.elbowArrow.d[1] * this.clientHeight]
+    const startVec: [number, number] = [points[1][0] - points[0][0], points[1][1] - points[0][1]]
+    const endVec: [number, number] = [
+      points[points.length - 1][0] - points[points.length - 2][0],
+      points[points.length - 1][1] - points[points.length - 2][1],
+    ]
+
+    let tStart = 0
+    let tEnd = 1
+    if (trim && this.arrowTrim) {
+      tStart = this.arrowTrim.tStart
+      if (tStart !== 0 && this.elbowArrow.startArrowHead !== ArrowHeadKind.None) {
+        const len = Math.hypot(startVec[0], startVec[1])
+        const gap = ARROW_HEAD_GAP / len
+
+        tStart += gap
+      }
+
+      tEnd = this.arrowTrim.tEnd
+      if (tEnd !== 1 && this.elbowArrow.endArrowHead !== ArrowHeadKind.None) {
+        const len = Math.hypot(endVec[0], endVec[1])
+        const gap = ARROW_HEAD_GAP / len
+        tEnd -= gap
+      }
+
+      points[0] = [
+        points[0][0] + (points[1][0] - points[0][0]) * tStart,
+        points[0][1] + (points[1][1] - points[0][1]) * tStart,
+      ]
+      points[points.length - 1] = [
+        points[points.length - 2][0] + (points[points.length - 1][0] - points[points.length - 2][0]) * tEnd,
+        points[points.length - 2][1] + (points[points.length - 1][1] - points[points.length - 2][1]) * tEnd,
+      ]
+    }
 
     const lines: [[number, number], [number, number]][] = []
     for (let i = 0; i < points.length - 1; i++) {
       lines.push([points[i], points[i + 1]])
     }
 
-    const startDir: [number, number] = [points[1][0] - points[0][0], points[1][1] - points[0][1]]
-    const endDir: [number, number] = [
-      points[points.length - 1][0] - points[points.length - 2][0],
-      points[points.length - 1][1] - points[points.length - 2][1],
-    ]
-
-    // const startDir: [number, number] = [b[0] - a[0], b[1] - a[1]]
-    // const endDir: [number, number] = [d[0] - c[0], d[1] - c[1]]
-
-    // let tStart = 0
-    // let tEnd = 1
-    // if (trim && this.arrowTrim) {
-    //   tStart = this.arrowTrim.tStart
-    //   if (tStart !== 0 && this.elbowArrow.startArrowHead !== ArrowHeadKind.None) {
-    //     const len = Math.hypot(b[0] - a[0], b[1] - a[1])
-    //     const gap = ARROW_HEAD_GAP / len
-
-    //     tStart += gap
-    //   }
-
-    //   tEnd = this.arrowTrim.tEnd
-    //   if (tEnd !== 1 && this.elbowArrow.endArrowHead !== ArrowHeadKind.None) {
-    //     const len = Math.hypot(d[0] - c[0], d[1] - c[1])
-    //     const gap = ARROW_HEAD_GAP / len
-    //     tEnd -= gap
-    //   }
-
-    //   a = [a[0] + (b[0] - a[0]) * tStart, a[1] + (b[1] - a[1]) * tStart]
-    //   d = [c[0] + (d[0] - c[0]) * tEnd, c[1] + (d[1] - c[1]) * tEnd]
-    // }
-
-    // const lines = [
-    //   [a, b],
-    //   [b, c],
-    //   [c, d],
-    // ]
-
     return svg`
       <g>
         ${lines.map(([start, end]) => this.drawLine(start, end, thickness, color, dasharray))}
         ${
           trim && this.elbowArrow.startArrowHead !== ArrowHeadKind.None
-            ? getArrowHeadPath(points[0], startDir, this.elbowArrow.startArrowHead, thickness, color)
+            ? getArrowHeadPath(points[0], startVec, this.elbowArrow.startArrowHead, thickness, color)
             : nothing
         }
         ${
           trim && this.elbowArrow.endArrowHead !== ArrowHeadKind.None
-            ? getArrowHeadPath(points[points.length - 1], endDir, this.elbowArrow.endArrowHead, thickness, color)
+            ? getArrowHeadPath(points[points.length - 1], endVec, this.elbowArrow.endArrowHead, thickness, color)
             : nothing
         }    
       </g>
     `
-
-    // return svg`<line
-    //   x1="${start[0]}"
-    //   y1="${start[1]}"
-    //   x2="${end[0]}"
-    //   y2="${end[1]}"
-    //   stroke="${color}"
-    //   fill="none"
-    //   stroke-width="${thickness}"
-    //   stroke-linecap="round"
-    //   stroke-dasharray="${dasharray}"
-    // />
-    // ${
-    //   trim && this.elbowArrow.startArrowHead !== ArrowHeadKind.None
-    //     ? this.getArrowHeadPath(start, flipDirection(vec), this.elbowArrow.startArrowHead, thickness, color)
-    //     : nothing
-    // }
-    // ${
-    //   trim && this.elbowArrow.endArrowHead !== ArrowHeadKind.None
-    //     ? this.getArrowHeadPath(end, vec, this.elbowArrow.endArrowHead, thickness, color)
-    //     : nothing
-    // }`
   }
 
   private drawLine(

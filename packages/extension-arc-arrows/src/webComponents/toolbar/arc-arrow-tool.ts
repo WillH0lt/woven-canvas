@@ -33,14 +33,14 @@ export class ICArcArrowTool extends ICToolbarIconButton {
       height: 150,
     })
 
-    const fontFamily =
-      InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
-      InfiniteCanvas.instance!.config.core.defaultFontFamily
+    // const fontFamily =
+    //   InfiniteCanvas.instance!.store.textEditor.mostRecentFontFamily.value ??
+    //   InfiniteCanvas.instance!.config.core.defaultFontFamily
 
-    const text = new Text({
-      fontFamily: fontFamily.name,
-      fontSize: 40,
-    })
+    // const text = new Text({
+    //   fontFamily: fontFamily.name,
+    //   fontSize: 40,
+    // })
 
     const color = new Color({
       red: 0,
@@ -58,7 +58,7 @@ export class ICArcArrowTool extends ICToolbarIconButton {
 
     const connector = new Connector()
 
-    const snapshot = createSnapshot(block, [text, color, arrow, connector])
+    const snapshot = createSnapshot(block, [color, arrow, connector])
 
     InfiniteCanvas.instance?.commands.core.createAndDragOntoCanvas(snapshot)
   }

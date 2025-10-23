@@ -127,6 +127,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       for (const blockEntity of changedBlocks) {
         if (!blockEntity) continue
         const block = blockEntity.read(Block)
+        const connector = connectorEntity.read(Connector)
         const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
         const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
         const position = block.uvToWorld(uv)
@@ -185,20 +186,20 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     }
 
     arrowEntity.add(Color)
-    arrowEntity.add(Text)
+    // arrowEntity.add(Text)
     arrowEntity.add(Connector)
 
     this.updateConnector(arrowEntity, ArrowHandleKind.Start, position)
   }
 
   private drawArrow(arrowEntity: Entity, start: [number, number], end: [number, number]): void {
-    const block = arrowEntity.write(Block)
-    block.left = Math.min(start[0], end[0])
-    block.top = Math.min(start[1], end[1])
-    block.width = Math.abs(start[0] - end[0])
-    block.height = Math.abs(start[1] - end[1])
-
     if (arrowEntity.has(ArcArrow)) {
+      const block = arrowEntity.write(Block)
+      block.left = Math.min(start[0], end[0])
+      block.top = Math.min(start[1], end[1])
+      block.width = Math.abs(start[0] - end[0])
+      block.height = Math.abs(start[1] - end[1])
+
       const arrow = arrowEntity.write(ArcArrow)
       const ax = start[0] < end[0] ? 0 : 1
       const ay = start[1] < end[1] ? 0 : 1
@@ -207,14 +208,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       arrow.c = [1 - ax, 1 - ay]
     } else if (arrowEntity.has(ElbowArrow)) {
       this.updateElbowArrow(arrowEntity, ArrowHandleKind.End, end)
-      // const arrow = arrowEntity.write(ElbowArrow)
-      // const ax = start[0] < end[0] ? 0 : 1
-      // const ay = start[1] < end[1] ? 0 : 1
-
-      // arrow.a = [ax, ay]
-      // arrow.b = [0.5, ay]
-      // arrow.c = [0.5, 1 - ay]
-      // arrow.d = [1 - ax, 1 - ay]
     }
 
     this.updateConnector(arrowEntity, ArrowHandleKind.End, end)
@@ -227,6 +220,8 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   private removeTransformHandles(): void {
     this.deleteEntities(this.handles.current)
 
+    this.emitCommand(CoreCommand.CreateCheckpoint)
+
     // const isEditing = this.selectedBlocks.current.every((e) => e.has(comps.Edited))
     // if (isEditing) {
     //   this.endTransformHandlesEdit()
@@ -234,7 +229,10 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private addTransformHandles(arrowEntity: Entity): void {
-    const handleKinds = [ArrowHandleKind.Start, ArrowHandleKind.Middle, ArrowHandleKind.End]
+    const handleKinds = [ArrowHandleKind.Start, ArrowHandleKind.End]
+    if (arrowEntity.has(ArcArrow)) {
+      handleKinds.push(ArrowHandleKind.Middle)
+    }
 
     const handles = handleKinds.map((handleKind) =>
       this.createEntity(
@@ -294,13 +292,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       switch (handleKind) {
         case ArrowHandleKind.Start:
           return block.uvToWorld(arrow.getPoint(0))
-        // case ArrowHandleKind.Middle:
-        // return this.getTrimmedCenter(arrowEntity) ?? block.uvToWorld(arrow.b)
-        // return block.uvToWorld(arrow.b)
         case ArrowHandleKind.End:
           return block.uvToWorld(arrow.getPoint(arrow.pointCount - 1))
       }
     }
+
 
     console.warn('Arrow entity has no recognized arrow component')
     return [0, 0]

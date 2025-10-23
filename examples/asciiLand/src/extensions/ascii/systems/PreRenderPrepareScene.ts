@@ -7,7 +7,7 @@ import type { Entity } from '@lastolivegames/becsy'
 import { LetterMaterial } from '../materials'
 import type { AsciiResources } from '../types'
 
-const meshTags = ['ascii-shape', 'ic-text']
+const meshTags = ['ascii-shape', 'ic-text', 'ic-elbow-arrow']
 
 export class PreRenderPrepareScene extends BaseSystem {
   protected declare readonly resources: AsciiResources
@@ -39,13 +39,19 @@ export class PreRenderPrepareScene extends BaseSystem {
       geometry.rotateY(Math.PI)
       geometry.rotateZ(Math.PI)
 
-      const material = new LetterMaterial(this.resources.fontData, this.resources.assets.fontAtlas)
-
+      const material = new LetterMaterial(
+        this.resources.fontData,
+        this.resources.assets.fontAtlas,
+        this.resources.assets.unicodeMap,
+        64,
+        64,
+      )
       const mesh = new Mesh(geometry, material)
 
       mesh.name = block.id
       mesh.userData.rank = block.rank
       this.resources.scene.add(mesh)
+      needsSorting = true
     }
 
     for (const blockEntity of this.blocks.addedOrChanged) {

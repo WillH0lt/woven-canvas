@@ -14,7 +14,7 @@ class ArrowsExtensionClass extends BaseExtension {
         canEdit: true,
       },
       resizeMode: 'groupOnly' as const,
-      components: [ArcArrow, Color, Text, Connector, ArrowTrim],
+      components: [ArcArrow, Color, Connector, ArrowTrim],
     },
     {
       tag: 'ic-elbow-arrow',
@@ -22,7 +22,7 @@ class ArrowsExtensionClass extends BaseExtension {
         canEdit: true,
       },
       resizeMode: 'groupOnly' as const,
-      components: [ElbowArrow, Color, Text, Connector, ArrowTrim],
+      components: [ElbowArrow, Color, Connector, ArrowTrim],
     },
   ]
 

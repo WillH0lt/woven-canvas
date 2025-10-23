@@ -92,6 +92,7 @@ export const BlockDef = z.object({
   components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
+  noHtml: z.boolean().default(false),
 })
 
 export type BlockDef = z.infer<typeof BlockDef>
@@ -182,7 +183,7 @@ export const Options = z.object({
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
   persistCameraPosition: z.boolean().default(true),
-  customBlocks: z.array(BlockDef).default([]),
+  customBlocks: z.array(z.any()).default([]),
   customTools: z.array(ToolDef).default([]),
   customTags: CustomTags.default(CustomTags.parse({})),
   theme: Theme.default(Theme.parse({})),

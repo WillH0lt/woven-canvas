@@ -50,8 +50,8 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     if (arrowEntity.has(ElbowArrow)) {
       // currently no hit geometry for elbow arrows
       // return
-      this.updateElbowArrowHitGeometry(arrowEntity)
-      this.updateElbowArrowTrim(arrowEntity)
+      const capsuleEntities = this.updateElbowArrowHitGeometry(arrowEntity)
+      this.updateElbowArrowTrim(arrowEntity, capsuleEntities)
     } else if (arrowEntity.has(ArcArrow)) {
       this.updateArcArrowHitGeometry(arrowEntity)
       this.updateArcArrowTrim(arrowEntity)
@@ -108,7 +108,7 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     }
   }
 
-  private updateElbowArrowHitGeometry(arrowEntity: Entity): void {
+  private updateElbowArrowHitGeometry(arrowEntity: Entity): Entity[] {
     const hitGeometries = arrowEntity.read(HitGeometries)
 
     const arrow = arrowEntity.read(ElbowArrow)
@@ -126,6 +126,7 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
       lines.push([p0, p1])
     }
 
+    const hitCapsuleEntities: Entity[] = []
     for (let i = 0; i < lines.length; i++) {
       let hitCapsuleEntity: Entity
       if (i < capsules.length) {
@@ -134,12 +135,20 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
         hitCapsuleEntity = this.createEntity(HitCapsule, { blockEntity: arrowEntity })
       }
 
+      hitCapsuleEntities.push(hitCapsuleEntity)
       const hitCapsule = hitCapsuleEntity.write(HitCapsule)
       hitCapsule.radius = Math.max(arrow.thickness / 2, minThickness / 2)
       const [a, b] = lines[i]
       hitCapsule.a = a
       hitCapsule.b = b
     }
+
+    // remove any extra capsules
+    for (let i = lines.length; i < capsules.length; i++) {
+      capsules[i].delete()
+    }
+
+    return hitCapsuleEntities
   }
 
   private updateArcArrowTrim(arrowEntity: Entity): void {
@@ -159,8 +168,18 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     const arc = hitGeometries.arcs.length > 0 ? hitGeometries.arcs[0].write(HitArc) : null
     const capsule = hitGeometries.capsules.length > 0 ? hitGeometries.capsules[0].write(HitCapsule) : null
 
-    const startTrim = this.calculateTrim(connector.startBlockEntity, arc, capsule, aWorld, 0)
-    const endTrim = this.calculateTrim(connector.endBlockEntity, arc, capsule, cWorld, 1)
+    let startTrim: number
+    let endTrim: number
+    if (arc) {
+      startTrim = this.calculateArcTrim(connector.startBlockEntity, arc, aWorld, 0)
+      endTrim = this.calculateArcTrim(connector.endBlockEntity, arc, cWorld, 1)
+    } else if (capsule) {
+      startTrim = this.calculateCapsuleTrim(connector.startBlockEntity, capsule, aWorld, 0)
+      endTrim = this.calculateCapsuleTrim(connector.endBlockEntity, capsule, cWorld, 1)
+    } else {
+      startTrim = 0
+      endTrim = 1
+    }
 
     trim.tStart = startTrim
     trim.tEnd = endTrim
@@ -179,7 +198,7 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     }
   }
 
-  private updateElbowArrowTrim(arrowEntity: Entity): void {
+  private updateElbowArrowTrim(arrowEntity: Entity, capsuleEntities: Entity[]): void {
     const connector = arrowEntity.read(Connector)
     const arrow = arrowEntity.read(ElbowArrow)
 
@@ -193,38 +212,48 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     }
     const trim = arrowEntity.write(ArrowTrim)
 
-    const hitGeometries = arrowEntity.read(HitGeometries)
+    if (capsuleEntities.length < 2) {
+      trim.tStart = 0
+      trim.tEnd = 1
+      return
+    }
 
-    // TODO
+    const startCapsule = capsuleEntities[0].write(HitCapsule)
+    const startTrim = this.calculateCapsuleTrim(connector.startBlockEntity, startCapsule, start, 0)
+    startCapsule.trim(startTrim, 1)
 
-    // const startCapsule = hitGeometries.capsules[0].write(HitCapsule)
-    // const startTrim = this.calculateTrim(connector.startBlockEntity, null, startCapsule, start, 0)
-    // startCapsule.trim(startTrim, 1)
+    const endCapsule = capsuleEntities[capsuleEntities.length - 1].write(HitCapsule)
+    const endTrim = this.calculateCapsuleTrim(connector.endBlockEntity, endCapsule, end, 1)
+    endCapsule.trim(0, endTrim)
 
-    // const endCapsule = hitGeometries.capsules[hitGeometries.capsules.length - 1].write(HitCapsule)
-    // const endTrim = this.calculateTrim(connector.endBlockEntity, null, endCapsule, end, 1)
-    // endCapsule.trim(0, endTrim)
-
-    // trim.tStart = startTrim
-    // trim.tEnd = endTrim
-
-    // console.log('Elbow Arrow Trim:', { startTrim, endTrim })
-
-    // // reset if the trim is too small
-    // if (endTrim - startTrim < 0.1) {
-    //   trim.tStart = 0
-    //   trim.tEnd = 1
-    // }
-
-    // // trim the hit geometry
-    // startCapsule.trim(trim.tStart, trim.tEnd)
-    // endCapsule.trim(trim.tStart, trim.tEnd)
+    trim.tStart = startTrim
+    trim.tEnd = endTrim
   }
 
-  private calculateTrim(
+  private calculateArcTrim(
     blockEntity: Entity | undefined,
-    hitArc: Readonly<HitArc> | null,
-    capsule: Readonly<HitCapsule> | null,
+    arc: Readonly<HitArc>,
+    referencePoint: [number, number],
+    defaultValue: number,
+  ): number {
+    if (!blockEntity || !blockEntity.has(Block)) return defaultValue
+
+    let points: [number, number][] = []
+
+    points = arcIntersectEntity(arc, blockEntity)
+
+    const intersect = closestPointToPoint(points, referencePoint)
+
+    if (!intersect) return defaultValue
+
+    const t = arc.pointToParametric(intersect)
+
+    return t ?? defaultValue
+  }
+
+  private calculateCapsuleTrim(
+    blockEntity: Entity | undefined,
+    capsule: Readonly<HitCapsule>,
     referencePoint: [number, number],
     defaultValue: number,
   ): number {
@@ -233,22 +262,13 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     const block = blockEntity.read(Block)
     let points: [number, number][] = []
 
-    if (hitArc) {
-      points = arcIntersectEntity(hitArc, blockEntity)
-    } else if (capsule) {
-      points = capsule.centerLineIntersectBlock(block)
-    }
+    points = capsule.centerLineIntersectBlock(block)
 
     const intersect = closestPointToPoint(points, referencePoint)
 
     if (!intersect) return defaultValue
 
-    let t: number | null = null
-    if (hitArc) {
-      t = hitArc.pointToParametric(intersect)
-    } else if (capsule) {
-      t = capsule.pointToParametric(intersect)
-    }
+    const t = capsule.pointToParametric(intersect)
 
     return t ?? defaultValue
   }
