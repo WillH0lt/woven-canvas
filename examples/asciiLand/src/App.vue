@@ -4,12 +4,19 @@
 
 <script setup lang="ts">
 import { InfiniteCanvas } from "@infinitecanvas/core";
-import { ArrowsExtension } from "@infinitecanvas/extension-arc-arrows";
+import { ArrowsExtension } from "@infinitecanvas/extension-arrows";
 import { ControlsExtension } from "@infinitecanvas/extension-controls";
 import { EraserExtension } from "@infinitecanvas/extension-eraser";
 import { onMounted, ref } from "vue";
 
+import figlet from "figlet";
+import graffiti from "figlet/fonts/Graffiti";
+import standard from "figlet/fonts/Standard";
+
 import { AsciiExtension } from "./extensions/ascii";
+
+figlet.parseFont("Standard", standard);
+figlet.parseFont("Graffiti", graffiti);
 
 const canvasContainer = ref<HTMLDivElement | null>(null);
 
@@ -26,13 +33,31 @@ const fontData = {
   backgroundColor: "#ffffff", // jules purple - 1d0245
 };
 
+const asciiFonts = [
+  {
+    fontFamily: "Courier Prime Sans",
+    fontSize: 20,
+    lineHeight: 1.2,
+  },
+  {
+    fontFamily: "Standard",
+    fontSize: 144,
+    lineHeight: 1,
+  },
+  {
+    fontFamily: "Graffiti",
+    fontSize: 144,
+    lineHeight: 1,
+  },
+];
+
 onMounted(async () => {
   const infiniteCanvas = await InfiniteCanvas.New(canvasContainer.value!, {
     extensions: [
       ControlsExtension,
-      ArrowsExtension,
-      EraserExtension,
-      AsciiExtension(fontData),
+      ArrowsExtension({ elbowArrowPadding: 48 }),
+      EraserExtension({ preEraseOpacity: 100 }),
+      AsciiExtension(fontData, asciiFonts),
     ],
     persistenceKey: "asciiLand-example",
     background: {
@@ -55,6 +80,13 @@ onMounted(async () => {
         {
           name: "Standard",
           url: "/fonts/standard/style.css",
+          previewImage:
+            "https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png",
+          selectable: true,
+        },
+        {
+          name: "Graffiti",
+          url: "/fonts/graffiti/style.css",
           previewImage:
             "https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png",
           selectable: true,

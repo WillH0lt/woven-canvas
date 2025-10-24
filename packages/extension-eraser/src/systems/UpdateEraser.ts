@@ -14,9 +14,12 @@ import type { Entity } from '@lastolivegames/becsy'
 import { EraserStroke } from '../components'
 import { Erased } from '../components/Erased'
 import { POINTS_CAPACITY, STROKE_RADIUS } from '../constants'
-import { EraserCommand, type EraserCommandArgs } from '../types'
+import { EraserCommand, type EraserCommandArgs, type EraserResources } from '../types'
 
 export class UpdateEraser extends BaseSystem<EraserCommandArgs & CoreCommandArgs> {
+
+  protected readonly resources!: EraserResources
+
   private readonly rankBounds = this.singleton.write(RankBounds)
 
   private readonly _strokes = this.query((q) => q.using(EraserStroke, Block, Aabb, Opacity).write)
@@ -93,7 +96,7 @@ export class UpdateEraser extends BaseSystem<EraserCommandArgs & CoreCommandArgs
 
     for (const intersect of intersections) {
       this.setComponent(intersect, Erased, { eraserStroke: strokeEntity })
-      this.setComponent(intersect, Opacity, { value: 50 })
+      this.setComponent(intersect, Opacity, { value: this.resources.preEraseOpacity })
     }
   }
 

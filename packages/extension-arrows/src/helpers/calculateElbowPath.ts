@@ -2,8 +2,6 @@ import { Aabb, Block } from '@infinitecanvas/core/components'
 import type { Entity } from '@lastolivegames/becsy'
 import { MinHeap } from './MinHeap'
 
-const PADDING = 50
-
 interface Ray {
   origin: [number, number]
   direction: [number, number]
@@ -28,6 +26,7 @@ export function calculateElbowPath(
   end: [number, number],
   startBlockEntity: Entity | undefined,
   endBlockEntity: Entity | undefined,
+  padding: number,
 ): [number, number][] {
   const startRay = calculateRay(start, end, startBlockEntity)
   const endRay = calculateRay(end, start, endBlockEntity)
@@ -35,11 +34,11 @@ export function calculateElbowPath(
   let path: [number, number][]
 
   if (startBlockEntity && endBlockEntity) {
-    path = routeBlockToBlock(startBlockEntity, endBlockEntity, startRay, endRay)
+    path = routeBlockToBlock(startBlockEntity, endBlockEntity, startRay, endRay, padding)
   } else if (startBlockEntity && !endBlockEntity) {
-    path = routeBlockToPoint(startBlockEntity, startRay, end)
+    path = routeBlockToPoint(startBlockEntity, startRay, end, padding)
   } else if (!startBlockEntity && endBlockEntity) {
-    path = routeBlockToPoint(endBlockEntity, endRay, start).reverse()
+    path = routeBlockToPoint(endBlockEntity, endRay, start, padding).reverse()
   } else {
     path = routePointToPoint(startRay.origin, end)
   }
@@ -52,6 +51,7 @@ function routeBlockToBlock(
   endBlockEntity: Entity,
   startRay: Ray,
   endRay: Ray,
+  padding: number,
 ): [number, number][] {
   const startBlock = startBlockEntity.read(Block)
   const startAabb = startBlock.computeAabb()
@@ -59,8 +59,8 @@ function routeBlockToBlock(
   const endBlock = endBlockEntity.read(Block)
   const endAabb = endBlock.computeAabb()
 
-  startAabb.applyPadding(PADDING)
-  endAabb.applyPadding(PADDING)
+  startAabb.applyPadding(padding)
+  endAabb.applyPadding(padding)
 
   extendAabbsToMeet(startAabb, endAabb)
 
@@ -89,13 +89,19 @@ function routeBlockToBlock(
   }
   path.push(endRay.origin)
 
+  removeDuplicates(path)
   removeStraightLinePoints(path)
   removeZigZagPoints(path)
 
   return path
 }
 
-function routeBlockToPoint(blockEntity: Entity, ray: Ray, endPoint: [number, number]): [number, number][] {
+function routeBlockToPoint(
+  blockEntity: Entity,
+  ray: Ray,
+  endPoint: [number, number],
+  padding: number,
+): [number, number][] {
   const block = blockEntity.read(Block)
 
   const dominantDirection = getDominantDirection(ray.origin, endPoint)
@@ -105,7 +111,7 @@ function routeBlockToPoint(blockEntity: Entity, ray: Ray, endPoint: [number, num
   }
 
   const aabb = block.computeAabb()
-  aabb.applyPadding(PADDING)
+  aabb.applyPadding(padding)
 
   const endRay: Ray = {
     origin: endPoint,
@@ -192,6 +198,22 @@ function routePointToPoint(start: [number, number], end: [number, number]): [num
   path.push(end)
 
   return path
+}
+
+function removeDuplicates(path: [number, number][]): void {
+  if (path.length < 2) return
+
+  const uniquePath: [number, number][] = [path[0]]
+  for (let i = 1; i < path.length; i++) {
+    const prev = uniquePath[uniquePath.length - 1]
+    const current = path[i]
+    if (prev[0] !== current[0] || prev[1] !== current[1]) {
+      uniquePath.push(current)
+    }
+  }
+
+  path.length = 0
+  path.push(...uniquePath)
 }
 
 function removeStraightLinePoints(path: [number, number][]): void {
@@ -600,6 +622,13 @@ function exitClosestSide(
 ): { direction: [number, number]; distance: number } {
   const block = blockEntity.read(Block)
 
+  // nudge the point slightly towards the center to avoid edge cases
+  const center = block.getCenter()
+  const nudgedPoint: [number, number] = [
+    point[0] + (center[0] - point[0]) * 0.01,
+    point[1] + (center[1] - point[1]) * 0.01,
+  ]
+
   const directions: [number, number][] = [
     [0, -1], // up
     [1, 0], // right
@@ -611,7 +640,7 @@ function exitClosestSide(
   let bestDistance = Number.POSITIVE_INFINITY
 
   for (const direction of directions) {
-    const intersections = rayIntersectBlock({ origin: point, direction }, block)
+    const intersections = rayIntersectBlock({ origin: nudgedPoint, direction }, block)
     if (intersections.length === 0) {
       continue
     }

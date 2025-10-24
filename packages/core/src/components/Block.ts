@@ -163,6 +163,7 @@ export class Block extends BaseComponent {
       this.top = aabb.top
       this.width = aabb.right - aabb.left
       this.height = aabb.bottom - aabb.top
+
       return
     }
 
@@ -192,6 +193,19 @@ export class Block extends BaseComponent {
     this.width = width
     this.height = height
   }
+
+  // public enforceMinSize(minWidth: number, minHeight: number): void {
+  //   if (this.width < minWidth) {
+  //     const delta = minWidth - this.width
+  //     this.left -= delta / 2
+  //     this.width = minWidth
+  //   }
+  //   if (this.height < minHeight) {
+  //     const delta = minHeight - this.height
+  //     this.top -= delta / 2
+  //     this.height = minHeight
+  //   }
+  // }
 
   public computeAabb(): Aabb {
     const aabb = new Aabb()

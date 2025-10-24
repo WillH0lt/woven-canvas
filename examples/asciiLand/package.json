@@ -11,7 +11,7 @@
   "dependencies": {
     "@dalet-oss/lexorank": "^1.1.0",
     "@infinitecanvas/core": "workspace:^",
-    "@infinitecanvas/extension-arc-arrows": "workspace:^",
+    "@infinitecanvas/extension-arrows": "workspace:^",
     "@infinitecanvas/extension-controls": "workspace:^",
     "@infinitecanvas/extension-eraser": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",

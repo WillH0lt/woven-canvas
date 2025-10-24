@@ -1,6 +1,6 @@
 {
   "private": false,
-  "name": "@infinitecanvas/extension-arc-arrows",
+  "name": "@infinitecanvas/extension-arrows",
   "version": "0.1.0",
   "description": "Demo library that contains common utility functions",
   "repository": "https://github.com/jkomyno/pnpm-monorepo-example.git",
@@ -45,7 +45,8 @@
     "@infinitecanvas/core": "workspace:^",
     "@lastolivegames/becsy": "^0.15.5",
     "lit": "^3.3.0",
-    "xstate": "^5.19.4"
+    "xstate": "^5.19.4",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "vitest": "^3.1.4"

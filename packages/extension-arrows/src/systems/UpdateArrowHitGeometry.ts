@@ -212,12 +212,6 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     }
     const trim = arrowEntity.write(ArrowTrim)
 
-    if (capsuleEntities.length < 2) {
-      trim.tStart = 0
-      trim.tEnd = 1
-      return
-    }
-
     const startCapsule = capsuleEntities[0].write(HitCapsule)
     const startTrim = this.calculateCapsuleTrim(connector.startBlockEntity, startCapsule, start, 0)
     startCapsule.trim(startTrim, 1)

@@ -92,9 +92,21 @@ export class AsciiFontFamilyMenu extends SignalWatcher(LitElement) {
   }
 
   private async selectFont(fontFamily: FontFamily): Promise<void> {
-    const fontSize = fontFamily.name === 'Standard' ? 144 : 20
-    const lineHeight = fontFamily.name === 'Standard' ? 1.0 : 1.2
+    const asciiFonts = this.config.ascii.fonts
 
+    const matchingFont = asciiFonts.find((font) => font.fontFamily === fontFamily.name)
+    if (!matchingFont) {
+      console.warn(`Font family "${fontFamily.name}" not found in ASCII fonts.`)
+      return
+    }
+
+    const fontSize = matchingFont.fontSize
+    const lineHeight = matchingFont.lineHeight
+
+    // const fontSize = fontFamily.name === 'Standard' ? 144 : 20
+    // const lineHeight = fontFamily.name === 'Standard' ? 1.0 : 1.2
+
+    // await this.commands
     await this.commands.textEditor.setTextProperties({ fontFamily, lineHeight, fontSize })
   }
 

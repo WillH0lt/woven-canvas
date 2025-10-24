@@ -33,19 +33,8 @@ export function transformPoint(m: Mat3, point: [number, number]): [number, numbe
   return [m[0] * x + m[1] * y + m[2], m[3] * x + m[4] * y + m[5]]
 }
 
-/** Ensures a number stays within a minimum and maximum value */
 export function clamp(value: number, min: number, max: number) {
-  const noNegativeZero = (n: number) => (Object.is(n, -0) ? 0 : n)
-
-  if (value < min) {
-    return noNegativeZero(min)
-  }
-
-  if (value > max) {
-    return noNegativeZero(max)
-  }
-
-  return noNegativeZero(value)
+  return Math.min(Math.max(value, min), max)
 }
 
 export function newRotationMatrixAroundPoint(angle: number, point: [number, number]): Mat3 {

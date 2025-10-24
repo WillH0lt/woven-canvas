@@ -24,6 +24,12 @@ export type Assets = {
   unicodeMap: Map<number, number>
 }
 
+export type AsciiFont = {
+  fontFamily: string
+  fontSize: number
+  lineHeight: number
+}
+
 export type AsciiResources = BaseResources & {
   renderer: WebGPURenderer
   camera: OrthographicCamera

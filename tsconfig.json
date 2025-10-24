@@ -6,7 +6,7 @@
       "path": "packages/core"
     },
     {
-      "path": "packages/extension-arc-arrows"
+      "path": "packages/extension-arrows"
     },
     {
       "path": "packages/extension-controls"

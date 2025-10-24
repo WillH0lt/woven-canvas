@@ -1,28 +1,37 @@
 import {
   BaseExtension,
   type BaseResources,
+  type IConfig,
   floatingMenuFontSizeButton,
   floatingMenuTextAlignmentButton,
   floatingMenuTextColorButton,
 } from '@infinitecanvas/core'
-import { Color, Text, VerticalAlign } from '@infinitecanvas/core/components'
+import { Color, Text } from '@infinitecanvas/core/components'
 import { OrthographicCamera, Scene, TextureLoader, Color as ThreeColor } from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 
 import { Shape } from './components'
 import * as sys from './systems'
-import { type AsciiResources, type Assets, FontData, type FontDataInput } from './types'
+import { type AsciiFont, type AsciiResources, type Assets, FontData, type FontDataInput } from './types'
 import './webComponents'
+
+declare module '@infinitecanvas/core' {
+  interface IConfig {
+    ascii: {
+      fonts: AsciiFont[]
+    }
+  }
+}
 
 class AsciiExtensionClass extends BaseExtension {
   public readonly blocks = [
     {
       tag: 'ascii-shape',
       editOptions: {
-        canEdit: true,
+        canEdit: false,
       },
       resizeMode: 'free' as const,
-      components: [Text, VerticalAlign, Shape, Color],
+      components: [Shape, Color],
       canRotate: false,
       noHtml: true,
     },
@@ -55,10 +64,12 @@ class AsciiExtensionClass extends BaseExtension {
   ]
 
   public readonly fontData: FontData
+  public readonly asciiFonts: AsciiFont[]
 
-  constructor(fontData: FontDataInput) {
+  constructor(fontData: FontDataInput, asciiFonts: AsciiFont[]) {
     super()
     this.fontData = FontData.parse(fontData)
+    this.asciiFonts = asciiFonts
   }
 
   public async preBuild(resources: BaseResources): Promise<void> {
@@ -93,7 +104,7 @@ class AsciiExtensionClass extends BaseExtension {
       fontData: this.fontData,
     }
 
-    this.updateGroup = this.createGroup(asciiResources, sys.UpdateEnforceGrid)
+    this.updateGroup = this.createGroup(asciiResources, sys.UpdateEnforceGrid, sys.UpdateArrows)
 
     this.preRenderGroup = this.createGroup(asciiResources, sys.PreRenderPrepareScene)
 
@@ -119,6 +130,15 @@ class AsciiExtensionClass extends BaseExtension {
       unicodeMap: new Map(Object.entries(unicodeMapRecord).map(([key, value]) => [Number(key), Number(value)])),
     }
   }
+
+  public addConfig = (): Partial<IConfig> => {
+    return {
+      ascii: {
+        fonts: this.asciiFonts,
+      },
+    }
+  }
 }
 
-export const AsciiExtension = (fontData: FontDataInput) => new AsciiExtensionClass(fontData)
+export const AsciiExtension = (fontData: FontDataInput, asciiFonts: AsciiFont[]) =>
+  new AsciiExtensionClass(fontData, asciiFonts)

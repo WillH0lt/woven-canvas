@@ -74,9 +74,9 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../../packages/core
-      '@infinitecanvas/extension-arc-arrows':
+      '@infinitecanvas/extension-arrows':
         specifier: workspace:^
-        version: link:../../packages/extension-arc-arrows
+        version: link:../../packages/extension-arrows
       '@infinitecanvas/extension-controls':
         specifier: workspace:^
         version: link:../../packages/extension-controls
@@ -147,9 +147,9 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../../packages/core
-      '@infinitecanvas/extension-arc-arrows':
+      '@infinitecanvas/extension-arrows':
         specifier: workspace:^
-        version: link:../../packages/extension-arc-arrows
+        version: link:../../packages/extension-arrows
       '@infinitecanvas/extension-controls':
         specifier: workspace:^
         version: link:../../packages/extension-controls
@@ -273,7 +273,7 @@ importers:
         specifier: ^1.4.6
         version: 1.4.6
 
-  packages/extension-arc-arrows:
+  packages/extension-arrows:
     dependencies:
       '@dalet-oss/lexorank':
         specifier: ^1.1.0
@@ -290,6 +290,9 @@ importers:
       xstate:
         specifier: ^5.19.4
         version: 5.19.4
+      zod:
+        specifier: ^4.0.17
+        version: 4.0.17
     devDependencies:
       vitest:
         specifier: ^3.1.4
@@ -340,6 +343,9 @@ importers:
       xstate:
         specifier: ^5.19.4
         version: 5.19.4
+      zod:
+        specifier: ^4.0.17
+        version: 4.0.17
     devDependencies:
       vitest:
         specifier: ^3.1.4

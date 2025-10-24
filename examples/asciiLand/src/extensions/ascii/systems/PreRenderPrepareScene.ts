@@ -1,6 +1,6 @@
 import { LexoRank } from '@dalet-oss/lexorank'
 import { BaseSystem } from '@infinitecanvas/core'
-import { Block, Camera, Hovered, Screen, Selected } from '@infinitecanvas/core/components'
+import { Block, Camera, Hovered, Opacity, Screen, Selected } from '@infinitecanvas/core/components'
 import { Mesh, PlaneGeometry } from 'three'
 
 import type { Entity } from '@lastolivegames/becsy'
@@ -21,6 +21,8 @@ export class PreRenderPrepareScene extends BaseSystem {
   private readonly hoveredBlocks = this.query((q) => q.added.removed.with(Block, Hovered))
 
   private readonly cameras = this.query((q) => q.addedOrChanged.with(Camera).trackWrites)
+
+  private readonly opacityBlocks = this.query((q) => q.addedOrChanged.removed.with(Block).and.with(Opacity).trackWrites)
 
   public execute(): void {
     let needsSorting = false
@@ -140,6 +142,35 @@ export class PreRenderPrepareScene extends BaseSystem {
       const material = this.getMaterial<LetterMaterial>(blockEntity)
       if (!material) continue
       material.hovered.value = false
+    }
+
+    // ========================================================
+    // block opacity
+    for (const blockEntity of this.opacityBlocks.addedOrChanged) {
+      if (!blockEntity.alive) continue
+      const block = blockEntity.read(Block)
+
+      const mesh = this.resources.scene.getObjectByName(block.id) as Mesh | undefined
+      if (!mesh) continue
+
+      let opacity = 1
+      if (blockEntity.has(Opacity)) {
+        opacity = blockEntity.read(Opacity).value / 255
+      }
+      const material = mesh.material as LetterMaterial
+
+      material.opacity = opacity
+    }
+
+    for (const blockEntity of this.opacityBlocks.removed) {
+      if (!blockEntity.alive || !blockEntity.has(Block)) continue
+      const block = blockEntity.read(Block)
+
+      const mesh = this.resources.scene.getObjectByName(block.id) as Mesh | undefined
+      if (!mesh) continue
+
+      const material = mesh.material as LetterMaterial
+      material.opacity = 1
     }
 
     // ========================================================

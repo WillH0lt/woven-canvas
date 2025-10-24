@@ -1,5 +1,5 @@
 import { BaseSystem } from '@infinitecanvas/core'
-import { Block, Color, Text } from '@infinitecanvas/core/components'
+import { Block, Color } from '@infinitecanvas/core/components'
 import type { Mesh } from 'three'
 
 import { Shape } from '../components'
@@ -11,7 +11,7 @@ import { RenderScene } from './RenderScene'
 export class RenderShapes extends BaseSystem {
   protected declare readonly resources: AsciiResources
 
-  private readonly shapes = this.query((q) => q.addedOrChanged.current.with(Shape, Text, Block, Color).trackWrites)
+  private readonly shapes = this.query((q) => q.addedOrChanged.current.with(Shape, Block, Color).trackWrites)
 
   public constructor() {
     super()
@@ -35,9 +35,6 @@ export class RenderShapes extends BaseSystem {
       const chars = material.chars.value
       const colors = material.colors.value
 
-      // const horizontalEdge = this.resources.assets.unicodeMap.get('-'.charCodeAt(0)) || 0
-      // const verticalEdge = this.resources.assets.unicodeMap.get('|'.charCodeAt(0)) || 0
-      // const corner = this.resources.assets.unicodeMap.get('+'.charCodeAt(0)) || 0
       const horizontalEdge = '-'
       const verticalEdge = '|'
       const corner = '+'

@@ -36,7 +36,7 @@ import {
 import type { FontData } from '../types'
 
 export class LetterMaterial extends NodeMaterial {
-  public grid: ShaderNodeObject<UniformNode<Vector2>>
+  public readonly grid: ShaderNodeObject<UniformNode<Vector2>>
   public atlas: ShaderNodeObject<UniformNode<Texture>>
   public chars: ShaderNodeObject<UniformNode<DataTexture>>
   public colors: ShaderNodeObject<UniformNode<DataTexture>>
@@ -57,7 +57,6 @@ export class LetterMaterial extends NodeMaterial {
 
     this.fontData = fontData
     this.unicodeMap = unicodeMap
-
     this.transparent = true
 
     this.atlas = uniform(atlas)
@@ -169,5 +168,23 @@ export class LetterMaterial extends NodeMaterial {
     data[index + 3] = color.alpha
 
     colors.needsUpdate = true
+  }
+
+  public uvToColRow(uv: [number, number]): [number, number] {
+    // const row = clampValue(Math.floor(uv[1] * this.grid.value.y), 0, this.grid.value.y - 1)
+    // const col = clampValue(Math.floor(uv[0] * this.grid.value.x), 0, this.grid.value.x - 1)
+    const row = Math.floor(uv[1] * (this.grid.value.y - 1))
+    const col = Math.floor(uv[0] * (this.grid.value.x - 1))
+    return [col, row]
+  }
+
+  public setCharAtUv(char: string, uv: [number, number]): void {
+    const [col, row] = this.uvToColRow(uv)
+    this.setCharAtPosition(char, row, col)
+  }
+
+  public setColorAtUv(color: ColorComp, uv: [number, number]): void {
+    const [col, row] = this.uvToColRow(uv)
+    this.setColorAtPosition(color, row, col)
   }
 }

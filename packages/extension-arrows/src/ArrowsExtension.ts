@@ -1,10 +1,10 @@
 import { BaseExtension, type BaseResources, ComponentRegistry } from '@infinitecanvas/core'
-import {} from '@infinitecanvas/core'
-import { Color, Connector, Text } from '@infinitecanvas/core/components'
+import { Color, Connector } from '@infinitecanvas/core/components'
 
 import { ArcArrow, ArrowTrim, ElbowArrow } from './components'
 import * as sys from './systems'
 import './webComponents'
+import { Options, type OptionsInput } from './types'
 
 class ArrowsExtensionClass extends BaseExtension {
   public readonly blocks = [
@@ -39,14 +39,26 @@ class ArrowsExtensionClass extends BaseExtension {
     },
   ]
 
+  private options: Options
+
+  constructor(options: OptionsInput) {
+    super()
+    this.options = Options.parse(options)
+  }
+
   public async preBuild(resources: BaseResources): Promise<void> {
     ComponentRegistry.instance.registerComponent(ArcArrow)
     ComponentRegistry.instance.registerComponent(ElbowArrow)
 
-    this.captureGroup = this.createGroup(resources, sys.CaptureArrowDraw, sys.CaptureArrowTransform)
+    const arrowResources = {
+      ...resources,
+      ...this.options,
+    }
 
-    this.updateGroup = this.createGroup(resources, sys.UpdateArrowTransform, sys.UpdateArrowHitGeometry)
+    this.captureGroup = this.createGroup(arrowResources, sys.CaptureArrowDraw, sys.CaptureArrowTransform)
+
+    this.updateGroup = this.createGroup(arrowResources, sys.UpdateArrowTransform, sys.UpdateArrowHitGeometry)
   }
 }
 
-export const ArrowsExtension = () => new ArrowsExtensionClass()
+export const ArrowsExtension = (options: OptionsInput = {}) => new ArrowsExtensionClass(options)

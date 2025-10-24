@@ -1,4 +1,6 @@
+import type { BaseResources } from '@infinitecanvas/core'
 import type { Entity } from '@lastolivegames/becsy'
+import { z } from 'zod/v4'
 
 export enum ArrowDrawState {
   Idle = 'idle',
@@ -53,3 +55,13 @@ export type ArrowCommandArgs = {
   [ArrowCommand.ShowTransformHandles]: []
   [ArrowCommand.UpdateTransformHandles]: [Entity]
 }
+
+export const Options = z.object({
+  elbowArrowPadding: z.number().min(0).default(50),
+})
+
+export type Options = z.infer<typeof Options>
+
+export type OptionsInput = z.input<typeof Options>
+
+export type ArrowResources = Options & BaseResources

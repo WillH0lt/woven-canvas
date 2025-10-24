@@ -22,7 +22,14 @@ import type { Entity } from '@lastolivegames/becsy'
 import { ArcArrow, ArrowHandle, ArrowTrim, ElbowArrow } from '../components'
 import { TRANSFORM_HANDLE_RANK, TRANSFORM_HANDLE_SIZE } from '../constants'
 import { calculateElbowPath } from '../helpers/calculateElbowPath'
-import { ArrowCommand, type ArrowCommandArgs, ArrowHandleKind, ArrowHeadKind, ArrowKind } from '../types'
+import {
+  ArrowCommand,
+  type ArrowCommandArgs,
+  ArrowHandleKind,
+  ArrowHeadKind,
+  ArrowKind,
+  type ArrowResources,
+} from '../types'
 
 function polarDelta(
   start: [number, number],
@@ -62,6 +69,8 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   // )
 
   // private readonly editedBlocks = this.query((q) => q.current.with(comps.Block, comps.Edited).write)
+
+  protected readonly resources!: ArrowResources
 
   private readonly rankBounds = this.singleton.write(RankBounds)
 
@@ -131,6 +140,16 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
         const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
         const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
         const position = block.uvToWorld(uv)
+        console.log(
+          [uv[0], uv[1]],
+          {
+            width: block.width,
+            height: block.height,
+            left: block.left,
+            top: block.top,
+          },
+          position,
+        )
         if (connectorEntity.has(ArcArrow)) {
           this.updateArcArrow(connectorEntity, handleKind, position)
         } else if (connectorEntity.has(ElbowArrow)) {
@@ -150,6 +169,10 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     const thickness = 4
 
     const arrowTag = kind === ArrowKind.Elbow ? 'ic-elbow-arrow' : 'ic-arc-arrow'
+
+    if (this.grid.enabled) {
+      this.grid.snapToGrid(position)
+    }
 
     const block = {
       tag: arrowTag,
@@ -193,6 +216,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private drawArrow(arrowEntity: Entity, start: [number, number], end: [number, number]): void {
+    if (this.grid.enabled) {
+      this.grid.snapToGrid(start)
+      this.grid.snapToGrid(end)
+    }
+
     if (arrowEntity.has(ArcArrow)) {
       const block = arrowEntity.write(Block)
       block.left = Math.min(start[0], end[0])
@@ -297,7 +325,6 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       }
     }
 
-
     console.warn('Arrow entity has no recognized arrow component')
     return [0, 0]
   }
@@ -385,11 +412,16 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     if (!blockEntity.has(ArrowHandle)) return
 
     const handle = blockEntity.read(ArrowHandle)
+
     const arrowEntity = handle.arrowEntity
     if (!arrowEntity) return
 
     const handleBlock = blockEntity.read(Block)
     const handlePosition = handleBlock.getCenter()
+
+    if (this.grid.enabled) {
+      this.grid.snapToGrid(handlePosition)
+    }
 
     if (arrowEntity.has(ArcArrow)) {
       this.updateArcArrow(arrowEntity, handle.kind, handlePosition)
@@ -478,7 +510,13 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
     const connector = arrowEntity.read(Connector)
 
-    const path = calculateElbowPath(start, end, connector.startBlockEntity, connector.endBlockEntity)
+    const path = calculateElbowPath(
+      start,
+      end,
+      connector.startBlockEntity,
+      connector.endBlockEntity,
+      this.resources.elbowArrowPadding,
+    )
 
     arrowBlock.boundPoints(path)
 
