@@ -27,15 +27,16 @@ class ArrowsExtensionClass extends BaseExtension {
   ]
 
   public readonly tools = [
-    {
-      name: 'arc arrow',
-      buttonTag: 'ic-arc-arrow-tool',
-      buttonTooltip: 'Arc Arrow',
-    },
+    // {
+    //   name: 'arc arrow',
+    //   buttonTag: 'ic-arc-arrow-tool',
+    //   buttonTooltip: 'Arc Arrow',
+    // },
     {
       name: 'elbow arrow',
       buttonTag: 'ic-elbow-arrow-tool',
-      buttonTooltip: 'Elbow Arrow',
+      buttonTooltip: 'Arrow',
+      orderIndex: 20,
     },
   ]
 

@@ -1,5 +1,5 @@
 import { InfiniteCanvas } from '@infinitecanvas/core'
-import { Block, Color, Connector, Text } from '@infinitecanvas/core/components'
+import { Block, Color, Connector } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
@@ -22,7 +22,7 @@ export class ICArcArrowTool extends ICToolbarIconButton {
 
   protected onClick() {
     InfiniteCanvas.instance?.commands.core.setControls({
-      leftMouseTool: 'arc-arrow',
+      leftMouseTool: 'arc arrow',
     })
   }
 

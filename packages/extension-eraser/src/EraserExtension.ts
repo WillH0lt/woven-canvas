@@ -19,7 +19,8 @@ class EraserExtensionClass extends BaseExtension {
     {
       name: 'eraser',
       buttonTag: 'ic-eraser-tool',
-      buttonTooltip: 'Erase',
+      buttonTooltip: 'Eraser',
+      orderIndex: 100,
     },
   ]
 

@@ -21,16 +21,6 @@ export type EmitterEvents = {
   [EmitterEventKind.Command]: [Command]
 }
 
-// export const ToolbarButton = z.object({
-//   tag: z.string(),
-//   tooltip: z.string().optional(),
-//   menu: z.string().optional(),
-//   tool: z.string().optional(),
-// })
-
-// export type ToolbarButtonInput = z.input<typeof ToolbarButton>
-// export type ToolbarButton = z.infer<typeof ToolbarButton>
-
 export const FloatingMenuButton = z.object({
   tag: z.string(),
   tooltip: z.string().optional(),
@@ -51,6 +41,7 @@ const Keybind = z.object({
 
 export const FontFamily = z.object({
   name: z.string(),
+  displayName: z.string(),
   url: z.string(),
   previewImage: z.string(),
   selectable: z.boolean().default(true),
@@ -107,6 +98,7 @@ export const ToolDef = z.object({
   buttonTooltip: z.string().optional(),
   buttonMenuTag: z.string().optional(),
   cursorIcon: z.string().optional(),
+  orderIndex: z.number().default(0),
 })
 
 export type ToolDefInput = z.input<typeof ToolDef>

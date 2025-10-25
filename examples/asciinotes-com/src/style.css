@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Cascadia Mono";
+  src: url(/fonts/CascadiaMono/CascadiaMono.ttf) format("truetype");
+}
+
+body {
+  font-family: "Cascadia Mono", monospace;
+}

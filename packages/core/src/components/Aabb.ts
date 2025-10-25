@@ -34,6 +34,20 @@ export class Aabb extends BaseComponent {
     return this
   }
 
+  public expandByAabb(aabb: Aabb): this {
+    this.expandByPoint([aabb.left, aabb.top])
+    this.expandByPoint([aabb.right, aabb.bottom])
+    return this
+  }
+
+  public copy(other: Aabb): this {
+    this.left = other.left
+    this.right = other.right
+    this.top = other.top
+    this.bottom = other.bottom
+    return this
+  }
+
   public setByPoints(points: [number, number][]): this {
     if (points.length === 0) return this
     const pt = points[0]

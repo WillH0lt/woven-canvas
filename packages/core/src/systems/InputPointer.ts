@@ -87,7 +87,7 @@ export class InputPointer extends BaseSystem {
     domElement.addEventListener('pointerdown', (e) => this.eventsBuffer.push(e))
     domElement.addEventListener('contextmenu', (e) => {
       e.preventDefault()
-      this.eventsBuffer.push(e)
+      this.eventsBuffer.push(e as PointerEvent)
     })
     window.addEventListener('pointerup', (e) => this.eventsBuffer.push(e))
     window.addEventListener('pointercancel', (e) => this.eventsBuffer.push(e))

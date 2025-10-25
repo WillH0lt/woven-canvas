@@ -6,13 +6,7 @@ import { customElement } from 'lit/decorators.js'
 @customElement('ic-eraser-tool')
 export class ICEraserTool extends ICToolbarIconButton {
   protected icon = html`
-    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-    <svg width="100%" height="100%" viewBox="0 0 640 640" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;fill:currentColor;">
-        <g transform="matrix(1.34747,0,0,1.34747,-113.491,-69.3983)">
-            <path d="M136,64C113.9,64 96,81.9 96,104L96,160C96,177.7 110.3,192 128,192C145.7,192 160,177.7 160,160L160,128L288,128L288,450.191L256,450.191C238.3,450.191 224,464.491 224,482.191C224,499.891 238.3,514.191 256,514.191L384,514.191C401.7,514.191 416,499.891 416,482.191C416,464.491 401.7,450.191 384,450.191L352,450.191L352,128L480,128L480,160C480,177.7 494.3,192 512,192C529.7,192 544,177.7 544,160L544,104C544,81.9 526.1,64 504,64L136,64Z" style="fill-rule:nonzero;"/>
-        </g>
-    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M210.5 480L333.5 480L398.8 414.7L225.3 241.2L98.6 367.9L210.6 479.9zM256 544L210.5 544C193.5 544 177.2 537.3 165.2 525.3L49 409C38.1 398.1 32 383.4 32 368C32 352.6 38.1 337.9 49 327L295 81C305.9 70.1 320.6 64 336 64C351.4 64 366.1 70.1 377 81L559 263C569.9 273.9 576 288.6 576 304C576 319.4 569.9 334.1 559 345L424 480L544 480C561.7 480 576 494.3 576 512C576 529.7 561.7 544 544 544L256 544z"/></svg>
   `
 
   protected onClick() {

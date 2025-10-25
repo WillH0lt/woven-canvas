@@ -122,12 +122,12 @@ export class CaptureArrowDraw extends BaseSystem<ArrowCommandArgs & CoreCommandA
   })
 
   public execute(): void {
-    const buttons = this.controls.getButtons('arc-arrow', 'elbow-arrow')
+    const buttons = this.controls.getButtons('arc arrow', 'elbow arrow')
     const events = this.getPointerEvents(buttons)
 
     if (events.length === 0) return
 
-    this.arrowDrawState.kind = this.controls.leftMouseTool === 'elbow-arrow' ? ArrowKind.Elbow : ArrowKind.Arc
+    this.arrowDrawState.kind = this.controls.leftMouseTool === 'elbow arrow' ? ArrowKind.Elbow : ArrowKind.Arc
 
     const { value, context } = this.runMachine<ArrowDrawState>(
       this.arrowDrawMachine,

@@ -95,24 +95,28 @@ export const FONT_SIZE_OPTIONS = [
 export const DEFAULT_FONT_FAMILIES = [
   {
     name: 'Figtree',
+    displayName: 'Figtree',
     url: 'https://fonts.googleapis.com/css2?family=Figtree',
     previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/Figtree.png',
     selectable: true,
   },
   {
     name: 'Shantell Sans',
+    displayName: 'Shantell Sans',
     url: 'https://fonts.googleapis.com/css2?family=Shantell+Sans',
     previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/ShantellSans.png',
     selectable: true,
   },
   {
     name: 'Courier Prime',
+    displayName: 'Courier Prime',
     url: 'https://fonts.googleapis.com/css2?family=Courier+Prime',
     previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png',
     selectable: true,
   },
   {
     name: 'EB Garamond',
+    displayName: 'EB Garamond',
     url: 'https://fonts.googleapis.com/css2?family=EB+Garamond',
     previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/EBGaramond.png',
     selectable: true,

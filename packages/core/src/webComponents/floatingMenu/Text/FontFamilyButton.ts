@@ -1,14 +1,17 @@
-import type { IStore } from '@infinitecanvas/core'
 import { SignalWatcher } from '@lit-labs/preact-signals'
 import { consume } from '@lit/context'
 import { customElement } from 'lit/decorators.js'
-import { storeContext } from '../../contexts'
+import type { IConfig, IStore } from '../../../types'
+import { configContext, storeContext } from '../../contexts'
 import { ICMenuDropdownButton } from '../../elements'
 
 @customElement('ic-font-family-button')
 export class ICFontFamilyButton extends SignalWatcher(ICMenuDropdownButton) {
   @consume({ context: storeContext })
   private store: IStore = {} as IStore
+
+  @consume({ context: configContext })
+  private config: IConfig = {} as IConfig
 
   render() {
     this.label = this.getFontFamilyLabel()
@@ -33,6 +36,14 @@ export class ICFontFamilyButton extends SignalWatcher(ICMenuDropdownButton) {
     }
     if (fontFamily === 'mixed') {
       return 'Mixed'
+    }
+
+    const fontObject = this.config.textEditor.fontMenu.families.find((f) => f.name === fontFamily)
+
+    console.log('fontObject', fontObject, fontFamily)
+
+    if (fontObject) {
+      return fontObject.displayName
     }
 
     return fontFamily

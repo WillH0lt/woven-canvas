@@ -53,7 +53,7 @@ function addToolbar(domElement: HTMLElement, tools: Record<string, ToolDef>): vo
   const toolbarElement = document.createElement('ic-toolbar')
   toolbarElement.style.maxWidth = '100%'
   toolbarElement.style.height = '100%'
-  toolbarElement.tools = Object.values(tools)
+  toolbarElement.tools = Object.values(tools).sort((a, b) => a.orderIndex - b.orderIndex)
   // toolbarContainer.style.pointerEvents = 'auto'
   toolbarContainer.appendChild(toolbarElement)
 }
@@ -181,7 +181,6 @@ export class InfiniteCanvas {
         ...blockDefs[blockDef.tag],
         ...blockDef,
       })
-
     }
 
     // Register components for each block definition
@@ -209,10 +208,6 @@ export class InfiniteCanvas {
     for (const tool of parsedOptions.customTools) {
       tools[tool.name] = ToolDef.parse(tool)
     }
-
-    // const fontFamilies = Object.fromEntries(parsedOptions.fontFamilies.map((f) => [f.name, f]))
-
-    addToolbar(domElement, tools)
 
     applyTheme(parsedOptions.theme)
 
@@ -291,6 +286,8 @@ export class InfiniteCanvas {
     infiniteCanvas.store.core.fontFamilies.subscribe((fontFamilies) => {
       FontLoader.loadFonts(fontFamilies)
     })
+
+    addToolbar(domElement, tools)
 
     return infiniteCanvas
   }

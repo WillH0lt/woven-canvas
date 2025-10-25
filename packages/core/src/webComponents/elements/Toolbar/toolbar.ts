@@ -3,6 +3,7 @@ import { SignalWatcher } from '@lit-labs/preact-signals'
 import { LitElement, type PropertyValues, nothing } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { html, unsafeStatic } from 'lit/static-html.js'
+
 import { InfiniteCanvas } from '../../../InfiniteCanvas'
 import type { ToolDef } from '../../../types'
 import { style } from './toolbar.style'
@@ -54,7 +55,7 @@ export class ICToolbar extends SignalWatcher(LitElement) {
   }
 
   render() {
-    const controls = InfiniteCanvas.instance?.store.core.controls
+    const controls = InfiniteCanvas.instance!.store.core.controls
 
     return html`
       <div class="container" 

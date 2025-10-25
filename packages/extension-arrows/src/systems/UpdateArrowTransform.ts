@@ -140,16 +140,7 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
         const handleKind = connector.startBlockId === block.id ? ArrowHandleKind.Start : ArrowHandleKind.End
         const uv = handleKind === ArrowHandleKind.Start ? connector.startBlockUv : connector.endBlockUv
         const position = block.uvToWorld(uv)
-        console.log(
-          [uv[0], uv[1]],
-          {
-            width: block.width,
-            height: block.height,
-            left: block.left,
-            top: block.top,
-          },
-          position,
-        )
+
         if (connectorEntity.has(ArcArrow)) {
           this.updateArcArrow(connectorEntity, handleKind, position)
         } else if (connectorEntity.has(ElbowArrow)) {

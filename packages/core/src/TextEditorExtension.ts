@@ -2,6 +2,7 @@ import { type ReadonlySignal, type Signal, computed, signal } from '@preact/sign
 
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
+import { FontLoader } from './FontLoader'
 import type { State } from './State'
 import { textEditorFloatingMenuButtons } from './buttonCatalog'
 import { CoreCommand, type CoreCommandArgs } from './commands'
@@ -254,6 +255,8 @@ export class TextEditorExtension extends BaseExtension {
           if (!this.blockContainer) return
 
           const { fontFamily, fontSize, lineHeight } = properties
+
+          await FontLoader.loadFonts([fontFamily])
 
           await applyFontFamilyToSelected(state, this.blockContainer, fontFamily.name)
 
