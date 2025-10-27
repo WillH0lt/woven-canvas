@@ -162,7 +162,7 @@ export class UpdateTransformBox extends BaseSystem<CoreCommandArgs> {
       dragStart.startRotateZ = block.rotateZ
 
       if (blockEntity.has(Text)) {
-        dragStart.startFontSize = blockEntity.read(Text).fontSize
+        dragStart.startFontSize = blockEntity.read(Text).fontSizePx
       }
     }
 

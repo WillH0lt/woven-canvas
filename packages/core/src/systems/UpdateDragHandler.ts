@@ -248,7 +248,7 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
           this.stretchTextEntity(selectedEntity)
         } else {
           // scale text font size
-          selectedEntity.write(Text).fontSize = endFontSize
+          selectedEntity.write(Text).fontSizePx = endFontSize
         }
       }
 

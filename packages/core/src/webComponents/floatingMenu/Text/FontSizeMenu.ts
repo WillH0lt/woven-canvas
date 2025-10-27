@@ -169,8 +169,8 @@ export class ICFontSizeMenu extends SignalWatcher(LitElement) {
       return null
     }
 
-    const firstFontSize = selectedTexts[0].fontSize
-    const allSameSize = selectedTexts.every((text) => text.fontSize === firstFontSize)
+    const firstFontSize = selectedTexts[0].fontSizePx
+    const allSameSize = selectedTexts.every((text) => text.fontSizePx === firstFontSize)
 
     return allSameSize ? firstFontSize : null
   }

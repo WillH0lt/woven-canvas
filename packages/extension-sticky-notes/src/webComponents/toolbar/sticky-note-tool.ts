@@ -36,7 +36,7 @@ export class ICStickyNoteTool extends ICToolbarIconButton {
 
     const text = new Text({
       fontFamily: fontFamily.name,
-      fontSize: 24,
+      fontSizePx: 24,
       constrainWidth: true,
     })
 

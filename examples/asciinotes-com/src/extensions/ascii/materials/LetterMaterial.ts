@@ -12,7 +12,6 @@ import {
   mix,
   mod,
   mul,
-  or,
   sub,
   texture,
   uint,
@@ -59,13 +58,15 @@ export class LetterMaterial extends NodeMaterial {
     this.unicodeMap = unicodeMap
     this.transparent = true
 
+    atlas.generateMipmaps = false
     this.atlas = uniform(atlas)
 
     this.chars = uniform<DataTexture>(
       new DataTexture(new Uint32Array(cols * rows), cols, rows, RedIntegerFormat, UnsignedIntType),
     )
     this.colors = uniform<DataTexture>(new DataTexture(new Uint8Array(4 * cols * rows), cols, rows, RGBAFormat))
-    this.grid = uniform(new Vector2(cols, rows), 'vec2')
+
+    this.grid = uniform(new Vector2(cols, rows), 'uvec2')
     this.atlasGrid = uniform(new Vector2().fromArray(fontData.atlasGrid), 'uvec2')
     this.atlasCellSize = uniform(new Vector2().fromArray(fontData.atlasCellSize), 'uvec2')
     this.atlasSize = uniform(new Vector2(atlas.width, atlas.height), 'uvec2')
@@ -79,7 +80,7 @@ export class LetterMaterial extends NodeMaterial {
 
     const vuv = uv()
 
-    const scaledUv = mul(vec2(vuv.x, sub(1.0, vuv.y)), div(this.grid, vec2(cols, rows)))
+    const scaledUv = mul(vec2(vuv.x, sub(1.0, vuv.y)), div(vec2(this.grid), vec2(cols, rows)))
     const charIndex = uint(texture(this.chars.value, scaledUv).r)
 
     const atlasCol = float(mod(charIndex, this.atlasGrid.x))
@@ -94,29 +95,17 @@ export class LetterMaterial extends NodeMaterial {
     // Map local UV within tile (fractional part) to atlas cell UV bounds
     const local = fract(mul(vuv, this.grid))
 
-    // Apply scaling for highlight effect
-    const highlighted = or(this.hovered, this.selected)
-    const highlightScaleInv = float(0.9)
-    const scaleAmount = mix(float(1.0), highlightScaleInv, highlighted)
-
-    // Center and scale the local UV coordinates
-    const centeredLocal = sub(local, vec2(0.5, 0.5))
-    const scaledLocal = add(mul(centeredLocal, scaleAmount), vec2(0.5, 0.5))
-
     // Calculate horizontal advance offset (centered)
     const dx = sub(x2, x1)
-    const advanceOffset = mul(dx, sub(1.0, this.charAdvance.value), 0.5)
+    const originX = mul(dx, fontData.originX)
     const advanceWidth = mul(dx, this.charAdvance.value)
 
     // Calculate vertical advance offset (for line spacing)
     const dy = sub(y2, y1)
-    const lineOffset = mul(dy, sub(1.0, this.lineSpacing.value), 0.5)
+    const originY = mul(dy, sub(1.0, this.lineSpacing.value), 0.5)
     const lineHeight = mul(dy, this.lineSpacing.value)
 
-    const atlasUV = vec2(
-      add(x1, advanceOffset, mul(scaledLocal.x, advanceWidth)),
-      add(y1, lineOffset, mul(scaledLocal.y, lineHeight)),
-    )
+    const atlasUV = vec2(add(x1, originX, mul(local.x, advanceWidth)), add(y1, originY, mul(local.y, lineHeight)))
 
     const s = texture(this.atlas.value, atlasUV)
 
@@ -125,7 +114,7 @@ export class LetterMaterial extends NodeMaterial {
 
     const textColor = texture(this.colors.value, scaledUv)
 
-    this.colorNode = mix(vec4(this.backgroundColor, textColor.a), textColor, alpha)
+    this.fragmentNode = mix(vec4(this.backgroundColor, textColor.a), textColor, alpha)
   }
 
   public setCharAtPosition(char: string, row: number, col: number): void {

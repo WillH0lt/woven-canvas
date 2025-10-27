@@ -32,7 +32,7 @@ export class ICRoughShapesTool extends ICToolbarIconButton {
 
     const text = new Text({
       fontFamily: fontFamily.name,
-      fontSize: 16,
+      fontSizePx: 16,
       constrainWidth: true,
     })
 

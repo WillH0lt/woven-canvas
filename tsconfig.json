@@ -30,7 +30,7 @@
       "path": "examples/canvas"
     },
     {
-      "path": "examples/asciiLand"
+      "path": "examples/asciinotes-com"
     }
   ],
   "compilerOptions": {

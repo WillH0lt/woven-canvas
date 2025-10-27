@@ -323,10 +323,12 @@ export class ICText extends ICEditableBlock {
     const styles: Record<string, string> = {
       'font-family': text.fontFamily,
       'line-height': `${text.lineHeight}`,
-      'font-size': `${text.fontSize}px`,
+      'font-size': `${text.fontSizePx}px`,
       'pointer-events': this.isEditing ? 'auto' : 'none',
       'text-align': this.defaultAlignment.toLowerCase(),
       'white-space': this.text.constrainWidth ? 'pre-wrap' : 'pre',
+      'letter-spacing': `${text.letterSpacingEm}em`,
+      // 'letter-spacing': '0.0141em',
       display: 'block',
       'min-width': '2px',
       width: this.text.constrainWidth ? '100%' : 'fit-content',

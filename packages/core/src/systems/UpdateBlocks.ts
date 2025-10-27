@@ -484,9 +484,13 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     const selectionState = this.selectionStateQuery.current[0].write(comps.SelectionState)
 
+    console.log(snapshot)
+
     const entities = this.createFromSnapshot(snapshot, { selectCreated: false, editCreated: false })
 
     const entity = entities[0]
+
+    console.log('created entity to drag onto canvas:', entity.has(comps.Block), entity.has(comps.Text))
 
     const block = entity.write(comps.Block)
     block.left = pointer.worldPosition[0] - block.width / 2

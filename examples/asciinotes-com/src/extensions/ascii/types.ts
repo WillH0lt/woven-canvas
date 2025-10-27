@@ -10,8 +10,9 @@ export type Assets = {
 
 export const AsciiFont = z.object({
   fontFamily: z.string(),
-  fontSize: z.number(),
+  fontSizePx: z.number(),
   lineHeight: z.number(),
+  letterSpacingEm: z.number(),
 })
 
 export type AsciiFont = z.infer<typeof AsciiFont>
@@ -23,8 +24,7 @@ export const FontData = z.object({
   atlasCellSize: z.tuple([z.number().int().min(1), z.number().int().min(1)]).readonly(),
   lineSpacing: z.number().min(0),
   charAdvance: z.number().min(0),
-  charShiftLeft: z.number().min(0),
-  charShiftTop: z.number().min(0),
+  originX: z.number().min(0),
   unicodeMapPath: z.string(),
   backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
 })

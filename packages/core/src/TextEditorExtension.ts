@@ -14,6 +14,7 @@ import {
   applyFontFamilyToSelected,
   applyFontSizeToSelected,
   applyItalicToSelected,
+  applyLetterSpacingToSelected,
   applyLineHeightToSelected,
   applyUnderlineToSelected,
   getSelectionAlignment,
@@ -45,9 +46,14 @@ declare module '@infinitecanvas/core' {
       setUnderline: (underline: boolean) => void
       setAlignment: (alignment: TextAlign) => void
       setColor: (color: string) => void
-      setFontSize: (fontSize: number) => void
+      setFontSize: (fontSizePx: number) => void
       setFontFamily: (fontFamily: FontFamily) => void
-      setTextProperties: (properties: { fontFamily: FontFamily; fontSize: number; lineHeight: number }) => void
+      setTextProperties: (properties: {
+        fontFamily: FontFamily
+        fontSizePx: number
+        lineHeight: number
+        letterSpacingEm: number
+      }) => void
     }
   }
 
@@ -232,11 +238,11 @@ export class TextEditorExtension extends BaseExtension {
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           send(CoreCommand.UpdateTransformBox)
         },
-        setFontSize: async (fontSize: number) => {
+        setFontSize: async (fontSizePx: number) => {
           if (!this.blockContainer) return
 
-          const snapshot = await applyFontSizeToSelected(state, this.blockContainer, fontSize)
-          console.log('setFontSize', fontSize, snapshot)
+          const snapshot = await applyFontSizeToSelected(state, this.blockContainer, fontSizePx)
+          console.log('setFontSize', fontSizePx, snapshot)
           send(CoreCommand.UpdateFromSnapshot, snapshot)
           send(CoreCommand.UpdateTransformBox)
         },
@@ -250,32 +256,40 @@ export class TextEditorExtension extends BaseExtension {
 
           this.mostRecentFontFamily.value = fontFamily
         },
-        setTextProperties: async (properties: { fontFamily: FontFamily; fontSize: number; lineHeight: number }) => {
+        setTextProperties: async (properties: {
+          fontFamily: FontFamily
+          fontSizePx: number
+          lineHeight: number
+          letterSpacingEm: number
+        }) => {
           // all these properties affect the text block size, so we need to apply them all at once
           if (!this.blockContainer) return
 
-          const { fontFamily, fontSize, lineHeight } = properties
+          console.log('setTextProperties', properties)
 
+          const { fontFamily, fontSizePx, lineHeight, letterSpacingEm } = properties
           await FontLoader.loadFonts([fontFamily])
 
           await applyFontFamilyToSelected(state, this.blockContainer, fontFamily.name)
+          await applyLetterSpacingToSelected(state, this.blockContainer, letterSpacingEm)
 
           const snapshot = await applyLineHeightToSelected(state, this.blockContainer, lineHeight)
 
           for (const id of Object.keys(snapshot)) {
             snapshot[id].Text.fontFamily = fontFamily.name
+            snapshot[id].Text.letterSpacingEm = letterSpacingEm
           }
 
           for (const id of Object.keys(snapshot)) {
             const text = state.getComponent<Text>(Text, id).value
             if (!text) continue
 
-            const factor = fontSize / text.fontSize
+            const factor = fontSizePx / text.fontSizePx
 
             snapshot[id].Block.width = Number(snapshot[id].Block.width) * factor
             snapshot[id].Block.height = Number(snapshot[id].Block.height) * factor
 
-            snapshot[id].Text.fontSize = fontSize
+            snapshot[id].Text.fontSizePx = fontSizePx
           }
 
           send(CoreCommand.UpdateFromSnapshot, snapshot)

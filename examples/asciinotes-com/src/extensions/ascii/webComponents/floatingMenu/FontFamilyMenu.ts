@@ -100,10 +100,11 @@ export class AsciiFontFamilyMenu extends SignalWatcher(LitElement) {
       return
     }
 
-    const fontSize = matchingFont.fontSize
+    const fontSizePx = matchingFont.fontSizePx
     const lineHeight = matchingFont.lineHeight
+    const letterSpacingEm = matchingFont.letterSpacingEm
 
-    await this.commands.textEditor.setTextProperties({ fontFamily, lineHeight, fontSize })
+    await this.commands.textEditor.setTextProperties({ fontFamily, lineHeight, fontSizePx, letterSpacingEm })
   }
 
   private handleWheelStop(e: Event) {

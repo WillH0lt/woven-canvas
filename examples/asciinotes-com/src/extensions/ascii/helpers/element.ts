@@ -31,6 +31,7 @@ export async function showElement(
   element.style.height = `${block.height}px`
   element.style.backgroundColor = resources.fontData.backgroundColor
   element.style.opacity = options.opacity?.toString() ?? '0'
+  // element.style.letterSpacing = '0.0175em'
 
   if (options.isEditing) {
     element.setAttribute('is-editing', 'true')

@@ -125,26 +125,27 @@ const fontData = {
   atlasGrid: [55, 44] as const,
   atlasCellSize: [37, 45] as const,
   clearColor: 0x00000000,
-  lineSpacing: 0.71, // magic number based on visual alignment
+  lineSpacing: 0.69, // magic number based on visual alignment
   charAdvance: 0.42, // magic number based on visual alignment
-  charShiftLeft: 0,
-  charShiftTop: 0,
+  originX: 0.13176470588235292,
   backgroundColor: "#ffffff", // jules purple - 1d0245
 };
 
 const asciiFonts = [
   {
     fontFamily: "CascadiaMono",
-    fontSize: 20,
+    fontSizePx: 20,
     lineHeight: 1.2,
+    letterSpacingEm: 0.0141,
   },
 ];
 
 for (const figletFont of figletFonts) {
   asciiFonts.push({
     fontFamily: figletFont.name,
-    fontSize: 24 * figletFont.lines,
+    fontSizePx: 24 * figletFont.lines,
     lineHeight: 1,
+    letterSpacingEm: 0,
   });
 }
 

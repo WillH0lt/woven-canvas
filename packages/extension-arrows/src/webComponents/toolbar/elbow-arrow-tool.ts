@@ -33,7 +33,7 @@ export class ICElbowArrowTool extends ICToolbarIconButton {
 
     // const text = new Text({
     //   fontFamily: fontFamily.name,
-    //   fontSize: 40,
+    //   fontSizePx: 40,
     // })
 
     const color = new Color({

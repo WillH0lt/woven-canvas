@@ -13,4 +13,12 @@ export default defineConfig({
     },
     conditions: ['@infinitecanvas/source'],
   },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    minify: 'esbuild', // Ensure esbuild is used for minification
+  },
+  esbuild: {
+    keepNames: true, // This option tells esbuild to preserve function and class names
+  },
 })

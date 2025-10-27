@@ -1,7 +1,6 @@
 import { BaseSystem } from '@infinitecanvas/core'
-import { Block } from '@infinitecanvas/core/components'
+import { Block, Persistent } from '@infinitecanvas/core/components'
 import { ArrowHandle, ElbowArrow } from '@infinitecanvas/extension-arrows'
-import { Shape } from '../components'
 
 const EPS = 0.0001
 
@@ -10,12 +9,12 @@ function approximately(a: number, b: number): boolean {
 }
 
 function round(value: number, step: number): number {
-  const result = Math.floor(value / step) * step
+  const result = Math.round(value / step) * step
   return approximately(result, 0) ? step : result
 }
 
 export class UpdateEnforceGrid extends BaseSystem {
-  private readonly shapes = this.query((q) => q.changed.with(Block, Shape).trackWrites.write)
+  private readonly shapes = this.query((q) => q.changed.with(Persistent, Block).trackWrites.write.without(ElbowArrow))
 
   private readonly arrows = this.query((q) => q.changed.with(ElbowArrow, Block).trackWrites)
 

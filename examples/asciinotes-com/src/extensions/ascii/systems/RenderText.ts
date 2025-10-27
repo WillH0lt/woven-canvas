@@ -114,9 +114,11 @@ export class RenderText extends BaseSystem {
   }
 
   private async updateText(textEntity: Entity): Promise<void> {
-    const { id } = textEntity.read(Block)
+    const block = textEntity.read(Block)
 
-    const mesh = this.resources.scene.getObjectByName(id) as Mesh | undefined
+    console.log('UPDATE TEXT RENDER', block.width, block.width / this.grid.colWidth)
+
+    const mesh = this.resources.scene.getObjectByName(block.id) as Mesh | undefined
     if (!mesh) return
 
     const element = await showElement(textEntity, this.resources, {})

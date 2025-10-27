@@ -117,9 +117,9 @@ export function getSelectionColor(state: State): string | null {
 export async function applyFontSizeToSelected(
   state: State,
   blockContainer: HTMLElement,
-  fontSize: number,
+  fontSizePx: number,
 ): Promise<Snapshot> {
-  return applyTextPropertyToSelected(state, blockContainer, 'fontSize', fontSize)
+  return applyTextPropertyToSelected(state, blockContainer, 'fontSizePx', fontSizePx)
 }
 
 export async function applyFontFamilyToSelected(
@@ -128,6 +128,14 @@ export async function applyFontFamilyToSelected(
   fontFamily: string,
 ): Promise<Snapshot> {
   return applyTextPropertyToSelected(state, blockContainer, 'fontFamily', fontFamily)
+}
+
+export async function applyLetterSpacingToSelected(
+  state: State,
+  blockContainer: HTMLElement,
+  letterSpacingEm: number,
+): Promise<Snapshot> {
+  return applyTextPropertyToSelected(state, blockContainer, 'letterSpacingEm', letterSpacingEm)
 }
 
 export async function applyLineHeightToSelected(

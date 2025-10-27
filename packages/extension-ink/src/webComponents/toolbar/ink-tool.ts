@@ -20,27 +20,6 @@ export class ICInkTool extends ICToolbarIconButton {
     InfiniteCanvas.instance?.commands.core.setControls({
       leftMouseTool: 'ink',
     })
-
-    // const block = new Block({
-    //   tag: 'ic-sticky-note',
-    //   width: 300,
-    //   height: 300,
-    // })
-    // const color = new Color({
-    //   red: Math.floor(Math.random() * 256),
-    //   green: Math.floor(Math.random() * 256),
-    //   blue: Math.floor(Math.random() * 256),
-    // })
-    // const text = new Text({
-    //   fontSize: 40,
-    //   verticalAlign: VerticalAlign.Top,
-    //   constrainWidth: true,
-    // })
-    // const snapshot = getSnapshot(block, [text, color])
-    // InfiniteCanvas.instance?.commands.core.setControls({
-    //   leftMouseTool: 'sticky-note',
-    //   heldSnapshot: JSON.stringify(snapshot),
-    // })
   }
 }
 

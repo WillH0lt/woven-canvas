@@ -1,11 +1,10 @@
-import { InfiniteCanvas } from '@infinitecanvas/core'
-import { Block } from '@infinitecanvas/core/components'
-import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
-import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
-import { Text } from '../../../components'
+import { InfiniteCanvas } from '../../../InfiniteCanvas'
+import { Block, Text } from '../../../components'
+import { createSnapshot } from '../../../helpers/createSnapshot'
+import { ICToolbarIconButton } from '../../elements'
 
 @customElement('ic-text-tool')
 export class ICTextTool extends ICToolbarIconButton {
@@ -33,7 +32,7 @@ export class ICTextTool extends ICToolbarIconButton {
     const lineHeight = 1.2
     const text = new Text({
       fontFamily: fontFamily.name,
-      fontSize: 24 / lineHeight,
+      fontSizePx: 24 / lineHeight,
       lineHeight,
     })
 
@@ -59,8 +58,9 @@ export class ICTextTool extends ICToolbarIconButton {
     const text = new Text({
       content: 'text',
       fontFamily: 'CascadiaMono',
-      fontSize: 20,
+      fontSizePx: 20,
       lineHeight: 1.2,
+      letterSpacingEm: 0.0141,
     })
 
     const snapshot = createSnapshot(block, [text])

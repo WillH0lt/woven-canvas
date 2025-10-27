@@ -23,8 +23,8 @@ export class ICFontSizeButton extends SignalWatcher(ICMenuDropdownButton) {
     let fontSize: number | 'mixed' | null = null
     for (const text of selectedTexts ?? []) {
       if (fontSize === null) {
-        fontSize = text.fontSize
-      } else if (fontSize !== text.fontSize) {
+        fontSize = text.fontSizePx
+      } else if (fontSize !== text.fontSizePx) {
         fontSize = 'mixed'
         break
       }
