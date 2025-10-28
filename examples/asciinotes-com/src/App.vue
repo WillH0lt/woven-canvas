@@ -21,6 +21,8 @@ import mini from "figlet/fonts/Mini";
 import rectangles from "figlet/fonts/Rectangles";
 import roman from "figlet/fonts/Roman";
 import standard from "figlet/fonts/Standard";
+// import terrace from "figlet/fonts/Terrace";
+// import tmplr from "figlet/fonts/Tmplr";
 
 import { AsciiExtension } from "./extensions/ascii";
 
@@ -39,6 +41,7 @@ const figletFonts = [
   },
   // {
   //   name: "Tmplr",
+  //   displayName: "Tmplr",
   //   lines: 4,
   //   font: tmplr,
   // },
@@ -56,6 +59,7 @@ const figletFonts = [
   },
   // {
   //   name: "Wavy",
+  //   displayName: "Wavy",
   //   lines: 4,
   //   font: Wavy,
   // },
@@ -85,6 +89,7 @@ const figletFonts = [
   },
   // {
   //   name: "BigChief",
+  //   displayName: "Big Chief",
   //   lines: 8,
   //   font: bigChief,
   // },
@@ -96,6 +101,7 @@ const figletFonts = [
   },
   // {
   //   name: "Terrace",
+  //   displayName: "Terrace",
   //   lines: 10,
   //   font: terrace,
   // },

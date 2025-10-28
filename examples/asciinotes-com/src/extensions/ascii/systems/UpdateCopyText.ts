@@ -74,13 +74,13 @@ export class UpdateCopyText extends BaseSystem<CoreCommandArgs> {
       const offsetCol = Math.round(blockAabb.left / this.grid.colWidth) - startCol
       const offsetRow = Math.round(blockAabb.top / this.grid.rowHeight) - startRow
 
-      for (let row = 0; row < materialChars.image.height; row++) {
+      for (let row = 0; row < material.grid.value.y; row++) {
         const targetRow = row + offsetRow
 
         // Skip if row is out of bounds
         if (targetRow < 0 || targetRow >= totalRows) continue
 
-        for (let col = 0; col < materialChars.image.width; col++) {
+        for (let col = 0; col < material.grid.value.x; col++) {
           const targetCol = col + offsetCol
 
           // Skip if column is out of bounds
