@@ -5,7 +5,7 @@ import type { BaseComponent } from '../BaseComponent'
 import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import * as comps from '../components'
-import { lowercaseFirstLetter } from '../helpers'
+import { binarySearchForId, lowercaseFirstLetter, uuidToNumber } from '../helpers'
 import type { CoreResources } from '../types'
 import type { ICBaseBlock } from '../webComponents'
 
@@ -28,7 +28,11 @@ export class RenderHtml extends BaseSystem {
 
   private readonly cameras = this.query((q) => q.addedOrChanged.with(comps.Camera).trackWrites)
 
-  private readonly blocks = this.query((q) => q.added.changed.removed.with(comps.Block).trackWrites)
+  private readonly blocks = this.query((q) =>
+    q.added.changed.current.removed
+      .with(comps.Block)
+      .trackWrites.orderBy((e) => (e.has(comps.Block) ? uuidToNumber(e.read(comps.Block).id) : 0)),
+  )
 
   private readonly opacityBlocks = this.query(
     (q) => q.addedChangedOrRemoved.with(comps.Block).and.with(comps.Opacity).trackWrites,
@@ -273,17 +277,18 @@ export class RenderHtml extends BaseSystem {
     if (blockEntity.has(comps.Connector)) {
       const connector = blockEntity.read(comps.Connector)
 
-      const { startBlockEntity, endBlockEntity } = connector
-      for (const block of [startBlockEntity, endBlockEntity]) {
-        if (block) {
-          const b = block.read(comps.Block)
+      const { startBlockId, endBlockId } = connector
+      for (const blockId of [startBlockId, endBlockId]) {
+        if (!blockId) continue
 
-          // TODO need a way to generate with a bit of randomness to avoid collisions
-          const otherRank = LexoRank.parse(b.rank).genNext()
+        const blockEntity = binarySearchForId(comps.Block, blockId, this.blocks.current)
+        if (!blockEntity) continue
 
-          if (otherRank.compareTo(rank) > 0) {
-            rank = otherRank
-          }
+        // TODO need a way to generate with a bit of randomness to avoid collisions
+        const otherRank = LexoRank.parse(blockEntity.read(comps.Block).rank).genNext()
+
+        if (otherRank.compareTo(rank) > 0) {
+          rank = otherRank
         }
       }
     }

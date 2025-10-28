@@ -1,6 +1,7 @@
 import { LexoRank } from '@dalet-oss/lexorank'
 import { BaseSystem } from '@infinitecanvas/core'
 import { Block, Camera, Connector, Hovered, Opacity, Screen, Selected } from '@infinitecanvas/core/components'
+import { binarySearchForId, uuidToNumber } from '@infinitecanvas/core/helpers'
 import { Mesh, PlaneGeometry } from 'three'
 
 import type { Entity } from '@lastolivegames/becsy'
@@ -15,7 +16,11 @@ export class PreRenderPrepareScene extends BaseSystem {
   private readonly screens = this.query((q) => q.addedOrChanged.with(Screen).trackWrites)
 
   private readonly blocks = this.query(
-    (q) => q.added.addedOrChanged.current.removed.with(Block).trackWrites.using(Connector).read,
+    (q) =>
+      q.added.addedOrChanged.current.removed
+        .with(Block)
+        .trackWrites.using(Connector)
+        .read.orderBy((e) => uuidToNumber(e.read(Block).id)).usingAll.write,
   )
 
   private readonly selectedBlocks = this.query((q) => q.added.removed.with(Block, Selected))
@@ -93,24 +98,6 @@ export class PreRenderPrepareScene extends BaseSystem {
 
     if (needsSorting) {
       this.sortMeshesByRank()
-      // const objectOrderMap = new Map<string, number>()
-
-      // const entities = this.blocks.current.slice().sort((a, b) => {
-      //   const rankA = LexoRank.parse(a.read(Block).rank)
-      //   const rankB = LexoRank.parse(b.read(Block).rank)
-      //   return rankA.compareTo(rankB)
-      // })
-
-      // for (const [index, entity] of entities.entries()) {
-      //   objectOrderMap.set(entity.read(Block).id, index)
-      // }
-
-      // for (const mesh of this.resources.scene.children) {
-      //   const order = objectOrderMap.get(mesh.name)
-      //   if (order !== undefined) {
-      //     mesh.renderOrder = order
-      //   }
-      // }
     }
 
     // ========================================================
@@ -249,17 +236,17 @@ export class PreRenderPrepareScene extends BaseSystem {
     if (blockEntity.has(Connector)) {
       const connector = blockEntity.read(Connector)
 
-      const { startBlockEntity, endBlockEntity } = connector
-      for (const block of [startBlockEntity, endBlockEntity]) {
-        if (block) {
-          const b = block.read(Block)
+      const { startBlockId, endBlockId } = connector
+      for (const blockId of [startBlockId, endBlockId]) {
+        if (!blockId) continue
 
-          // TODO need a way to generate with a bit of randomness to avoid collisions
-          const otherRank = LexoRank.parse(b.rank).genNext()
+        const blockEntity = binarySearchForId(Block, blockId, this.blocks.current)
+        if (!blockEntity) continue
 
-          if (otherRank.compareTo(rank) > 0) {
-            rank = otherRank
-          }
+        const otherRank = LexoRank.parse(blockEntity.read(Block).rank).genNext()
+
+        if (otherRank.compareTo(rank) > 0) {
+          rank = otherRank
         }
       }
     }

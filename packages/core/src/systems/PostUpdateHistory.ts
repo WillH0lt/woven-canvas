@@ -4,7 +4,6 @@ import { BaseSystem } from '../BaseSystem'
 import { ComponentRegistry } from '../ComponentRegistry'
 import { CoreCommand, type CoreCommandArgs } from '../commands'
 import * as comps from '../components'
-import { uuidToNumber } from '../helpers'
 import type { CoreResources } from '../types'
 import { PostUpdateDeleter } from './PostUpdateDeleter'
 
@@ -15,10 +14,10 @@ export class PostUpdateHistory extends BaseSystem<CoreCommandArgs> {
 
   private readonly removedQueries = new Map<new () => BaseComponent, Query>()
 
-  private readonly entities = this.query(
-    (q) =>
-      q.current.with(comps.Block, comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
-  )
+  // private readonly entities = this.query(
+  //   (q) =>
+  //     q.current.with(comps.Block, comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
+  // )
 
   protected declare readonly resources: CoreResources
 

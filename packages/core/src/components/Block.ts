@@ -1,4 +1,4 @@
-import { type Entity, Type, field } from '@lastolivegames/becsy'
+import { Type, field } from '@lastolivegames/becsy'
 
 import { BaseComponent } from '../BaseComponent'
 import {
@@ -9,7 +9,6 @@ import {
   transformPoint,
 } from '../helpers'
 import { Aabb } from './Aabb'
-import { Connector } from './Connector'
 import type { HitCapsule } from './HitCapsule'
 
 export class Block extends BaseComponent {
@@ -21,7 +20,6 @@ export class Block extends BaseComponent {
   @field.float64 declare height: number
   @field.float64 declare rotateZ: number
   @field.dynamicString(36) public declare rank: string
-  @field.backrefs(Connector, undefined, true) public declare connectors: Entity[]
 
   public intersectsPoint(point: [number, number]): boolean {
     const { width, height, left, top, rotateZ } = this
@@ -193,19 +191,6 @@ export class Block extends BaseComponent {
     this.width = width
     this.height = height
   }
-
-  // public enforceMinSize(minWidth: number, minHeight: number): void {
-  //   if (this.width < minWidth) {
-  //     const delta = minWidth - this.width
-  //     this.left -= delta / 2
-  //     this.width = minWidth
-  //   }
-  //   if (this.height < minHeight) {
-  //     const delta = minHeight - this.height
-  //     this.top -= delta / 2
-  //     this.height = minHeight
-  //   }
-  // }
 
   public computeAabb(): Aabb {
     const aabb = new Aabb()

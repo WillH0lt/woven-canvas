@@ -2,7 +2,7 @@ import type { Entity, Query, System } from '@lastolivegames/becsy'
 
 import { ComponentRegistry } from '../ComponentRegistry'
 import type { Diff } from '../History'
-import { Block, Connector, Persistent } from '../components'
+import { Block, Persistent } from '../components'
 import { binarySearchForId } from '../helpers/binarySearchForId'
 
 export function applyDiff(system: System, diff: Diff, entities: Query): { added: Entity[]; changed: Entity[] } {
@@ -64,30 +64,5 @@ export function applyDiff(system: System, diff: Diff, entities: Query): { added:
     }
   }
 
-  // update the connectors
-  for (const entity of [...added, ...changed]) {
-    if (!entity.has(Connector)) continue
-    const connector = entity.write(Connector)
-    if (connector.startBlockId) {
-      const startBlockEntity = findEntity(connector.startBlockId, added, entities)
-      connector.startBlockEntity = startBlockEntity || undefined
-    }
-    if (connector.endBlockId) {
-      const endBlockEntity = findEntity(connector.endBlockId, added, entities)
-      connector.endBlockEntity = endBlockEntity || undefined
-    }
-  }
-
   return { added, changed }
-}
-
-function findEntity(id: string, added: Entity[], entities: Query): Entity | null {
-  for (const entity of added) {
-    const block = entity.read(Block)
-    if (block.id === id) {
-      return entity
-    }
-  }
-
-  return binarySearchForId(Block, id, entities.current)
 }

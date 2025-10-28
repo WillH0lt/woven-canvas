@@ -1,7 +1,5 @@
-import type { Entity } from '@lastolivegames/becsy'
-
 import { BaseSystem } from '../BaseSystem.js'
-import { Block, Connector, ToBeDeleted } from '../components/index.js'
+import { ToBeDeleted } from '../components/index.js'
 
 export class PostUpdateDeleter extends BaseSystem {
   // Note the usingAll.write below, which grants write entitlements on all component types.
@@ -9,25 +7,25 @@ export class PostUpdateDeleter extends BaseSystem {
 
   public execute(): void {
     for (const entity of this.entities.current) {
-      this.cleanUpConnectors(entity)
+      // this.cleanUpConnectors(entity)
       entity.delete()
     }
   }
 
-  private cleanUpConnectors(entity: Entity): void {
-    if (!entity.has(Block)) return
+  // private cleanUpConnectors(entity: Entity): void {
+  //   if (!entity.has(Block)) return
 
-    const block = entity.read(Block)
-    for (const connectorEntity of block.connectors) {
-      if (!connectorEntity.has(Connector)) continue
-      const connector = connectorEntity.write(Connector)
-      if (connector.startBlockId === block.id) {
-        connector.startBlockId = ''
-      }
+  //   const block = entity.read(Block)
+  //   for (const connectorEntity of block.connectors) {
+  //     if (!connectorEntity.has(Connector)) continue
+  //     const connector = connectorEntity.write(Connector)
+  //     if (connector.startBlockId === block.id) {
+  //       connector.startBlockId = ''
+  //     }
 
-      if (connector.endBlockId === block.id) {
-        connector.endBlockId = ''
-      }
-    }
-  }
+  //     if (connector.endBlockId === block.id) {
+  //       connector.endBlockId = ''
+  //     }
+  //   }
+  // }
 }

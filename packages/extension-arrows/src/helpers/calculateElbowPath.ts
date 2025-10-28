@@ -24,8 +24,8 @@ type TurnDirection = 'left' | 'right'
 export function calculateElbowPath(
   start: [number, number],
   end: [number, number],
-  startBlockEntity: Entity | undefined,
-  endBlockEntity: Entity | undefined,
+  startBlockEntity: Entity | null,
+  endBlockEntity: Entity | null,
   padding: number,
 ): [number, number][] {
   const startRay = calculateRay(start, end, startBlockEntity)
@@ -596,7 +596,7 @@ function rayRayIntersection(ray1: Ray, ray2: Ray): Intersection | null {
   return null
 }
 
-function calculateRay(point: [number, number], target: [number, number], blockEntity: Entity | undefined): Ray {
+function calculateRay(point: [number, number], target: [number, number], blockEntity: Entity | null): Ray {
   let direction: [number, number]
 
   // Determine the ray directions

@@ -12,6 +12,8 @@ export function binarySearchForId(
   id: string,
   entities: readonly Entity[],
 ): Entity | null {
+  if (id === '') return null
+
   entities = entities.filter((e) => e.has(Component))
 
   let left = 0

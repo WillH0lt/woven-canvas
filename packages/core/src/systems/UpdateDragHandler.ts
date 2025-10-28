@@ -31,6 +31,8 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
     (q) => q.current.changed.with(TransformBox, Block).trackWrites.using(DragStart, TransformHandle).write,
   )
 
+  private readonly connectors = this.query((q) => q.current.with(Connector))
+
   public constructor() {
     super()
     this.schedule((s) => s.after(UpdateSelection, UpdateBlocks, UpdateCamera, UpdateTransformBox))
@@ -302,13 +304,13 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
     if (!blockEntity.has(Connector)) return true
     const connector = blockEntity.read(Connector)
 
-    if (connector.startBlockEntity) {
-      const movingStartBlock = otherMovedEntities.some((e) => e.isSame(connector.startBlockEntity!))
+    if (connector.startBlockId) {
+      const movingStartBlock = otherMovedEntities.some((e) => e.read(Block).id === connector.startBlockId)
       if (!movingStartBlock) return false
     }
 
-    if (connector.endBlockEntity) {
-      const movingEndBlock = otherMovedEntities.some((e) => e.isSame(connector.endBlockEntity!))
+    if (connector.endBlockId) {
+      const movingEndBlock = otherMovedEntities.some((e) => e.read(Block).id === connector.endBlockId)
       if (!movingEndBlock) return false
     }
 
@@ -316,12 +318,13 @@ export class UpdateDragHandler extends BaseSystem<CoreCommandArgs> {
   }
 
   private _markConnectorsForUpdate(blockEntity: Entity): void {
-    const block = blockEntity.read(Block)
+    const { id } = blockEntity.read(Block)
 
-    for (const connectorEntity of block.connectors) {
-      const connector = connectorEntity.write(Connector)
-      if (connector.startBlockEntity?.isSame(blockEntity)) connector.startNeedsUpdate = true
-      if (connector.endBlockEntity?.isSame(blockEntity)) connector.endNeedsUpdate = true
+    for (const connectorEntity of this.connectors.current) {
+      const connector = connectorEntity.read(Connector)
+
+      if (connector.startBlockId === id) connectorEntity.write(Connector).startNeedsUpdate = true
+      if (connector.endBlockId === id) connectorEntity.write(Connector).endNeedsUpdate = true
     }
   }
 }

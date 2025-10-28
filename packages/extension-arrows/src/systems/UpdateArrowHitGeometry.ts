@@ -10,6 +10,7 @@ import {
   Text,
   allHitGeometriesArray,
 } from '@infinitecanvas/core/components'
+import { binarySearchForId, uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
 import { ArcArrow, ArrowTrim, ElbowArrow } from '../components'
@@ -25,6 +26,10 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
         .write.trackWrites.withAny(ArcArrow, ElbowArrow)
         .write.trackWrites.using(HitGeometries, HitArc, HitCapsule, Persistent, Color, Text, ArrowTrim)
         .write.using(...allHitGeometriesArray).read,
+  )
+
+  private readonly blocks = this.query((q) =>
+    q.current.with(Block, Persistent).orderBy((e) => uuidToNumber(e.read(Block).id)),
   )
 
   public constructor() {
@@ -47,14 +52,15 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
       arrowEntity.add(ArrowTrim)
     }
 
+    const startBlockEntity = binarySearchForId(Block, arrowEntity.read(Connector).startBlockId, this.blocks.current)
+    const endBlockEntity = binarySearchForId(Block, arrowEntity.read(Connector).endBlockId, this.blocks.current)
+
     if (arrowEntity.has(ElbowArrow)) {
-      // currently no hit geometry for elbow arrows
-      // return
       const capsuleEntities = this.updateElbowArrowHitGeometry(arrowEntity)
-      this.updateElbowArrowTrim(arrowEntity, capsuleEntities)
+      this.updateElbowArrowTrim(arrowEntity, capsuleEntities, startBlockEntity, endBlockEntity)
     } else if (arrowEntity.has(ArcArrow)) {
       this.updateArcArrowHitGeometry(arrowEntity)
-      this.updateArcArrowTrim(arrowEntity)
+      this.updateArcArrowTrim(arrowEntity, startBlockEntity, endBlockEntity)
     }
   }
 
@@ -151,8 +157,11 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     return hitCapsuleEntities
   }
 
-  private updateArcArrowTrim(arrowEntity: Entity): void {
-    const connector = arrowEntity.read(Connector)
+  private updateArcArrowTrim(
+    arrowEntity: Entity,
+    startBlockEntity: Entity | null,
+    endBlockEntity: Entity | null,
+  ): void {
     const arrow = arrowEntity.read(ArcArrow)
 
     const arrowBlock = arrowEntity.read(Block)
@@ -171,11 +180,11 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     let startTrim: number
     let endTrim: number
     if (arc) {
-      startTrim = this.calculateArcTrim(connector.startBlockEntity, arc, aWorld, 0)
-      endTrim = this.calculateArcTrim(connector.endBlockEntity, arc, cWorld, 1)
+      startTrim = this.calculateArcTrim(startBlockEntity, arc, aWorld, 0)
+      endTrim = this.calculateArcTrim(endBlockEntity, arc, cWorld, 1)
     } else if (capsule) {
-      startTrim = this.calculateCapsuleTrim(connector.startBlockEntity, capsule, aWorld, 0)
-      endTrim = this.calculateCapsuleTrim(connector.endBlockEntity, capsule, cWorld, 1)
+      startTrim = this.calculateCapsuleTrim(startBlockEntity, capsule, aWorld, 0)
+      endTrim = this.calculateCapsuleTrim(endBlockEntity, capsule, cWorld, 1)
     } else {
       startTrim = 0
       endTrim = 1
@@ -198,8 +207,12 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     }
   }
 
-  private updateElbowArrowTrim(arrowEntity: Entity, capsuleEntities: Entity[]): void {
-    const connector = arrowEntity.read(Connector)
+  private updateElbowArrowTrim(
+    arrowEntity: Entity,
+    capsuleEntities: Entity[],
+    startBlockEntity: Entity | null,
+    endBlockEntity: Entity | null,
+  ): void {
     const arrow = arrowEntity.read(ElbowArrow)
 
     const arrowBlock = arrowEntity.read(Block)
@@ -213,11 +226,11 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
     const trim = arrowEntity.write(ArrowTrim)
 
     const startCapsule = capsuleEntities[0].write(HitCapsule)
-    const startTrim = this.calculateCapsuleTrim(connector.startBlockEntity, startCapsule, start, 0)
+    const startTrim = this.calculateCapsuleTrim(startBlockEntity, startCapsule, start, 0)
     startCapsule.trim(startTrim, 1)
 
     const endCapsule = capsuleEntities[capsuleEntities.length - 1].write(HitCapsule)
-    const endTrim = this.calculateCapsuleTrim(connector.endBlockEntity, endCapsule, end, 1)
+    const endTrim = this.calculateCapsuleTrim(endBlockEntity, endCapsule, end, 1)
     endCapsule.trim(0, endTrim)
 
     trim.tStart = startTrim
@@ -225,7 +238,7 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
   }
 
   private calculateArcTrim(
-    blockEntity: Entity | undefined,
+    blockEntity: Entity | null,
     arc: Readonly<HitArc>,
     referencePoint: [number, number],
     defaultValue: number,
@@ -246,7 +259,7 @@ export class UpdateArrowHitGeometry extends BaseSystem<ArrowCommandArgs & CoreCo
   }
 
   private calculateCapsuleTrim(
-    blockEntity: Entity | undefined,
+    blockEntity: Entity | null,
     capsule: Readonly<HitCapsule>,
     referencePoint: [number, number],
     defaultValue: number,

@@ -16,7 +16,7 @@ import {
   TransformHandle,
   allHitGeometriesArray,
 } from '@infinitecanvas/core/components'
-import { intersectPoint } from '@infinitecanvas/core/helpers'
+import { binarySearchForId, intersectPoint, uuidToNumber } from '@infinitecanvas/core/helpers'
 import type { Entity } from '@lastolivegames/becsy'
 
 import { ArcArrow, ArrowHandle, ArrowTrim, ElbowArrow } from '../components'
@@ -99,7 +99,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   )
 
   private readonly blocks = this.query(
-    (q) => q.changed.and.current.with(Block).trackWrites.using(TransformBox, TransformHandle).read,
+    (q) =>
+      q.changed.and.current
+        .with(Block)
+        .trackWrites.orderBy((e) => uuidToNumber(e.read(Block).id))
+        .using(TransformBox, TransformHandle).read,
   )
 
   private readonly connectors = this.query((q) =>
@@ -130,8 +134,14 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
       const connector = connectorEntity.read(Connector)
 
       const changedBlocks = []
-      if (connector.startNeedsUpdate) changedBlocks.push(connector.startBlockEntity)
-      if (connector.endNeedsUpdate) changedBlocks.push(connector.endBlockEntity)
+      if (connector.startNeedsUpdate) {
+        const startBlock = binarySearchForId(Block, connector.startBlockId, this.blocks.changed)
+        if (startBlock) changedBlocks.push(startBlock)
+      }
+      if (connector.endNeedsUpdate) {
+        const endBlock = binarySearchForId(Block, connector.endBlockId, this.blocks.changed)
+        if (endBlock) changedBlocks.push(endBlock)
+      }
 
       for (const blockEntity of changedBlocks) {
         if (!blockEntity) continue
@@ -368,14 +378,14 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private onArcArrowDrag(arrowEntity: Entity): void {
-    if (arrowEntity.read(Connector).startBlockEntity) {
+    if (arrowEntity.read(Connector).startBlockId) {
       const block = arrowEntity.read(Block)
       const arrow = arrowEntity.read(ArcArrow)
       const start = block.uvToWorld(arrow.a)
       this.updateConnector(arrowEntity, ArrowHandleKind.Start, start)
     }
 
-    if (arrowEntity.read(Connector).endBlockEntity) {
+    if (arrowEntity.read(Connector).endBlockId) {
       const block = arrowEntity.read(Block)
       const arrow = arrowEntity.read(ArcArrow)
       const end = block.uvToWorld(arrow.c)
@@ -384,14 +394,14 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
   }
 
   private onElbowArrowDrag(arrowEntity: Entity): void {
-    if (arrowEntity.read(Connector).startBlockEntity) {
+    if (arrowEntity.read(Connector).startBlockId) {
       const block = arrowEntity.read(Block)
       const arrow = arrowEntity.read(ElbowArrow)
       const start = block.uvToWorld(arrow.getPoint(0))
       this.updateConnector(arrowEntity, ArrowHandleKind.Start, start)
     }
 
-    if (arrowEntity.read(Connector).endBlockEntity) {
+    if (arrowEntity.read(Connector).endBlockId) {
       const block = arrowEntity.read(Block)
       const arrow = arrowEntity.read(ElbowArrow)
       const end = block.uvToWorld(arrow.getPoint(arrow.pointCount - 1))
@@ -501,13 +511,10 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
     const connector = arrowEntity.read(Connector)
 
-    const path = calculateElbowPath(
-      start,
-      end,
-      connector.startBlockEntity,
-      connector.endBlockEntity,
-      this.resources.elbowArrowPadding,
-    )
+    const startBlockEntity = binarySearchForId(Block, connector.startBlockId, this.blocks.current)
+    const endBlockEntity = binarySearchForId(Block, connector.endBlockId, this.blocks.current)
+
+    const path = calculateElbowPath(start, end, startBlockEntity, endBlockEntity, this.resources.elbowArrowPadding)
 
     arrowBlock.boundPoints(path)
 
@@ -528,11 +535,9 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
     if (handleKind === ArrowHandleKind.Start) {
       connector.startBlockId = attachmentBlock?.id ?? ''
       connector.startBlockUv = attachmentBlock?.worldToUv(handlePosition) ?? [0, 0]
-      connector.startBlockEntity = attachment || undefined
     } else {
       connector.endBlockId = attachmentBlock?.id ?? ''
       connector.endBlockUv = attachmentBlock?.worldToUv(handlePosition) ?? [0, 0]
-      connector.endBlockEntity = attachment || undefined
     }
   }
 

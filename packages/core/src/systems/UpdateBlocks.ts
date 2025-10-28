@@ -27,7 +27,8 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   private readonly cursorQuery = this.query((q) => q.current.with(comps.Cursor).write)
 
   private readonly entities = this.query(
-    (q) => q.current.with(comps.Block).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
+    (q) =>
+      q.current.with(comps.Block, comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
   )
 
   private readonly connectors = this.query((q) => q.added.with(comps.Connector).write)
@@ -83,20 +84,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       for (const blockEntity of this.persistentBlocks.added) {
         const { rank } = blockEntity.read(comps.Block)
         this.rankBounds.add(LexoRank.parse(rank))
-      }
-
-      // update refs in connectors
-      for (const connectorEntity of this.connectors.added) {
-        const connector = connectorEntity.write(comps.Connector)
-
-        if (connector.startBlockId) {
-          const startBlockEntity = binarySearchForId(comps.Block, connector.startBlockId, this.entities.current)
-          connector.startBlockEntity = startBlockEntity || undefined
-        }
-        if (connector.endBlockId) {
-          const endBlockEntity = binarySearchForId(comps.Block, connector.endBlockId, this.entities.current)
-          connector.endBlockEntity = endBlockEntity || undefined
-        }
       }
     }
 
@@ -209,31 +196,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
           top: block.top + offset[1],
         },
       }
-
-      // update the connector references if any
-      if (newSnapshot[newId].Connector) {
-        const connector = newSnapshot[newId].Connector as Partial<comps.Connector>
-        if (connector.startBlockId) {
-          if (snapshot[connector.startBlockId]) {
-            // we're duplicating the arrow and it's connected blocks, so we need to update the references
-            const newStartBlockId = generateUuidBySeed(connector.startBlockId + cloneGeneratorSeed)
-            connector.startBlockId = newStartBlockId
-          } else {
-            // the start block isn't being duplicated, so just disconnect
-            connector.startBlockId = undefined
-          }
-        }
-
-        // and do the same for the end block
-        if (connector.endBlockId) {
-          if (snapshot[connector.endBlockId]) {
-            const newEndBlockId = generateUuidBySeed(connector.endBlockId + cloneGeneratorSeed)
-            connector.endBlockId = newEndBlockId
-          } else {
-            connector.endBlockId = undefined
-          }
-        }
-      }
     }
 
     const diff = new Diff()
@@ -325,16 +287,16 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     applyDiff(this, diff, this.entities)
 
     // mark connectors for update if their connected blocks have changed
-    for (const id of Object.keys(snapshot)) {
-      if (!snapshot[id].Block) continue
-      const blockEntity = binarySearchForId(comps.Block, id, this.entities.current)
-      if (!blockEntity) continue
+    for (const connectorEntity of this.connectors.current) {
+      const id = connectorEntity.read(comps.Block).id
+      if (!snapshot[id]) continue
 
-      const block = blockEntity.read(comps.Block)
-      for (const connectorEntity of block.connectors) {
-        const connector = connectorEntity.write(Connector)
-        if (connector.startBlockEntity?.isSame(blockEntity)) connector.startNeedsUpdate = true
-        if (connector.endBlockEntity?.isSame(blockEntity)) connector.endNeedsUpdate = true
+      const connector = connectorEntity.read(Connector)
+      if (snapshot[connector.startBlockId]) {
+        connectorEntity.write(Connector).startNeedsUpdate = true
+      }
+      if (snapshot[connector.endBlockId]) {
+        connectorEntity.write(Connector).endNeedsUpdate = true
       }
     }
   }
