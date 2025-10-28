@@ -44,6 +44,7 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         draggedEntityStart: [number, number]
         draggedEntity: Entity | undefined
         cloneGeneratorSeed: string
+        isCloning: boolean
       },
       events: {} as PointerEvent,
     },
@@ -107,7 +108,7 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
           top: context.draggedEntityStart[1],
         })
 
-        if (context.cloneGeneratorSeed) {
+        if (context.isCloning) {
           if (context.draggedEntity.has(TransformBox)) {
             this.emitCommand(CoreCommand.UncloneSelected, context.cloneGeneratorSeed)
           } else {
@@ -121,7 +122,8 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         pointingStartWorld: [0, 0],
         draggedEntityStart: [0, 0],
         draggedEntity: undefined,
-        cloneGeneratorSeed: '',
+        cloneGeneratorSeed: () => crypto.randomUUID(),
+        isCloning: false,
       }),
       createSelectionBox: () => {
         this.emitCommand(CoreCommand.AddSelectionBox)
@@ -133,8 +135,8 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
         this.emitCommand(CoreCommand.CreateCheckpoint)
       },
       updateDragged: assign({
-        cloneGeneratorSeed: ({ context, event }) => {
-          if (!context.draggedEntity) return ''
+        isCloning: ({ context, event }) => {
+          if (!context.draggedEntity) return false
 
           let left = context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0]
           let top = context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1]
@@ -160,31 +162,31 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
           })
 
           // if alt is down then clone the entity if it hasn't already been cloned
-          let cloneGeneratorSeed = context.cloneGeneratorSeed
-          if (event.altDown && draggingPersistent && !cloneGeneratorSeed) {
+          let isCloning = context.isCloning
+          if (event.altDown && draggingPersistent && !context.isCloning) {
             const block = context.draggedEntity.read(Block)
 
             const dx = context.draggedEntityStart[0] - block.left
             const dy = context.draggedEntityStart[1] - block.top
 
-            cloneGeneratorSeed = crypto.randomUUID().slice(0, 8)
+            isCloning = true
 
             if (context.draggedEntity.has(TransformBox)) {
-              this.emitCommand(CoreCommand.CloneSelected, [dx, dy], cloneGeneratorSeed)
+              this.emitCommand(CoreCommand.CloneSelected, [dx, dy], context.cloneGeneratorSeed)
             } else {
-              this.emitCommand(CoreCommand.CloneEntities, [context.draggedEntity], [dx, dy], cloneGeneratorSeed)
+              this.emitCommand(CoreCommand.CloneEntities, [context.draggedEntity], [dx, dy], context.cloneGeneratorSeed)
             }
-          } else if (!event.altDown && cloneGeneratorSeed) {
+          } else if (!event.altDown && context.isCloning) {
             // if alt was released then unclone the entity
             if (context.draggedEntity.has(TransformBox)) {
-              this.emitCommand(CoreCommand.UncloneSelected, cloneGeneratorSeed)
+              this.emitCommand(CoreCommand.UncloneSelected, context.cloneGeneratorSeed)
             } else {
-              this.emitCommand(CoreCommand.UncloneEntities, [context.draggedEntity], cloneGeneratorSeed)
+              this.emitCommand(CoreCommand.UncloneEntities, [context.draggedEntity], context.cloneGeneratorSeed)
             }
-            cloneGeneratorSeed = ''
+            isCloning = false
           }
 
-          return cloneGeneratorSeed
+          return isCloning
         },
       }),
       resizeSelectionBox: ({ context, event }) => {
@@ -246,7 +248,8 @@ export class PreCaptureSelect extends BaseSystem<CoreCommandArgs> {
       pointingStartWorld: [0, 0],
       draggedEntityStart: [0, 0],
       draggedEntity: undefined,
-      cloneGeneratorSeed: '',
+      cloneGeneratorSeed: crypto.randomUUID(),
+      isCloning: false,
     },
     states: {
       [SelectionState.Idle]: {

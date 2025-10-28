@@ -1,6 +1,5 @@
 import { LexoRank } from '@dalet-oss/lexorank'
 import type { Entity } from '@lastolivegames/becsy'
-
 import { BaseSystem } from '../BaseSystem'
 import { Diff } from '../History'
 import type { Snapshot } from '../History'
@@ -9,7 +8,7 @@ import * as comps from '../components'
 import { type Block, Connector } from '../components'
 import { CROSSHAIR_CURSOR } from '../constants'
 import { getCursorSvg } from '../cursors'
-import { applyDiff, binarySearchForId, generateUuidBySeed, uuidToNumber } from '../helpers'
+import { applyDiff, binarySearchForId, transformUuid, uuidToNumber } from '../helpers'
 import { CursorKind, SelectionState } from '../types'
 import { UpdateCamera } from './UpdateCamera'
 
@@ -31,7 +30,7 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       q.current.with(comps.Block, comps.Persistent).orderBy((e) => uuidToNumber(e.read(comps.Block).id)).usingAll.write,
   )
 
-  private readonly connectors = this.query((q) => q.added.with(comps.Connector).write)
+  private readonly connectors = this.query((q) => q.current.with(comps.Connector).write)
 
   // let becsy know that cursor is a singleton
   private readonly _cursor = this.singleton.read(comps.Cursor)
@@ -150,8 +149,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
     rankShiftDirection: 'forward' | 'backward' = 'forward',
     cloneGeneratorSeed: string | null = null,
   ): Entity[] {
-    const newSnapshot: Snapshot = {}
-
     if (cloneGeneratorSeed === null) {
       cloneGeneratorSeed = crypto.randomUUID().slice(0, 8)
     }
@@ -183,9 +180,10 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     const ranks = rankStart.multipleBetween(rankEnd, blocks.length)
 
+    const newSnapshot: Snapshot = {}
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i]
-      const newId = generateUuidBySeed(block.id + cloneGeneratorSeed)
+      const newId = transformUuid(block.id, cloneGeneratorSeed)
       newSnapshot[newId] = {
         ...snapshot[block.id],
         Block: {
@@ -257,14 +255,11 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
       return rankA.compareTo(rankB)
     })
 
-    // // Check if selected blocks are already at the bottom (lowest ranks)
+    // Check if selected blocks are already at the bottom (lowest ranks)
     const alreadyOnBottom = allSortedBlocks[mySelectedBlocks.length - 1].isSame(
       mySelectedBlocks[mySelectedBlocks.length - 1],
     )
-    // console.log(
-    //   allSortedBlocks[mySelectedBlocks.length - 1].read(comps.Block).toJson(),
-    //   mySelectedBlocks[0].read(comps.Block).toJson(),
-    // )
+
     if (alreadyOnBottom) {
       return
     }
@@ -355,6 +350,8 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   private cloneEntities(entities: Entity[], offset: [number, number], cloneGeneratorSeed: string): void {
     const snapshot = this._getSnapshot(entities)
     this._duplicateSnapshot(snapshot, offset, 'backward', cloneGeneratorSeed)
+
+    this.swapClonedConnectors(entities, cloneGeneratorSeed)
   }
 
   private cloneSelected(offset: [number, number], cloneGeneratorSeed: string): void {
@@ -366,14 +363,16 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
   }
 
   private uncloneEntities(blockEntities: Entity[], cloneGeneratorSeed: string): void {
-    for (const blockEntity of blockEntities) {
-      const block = blockEntity.read(comps.Block)
-      const expectedId = generateUuidBySeed(block.id + cloneGeneratorSeed)
-      const clonedBlockEntity = binarySearchForId(comps.Block, expectedId, this.entities.current)
-      if (clonedBlockEntity) {
-        this.deleteEntity(clonedBlockEntity)
-      }
-    }
+    const clonedEntities = blockEntities
+      .map((entity) => {
+        const block = entity.read(comps.Block)
+        const expectedId = transformUuid(block.id, cloneGeneratorSeed)
+        return binarySearchForId(comps.Block, expectedId, this.entities.current)
+      })
+      .filter((e): e is Entity => e !== null)
+
+    this.swapClonedConnectors(clonedEntities, cloneGeneratorSeed)
+    this.deleteEntities(clonedEntities)
   }
 
   private uncloneSelected(cloneGeneratorSeed: string): void {
@@ -383,6 +382,74 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     this.uncloneEntities(mySelectedBlocks, cloneGeneratorSeed)
   }
+
+  // if we are dragging a block with an arrow attached (and the arrow isn't also being dragged)
+  // we need to swap the connectors to point to the cloned block
+  private swapClonedConnectors(originalEntities: Entity[], cloneGeneratorSeed: string): void {
+    for (const originalEntity of originalEntities) {
+      const originalBlock = originalEntity.read(comps.Block)
+
+      const connectors = this.connectors.current.filter((connectorEntity) => {
+        const connector = connectorEntity.read(Connector)
+        return connector.startBlockId === originalBlock.id || connector.endBlockId === originalBlock.id
+      })
+      // .filter((connectorEntity) => {
+      //   // only consider connectors that are not also being cloned
+      //   return !originalEntities.some((e) => e.isSame(connectorEntity))
+      // })
+
+      console.log('SWAPPING CONNECTORS FOR BLOCK', originalBlock.id, 'CONNECTORS:', connectors.length)
+
+      for (const connectorEntity of connectors) {
+        const connector = connectorEntity.read(Connector)
+
+        if (connector.startBlockId === originalBlock.id) {
+          const c = connectorEntity.write(Connector)
+          c.startBlockId = transformUuid(originalBlock.id, cloneGeneratorSeed)
+          c.startNeedsUpdate = true
+        }
+
+        if (connector.endBlockId === originalBlock.id) {
+          const c = connectorEntity.write(Connector)
+          c.endBlockId = transformUuid(originalBlock.id, cloneGeneratorSeed)
+          c.endNeedsUpdate = true
+        }
+      }
+    }
+  }
+
+  //   for (const connectorEntity of connectors) {
+  //     const connector = connectorEntity.read(Connector)
+  //     if (connector.startBlockId === originalBlock.id) {
+  //       // only update if the end block isn't also being cloned
+  //       const isAlsoCloned = originalEntities.some((e) => e.isSame(connectorEntity))
+  //       if (isAlsoCloned) continue
+  //       connectorEntity.write(Connector).startBlockId = generateUuidBySeed(originalBlock.id, cloneGeneratorSeed)
+  //     }
+
+  //     if (connector.endBlockId === originalBlock.id) {
+  //       // only update if the start block isn't also being cloned
+  //       const startBlockAlsoCloned = mySelectedBlocks.some((e) => e.read(comps.Block).id === connector.startBlockId)
+  //       if (!startBlockAlsoCloned) {
+  //         connectorEntity.write(Connector).endBlockId = clonedBlock.id
+  //         needsUpdate = true
+  //       }
+  //     }
+
+  //     if (needsUpdate) {
+  //       connectorEntity.write(Connector).startNeedsUpdate = true
+  //       connectorEntity.write(Connector).endNeedsUpdate = true
+  //     }
+  //   }
+
+  //   const clonedBlockEntity = clonedEntities.find(
+  //     (e) => e.read(comps.Block).id === generateUuidBySeed(originalBlock.id, cloneGeneratorSeed),
+  //   )
+  //   if (!clonedBlockEntity) continue
+
+  //   const clonedBlock = clonedBlockEntity.read(comps.Block)
+  // }
+  // }
 
   private selectBlock(blockEntity: Entity, options: { deselectOthers?: boolean } = {}): void {
     this.selectBlocks([blockEntity], options)
@@ -446,13 +513,9 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
 
     const selectionState = this.selectionStateQuery.current[0].write(comps.SelectionState)
 
-    console.log(snapshot)
-
     const entities = this.createFromSnapshot(snapshot, { selectCreated: false, editCreated: false })
 
     const entity = entities[0]
-
-    console.log('created entity to drag onto canvas:', entity.has(comps.Block), entity.has(comps.Text))
 
     const block = entity.write(comps.Block)
     block.left = pointer.worldPosition[0] - block.width / 2

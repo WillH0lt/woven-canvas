@@ -135,11 +135,11 @@ export class UpdateArrowTransform extends BaseSystem<ArrowCommandArgs & CoreComm
 
       const changedBlocks = []
       if (connector.startNeedsUpdate) {
-        const startBlock = binarySearchForId(Block, connector.startBlockId, this.blocks.changed)
+        const startBlock = binarySearchForId(Block, connector.startBlockId, this.blocks.current)
         if (startBlock) changedBlocks.push(startBlock)
       }
       if (connector.endNeedsUpdate) {
-        const endBlock = binarySearchForId(Block, connector.endBlockId, this.blocks.changed)
+        const endBlock = binarySearchForId(Block, connector.endBlockId, this.blocks.current)
         if (endBlock) changedBlocks.push(endBlock)
       }
 

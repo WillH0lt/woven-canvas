@@ -49,7 +49,8 @@ class SeededRandom {
  * @param seed - String or number to use as seed
  * @returns UUID string in format xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
  */
-export function generateUuidBySeed(seed: string | number): string {
+export function generateUuidBySeed(originalUuid: string, generatorSeed: string | number): string {
+  const seed = originalUuid + generatorSeed
   const rng = new SeededRandom(seed)
 
   let uuid = ''
