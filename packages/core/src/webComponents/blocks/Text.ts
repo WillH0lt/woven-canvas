@@ -3,6 +3,7 @@ import Bold from '@tiptap/extension-bold'
 import Document from '@tiptap/extension-document'
 import History from '@tiptap/extension-history'
 import Italic from '@tiptap/extension-italic'
+import { ListKit } from '@tiptap/extension-list'
 import Paragraph from '@tiptap/extension-paragraph'
 import { Text as TiptapText } from '@tiptap/extension-text'
 import TextAlign from '@tiptap/extension-text-align'
@@ -56,6 +57,48 @@ export class ICText extends ICEditableBlock {
 
       .ProseMirror-focused {
         outline: none;
+      }
+
+      /* List styles */
+      ul,
+      ol {
+        padding: 0 1rem;
+        margin: 1.25rem 1rem 1.25rem 0.4rem;
+
+        li p {
+          margin-top: 0.25em;
+          margin-bottom: 0.25em;
+        }
+      }
+
+      /* Task list specific styles */
+      ul[data-type='taskList'] {
+        list-style: none;
+        margin-left: 0;
+        padding: 0;
+
+        li {
+          align-items: flex-start;
+          display: flex;
+
+          > label {
+            flex: 0 0 auto;
+            margin-right: 0.5rem;
+            user-select: none;
+          }
+
+          > div {
+            flex: 1 1 auto;
+          }
+        }
+
+        input[type='checkbox'] {
+          cursor: pointer;
+        }
+
+        ul[data-type='taskList'] {
+          margin: 0;
+        }
       }
     `,
   ]
@@ -123,6 +166,7 @@ export class ICText extends ICEditableBlock {
           alignments: ['left', 'center', 'right', 'justify'],
           defaultAlignment: this.defaultAlignment,
         }),
+        ListKit,
         History,
       ],
       content: this.text.content,
@@ -314,6 +358,31 @@ export class ICText extends ICEditableBlock {
     this.syncStore()
   }
 
+  public toggleCheckbox(): void {
+    if (!this._editor) return
+
+    const { from, to } = this._editor.state.selection
+
+    let cmd = this._editor.chain().focus()
+
+    const updateAllText = from === to
+
+    if (updateAllText) {
+      cmd = cmd.selectAll()
+    }
+
+    // const isInTaskList = this._editor.isActive('taskList')
+    cmd = cmd.toggleTaskList()
+
+    if (updateAllText) {
+      cmd = cmd.setTextSelection(to)
+    }
+
+    cmd.run()
+
+    this.syncStore()
+  }
+
   render() {
     const text = this.text
     if (!text) {
@@ -328,7 +397,6 @@ export class ICText extends ICEditableBlock {
       'text-align': this.defaultAlignment.toLowerCase(),
       'white-space': this.text.constrainWidth ? 'pre-wrap' : 'pre',
       'letter-spacing': `${text.letterSpacingEm}em`,
-      // 'letter-spacing': '0.0141em',
       display: 'block',
       'min-width': '2px',
       width: this.text.constrainWidth ? '100%' : 'fit-content',

@@ -48,6 +48,7 @@ declare module '@infinitecanvas/core' {
       setColor: (color: string) => void
       setFontSize: (fontSizePx: number) => void
       setFontFamily: (fontFamily: FontFamily) => void
+      toggleCheckbox: () => void
       setTextProperties: (properties: {
         fontFamily: FontFamily
         fontSizePx: number
@@ -255,6 +256,22 @@ export class TextEditorExtension extends BaseExtension {
           send(CoreCommand.UpdateTransformBox)
 
           this.mostRecentFontFamily.value = fontFamily
+        },
+        toggleCheckbox: async () => {
+          // if there's an edited text block then set bold on that
+          const element = this.#getEditableTextElement()
+          if (element) {
+            element.toggleCheckbox()
+            return
+          }
+
+          // if (!this.blockContainer) return
+
+          // const snapshot = await applyBoldToSelected(state, this.blockContainer, bold)
+
+          // send(CoreCommand.UpdateFromSnapshot, snapshot)
+          // // update the transform box in case the size of the text block changed
+          // send(CoreCommand.UpdateTransformBox)
         },
         setTextProperties: async (properties: {
           fontFamily: FontFamily

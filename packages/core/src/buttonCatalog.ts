@@ -78,6 +78,11 @@ export const floatingMenuTextAlignmentButton = {
   tooltip: 'Alignment',
 }
 
+export const floatingMenuTextCheckboxButton = {
+  tag: 'ic-text-checkbox-button',
+  tooltip: 'Todo Item',
+}
+
 export const floatingMenuButtonVerticalAlign = {
   tag: 'ic-vertical-alignment-button',
   tooltip: 'Vertical Alignment',
@@ -90,5 +95,6 @@ export const textEditorFloatingMenuButtons = [
   floatingMenuItalicButton,
   floatingMenuUnderlineButton,
   floatingMenuTextColorButton,
+  floatingMenuTextCheckboxButton,
   floatingMenuTextAlignmentButton,
 ]
