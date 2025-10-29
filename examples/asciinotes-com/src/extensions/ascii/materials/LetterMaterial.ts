@@ -114,7 +114,7 @@ export class LetterMaterial extends NodeMaterial {
 
     const textColor = texture(this.colors.value, scaledUv)
 
-    this.fragmentNode = mix(vec4(this.backgroundColor, textColor.a), textColor, alpha)
+    this.colorNode = mix(vec4(this.backgroundColor, textColor.a), textColor, alpha)
   }
 
   public setCharAtPosition(char: string, row: number, col: number): void {

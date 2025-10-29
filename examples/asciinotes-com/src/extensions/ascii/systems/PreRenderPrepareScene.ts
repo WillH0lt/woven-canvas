@@ -20,7 +20,7 @@ export class PreRenderPrepareScene extends BaseSystem {
       q.added.addedOrChanged.current.removed
         .with(Block)
         .trackWrites.using(Connector)
-        .read.orderBy((e) => uuidToNumber(e.read(Block).id)).usingAll.write,
+        .read.orderBy((e) => (e.has(Block) ? uuidToNumber(e.read(Block).id) : 0)).usingAll.write,
   )
 
   private readonly selectedBlocks = this.query((q) => q.added.removed.with(Block, Selected))

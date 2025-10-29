@@ -393,12 +393,6 @@ export class UpdateBlocks extends BaseSystem<CoreCommandArgs> {
         const connector = connectorEntity.read(Connector)
         return connector.startBlockId === originalBlock.id || connector.endBlockId === originalBlock.id
       })
-      // .filter((connectorEntity) => {
-      //   // only consider connectors that are not also being cloned
-      //   return !originalEntities.some((e) => e.isSame(connectorEntity))
-      // })
-
-      console.log('SWAPPING CONNECTORS FOR BLOCK', originalBlock.id, 'CONNECTORS:', connectors.length)
 
       for (const connectorEntity of connectors) {
         const connector = connectorEntity.read(Connector)
