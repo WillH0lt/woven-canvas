@@ -43,9 +43,9 @@
   "dependencies": {
     "@infinitecanvas/core": "workspace:^",
     "@lit/context": "^1.1.6",
-    "lit": "^3.3.0"
+    "lit": "^3.3.1"
   },
   "devDependencies": {
-    "vitest": "^3.1.4"
+    "vitest": "^4.0.7"
   }
 }

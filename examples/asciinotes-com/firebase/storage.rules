@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /users/{uid}/pfp.jpg {
+      allow get: if true;
+      allow write: if request.auth.uid == uid && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /users/{uid}/sites/{allPaths=**} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if request.auth.uid == uid && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /users/{uid}/pages/{allPaths=**} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if request.auth.uid == uid && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

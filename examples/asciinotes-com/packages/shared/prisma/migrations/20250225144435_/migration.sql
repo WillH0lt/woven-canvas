@@ -1,0 +1,11 @@
+-- AlterTable
+ALTER TABLE "Effect" ALTER COLUMN "endDeltaParallel" DROP DEFAULT,
+ALTER COLUMN "endDeltaPerpendicular" DROP DEFAULT,
+ALTER COLUMN "endDeltaRotateZ" DROP DEFAULT,
+ALTER COLUMN "endScalarOpacity" DROP DEFAULT,
+ALTER COLUMN "endScalarScale" DROP DEFAULT,
+ALTER COLUMN "startDeltaParallel" DROP DEFAULT,
+ALTER COLUMN "startDeltaPerpendicular" DROP DEFAULT,
+ALTER COLUMN "startDeltaRotateZ" DROP DEFAULT,
+ALTER COLUMN "startScalarOpacity" DROP DEFAULT,
+ALTER COLUMN "startScalarScale" DROP DEFAULT;

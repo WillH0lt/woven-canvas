@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Site" ALTER COLUMN "description" DROP DEFAULT,
+ALTER COLUMN "title" DROP DEFAULT;

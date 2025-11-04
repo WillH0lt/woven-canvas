@@ -1,7 +1,75 @@
-# Generate font data
+# Nuxt Minimal Starter
 
-.\msdf-atlas-gen.exe -font '.\Courier Prime Sans.ttf' -dimensions 512 512 -uniformgrid -imageout atlas.png -json fnt.json
+Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
-.\msdf-atlas-gen.exe -font '.\Courier Prime Sans.ttf' -allglyphs -uniformgrid -uniformcell 42 71 -imageout atlas2.png -json fnt2.json
+## Setup
 
-.\msdf-atlas-gen.exe -font '.\CourierPrimeSans.ttf' -charset chars.txt -uniformgrid -uniformcell 42 71 -imageout atlas2.png -json fnt2.json
+Make sure to install dependencies:
+
+```bash
+# npm
+npm install
+
+# pnpm
+pnpm install
+
+# yarn
+yarn install
+
+# bun
+bun install
+```
+
+## Development Server
+
+Start the development server on `http://localhost:3000`:
+
+```bash
+# npm
+npm run dev
+
+# pnpm
+pnpm dev
+
+# yarn
+yarn dev
+
+# bun
+bun run dev
+```
+
+## Production
+
+Build the application for production:
+
+```bash
+# npm
+npm run build
+
+# pnpm
+pnpm build
+
+# yarn
+yarn build
+
+# bun
+bun run build
+```
+
+Locally preview production build:
+
+```bash
+# npm
+npm run preview
+
+# pnpm
+pnpm preview
+
+# yarn
+yarn preview
+
+# bun
+bun run preview
+```
+
+Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.

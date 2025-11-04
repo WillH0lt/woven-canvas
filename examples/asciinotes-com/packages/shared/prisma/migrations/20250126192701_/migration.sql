@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Effect" ALTER COLUMN "pageId" DROP DEFAULT;

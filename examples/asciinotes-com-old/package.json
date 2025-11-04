@@ -1,0 +1,41 @@
+{
+  "name": "asciiland",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "deploy:production": "firebase deploy",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dalet-oss/lexorank": "^1.1.1",
+    "@infinitecanvas/core": "workspace:^",
+    "@infinitecanvas/extension-arrows": "workspace:^",
+    "@infinitecanvas/extension-controls": "workspace:^",
+    "@infinitecanvas/extension-eraser": "workspace:^",
+    "@infinitecanvas/extension-ink": "workspace:^",
+    "@lastolivegames/becsy": "^0.15.5",
+    "@lit-labs/preact-signals": "^1.0.3",
+    "@lit/context": "^1.1.6",
+    "@manaflair/text-layout": "^0.11.0",
+    "@tailwindcss/vite": "^4.1.16",
+    "figlet": "^1.9.3",
+    "lit": "^3.3.1",
+    "mono-layout": "^0.14.4",
+    "tailwindcss": "^4.1.16",
+    "three": "^0.181.0",
+    "vue": "^3.5.22",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/three": "^0.181.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.12",
+    "vite-plugin-full-reload": "^1.2.0",
+    "vue-tsc": "^3.1.3"
+  }
+}

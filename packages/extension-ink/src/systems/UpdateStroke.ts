@@ -65,6 +65,7 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
     const pressures = pressure !== null ? [pressure] : []
 
     strokeEntity.add(Stroke)
+
     const stroke = strokeEntity.write(Stroke)
     stroke.fromJson({
       points,
@@ -100,10 +101,14 @@ export class UpdateStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> {
       aabb.expandByPoint(point)
 
       const block = strokeEntity.write(Block)
+
       block.left = aabb.left
       block.top = aabb.top
       block.width = aabb.right - aabb.left
       block.height = aabb.bottom - aabb.top
+
+      this.grid.snapBlockPositionToGrid(block)
+      this.grid.snapBlockSizeToGrid(block)
 
       stroke.originalLeft = block.left
       stroke.originalTop = block.top

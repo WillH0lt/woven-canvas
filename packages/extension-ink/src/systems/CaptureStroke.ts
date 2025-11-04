@@ -24,7 +24,6 @@ export class CaptureStroke extends BaseSystem<InkCommandArgs & CoreCommandArgs> 
         activeStroke: ({ event }) => {
           const entity = this.createEntity()
           const pressure = event.pointerType === PointerType.Pen ? event.pressure : null
-          console.log('pressure', pressure)
           this.emitCommand(InkCommand.AddStroke, entity, event.worldPosition, pressure)
           return entity
         },

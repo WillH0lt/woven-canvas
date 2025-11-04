@@ -1,0 +1,38 @@
+{
+  "name": "@scrolly-page/shared",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/shared.js",
+  "module": "dist/shared.js",
+  "types": "dist/types.d.ts",
+  "files": [
+    "dist",
+    "prisma"
+  ],
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "postinstall": "prisma generate",
+    "preview": "vite preview",
+    "prisma:db:pull": "dotenv -- pnpm prisma db pull",
+    "prisma:db:push": "dotenv -- pnpm prisma db push",
+    "prisma:generate": "dotenv -- pnpm prisma generate",
+    "prisma:migrate": "dotenv -- pnpm prisma migrate dev",
+    "prisma:reset": "dotenv -- pnpm prisma migrate reset",
+    "prisma:seed": "dotenv -- pnpm prisma:db:push --force-reset && pnpm prisma db seed",
+    "prisma:studio": "dotenv -- pnpm prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.4.4",
+    "prisma": "^5.22.0",
+    "typescript": "~5.6.2",
+    "vite": "^5.4.10",
+    "vite-plugin-dts": "^4.3.0"
+  },
+  "peerDevDependencies": {
+    "prisma": "^5.x.x"
+  }
+}

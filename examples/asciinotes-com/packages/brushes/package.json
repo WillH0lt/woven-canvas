@@ -1,0 +1,33 @@
+{
+  "name": "@scrolly-page/brushes",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/brushes.js",
+  "module": "dist/brushes.js",
+  "types": "dist/brushes.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "peerDependencies": {
+    "pixi-viewport": "5.x.x",
+    "pixi.js": "8.x.x"
+  },
+  "dependencies": {
+    "lodash.merge": "^4.6.2"
+  },
+  "devDependencies": {
+    "@tweakpane/core": "^2.0.4",
+    "@types/lodash.merge": "^4.6.9",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "tweakpane": "^4.0.4",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.10",
+    "vite-plugin-dts": "^4.2.2",
+    "vite-plugin-glsl": "^1.3.0"
+  }
+}

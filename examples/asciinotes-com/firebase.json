@@ -1,12 +1,42 @@
 {
+  "firestore": {
+    "rules": "./firebase/firestore.rules",
+    "indexes": "./firebase/firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "./firebase/storage.rules"
+  },
   "hosting": {
-    "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "run": {
+          "serviceId": "app",
+          "region": "us-central1"
+        }
       }
     ]
+  },
+  "emulators": {
+    "auth": {
+      "host": "0.0.0.0",
+      "port": 9099
+    },
+    "firestore": {
+      "host": "0.0.0.0",
+      "port": 8081
+    },
+    "hosting": {
+      "host": "0.0.0.0",
+      "port": 5050
+    },
+    "storage": {
+      "host": "0.0.0.0",
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
   }
 }
