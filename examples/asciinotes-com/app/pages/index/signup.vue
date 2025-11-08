@@ -1,5 +1,5 @@
 <template>
-  <ModalLogin @close="router.replace('/')" :signing-up="true" />
+  <!-- <ModalLogin @close="router.replace('/')" :signing-up="true" /> -->
 </template>
 
 <script lang="ts" setup>

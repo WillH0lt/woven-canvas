@@ -23,9 +23,8 @@ import { createSwapy, utils } from "swapy";
 import type { Swapy, SlotItemMapArray } from "swapy";
 import { LexoRank } from "lexorank";
 
-const { pages, rankKey } = defineProps<{
+const { pages } = defineProps<{
   pages: Page[];
-  rankKey: "rank" | "pinRank";
 }>();
 
 const pageStore = usePageStore();
@@ -87,7 +86,7 @@ onMounted(() => {
 
     pageStore.updateUserPage({
       pageId: movedPage.id,
-      updates: { [rankKey]: rank },
+      updates: { rank },
     });
 
     draggedPageId.value = null;
@@ -132,11 +131,7 @@ function getPageRank(page: Page): LexoRank {
   const userPage = pageStore.userPages.find((up) => up.pageId === page.id);
   if (!userPage) throw new Error("UserPage not found for Page");
 
-  const rankValue = userPage[rankKey];
-  if (!rankValue)
-    throw new Error(`Rank ${rankKey} is null for page ${page.id}`);
-
-  return LexoRank.parse(rankValue);
+  return LexoRank.parse(userPage.rank);
 }
 
 const slottedItems = computed(() =>

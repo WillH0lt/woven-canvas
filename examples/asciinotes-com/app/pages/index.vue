@@ -23,10 +23,10 @@
   <div class="flex w-full h-screen">
     <div
       class="overflow-hidden transition-[width] duration-500"
-      :class="sideMenuVisible ? 'w-62' : 'w-0'"
+      :class="sideMenuVisible ? 'w-80' : 'w-0'"
     >
       <div
-        class="w-62 transition-transform duration-500"
+        class="w-80 transition-transform duration-500"
         :class="sideMenuVisible ? 'translate-x-0' : '-translate-x-full'"
       >
         <SideMenu class="bg-gray-100 h-screen" />
@@ -68,9 +68,7 @@
             <div class="w-7 text-center mr-1">
               {{ pageStore.activePage?.icon }}
             </div>
-            <div
-              class="mr-auto max-w-[calc(100% - 42px)] overflow-x-hidden text-ellipsis"
-            >
+            <div class="mr-auto overflow-x-hidden text-ellipsis">
               {{ pageStore.activePage?.name }}
             </div>
           </div>

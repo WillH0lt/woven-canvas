@@ -17,14 +17,25 @@
       <template #anchor>
         <router-link
           :to="`/p/${page.id}`"
-          class="flex-1 flex items-center cursor-pointer hover:font-bold"
+          class="flex-1 flex items-center cursor-pointer hover:font-bold min-w-0"
           draggable="false"
         >
           <div class="w-7 text-center mr-3 text-xl">{{ page.icon }}</div>
-          <div
-            class="mr-auto max-w-[calc(100% - 42px)] overflow-x-hidden text-ellipsis"
-          >
-            {{ page.name }}
+          <div class="flex items-center mr-auto overflow-hidden min-w-0">
+            <div class="flex-1 truncate">
+              {{ page.name }}
+            </div>
+            <UTooltip
+              v-if="getUserPage(page)?.isPinned"
+              text="pinned"
+              :content="{
+                align: 'center',
+                side: 'right',
+                sideOffset: 8,
+              }"
+            >
+              <UIcon class="size-4 text-gray-400 mx-2" name="i-lucide-pin" />
+            </UTooltip>
           </div>
         </router-link>
       </template>
@@ -81,17 +92,17 @@ function getMenuItems(page: Page) {
 
   const groupA = [];
 
-  if (userPage.pinRank === null) {
-    groupA.push({
-      label: "Pin",
-      icon: "i-lucide-pin",
-      onSelect: () => pageStore.pinUserPage(props.page.id),
-    });
-  } else {
+  if (userPage.isPinned) {
     groupA.push({
       label: "Unpin",
       icon: "i-lucide-pin-off",
       onSelect: () => pageStore.unpinUserPage(props.page.id),
+    });
+  } else {
+    groupA.push({
+      label: "Pin",
+      icon: "i-lucide-pin",
+      onSelect: () => pageStore.pinUserPage(props.page.id),
     });
   }
 
@@ -135,5 +146,9 @@ async function deletePage(pageId: string): Promise<void> {
   if (confirmed) {
     await pageStore.deletePage(pageId);
   }
+}
+
+function getUserPage(page: Page) {
+  return pageStore.userPages.find((up) => up.pageId === page.id);
 }
 </script>

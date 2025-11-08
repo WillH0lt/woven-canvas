@@ -18,7 +18,14 @@
         @click="$emit('close')"
       />
 
-      <ElementButton
+      <UButton
+        class="relative w-[320px] bg-white drop-shadow text-black"
+        @click="signinGoogleRedirect"
+      >
+        Continue with Google
+      </UButton>
+
+      <!-- <ElementButton
         class="relative w-[320px] bg-white drop-shadow"
         @click="signinGoogleRedirect"
       >
@@ -40,7 +47,7 @@
       >
         <SvgoGithub class="absolute left-0 mx-[16px] w-[16px]" />
         <div class="text-black">Continue with Github</div>
-      </ElementButton>
+      </ElementButton> -->
 
       <div v-if="errorMessage" class="w-[320px] text-error">
         * {{ errorMessage }}
@@ -79,9 +86,9 @@ import { collection, doc, setDoc } from "firebase/firestore";
 
 import type { Profile } from "~/types/index.js";
 
-defineProps<{
-  signingUp: boolean;
-}>();
+// defineProps<{
+//   signingUp: boolean;
+// }>();
 
 const AuthErrorText = {
   "auth/wrong-password": "the password is incorrect.",
@@ -126,6 +133,7 @@ const emit = defineEmits(["close"]);
 const errorMessage = ref("");
 
 async function signinGoogleRedirect() {
+  console.log("Signing in with Google");
   errorMessage.value = "";
   try {
     const credential = await signInWithPopup(auth, googleAuthProvider);

@@ -2,10 +2,7 @@ import type { Page, UserPage } from "@prisma/client";
 import { LexoRank } from "@dalet-oss/lexorank";
 import { TRPCClientError } from "@trpc/client";
 
-function getRankBounds(
-  userPages: UserPage[],
-  rankKey: "rank" | "pinRank"
-): {
+function getRankBounds(userPages: UserPage[]): {
   minRank: LexoRank | null;
   maxRank: LexoRank | null;
 } {
@@ -13,15 +10,12 @@ function getRankBounds(
   let maxRank = LexoRank.min();
 
   userPages.forEach((up) => {
-    const rankValue = up[rankKey];
-    if (rankValue) {
-      const currentRank = LexoRank.parse(rankValue);
-      if (currentRank.compareTo(minRank) === -1) {
-        minRank = currentRank;
-      }
-      if (currentRank.compareTo(maxRank) === 1) {
-        maxRank = currentRank;
-      }
+    const currentRank = LexoRank.parse(up.rank);
+    if (currentRank.compareTo(minRank) === -1) {
+      minRank = currentRank;
+    }
+    if (currentRank.compareTo(maxRank) === 1) {
+      maxRank = currentRank;
     }
   });
 
@@ -68,7 +62,7 @@ export const usePageStore = defineStore("page", () => {
   }
 
   async function addPageAndNavigate(): Promise<UserPage> {
-    const { minRank } = getRankBounds(userPages.value, "rank");
+    const { minRank } = getRankBounds(userPages.value);
     const rank = minRank?.genPrev() ?? LexoRank.middle();
 
     try {
@@ -79,7 +73,7 @@ export const usePageStore = defineStore("page", () => {
         },
         userPage: {
           rank: rank.toString(),
-          pinRank: null,
+          isPinned: false,
         },
       });
 
@@ -161,26 +155,27 @@ export const usePageStore = defineStore("page", () => {
   }
 
   async function pinUserPage(pageId: string): Promise<UserPage> {
-    const { minRank } = getRankBounds(userPages.value, "pinRank");
+    const { minRank } = getRankBounds(userPages.value);
     const rank = minRank?.genPrev() ?? LexoRank.middle();
 
     return await updateUserPage({
       pageId,
       updates: {
-        pinRank: rank.toString(),
+        rank: rank.toString(),
+        isPinned: true,
       },
     });
   }
 
   async function unpinUserPage(pageId: string): Promise<UserPage> {
-    const { minRank } = getRankBounds(userPages.value, "rank");
+    const { minRank } = getRankBounds(userPages.value);
     const rank = minRank?.genPrev() ?? LexoRank.middle();
 
     return await updateUserPage({
       pageId,
       updates: {
-        pinRank: null,
         rank: rank.toString(),
+        isPinned: false,
       },
     });
   }

@@ -32,7 +32,7 @@ model UserPage {
   page     Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
   uid      String
   rank     String
-  pinRank  String?
+  isPinned Boolean
 
   @@unique([rank, uid])
   @@map(name: "user_pages")

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { LexoRank } from "@dalet-oss/lexorank";
+import { is } from "zod/v4/locales";
 
 function isValidLexoRank(value: string): boolean {
   try {
@@ -15,12 +16,7 @@ export const UserPageCreateSchema = z.object({
   rank: z.string().refine(isValidLexoRank, {
     message: "Invalid rank format.",
   }),
-  pinRank: z
-    .string()
-    .refine(isValidLexoRank, {
-      message: "Invalid rank format.",
-    })
-    .nullable(),
+  isPinned: z.boolean(),
 });
 
 export const UserPageUpdateSchema = z.object({
