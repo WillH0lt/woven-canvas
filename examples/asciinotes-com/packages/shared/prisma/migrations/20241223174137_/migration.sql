@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Effect" ALTER COLUMN "rank" DROP DEFAULT;

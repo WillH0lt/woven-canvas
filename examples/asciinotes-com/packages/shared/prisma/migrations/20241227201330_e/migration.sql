@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Part" ALTER COLUMN "isGroup" DROP DEFAULT;

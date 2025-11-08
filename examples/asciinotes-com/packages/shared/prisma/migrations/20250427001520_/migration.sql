@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "Part" ALTER COLUMN "srcHeight" DROP DEFAULT,
-ALTER COLUMN "srcWidth" DROP DEFAULT;

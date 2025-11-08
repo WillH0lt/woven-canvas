@@ -1,4 +1,4 @@
-import Stripe from 'stripe';
+import Stripe from "stripe";
 
 function stripeSingleton(): Stripe {
   const runtimeConfig = useRuntimeConfig();

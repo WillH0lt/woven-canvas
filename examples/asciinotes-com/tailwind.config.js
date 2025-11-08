@@ -12,15 +12,6 @@ module.exports = {
   ],
   plugins: [require("@tailwindcss/forms"), require("tailwindcss-rem-to-px")],
   theme: {
-    extend: {
-      theme: {
-        extend: {
-          fontFamily: {
-            logo: ["Lobster Two"],
-          },
-        },
-      },
-    },
     colors: {
       white: "#ffffff",
       black: "#000000",
@@ -28,7 +19,6 @@ module.exports = {
       primary: "var(--color-primary)",
       "primary-light": "var(--color-primary-light)",
       error: "var(--color-error)",
-      darken: "var(--color-darken)",
       gray: {
         100: "var(--color-gray-100)",
         200: "var(--color-gray-200)",
