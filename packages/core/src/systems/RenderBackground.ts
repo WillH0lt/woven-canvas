@@ -2,7 +2,10 @@ import { BaseSystem } from '../BaseSystem'
 import { Background, Camera, Grid, Screen } from '../components'
 import { RenderHtml } from './RenderHtml'
 
-const patternCanvas = document.createElement('canvas')
+let patternCanvas: HTMLCanvasElement
+if (typeof document !== 'undefined') {
+  patternCanvas = document.createElement('canvas')
+}
 
 function drawDot(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
   const radius = size / 2

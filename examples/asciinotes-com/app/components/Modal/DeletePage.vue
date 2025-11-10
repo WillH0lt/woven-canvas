@@ -10,7 +10,7 @@
           class="ml-auto"
           variant="ghost"
           color="neutral"
-          label="cancel"
+          label="Cancel"
           @click="emit('close', false)"
         />
         <UButton

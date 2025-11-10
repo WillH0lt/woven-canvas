@@ -1,33 +1,37 @@
 <template>
   <div class="absolute top-0 right-0 m-4">
-    <UPopover
-      v-if="currentUser"
-      modal
-      @update:open="(isOpen: boolean) => {
-        // if (!isOpen) {
-        //   savePage(page);
-        // }
-      }"
-    >
-      <UButton color="primary" size="lg" variant="solid"> Share </UButton>
+    <UPopover v-if="currentUser" modal>
+      <UButton class="cursor-pointer" color="primary" size="lg" variant="solid">
+        Share
+      </UButton>
       <template #content>
-        <PopoverSharePage />
+        <PopoverSharePage
+          v-if="pageStore.activePage"
+          :page="pageStore.activePage"
+        />
       </template>
     </UPopover>
 
-    <RouterLink v-else to="/signin">
-      <UButton color="primary" size="lg" variant="solid"> Sign in </UButton>
-    </RouterLink>
+    <UButton
+      v-else
+      @click="loginModal.open()"
+      class="cursor-pointer"
+      color="primary"
+      size="lg"
+      variant="solid"
+    >
+      Sign in
+    </UButton>
   </div>
 
   <div class="flex w-full h-screen">
     <div
       class="overflow-hidden transition-[width] duration-500"
-      :class="sideMenuVisible ? 'w-80' : 'w-0'"
+      :class="appStore.sideMenuOpen ? 'w-80' : 'w-0'"
     >
       <div
         class="w-80 transition-transform duration-500"
-        :class="sideMenuVisible ? 'translate-x-0' : '-translate-x-full'"
+        :class="appStore.sideMenuOpen ? 'translate-x-0' : '-translate-x-full'"
       >
         <SideMenu class="bg-gray-100 h-screen" />
       </div>
@@ -38,8 +42,7 @@
     >
       <div class="flex absolute top-0 left-0 m-2">
         <UTooltip
-          v-if="currentUser"
-          :text="sideMenuVisible ? 'Close sidebar' : 'Open sidebar'"
+          :text="appStore.sideMenuOpen ? 'Close sidebar' : 'Open sidebar'"
           class="pointer-events-auto"
         >
           <UButton
@@ -56,6 +59,9 @@
           class="pointer-events-auto ml-1"
           v-if="pageStore.activePage"
           modal
+          :content="{
+            align: 'start',
+          }"
           @update:open="(isOpen: boolean) => {
             if (!isOpen) {
               savePage(pageStore.activePage!);
@@ -81,25 +87,42 @@
           </template>
         </UPopover>
       </div>
-      <div class="bg-primary w-20 h-20"></div>
-      <NuxtPage />
+      <StudioView />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import type { Page } from "@prisma/client";
+import { ModalLogin, ModalTerms } from "#components";
+
+const overlay = useOverlay();
+const loginModal = overlay.create(ModalLogin);
+const termsModal = overlay.create(ModalTerms);
 
 const currentUser = useCurrentUser();
-
 const appStore = useAppStore();
-const sideMenuVisible = computed(() => {
-  return currentUser && appStore.sideMenuOpen;
-});
+
+watch(
+  currentUser,
+  async (user, prevUser) => {
+    if (user && !prevUser) {
+      loginModal.close();
+      const user = await appStore.fetchUserData();
+
+      if (!user.acceptedTerms) {
+        termsModal.open();
+      }
+    } else if (prevUser && !user) {
+      appStore.clearUserData();
+    }
+  },
+  { immediate: true }
+);
 
 const pageStore = usePageStore();
 async function savePage(page: Page): Promise<void> {
-  await pageStore.updatePage({
+  await pageStore.updatePageName({
     pageId: page.id,
     updates: {
       name: page.name,

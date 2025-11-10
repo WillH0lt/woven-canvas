@@ -18,10 +18,13 @@
       </div>
     </div>
 
-    <div class="text-gray-400 text-nowrap overflow-x-hidden select-none">
+    <div
+      v-if="currentUser"
+      class="text-gray-400 text-nowrap overflow-x-hidden select-none"
+    >
       -------------------------------------------------
     </div>
-    <SideMenuFooter />
+    <SideMenuFooter v-if="currentUser" />
   </div>
 </template>
 
@@ -31,12 +34,6 @@ import { LexoRank } from "@dalet-oss/lexorank";
 const currentUser = useCurrentUser();
 
 const pageStore = usePageStore();
-
-try {
-  await pageStore.fetchPages();
-} catch (error) {
-  console.error("Error fetching pages:", error);
-}
 
 function getSortedPages(userPages: UserPage[]): Page[] {
   const sortedUserPages = userPages.sort((a, b) => {

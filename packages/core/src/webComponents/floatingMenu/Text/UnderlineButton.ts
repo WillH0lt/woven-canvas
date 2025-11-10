@@ -5,7 +5,7 @@ import { customElement } from 'lit/decorators.js'
 
 import type { ICommands, IStore } from '../../../types'
 import { commandsContext, storeContext } from '../../contexts'
-import { ICMenuIconButton } from '../../elements/MenuIconButton'
+import { ICMenuIconButton } from '../../elements'
 
 @customElement('ic-text-underline-button')
 export class ICTextUnderlineButton extends SignalWatcher(ICMenuIconButton) {

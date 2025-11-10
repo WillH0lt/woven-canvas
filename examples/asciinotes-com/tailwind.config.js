@@ -10,7 +10,6 @@ module.exports = {
     "./app.vue",
     "./error.vue",
   ],
-  plugins: [require("@tailwindcss/forms"), require("tailwindcss-rem-to-px")],
   theme: {
     colors: {
       white: "#ffffff",

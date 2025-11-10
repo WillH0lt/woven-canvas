@@ -43,22 +43,42 @@ export const usePageStore = defineStore("page", () => {
   });
 
   async function fetchPages(): Promise<UserPage[]> {
-    try {
-      const response = await $trpc.userPage.getAll.query();
-      userPages.value = response;
-      pages.value = response.map((up) => up.page);
-      return response;
-    } catch (error) {
+    const { data, error } = await useLazyAsyncData(
+      "user-pages",
+      async () => {
+        try {
+          const response = await $trpc.userPage.getAll.query();
+          return response;
+        } catch (error) {
+          console.error("Error fetching pages:", error);
+          throw error;
+        }
+      },
+      {
+        server: true, // Enable SSR
+        default: () => [],
+      }
+    );
+
+    if (error.value) {
       toast.add({
         title: "Error fetching pages",
         description:
-          error instanceof TRPCClientError
-            ? error.cause?.message
+          error.value instanceof TRPCClientError
+            ? error.value.cause?.message
             : "An unexpected error occurred",
         color: "error",
       });
-      throw error;
+      throw error.value;
     }
+
+    if (data.value) {
+      userPages.value = data.value;
+      pages.value = data.value.map((up) => up.page);
+      return data.value;
+    }
+
+    return [];
   }
 
   async function addPageAndNavigate(): Promise<UserPage> {
@@ -96,8 +116,8 @@ export const usePageStore = defineStore("page", () => {
     }
   }
 
-  async function updatePage(
-    input: Parameters<typeof $trpc.page.update.mutate>[0]
+  async function updatePageName(
+    input: Parameters<typeof $trpc.page.updateName.mutate>[0]
   ): Promise<Page> {
     let page = pages.value.find((p) => p.id === input.pageId);
     if (!page) {
@@ -111,7 +131,36 @@ export const usePageStore = defineStore("page", () => {
     );
 
     try {
-      return await $trpc.page.update.mutate(input);
+      return await $trpc.page.updateName.mutate(input);
+    } catch (error) {
+      toast.add({
+        title: "Error updating page",
+        description:
+          error instanceof TRPCClientError
+            ? error.cause?.message
+            : "An unexpected error occurred",
+        color: "error",
+      });
+      throw error;
+    }
+  }
+
+  async function updatePageShareMode(
+    input: Parameters<typeof $trpc.page.updateShareMode.mutate>[0]
+  ): Promise<Page> {
+    let page = pages.value.find((p) => p.id === input.pageId);
+    if (!page) {
+      throw new Error("Page not found in store");
+    }
+
+    const updatedPage = { ...page, ...input.updates };
+
+    pages.value = pages.value.map((p) =>
+      p.id === input.pageId ? updatedPage : p
+    );
+
+    try {
+      return await $trpc.page.updateShareMode.mutate(input);
     } catch (error) {
       toast.add({
         title: "Error updating page",
@@ -206,7 +255,8 @@ export const usePageStore = defineStore("page", () => {
 
     fetchPages,
     addPageAndNavigate,
-    updatePage,
+    updatePageName,
+    updatePageShareMode,
     updateUserPage,
     pinUserPage,
     unpinUserPage,

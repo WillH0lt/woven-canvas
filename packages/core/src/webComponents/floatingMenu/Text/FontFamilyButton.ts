@@ -1,6 +1,7 @@
-import { SignalWatcher } from '@lit-labs/preact-signals'
 import { consume } from '@lit/context'
 import { customElement } from 'lit/decorators.js'
+import { SignalWatcher } from '@lit-labs/preact-signals'
+
 import type { IConfig, IStore } from '../../../types'
 import { configContext, storeContext } from '../../contexts'
 import { ICMenuDropdownButton } from '../../elements'

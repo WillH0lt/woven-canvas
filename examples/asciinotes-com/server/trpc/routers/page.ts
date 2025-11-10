@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 import { protectedProcedure, router } from "../trpc";
-import { PageUpdateSchema, PageCreateSchema } from "../schemas";
+import {
+  PageNameUpdateSchema,
+  PageShareModeUpdateSchema,
+  PageCreateSchema,
+} from "../schemas";
 import { assertActiveSubscription } from "../../utils/plans";
 import { UserPageCreateSchema } from "../schemas/userPage";
 
@@ -18,7 +22,7 @@ const pageRouter = router({
 
       const pageCount = await prisma.page.count({
         where: {
-          createdBy: uid,
+          uid,
         },
       });
 
@@ -29,34 +33,60 @@ const pageRouter = router({
       const page = await prisma.page.create({
         data: {
           ...input.page,
-          createdBy: uid,
+          uid,
         },
       });
 
       return await prisma.userPage.create({
         data: {
           ...input.userPage,
-          uid: uid,
+          uid,
           pageId: page.id,
         },
         include: { page: true },
       });
     }),
-  update: protectedProcedure
-    .input(PageUpdateSchema)
+  updateName: protectedProcedure
+    .input(PageNameUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { prisma, uid } = ctx;
 
       const page = await prisma.page.findFirst({
-        where: { id: input.pageId, createdBy: uid },
+        where: {
+          id: input.pageId,
+          OR: [{ uid }, { shareMode: "ReadWrite" }],
+        },
       });
 
       if (!page) {
-        throw new Error("Page not found");
+        throw new Error("Page not found or insufficient permissions");
       }
 
       return prisma.page.update({
-        where: { id: input.pageId, createdBy: uid },
+        where: { id: input.pageId },
+        data: {
+          ...input.updates,
+        },
+      });
+    }),
+  updateShareMode: protectedProcedure
+    .input(PageShareModeUpdateSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { prisma, uid } = ctx;
+
+      const page = await prisma.page.findFirst({
+        where: {
+          id: input.pageId,
+          uid,
+        },
+      });
+
+      if (!page) {
+        throw new Error("Page not found or insufficient permissions");
+      }
+
+      return prisma.page.update({
+        where: { id: input.pageId },
         data: {
           ...input.updates,
         },
@@ -72,7 +102,7 @@ const pageRouter = router({
       const { prisma, uid } = ctx;
 
       const page = await prisma.page.findFirst({
-        where: { id: input.pageId, createdBy: uid },
+        where: { id: input.pageId, uid },
       });
 
       if (!page) {
@@ -80,7 +110,7 @@ const pageRouter = router({
       }
 
       return prisma.page.delete({
-        where: { id: input.pageId, createdBy: uid },
+        where: { id: input.pageId, uid },
       });
     }),
 });

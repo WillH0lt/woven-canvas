@@ -1,5 +1,5 @@
 import { Type, component, field } from '@lastolivegames/becsy'
-import { BaseComponent } from '../../../core/src/BaseComponent'
+import { BaseComponent } from '@infinitecanvas/core'
 
 @component
 export class ArrowTrim extends BaseComponent {

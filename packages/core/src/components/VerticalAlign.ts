@@ -1,6 +1,7 @@
-import { BaseComponent } from '@infinitecanvas/core'
 import { Type, component, field } from '@lastolivegames/becsy'
+
 import { VerticalAlign as VerticalAlignEnum } from '../types'
+import { BaseComponent } from '../BaseComponent'
 
 @component
 export class VerticalAlign extends BaseComponent {

@@ -1,17 +1,20 @@
 import fullReload from "vite-plugin-full-reload";
-import glsl from "vite-plugin-glsl";
-
 import { defineNuxtConfig } from "nuxt/config";
+import { fileURLToPath } from "node:url";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   devtools: { enabled: false },
+  ssr: false,
   build: {
     transpile: ["trpc-nuxt"],
   },
   runtimeConfig: {
     stripeSecretKey: "",
+    public: {
+      baseUrl: "",
+    },
   },
   app: {
     head: {
@@ -29,8 +32,6 @@ export default defineNuxtConfig({
         autoImports: ["defineStore", "acceptHMRUpdate"],
       },
     ],
-    "nuxt-svgo",
-    "nuxt-gtag",
     "nuxt-emoji-picker",
   ],
   css: ["~/assets/css/main.css"],
@@ -73,24 +74,6 @@ export default defineNuxtConfig({
       measurementId: "G-M600PHRH1C",
     },
   },
-  svgo: {
-    defaultImport: "component",
-    svgoConfig: {
-      plugins: [
-        {
-          name: "preset-default",
-          params: {
-            overrides: {
-              inlineStyles: {
-                removeMatchedSelectors: false,
-              },
-              minifyStyles: false,
-            },
-          },
-        },
-      ],
-    },
-  },
 
   vite: {
     esbuild: {
@@ -102,9 +85,39 @@ export default defineNuxtConfig({
         },
       },
     },
-    plugins: [glsl(), fullReload(["packages/**/*"])],
+    // plugins: [fullReload(["packages/**/*"])],
+    resolve: {
+      conditions: [
+        "@infinitecanvas/source",
+        "import",
+        "module",
+        "browser",
+        "default",
+      ],
+    },
   },
   alias: {
-    ".prisma/client": "./node_modules/.prisma/client",
+    // "@infinitecanvas/core": fileURLToPath(
+    //   new URL("../../packages/core/src/index.ts", import.meta.url)
+    // ),
+    // "@infinitecanvas/core/helpers": fileURLToPath(
+    //   new URL("../../packages/core/src/helpers/index.ts", import.meta.url)
+    // ),
+    // "@infinitecanvas/core/components": fileURLToPath(
+    //   new URL("../../packages/core/src/components/index.ts", import.meta.url)
+    // ),
+    // "@infinitecanvas/extension-arrows": fileURLToPath(
+    //   new URL("../../packages/extension-arrows/src", import.meta.url)
+    // ),
+    // "@infinitecanvas/extension-controls": fileURLToPath(
+    //   new URL("../../packages/extension-controls/src", import.meta.url)
+    // ),
+    // "@infinitecanvas/extension-eraser": fileURLToPath(
+    //   new URL("../../packages/extension-eraser/src", import.meta.url)
+    // ),
+    // "@infinitecanvas/extension-ink": fileURLToPath(
+    //   new URL("../../packages/extension-ink/src", import.meta.url)
+    // ),
+    // ".prisma/client": "./node_modules/.prisma/client",
   },
 });

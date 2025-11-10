@@ -1,8 +1,8 @@
-import type { IStore } from '@infinitecanvas/core'
-import { SignalWatcher } from '@lit-labs/preact-signals'
 import { customElement } from 'lit/decorators.js'
-
 import { consume } from '@lit/context'
+import { watch, SignalWatcher } from '@lit-labs/preact-signals'
+
+import type { IStore } from '../../../types'
 import { FONT_SIZE_OPTIONS } from '../../../constants'
 import { storeContext } from '../../contexts'
 import { ICMenuDropdownButton } from '../../elements'

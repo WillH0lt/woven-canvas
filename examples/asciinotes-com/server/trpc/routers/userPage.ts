@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { protectedProcedure, router } from "../trpc";
-import { UserPageUpdateSchema } from "../schemas/userPage";
+import { UserPageUpdateSchema } from "../schemas";
 
 const userPageRouter = router({
   getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -51,7 +51,7 @@ const userPageRouter = router({
         throw new Error("UserPage not found");
       }
 
-      if (userPage.page.createdBy === uid) {
+      if (userPage.page.uid === uid) {
         throw new Error("Cannot forget your own page");
       }
 

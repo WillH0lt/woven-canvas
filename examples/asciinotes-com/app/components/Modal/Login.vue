@@ -1,145 +1,126 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-20"
-    @click="$emit('close')"
-    :style="{
-      fontSize: '16px',
-    }"
-  >
-    <div
-      class="relative w-full max-w-[420px] pt-[64px] pb-[16px] bg-gray-300 flex flex-col items-center gap-[16px] rounded-lg"
-      :class="{
-        'pb-[64px]': !signingUp && errorMessage === '',
-      }"
-      @click.stop
-    >
-      <svgoX
-        class="absolute top-[16px] right-[16px] w-[16px] text-primary hover:scale-110 transition cursor-pointer"
-        @click="$emit('close')"
-      />
-
-      <UButton
-        class="relative w-[320px] bg-white drop-shadow text-black"
-        @click="signinGoogleRedirect"
+  <UModal :close="{ onClick: () => emit('close') }" class="divide-y-0 w-xs">
+    <template #body>
+      <!-- Email sent success state -->
+      <div
+        v-if="emailSent"
+        class="flex flex-col w-full items-center gap-4 text-center"
       >
-        Continue with Google
-      </UButton>
+        <div class="font-bold">Check your email</div>
+        <div class="text-sm text-gray-600 px-4">
+          We've sent an email to
+          <span class="font-medium">{{ state.email }}</span
+          >. Click the link in your email to sign in to AsciiNotes.
+        </div>
+        <div class="text-xs text-gray-500 px-4">
+          Didn't receive the email? Check your spam folder or
+          <button @click="resendEmail" class="text-blue-600 hover:underline">
+            try again</button
+          >.
+        </div>
+        <UButton variant="outline" color="neutral" @click="goBack" class="mt-2">
+          Back to sign in
+        </UButton>
+      </div>
 
-      <!-- <ElementButton
-        class="relative w-[320px] bg-white drop-shadow"
-        @click="signinGoogleRedirect"
+      <!-- Default sign in state -->
+      <div v-else class="flex flex-col w-full items-center gap-4">
+        <div class="font-bold">Continue to AsciiNotes</div>
+        <UButton
+          class="cursor-pointer"
+          @click="continueWithGoogle"
+          :leadingIcon="IconGoogle"
+          variant="outline"
+          color="neutral"
+          block
+        >
+          Continue with Google
+        </UButton>
+
+        <UButton
+          class="cursor-pointer"
+          @click="continueWithGithub"
+          :leadingIcon="IconGithub"
+          variant="outline"
+          color="neutral"
+          block
+        >
+          Continue with Github
+        </UButton>
+        <div
+          class="flex items-center justify-center w-full gap-2 px-2 text-sm text-gray-400"
+        >
+          ---------- or ----------
+        </div>
+
+        <UForm
+          :schema="schema"
+          :state="state"
+          class="space-y-4 w-full"
+          @submit="continueWithEmail"
+        >
+          <UFormField
+            name="email"
+            :ui="{
+              error: 'text-xs ml-2',
+            }"
+          >
+            <UInput
+              class="w-full"
+              v-model="state.email"
+              placeholder="Enter your email address"
+            />
+          </UFormField>
+
+          <UButton
+            class="cursor-pointer"
+            type="submit"
+            block
+            :loading="isLoading"
+            :disabled="isLoading"
+          >
+            {{ isLoading ? "Sending..." : "Continue" }}
+          </UButton>
+        </UForm>
+      </div>
+      <div
+        v-if="errorMessage"
+        class="w-full text-center text-sm mt-2 text-error"
       >
-        <svgoGoogle class="mx-[16px] w-[16px]" />
-        <div class="text-black">Continue with Google</div>
-      </ElementButton>
-
-      <ElementButton
-        class="relative w-[320px] bg-white drop-shadow"
-        @click="signinMicrosoftRedirect"
-      >
-        <SvgoMicrosoft class="absolute left-0 mx-[16px] w-[16px]" />
-        <div class="text-black">Continue with Microsoft</div>
-      </ElementButton>
-
-      <ElementButton
-        class="relative w-[320px] bg-white drop-shadow"
-        @click="signinGithubRedirect"
-      >
-        <SvgoGithub class="absolute left-0 mx-[16px] w-[16px]" />
-        <div class="text-black">Continue with Github</div>
-      </ElementButton> -->
-
-      <div v-if="errorMessage" class="w-[320px] text-error">
         * {{ errorMessage }}
       </div>
-
-      <div class="w-[320px] text-gray-500 text-center" v-if="signingUp">
-        By registering you agree to ScrollyPage's
-        <a
-          class="text-primary hover:underline"
-          href="https://scrolly.page/terms"
-          target="_blank"
-          >Terms of Service</a
-        >
-        and
-        <a
-          class="text-primary hover:underline"
-          href="https://scrolly.page/privacy"
-          target="_blank"
-          >Privacy Policy</a
-        >
-        .
-      </div>
-    </div>
-  </div>
+    </template>
+  </UModal>
 </template>
 
 <script lang="ts" setup>
 import {
   signInWithPopup,
   GoogleAuthProvider,
-  OAuthProvider,
   GithubAuthProvider,
 } from "firebase/auth";
-import type { UserCredential } from "firebase/auth";
-import { collection, doc, setDoc } from "firebase/firestore";
+import type { FormSubmitEvent } from "@nuxt/ui";
+import z from "zod";
+import { IconGoogle, IconGithub } from "#components";
 
-import type { Profile } from "~/types/index.js";
-
-// defineProps<{
-//   signingUp: boolean;
-// }>();
-
-const AuthErrorText = {
-  "auth/wrong-password": "the password is incorrect.",
-  "auth/invalid-login-credentials": "the email or password is incorrect.",
-  "auth/user-disabled":
-    "The user account has been disabled by an administrator.",
-  "auth/weak-password": "The password is not strong enough.",
-  "auth/email-already-in-use":
-    "the email address is already being used by another account.",
-  "auth/missing-email": "Please enter an email address.",
-  "auth/invalid-email": "Please enter a valid email address.",
-  "auth/user-not-found": "There is no account registered with this email.",
-  "auth/too-many-requests": "Too many requests. Please try again later.",
-  "auth/operation-not-allowed": "An error occurred. Please try again.",
-  "auth/invalid-action-code": "The link is invalid or has expired.",
-  "auth/internal-error": "An error occurred. Please try again.",
-  "auth/expired-action-code": "The link is invalid or has expired.",
-  "auth/recent-login-required": "Please log in again and retry.",
-  "auth/provider-already-linked":
-    "The account is already linked to an existing account.",
-  "auth/invalid-phone-number": "Please enter a valid phone number.",
-  "auth/requires-recent-login":
-    "This requires a recent log in, please log in again and retry.",
-  "auth/account-exists-with-different-credential":
-    "An account already exists with the same email address but different sign-in provider.",
-};
+import { AuthErrorText } from "~/constants";
 
 const auth = useFirebaseAuth()!;
-const db = useFirestore();
-const router = useRouter();
+const { sendMagicLink } = useEmailAuth();
 
 const googleAuthProvider = new GoogleAuthProvider();
 const githubAuthProvider = new GithubAuthProvider();
-const microsoftAuthProvider = new OAuthProvider("microsoft.com");
-microsoftAuthProvider.setCustomParameters({
-  prompt: "login",
-  tenant: "common",
-});
 
 const emit = defineEmits(["close"]);
 
 const errorMessage = ref("");
+const emailSent = ref(false);
+const isLoading = ref(false);
 
-async function signinGoogleRedirect() {
-  console.log("Signing in with Google");
+async function continueWithGoogle() {
   errorMessage.value = "";
   try {
-    const credential = await signInWithPopup(auth, googleAuthProvider);
-
-    await grabProfileData(credential);
-    router.replace("/");
+    await signInWithPopup(auth, googleAuthProvider);
   } catch (err: any) {
     console.error(err);
     errorMessage.value =
@@ -149,12 +130,10 @@ async function signinGoogleRedirect() {
   }
 }
 
-async function signinMicrosoftRedirect() {
+async function continueWithGithub() {
   errorMessage.value = "";
   try {
-    const credential = await signInWithPopup(auth, microsoftAuthProvider);
-    await grabProfileData(credential);
-    router.replace("/");
+    await signInWithPopup(auth, githubAuthProvider);
   } catch (err: any) {
     console.error(err);
     errorMessage.value =
@@ -164,38 +143,55 @@ async function signinMicrosoftRedirect() {
   }
 }
 
-async function signinGithubRedirect() {
+const schema = z.object({
+  email: z.email("Please enter a valid email address"),
+});
+
+type Schema = z.infer<typeof schema>;
+
+const state = reactive({
+  email: "",
+});
+
+async function continueWithEmail(event: FormSubmitEvent<Schema>) {
   errorMessage.value = "";
+  isLoading.value = true;
+
   try {
-    const credential = await signInWithPopup(auth, githubAuthProvider);
-    await grabProfileData(credential);
-    router.replace("/");
+    await sendMagicLink(state.email);
+    emailSent.value = true;
   } catch (err: any) {
     console.error(err);
     errorMessage.value =
       err.code in AuthErrorText
         ? AuthErrorText[err.code as keyof typeof AuthErrorText]
-        : err;
+        : err.message || "An error occurred. Please try again.";
+  } finally {
+    isLoading.value = false;
   }
 }
 
-async function grabProfileData(credential: UserCredential): Promise<void> {
-  const user = credential.user;
+async function resendEmail() {
+  if (!state.email) return;
 
-  const documentRef = doc(collection(db, "users"), user.uid);
+  errorMessage.value = "";
+  isLoading.value = true;
 
-  const profile: Partial<Profile> = {
-    uid: user.uid,
-  };
-
-  if (user.email) {
-    profile.email = user.email;
+  try {
+    await sendMagicLink(state.email);
+  } catch (err: any) {
+    console.error(err);
+    errorMessage.value =
+      err.code in AuthErrorText
+        ? AuthErrorText[err.code as keyof typeof AuthErrorText]
+        : err.message || "An error occurred. Please try again.";
+  } finally {
+    isLoading.value = false;
   }
+}
 
-  if (user.photoURL) {
-    profile.photoUrl = user.photoURL;
-  }
-
-  await setDoc(documentRef, profile, { merge: true });
+function goBack() {
+  emailSent.value = false;
+  errorMessage.value = "";
 }
 </script>

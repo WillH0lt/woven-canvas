@@ -1,6 +1,6 @@
-import { SignalWatcher } from '@lit-labs/preact-signals'
 import { LitElement, html } from 'lit'
 import { customElement } from 'lit/decorators.js'
+import { SignalWatcher } from '@lit-labs/preact-signals'
 
 import { consume } from '@lit/context'
 import { VerticalAlign as VerticalAlignComp } from '../../../components'

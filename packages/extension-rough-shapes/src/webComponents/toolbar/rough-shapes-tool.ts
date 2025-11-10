@@ -1,11 +1,11 @@
-import { InfiniteCanvas, VerticalAlign } from '@infinitecanvas/core'
+import { InfiniteCanvas, VerticalAlign, type Snapshot  } from '@infinitecanvas/core'
 import { Block, Text, VerticalAlign as VerticalAlignComp } from '@infinitecanvas/core/components'
 import { ICToolbarIconButton } from '@infinitecanvas/core/elements'
 import { createSnapshot } from '@infinitecanvas/core/helpers'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
-import type { Snapshot } from 'packages/core/build'
-import { RoughShape } from '../..'
+
+import { RoughShape } from '../../components'
 
 @customElement('ic-rough-shapes-tool')
 export class ICRoughShapesTool extends ICToolbarIconButton {

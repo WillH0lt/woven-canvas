@@ -1,11 +1,10 @@
-import type { IConfig } from '@infinitecanvas/core'
-import { SignalWatcher } from '@lit-labs/preact-signals'
 import { consume } from '@lit/context'
 import { LitElement, css, html, nothing } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
+import { SignalWatcher } from '@lit-labs/preact-signals'
 
 import { FontLoader } from '../../../FontLoader'
-import type { FontFamily, ICommands, IStore } from '../../../types'
+import type { FontFamily, ICommands, IStore, IConfig } from '../../../types'
 import { commandsContext, configContext, storeContext } from '../../contexts'
 
 const magnifyingGlassIcon = html`

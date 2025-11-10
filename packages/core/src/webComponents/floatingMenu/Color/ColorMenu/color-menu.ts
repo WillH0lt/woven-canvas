@@ -1,6 +1,6 @@
-import { SignalWatcher, signal } from '@lit-labs/preact-signals'
+import { signal, SignalWatcher } from '@lit-labs/preact-signals'
 import { consume } from '@lit/context'
-import { LitElement, html, nothing } from 'lit'
+import { LitElement, html, nothing, isServer } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import { Color } from '../../../../components'

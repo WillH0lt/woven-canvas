@@ -132,7 +132,7 @@ function getMenuItems(page: Page) {
 
 const pageStore = usePageStore();
 async function savePage(page: Page): Promise<void> {
-  await pageStore.updatePage({
+  await pageStore.updatePageName({
     pageId: page.id,
     updates: {
       name: page.name,

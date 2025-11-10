@@ -1,8 +1,8 @@
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
-import { SignalWatcher } from '@lit-labs/preact-signals'
-import { LitElement, type PropertyValues, nothing } from 'lit'
+import { LitElement, type PropertyValues, nothing, isServer } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { html, unsafeStatic } from 'lit/static-html.js'
+import { SignalWatcher } from '@lit-labs/preact-signals'
 
 import { InfiniteCanvas } from '../../../InfiniteCanvas'
 import type { ToolDef } from '../../../types'

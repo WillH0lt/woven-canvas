@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { ShareMode } from "@prisma/client";
+
 function isSingleEmoji(value: string): boolean {
   const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
   const segments = Array.from(segmenter.segment(value));
@@ -13,7 +15,14 @@ export const PageCreateSchema = z.object({
     .refine(isSingleEmoji, { message: "Must be exactly one emoji" }),
 });
 
-export const PageUpdateSchema = z.object({
+export const PageNameUpdateSchema = z.object({
   pageId: z.string(),
   updates: PageCreateSchema.partial(),
+});
+
+export const PageShareModeUpdateSchema = z.object({
+  pageId: z.string(),
+  updates: z.object({
+    shareMode: z.enum(ShareMode),
+  }),
 });

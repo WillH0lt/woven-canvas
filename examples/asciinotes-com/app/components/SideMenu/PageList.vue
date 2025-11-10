@@ -21,7 +21,7 @@
 import type { Page } from "@prisma/client";
 import { createSwapy, utils } from "swapy";
 import type { Swapy, SlotItemMapArray } from "swapy";
-import { LexoRank } from "lexorank";
+import { LexoRank } from "@dalet-oss/lexorank";
 
 const { pages } = defineProps<{
   pages: Page[];

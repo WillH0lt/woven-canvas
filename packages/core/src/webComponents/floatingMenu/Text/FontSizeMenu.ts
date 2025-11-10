@@ -1,9 +1,9 @@
-import type { ICommands, IStore } from '@infinitecanvas/core'
-import { SignalWatcher } from '@lit-labs/preact-signals'
-import { LitElement, css, html } from 'lit'
+import { LitElement, css, html, isServer } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
-
 import { consume } from '@lit/context'
+import { SignalWatcher } from '@lit-labs/preact-signals'
+
+import type { ICommands, IStore } from '../../../types'
 import { FONT_SIZE_OPTIONS } from '../../../constants'
 import { commandsContext, storeContext } from '../../contexts'
 

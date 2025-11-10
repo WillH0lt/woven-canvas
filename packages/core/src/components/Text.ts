@@ -1,5 +1,6 @@
-import { BaseComponent } from '@infinitecanvas/core'
 import { Type, component, field } from '@lastolivegames/becsy'
+
+import { BaseComponent } from '../BaseComponent'
 
 @component
 export class Text extends BaseComponent {

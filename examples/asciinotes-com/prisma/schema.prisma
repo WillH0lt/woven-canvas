@@ -13,9 +13,23 @@ enum ShareMode {
   ReadWrite
 }
 
+model User {
+  uid           String     @id
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  acceptedTerms Boolean    @default(false)
+  name          String?
+  avatarUrl     String?
+  pages         Page[]
+  userPages     UserPage[]
+
+  @@map(name: "users")
+}
+
 model Page {
   id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdBy String
+  uid       String
+  user      User       @relation(fields: [uid], references: [uid], onDelete: Cascade)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   name      String
@@ -31,6 +45,7 @@ model UserPage {
   pageId   String  @db.Uuid
   page     Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
   uid      String
+  user     User    @relation(fields: [uid], references: [uid], onDelete: Cascade)
   rank     String
   isPinned Boolean
 

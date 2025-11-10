@@ -1,9 +1,9 @@
-import { ICMenuIconButton } from '@infinitecanvas/core/elements'
 import { type ReadonlySignal, SignalWatcher } from '@lit-labs/preact-signals'
 import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
-
 import { consume } from '@lit/context'
+
+import { ICMenuIconButton } from '../../elements'
 import { type ICommands, type IStore, TextAlign } from '../../../types'
 import { commandsContext, storeContext } from '../../contexts'
 

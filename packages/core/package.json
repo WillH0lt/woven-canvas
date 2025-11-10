@@ -76,7 +76,7 @@
   },
   "scripts": {
     "clean": "rimraf build .turbo",
-    "build": "tsup ./src/index.ts ./src/helpers/index.ts ./src/components/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
+    "build": "tsup ./src/index.ts ./src/helpers/index.ts ./src/components/index.ts ./src/webComponents/elements/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
     "test": "vitest  --config ../../vitest.config.ts run",

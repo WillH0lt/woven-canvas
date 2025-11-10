@@ -2,17 +2,30 @@
   <div class="flex flex-col p-4 min-w-80 text-sm">
     <div class="flex items-center">
       <div class="mr-auto">Share this page</div>
-      <USwitch v-model="isShared" size="sm" />
+      <USwitch
+        v-model="isShared"
+        size="sm"
+        @update:modelValue="handleIsSharedUpdate"
+      />
     </div>
     <div v-if="isShared" class="mt-4">
       <div class="flex items-center">
         <div class="max-w-48">Anyone with the link</div>
         <USelect
-          class="ml-auto"
-          size="sm"
+          class="ml-auto mb-1"
           v-model="shareMode"
-          :items="shareModeItems"
-          variant="ghost"
+          @update:modelValue="handleShareModeUpdate"
+          :items="[
+            {
+              label: 'can view',
+              value: ShareMode.ReadOnly,
+            },
+            {
+              label: 'can edit',
+              value: ShareMode.ReadWrite,
+            },
+          ]"
+          variant="outline"
         />
       </div>
       <div class="flex justify-center w-full mt-4">
@@ -25,24 +38,53 @@
 </template>
 
 <script lang="ts" setup>
-import { ShareMode } from "@prisma/client";
+import { ShareMode, type Page } from "@prisma/client";
 import { useClipboard } from "@vueuse/core";
 
-const isShared = ref(false);
+const props = defineProps<{
+  page: Page;
+}>();
 
-const shareModeItems = ref([
-  {
-    label: "Can view",
-    value: ShareMode.ReadOnly,
-  },
-  {
-    label: "Can edit",
-    value: ShareMode.ReadWrite,
-  },
-]);
-const shareMode = ref(ShareMode.ReadOnly);
+const runtimeConfig = useRuntimeConfig();
+const pageStore = usePageStore();
 
-const linkToCopy = ref("https://your-website.com/your-page"); // The link you want to copy
+const isShared = ref(props.page.shareMode !== ShareMode.None);
+
+const shareMode = ref(
+  props.page.shareMode === ShareMode.ReadWrite
+    ? ShareMode.ReadWrite
+    : ShareMode.ReadOnly
+);
+
+async function handleIsSharedUpdate(value: boolean): Promise<void> {
+  shareMode.value = ShareMode.ReadOnly;
+  if (value) {
+    await pageStore.updatePageShareMode({
+      pageId: props.page.id,
+      updates: {
+        shareMode: shareMode.value,
+      },
+    });
+  } else {
+    await pageStore.updatePageShareMode({
+      pageId: props.page.id,
+      updates: {
+        shareMode: ShareMode.None,
+      },
+    });
+  }
+}
+
+async function handleShareModeUpdate(value: ShareMode): Promise<void> {
+  await pageStore.updatePageShareMode({
+    pageId: props.page.id,
+    updates: {
+      shareMode: value,
+    },
+  });
+}
+
+const linkToCopy = ref(`${runtimeConfig.public.baseUrl}/p/${props.page.id}`);
 const { copy } = useClipboard({ source: linkToCopy });
 
 const copyButtonIcon = ref("i-lucide-copy");

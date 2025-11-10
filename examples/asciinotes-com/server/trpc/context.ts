@@ -2,8 +2,8 @@ import type { PrismaClient } from "@prisma/client";
 import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
 import type { H3Event } from "h3";
 
-import { firebaseApp } from "../utils/firebase.js";
-import prisma from "./db.js";
+import { firebaseApp } from "../utils/firebase";
+import prisma from "./db";
 
 export interface Context {
   prisma: PrismaClient;

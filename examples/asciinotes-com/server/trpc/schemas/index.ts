@@ -1,1 +1,2 @@
-export { PageUpdateSchema, PageCreateSchema } from "./page";
+export * from "./page";
+export * from "./userPage";

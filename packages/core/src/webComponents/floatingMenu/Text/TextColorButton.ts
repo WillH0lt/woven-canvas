@@ -1,9 +1,9 @@
-import { SignalWatcher } from '@lit-labs/preact-signals'
 import { consume } from '@lit/context'
 import { LitElement, css, html, nothing } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import tinycolor from 'tinycolor2'
+import { SignalWatcher } from '@lit-labs/preact-signals'
 
 import type { IStore } from '../../../types'
 import { storeContext } from '../../contexts'
