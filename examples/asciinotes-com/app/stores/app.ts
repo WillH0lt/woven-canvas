@@ -1,5 +1,5 @@
 import { TRPCClientError } from "@trpc/client";
-import type { User } from "@prisma/client";
+import type { User } from "#shared/prisma";
 
 export const useAppStore = defineStore("app", () => {
   const { $trpc } = useNuxtApp();

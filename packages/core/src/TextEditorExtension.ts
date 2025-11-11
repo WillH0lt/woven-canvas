@@ -36,7 +36,7 @@ import {
   type SendCommandFn,
   TextAlign,
 } from './types'
-import { ICText } from './webComponents/blocks'
+import type { ICText } from './webComponents/blocks'
 
 declare module '@infinitecanvas/core' {
   interface ICommands {
@@ -129,8 +129,8 @@ export class TextEditorExtension extends BaseExtension {
     // get ic-text element where edited is true
     // ic-text might be a direct child of the blockContainer or inside a shadowRoot
     const element = this.blockContainer?.querySelector('[is-editing="true"]') as HTMLElement | null
-    if (element instanceof ICText) {
-      return element
+    if (element?.tagName === 'IC-TEXT') {
+      return element as ICText
     }
 
     const textElement = element?.shadowRoot?.querySelector('ic-text') as ICText | null

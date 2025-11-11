@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Page } from "@prisma/client";
+import type { Page } from "#shared/prisma";
 
 import { ModalDeletePage } from "#components";
 

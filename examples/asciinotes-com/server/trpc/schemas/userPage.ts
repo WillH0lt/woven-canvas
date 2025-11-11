@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import { LexoRank } from "@dalet-oss/lexorank";
-import { is } from "zod/v4/locales";
 
 function isValidLexoRank(value: string): boolean {
   try {

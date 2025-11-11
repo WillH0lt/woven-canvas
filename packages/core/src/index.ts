@@ -1,4 +1,7 @@
+import './CoreExtension'
+import './TextEditorExtension' 
 export { InfiniteCanvas } from './InfiniteCanvas'
+export { CoreExtension } from './CoreExtension'
 
 export {
   Options,

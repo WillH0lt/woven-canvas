@@ -1,7 +1,8 @@
 import { type SystemGroup, World } from '@lastolivegames/becsy'
 import type { z } from 'zod/v4'
-
 import { Emitter } from 'strict-event-emitter'
+import { isServer } from 'lit'
+
 import { BaseExtension } from './BaseExtension'
 import { ComponentRegistry } from './ComponentRegistry'
 import { CoreExtension } from './CoreExtension'
@@ -25,7 +26,9 @@ import {
   ToolDef,
 } from './types'
 
-import './webComponents'
+if (!isServer) {
+  import('./webComponents')
+}
 import type { ICApp } from './webComponents'
 
 function scheduleGroups(orderedGroups: SystemGroup[]): void {

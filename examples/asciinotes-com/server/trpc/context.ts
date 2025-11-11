@@ -1,12 +1,11 @@
-import type { PrismaClient } from "@prisma/client";
 import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
 import type { H3Event } from "h3";
 
 import { firebaseApp } from "../utils/firebase";
-import prisma from "./db";
+import { prisma } from "../../prisma/db";
 
 export interface Context {
-  prisma: PrismaClient;
+  prisma: typeof prisma;
   uid: string | null;
   session: string | null;
 }

@@ -1,7 +1,6 @@
 import { LitElement, css, html, isServer } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 import { consume } from '@lit/context'
-import { SignalWatcher } from '@lit-labs/preact-signals'
 
 import type { ICommands, IStore } from '../../../types'
 import { FONT_SIZE_OPTIONS } from '../../../constants'
@@ -22,8 +21,19 @@ const checkIcon = html`
   </svg>
 `
 
+
+console.log('==============================================')
+console.log('==============================================')
+console.log('==============================================')
+console.log('==============================================')
+console.log('==============================================')
+console.log('==============================================')
+console.log('==============================================')
+console.log('==============================================')
+console.log('isServer', isServer, '===========================================')
+
 @customElement('ic-font-size-menu')
-export class ICFontSizeMenu extends SignalWatcher(LitElement) {
+export class ICFontSizeMenu extends LitElement {
   @consume({ context: storeContext })
   private store: IStore = {} as IStore
 

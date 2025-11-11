@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ShareMode } from "@prisma/client";
+import { ShareMode } from "#shared/prisma";
 
 function isSingleEmoji(value: string): boolean {
   const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });

@@ -4,7 +4,7 @@ import { html } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
 import type { ICommands, IStore } from '../../../types'
-import { ICMenuIconButton } from '../../elements'
+import { ICMenuIconButton } from '../../elements/MenuIconButton'
 import { commandsContext, storeContext } from '../../contexts'
 
 @customElement('ic-text-italic-button')

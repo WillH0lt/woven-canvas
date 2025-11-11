@@ -4,7 +4,7 @@ import { SignalWatcher } from '@lit-labs/preact-signals'
 
 import type { IConfig, IStore } from '../../../types'
 import { configContext, storeContext } from '../../contexts'
-import { ICMenuDropdownButton } from '../../elements'
+import { ICMenuDropdownButton } from '../../elements/MenuDropdownButton'
 
 @customElement('ic-font-family-button')
 export class ICFontFamilyButton extends SignalWatcher(ICMenuDropdownButton) {

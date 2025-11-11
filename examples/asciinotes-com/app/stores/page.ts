@@ -1,4 +1,4 @@
-import type { Page, UserPage } from "@prisma/client";
+import type { Page, UserPage } from "#shared/prisma";
 import { LexoRank } from "@dalet-oss/lexorank";
 import { TRPCClientError } from "@trpc/client";
 

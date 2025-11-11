@@ -1,1 +1,0 @@
-export { LetterMaterial } from './LetterMaterial'

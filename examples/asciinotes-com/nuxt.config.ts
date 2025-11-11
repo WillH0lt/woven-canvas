@@ -1,12 +1,10 @@
 import fullReload from "vite-plugin-full-reload";
 import { defineNuxtConfig } from "nuxt/config";
-import { fileURLToPath } from "node:url";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   devtools: { enabled: false },
-  ssr: false,
   build: {
     transpile: ["trpc-nuxt"],
   },
@@ -85,7 +83,7 @@ export default defineNuxtConfig({
         },
       },
     },
-    // plugins: [fullReload(["packages/**/*"])],
+    plugins: [fullReload(["../../packages/**/*"])],
     resolve: {
       conditions: [
         "@infinitecanvas/source",
@@ -95,29 +93,5 @@ export default defineNuxtConfig({
         "default",
       ],
     },
-  },
-  alias: {
-    // "@infinitecanvas/core": fileURLToPath(
-    //   new URL("../../packages/core/src/index.ts", import.meta.url)
-    // ),
-    // "@infinitecanvas/core/helpers": fileURLToPath(
-    //   new URL("../../packages/core/src/helpers/index.ts", import.meta.url)
-    // ),
-    // "@infinitecanvas/core/components": fileURLToPath(
-    //   new URL("../../packages/core/src/components/index.ts", import.meta.url)
-    // ),
-    // "@infinitecanvas/extension-arrows": fileURLToPath(
-    //   new URL("../../packages/extension-arrows/src", import.meta.url)
-    // ),
-    // "@infinitecanvas/extension-controls": fileURLToPath(
-    //   new URL("../../packages/extension-controls/src", import.meta.url)
-    // ),
-    // "@infinitecanvas/extension-eraser": fileURLToPath(
-    //   new URL("../../packages/extension-eraser/src", import.meta.url)
-    // ),
-    // "@infinitecanvas/extension-ink": fileURLToPath(
-    //   new URL("../../packages/extension-ink/src", import.meta.url)
-    // ),
-    // ".prisma/client": "./node_modules/.prisma/client",
   },
 });

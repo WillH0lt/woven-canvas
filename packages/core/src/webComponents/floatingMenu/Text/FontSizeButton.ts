@@ -1,11 +1,11 @@
 import { customElement } from 'lit/decorators.js'
 import { consume } from '@lit/context'
-import { watch, SignalWatcher } from '@lit-labs/preact-signals'
+import { SignalWatcher } from '@lit-labs/preact-signals'
 
 import type { IStore } from '../../../types'
 import { FONT_SIZE_OPTIONS } from '../../../constants'
 import { storeContext } from '../../contexts'
-import { ICMenuDropdownButton } from '../../elements'
+import { ICMenuDropdownButton } from '../../elements/MenuDropdownButton'
 
 @customElement('ic-font-size-button')
 export class ICFontSizeButton extends SignalWatcher(ICMenuDropdownButton) {

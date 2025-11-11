@@ -29,7 +29,6 @@ import { DEFAULT_FONT_FAMILIES, SESSION_KEY } from './constants'
 import { HAND_CURSOR, SELECT_CURSOR } from './constants'
 import { createSnapshot } from './helpers'
 import * as sys from './systems'
-import {} from './textUtils'
 import type {
   AnimationInput,
   BaseResources,

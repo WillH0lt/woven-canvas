@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { InfiniteCanvas } from "@infinitecanvas/core";
+import { InfiniteCanvas, CoreExtension } from "@infinitecanvas/core";
 import { ArrowsExtension } from "@infinitecanvas/extension-arrows";
 import { ControlsExtension } from "@infinitecanvas/extension-controls";
 import { EraserExtension } from "@infinitecanvas/extension-eraser";
@@ -145,6 +145,7 @@ onMounted(async () => {
       },
     ],
   });
+
   infiniteCanvas.store.core.blockCount.subscribe((count) => {
     console.log("Block count:", count);
   });

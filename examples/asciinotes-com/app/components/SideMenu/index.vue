@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Page, UserPage } from "@prisma/client";
+import type { Page, UserPage } from "#shared/prisma";
 import { LexoRank } from "@dalet-oss/lexorank";
 const currentUser = useCurrentUser();
 

@@ -7,9 +7,9 @@ export default defineConfig({
   minify: false,
   format: ['esm', 'cjs'],
   outDir: 'build',
-  // esbuildPlugins: [
-  //   replace({
-  //     '@lastolivegames/becsy': '@lastolivegames/becsy/perf',
-  //   }),
-  // ],
+  esbuildPlugins: [
+    replace({
+      '@lastolivegames/becsy': '@lastolivegames/becsy/perf',
+    }),
+  ],
 })
