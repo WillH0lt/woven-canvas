@@ -6,8 +6,9 @@ CREATE TABLE "users" (
     "uid" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "name" TEXT NOT NULL,
-    "avatarUrl" TEXT NOT NULL,
+    "acceptedTerms" BOOLEAN NOT NULL DEFAULT false,
+    "name" TEXT,
+    "avatarUrl" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("uid")
 );
@@ -31,7 +32,8 @@ CREATE TABLE "user_pages" (
     "pageId" UUID NOT NULL,
     "uid" TEXT NOT NULL,
     "rank" TEXT NOT NULL,
-    "isPinned" BOOLEAN NOT NULL,
+    "isPinned" BOOLEAN NOT NULL DEFAULT false,
+    "isActive" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "user_pages_pkey" PRIMARY KEY ("id")
 );

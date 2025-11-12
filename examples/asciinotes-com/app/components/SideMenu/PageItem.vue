@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Page } from "#shared/prisma";
+import type { Page } from "#shared/prisma/browser";
 
 import { ModalDeletePage } from "#components";
 
@@ -74,11 +74,11 @@ const props = defineProps<{
   isBeingDragged: boolean;
 }>();
 
-const route = useRoute();
+const pageStore = usePageStore();
 
 const menuOpen = ref(false);
 const renamePopoverOpen = ref(false);
-const isActivePage = computed(() => route.params.pageId === props.page.id);
+const isActivePage = computed(() => pageStore.activePage?.id === props.page.id);
 
 const overlay = useOverlay();
 const deleteModal = overlay.create(ModalDeletePage);
@@ -130,7 +130,6 @@ function getMenuItems(page: Page) {
   return [groupA, groupB];
 }
 
-const pageStore = usePageStore();
 async function savePage(page: Page): Promise<void> {
   await pageStore.updatePageName({
     pageId: page.id,

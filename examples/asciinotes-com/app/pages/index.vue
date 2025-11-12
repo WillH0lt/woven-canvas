@@ -1,29 +1,4 @@
 <template>
-  <div class="absolute top-0 right-0 m-4">
-    <UPopover v-if="currentUser" modal>
-      <UButton class="cursor-pointer" color="primary" size="lg" variant="solid">
-        Share
-      </UButton>
-      <template #content>
-        <PopoverSharePage
-          v-if="pageStore.activePage"
-          :page="pageStore.activePage"
-        />
-      </template>
-    </UPopover>
-
-    <UButton
-      v-else
-      @click="loginModal.open()"
-      class="cursor-pointer"
-      color="primary"
-      size="lg"
-      variant="solid"
-    >
-      Sign in
-    </UButton>
-  </div>
-
   <div class="flex w-full h-screen">
     <div
       class="overflow-hidden transition-[width] duration-500"
@@ -40,6 +15,7 @@
     <div
       class="flex-1 relative flex items-center justify-center pointer-events-none"
     >
+      <StudioView class="pointer-events-auto" />
       <div class="flex absolute top-0 left-0 m-2">
         <UTooltip
           :text="appStore.sideMenuOpen ? 'Close sidebar' : 'Open sidebar'"
@@ -63,8 +39,8 @@
             align: 'start',
           }"
           @update:open="(isOpen: boolean) => {
-            if (!isOpen) {
-              savePage(pageStore.activePage!);
+            if (!isOpen && pageStore.activePage) {
+              savePage(pageStore.activePage);
             }
           }"
         >
@@ -87,13 +63,39 @@
           </template>
         </UPopover>
       </div>
-      <StudioView />
     </div>
+  </div>
+
+  <div class="absolute top-0 right-0 m-4">
+    <UButton
+      v-if="appStore.isAnonymous"
+      @click="loginModal.open()"
+      class="cursor-pointer"
+      color="primary"
+      size="lg"
+      variant="solid"
+    >
+      Sign in
+    </UButton>
+
+    <UPopover v-else modal>
+      <UButton class="cursor-pointer" color="primary" size="lg" variant="solid">
+        Share
+      </UButton>
+      <template #content>
+        <PopoverSharePage
+          v-if="pageStore.activePage"
+          :page="pageStore.activePage"
+        />
+      </template>
+    </UPopover>
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { Page } from "#shared/prisma";
+import type { User } from "firebase/auth";
+
+import type { Page } from "#shared/prisma/browser";
 import { ModalLogin, ModalTerms } from "#components";
 
 const overlay = useOverlay();
@@ -102,23 +104,40 @@ const termsModal = overlay.create(ModalTerms);
 
 const currentUser = useCurrentUser();
 const appStore = useAppStore();
+const auth = useFirebaseAuth()!;
+
+async function handleSignIn(): Promise<void> {
+  loginModal.close();
+
+  const user = await appStore.fetchUserData();
+  if (!user.acceptedTerms && !appStore.isAnonymous) {
+    termsModal.open();
+  }
+}
 
 watch(
   currentUser,
-  async (user, prevUser) => {
-    if (user && !prevUser) {
-      loginModal.close();
-      const user = await appStore.fetchUserData();
+  async (currUser, prevUser) => {
+    if (!prevUser && currUser) {
+      await handleSignIn();
+      return;
+    }
 
-      if (!user.acceptedTerms) {
-        termsModal.open();
-      }
-    } else if (prevUser && !user) {
-      appStore.clearUserData();
+    if (!currUser || !prevUser || currUser.uid === prevUser.uid) return;
+
+    const prevAnonymous = isAnonymous(prevUser);
+    const currAnonymous = isAnonymous(currUser);
+
+    if (prevAnonymous && !currAnonymous) {
+      await handleSignIn();
     }
   },
   { immediate: true }
 );
+
+function isAnonymous(user: User): boolean {
+  return user.providerData.length === 0 || user.isAnonymous;
+}
 
 const pageStore = usePageStore();
 async function savePage(page: Page): Promise<void> {

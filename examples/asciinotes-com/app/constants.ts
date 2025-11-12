@@ -15,5 +15,5 @@ export const AuthErrorText = {
     "The sign-in link has expired. Please request a new one.",
   "auth/invalid-email": "The email address is invalid.",
   "auth/email-already-in-use":
-    "An account already exists with this email address.",
+    "An account already exists with this email but it uses a different sign-in method.",
 };

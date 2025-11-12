@@ -104,9 +104,9 @@ import type { FormSubmitEvent } from "@nuxt/ui";
 
 import { AuthErrorText } from "~/constants";
 
-const { verifyMagicLink, isValidMagicLink, getStoredEmail } = useEmailAuth();
+const { signUpWithMagicLink, isValidMagicLink, getStoredEmail } =
+  useEmailAuth();
 const router = useRouter();
-const route = useRoute();
 
 const isVerifying = ref(true);
 const needsEmail = ref(false);
@@ -141,7 +141,7 @@ async function verifyEmailLink(inputEmail?: string) {
     }
 
     // Sign in the user with the email link
-    await verifyMagicLink(url, email);
+    await signUpWithMagicLink(url, email);
 
     // Show success state
     isVerifying.value = false;
@@ -178,7 +178,14 @@ function goHome() {
   router.replace("/");
 }
 
+const auth = useFirebaseAuth()!;
+
 onMounted(() => {
-  verifyEmailLink();
+  // wait for anonymous user to be set up
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      verifyEmailLink();
+    }
+  });
 });
 </script>

@@ -703,7 +703,8 @@ export const UserPageScalarFieldEnum = {
   pageId: 'pageId',
   uid: 'uid',
   rank: 'rank',
-  isPinned: 'isPinned'
+  isPinned: 'isPinned',
+  isActive: 'isActive'
 } as const
 
 export type UserPageScalarFieldEnum = (typeof UserPageScalarFieldEnum)[keyof typeof UserPageScalarFieldEnum]

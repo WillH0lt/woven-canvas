@@ -125,6 +125,9 @@ importers:
       firebase:
         specifier: ^12.5.0
         version: 12.5.0
+      idb:
+        specifier: ^8.0.3
+        version: 8.0.3
       lit:
         specifier: ^3.3.1
         version: 3.3.1

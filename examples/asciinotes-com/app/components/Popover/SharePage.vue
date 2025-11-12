@@ -38,8 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Page } from "#shared/prisma";
-import { ShareMode } from "#shared/prisma/enums";
+import { type Page, ShareMode } from "#shared/prisma/browser";
 import { useClipboard } from "@vueuse/core";
 
 const props = defineProps<{

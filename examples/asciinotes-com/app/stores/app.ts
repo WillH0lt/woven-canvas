@@ -1,5 +1,5 @@
 import { TRPCClientError } from "@trpc/client";
-import type { User } from "#shared/prisma";
+import type { User } from "#shared/prisma/browser";
 
 export const useAppStore = defineStore("app", () => {
   const { $trpc } = useNuxtApp();
@@ -10,6 +10,19 @@ export const useAppStore = defineStore("app", () => {
   const sideMenuOpen = ref(true);
 
   const user = ref<User | null>(null);
+
+  const isAnonymous = computed(() => {
+    if (!currentUser.value) return true;
+
+    return (
+      currentUser.value.providerData.length === 0 ||
+      currentUser.value.isAnonymous
+    );
+  });
+
+  const isLoggedIn = computed(() => {
+    return !!currentUser.value && !isAnonymous.value;
+  });
 
   async function fetchUserData(): Promise<User> {
     const key = `user-${currentUser.value?.uid}`;
@@ -58,6 +71,8 @@ export const useAppStore = defineStore("app", () => {
     clearUserData,
 
     user,
+    isAnonymous,
+    isLoggedIn,
     sideMenuOpen,
   };
 });

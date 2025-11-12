@@ -30,6 +30,7 @@ export type UserPageMinAggregateOutputType = {
   uid: string | null
   rank: string | null
   isPinned: boolean | null
+  isActive: boolean | null
 }
 
 export type UserPageMaxAggregateOutputType = {
@@ -38,6 +39,7 @@ export type UserPageMaxAggregateOutputType = {
   uid: string | null
   rank: string | null
   isPinned: boolean | null
+  isActive: boolean | null
 }
 
 export type UserPageCountAggregateOutputType = {
@@ -46,6 +48,7 @@ export type UserPageCountAggregateOutputType = {
   uid: number
   rank: number
   isPinned: number
+  isActive: number
   _all: number
 }
 
@@ -56,6 +59,7 @@ export type UserPageMinAggregateInputType = {
   uid?: true
   rank?: true
   isPinned?: true
+  isActive?: true
 }
 
 export type UserPageMaxAggregateInputType = {
@@ -64,6 +68,7 @@ export type UserPageMaxAggregateInputType = {
   uid?: true
   rank?: true
   isPinned?: true
+  isActive?: true
 }
 
 export type UserPageCountAggregateInputType = {
@@ -72,6 +77,7 @@ export type UserPageCountAggregateInputType = {
   uid?: true
   rank?: true
   isPinned?: true
+  isActive?: true
   _all?: true
 }
 
@@ -153,6 +159,7 @@ export type UserPageGroupByOutputType = {
   uid: string
   rank: string
   isPinned: boolean
+  isActive: boolean
   _count: UserPageCountAggregateOutputType | null
   _min: UserPageMinAggregateOutputType | null
   _max: UserPageMaxAggregateOutputType | null
@@ -182,6 +189,7 @@ export type UserPageWhereInput = {
   uid?: Prisma.StringFilter<"UserPage"> | string
   rank?: Prisma.StringFilter<"UserPage"> | string
   isPinned?: Prisma.BoolFilter<"UserPage"> | boolean
+  isActive?: Prisma.BoolFilter<"UserPage"> | boolean
   page?: Prisma.XOR<Prisma.PageScalarRelationFilter, Prisma.PageWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
@@ -192,6 +200,7 @@ export type UserPageOrderByWithRelationInput = {
   uid?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   page?: Prisma.PageOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
 }
@@ -206,6 +215,7 @@ export type UserPageWhereUniqueInput = Prisma.AtLeast<{
   uid?: Prisma.StringFilter<"UserPage"> | string
   rank?: Prisma.StringFilter<"UserPage"> | string
   isPinned?: Prisma.BoolFilter<"UserPage"> | boolean
+  isActive?: Prisma.BoolFilter<"UserPage"> | boolean
   page?: Prisma.XOR<Prisma.PageScalarRelationFilter, Prisma.PageWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "rank_uid">
@@ -216,6 +226,7 @@ export type UserPageOrderByWithAggregationInput = {
   uid?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   _count?: Prisma.UserPageCountOrderByAggregateInput
   _max?: Prisma.UserPageMaxOrderByAggregateInput
   _min?: Prisma.UserPageMinOrderByAggregateInput
@@ -230,12 +241,14 @@ export type UserPageScalarWhereWithAggregatesInput = {
   uid?: Prisma.StringWithAggregatesFilter<"UserPage"> | string
   rank?: Prisma.StringWithAggregatesFilter<"UserPage"> | string
   isPinned?: Prisma.BoolWithAggregatesFilter<"UserPage"> | boolean
+  isActive?: Prisma.BoolWithAggregatesFilter<"UserPage"> | boolean
 }
 
 export type UserPageCreateInput = {
   id?: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
   page: Prisma.PageCreateNestedOneWithoutUserPagesInput
   user: Prisma.UserCreateNestedOneWithoutUserPagesInput
 }
@@ -245,13 +258,15 @@ export type UserPageUncheckedCreateInput = {
   pageId: string
   uid: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
 }
 
 export type UserPageUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   page?: Prisma.PageUpdateOneRequiredWithoutUserPagesNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutUserPagesNestedInput
 }
@@ -262,6 +277,7 @@ export type UserPageUncheckedUpdateInput = {
   uid?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPageCreateManyInput = {
@@ -269,13 +285,15 @@ export type UserPageCreateManyInput = {
   pageId: string
   uid: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
 }
 
 export type UserPageUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPageUncheckedUpdateManyInput = {
@@ -284,6 +302,7 @@ export type UserPageUncheckedUpdateManyInput = {
   uid?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPageListRelationFilter = {
@@ -307,6 +326,7 @@ export type UserPageCountOrderByAggregateInput = {
   uid?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
 }
 
 export type UserPageMaxOrderByAggregateInput = {
@@ -315,6 +335,7 @@ export type UserPageMaxOrderByAggregateInput = {
   uid?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
 }
 
 export type UserPageMinOrderByAggregateInput = {
@@ -323,6 +344,7 @@ export type UserPageMinOrderByAggregateInput = {
   uid?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
 }
 
 export type UserPageCreateNestedManyWithoutUserInput = {
@@ -412,7 +434,8 @@ export type UserPageUncheckedUpdateManyWithoutPageNestedInput = {
 export type UserPageCreateWithoutUserInput = {
   id?: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
   page: Prisma.PageCreateNestedOneWithoutUserPagesInput
 }
 
@@ -420,7 +443,8 @@ export type UserPageUncheckedCreateWithoutUserInput = {
   id?: string
   pageId: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
 }
 
 export type UserPageCreateOrConnectWithoutUserInput = {
@@ -458,12 +482,14 @@ export type UserPageScalarWhereInput = {
   uid?: Prisma.StringFilter<"UserPage"> | string
   rank?: Prisma.StringFilter<"UserPage"> | string
   isPinned?: Prisma.BoolFilter<"UserPage"> | boolean
+  isActive?: Prisma.BoolFilter<"UserPage"> | boolean
 }
 
 export type UserPageCreateWithoutPageInput = {
   id?: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
   user: Prisma.UserCreateNestedOneWithoutUserPagesInput
 }
 
@@ -471,7 +497,8 @@ export type UserPageUncheckedCreateWithoutPageInput = {
   id?: string
   uid: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
 }
 
 export type UserPageCreateOrConnectWithoutPageInput = {
@@ -504,13 +531,15 @@ export type UserPageCreateManyUserInput = {
   id?: string
   pageId: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
 }
 
 export type UserPageUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   page?: Prisma.PageUpdateOneRequiredWithoutUserPagesNestedInput
 }
 
@@ -519,6 +548,7 @@ export type UserPageUncheckedUpdateWithoutUserInput = {
   pageId?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPageUncheckedUpdateManyWithoutUserInput = {
@@ -526,19 +556,22 @@ export type UserPageUncheckedUpdateManyWithoutUserInput = {
   pageId?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPageCreateManyPageInput = {
   id?: string
   uid: string
   rank: string
-  isPinned: boolean
+  isPinned?: boolean
+  isActive?: boolean
 }
 
 export type UserPageUpdateWithoutPageInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   user?: Prisma.UserUpdateOneRequiredWithoutUserPagesNestedInput
 }
 
@@ -547,6 +580,7 @@ export type UserPageUncheckedUpdateWithoutPageInput = {
   uid?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPageUncheckedUpdateManyWithoutPageInput = {
@@ -554,6 +588,7 @@ export type UserPageUncheckedUpdateManyWithoutPageInput = {
   uid?: Prisma.StringFieldUpdateOperationsInput | string
   rank?: Prisma.StringFieldUpdateOperationsInput | string
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 
@@ -564,6 +599,7 @@ export type UserPageSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   uid?: boolean
   rank?: boolean
   isPinned?: boolean
+  isActive?: boolean
   page?: boolean | Prisma.PageDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userPage"]>
@@ -574,6 +610,7 @@ export type UserPageSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   uid?: boolean
   rank?: boolean
   isPinned?: boolean
+  isActive?: boolean
   page?: boolean | Prisma.PageDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userPage"]>
@@ -584,6 +621,7 @@ export type UserPageSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   uid?: boolean
   rank?: boolean
   isPinned?: boolean
+  isActive?: boolean
   page?: boolean | Prisma.PageDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userPage"]>
@@ -594,9 +632,10 @@ export type UserPageSelectScalar = {
   uid?: boolean
   rank?: boolean
   isPinned?: boolean
+  isActive?: boolean
 }
 
-export type UserPageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pageId" | "uid" | "rank" | "isPinned", ExtArgs["result"]["userPage"]>
+export type UserPageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pageId" | "uid" | "rank" | "isPinned" | "isActive", ExtArgs["result"]["userPage"]>
 export type UserPageInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   page?: boolean | Prisma.PageDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -622,6 +661,7 @@ export type $UserPagePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     uid: string
     rank: string
     isPinned: boolean
+    isActive: boolean
   }, ExtArgs["result"]["userPage"]>
   composites: {}
 }
@@ -1052,6 +1092,7 @@ export interface UserPageFieldRefs {
   readonly uid: Prisma.FieldRef<"UserPage", 'String'>
   readonly rank: Prisma.FieldRef<"UserPage", 'String'>
   readonly isPinned: Prisma.FieldRef<"UserPage", 'Boolean'>
+  readonly isActive: Prisma.FieldRef<"UserPage", 'Boolean'>
 }
     
 

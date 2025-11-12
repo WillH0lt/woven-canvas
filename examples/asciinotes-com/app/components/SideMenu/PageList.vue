@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Page } from "#shared/prisma";
+import type { Page } from "#shared/prisma/browser";
 import { createSwapy, utils } from "swapy";
 import type { Swapy, SlotItemMapArray } from "swapy";
 import { LexoRank } from "@dalet-oss/lexorank";

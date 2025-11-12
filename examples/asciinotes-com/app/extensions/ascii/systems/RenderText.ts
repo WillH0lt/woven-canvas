@@ -1,182 +1,200 @@
-import { BaseSystem } from '@infinitecanvas/core'
-import { Block, Color, Edited, Selected, Text } from '@infinitecanvas/core/components'
-import { type Entity, co } from '@lastolivegames/becsy'
-import figlet from 'figlet'
-import type { Mesh } from 'three'
+import { BaseSystem } from "@infinitecanvas/core";
+import {
+  Block,
+  Color,
+  Edited,
+  Selected,
+  Text,
+} from "@infinitecanvas/core/components";
+import { type Entity, co } from "@lastolivegames/becsy";
+import figlet from "figlet";
+import type { Mesh } from "three";
 
-import { removeElement, showElement } from '../helpers/element'
-import { resizeAndMaybeRecreateLetterMaterial } from '../helpers/materialHelper'
-import { getLines } from '../helpers/textLayoutCalculator'
-import type { LetterMaterial } from '../materials'
-import type { AsciiResources } from '../types'
-import { RenderScene } from './RenderScene'
-import { RenderShapes } from './RenderShapes'
+import { removeElement, showElement } from "../helpers/element";
+import { resizeAndMaybeRecreateLetterMaterial } from "../helpers/materialHelper";
+import { getLines } from "../helpers/textLayoutCalculator";
+import type { LetterMaterial } from "../materials";
+import type { AsciiResources } from "../types";
+import { RenderScene } from "./RenderScene";
+import { RenderShapes } from "./RenderShapes";
 
 export class RenderText extends BaseSystem {
-  protected declare readonly resources: AsciiResources
+  protected declare readonly resources: AsciiResources;
 
-  private readonly texts = this.query((q) => q.added.addedOrChanged.current.with(Text).trackWrites)
+  private readonly texts = this.query(
+    (q) => q.added.addedOrChanged.current.with(Text).trackWrites
+  );
 
-  private readonly textBlocks = this.query((q) => q.changed.with(Block).trackWrites.and.with(Text))
+  private readonly textBlocks = this.query((q) =>
+    q.changed.with(Block).trackWrites.and.with(Text)
+  );
 
-  private readonly selectedTexts = this.query((q) => q.added.removed.with(Text, Block, Selected))
+  private readonly selectedTexts = this.query((q) =>
+    q.added.removed.with(Text, Block, Selected)
+  );
 
-  private readonly editedTexts = this.query((q) => q.added.removed.with(Text, Block, Edited))
+  private readonly editedTexts = this.query((q) =>
+    q.added.removed.with(Text, Block, Edited)
+  );
 
   public constructor() {
-    super()
-    this.schedule((s) => s.inAnyOrderWith(RenderShapes).before(RenderScene))
+    super();
+    this.schedule((s) => s.inAnyOrderWith(RenderShapes).before(RenderScene));
   }
 
   private getTextLines(textEntity: Entity, element: HTMLElement): string[] {
-    const { fontFamily } = textEntity.read(Text)
+    const { fontFamily } = textEntity.read(Text);
 
-    const textContainer = element?.shadowRoot?.firstElementChild as HTMLElement | null
-    if (!textContainer) return []
+    const textContainer = element?.shadowRoot
+      ?.firstElementChild as HTMLElement | null;
+    if (!textContainer) return [];
 
     const lines = getLines(textContainer)
       .map((line) => line.text)
       .flatMap((line) => {
-        if (fontFamily === 'CascadiaMono') {
-          return [line]
+        if (fontFamily === "CascadiaMono") {
+          return [line];
         }
 
         return figlet
           .textSync(line, {
             font: fontFamily,
-            horizontalLayout: 'full',
-            verticalLayout: 'full',
+            horizontalLayout: "full",
+            verticalLayout: "full",
           })
-          .split('\n')
-      })
+          .split("\n");
+      });
 
-    return lines
+    return lines;
   }
 
   private updateMaterial(mesh: Mesh, lines: string[]): void {
-    const width = mesh.scale.x
-    const height = mesh.scale.y
+    const width = mesh.scale.x;
+    const height = mesh.scale.y;
 
-    const rows = Math.round(height / this.grid.rowHeight)
-    const cols = Math.round(width / this.grid.colWidth)
+    const rows = Math.round(height / this.grid.rowHeight);
+    const cols = Math.round(width / this.grid.colWidth);
 
-    resizeAndMaybeRecreateLetterMaterial(mesh, rows, cols)
+    resizeAndMaybeRecreateLetterMaterial(mesh, rows, cols);
 
-    const material = mesh.material as LetterMaterial
+    const material = mesh.material as LetterMaterial;
 
-    material.colors.value.image.data.fill(0)
+    material.colors.value.image.data.fill(0);
 
     const black = new Color({
       red: 0,
       green: 0,
       blue: 0,
       alpha: 255,
-    })
+    });
 
     const invisible = new Color({
       red: 0,
       green: 0,
       blue: 0,
       alpha: 0,
-    })
+    });
 
     // Fill the grid with characters from the split lines
     for (let row = 0; row < Math.min(rows, lines.length); row++) {
-      const line = lines[row]
+      const line = lines[row];
 
       for (let col = 0; col < Math.min(cols, line.length); col++) {
-        const c = line[col]
-        material.setCharAtPosition(c, row, col)
-        if (c === ' ') {
-          material.setColorAtPosition(invisible, row, col)
+        const c = line[col];
+        material.setCharAtPosition(c, row, col);
+        if (c === " ") {
+          material.setColorAtPosition(invisible, row, col);
         } else {
-          material.setColorAtPosition(black, row, col)
+          material.setColorAtPosition(black, row, col);
         }
       }
     }
   }
 
-  @co private *cleanupTextElement(textEntity: Entity, blockId: string): Generator {
+  @co private *cleanupTextElement(
+    textEntity: Entity,
+    blockId: string
+  ): Generator {
     if (!textEntity.alive) {
       // remove element immediately
-      removeElement(blockId)
-      return
+      removeElement(blockId);
+      return;
     }
 
-    if (textEntity.has(Edited) || textEntity.has(Selected)) return
+    if (textEntity.has(Edited) || textEntity.has(Selected)) return;
 
-    co.scope(textEntity)
-    co.cancelIfCoroutineStarted()
+    co.scope(textEntity);
+    co.cancelIfCoroutineStarted();
 
-    yield co.waitForFrames(5)
+    yield co.waitForFrames(5);
 
-    removeElement(blockId)
+    removeElement(blockId);
   }
 
   private async updateText(textEntity: Entity): Promise<void> {
-    const block = textEntity.read(Block)
+    const block = textEntity.read(Block);
 
-    console.log('UPDATE TEXT RENDER', block.width, block.width / this.grid.colWidth)
+    const mesh = this.resources.scene.getObjectByName(block.id) as
+      | Mesh
+      | undefined;
+    if (!mesh) return;
 
-    const mesh = this.resources.scene.getObjectByName(block.id) as Mesh | undefined
-    if (!mesh) return
+    const element = await showElement(textEntity, this.resources, {});
 
-    const element = await showElement(textEntity, this.resources, {})
+    const lines = this.getTextLines(textEntity, element);
 
-    const lines = this.getTextLines(textEntity, element)
-
-    this.updateMaterial(mesh, lines)
+    this.updateMaterial(mesh, lines);
   }
 
   private updateTextSync(textEntity: Entity): void {
-    const { id } = textEntity.read(Block)
+    const { id } = textEntity.read(Block);
 
-    const mesh = this.resources.scene.getObjectByName(id) as Mesh | undefined
-    if (!mesh) return
+    const mesh = this.resources.scene.getObjectByName(id) as Mesh | undefined;
+    if (!mesh) return;
 
-    const element = document.getElementById(id) as HTMLElement | null
-    if (!element) return
+    const element = document.getElementById(id) as HTMLElement | null;
+    if (!element) return;
 
-    const lines = this.getTextLines(textEntity, element)
+    const lines = this.getTextLines(textEntity, element);
 
-    this.updateMaterial(mesh, lines)
+    this.updateMaterial(mesh, lines);
   }
 
   public execute(): void {
     for (const textEntity of this.selectedTexts.added) {
-      showElement(textEntity, this.resources, { opacity: 0 })
+      showElement(textEntity, this.resources, { opacity: 0 });
     }
 
     for (const textEntity of this.editedTexts.added) {
-      const { id } = textEntity.read(Block)
+      const { id } = textEntity.read(Block);
 
-      const element = document.getElementById(id) as HTMLElement | null
-      if (!element) return
+      const element = document.getElementById(id) as HTMLElement | null;
+      if (!element) return;
 
-      element.style.opacity = '1'
+      element.style.opacity = "1";
     }
 
     if (this.selectedTexts.removed.length > 0) {
-      this.accessRecentlyDeletedData()
+      this.accessRecentlyDeletedData();
     }
     for (const textEntity of this.selectedTexts.removed) {
-      const block = textEntity.read(Block)
+      const block = textEntity.read(Block);
 
-      this.cleanupTextElement(textEntity, block.id)
+      this.cleanupTextElement(textEntity, block.id);
     }
 
     for (const textEntity of this.textBlocks.changed) {
       // if just the block is changeing we can do a sync update
-      this.updateTextSync(textEntity)
+      this.updateTextSync(textEntity);
     }
 
     for (const textEntity of this.texts.addedOrChanged) {
-      if (textEntity.has(Edited)) continue
+      if (textEntity.has(Edited)) continue;
 
       // if the text is also changing we need to wait for the element to update
-      const { id } = textEntity.read(Block)
-      this.updateText(textEntity)
-      this.cleanupTextElement(textEntity, id)
+      const { id } = textEntity.read(Block);
+      this.updateText(textEntity);
+      this.cleanupTextElement(textEntity, id);
     }
   }
 }

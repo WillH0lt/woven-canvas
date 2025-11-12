@@ -15,7 +15,7 @@ export const UserPageCreateSchema = z.object({
   rank: z.string().refine(isValidLexoRank, {
     message: "Invalid rank format.",
   }),
-  isPinned: z.boolean(),
+  isPinned: z.boolean().optional(),
 });
 
 export const UserPageUpdateSchema = z.object({

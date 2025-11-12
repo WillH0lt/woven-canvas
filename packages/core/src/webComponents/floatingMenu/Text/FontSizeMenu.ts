@@ -1,10 +1,10 @@
-import { LitElement, css, html, isServer } from 'lit'
-import { customElement, state } from 'lit/decorators.js'
-import { consume } from '@lit/context'
+import { LitElement, css, html, isServer } from "lit";
+import { customElement, state } from "lit/decorators.js";
+import { consume } from "@lit/context";
 
-import type { ICommands, IStore } from '../../../types'
-import { FONT_SIZE_OPTIONS } from '../../../constants'
-import { commandsContext, storeContext } from '../../contexts'
+import type { ICommands, IStore } from "../../../types";
+import { FONT_SIZE_OPTIONS } from "../../../constants";
+import { commandsContext, storeContext } from "../../contexts";
 
 const checkIcon = html`
   <svg
@@ -19,29 +19,18 @@ const checkIcon = html`
       d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"
     />
   </svg>
-`
+`;
 
-
-console.log('==============================================')
-console.log('==============================================')
-console.log('==============================================')
-console.log('==============================================')
-console.log('==============================================')
-console.log('==============================================')
-console.log('==============================================')
-console.log('==============================================')
-console.log('isServer', isServer, '===========================================')
-
-@customElement('ic-font-size-menu')
+@customElement("ic-font-size-menu")
 export class ICFontSizeMenu extends LitElement {
   @consume({ context: storeContext })
-  private store: IStore = {} as IStore
+  private store: IStore = {} as IStore;
 
   @consume({ context: commandsContext })
-  private commands: ICommands = {} as ICommands
+  private commands: ICommands = {} as ICommands;
 
   @state()
-  private fontSizeText = ''
+  private fontSizeText = "";
 
   static styles = css`
     .menu-container {
@@ -127,88 +116,94 @@ export class ICFontSizeMenu extends LitElement {
       color: var(--ic-gray-400);
       font-size: 0.875rem;
     }
-  `
+  `;
 
   connectedCallback() {
-    super.connectedCallback()
-    const fontSize = this.getCurrentFontSize()
+    super.connectedCallback();
+    const fontSize = this.getCurrentFontSize();
     if (fontSize !== null) {
-      this.updateFontSizeText(fontSize)
+      this.updateFontSizeText(fontSize);
     }
   }
 
   private updateFontSizeText(fontSize: number) {
-    const n = +fontSize.toFixed(1)
-    this.fontSizeText = n.toString()
+    const n = +fontSize.toFixed(1);
+    this.fontSizeText = n.toString();
   }
 
   private setFontSize(value: number) {
-    this.commands.textEditor.setFontSize(value)
-    this.updateFontSizeText(value)
+    this.commands.textEditor.setFontSize(value);
+    this.updateFontSizeText(value);
   }
 
   private handleCustomFontSize() {
-    const value = Number.parseFloat(this.fontSizeText)
+    const value = Number.parseFloat(this.fontSizeText);
     if (!Number.isNaN(value) && value > 0) {
-      this.setFontSize(value)
+      this.setFontSize(value);
     }
   }
 
   private handleInputChange(e: Event) {
-    const input = e.target as HTMLInputElement
-    this.fontSizeText = input.value
+    const input = e.target as HTMLInputElement;
+    this.fontSizeText = input.value;
 
-    this.handleCustomFontSize()
+    this.handleCustomFontSize();
   }
 
   private handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
-      this.handleCustomFontSize()
-      ;(e.target as HTMLInputElement).blur()
+    if (e.key === "Enter") {
+      this.handleCustomFontSize();
+      (e.target as HTMLInputElement).blur();
     }
   }
 
   private handleBlur() {
-    this.handleCustomFontSize()
+    this.handleCustomFontSize();
   }
 
   private getCurrentFontSize(): number | null {
-    const selectedTexts = this.store.textEditor.selectedTexts.value
+    const selectedTexts = this.store.textEditor.selectedTexts.value;
 
     if (!selectedTexts || selectedTexts.length === 0) {
-      return null
+      return null;
     }
 
-    const firstFontSize = selectedTexts[0].fontSizePx
-    const allSameSize = selectedTexts.every((text) => text.fontSizePx === firstFontSize)
+    const firstFontSize = selectedTexts[0].fontSizePx;
+    const allSameSize = selectedTexts.every(
+      (text) => text.fontSizePx === firstFontSize
+    );
 
-    return allSameSize ? firstFontSize : null
+    return allSameSize ? firstFontSize : null;
   }
 
   render() {
-    const currentFontSize = this.getCurrentFontSize()
+    const currentFontSize = this.getCurrentFontSize();
 
     return html`
       <div class="menu-container" @click=${(e: Event) => e.stopPropagation()}>
         ${FONT_SIZE_OPTIONS.map(
           (option) => html`
-          <div
-            class="option-item ${currentFontSize === option.value ? 'active' : ''}"
-            @click=${() => this.setFontSize(option.value)}
-          >
-            ${currentFontSize === option.value ? html`<div class="check-icon">${checkIcon}</div>` : ''}
             <div
-              class="option-label"
-              style="font-size: ${option.displayValue}px"
+              class="option-item ${currentFontSize === option.value
+                ? "active"
+                : ""}"
+              @click=${() => this.setFontSize(option.value)}
             >
-              ${option.label}
+              ${currentFontSize === option.value
+                ? html`<div class="check-icon">${checkIcon}</div>`
+                : ""}
+              <div
+                class="option-label"
+                style="font-size: ${option.displayValue}px"
+              >
+                ${option.label}
+              </div>
             </div>
-          </div>
-        `,
+          `
         )}
-        
+
         <div class="separator"></div>
-        
+
         <div class="input-container">
           <input
             class="custom-input"
@@ -221,12 +216,12 @@ export class ICFontSizeMenu extends LitElement {
           <div class="px-suffix">px</div>
         </div>
       </div>
-    `
+    `;
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ic-font-size-menu': ICFontSizeMenu
+    "ic-font-size-menu": ICFontSizeMenu;
   }
 }

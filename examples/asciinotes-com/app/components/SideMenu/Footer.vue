@@ -2,7 +2,7 @@
   <div class="flex items-center justify-center w-full">
     <UDropdownMenu :items="accountItems">
       <div
-        class="flex group gap-2 px-2 py-1 hover:bg-gray-200 mb-2 cursor-pointer rounded-lg transition-colors"
+        class="flex group gap-2 px-2 py-1 hover:bg-gray-200 mb-2 cursor-pointer rounded-lg transition-colors select-none"
       >
         <!-- <UAvatar
           :src="currentUser?.photoURL || ''"
@@ -53,6 +53,8 @@ const accountItems = ref([
       icon: "i-lucide-log-out",
       onSelect: async () => {
         await signOut(auth);
+
+        window.location.href = "/";
       },
     },
   ],

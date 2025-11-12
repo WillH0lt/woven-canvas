@@ -1,122 +1,131 @@
-import { co } from '@lastolivegames/becsy'
-import { InputKeyboard } from './InputKeyboard'
-import { InputPointer } from './InputPointer'
-import { InputScreen } from './InputScreen'
+import { co } from "@lastolivegames/becsy";
 
-import { BaseSystem } from '../BaseSystem'
-import { Mouse } from '../components'
+import { InputKeyboard } from "./InputKeyboard";
+import { InputPointer } from "./InputPointer";
+import { InputScreen } from "./InputScreen";
+import type { BaseResources } from "../types";
+import { BaseSystem } from "../BaseSystem";
+import { Mouse, Screen } from "../components";
 
 export class InputMouse extends BaseSystem {
-  private readonly mice = this.query((q) => q.current.with(Mouse).write)
+  private readonly mice = this.query((q) => q.current.with(Mouse).write);
+
+  protected declare readonly resources: BaseResources;
 
   private get writeableMouse(): Mouse {
-    return this.mice.current[0].write(Mouse)
+    return this.mice.current[0].write(Mouse);
   }
 
   // declaring to becsy that mouse is a singleton component
-  private readonly _mouse = this.singleton.read(Mouse)
+  private readonly _mouse = this.singleton.read(Mouse);
 
   public constructor() {
-    super()
-    this.schedule((s) => s.inAnyOrderWith(InputKeyboard, InputScreen, InputPointer))
+    super();
+    this.schedule((s) =>
+      s.inAnyOrderWith(InputKeyboard, InputScreen, InputPointer)
+    );
   }
 
   @co private *onMouseMove(e: MouseEvent): Generator {
-    this.writeableMouse.position = [e.clientX, e.clientY]
-    this.setTrigger('moveTrigger')
+    this.writeableMouse.position = [
+      e.clientX - this.screen.left,
+      e.clientY - this.screen.top,
+    ];
+    this.setTrigger("moveTrigger");
 
-    yield
+    yield;
   }
 
   @co private *setTrigger(triggerKey: string): Generator {
     if (!(triggerKey in this.mouse)) {
-      throw new Error(`Invalid trigger key: ${triggerKey}`)
+      throw new Error(`Invalid trigger key: ${triggerKey}`);
     }
 
-    Object.assign(this.writeableMouse, { [triggerKey]: true })
+    Object.assign(this.writeableMouse, { [triggerKey]: true });
 
-    yield co.waitForFrames(1)
+    yield co.waitForFrames(1);
 
-    Object.assign(this.writeableMouse, { [triggerKey]: false })
+    Object.assign(this.writeableMouse, { [triggerKey]: false });
   }
 
   @co private *onWheel(e: WheelEvent): Generator {
-    e.preventDefault()
+    e.preventDefault();
 
-    this.writeableMouse.wheelDeltaY = normalizedDeltaY(e)
-    this.writeableMouse.wheelDeltaX = e.deltaX
-    this.setTrigger('wheelTrigger')
+    this.writeableMouse.wheelDeltaY = normalizedDeltaY(e);
+    this.writeableMouse.wheelDeltaX = e.deltaX;
+    this.setTrigger("wheelTrigger");
 
-    yield
+    yield;
   }
 
   @co private *onMouseLeave(): Generator {
-    // Reset mouse position when leaving the window
-    // this.mouse.position = [0, 0]
-    this.setTrigger('leaveTrigger')
+    this.setTrigger("leaveTrigger");
 
-    yield
+    yield;
   }
 
   @co private *onMouseEnter(): Generator {
-    // Reset mouse position when entering the window
-    // this.mouse.position = [0, 0]
-    this.setTrigger('enterTrigger')
+    this.setTrigger("enterTrigger");
 
-    yield
+    yield;
   }
 
   public initialize(): void {
-    const domElement = this.resources.domElement
+    const domElement = this.resources.domElement;
 
-    window.addEventListener('mousemove', this.onMouseMove.bind(this))
-    domElement.addEventListener('wheel', this.onWheel.bind(this), { passive: false })
+    window.addEventListener("mousemove", this.onMouseMove.bind(this));
+    domElement.addEventListener("wheel", this.onWheel.bind(this), {
+      passive: false,
+    });
     window.addEventListener(
-      'wheel',
+      "wheel",
       (e) => {
-        e.preventDefault()
+        e.preventDefault();
       },
-      { passive: false },
-    )
+      { passive: false }
+    );
 
-    domElement.addEventListener('mouseleave', this.onMouseLeave.bind(this))
-    domElement.addEventListener('mouseenter', this.onMouseEnter.bind(this))
+    domElement.addEventListener("mouseleave", this.onMouseLeave.bind(this));
+    domElement.addEventListener("mouseenter", this.onMouseEnter.bind(this));
   }
 }
 
 export function normalizedDeltaY(event: WheelEvent): number {
-  const LINE_MODE = 1
-  const PAGE_MODE = 2
+  const LINE_MODE = 1;
+  const PAGE_MODE = 2;
 
   // Default line height in pixels (approximate)
-  const LINE_HEIGHT = 16
+  const LINE_HEIGHT = 16;
 
   // Default page height in pixels (approximate)
-  const PAGE_HEIGHT = window.innerHeight
+  const PAGE_HEIGHT = window.innerHeight;
 
-  let deltaY = event.deltaY
+  let deltaY = event.deltaY;
 
   // Normalize based on the deltaMode
   if (event.deltaMode === LINE_MODE) {
     // Convert from lines to pixels
-    deltaY *= LINE_HEIGHT
+    deltaY *= LINE_HEIGHT;
   } else if (event.deltaMode === PAGE_MODE) {
     // Convert from pages to pixels
-    deltaY *= PAGE_HEIGHT
+    deltaY *= PAGE_HEIGHT;
   }
 
   // Account for Firefox (which often uses smaller values)
-  if (navigator.userAgent.includes('Firefox')) {
-    deltaY *= 4
+  if (navigator.userAgent.includes("Firefox")) {
+    deltaY *= 4;
   }
 
   // You may want to add a multiplier for macOS where values can be smaller
-  if (navigator.userAgent.includes('Mac') || navigator.userAgent.includes('Macintosh')) {
-    deltaY *= 1.5
+  if (
+    navigator.userAgent.includes("Mac") ||
+    navigator.userAgent.includes("Macintosh")
+  ) {
+    deltaY *= 1.5;
   }
 
   // Clamp the value to a reasonable range
-  deltaY = Math.min(Math.max(deltaY, -100), 100)
+  deltaY = Math.min(Math.max(deltaY, -100), 100);
 
-  return deltaY
+  return deltaY;
 }

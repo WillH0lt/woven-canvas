@@ -2,15 +2,17 @@ import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
+  linkWithCredential,
+  EmailAuthProvider,
 } from "firebase/auth";
 
 export const useEmailAuth = () => {
   const auth = useFirebaseAuth()!;
 
-  const sendMagicLink = async (
+  async function sendMagicLink(
     email: string,
     redirectUrl: string = "/auth/verify"
-  ) => {
+  ) {
     // Store email in localStorage for later verification
     localStorage.setItem("emailForSignIn", email);
 
@@ -20,9 +22,9 @@ export const useEmailAuth = () => {
     };
 
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-  };
+  }
 
-  const verifyMagicLink = async (url: string, email?: string) => {
+  async function signUpWithMagicLink(url: string, email?: string) {
     if (!isSignInWithEmailLink(auth, url)) {
       throw new Error("Invalid sign-in link");
     }
@@ -33,29 +35,44 @@ export const useEmailAuth = () => {
       throw new Error("Email is required to complete sign-in");
     }
 
-    const result = await signInWithEmailLink(auth, userEmail, url);
+    if (!auth.currentUser) {
+      throw new Error(
+        "There must be an anonymous user to sign up with a provider."
+      );
+    }
 
-    // Clear email from localStorage
-    localStorage.removeItem("emailForSignIn");
+    const credential = EmailAuthProvider.credentialWithLink(userEmail, url);
 
-    return result;
-  };
+    try {
+      return await linkWithCredential(auth.currentUser, credential);
+    } catch (err: any) {
+      console.log("Error linking credential:", err);
+      if (err.code === "auth/email-already-in-use") {
+        // TODO authorize transfer of anonymous data to existing account
 
-  const isValidMagicLink = (url: string) => {
+        // If the credential is already in use, sign in with the link instead
+        return await signInWithEmailLink(auth, userEmail, url);
+      }
+
+      throw err;
+    }
+  }
+
+  function isValidMagicLink(url: string) {
     return isSignInWithEmailLink(auth, url);
-  };
+  }
 
-  const getStoredEmail = () => {
+  function getStoredEmail() {
     return localStorage.getItem("emailForSignIn");
-  };
+  }
 
-  const clearStoredEmail = () => {
+  function clearStoredEmail() {
     localStorage.removeItem("emailForSignIn");
-  };
+  }
 
   return {
     sendMagicLink,
-    verifyMagicLink,
+    signUpWithMagicLink,
     isValidMagicLink,
     getStoredEmail,
     clearStoredEmail,

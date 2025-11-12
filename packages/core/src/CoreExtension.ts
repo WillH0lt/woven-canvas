@@ -1,16 +1,19 @@
-import type { System } from '@lastolivegames/becsy'
-import { type ReadonlySignal, computed } from '@preact/signals-core'
-import type { Emitter } from 'strict-event-emitter'
+import type { System } from "@lastolivegames/becsy";
+import { type ReadonlySignal, computed } from "@preact/signals-core";
+import type { Emitter } from "strict-event-emitter";
 
-import type { BaseComponent } from './BaseComponent'
-import { BaseExtension } from './BaseExtension'
-import { ComponentRegistry } from './ComponentRegistry'
-import { FontLoader } from './FontLoader'
-import type { Snapshot } from './History'
-import { LocalDB } from './LocalDB'
-import type { State } from './State'
-import { floatingMenuButtonColor, floatingMenuButtonVerticalAlign } from './buttonCatalog'
-import { CoreCommand, type CoreCommandArgs } from './commands'
+import type { BaseComponent } from "./BaseComponent";
+import { BaseExtension } from "./BaseExtension";
+import { ComponentRegistry } from "./ComponentRegistry";
+import { FontLoader } from "./FontLoader";
+import type { Snapshot } from "./History";
+import { LocalDB } from "./LocalDB";
+import type { State } from "./State";
+import {
+  floatingMenuButtonColor,
+  floatingMenuButtonVerticalAlign,
+} from "./buttonCatalog";
+import { CoreCommand, type CoreCommandArgs } from "./commands";
 import {
   Block,
   Camera,
@@ -21,20 +24,21 @@ import {
   Edited,
   Hovered,
   Persistent,
+  Screen,
   Selected,
   Text,
   VerticalAlign,
-} from './components'
-import { DEFAULT_FONT_FAMILIES, SESSION_KEY } from './constants'
-import { HAND_CURSOR, SELECT_CURSOR } from './constants'
-import { createSnapshot } from './helpers'
-import * as sys from './systems'
+} from "./components";
+import { DEFAULT_FONT_FAMILIES, SESSION_KEY } from "./constants";
+import { HAND_CURSOR, SELECT_CURSOR } from "./constants";
+import { createSnapshot } from "./helpers";
+import * as sys from "./systems";
 import type {
   AnimationInput,
   BaseResources,
   ColorMenuOptions,
   CoreResources,
-  EmitterEvents,
+  InwardEmitterEvents,
   FontFamily,
   ICommands,
   IConfig,
@@ -42,63 +46,72 @@ import type {
   Options,
   SendCommandFn,
   SerializablePropNames,
-} from './types'
+  EmitterEvents,
+} from "./types";
 
-type BlockData = Pick<Block, SerializablePropNames<Block>>
-type ColorData = Pick<Color, SerializablePropNames<Color>>
-type ControlsData = Pick<Controls, SerializablePropNames<Controls>>
+type BlockData = Pick<Block, SerializablePropNames<Block>>;
+type ColorData = Pick<Color, SerializablePropNames<Color>>;
+type ControlsData = Pick<Controls, SerializablePropNames<Controls>>;
 
-declare module '@infinitecanvas/core' {
+declare module "@infinitecanvas/core" {
   interface ICommands {
     core: {
-      setCamera: (camera: Partial<Camera>, animation: AnimationInput) => void
-      cancelCameraAnimation: () => void
-      frameCameraToBlocks: (animation: AnimationInput) => void
-      undo: () => void
-      redo: () => void
-      createCheckpoint: () => void
-      bringForwardSelected: () => void
-      sendBackwardSelected: () => void
-      deselectAll: () => void
-      duplicateSelected: () => void
-      removeSelected: () => void
-      updateBlock: (blockId: string, block: Partial<BlockData>) => void
-      updateFromSnapshot: (snapshot: Snapshot) => void
-      addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => void
-      scaleBlock: (blockId: string, factor: number) => void
-      setControls: (controls: Partial<ControlsData>) => void
-      setColor: (blockId: string, color: Partial<ColorData>) => void
-      applyColorToSelected: (color: ColorData) => void
-      applyVerticalAlignToSelected: (verticalAlign: VerticalAlign) => void
-      createAndDragOntoCanvas: (snapshot: Snapshot) => void
-      getSelectedSnapshot: (Components: (new () => BaseComponent)[]) => Snapshot
-    }
+      setCamera: (camera: Partial<Camera>, animation: AnimationInput) => void;
+      cancelCameraAnimation: () => void;
+      frameCameraToBlocks: (animation: AnimationInput) => void;
+      undo: () => void;
+      redo: () => void;
+      createCheckpoint: () => void;
+      bringForwardSelected: () => void;
+      sendBackwardSelected: () => void;
+      deselectAll: () => void;
+      duplicateSelected: () => void;
+      removeSelected: () => void;
+      updateBlock: (blockId: string, block: Partial<BlockData>) => void;
+      updateFromSnapshot: (snapshot: Snapshot) => void;
+      addBlock: (
+        block: Partial<BlockData>,
+        components: BaseComponent[]
+      ) => void;
+      scaleBlock: (blockId: string, factor: number) => void;
+      setControls: (controls: Partial<ControlsData>) => void;
+      setColor: (blockId: string, color: Partial<ColorData>) => void;
+      applyColorToSelected: (color: ColorData) => void;
+      applyVerticalAlignToSelected: (verticalAlign: VerticalAlign) => void;
+      createAndDragOntoCanvas: (snapshot: Snapshot) => void;
+      getSelectedSnapshot: (
+        Components: (new () => BaseComponent)[]
+      ) => Snapshot;
+    };
   }
 
   interface IStore {
     core: {
-      blockCount: ReadonlySignal<number>
-      selectedBlockCount: ReadonlySignal<number>
-      selectedBlockIds: ReadonlySignal<string[]>
-      hoveredBlockId: ReadonlySignal<string | null>
-      blockById: (id: string) => ReadonlySignal<Block | undefined>
-      colorById: (id: string) => ReadonlySignal<Color | undefined>
-      verticalAlignById: (id: string) => ReadonlySignal<VerticalAlign | undefined>
-      textById: (id: string) => ReadonlySignal<Text | undefined>
-      controls: ReadonlySignal<Controls | undefined>
-      camera: ReadonlySignal<Camera | undefined>
-      cameraState: ReadonlySignal<CameraState | undefined>
-      fontFamilies: ReadonlySignal<FontFamily[]>
-      selectedBlocks: ReadonlySignal<Block[]>
-      selectedColors: ReadonlySignal<Color[]>
-    }
+      blockCount: ReadonlySignal<number>;
+      selectedBlockCount: ReadonlySignal<number>;
+      selectedBlockIds: ReadonlySignal<string[]>;
+      hoveredBlockId: ReadonlySignal<string | null>;
+      blockById: (id: string) => ReadonlySignal<Block | undefined>;
+      colorById: (id: string) => ReadonlySignal<Color | undefined>;
+      verticalAlignById: (
+        id: string
+      ) => ReadonlySignal<VerticalAlign | undefined>;
+      textById: (id: string) => ReadonlySignal<Text | undefined>;
+      controls: ReadonlySignal<Controls | undefined>;
+      camera: ReadonlySignal<Camera | undefined>;
+      cameraState: ReadonlySignal<CameraState | undefined>;
+      screen: ReadonlySignal<Screen | undefined>;
+      fontFamilies: ReadonlySignal<FontFamily[]>;
+      selectedBlocks: ReadonlySignal<Block[]>;
+      selectedColors: ReadonlySignal<Color[]>;
+    };
   }
 
   interface IConfig {
     core: {
-      colorMenu: ColorMenuOptions
-      defaultFontFamily: FontFamily
-    }
+      colorMenu: ColorMenuOptions;
+      defaultFontFamily: FontFamily;
+    };
   }
 }
 
@@ -114,122 +127,154 @@ export class CoreExtension extends BaseExtension {
       buttons: [floatingMenuButtonVerticalAlign],
       orderIndex: 100,
     },
-  ]
+  ];
 
   public readonly tools = [
     {
-      name: 'select',
-      buttonTag: 'ic-select-tool',
-      buttonTooltip: 'Select',
+      name: "select",
+      buttonTag: "ic-select-tool",
+      buttonTooltip: "Select",
       cursorIcon: SELECT_CURSOR,
 
-      blockContainer: 'asdf',
+      blockContainer: "asdf",
     },
     {
-      name: 'hand',
-      buttonTag: 'ic-hand-tool',
-      buttonTooltip: 'Hand',
+      name: "hand",
+      buttonTag: "ic-hand-tool",
+      buttonTooltip: "Hand",
       cursorIcon: HAND_CURSOR,
     },
     {
-      name: 'text',
-      buttonTag: 'ic-text-tool',
-      buttonTooltip: 'Text',
+      name: "text",
+      buttonTag: "ic-text-tool",
+      buttonTooltip: "Text",
     },
-  ]
+  ];
 
-  private readonly options: Options
-  private readonly emitter: Emitter<EmitterEvents>
-  private readonly state: State
-  private initialEntities: Snapshot = {}
+  private readonly options: Options;
+  private readonly inwardEmitter: Emitter<InwardEmitterEvents>;
+  private readonly outwardEmitter: Emitter<EmitterEvents>;
+  private readonly state: State;
+  private initialEntities: Snapshot = {};
 
-  constructor(emitter: Emitter<EmitterEvents>, state: State, options: Options) {
-    super()
-    this.emitter = emitter
-    this.state = state
-    this.options = options
+  constructor(
+    inwardEmitter: Emitter<InwardEmitterEvents>,
+    outwardEmitter: Emitter<EmitterEvents>,
+    state: State,
+    options: Options
+  ) {
+    super();
+    this.inwardEmitter = inwardEmitter;
+    this.outwardEmitter = outwardEmitter;
+    this.state = state;
+    this.options = options;
   }
 
   public async preBuild(resources: BaseResources): Promise<void> {
-    ComponentRegistry.instance.registerComponent(Block)
-    ComponentRegistry.instance.registerComponent(Color)
-    ComponentRegistry.instance.registerComponent(VerticalAlign)
-    ComponentRegistry.instance.registerComponent(Edited)
-    ComponentRegistry.instance.registerComponent(Selected)
-    ComponentRegistry.instance.registerComponent(Hovered)
-    ComponentRegistry.instance.registerComponent(Persistent)
-    ComponentRegistry.instance.registerComponent(Connector)
+    ComponentRegistry.instance.registerComponent(Block);
+    ComponentRegistry.instance.registerComponent(Color);
+    ComponentRegistry.instance.registerComponent(VerticalAlign);
+    ComponentRegistry.instance.registerComponent(Edited);
+    ComponentRegistry.instance.registerComponent(Selected);
+    ComponentRegistry.instance.registerComponent(Hovered);
+    ComponentRegistry.instance.registerComponent(Persistent);
+    ComponentRegistry.instance.registerComponent(Connector);
 
-    ComponentRegistry.instance.registerComponent(Controls)
-    ComponentRegistry.instance.registerComponent(Camera)
-    ComponentRegistry.instance.registerComponent(CameraState)
+    ComponentRegistry.instance.registerComponent(Controls);
+    ComponentRegistry.instance.registerComponent(Camera);
+    ComponentRegistry.instance.registerComponent(CameraState);
+    ComponentRegistry.instance.registerComponent(Screen);
 
-    const menuContainer = document.createElement('div')
-    menuContainer.style.pointerEvents = 'none'
-    menuContainer.style.userSelect = 'none'
-    menuContainer.style.transformOrigin = '0 0'
+    const menuContainer = document.createElement("div");
+    menuContainer.style.pointerEvents = "none";
+    menuContainer.style.userSelect = "none";
+    menuContainer.style.transformOrigin = "0 0";
     // establish a stacking context
-    menuContainer.style.transform = 'translate(0, 0) scale(1)'
-    menuContainer.style.position = 'relative'
-    resources.domElement.append(menuContainer)
+    menuContainer.style.transform = "translate(0, 0) scale(1)";
+    menuContainer.style.position = "relative";
+    resources.domElement.append(menuContainer);
 
-    const localDB = await LocalDB.New(this.options.persistenceKey)
-    this.initialEntities = await localDB.getAll()
+    let localDB: LocalDB | undefined = undefined;
+    if (this.options.localPersistence.enabled) {
+      localDB = await LocalDB.New(this.options.localPersistence.key);
+      this.initialEntities = await localDB.getAll();
+    }
 
-    await loadFonts(this.initialEntities, this.options)
+    await loadFonts(this.initialEntities, this.options);
 
     const coreResources: CoreResources = {
       ...resources,
       ...this.options,
-      emitter: this.emitter,
+      inwardEmitter: this.inwardEmitter,
+      outwardEmitter: this.outwardEmitter,
       state: this.state,
       menuContainer,
       localDB,
-    }
+    };
 
-    this.preInputGroup = this.createGroup(coreResources, sys.PreInputCommandSpawner, sys.PreInputFrameCounter)
+    this.preInputGroup = this.createGroup(
+      coreResources,
+      sys.PreInputCommandSpawner,
+      sys.PreInputFrameCounter
+    );
     this.inputGroup = this.createGroup(
       coreResources,
       sys.InputScreen,
       sys.InputPointer,
       sys.InputKeyboard,
-      sys.InputMouse,
-    )
+      sys.InputMouse
+    );
 
-    this.preCaptureGroup = this.createGroup(coreResources, sys.PreCaptureIntersect, sys.PreCaptureSelect)
+    this.preCaptureGroup = this.createGroup(
+      coreResources,
+      sys.PreCaptureIntersect,
+      sys.PreCaptureSelect
+    );
     this.captureGroup = this.createGroup(
       coreResources,
       sys.CaptureBlockPlacement,
       sys.CaptureTransformBox,
       sys.CaptureHoverCursor,
-      sys.CaptureKeyboard,
-    )
-    this.preUpdateGroup = this.createGroup(coreResources, sys.PreUpdateEdited, sys.PreUpdateUndoRedo)
+      sys.CaptureKeyboard
+    );
+    this.preUpdateGroup = this.createGroup(
+      coreResources,
+      sys.PreUpdateEdited,
+      sys.PreUpdateUndoRedo
+    );
     this.updateGroup = this.createGroup(
       coreResources,
       sys.UpdateBlocks,
       sys.UpdateCamera,
       sys.UpdateSelection,
       sys.UpdateTransformBox,
-      sys.UpdateDragHandler,
-    )
+      sys.UpdateDragHandler
+    );
     this.postUpdateGroup = this.createGroup(
       coreResources,
       sys.PostUpdateDeleter,
       sys.PostUpdateHistory,
       sys.PostUpdateSessionSync,
-      sys.PostUpdateScaleWithZoom,
-    )
-    this.preRenderGroup = this.createGroup(coreResources, sys.PreRenderStoreSync, sys.PreRenderFloatingMenus)
-    this.renderGroup = this.createGroup(coreResources, sys.RenderHtml, sys.RenderBackground)
+      sys.PostUpdateScaleWithZoom
+    );
+    this.preRenderGroup = this.createGroup(
+      coreResources,
+      sys.PreRenderStoreSync,
+      sys.PreRenderFloatingMenus
+    );
+    this.renderGroup = this.createGroup(
+      coreResources,
+      sys.RenderHtml,
+      sys.RenderBackground
+    );
   }
 
   public build(worldSystem: System, resources: BaseResources): void {
     for (const [id, entity] of Object.entries(this.initialEntities)) {
       if (id === SESSION_KEY) {
-        initializeSessionSingletons(worldSystem, entity)
+        initializeSessionSingletons(worldSystem, entity);
       } else {
-        initializeBlock(worldSystem, entity, resources)
+        initializeBlock(worldSystem, entity, resources);
       }
 
       // if (id === SESSION_KEY) {
@@ -268,7 +313,7 @@ export class CoreExtension extends BaseExtension {
     }
 
     // clear initialEntities to save on memory
-    this.initialEntities = {}
+    this.initialEntities = {};
   }
 
   public addConfig = (): Partial<IConfig> => {
@@ -277,18 +322,24 @@ export class CoreExtension extends BaseExtension {
         colorMenu: this.options.colorMenu,
         defaultFontFamily:
           this.options.defaultFont ??
-          (this.options.fontMenu.families.length > 0 ? this.options.fontMenu.families[0] : DEFAULT_FONT_FAMILIES[0]),
+          (this.options.fontMenu.families.length > 0
+            ? this.options.fontMenu.families[0]
+            : DEFAULT_FONT_FAMILIES[0]),
       },
-    }
-  }
+    };
+  };
 
-  public addCommands = (state: State, send: SendCommandFn<CoreCommandArgs>): Partial<ICommands> => {
+  public addCommands = (
+    state: State,
+    send: SendCommandFn<CoreCommandArgs>
+  ): Partial<ICommands> => {
     return {
       core: {
         setCamera: (camera: Partial<Camera>, animation: AnimationInput = {}) =>
           send(CoreCommand.SetCamera, camera, animation),
         cancelCameraAnimation: () => send(CoreCommand.CancelCameraAnimation),
-        frameCameraToBlocks: (animation: AnimationInput = {}) => send(CoreCommand.FrameCameraToBlocks, animation),
+        frameCameraToBlocks: (animation: AnimationInput = {}) =>
+          send(CoreCommand.FrameCameraToBlocks, animation),
         undo: () => send(CoreCommand.Undo),
         redo: () => send(CoreCommand.Redo),
         createCheckpoint: () => send(CoreCommand.CreateCheckpoint),
@@ -298,25 +349,25 @@ export class CoreExtension extends BaseExtension {
         duplicateSelected: () => send(CoreCommand.DuplicateSelected),
         removeSelected: () => send(CoreCommand.RemoveSelected),
         updateFromSnapshot: (snapshot: Snapshot) => {
-          send(CoreCommand.UpdateFromSnapshot, snapshot)
+          send(CoreCommand.UpdateFromSnapshot, snapshot);
         },
         updateBlock: (blockId: string, block: Partial<BlockData>) => {
           send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {
               Block: block,
             },
-          })
+          });
         },
         addBlock: (block: Partial<BlockData>, components: BaseComponent[]) => {
-          const snapshot = createSnapshot(new Block(block), components)
-          send(CoreCommand.CreateFromSnapshot, snapshot)
+          const snapshot = createSnapshot(new Block(block), components);
+          send(CoreCommand.CreateFromSnapshot, snapshot);
         },
         scaleBlock: (blockId: string, factor: number) => {
-          const blockComp = state.getComponent<Block>(Block, blockId).value
-          if (!blockComp) return
+          const blockComp = state.getComponent<Block>(Block, blockId).value;
+          if (!blockComp) return;
 
-          const newWidth = blockComp.width * factor
-          const newHeight = blockComp.height * factor
+          const newWidth = blockComp.width * factor;
+          const newHeight = blockComp.height * factor;
 
           send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {
@@ -325,193 +376,229 @@ export class CoreExtension extends BaseExtension {
                 height: newHeight,
               },
             },
-          })
+          });
         },
-        setControls: (controls: Partial<ControlsData>) => send(CoreCommand.SetControls, controls),
+        setControls: (controls: Partial<ControlsData>) =>
+          send(CoreCommand.SetControls, controls),
         setColor: (blockId: string, color: Partial<ColorData>) => {
           send(CoreCommand.UpdateFromSnapshot, {
             [blockId]: {
               Color: new Color(color).toJson(),
             },
-          })
+          });
         },
         applyColorToSelected: (color: ColorData) => {
-          const selectedIds = state.getComponents(Selected).value
-          if (Object.keys(selectedIds).length === 0) return
+          const selectedIds = state.getComponents(Selected).value;
+          if (Object.keys(selectedIds).length === 0) return;
 
-          const snapshot: Snapshot = {}
+          const snapshot: Snapshot = {};
           for (const id of Object.keys(selectedIds)) {
             snapshot[id] = {
               Color: color,
-            }
+            };
           }
-          send(CoreCommand.UpdateFromSnapshot, snapshot)
+          send(CoreCommand.UpdateFromSnapshot, snapshot);
         },
         applyVerticalAlignToSelected: (verticalAlign: VerticalAlign) => {
-          const selectedIds = state.getComponents(Selected).value
-          if (Object.keys(selectedIds).length === 0) return
+          const selectedIds = state.getComponents(Selected).value;
+          if (Object.keys(selectedIds).length === 0) return;
 
-          const snapshot: Snapshot = {}
+          const snapshot: Snapshot = {};
           for (const id of Object.keys(selectedIds)) {
             snapshot[id] = {
               VerticalAlign: verticalAlign.toJson(),
-            }
+            };
           }
-          send(CoreCommand.UpdateFromSnapshot, snapshot)
+          send(CoreCommand.UpdateFromSnapshot, snapshot);
         },
         createAndDragOntoCanvas: (snapshot: Snapshot) => {
-          send(CoreCommand.CreateAndDragOntoCanvas, snapshot)
+          send(CoreCommand.CreateAndDragOntoCanvas, snapshot);
         },
-        getSelectedSnapshot: (Components: (new () => BaseComponent)[]): Snapshot => {
-          const selectedIds = state.getComponents(Selected).value
+        getSelectedSnapshot: (
+          Components: (new () => BaseComponent)[]
+        ): Snapshot => {
+          const selectedIds = state.getComponents(Selected).value;
 
-          const snapshot: Snapshot = {}
+          const snapshot: Snapshot = {};
           for (const id of Object.keys(selectedIds)) {
-            const entity: any = {}
-            entity.Block = state.getComponent<Block>(Block, id).value?.toJson() || {}
+            const entity: any = {};
+            entity.Block =
+              state.getComponent<Block>(Block, id).value?.toJson() || {};
 
             for (const Comp of Components) {
-              const compInstance = state.getComponent(Comp, id).value
+              const compInstance = state.getComponent(Comp, id).value;
               if (compInstance) {
-                entity[Comp.name] = compInstance.toJson()
+                entity[Comp.name] = compInstance.toJson();
               }
             }
 
-            snapshot[id] = entity
+            snapshot[id] = entity;
           }
 
-          return snapshot
+          return snapshot;
         },
       },
-    }
-  }
+    };
+  };
 
   public addStore = (state: State): Partial<IStore> => {
     return {
       core: {
-        blockCount: computed(() => Object.keys(state.getComponents(Persistent).value).length),
-        selectedBlockCount: computed(() => Object.keys(state.getComponents(Selected).value).length),
+        blockCount: computed(
+          () => Object.keys(state.getComponents(Persistent).value).length
+        ),
+        selectedBlockCount: computed(
+          () => Object.keys(state.getComponents(Selected).value).length
+        ),
         selectedBlockIds: computed(() => {
-          const selected = state.getComponents(Selected).value
-          return Object.keys(selected)
+          const selected = state.getComponents(Selected).value;
+          return Object.keys(selected);
         }),
         hoveredBlockId: computed(() => {
-          const hovered = state.getComponents(Hovered).value
-          const ids = Object.keys(hovered)
-          return ids.length > 0 ? ids[0] : null
+          const hovered = state.getComponents(Hovered).value;
+          const ids = Object.keys(hovered);
+          return ids.length > 0 ? ids[0] : null;
         }),
         selectedBlocks: computed(() => {
-          const selected = state.getComponents(Selected).value
-          const ids = Object.keys(selected)
+          const selected = state.getComponents(Selected).value;
+          const ids = Object.keys(selected);
 
-          const blocks: Block[] = []
+          const blocks: Block[] = [];
 
           for (const id of ids) {
-            const block = state.getComponent<Block>(Block, id)
+            const block = state.getComponent<Block>(Block, id);
             if (block?.value) {
-              blocks.push(block.value)
+              blocks.push(block.value);
             }
           }
 
-          return blocks
+          return blocks;
         }),
         blockById: (id: string): ReadonlySignal<Block | undefined> =>
           computed(() => state.getComponent<Block>(Block, id).value),
         colorById: (id: string): ReadonlySignal<Color | undefined> =>
           computed(() => state.getComponent<Color>(Color, id).value),
-        verticalAlignById: (id: string): ReadonlySignal<VerticalAlign | undefined> =>
-          computed(() => state.getComponent<VerticalAlign>(VerticalAlign, id).value),
+        verticalAlignById: (
+          id: string
+        ): ReadonlySignal<VerticalAlign | undefined> =>
+          computed(
+            () => state.getComponent<VerticalAlign>(VerticalAlign, id).value
+          ),
         controls: computed(() => state.getSingleton(Controls).value),
         camera: computed(() => state.getSingleton(Camera).value),
         cameraState: computed(() => state.getSingleton(CameraState).value),
+        screen: computed(() => state.getSingleton(Screen).value),
         textById: (id: string): ReadonlySignal<Text | undefined> =>
           computed(() => state.getComponent<Text>(Text, id).value),
         fontFamilies: computed(() => {
-          const texts = state.getComponents(Text).value
-          const names = new Set<string>()
+          const texts = state.getComponents(Text).value;
+          const names = new Set<string>();
           for (const text of Object.values(texts)) {
             if (text.value.fontFamily) {
-              names.add(text.value.fontFamily)
+              names.add(text.value.fontFamily);
             }
           }
 
-          const namesArray = Array.from(names).sort()
+          const namesArray = Array.from(names).sort();
 
           const families = namesArray.map((name) => {
-            return this.options.fontMenu.families.find((family) => family.name === name)
-          })
+            return this.options.fontMenu.families.find(
+              (family) => family.name === name
+            );
+          });
 
-          return families.filter((family): family is FontFamily => family !== undefined)
+          return families.filter(
+            (family): family is FontFamily => family !== undefined
+          );
         }),
         selectedColors: computed(() => {
-          const selected = state.getComponents(Selected).value
-          const ids = Object.keys(selected)
+          const selected = state.getComponents(Selected).value;
+          const ids = Object.keys(selected);
 
-          const colors: Record<string, Color> = {}
+          const colors: Record<string, Color> = {};
 
           for (const id of ids) {
-            const color = state.getComponent<Color>(Color, id)
+            const color = state.getComponent<Color>(Color, id);
             if (color?.value) {
-              const hex = color.value.toHex()
-              colors[hex] = color.value
+              const hex = color.value.toHex();
+              colors[hex] = color.value;
             }
           }
 
-          return Object.values(colors).sort((a, b) => a.toHex().localeCompare(b.toHex()))
+          return Object.values(colors).sort((a, b) =>
+            a.toHex().localeCompare(b.toHex())
+          );
         }),
       },
-    }
-  }
+    };
+  };
 }
 
 function initializeSessionSingletons(worldSystem: System, entity: any) {
-  const name = Object.keys(entity)[0]
-  const Component = ComponentRegistry.instance.getSingletonByName(name)
-  if (Component && (Component.prototype.constructor as typeof BaseComponent).persistent) {
-    const comp = worldSystem.singleton.write(Component)
-    comp.fromJson(entity[name])
+  const name = Object.keys(entity)[0];
+  const Component = ComponentRegistry.instance.getSingletonByName(name);
+  if (
+    Component &&
+    (Component.prototype.constructor as typeof BaseComponent).persistent
+  ) {
+    const comp = worldSystem.singleton.write(Component);
+    comp.fromJson(entity[name]);
   }
 }
 
-function initializeBlock(worldSystem: System, entity: any, resources: BaseResources) {
-  const args = []
+function initializeBlock(
+  worldSystem: System,
+  entity: any,
+  resources: BaseResources
+) {
+  const args = [];
 
-  const tag = entity.Block.tag
-  const components = resources.blockDefs[tag as string]?.components
+  const tag = entity.Block.tag;
+  const components = resources.blockDefs[tag as string]?.components;
 
   if (!components) {
-    console.warn(`Local storage tried to load a block with tag "${tag}" but no block definitions were found for it.`)
-    return
+    console.warn(
+      `Local storage tried to load a block with tag "${tag}" but no block definitions were found for it.`
+    );
+    return;
   }
 
   for (const component of [Block, ...components]) {
-    const model = entity[component.name] || {}
-    const instance = new component().fromJson(model)
-    args.push(component, instance)
+    const model = entity[component.name] || {};
+    const instance = new component().fromJson(model);
+    args.push(component, instance);
   }
 
   // @ts-ignore
-  worldSystem.createEntity(...args, Persistent)
+  worldSystem.createEntity(...args, Persistent);
 }
 
-async function loadFonts(initialEntities: Snapshot, options: Options): Promise<void> {
-  const names = new Set<string>()
+async function loadFonts(
+  initialEntities: Snapshot,
+  options: Options
+): Promise<void> {
+  const names = new Set<string>();
   for (const [_, entity] of Object.entries(initialEntities)) {
-    if (!entity.Text?.fontFamily) continue
+    if (!entity.Text?.fontFamily) continue;
 
-    const name = entity.Text.fontFamily
-    names.add(name as string)
+    const name = entity.Text.fontFamily;
+    names.add(name as string);
   }
 
-  const fontFamilies = Array.from(names).reduce<Set<FontFamily>>((set, name) => {
-    const family = options.fontMenu.families.find((family) => family.name === name)
-    if (family) {
-      set.add(family)
-    }
-    return set
-  }, new Set<FontFamily>())
+  const fontFamilies = Array.from(names).reduce<Set<FontFamily>>(
+    (set, name) => {
+      const family = options.fontMenu.families.find(
+        (family) => family.name === name
+      );
+      if (family) {
+        set.add(family);
+      }
+      return set;
+    },
+    new Set<FontFamily>()
+  );
 
-  await FontLoader.loadFonts(Array.from(fontFamilies))
+  await FontLoader.loadFonts(Array.from(fontFamilies));
 
-  await document.fonts.ready
+  await document.fonts.ready;
 }

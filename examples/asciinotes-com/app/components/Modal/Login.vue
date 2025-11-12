@@ -8,15 +8,13 @@
       >
         <div class="font-bold">Check your email</div>
         <div class="text-sm text-gray-600 px-4">
-          We've sent an email to
+          We've sent a sign-in link to
           <span class="font-medium">{{ state.email }}</span
-          >. Click the link in your email to sign in to AsciiNotes.
+          >.
         </div>
         <div class="text-xs text-gray-500 px-4">
           Didn't receive the email? Check your spam folder or
-          <button @click="resendEmail" class="text-blue-600 hover:underline">
-            try again</button
-          >.
+          <button @click="goBack" class="link">try again</button>.
         </div>
         <UButton variant="outline" color="neutral" @click="goBack" class="mt-2">
           Back to sign in
@@ -95,11 +93,14 @@
 
 <script lang="ts" setup>
 import {
-  signInWithPopup,
+  signInWithCredential,
   GoogleAuthProvider,
   GithubAuthProvider,
+  linkWithPopup,
+  OAuthProvider,
+  type AuthProvider,
+  type UserCredential,
 } from "firebase/auth";
-import type { FormSubmitEvent } from "@nuxt/ui";
 import z from "zod";
 import { IconGoogle, IconGithub } from "#components";
 
@@ -119,8 +120,10 @@ const isLoading = ref(false);
 
 async function continueWithGoogle() {
   errorMessage.value = "";
+
   try {
-    await signInWithPopup(auth, googleAuthProvider);
+    await signUpWithProvider(googleAuthProvider);
+    emit("close");
   } catch (err: any) {
     console.error(err);
     errorMessage.value =
@@ -133,7 +136,8 @@ async function continueWithGoogle() {
 async function continueWithGithub() {
   errorMessage.value = "";
   try {
-    await signInWithPopup(auth, githubAuthProvider);
+    await signUpWithProvider(githubAuthProvider);
+    emit("close");
   } catch (err: any) {
     console.error(err);
     errorMessage.value =
@@ -143,17 +147,41 @@ async function continueWithGithub() {
   }
 }
 
+async function signUpWithProvider(
+  provider: AuthProvider
+): Promise<UserCredential> {
+  if (!auth.currentUser) {
+    throw new Error(
+      "There must be an anonymous user to sign up with a provider."
+    );
+  }
+
+  try {
+    return await linkWithPopup(auth.currentUser, provider);
+  } catch (err: any) {
+    const credential = OAuthProvider.credentialFromError(err);
+    if (err.code === "auth/credential-already-in-use" && credential) {
+      // TODO authorize transfer of anonymous data to existing account
+
+      // authorize transfer with a uuid key
+      // once signed in with existing account, verify uuid and merge data
+
+      // If the credential is already in use, sign in with the provider instead
+      return await signInWithCredential(auth, credential);
+    }
+    throw err;
+  }
+}
+
 const schema = z.object({
   email: z.email("Please enter a valid email address"),
 });
-
-type Schema = z.infer<typeof schema>;
 
 const state = reactive({
   email: "",
 });
 
-async function continueWithEmail(event: FormSubmitEvent<Schema>) {
+async function continueWithEmail() {
   errorMessage.value = "";
   isLoading.value = true;
 

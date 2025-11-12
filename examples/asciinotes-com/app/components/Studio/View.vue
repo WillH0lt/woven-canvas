@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { InfiniteCanvas, CoreExtension } from "@infinitecanvas/core";
+import { InfiniteCanvas } from "@infinitecanvas/core";
 import { ArrowsExtension } from "@infinitecanvas/extension-arrows";
 import { ControlsExtension } from "@infinitecanvas/extension-controls";
 import { EraserExtension } from "@infinitecanvas/extension-eraser";
@@ -23,7 +23,7 @@ const fontData = {
   lineSpacing: 0.69, // magic number based on visual alignment
   charAdvance: 0.42, // magic number based on visual alignment
   originX: 0.13176470588235292,
-  backgroundColor: "#f4f4f4", // jules purple - 1d0245
+  backgroundColor: "#ffffff", // jules purple - 1d0245
   highlightColor: "#e0e0ff", // "#f0f0ff",
 };
 
@@ -100,8 +100,6 @@ const shapeStyles = [
 ];
 
 onMounted(async () => {
-  console.log("Initializing InfiniteCanvas...");
-
   const infiniteCanvas = await InfiniteCanvas.New(canvasContainer.value!, {
     extensions: [
       ControlsExtension({
@@ -112,7 +110,9 @@ onMounted(async () => {
       InkExtension,
       AsciiExtension({ fontData, asciiFonts, shapeStyles }),
     ],
-    persistenceKey: "asciinote-com-v0",
+    localPersistence: {
+      enabled: false,
+    },
     background: {
       enabled: false,
       color: fontData.backgroundColor,
@@ -148,6 +148,10 @@ onMounted(async () => {
 
   infiniteCanvas.store.core.blockCount.subscribe((count) => {
     console.log("Block count:", count);
+  });
+
+  infiniteCanvas.emitter.on("change", () => {
+    console.log("Canvas changed");
   });
 });
 </script>

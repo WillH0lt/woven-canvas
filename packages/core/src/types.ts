@@ -1,25 +1,37 @@
-import type { Entity } from '@lastolivegames/becsy'
-import type { Emitter } from 'strict-event-emitter'
-import { z } from 'zod/v4'
-import type { BaseComponent } from './BaseComponent'
-import { BaseExtension } from './BaseExtension'
-import type { History } from './History'
-import type { LocalDB } from './LocalDB'
-import type { State } from './State'
-import { DEFAULT_COLOR_MENU_PALETTE, DEFAULT_FONT_FAMILIES, DEFAULT_KEYBINDS } from './constants'
-
-export enum EmitterEventKind {
-  Command = 'command',
-}
+import type { Entity } from "@lastolivegames/becsy";
+import type { Emitter } from "strict-event-emitter";
+import { z } from "zod/v4";
+import type { BaseComponent } from "./BaseComponent";
+import { BaseExtension } from "./BaseExtension";
+import type { History } from "./History";
+import type { LocalDB } from "./LocalDB";
+import type { State } from "./State";
+import {
+  DEFAULT_COLOR_MENU_PALETTE,
+  DEFAULT_FONT_FAMILIES,
+  DEFAULT_KEYBINDS,
+} from "./constants";
 
 export type Command = {
-  kind: string
-  payload: string
+  kind: string;
+  payload: string;
+};
+
+export enum InwardEmitterEventKind {
+  Command = "command",
 }
 
+export type InwardEmitterEvents = {
+  [InwardEmitterEventKind.Command]: [Command];
+};
+
+// export enum EmitterEventKind {
+//   Change = "change",
+// }
+
 export type EmitterEvents = {
-  [EmitterEventKind.Command]: [Command]
-}
+  change: [];
+};
 
 export const FloatingMenuButton = z.object({
   tag: z.string(),
@@ -27,17 +39,17 @@ export const FloatingMenuButton = z.object({
   menu: z.string().optional(),
   width: z.number().default(40),
   params: z.record(z.string(), z.any()).optional(),
-})
+});
 
-export type FloatingMenuButtonInput = z.input<typeof FloatingMenuButton>
-export type FloatingMenuButton = z.infer<typeof FloatingMenuButton>
+export type FloatingMenuButtonInput = z.input<typeof FloatingMenuButton>;
+export type FloatingMenuButton = z.infer<typeof FloatingMenuButton>;
 
 const Keybind = z.object({
   command: z.string(),
   key: z.string(),
   mod: z.boolean().optional(),
   shift: z.boolean().optional(),
-})
+});
 
 export const FontFamily = z.object({
   name: z.string(),
@@ -45,52 +57,55 @@ export const FontFamily = z.object({
   url: z.string(),
   previewImage: z.string(),
   selectable: z.boolean().default(true),
-})
+});
 
-export type FontFamily = z.infer<typeof FontFamily>
+export type FontFamily = z.infer<typeof FontFamily>;
 
 export const FontMenuOptions = z.object({
   families: z.array(FontFamily).default(DEFAULT_FONT_FAMILIES),
   showSearch: z.boolean().default(false),
-})
+});
 
-export type FontMenuOptions = z.infer<typeof FontMenuOptions>
+export type FontMenuOptions = z.infer<typeof FontMenuOptions>;
 
 export const ColorMenuOptions = z.object({
   palette: z.array(z.string()).default(DEFAULT_COLOR_MENU_PALETTE),
   showPicker: z.boolean().default(true),
-})
+});
 
-export type ColorMenuOptions = z.infer<typeof ColorMenuOptions>
+export type ColorMenuOptions = z.infer<typeof ColorMenuOptions>;
 
 export type CoreResources = BaseResources &
   Options & {
-    emitter: Emitter<EmitterEvents>
-    state: State
-    menuContainer: HTMLDivElement
-    localDB: LocalDB
-  }
+    inwardEmitter: Emitter<InwardEmitterEvents>;
+    outwardEmitter: Emitter<EmitterEvents>;
+    state: State;
+    menuContainer: HTMLDivElement;
+    localDB?: LocalDB;
+  };
 
 const BlockDefEditOptions = z.object({
   canEdit: z.boolean().default(false),
   removeWhenTextEmpty: z.boolean().default(false),
-})
+});
 
 export const BlockDef = z.object({
   tag: z.string(),
   editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
-  resizeMode: z.enum(['scale', 'text', 'free', 'groupOnly']).default('scale'),
-  components: z.array(z.custom<new () => BaseComponent>(() => true)).default([]),
+  resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),
+  components: z
+    .array(z.custom<new () => BaseComponent>(() => true))
+    .default([]),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
   noHtml: z.boolean().default(false),
-})
+});
 
-export type BlockDef = z.infer<typeof BlockDef>
+export type BlockDef = z.infer<typeof BlockDef>;
 
-export type BlockDefInput = z.input<typeof BlockDef>
+export type BlockDefInput = z.input<typeof BlockDef>;
 
-export type BlockDefMap = Record<string, z.infer<typeof BlockDef>>
+export type BlockDefMap = Record<string, z.infer<typeof BlockDef>>;
 
 export const ToolDef = z.object({
   name: z.string(),
@@ -99,113 +114,123 @@ export const ToolDef = z.object({
   buttonMenuTag: z.string().optional(),
   cursorIcon: z.string().optional(),
   orderIndex: z.number().default(0),
-})
+});
 
-export type ToolDefInput = z.input<typeof ToolDef>
+export type ToolDefInput = z.input<typeof ToolDef>;
 
-export type ToolDef = z.infer<typeof ToolDef>
+export type ToolDef = z.infer<typeof ToolDef>;
 
-export type ToolDefMap = Record<string, z.infer<typeof ToolDef>>
+export type ToolDefMap = Record<string, z.infer<typeof ToolDef>>;
 
 export const FloatingMenuDef = z.object({
   component: z.custom<new () => BaseComponent>(() => true),
   buttons: z.array(FloatingMenuButton),
   orderIndex: z.number().default(0),
-})
+});
 
-export type FloatingMenuDefInput = z.input<typeof FloatingMenuDef>
+export type FloatingMenuDefInput = z.input<typeof FloatingMenuDef>;
 
-export type FloatingMenuDef = z.infer<typeof FloatingMenuDef>
+export type FloatingMenuDef = z.infer<typeof FloatingMenuDef>;
 
-export type FloatingMenuMap = Record<string, FloatingMenuDef>
+export type FloatingMenuMap = Record<string, FloatingMenuDef>;
 
 const Theme = z.object({
-  gray100: z.string().default('#f8f9f9'),
-  gray200: z.string().default('#e3e5e8'),
-  gray300: z.string().default('#c7ccd1'),
-  gray400: z.string().default('#9099a4'),
-  gray500: z.string().default('#4f5660'),
-  gray600: z.string().default('#2e3338'),
-  gray700: z.string().default('#060607'),
+  gray100: z.string().default("#f8f9f9"),
+  gray200: z.string().default("#e3e5e8"),
+  gray300: z.string().default("#c7ccd1"),
+  gray400: z.string().default("#9099a4"),
+  gray500: z.string().default("#4f5660"),
+  gray600: z.string().default("#2e3338"),
+  gray700: z.string().default("#060607"),
 
-  primaryLight: z.string().default('#8a76f4'),
-  primary: z.string().default('#6a58f2'),
+  primaryLight: z.string().default("#8a76f4"),
+  primary: z.string().default("#6a58f2"),
 
-  menuBorderRadius: z.string().default('12px'),
-  menuTooltipBorderRadius: z.string().default('6px'),
-  transitionDuration: z.string().default('150ms'),
-  transitionTimingFunction: z.string().default('cubic-bezier(0.4, 0, 0.2, 1)'),
+  menuBorderRadius: z.string().default("12px"),
+  menuTooltipBorderRadius: z.string().default("6px"),
+  transitionDuration: z.string().default("150ms"),
+  transitionTimingFunction: z.string().default("cubic-bezier(0.4, 0, 0.2, 1)"),
 
-  highlightedBlockOutlineColor: z.string().default('var(--ic-primary)'),
-  highlightedBlockOutlineWidth: z.string().default('1.5px'),
-  highlightedBlockOutlineOffset: z.string().default('-1px'),
-  highlightedBlockBorderRadius: z.string().default('2px'),
-})
+  highlightedBlockOutlineColor: z.string().default("var(--ic-primary)"),
+  highlightedBlockOutlineWidth: z.string().default("1.5px"),
+  highlightedBlockOutlineOffset: z.string().default("-1px"),
+  highlightedBlockBorderRadius: z.string().default("2px"),
+});
 
-export type Theme = z.infer<typeof Theme>
+export type Theme = z.infer<typeof Theme>;
 
 const CustomTags = z.object({
-  transformBox: z.string().default('ic-transform-box'),
-  transformHandle: z.string().default('ic-rectangular-handle'),
-  selectionBox: z.string().default('ic-selection-box'),
-})
+  transformBox: z.string().default("ic-transform-box"),
+  transformHandle: z.string().default("ic-rectangular-handle"),
+  selectionBox: z.string().default("ic-selection-box"),
+});
 
-type CustomTags = z.infer<typeof CustomTags>
+type CustomTags = z.infer<typeof CustomTags>;
 
 const Grid = z.object({
   enabled: z.boolean().default(true),
   colWidth: z.number().default(15),
   rowHeight: z.number().default(15),
-})
+});
 
 const Background = z.object({
   enabled: z.boolean().default(true),
-  kind: z.enum(['blank', 'dots', 'grid']).default('dots'),
-  color: z.string().default('#f4f4f4'),
-  strokeColor: z.string().default('#a1a1a1'),
+  kind: z.enum(["blank", "dots", "grid"]).default("dots"),
+  color: z.string().default("#f4f4f4"),
+  strokeColor: z.string().default("#a1a1a1"),
   subdivisionStep: z.number().default(5),
-})
+});
+
+const LocalPersistence = z.object({
+  enabled: z.boolean().default(true),
+  key: z.string().default("default"),
+  camera: z.boolean().default(true),
+});
 
 export const Options = z.object({
   extensions: z
     .array(
-      z.union([z.instanceof(BaseExtension), z.custom<(args: any) => BaseExtension>((fn) => typeof fn === 'function')]),
+      z.union([
+        z.instanceof(BaseExtension),
+        z.custom<(args: any) => BaseExtension>(
+          (fn) => typeof fn === "function"
+        ),
+      ])
     )
     .default([]),
   autoloop: z.boolean().default(true),
   autofocus: z.boolean().default(true),
-  persistCameraPosition: z.boolean().default(true),
   customBlocks: z.array(z.any()).default([]),
   customTools: z.array(ToolDef).default([]),
   customTags: CustomTags.default(CustomTags.parse({})),
   theme: Theme.default(Theme.parse({})),
   grid: Grid.default(Grid.parse({})),
   background: Background.default(Background.parse({})),
-  persistenceKey: z.string().default('default'),
+  localPersistence: LocalPersistence.default(LocalPersistence.parse({})),
   keybinds: z.array(Keybind).default(DEFAULT_KEYBINDS),
   colorMenu: ColorMenuOptions.default(ColorMenuOptions.parse({})),
   textColorMenu: ColorMenuOptions.default(ColorMenuOptions.parse({})),
   fontMenu: FontMenuOptions.default(FontMenuOptions.parse({})),
   defaultFont: FontFamily.optional(),
-})
+});
 
-export type Options = z.infer<typeof Options>
+export type Options = z.infer<typeof Options>;
 
-export type OptionsInput = z.input<typeof Options>
+export type OptionsInput = z.input<typeof Options>;
 
 export interface BaseResources {
-  domElement: HTMLElement
-  blockContainer: HTMLDivElement
-  backgroundCanvas: HTMLCanvasElement | null
-  history: History
-  blockDefs: BlockDefMap
-  floatingMenus: FloatingMenuMap
-  tags: CustomTags
-  tools: ToolDefMap
-  uid: string
+  domElement: HTMLElement;
+  blockContainer: HTMLDivElement;
+  backgroundCanvas: HTMLCanvasElement | null;
+  history: History;
+  blockDefs: BlockDefMap;
+  floatingMenus: FloatingMenuMap;
+  tags: CustomTags;
+  tools: ToolDefMap;
+  uid: string;
 }
 
-export type CommandArgs = Record<string, Array<unknown>>
+export type CommandArgs = Record<string, Array<unknown>>;
 
 // biome-ignore lint/suspicious/noEmptyInterface: this type gets built upon with extensions
 export interface IConfig {}
@@ -216,127 +241,144 @@ export interface ICommands {}
 // biome-ignore lint/suspicious/noEmptyInterface: this type gets built upon with extensions
 export interface IStore {}
 
-export type SendCommandFn<T> = <C extends keyof T>(kind: C, ...args: T[C] extends any[] ? T[C] : [T[C]]) => void
+export type SendCommandFn<T> = <C extends keyof T>(
+  kind: C,
+  ...args: T[C] extends any[] ? T[C] : [T[C]]
+) => void;
 
 export enum PointerType {
-  Mouse = 'mouse',
-  Touch = 'touch',
-  Pen = 'pen',
+  Mouse = "mouse",
+  Touch = "touch",
+  Pen = "pen",
 }
 
 export enum PointerButton {
-  None = 'none',
-  Left = 'left',
-  Middle = 'middle',
-  Right = 'right',
-  Back = 'back',
-  Forward = 'forward',
-  PenEraser = 'penEraser',
+  None = "none",
+  Left = "left",
+  Middle = "middle",
+  Right = "right",
+  Back = "back",
+  Forward = "forward",
+  PenEraser = "penEraser",
 }
 
 export type PointerEvent = {
-  type: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'click' | 'cancel' | 'frame'
-  worldPosition: [number, number]
-  clientPosition: [number, number]
-  velocity: [number, number]
-  intersects: [Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined, Entity | undefined]
-  obscured: boolean
-  pressure: number
-  pointerType: PointerType
-  shiftDown: boolean
-  altDown: boolean
-  modDown: boolean
-  cameraTop: number
-  cameraLeft: number
-  cameraZoom: number
-}
+  type:
+    | "pointerDown"
+    | "pointerMove"
+    | "pointerUp"
+    | "click"
+    | "cancel"
+    | "frame";
+  worldPosition: [number, number];
+  clientPosition: [number, number];
+  velocity: [number, number];
+  intersects: [
+    Entity | undefined,
+    Entity | undefined,
+    Entity | undefined,
+    Entity | undefined,
+    Entity | undefined
+  ];
+  obscured: boolean;
+  pressure: number;
+  pointerType: PointerType;
+  shiftDown: boolean;
+  altDown: boolean;
+  modDown: boolean;
+  cameraTop: number;
+  cameraLeft: number;
+  cameraZoom: number;
+};
 
 export type MouseEvent = {
-  type: 'mouseMove' | 'wheel'
-  wheelDeltaX: number
-  wheelDeltaY: number
-  worldPosition: [number, number]
-  clientPosition: [number, number]
-}
+  type: "mouseMove" | "wheel";
+  wheelDeltaX: number;
+  wheelDeltaY: number;
+  worldPosition: [number, number];
+  clientPosition: [number, number];
+};
 
-export type Transform = [number, number, number, number, number, number]
+export type Transform = [number, number, number, number, number, number];
 
 // Pick only serializable properties, excluding functions, Entity values, and Entity[] values
 export type SerializablePropNames<T> = {
   [K in keyof T]-?: T[K] extends (...args: any) => any
     ? never
     : T[K] extends Entity[]
-      ? never
-      : T[K] extends Entity
-        ? never
-        : K
-}[keyof T]
+    ? never
+    : T[K] extends Entity
+    ? never
+    : K;
+}[keyof T];
 
 export enum SelectionState {
-  Idle = 'idle',
-  Pointing = 'pointing',
-  Dragging = 'dragging',
-  SelectionBoxPointing = 'selectionBoxPointing',
-  SelectionBoxDragging = 'selectionBoxDragging',
+  Idle = "idle",
+  Pointing = "pointing",
+  Dragging = "dragging",
+  SelectionBoxPointing = "selectionBoxPointing",
+  SelectionBoxDragging = "selectionBoxDragging",
 }
 
 export enum TransformBoxState {
-  None = 'none',
-  Idle = 'idle',
-  Editing = 'editing',
+  None = "none",
+  Idle = "idle",
+  Editing = "editing",
 }
 
 export enum TransformHandleKind {
-  Scale = 'scale',
-  Stretch = 'stretch',
-  Rotate = 'rotate',
+  Scale = "scale",
+  Stretch = "stretch",
+  Rotate = "rotate",
 }
 
 export enum CursorKind {
-  Drag = 'drag',
-  NESW = 'nesw',
-  NWSE = 'nwse',
-  NS = 'ns',
-  EW = 'ew',
-  RotateNW = 'rotateNW',
-  RotateNE = 'rotateNE',
-  RotateSW = 'rotateSW',
-  RotateSE = 'rotateSE',
+  Drag = "drag",
+  NESW = "nesw",
+  NWSE = "nwse",
+  NS = "ns",
+  EW = "ew",
+  RotateNW = "rotateNW",
+  RotateNE = "rotateNE",
+  RotateSW = "rotateSW",
+  RotateSE = "rotateSE",
 }
 
 export enum TextAlign {
-  Left = 'left',
-  Center = 'center',
-  Right = 'right',
-  Justify = 'justify',
+  Left = "left",
+  Center = "center",
+  Right = "right",
+  Justify = "justify",
 }
 
 export enum VerticalAlign {
-  Top = 'top',
-  Center = 'center',
-  Bottom = 'bottom',
+  Top = "top",
+  Center = "center",
+  Bottom = "bottom",
 }
 
 export enum Easing {
-  Linear = 'linear',
-  EaseInQuad = 'easeInQuad',
-  EaseOutQuad = 'easeOutQuad',
-  EaseInOutQuad = 'easeInOutQuad',
-  EaseInCubic = 'easeInCubic',
-  EaseOutCubic = 'easeOutCubic',
-  EaseInOutSine = 'easeInOutSine',
+  Linear = "linear",
+  EaseInQuad = "easeInQuad",
+  EaseOutQuad = "easeOutQuad",
+  EaseInOutQuad = "easeInOutQuad",
+  EaseInCubic = "easeInCubic",
+  EaseOutCubic = "easeOutCubic",
+  EaseInOutSine = "easeInOutSine",
 }
 
 export enum CameraAnimationKind {
-  Bezier = 'bezier',
-  SmoothDamp = 'smoothDamp',
+  Bezier = "bezier",
+  SmoothDamp = "smoothDamp",
 }
 
 export const Animation = z.object({
   durationMs: z.number().min(0).default(0),
-  bezier: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([0.645, 0.045, 0.355, 1.0]),
-})
+  bezier: z
+    .tuple([z.number(), z.number(), z.number(), z.number()])
+    .default([0.645, 0.045, 0.355, 1.0]),
+});
 
-export type Animation = z.infer<typeof Animation>
+export type Animation = z.infer<typeof Animation>;
 
-export type AnimationInput = z.input<typeof Animation>
+export type AnimationInput = z.input<typeof Animation>;

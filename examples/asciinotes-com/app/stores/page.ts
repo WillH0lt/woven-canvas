@@ -1,4 +1,4 @@
-import type { Page, UserPage } from "#shared/prisma";
+import type { Page, UserPage } from "#shared/prisma/browser";
 import { LexoRank } from "@dalet-oss/lexorank";
 import { TRPCClientError } from "@trpc/client";
 
@@ -33,32 +33,46 @@ export const usePageStore = defineStore("page", () => {
   const userPages = ref<UserPage[]>([]);
   const pages = ref<Page[]>([]);
 
+  const sortedUserPages = computed(() => {
+    return userPages.value.sort((a, b) => {
+      const rankA = LexoRank.parse(a.rank);
+      const rankB = LexoRank.parse(b.rank);
+      return rankA.compareTo(rankB);
+    });
+  });
+
   const activePage = computed(() => {
     const route = router.currentRoute.value;
-    const pageId = route.params.pageId as string | undefined;
+    let pageId = route.params.pageId as string | undefined;
+
     if (!pageId) {
+      // first check isPinned pages
+      pageId = sortedUserPages.value.find((p) => p.isPinned)?.pageId;
+    }
+
+    if (!pageId) {
+      // then use the first page
+      pageId = sortedUserPages.value[0]?.pageId;
+    }
+
+    if (!pageId) {
+      // no pages available
       return null;
     }
+
     return pages.value.find((p) => p.id === pageId) || null;
   });
 
   async function fetchPages(): Promise<UserPage[]> {
-    const { data, error } = await useLazyAsyncData(
-      "user-pages",
-      async () => {
-        try {
-          const response = await $trpc.userPage.getAll.query();
-          return response;
-        } catch (error) {
-          console.error("Error fetching pages:", error);
-          throw error;
-        }
-      },
-      {
-        server: true, // Enable SSR
-        default: () => [],
+    const { data, error } = await useLazyAsyncData("user-pages", async () => {
+      try {
+        const response = await $trpc.userPage.getAll.query();
+        return response;
+      } catch (error) {
+        console.error("Error fetching pages:", error);
+        throw error;
       }
-    );
+    });
 
     if (error.value) {
       toast.add({
@@ -93,7 +107,6 @@ export const usePageStore = defineStore("page", () => {
         },
         userPage: {
           rank: rank.toString(),
-          isPinned: false,
         },
       });
 

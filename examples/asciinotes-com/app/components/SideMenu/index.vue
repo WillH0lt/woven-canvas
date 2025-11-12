@@ -19,19 +19,20 @@
     </div>
 
     <div
-      v-if="currentUser"
+      v-if="appStore.isLoggedIn"
       class="text-gray-400 text-nowrap overflow-x-hidden select-none"
     >
       -------------------------------------------------
     </div>
-    <SideMenuFooter v-if="currentUser" />
+    <SideMenuFooter v-if="appStore.isLoggedIn" />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Page, UserPage } from "#shared/prisma";
+import type { Page, UserPage } from "#shared/prisma/browser";
 import { LexoRank } from "@dalet-oss/lexorank";
-const currentUser = useCurrentUser();
+
+const appStore = useAppStore();
 
 const pageStore = usePageStore();
 

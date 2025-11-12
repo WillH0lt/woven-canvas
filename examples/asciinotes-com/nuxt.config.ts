@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   build: {
     transpile: ["trpc-nuxt"],
   },
+  ssr: true,
   runtimeConfig: {
     stripeSecretKey: "",
     public: {
@@ -83,7 +84,9 @@ export default defineNuxtConfig({
         },
       },
     },
-    plugins: [fullReload(["../../packages/**/*"])],
+    plugins: [
+      fullReload(["../../packages/**/*", "app/components/Studio/View.vue"]),
+    ],
     resolve: {
       conditions: [
         "@infinitecanvas/source",

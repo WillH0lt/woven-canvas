@@ -1,40 +1,44 @@
-import { co } from '@lastolivegames/becsy'
+import { co } from "@lastolivegames/becsy";
 
-import { BaseSystem } from '../BaseSystem'
-import { Screen } from '../components'
-import type { BaseResources } from '../types'
-import { InputKeyboard } from './InputKeyboard'
+import { BaseSystem } from "../BaseSystem";
+import { Screen } from "../components";
+import type { BaseResources } from "../types";
+import { InputKeyboard } from "./InputKeyboard";
 
 export class InputScreen extends BaseSystem {
-  private readonly screens = this.query((q) => q.current.with(Screen).write)
+  private readonly screens = this.query((q) => q.current.with(Screen).write);
 
-  protected declare readonly resources: BaseResources
+  protected declare readonly resources: BaseResources;
 
   public constructor() {
-    super()
-    this.schedule((s) => s.inAnyOrderWith(InputKeyboard))
+    super();
+    this.schedule((s) => s.inAnyOrderWith(InputKeyboard));
   }
 
   @co private *resizeCoroutine(): Generator {
-    this._handleResize()
+    this._handleResize();
 
-    yield
+    yield;
   }
 
   public initialize(): void {
-    const resizeObserver = new ResizeObserver(this.resizeCoroutine.bind(this))
-    resizeObserver.observe(this.resources.domElement)
+    const resizeObserver = new ResizeObserver(this.resizeCoroutine.bind(this));
+    resizeObserver.observe(this.resources.domElement);
   }
 
   public execute(): void {
     if (this.frame.value === 1) {
-      this._handleResize()
+      this._handleResize();
     }
   }
 
   private _handleResize(): void {
-    const screen = this.screens.current[0].write(Screen)
-    screen.width = this.resources.domElement.clientWidth
-    screen.height = this.resources.domElement.clientHeight
+    const screen = this.screens.current[0].write(Screen);
+    screen.width = this.resources.domElement.clientWidth;
+    screen.height = this.resources.domElement.clientHeight;
+
+    const rect = this.resources.domElement.getBoundingClientRect();
+    screen.left = rect.left;
+    screen.top = rect.top;
   }
 }
