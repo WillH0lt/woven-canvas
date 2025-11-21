@@ -6,6 +6,9 @@
       "path": "packages/core"
     },
     {
+      "path": "packages/ecs"
+    },
+    {
       "path": "packages/extension-arrows"
     },
     {
@@ -26,6 +29,7 @@
     {
       "path": "packages/extension-sticky-notes"
     },
+
     {
       "path": "examples/canvas"
     },

@@ -1,0 +1,921 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { field, component, System, type Query, World } from "../src/index.js";
+
+describe("Query", () => {
+  // Define test components
+  const Position = component({
+    x: field.float32().default(0),
+    y: field.float32().default(0),
+  });
+
+  const Velocity = component({
+    dx: field.float32().default(0),
+    dy: field.float32().default(0),
+  });
+
+  const Health = component({
+    current: field.uint16().default(100),
+    max: field.uint16().default(100),
+  });
+
+  const Enemy = component({
+    damage: field.uint8().default(10),
+  });
+
+  const Player = component({
+    score: field.uint32().default(0),
+  });
+
+  let world: World;
+
+  beforeEach(() => {
+    world = new World();
+  });
+
+  describe("QueryBuilder - Basic Operations", () => {
+    it("should query entities with specific components", () => {
+      // Create entities with different component combinations
+      const e1 = world.createEntity();
+      e1.add(Position, { x: 10, y: 20 });
+      e1.add(Velocity, { dx: 1, dy: 2 });
+
+      const e2 = world.createEntity();
+      e2.add(Position, { x: 30, y: 40 });
+
+      const e3 = world.createEntity();
+      e3.add(Velocity, { dx: 5, dy: 5 });
+
+      // Query for entities with Position
+      const positionQuery = world.query((q) => q.with(Position));
+
+      positionQuery._prepare(); // Ensure pending changes are processed
+
+      expect(positionQuery.current).toHaveLength(2);
+      expect(positionQuery.current).toContain(e1);
+      expect(positionQuery.current).toContain(e2);
+      expect(positionQuery.current).not.toContain(e3);
+    });
+
+    it("should query entities with multiple required components", () => {
+      const e1 = world.createEntity();
+      e1.add(Position, { x: 10, y: 20 });
+      e1.add(Velocity, { dx: 1, dy: 2 });
+
+      const e2 = world.createEntity();
+      e2.add(Position, { x: 30, y: 40 });
+
+      const e3 = world.createEntity();
+      e3.add(Position, { x: 50, y: 60 });
+      e3.add(Velocity, { dx: 3, dy: 4 });
+      e3.add(Health);
+
+      // Query for entities with both Position AND Velocity
+      const query = world.query((q) => q.with(Position, Velocity));
+
+      expect(query.current).toHaveLength(2);
+      expect(query.current).toContain(e1);
+      expect(query.current).toContain(e3);
+      expect(query.current).not.toContain(e2);
+    });
+
+    it("should query entities without specific components", () => {
+      const e1 = world.createEntity();
+      e1.add(Position, { x: 10, y: 20 });
+      e1.add(Enemy);
+
+      const e2 = world.createEntity();
+      e2.add(Position, { x: 30, y: 40 });
+      e2.add(Player);
+
+      const e3 = world.createEntity();
+      e3.add(Position, { x: 50, y: 60 });
+
+      // Query for Position entities that are NOT enemies
+      const query = world.query((q) => q.with(Position).without(Enemy));
+
+      expect(query.current).toHaveLength(2);
+      expect(query.current).toContain(e2);
+      expect(query.current).toContain(e3);
+      expect(query.current).not.toContain(e1);
+    });
+
+    it("should query entities with any of specified components", () => {
+      const e1 = world.createEntity();
+      e1.add(Enemy);
+
+      const e2 = world.createEntity();
+      e2.add(Player);
+
+      const e3 = world.createEntity();
+      e3.add(Health);
+
+      // Query for entities that are either Enemy OR Player
+      const query = world.query((q) => q.any(Enemy, Player));
+
+      expect(query.current).toHaveLength(2);
+      expect(query.current).toContain(e1);
+      expect(query.current).toContain(e2);
+      expect(query.current).not.toContain(e3);
+    });
+
+    it("should combine with, without, and any clauses", () => {
+      const e1 = world.createEntity();
+      e1.add(Position);
+      e1.add(Velocity);
+      e1.add(Enemy);
+
+      const e2 = world.createEntity();
+      e2.add(Position);
+      e2.add(Player);
+
+      const e3 = world.createEntity();
+      e3.add(Position);
+      e3.add(Health);
+      e3.add(Player);
+
+      const e4 = world.createEntity();
+      e4.add(Position);
+      e4.add(Velocity);
+
+      // Query for: Position AND (Player OR Enemy) AND NOT Velocity
+      const query = world.query((q) =>
+        q.with(Position).any(Player, Enemy).without(Velocity)
+      );
+
+      expect(query.current).toHaveLength(2);
+      expect(query.current).toContain(e2);
+      expect(query.current).toContain(e3);
+      expect(query.current).not.toContain(e1);
+      expect(query.current).not.toContain(e4);
+    });
+  });
+
+  describe("Query - Reactive Updates", () => {
+    it("should update query results when components are added", () => {
+      const e1 = world.createEntity();
+      e1.add(Position);
+
+      const query = world.query((q) => q.with(Position, Velocity));
+
+      expect(query.current).toHaveLength(0);
+
+      // Add Velocity component
+      e1.add(Velocity);
+
+      query._prepare();
+
+      expect(query.current).toHaveLength(1);
+      expect(query.current).toContain(e1);
+    });
+
+    it("should update query results when components are removed", () => {
+      const e1 = world.createEntity();
+      e1.add(Position);
+      e1.add(Velocity);
+
+      const query = world.query((q) => q.with(Position, Velocity));
+
+      expect(query.current).toHaveLength(1);
+
+      // Remove Velocity component
+      e1.remove(Velocity);
+
+      query._prepare();
+
+      expect(query.current).toHaveLength(0);
+    });
+
+    it("should update query results when entities are created", () => {
+      const query = world.query((q) => q.with(Position));
+
+      expect(query.current).toHaveLength(0);
+
+      const e1 = world.createEntity();
+      e1.add(Position);
+
+      query._prepare();
+
+      expect(query.current).toHaveLength(1);
+    });
+
+    it("should update query results when entities are removed", () => {
+      const e1 = world.createEntity();
+      e1.add(Position);
+
+      const query = world.query((q) => q.with(Position));
+
+      expect(query.current).toHaveLength(1);
+
+      world.removeEntity(e1);
+
+      query._prepare();
+
+      expect(query.current).toHaveLength(0);
+    });
+  });
+
+  describe("System Integration", () => {
+    it("should work with System class", () => {
+      // Define some test components for a system
+      const Block = component({
+        type: field.uint8().default(1),
+      });
+
+      const Edited = component({
+        timestamp: field.uint32().default(0),
+      });
+
+      // Create a system that processes edited blocks
+      class BlockEditSystem extends System {
+        private editedBlocks = this.query((q) => q.with(Block, Edited));
+        public processedCount = 0;
+
+        public execute(): void {
+          for (const entity of this.editedBlocks.current) {
+            const block = entity.get(Block);
+            const edited = entity.get(Edited);
+
+            expect(block).toBeDefined();
+            expect(edited).toBeDefined();
+
+            this.processedCount++;
+          }
+        }
+      }
+
+      // Create system
+      const system = world.createSystem(BlockEditSystem);
+
+      // Create test entities
+      const e1 = world.createEntity();
+      e1.add(Block);
+      e1.add(Edited);
+
+      const e2 = world.createEntity();
+      e2.add(Block);
+
+      const e3 = world.createEntity();
+      e3.add(Block);
+      e3.add(Edited);
+
+      // Execute system
+      system.execute();
+
+      expect(system.processedCount).toBe(2);
+    });
+
+    it("should support multiple queries in one system", () => {
+      class MovementSystem extends System {
+        private movingEntities = this.query((q) => q.with(Position, Velocity));
+        private staticEntities = this.query((q) =>
+          q.with(Position).without(Velocity)
+        );
+
+        public execute(): void {
+          console.log("Executing MovementSystem");
+
+          // Move entities with velocity
+          for (const entity of this.movingEntities.current) {
+            const pos = entity.get(Position)!;
+            const vel = entity.get(Velocity)!;
+
+            pos.value.x += vel.value.dx;
+            pos.value.y += vel.value.dy;
+          }
+        }
+
+        public getMovingCount(): number {
+          return this.movingEntities.current.length;
+        }
+
+        public getStaticCount(): number {
+          return this.staticEntities.current.length;
+        }
+      }
+
+      const system = world.createSystem(MovementSystem);
+
+      const e1 = world.createEntity();
+      e1.add(Position, { x: 0, y: 0 });
+      e1.add(Velocity, { dx: 1, dy: 2 });
+
+      const e2 = world.createEntity();
+      e2.add(Position, { x: 10, y: 10 });
+
+      system.execute();
+
+      expect(system.getMovingCount()).toBe(1);
+      expect(system.getStaticCount()).toBe(1);
+
+      const pos = e1.get(Position)!;
+      expect(pos.value.x).toBeCloseTo(1);
+      expect(pos.value.y).toBeCloseTo(2);
+    });
+  });
+
+  describe("Performance - Bitmask Operations", () => {
+    it("should efficiently handle large numbers of entities", () => {
+      // Create 1000 entities with various component combinations
+      const entities = [];
+      for (let i = 0; i < 1000; i++) {
+        const entity = world.createEntity();
+        entities.push(entity);
+
+        entity.add(Position, { x: i, y: i });
+
+        if (i % 2 === 0) {
+          entity.add(Velocity);
+        }
+
+        if (i % 3 === 0) {
+          entity.add(Health);
+        }
+
+        if (i % 5 === 0) {
+          entity.add(Enemy);
+        }
+      }
+
+      // Query should be fast with bitmask operations
+      const query = world.query((q: any) =>
+        q.with(Position, Velocity).without(Enemy)
+      );
+
+      const startTime = performance.now();
+      const results = query.current;
+      const endTime = performance.now();
+
+      // Should find entities divisible by 2 but not by 5
+      expect(results.length).toBe(400); // (1000/2) - (1000/10)
+
+      // Should be very fast (under 10ms for 1000 entities)
+      expect(endTime - startTime).toBeLessThan(10);
+    });
+
+    it("should cache query results", () => {
+      const e1 = world.createEntity();
+      e1.add(Position);
+
+      const query = world.query((q: any) => q.with(Position));
+
+      // First access
+      const results1 = query.current;
+
+      // Second access should use cache (same reference)
+      const results2 = query.current;
+
+      expect(results1).toBe(results2);
+    });
+  });
+
+  describe("Query Added Tracking", () => {
+    describe("Basic Added Tracking", () => {
+      it("should track newly added entities", () => {
+        const query = world.query((q) => q.with(Position));
+
+        // Initially no entities
+        expect(query.added).toHaveLength(0);
+        expect(query.current).toHaveLength(0);
+
+        // Create an entity
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        query._prepare();
+
+        // Should appear in added
+        expect(query.added).toHaveLength(1);
+        expect(query.added).toContain(e1);
+        expect(query.current).toHaveLength(1);
+      });
+
+      it("should track entities when components are added", () => {
+        const query = world.query((q) => q.with(Position, Velocity));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        // Doesn't match yet (needs both components)
+        expect(query.added).toHaveLength(0);
+        expect(query.current).toHaveLength(0);
+
+        // Add velocity
+        e1.add(Velocity, { dx: 1, dy: 1 });
+
+        query._prepare();
+
+        // Now it should appear in added
+        expect(query.added).toHaveLength(1);
+        expect(query.added).toContain(e1);
+        expect(query.current).toHaveLength(1);
+
+        // Call _prepare again to clear added for this non-system test
+        query._prepare();
+        expect(query.added).toHaveLength(0);
+        expect(query.current).toHaveLength(1);
+      });
+
+      it("should handle multiple entities being added", () => {
+        const query = world.query((q) => q.with(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position);
+
+        const e2 = world.createEntity();
+        e2.add(Position);
+
+        const e3 = world.createEntity();
+        e3.add(Position);
+
+        query._prepare();
+
+        expect(query.added).toHaveLength(3);
+        expect(query.current).toHaveLength(3);
+
+        // Call _prepare again to clear added for this non-system test
+        query._prepare();
+
+        // Add one more entity
+        const e4 = world.createEntity();
+        e4.add(Position);
+
+        query._prepare();
+
+        expect(query.added).toHaveLength(1);
+        expect(query.added).toContain(e4);
+        expect(query.current).toHaveLength(4);
+      });
+    });
+
+    describe("Current Tracking", () => {
+      it("should work with .current always available", () => {
+        const query = world.query((q) => q.with(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position);
+
+        query._prepare();
+
+        expect(query.current).toHaveLength(1);
+        expect(query.current).toContain(e1);
+      });
+
+      it("should work with both .added and .current always available", () => {
+        const query = world.query((q) => q.with(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position);
+
+        query._prepare();
+
+        expect(query.added).toHaveLength(1);
+        expect(query.current).toHaveLength(1);
+
+        // Call _prepare again to clear added for this non-system test
+        query._prepare();
+
+        expect(query.added).toHaveLength(0);
+        expect(query.current).toHaveLength(1);
+      });
+    });
+
+    describe("System Integration with Added", () => {
+      it("should work in a system like the example", () => {
+        class MoveSystem extends System {
+          private movers = this.query((q) => q.with(Position));
+          public initCount = 0;
+          public moveCount = 0;
+
+          public execute(): void {
+            // Process newly added entities
+            for (const entity of this.movers.added) {
+              this.initCount++;
+              const pos = entity.get(Position)!;
+              pos.value.x += 10;
+              pos.value.y += 10;
+            }
+
+            // Process all current entities
+            for (const entity of this.movers.current) {
+              this.moveCount++;
+              const pos = entity.get(Position)!;
+              pos.value.x += 1;
+              pos.value.y += 1;
+            }
+          }
+        }
+
+        const system = world.createSystem(MoveSystem);
+
+        // First frame - create entities
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 0, y: 0 });
+
+        system.execute();
+
+        expect(system.initCount).toBe(1);
+        expect(system.moveCount).toBe(1);
+
+        const pos1 = e1.get(Position)!;
+        expect(pos1.value.x).toBe(11); // 10 (init) + 1 (move)
+        expect(pos1.value.y).toBe(11);
+
+        system.execute();
+
+        expect(system.initCount).toBe(1); // No new inits
+        expect(system.moveCount).toBe(2); // One more move
+
+        expect(pos1.value.x).toBe(12); // 11 + 1
+        expect(pos1.value.y).toBe(12);
+
+        // Add a new entity
+        const e2 = world.createEntity();
+        e2.add(Position, { x: 100, y: 100 });
+
+        system.execute();
+
+        expect(system.initCount).toBe(2); // New entity initialized
+        expect(system.moveCount).toBe(4); // Both entities moved
+
+        const pos2 = e2.get(Position)!;
+        expect(pos2.value.x).toBe(111); // 100 + 10 (init) + 1 (move)
+        expect(pos2.value.y).toBe(111);
+      });
+
+      it("should handle entity removal correctly", () => {
+        const query = world.query((q) => q.with(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position);
+
+        const e2 = world.createEntity();
+        e2.add(Position);
+
+        query._prepare();
+
+        expect(query.added).toHaveLength(2);
+        expect(query.current).toHaveLength(2);
+
+        // Call _prepare again to clear added for this non-system test
+        query._prepare();
+
+        // Remove one entity
+        world.removeEntity(e1);
+
+        query._prepare();
+
+        expect(query.added).toHaveLength(0);
+        expect(query.current).toHaveLength(1);
+        expect(query.current).toContain(e2);
+      });
+    });
+  });
+
+  describe("Query Deferred Updates", () => {
+    describe("Deferred Updates During System Execution", () => {
+      it("should not immediately update query.added when entity is created during system execution", () => {
+        let addedCountBeforeSpawn: number = 0;
+        let addedCountAfterSpawn: number = 0;
+
+        class SpawnerSystem extends System {
+          private entities = this.query((q) => q.with(Position));
+
+          public execute(): void {
+            // Check how many entities are in .added at start
+            addedCountBeforeSpawn = this.entities.added.length;
+
+            // Create a new entity during system execution
+            const newEntity = this.createEntity();
+            newEntity.add(Position, { x: 100, y: 100 });
+
+            // The new entity should NOT appear in .added yet (deferred)
+            addedCountAfterSpawn = this.entities.added.length;
+          }
+        }
+
+        const system = world.createSystem(SpawnerSystem);
+
+        // First execution - no entities exist yet
+        system.execute();
+
+        // Started with no entities
+        expect(addedCountBeforeSpawn).toBe(0);
+
+        // After creating new entity during execution, it should NOT have appeared in .added yet
+        expect(addedCountAfterSpawn).toBe(0);
+
+        // After system completes, run it again - now the new entity should appear
+        system.execute();
+
+        // This time, the newly spawned entity from previous execution should be in .added
+        expect(addedCountBeforeSpawn).toBe(1);
+
+        // After spawning another during execution, still only see 1 in .added (the new spawn is deferred)
+        expect(addedCountAfterSpawn).toBe(1);
+      });
+
+      it("should defer entity addition to query during system execution", () => {
+        const seenEntities: number[] = [];
+
+        class TestSystem extends System {
+          private entities = this.query((q) => q.with(Position));
+
+          public execute(): void {
+            // Record how many entities we see at the start
+            seenEntities.push(this.entities.current.length);
+
+            // Create new entity
+            const e = this.createEntity();
+            e.add(Position);
+
+            // Should still show same count (deferred)
+            seenEntities.push(this.entities.current.length);
+          }
+        }
+
+        const system = world.createSystem(TestSystem);
+
+        // First execution - starts with 0 entities
+        system.execute();
+        expect(seenEntities[0]).toBe(0); // Start with 0
+        expect(seenEntities[1]).toBe(0); // Still 0 after adding during execution
+
+        // Second execution - should now see 1 entity
+        seenEntities.length = 0;
+        system.execute();
+        expect(seenEntities[0]).toBe(1); // Now we see the entity from previous execution
+        expect(seenEntities[1]).toBe(1); // Still 1 after adding new one
+      });
+
+      it("should defer entity removal from query during system execution", () => {
+        const seenEntities: number[] = [];
+
+        class TestSystem extends System {
+          private entities = this.query((q) => q.with(Position));
+
+          public execute(): void {
+            // Record how many entities we see
+            seenEntities.push(this.entities.current.length);
+
+            // Remove a component from first entity
+            const entity = this.entities.current[0];
+            if (entity) {
+              entity.remove(Position);
+
+              // Should still show same count (deferred)
+              seenEntities.push(this.entities.current.length);
+            }
+          }
+        }
+
+        // Create two entities
+        const e1 = world.createEntity();
+        e1.add(Position);
+        const e2 = world.createEntity();
+        e2.add(Position);
+
+        const system = world.createSystem(TestSystem);
+
+        // First execution - starts with 2 entities
+        system.execute();
+        expect(seenEntities[0]).toBe(2); // Start with 2
+        expect(seenEntities[1]).toBe(2); // Still 2 after removing during execution
+
+        // Second execution - should now see 1 entity
+        seenEntities.length = 0;
+        system.execute();
+        expect(seenEntities[0]).toBe(1); // Now we see only 1 entity
+      });
+
+      it("should handle complex scenario with multiple entities being added and removed", () => {
+        class ComplexSystem extends System {
+          private movers = this.query((q) => q.with(Position, Velocity));
+          public countsPerExecution: number[] = [];
+
+          public execute(): void {
+            this.countsPerExecution.push(this.movers.current.length);
+
+            // Create new entities
+            for (let i = 0; i < 3; i++) {
+              const e = this.createEntity();
+              e.add(Position);
+              e.add(Velocity);
+            }
+
+            // Remove some existing entities
+            if (this.movers.current.length > 0) {
+              this.removeEntity(this.movers.current[0]);
+            }
+          }
+        }
+
+        const system = world.createSystem(ComplexSystem);
+
+        // Start with 2 entities
+        const e1 = world.createEntity();
+        e1.add(Position);
+        e1.add(Velocity);
+        const e2 = world.createEntity();
+        e2.add(Position);
+        e2.add(Velocity);
+
+        // First execution: 2 entities, adds 3, removes 1 = 4 total after
+        system.execute();
+        expect(system.countsPerExecution[0]).toBe(2);
+
+        // Second execution: should see 4 entities now
+        system.execute();
+        expect(system.countsPerExecution[1]).toBe(4);
+
+        // Third execution: previous execution added 3, removed 1 = 6 total
+        system.execute();
+        expect(system.countsPerExecution[2]).toBe(6);
+      });
+    });
+  });
+
+  describe("Query Removed Tracking", () => {
+    describe("Basic Removed Tracking", () => {
+      it("should track entities when they are removed from the world", () => {
+        const query = world.query((q) => q.with(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        query._prepare();
+
+        expect(query.current).toHaveLength(1);
+        expect(query.removed).toHaveLength(0);
+
+        // Remove the entity
+        world.removeEntity(e1);
+
+        query._prepare();
+
+        // Should appear in removed
+        expect(query.removed).toHaveLength(1);
+        expect(query.removed).toContain(e1);
+        expect(query.current).toHaveLength(0);
+
+        // Call _prepare again to clear removed
+        query._prepare();
+        expect(query.removed).toHaveLength(0);
+      });
+
+      it("should track entities when components are removed", () => {
+        const query = world.query((q) => q.with(Position, Velocity));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+        e1.add(Velocity, { dx: 1, dy: 1 });
+
+        query._prepare();
+
+        expect(query.current).toHaveLength(1);
+        expect(query.removed).toHaveLength(0);
+
+        // Remove velocity component
+        e1.remove(Velocity);
+
+        query._prepare();
+
+        // Should appear in removed
+        expect(query.removed).toHaveLength(1);
+        expect(query.removed).toContain(e1);
+        expect(query.current).toHaveLength(0);
+
+        // Call _prepare again to clear removed
+        query._prepare();
+        expect(query.removed).toHaveLength(0);
+      });
+
+      it("should handle multiple entities being removed", () => {
+        const query = world.query((q) => q.with(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position);
+
+        const e2 = world.createEntity();
+        e2.add(Position);
+
+        const e3 = world.createEntity();
+        e3.add(Position);
+
+        query._prepare();
+
+        expect(query.current).toHaveLength(3);
+
+        // Remove two entities
+        world.removeEntity(e1);
+        e2.remove(Position);
+
+        query._prepare();
+
+        expect(query.removed).toHaveLength(2);
+        expect(query.removed).toContain(e1);
+        expect(query.removed).toContain(e2);
+        expect(query.current).toHaveLength(1);
+        expect(query.current).toContain(e3);
+
+        // Call _prepare again to clear removed
+        query._prepare();
+        expect(query.removed).toHaveLength(0);
+      });
+    });
+
+    describe("System Integration with Removed", () => {
+      it("should work in a system for cleanup logic", () => {
+        class CleanupSystem extends System {
+          private tracked = this.query((q) => q.with(Position));
+          public cleanupCount = 0;
+          public currentCount = 0;
+
+          public execute(): void {
+            // Clean up removed entities
+            for (const entity of this.tracked.removed) {
+              this.cleanupCount++;
+            }
+
+            // Count current entities
+            this.currentCount = this.tracked.current.length;
+          }
+        }
+
+        const system = world.createSystem(CleanupSystem);
+
+        // Create entities
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 0, y: 0 });
+        const e2 = world.createEntity();
+        e2.add(Position, { x: 10, y: 10 });
+
+        system.execute();
+
+        expect(system.cleanupCount).toBe(0);
+        expect(system.currentCount).toBe(2);
+
+        // Remove one entity
+        world.removeEntity(e1);
+
+        system.execute();
+
+        expect(system.cleanupCount).toBe(1);
+        expect(system.currentCount).toBe(1);
+
+        // Run again - cleanup count should still be 1 (removed list is cleared)
+        system.cleanupCount = 0;
+        system.execute();
+
+        expect(system.cleanupCount).toBe(0);
+        expect(system.currentCount).toBe(1);
+      });
+
+      it("should handle added and removed together", () => {
+        class TrackerSystem extends System {
+          private entities = this.query((q) => q.with(Position));
+          public addedCount = 0;
+          public removedCount = 0;
+          public currentCount = 0;
+
+          public execute(): void {
+            this.addedCount = this.entities.added.length;
+            this.removedCount = this.entities.removed.length;
+            this.currentCount = this.entities.current.length;
+          }
+        }
+
+        const system = world.createSystem(TrackerSystem);
+
+        // First frame - create entities
+        const e1 = world.createEntity();
+        e1.add(Position);
+        const e2 = world.createEntity();
+        e2.add(Position);
+
+        system.execute();
+
+        expect(system.addedCount).toBe(2);
+        expect(system.removedCount).toBe(0);
+        expect(system.currentCount).toBe(2);
+
+        // Second frame - add one, remove one
+        const e3 = world.createEntity();
+        e3.add(Position);
+        world.removeEntity(e1);
+
+        system.execute();
+
+        expect(system.addedCount).toBe(1);
+        expect(system.removedCount).toBe(1);
+        expect(system.currentCount).toBe(2); // e2, e3
+
+        // Third frame - no changes
+        system.execute();
+
+        expect(system.addedCount).toBe(0);
+        expect(system.removedCount).toBe(0);
+        expect(system.currentCount).toBe(2);
+      });
+    });
+  });
+});
