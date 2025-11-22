@@ -23,7 +23,7 @@ const Player = component({
 });
 
 // Create a player instance
-const player = Player.from({
+const player = Player._from({
   name: "Hero",
   x: 100,
   y: 50,
@@ -53,7 +53,10 @@ console.log(
 // Heal
 console.log("\n=== Healing ===");
 const healAmount = 20;
-player.value.health = Math.min(player.value.health + healAmount, player.value.maxHealth);
+player.value.health = Math.min(
+  player.value.health + healAmount,
+  player.value.maxHealth
+);
 console.log(
   `Healed ${healAmount}. Health: ${player.value.health}/${player.value.maxHealth}`
 );

@@ -24,7 +24,7 @@ const Position = component("Position", {
 });
 
 // Create an instance
-const position = Position.from({ x: 10, y: 20, z: 30 });
+const position = Position._from({ x: 10, y: 20, z: 30 });
 
 // Access properties directly (recommended)
 console.log(position.x); // 10
@@ -93,12 +93,12 @@ const Player = component("Player", {
 });
 
 // Create with defaults
-const player = Player.from({});
+const player = Player._from({});
 console.log(player.toJSON());
 // { name: "Player", health: 100, speed: 5.0, alive: true }
 
 // Override defaults
-const customPlayer = Player.from({ name: "Hero", health: 150 });
+const customPlayer = Player._from({ name: "Hero", health: 150 });
 console.log(customPlayer.name); // "Hero"
 console.log(customPlayer.health); // 150
 console.log(customPlayer.speed); // 5.0 (default)
@@ -122,7 +122,7 @@ const Transform = component("Transform", {
   scaleZ: ecs.float32().default(1),
 });
 
-const transform = Transform.from({
+const transform = Transform._from({
   posX: 100,
   posY: 50,
 });
@@ -138,7 +138,7 @@ const Health = component("Health", {
   invulnerable: ecs.boolean().default(false),
 });
 
-const health = Health.from({
+const health = Health._from({
   current: 80,
   max: 100,
   regeneration: 1.5,
@@ -166,7 +166,7 @@ const Inventory = component("Inventory", {
   currentWeight: ecs.float32().default(0),
 });
 
-const inventory = Inventory.from({
+const inventory = Inventory._from({
   slots: 30,
   maxWeight: 150,
 });

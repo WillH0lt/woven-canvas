@@ -29,12 +29,14 @@
     {
       "path": "packages/extension-sticky-notes"
     },
-
     {
       "path": "examples/canvas"
     },
     {
       "path": "examples/asciinotes-com"
+    },
+    {
+      "path": "examples/ecs-test"
     }
   ],
   "compilerOptions": {

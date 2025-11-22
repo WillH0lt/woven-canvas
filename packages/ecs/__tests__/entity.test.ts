@@ -1,29 +1,36 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { field, component, Entity, World } from "../src/index.js";
+import { field, Entity, World } from "../src/index";
 
 describe("Entity", () => {
-  // Define some test components
-  const Position = component({
-    x: field.float32().default(0),
-    y: field.float32().default(0),
-  });
+  let world: World;
+  let Position: any;
+  let Velocity: any;
+  let Health: any;
 
-  const Velocity = component({
-    dx: field.float32().default(0),
-    dy: field.float32().default(0),
-  });
+  beforeEach(() => {
+    world = new World();
 
-  const Health = component({
-    current: field.uint16().default(100),
-    max: field.uint16().default(100),
+    // Define some test components
+    Position = world.createComponent({
+      x: field.float32().default(0),
+      y: field.float32().default(0),
+    });
+
+    Velocity = world.createComponent({
+      dx: field.float32().default(0),
+      dy: field.float32().default(0),
+    });
+
+    Health = world.createComponent({
+      current: field.uint16().default(100),
+      max: field.uint16().default(100),
+    });
   });
 
   describe("Entity - Basic Operations", () => {
     let entity: Entity;
-    let world: World;
 
     beforeEach(() => {
-      world = new World();
       entity = world.createEntity();
     });
 
@@ -40,7 +47,7 @@ describe("Entity", () => {
 
       expect(() => {
         entity.add(Position, { x: 30, y: 40 });
-      }).toThrow("Entity 1 already has component:");
+      }).toThrow("Entity already has component:");
     });
 
     it("should get a component from entity", () => {
@@ -83,22 +90,6 @@ describe("Entity", () => {
   });
 
   describe("World", () => {
-    let world: World;
-
-    beforeEach(() => {
-      world = new World();
-    });
-
-    it("should create entities with sequential IDs", () => {
-      const e1 = world.createEntity();
-      const e2 = world.createEntity();
-      const e3 = world.createEntity();
-
-      expect(e1.getId()).toBe(1);
-      expect(e2.getId()).toBe(2);
-      expect(e3.getId()).toBe(3);
-    });
-
     it("should remove entity by instance", () => {
       const entity = world.createEntity();
 
@@ -117,8 +108,6 @@ describe("Entity", () => {
 
   describe("Real-World Usage", () => {
     it("should handle component lifecycle", () => {
-      const world = new World();
-
       const entity = world.createEntity();
       entity.add(Health, { current: 100, max: 100 });
 

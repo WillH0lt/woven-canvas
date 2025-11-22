@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { field, component, World, System } from "@infinitecanvas/ecs";
+import { field, World, System } from "@infinitecanvas/ecs";
 import { ref } from "vue";
 
 interface BlockEntity {
@@ -30,18 +30,22 @@ interface BlockEntity {
 
 const blocks = ref<Record<string, BlockEntity>>({});
 
-const Color = component({
+// Create world
+const world = new World();
+
+const Color = world.createComponent({
   red: field.uint8(),
   green: field.uint8(),
   blue: field.uint8(),
 });
 
-const Position = component({
+const Position = world.createComponent({
   x: field.float32(),
   y: field.float32(),
 });
 
-const Block = component({
+const Block = world.createComponent({
+  id: field.uint32(),
   width: field.float32(),
   height: field.float32(),
 });
@@ -56,10 +60,8 @@ class SyncSystem extends System {
       const color = blockEntity.get(Color)!;
       const block = blockEntity.get(Block)!;
 
-      const id = blockEntity.getId();
-
-      blocks.value[id] = {
-        id: id,
+      blocks.value[block.value.id] = {
+        id: block.value.id,
         width: block.value.width,
         height: block.value.height,
         x: pos.value.x,
@@ -74,15 +76,19 @@ class SyncSystem extends System {
 
 class MoveSystem extends System {
   // Define a query for entities that can move
-  private movers = this.query((q) => q.with(Position));
+  private movers = this.query((q) => q.withTracked(Position));
 
   public execute(): void {
-    // console.log(
-    //   "CURRENT ENTITY",
-    //   this.movers.current.length,
-    //   "ADDED ENTITY",
-    //   this.movers.added.length
-    // );
+    console.log(
+      "CURRENT ENTITY",
+      this.movers.current.length,
+      "ADDED ENTITY",
+      this.movers.added.length,
+      "CHANGED ENTITY",
+      this.movers.changed.length,
+      "REMOVED ENTITY",
+      this.movers.removed.length
+    );
 
     for (const entity of this.movers.added) {
       // perform some initialization if needed
@@ -101,26 +107,25 @@ class MoveSystem extends System {
   }
 }
 
-// Create world
-const world = new World();
-
 // Create systems
 const syncSystem = world.createSystem(SyncSystem);
 const moveSystem = world.createSystem(MoveSystem);
 
 // Create some blocks
 const block1 = world.createEntity();
-block1.add(Block, { width: 50, height: 50 });
+
+block1.add(Block, { id: 1, width: 50, height: 50 });
 block1.add(Position, { x: 200, y: 200 });
 block1.add(Color, { red: 0, green: 255, blue: 0 });
 
 const block2 = world.createEntity();
-block2.add(Block, { width: 75, height: 75 });
+block2.add(Block, { id: 2, width: 75, height: 75 });
 block2.add(Position, { x: 250, y: 250 });
 block2.add(Color, { red: 255, green: 0, blue: 0 });
 
 function loop() {
   requestAnimationFrame(loop);
+
   moveSystem.execute();
   syncSystem.execute();
 }

@@ -1,47 +1,56 @@
-import { field, component, World, System, type Entity } from "../src/index";
-
-// Define components for a simple game
-const Position = component({
-  x: field.float32().default(0),
-  y: field.float32().default(0),
-});
-
-const Velocity = component({
-  dx: field.float32().default(0),
-  dy: field.float32().default(0),
-});
-
-const Health = component({
-  current: field.uint16().default(100),
-  max: field.uint16().default(100),
-});
-
-const Enemy = component({
-  damage: field.uint8().default(10),
-  aiType: field.uint8().default(0),
-});
-
-const Player = component({
-  score: field.uint32().default(0),
-});
-
-const Renderable = component({
-  visible: field.boolean().default(true),
-  sprite: field.uint8().default(0),
-});
-
-const Block = component({
-  type: field.uint8().default(1),
-});
-
-const Edited = component({
-  timestamp: field.uint32().default(0),
-});
+import { field, World, System, type Entity } from "../src/index";
 
 /**
- * Example System: Handles movement for all entities with Position and Velocity
+ * Example: Complex query with multiple conditions
  */
-class MovementSystem extends System {
+function main() {
+  console.log("=== ECS Query System Demo ===\n");
+
+  // Create world
+  const world = new World();
+
+  // Define components for a simple game
+  const Position = world.createComponent({
+    x: field.float32().default(0),
+    y: field.float32().default(0),
+  });
+
+  const Velocity = world.createComponent({
+    dx: field.float32().default(0),
+    dy: field.float32().default(0),
+  });
+
+  const Health = world.createComponent({
+    current: field.uint16().default(100),
+    max: field.uint16().default(100),
+  });
+
+  const Enemy = world.createComponent({
+    damage: field.uint8().default(10),
+    aiType: field.uint8().default(0),
+  });
+
+  const Player = world.createComponent({
+    score: field.uint32().default(0),
+  });
+
+  const Renderable = world.createComponent({
+    visible: field.boolean().default(true),
+    sprite: field.uint8().default(0),
+  });
+
+  const Block = world.createComponent({
+    type: field.uint8().default(1),
+  });
+
+  const Edited = world.createComponent({
+    timestamp: field.uint32().default(0),
+  }););
+
+  /**
+   * Example System: Handles movement for all entities with Position and Velocity
+   */
+  class MovementSystem extends System {
   // Define a query for entities that can move
   private movingEntities = this.query((q) => q.with(Position, Velocity));
 
@@ -173,7 +182,7 @@ class DeathSystem extends System {
       const health = entity.get(Health)!;
 
       if (health.value.current <= 0) {
-        console.log(`Entity ${entity.getId()} died`);
+        console.log(`Entity ${entity._getId()} died`);
         entitiesToRemove.push(entity);
       }
     }
@@ -209,15 +218,8 @@ class AISystem extends System {
       if (pos.value.y > 0) pos.value.y -= 0.5;
     }
   }
-}
 
-// ===== Usage Example =====
-
-function main() {
-  console.log("=== ECS Query System Demo ===\n");
-
-  // Create world
-  const world = new World();
+  // ===== Usage Example =====
 
   // Create systems
   const movementSystem = world.createSystem(MovementSystem);

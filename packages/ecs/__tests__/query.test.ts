@@ -1,35 +1,40 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { field, component, System, type Query, World } from "../src/index.js";
+import { field, System, World, type Entity } from "../src/index.js";
 
 describe("Query", () => {
-  // Define test components
-  const Position = component({
-    x: field.float32().default(0),
-    y: field.float32().default(0),
-  });
-
-  const Velocity = component({
-    dx: field.float32().default(0),
-    dy: field.float32().default(0),
-  });
-
-  const Health = component({
-    current: field.uint16().default(100),
-    max: field.uint16().default(100),
-  });
-
-  const Enemy = component({
-    damage: field.uint8().default(10),
-  });
-
-  const Player = component({
-    score: field.uint32().default(0),
-  });
-
   let world: World;
+  let Position: any;
+  let Velocity: any;
+  let Health: any;
+  let Enemy: any;
+  let Player: any;
 
   beforeEach(() => {
     world = new World();
+
+    // Define test components
+    Position = world.createComponent({
+      x: field.float32().default(0),
+      y: field.float32().default(0),
+    });
+
+    Velocity = world.createComponent({
+      dx: field.float32().default(0),
+      dy: field.float32().default(0),
+    });
+
+    Health = world.createComponent({
+      current: field.uint16().default(100),
+      max: field.uint16().default(100),
+    });
+
+    Enemy = world.createComponent({
+      damage: field.uint8().default(10),
+    });
+
+    Player = world.createComponent({
+      score: field.uint32().default(0),
+    });
   });
 
   describe("QueryBuilder - Basic Operations", () => {
@@ -217,11 +222,11 @@ describe("Query", () => {
   describe("System Integration", () => {
     it("should work with System class", () => {
       // Define some test components for a system
-      const Block = component({
+      const Block = world.createComponent({
         type: field.uint8().default(1),
       });
 
-      const Edited = component({
+      const Edited = world.createComponent({
         timestamp: field.uint32().default(0),
       });
 
@@ -272,8 +277,6 @@ describe("Query", () => {
         );
 
         public execute(): void {
-          console.log("Executing MovementSystem");
-
           // Move entities with velocity
           for (const entity of this.movingEntities.current) {
             const pos = entity.get(Position)!;
@@ -915,6 +918,468 @@ describe("Query", () => {
         expect(system.addedCount).toBe(0);
         expect(system.removedCount).toBe(0);
         expect(system.currentCount).toBe(2);
+      });
+    });
+  });
+
+  describe("Query Change Tracking", () => {
+    describe("Basic Change Tracking", () => {
+      it("should track when a single tracked component changes", () => {
+        const query = world.query((q) => q.withTracked(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(0);
+
+        // Modify the tracked component
+        const pos = e1.get(Position)!;
+        pos.value.x = 30;
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(1);
+        expect(query.changed).toContain(e1);
+
+        // Call _prepare again to clear changed
+        query._prepare();
+        expect(query.changed).toHaveLength(0);
+      });
+
+      it("should track changes to multiple tracked components", () => {
+        const query = world.query((q) => q.withTracked(Position, Velocity));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+        e1.add(Velocity, { dx: 1, dy: 2 });
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(0);
+
+        // Modify Position
+        const pos = e1.get(Position)!;
+        pos.value.x = 30;
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(1);
+        expect(query.changed).toContain(e1);
+
+        // Clear changed
+        query._prepare();
+        expect(query.changed).toHaveLength(0);
+
+        // Modify Velocity
+        const vel = e1.get(Velocity)!;
+        vel.value.dx = 5;
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(1);
+        expect(query.changed).toContain(e1);
+      });
+
+      it("should not track changes to non-tracked components", () => {
+        const query = world.query((q) =>
+          q.withTracked(Position).with(Velocity)
+        );
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+        e1.add(Velocity, { dx: 1, dy: 2 });
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(0);
+
+        // Modify non-tracked Velocity component
+        const vel = e1.get(Velocity)!;
+        vel.value.dx = 5;
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(0);
+
+        // Modify tracked Position component
+        const pos = e1.get(Position)!;
+        pos.value.x = 30;
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(1);
+        expect(query.changed).toContain(e1);
+      });
+
+      it("should track changes to multiple entities", () => {
+        const query = world.query((q) => q.withTracked(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        const e2 = world.createEntity();
+        e2.add(Position, { x: 30, y: 40 });
+
+        const e3 = world.createEntity();
+        e3.add(Position, { x: 50, y: 60 });
+
+        query._prepare();
+
+        // Modify multiple entities
+        e1.get(Position)!.value.x = 100;
+        e3.get(Position)!.value.y = 200;
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(2);
+        expect(query.changed).toContain(e1);
+        expect(query.changed).toContain(e3);
+        expect(query.changed).not.toContain(e2);
+      });
+
+      it("should only track entities that match the query", () => {
+        const query = world.query((q) =>
+          q.withTracked(Position).with(Velocity)
+        );
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+        e1.add(Velocity, { dx: 1, dy: 2 });
+
+        const e2 = world.createEntity();
+        e2.add(Position, { x: 30, y: 40 });
+        // e2 doesn't have Velocity, so doesn't match query
+
+        query._prepare();
+
+        // Modify both entities
+        e1.get(Position)!.value.x = 100;
+        e2.get(Position)!.value.x = 200;
+
+        query._prepare();
+
+        // Only e1 should be tracked (e2 doesn't match query)
+        expect(query.changed).toHaveLength(1);
+        expect(query.changed).toContain(e1);
+        expect(query.changed).not.toContain(e2);
+      });
+
+      it("should handle multiple property changes on same entity as one change", () => {
+        const query = world.query((q) => q.withTracked(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        query._prepare();
+
+        // Modify multiple properties on the same component
+        const pos = e1.get(Position)!;
+        pos.value.x = 30;
+        pos.value.y = 40;
+        pos.value.x = 50;
+
+        query._prepare();
+
+        // Should only appear once in changed array
+        expect(query.changed).toHaveLength(1);
+        expect(query.changed).toContain(e1);
+      });
+    });
+
+    describe("System Integration with Change Tracking", () => {
+      it("should work in a system to process changed entities", () => {
+        class PositionChangeSystem extends System {
+          private tracked = this.query((q) => q.withTracked(Position));
+          public changeCount = 0;
+          public changedEntities: Entity[] = [];
+
+          public execute(): void {
+            for (const entity of this.tracked.changed) {
+              this.changeCount++;
+              this.changedEntities.push(entity);
+            }
+          }
+        }
+
+        const system = world.createSystem(PositionChangeSystem);
+
+        // Create entities
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 0, y: 0 });
+        const e2 = world.createEntity();
+        e2.add(Position, { x: 10, y: 10 });
+
+        system.execute();
+
+        expect(system.changeCount).toBe(0);
+
+        // Modify one entity
+        e1.get(Position)!.value.x = 5;
+
+        system.execute();
+
+        expect(system.changeCount).toBe(1);
+        expect(system.changedEntities).toContain(e1);
+
+        // Reset for next frame
+        system.changeCount = 0;
+        system.changedEntities = [];
+
+        // Modify both entities
+        e1.get(Position)!.value.y = 7;
+        e2.get(Position)!.value.x = 15;
+
+        system.execute();
+
+        expect(system.changeCount).toBe(2);
+        expect(system.changedEntities).toContain(e1);
+        expect(system.changedEntities).toContain(e2);
+      });
+
+      it("should work with added, removed, and changed together", () => {
+        class CompleteTrackerSystem extends System {
+          private entities = this.query((q) => q.withTracked(Position));
+          public addedCount = 0;
+          public removedCount = 0;
+          public changedCount = 0;
+          public currentCount = 0;
+
+          public execute(): void {
+            this.addedCount = this.entities.added.length;
+            this.removedCount = this.entities.removed.length;
+            this.changedCount = this.entities.changed.length;
+            this.currentCount = this.entities.current.length;
+          }
+        }
+
+        const system = world.createSystem(CompleteTrackerSystem);
+
+        // First frame - create entities
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 0, y: 0 });
+        const e2 = world.createEntity();
+        e2.add(Position, { x: 10, y: 10 });
+
+        system.execute();
+
+        expect(system.addedCount).toBe(2);
+        expect(system.removedCount).toBe(0);
+        expect(system.changedCount).toBe(0);
+        expect(system.currentCount).toBe(2);
+
+        // Second frame - modify one entity
+        e1.get(Position)!.value.x = 5;
+
+        system.execute();
+
+        expect(system.addedCount).toBe(0);
+        expect(system.removedCount).toBe(0);
+        expect(system.changedCount).toBe(1);
+        expect(system.currentCount).toBe(2);
+
+        // Third frame - add one, remove one, modify one
+        const e3 = world.createEntity();
+        e3.add(Position, { x: 20, y: 20 });
+        world.removeEntity(e2);
+        e1.get(Position)!.value.y = 7;
+
+        system.execute();
+
+        expect(system.addedCount).toBe(1);
+        expect(system.removedCount).toBe(1);
+        expect(system.changedCount).toBe(1);
+        expect(system.currentCount).toBe(2); // e1, e3
+      });
+
+      it("should track changes during system execution for next frame", () => {
+        const seenChanges: number[] = [];
+
+        class ModifierSystem extends System {
+          private entities = this.query((q) =>
+            q.withTracked(Position).with(Velocity)
+          );
+
+          public execute(): void {
+            // Record how many changes we see
+            seenChanges.push(this.entities.changed.length);
+
+            // Modify an entity
+            if (this.entities.current.length > 0) {
+              const entity = this.entities.current[0];
+              const pos = entity.get(Position)!;
+              pos.value.x += 1;
+            }
+
+            // Should not see the change yet (deferred)
+            seenChanges.push(this.entities.changed.length);
+          }
+        }
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 0, y: 0 });
+        e1.add(Velocity, { dx: 1, dy: 1 });
+
+        const system = world.createSystem(ModifierSystem);
+
+        // First execution - no changes yet
+        system.execute();
+        expect(seenChanges[0]).toBe(0); // Start with 0
+        expect(seenChanges[1]).toBe(0); // Still 0 after modifying
+
+        // Second execution - should see the change from previous frame
+        seenChanges.length = 0;
+        system.execute();
+        expect(seenChanges[0]).toBe(1); // Now we see the change
+        expect(seenChanges[1]).toBe(1); // Still 1 after new modification
+      });
+    });
+
+    describe("Change Tracking Edge Cases", () => {
+      it("should not track changes after entity is removed from query", () => {
+        const query = world.query((q) =>
+          q.withTracked(Position).with(Velocity)
+        );
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+        e1.add(Velocity, { dx: 1, dy: 2 });
+
+        query._prepare();
+
+        // Remove Velocity - entity no longer matches query
+        e1.remove(Velocity);
+
+        query._prepare();
+
+        // Modify Position
+        e1.get(Position)!.value.x = 30;
+
+        query._prepare();
+
+        // Should not be tracked because entity doesn't match query anymore
+        expect(query.changed).toHaveLength(0);
+      });
+
+      it("should not track changes after entity is removed from world", () => {
+        const query = world.query((q) => q.withTracked(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        query._prepare();
+
+        // Modify Position before removal
+        e1.get(Position)!.value.x = 30;
+
+        query._prepare();
+
+        // Should be tracked
+        expect(query.changed).toHaveLength(1);
+        expect(query.changed).toContain(e1);
+
+        query._prepare();
+
+        // Remove entity from world
+        world.removeEntity(e1);
+
+        query._prepare();
+
+        // Entity should be in removed, not in changed
+        expect(query.removed).toHaveLength(1);
+        expect(query.changed).toHaveLength(0);
+      });
+
+      it("should work with query without tracking specified", () => {
+        const query = world.query((q) => q.with(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        query._prepare();
+
+        // Modify Position
+        e1.get(Position)!.value.x = 30;
+
+        query._prepare();
+
+        // Should never have changed entities (no tracking)
+        expect(query.changed).toHaveLength(0);
+      });
+
+      it("should track changes to different properties independently", () => {
+        const query = world.query((q) => q.withTracked(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        query._prepare();
+
+        // Modify x
+        e1.get(Position)!.value.x = 30;
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(1);
+
+        // Clear
+        query._prepare();
+
+        // Modify y
+        e1.get(Position)!.value.y = 40;
+
+        query._prepare();
+
+        expect(query.changed).toHaveLength(1);
+      });
+
+      it("should handle newly added entities with immediate changes", () => {
+        const query = world.query((q) => q.withTracked(Position));
+
+        const e1 = world.createEntity();
+        e1.add(Position, { x: 10, y: 20 });
+
+        // Modify immediately after adding
+        e1.get(Position)!.value.x = 30;
+
+        query._prepare();
+
+        // Should appear in added (newly added to query)
+        expect(query.added).toHaveLength(1);
+        expect(query.added).toContain(e1);
+
+        // Should also appear in changed (value was modified)
+        expect(query.changed).toHaveLength(1);
+        expect(query.changed).toContain(e1);
+      });
+    });
+
+    describe("Performance with Change Tracking", () => {
+      it("should efficiently handle many entities with tracking", () => {
+        const query = world.query((q) => q.withTracked(Position));
+
+        // Create 1000 entities
+        const entities = [];
+        for (let i = 0; i < 1000; i++) {
+          const entity = world.createEntity();
+          entity.add(Position, { x: i, y: i });
+          entities.push(entity);
+        }
+
+        query._prepare();
+
+        // Modify half of them
+        const startTime = performance.now();
+        for (let i = 0; i < 500; i++) {
+          entities[i].get(Position)!.value.x += 10;
+        }
+        query._prepare();
+        const endTime = performance.now();
+
+        expect(query.changed).toHaveLength(500);
+        // Should be very fast
+        expect(endTime - startTime).toBeLessThan(50);
       });
     });
   });

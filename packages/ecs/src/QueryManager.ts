@@ -8,6 +8,9 @@ import type { Query } from "./Query";
 export class QueryManager {
   private queries: Set<Query>;
 
+  /**
+   * Create a new query manager
+   */
   constructor() {
     this.queries = new Set();
   }
@@ -33,6 +36,7 @@ export class QueryManager {
    * Notify all queries that an entity was created or updated
    * Each query will check if the entity matches and add/remove accordingly
    * @param entity - The entity that was created or updated
+   * @param prevBitmask - The entity's previous component bitmask
    */
   handleEntityShapeChange(entity: Entity, prevBitmask: bigint): void {
     for (const query of this.queries) {
@@ -48,6 +52,18 @@ export class QueryManager {
   handleEntityRemove(entity: Entity): void {
     for (const query of this.queries) {
       query._handleEntityRemove(entity);
+    }
+  }
+
+  /**
+   * Notify all queries that a component value changed on an entity
+   * Each query will check if the component is tracked and add to changed list
+   * @param entity - The entity whose component changed
+   * @param componentBitmask - The bitmask of the component that changed
+   */
+  handleEntityValueChange(entity: Entity, componentBitmask: bigint): void {
+    for (const query of this.queries) {
+      query._handleEntityValueChange(entity, componentBitmask);
     }
   }
 

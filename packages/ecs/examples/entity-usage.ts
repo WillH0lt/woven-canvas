@@ -43,7 +43,7 @@ player.add(Velocity, { dx: 0, dy: 0 });
 player.add(Health, { current: 100, max: 100, regeneration: 1.5 });
 player.add(Sprite, { texture: "hero.png", layer: 1 });
 
-console.log(`Player ID: ${player.getId()}`);
+console.log(`Player ID: ${player._getId()}`);
 console.log(`Player has Name: ${player.has(Name)}`);
 console.log(`Player has Position: ${player.has(Position)}`);
 console.log();
@@ -186,7 +186,7 @@ console.log("=== Final Entity State ===\n");
 const allEntitiesQuery = doc.query((q) => q.with(Name));
 for (const entity of allEntitiesQuery.current) {
   const name = entity.get(Name)!;
-  console.log(`${name.value.value} (ID: ${entity.getId()}):`);
+  console.log(`${name.value.value} (ID: ${entity._getId()}):`);
 
   // Print component data
   if (entity.has(Position)) {

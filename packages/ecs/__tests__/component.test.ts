@@ -1,15 +1,21 @@
-import { describe, it, expect, vi } from "vitest";
-import { field, component } from "../src/index.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { field, World } from "../src/index.js";
 
 describe("Component", () => {
+  let world: World;
+
+  beforeEach(() => {
+    world = new World();
+  });
+
   describe("Component Definition", () => {
     it("should create a component with string fields", () => {
-      const User = component({
+      const User = world.createComponent({
         name: field.string().max(50),
         email: field.string().max(100),
       });
 
-      const user = User.from({ name: "Alice", email: "alice@example.com" });
+      const user = User._from({ name: "Alice", email: "alice@example.com" });
 
       // Direct property access via .value
       expect(user.value.name).toBe("Alice");
@@ -17,13 +23,13 @@ describe("Component", () => {
     });
 
     it("should create a component with numeric fields", () => {
-      const Position = component({
+      const Position = world.createComponent({
         x: field.float32(),
         y: field.float32(),
         z: field.float32(),
       });
 
-      const pos = Position.from({ x: 1.5, y: 2.5, z: 3.5 });
+      const pos = Position._from({ x: 1.5, y: 2.5, z: 3.5 });
 
       // Direct property access via .value
       expect(pos.value.x).toBeCloseTo(1.5);
@@ -32,14 +38,14 @@ describe("Component", () => {
     });
 
     it("should create a component with mixed field types", () => {
-      const Player = component({
+      const Player = world.createComponent({
         name: field.string().max(30),
         health: field.uint8(),
         score: field.uint32(),
         speed: field.float32(),
       });
 
-      const player = Player.from({
+      const player = Player._from({
         name: "Bob",
         health: 100,
         score: 1500,
@@ -54,13 +60,13 @@ describe("Component", () => {
     });
 
     it("should support default values", () => {
-      const Config = component({
+      const Config = world.createComponent({
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
         label: field.string().max(20).default("default"),
       });
 
-      const config = Config.from({});
+      const config = Config._from({});
 
       // Direct property access via .value
       expect(config.value.enabled).toBe(true);
@@ -69,12 +75,12 @@ describe("Component", () => {
     });
 
     it("should override default values when provided", () => {
-      const Config = component({
+      const Config = world.createComponent({
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
       });
 
-      const config = Config.from({ enabled: false, maxCount: 50 });
+      const config = Config._from({ enabled: false, maxCount: 50 });
 
       // Direct property access via .value
       expect(config.value.enabled).toBe(false);
@@ -84,95 +90,79 @@ describe("Component", () => {
 
   describe("Component Instance Operations", () => {
     it("should allow setting values via direct property assignment", () => {
-      const Counter = component({
+      const Counter = world.createComponent({
         count: field.uint32(),
       });
 
-      const counter = Counter.from({ count: 0 });
+      const counter = Counter._from({ count: 0 });
       expect(counter.value.count).toBe(0);
 
       // Direct property assignment via .value
       counter.value.count = 42;
       expect(counter.value.count).toBe(42);
     });
-
-    it("should convert to JSON", () => {
-      const Entity = component({
-        id: field.uint32(),
-        name: field.string().max(20),
-        active: field.boolean(),
-      });
-
-      const entity = Entity.from({ id: 123, name: "Test", active: true });
-
-      expect(entity.toJSON()).toEqual({
-        id: 123,
-        name: "Test",
-        active: true,
-      });
-    });
   });
 
   describe("All Numeric Types", () => {
     it("should support uint8", () => {
-      const C = component({ val: field.uint8() });
-      const c = C.from({ val: 255 });
+      const C = world.createComponent({ val: field.uint8() });
+      const c = C._from({ val: 255 });
       expect(c.value.val).toBe(255);
     });
 
     it("should support uint16", () => {
-      const C = component({ val: field.uint16() });
-      const c = C.from({ val: 65535 });
+      const C = world.createComponent({ val: field.uint16() });
+      const c = C._from({ val: 65535 });
       expect(c.value.val).toBe(65535);
     });
 
     it("should support uint32", () => {
-      const C = component({ val: field.uint32() });
-      const c = C.from({ val: 4294967295 });
+      const C = world.createComponent({ val: field.uint32() });
+      const c = C._from({ val: 4294967295 });
       expect(c.value.val).toBe(4294967295);
     });
 
     it("should support int8", () => {
-      const C = component({ val: field.int8() });
-      const c = C.from({ val: -128 });
+      const C = world.createComponent({ val: field.int8() });
+      const c = C._from({ val: -128 });
       expect(c.value.val).toBe(-128);
     });
 
     it("should support int16", () => {
-      const C = component({ val: field.int16() });
-      const c = C.from({ val: -32768 });
+      const C = world.createComponent({ val: field.int16() });
+      const c = C._from({ val: -32768 });
       expect(c.value.val).toBe(-32768);
     });
 
     it("should support int32", () => {
-      const C = component({ val: field.int32() });
-      const c = C.from({ val: -2147483648 });
+      const C = world.createComponent({ val: field.int32() });
+      const c = C._from({ val: -2147483648 });
       expect(c.value.val).toBe(-2147483648);
     });
 
     it("should support float32", () => {
-      const C = component({ val: field.float32() });
-      const c = C.from({ val: 3.14159 });
+      const C = world.createComponent({ val: field.float32() });
+      const c = C._from({ val: 3.14159 });
       expect(c.value.val).toBeCloseTo(3.14159, 5);
     });
 
     it("should support float64", () => {
-      const C = component({ val: field.float64() });
-      const c = C.from({ val: 3.141592653589793 });
+      const C = world.createComponent({ val: field.float64() });
+      const c = C._from({ val: 3.141592653589793 });
       expect(c.value.val).toBeCloseTo(3.141592653589793, 15);
     });
   });
 
   describe("TypeScript Type Inference", () => {
     it("should provide correct types for component properties", () => {
-      const TestComponent = component({
+      const TestComponent = world.createComponent({
         name: field.string().max(20),
         count: field.uint32(),
         ratio: field.float32(),
         enabled: field.boolean(),
       });
 
-      const instance = TestComponent.from({
+      const instance = TestComponent._from({
         name: "test",
         count: 42,
         ratio: 0.5,
@@ -194,13 +184,13 @@ describe("Component", () => {
 
   describe("From Function Validation", () => {
     it("should use defaults for missing fields when defaults are defined", () => {
-      const Config = component({
+      const Config = world.createComponent({
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
         label: field.string().max(20).default("default"),
       });
 
-      const config = Config.from({});
+      const config = Config._from({});
 
       expect(config.value.enabled).toBe(true);
       expect(config.value.maxCount).toBe(100);
@@ -208,13 +198,13 @@ describe("Component", () => {
     });
 
     it("should use type-based fallbacks for missing fields without defaults", () => {
-      const Entity = component({
+      const Entity = world.createComponent({
         name: field.string().max(20),
         count: field.uint32(),
         active: field.boolean(),
       });
 
-      const entity = Entity.from({});
+      const entity = Entity._from({});
 
       expect(entity.value.name).toBe("");
       expect(entity.value.count).toBe(0);
@@ -222,24 +212,24 @@ describe("Component", () => {
     });
 
     it("should use defaults over type fallbacks when available", () => {
-      const Mixed = component({
+      const Mixed = world.createComponent({
         withDefault: field.uint32().default(42),
         withoutDefault: field.uint32(),
       });
 
-      const mixed = Mixed.from({});
+      const mixed = Mixed._from({});
 
       expect(mixed.value.withDefault).toBe(42);
       expect(mixed.value.withoutDefault).toBe(0);
     });
 
     it("should use provided values over defaults", () => {
-      const Config = component({
+      const Config = world.createComponent({
         enabled: field.boolean().default(true),
         count: field.uint32().default(10),
       });
 
-      const config = Config.from({
+      const config = Config._from({
         enabled: false,
         count: 5,
       });
@@ -249,13 +239,13 @@ describe("Component", () => {
     });
 
     it("should handle partially missing fields correctly", () => {
-      const Player = component({
+      const Player = world.createComponent({
         name: field.string().max(20).default("Unknown"),
         health: field.uint8(),
         score: field.uint32().default(0),
       });
 
-      const player = Player.from({ name: "Bob" });
+      const player = Player._from({ name: "Bob" });
 
       expect(player.value.name).toBe("Bob");
       expect(player.value.health).toBe(0);
@@ -263,20 +253,20 @@ describe("Component", () => {
     });
 
     it("should throw error for non-object input", () => {
-      const Simple = component({
+      const Simple = world.createComponent({
         value: field.uint8(),
       });
 
-      expect(() => Simple.from(null)).toThrow(
+      expect(() => Simple._from(null)).toThrow(
         "Invalid input: expected an object"
       );
-      expect(() => Simple.from(undefined)).toThrow(
+      expect(() => Simple._from(undefined)).toThrow(
         "Invalid input: expected an object"
       );
-      expect(() => Simple.from(42)).toThrow(
+      expect(() => Simple._from(42)).toThrow(
         "Invalid input: expected an object"
       );
-      expect(() => Simple.from("string")).toThrow(
+      expect(() => Simple._from("string")).toThrow(
         "Invalid input: expected an object"
       );
       // Arrays are technically objects in JavaScript, so they don't throw
@@ -284,7 +274,7 @@ describe("Component", () => {
     });
 
     it("should work with all numeric types", () => {
-      const AllTypes = component({
+      const AllTypes = world.createComponent({
         u8: field.uint8(),
         u16: field.uint16(),
         u32: field.uint32(),
@@ -295,7 +285,7 @@ describe("Component", () => {
         f64: field.float64(),
       });
 
-      const instance = AllTypes.from({});
+      const instance = AllTypes._from({});
 
       expect(instance.value.u8).toBe(0);
       expect(instance.value.u16).toBe(0);

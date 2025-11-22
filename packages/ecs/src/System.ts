@@ -17,7 +17,12 @@ export abstract class System {
   readonly #world: World;
   readonly #queries: Query[] = [];
 
-  /** @internal */
+  /**
+   * Use World.createSystem() to create system instances
+   * @param world - The world this system belongs to
+   * @param _key - Internal key to restrict construction to World class
+   * @internal
+   */
   constructor(world: World, _key?: typeof SYSTEM_CREATION_KEY) {
     if (_key !== SYSTEM_CREATION_KEY) {
       throw new Error(
@@ -28,8 +33,11 @@ export abstract class System {
   }
 
   /**
-   * @internal
    * Factory method for creating system instances - only callable by World
+   * @param world - The world to create the system in
+   * @param key - Internal key to verify caller is authorized
+   * @returns A new system instance
+   * @internal
    */
   static _create<T extends System>(
     this: new (world: World, key: typeof SYSTEM_CREATION_KEY) => T,
@@ -41,18 +49,14 @@ export abstract class System {
     return new this(world, key);
   }
 
-  /** @internal */
+  /**
+   * Prepare all queries before system execution
+   * @internal
+   */
   _beforeExecute(): void {
     for (const query of this.#queries) {
       query._prepare();
     }
-  }
-
-  /** @internal */
-  _afterExecute(): void {
-    // for (const query of this.#queries) {
-    //   query._clearAdded();
-    // }
   }
 
   /**

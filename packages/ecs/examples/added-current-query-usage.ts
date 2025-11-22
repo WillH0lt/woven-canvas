@@ -39,7 +39,7 @@ class MovementSystem extends System {
   public execute(): void {
     // Process newly added entities - perform initialization
     for (const entity of this.movers.added) {
-      console.log(`New mover entity ${entity.getId()} added!`);
+      console.log(`New mover entity ${entity._getId()} added!`);
 
       const pos = entity.get(Position)!;
       const vel = entity.get(Velocity)!;

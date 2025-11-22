@@ -6,7 +6,7 @@
 // add binary type
 // add ComponentInstance.fromJson method
 
-import { EventEmitter } from "./EventEmitter";
+import { View, type ViewConstructor, type ViewInstance } from "./view";
 
 // Field type definitions
 type FieldType = "string" | "number" | "boolean";
@@ -168,12 +168,12 @@ export const field = {
 };
 
 // Component schema and class types
-export type ComponentSchema = Record<
+type ComponentSchema = Record<
   string,
   StringFieldBuilder | NumberFieldBuilder | BooleanFieldBuilder
 >;
 
-export type InferComponentType<T extends ComponentSchema> = {
+type InferComponentType<T extends ComponentSchema> = {
   [K in keyof T]: T[K] extends StringFieldBuilder
     ? string
     : T[K] extends NumberFieldBuilder
@@ -183,12 +183,6 @@ export type InferComponentType<T extends ComponentSchema> = {
     : never;
 };
 
-/**
- * @internal
- * Symbol used to ensure only World can create Component instances
- */
-export const COMPONENT_CREATION_KEY = Symbol("COMPONENT_CREATION_KEY");
-
 // Component class that wraps structurae View
 /**
  * Component class that wraps structurae View for efficient memory layout
@@ -196,36 +190,26 @@ export const COMPONENT_CREATION_KEY = Symbol("COMPONENT_CREATION_KEY");
  * @template T - The inferred type of the component data
  */
 export class Component<T extends Record<string, any>> {
+  private static nextBitPosition = 0;
+
   private id: string;
   private bitPosition: number;
-  // private ViewClass: ViewConstructor<T>;
+  private ViewClass: ViewConstructor<T>;
   private schema: Record<string, Field>;
   private defaults: Partial<T>;
 
   /**
    * Create a new component definition
    * @param schema - The component schema built using field builders
-   * @param bitPosition - The unique bit position assigned by World
-   * @param _key - Internal key to restrict construction to World class
-   * @internal
    */
-  constructor(
-    schema: ComponentSchema,
-    index: number,
-    _key?: typeof COMPONENT_CREATION_KEY
-  ) {
-    if (_key !== COMPONENT_CREATION_KEY) {
-      throw new Error(
-        "Components cannot be instantiated directly. Use world.createComponent() instead."
-      );
-    }
+  constructor(schema: ComponentSchema) {
     // Generate a random ID for the component
     this.id = `component_${Math.random()
       .toString(36)
       .substring(2, 11)}_${Date.now().toString(36)}`;
 
     // Assign unique bit position for bitmask operations
-    this.bitPosition = index;
+    this.bitPosition = Component.nextBitPosition++;
 
     this.schema = {};
     this.defaults = {};
@@ -257,24 +241,14 @@ export class Component<T extends Record<string, any>> {
         };
       }
     }
-  }
 
-  /**
-   * Factory method for creating component instances - only callable by World
-   * @param schema - The component schema built using field builders
-   * @param bitPosition - The unique bit position assigned by World
-   * @param key - Internal key to verify caller is authorized
-   * @returns A new component instance
-   * @internal
-   */
-  static _create<T extends Record<string, any>>(
-    schema: ComponentSchema,
-    bitPosition: number,
-    key: typeof COMPONENT_CREATION_KEY
-  ): Component<T> {
-    if (key !== COMPONENT_CREATION_KEY)
-      throw new Error("Use world.createComponent()");
-    return new Component(schema, bitPosition, key) as Component<T>;
+    // Create the View class
+    const view = new View();
+    this.ViewClass = view.create<T>({
+      $id: this.id,
+      type: "object",
+      properties,
+    } as any);
   }
 
   /**
@@ -311,7 +285,9 @@ export class Component<T extends Record<string, any>> {
       }
     }
 
-    return new ComponentInstance<T>(validatedData as T, this._getBitmask());
+    const fullData = { ...this.defaults, ...data } as T;
+    const viewInstance = this.ViewClass.from(fullData);
+    return ComponentInstance.create<T>(viewInstance);
   }
 
   /**
@@ -334,43 +310,73 @@ export class Component<T extends Record<string, any>> {
 }
 
 /**
- * Events emitted by ComponentInstance
- * @internal
- */
-interface ComponentInstanceEvents {
-  change: { componentBitmask: bigint };
-}
-
-/**
  * Component instance wrapper with proxy for direct property access via .value
  * Provides a type-safe interface to the underlying structurae View instance
  * @template T - The type of the component data
  */
-export class ComponentInstance<
-  T extends Record<string, any>
-> extends EventEmitter<ComponentInstanceEvents> {
+export class ComponentInstance<T extends Record<string, any>> {
+  private viewInstance: ViewInstance<T>;
   value: T;
-  private componentBitmask: bigint;
 
   /**
    * Create a component instance wrapper
-   * @param value - The underlying data object
-   * @param componentBitmask - The bitmask identifying this component type
+   * @param viewInstance - The underlying structurae View instance
    */
-  constructor(value: T, componentBitmask: bigint) {
-    super();
-    this.componentBitmask = componentBitmask;
+  constructor(viewInstance: ViewInstance<T>) {
+    this.viewInstance = viewInstance;
 
     // Create a proxy for the value property that intercepts property access
     this.value = new Proxy({} as T, {
-      get: (_target: T, prop: string) => {
-        return value[prop as keyof T];
+      get(target: T, prop: string | symbol) {
+        if (typeof prop === "symbol") {
+          return (target as any)[prop];
+        }
+        return (viewInstance as any).get(prop as string);
       },
-      set: (_target: T, prop: string, val: any) => {
-        value[prop as keyof T] = val;
-        this.emit("change", { componentBitmask });
+
+      set(_target: T, prop: string | symbol, value: any) {
+        if (typeof prop === "symbol") {
+          return false;
+        }
+        (viewInstance as any).set(prop as string, value);
         return true;
       },
     });
   }
+
+  /**
+   * Convert the component instance to a plain JSON object
+   * @returns The component data as a plain object
+   */
+  toJSON(): T {
+    return (this.viewInstance as any).toJSON();
+  }
+
+  /**
+   * Create a component instance from a View instance
+   * @param viewInstance - The structurae View instance
+   * @returns A new component instance wrapper
+   */
+  static create<T extends Record<string, any>>(
+    viewInstance: ViewInstance<T>
+  ): ComponentInstance<T> {
+    return new ComponentInstance(viewInstance);
+  }
+}
+
+/**
+ * Factory function to create component definitions with type inference
+ * @template T - The component schema type
+ * @param schema - The component schema built using field builders
+ * @returns A new Component instance with inferred type
+ * @example
+ * const Position = component({
+ *   x: field.float32().default(0),
+ *   y: field.float32().default(0)
+ * });
+ */
+export function component<T extends ComponentSchema>(
+  schema: T
+): Component<InferComponentType<T>> {
+  return new Component(schema) as Component<InferComponentType<T>>;
 }

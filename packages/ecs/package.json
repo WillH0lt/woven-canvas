@@ -1,5 +1,5 @@
 {
-  "private": false,
+  "private": true,
   "name": "@infinitecanvas/ecs",
   "version": "0.1.0",
   "description": "Demo library that contains common utility functions",
@@ -40,10 +40,12 @@
     "test": "vitest  --config ../../vitest.config.ts run",
     "test:watch": "vitest  --config ../../vitest.config.ts run --watch"
   },
-  "dependencies": {
-    "structurae": "^4.0.2"
-  },
   "devDependencies": {
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.7",
+    "@types/bun": "latest"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

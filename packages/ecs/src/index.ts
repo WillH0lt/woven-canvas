@@ -1,6 +1,4 @@
-export { field, component, Component, ComponentInstance } from "./Component";
-export { Entity } from "./Entity";
-export { World } from "./World";
-export { Query, QueryBuilder } from "./Query";
-export { QueryManager } from "./QueryManager";
+export { field, type Component } from "./Component";
 export { System } from "./System";
+export { World } from "./World";
+export { Entity } from "./Entity";

@@ -1,33 +1,62 @@
 import type { Component, ComponentInstance } from "./Component";
-import type { QueryManager } from "./QueryManager";
+import { EventEmitter } from "./EventEmitter";
+
+/**
+ * @internal
+ * Symbol used to ensure only World can create Entity instances
+ */
+export const ENTITY_CREATION_KEY = Symbol("ENTITY_CREATION_KEY");
+
+/**
+ * Events emitted by Entity
+ * @internal
+ */
+interface EntityEvents {
+  shapeChange: { entity: Entity; prevBitmask: bigint };
+  valueChange: { entity: Entity; componentBitmask: bigint };
+}
 
 /**
  * Entity class that manages multiple components
  */
-export class Entity {
-  private id: number;
-  private components: WeakMap<Component<any>, ComponentInstance<any>>;
+export class Entity extends EventEmitter<EntityEvents> {
+  private components: Map<string, ComponentInstance<any>>;
   private componentBitmask: bigint;
-  private queryManager: QueryManager;
 
-  constructor(id: number, queryManager: QueryManager) {
-    this.id = id;
-    this.components = new WeakMap();
+  /**
+   * Create a new entity
+   * @param _key - Internal key to restrict construction to World class
+   * @internal
+   */
+  constructor(_key?: typeof ENTITY_CREATION_KEY) {
+    if (_key !== ENTITY_CREATION_KEY) {
+      throw new Error(
+        "Entities cannot be instantiated directly. Use world.createEntity() instead."
+      );
+    }
+    super();
+    this.components = new Map();
     this.componentBitmask = 0n;
-    this.queryManager = queryManager;
   }
 
   /**
-   * Get the entity's unique ID
+   * Factory method for creating entity instances - only callable by World
+   * @param key - Internal key to verify caller is authorized
+   * @returns A new entity instance
+   * @internal
    */
-  getId(): number {
-    return this.id;
+  static _create(key: typeof ENTITY_CREATION_KEY): Entity {
+    if (key !== ENTITY_CREATION_KEY)
+      throw new Error("Use world.createEntity()");
+    return new Entity(key);
   }
 
   /**
    * Get the entity's component bitmask (for query matching)
+   * @returns The component bitmask
+   * @internal
    */
-  getBitmask(): bigint {
+  _getBitmask(): bigint {
     return this.componentBitmask;
   }
 
@@ -42,23 +71,27 @@ export class Entity {
     data?: Partial<T>
   ): ComponentInstance<T> {
     // Check if component already exists
-    if (this.components.has(componentDef)) {
-      throw new Error(
-        `Entity ${this.id} already has component: ${componentDef.getId()}`
-      );
+    if (this.components.has(componentDef._getId())) {
+      throw new Error(`Entity already has component: ${componentDef._getId()}`);
     }
 
     // Create component instance
-    const instance = componentDef.from(data || {});
-    this.components.set(componentDef, instance);
+    const instance = componentDef._from(data || {});
+
+    // Listen to component changes and bubble them up
+    instance.on("change", ({ componentBitmask }) => {
+      this.emit("valueChange", { entity: this, componentBitmask });
+    });
+
+    this.components.set(componentDef._getId(), instance);
 
     const prevBitmask = this.componentBitmask;
 
     // Update bitmask
-    this.componentBitmask |= componentDef.getBitmask();
+    this.componentBitmask |= componentDef._getBitmask();
 
-    // Update queries
-    this.queryManager.handleEntityShapeChange(this, prevBitmask);
+    // Emit shape change event
+    this.emit("shapeChange", { entity: this, prevBitmask });
 
     return instance;
   }
@@ -69,18 +102,18 @@ export class Entity {
    * @returns True if removed, false if component didn't exist
    */
   remove<T extends Record<string, any>>(componentDef: Component<T>): boolean {
-    if (!this.components.has(componentDef)) {
+    if (!this.components.has(componentDef._getId())) {
       return false;
     }
 
-    this.components.delete(componentDef);
+    this.components.delete(componentDef._getId());
     const prevBitmask = this.componentBitmask;
 
     // Update bitmask
-    this.componentBitmask &= ~componentDef.getBitmask();
+    this.componentBitmask &= ~componentDef._getBitmask();
 
-    // Update queries
-    this.queryManager.handleEntityShapeChange(this, prevBitmask);
+    // Emit shape change event
+    this.emit("shapeChange", { entity: this, prevBitmask });
 
     return true;
   }
@@ -93,7 +126,7 @@ export class Entity {
   get<T extends Record<string, any>>(
     componentDef: Component<T>
   ): ComponentInstance<T> | undefined {
-    return this.components.get(componentDef) as
+    return this.components.get(componentDef._getId()) as
       | ComponentInstance<T>
       | undefined;
   }
@@ -104,15 +137,15 @@ export class Entity {
    * @returns True if entity has this component
    */
   has<T extends Record<string, any>>(componentDef: Component<T>): boolean {
-    return this.components.has(componentDef);
+    return this.components.has(componentDef._getId());
   }
 
   /**
-   * Get all component IDs attached to this entity
-   * @returns Array of component IDs
+   * Dispose of the entity and clean up all component references
    */
   dispose(): void {
-    this.components = new WeakMap();
+    this.components = new Map();
     this.componentBitmask = 0n;
+    this.clearListeners();
   }
 }

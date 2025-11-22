@@ -1,16 +1,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { World, System, component, field } from "../src/index.js";
+import { World, System, field } from "../src/index.js";
 
 describe("System", () => {
   let world: World;
-
-  const Position = component({
-    x: field.float32().default(0),
-    y: field.float32().default(0),
-  });
+  let Position: any;
 
   beforeEach(() => {
     world = new World();
+
+    Position = world.createComponent({
+      x: field.float32().default(0),
+      y: field.float32().default(0),
+    });
   });
 
   describe("System Creation", () => {
@@ -91,16 +92,12 @@ describe("System", () => {
         execute(): void {
           executionOrder.push("execute");
         }
-
-        _afterExecute(): void {
-          executionOrder.push("after");
-        }
       }
 
       const system = world.createSystem(TestSystem);
       system.execute();
 
-      expect(executionOrder).toEqual(["before", "execute", "after"]);
+      expect(executionOrder).toEqual(["before", "execute"]);
     });
 
     it("should call tick which calls execute", () => {

@@ -1,4 +1,4 @@
-import { Entity } from "./Entity";
+import { Entity, ENTITY_CREATION_KEY } from "./Entity";
 import type { Query, QueryBuilder } from "./Query";
 import {
   Query as QueryClass,
@@ -6,21 +6,22 @@ import {
 } from "./Query";
 import { QueryManager } from "./QueryManager";
 import { System, SYSTEM_CREATION_KEY } from "./System";
+import { Component, COMPONENT_CREATION_KEY } from "./Component";
+import type { ComponentSchema, InferComponentType } from "./Component";
 
 /**
- * World class - the "world" in traditional ECS frameworks.
- * Manages entities, components, and serves as the central point for ECS operations.
+ * World class - central manager for entities, components, and systems in the ECS framework.
  */
 export class World {
-  private entities: Map<number, Entity>;
   private entitySet: Set<Entity>;
-  private nextId: number;
   private queryManager: QueryManager;
+  private componentIndex: number = 0;
 
+  /**
+   * Create a new world instance
+   */
   constructor() {
-    this.entities = new Map();
     this.entitySet = new Set();
-    this.nextId = 1;
     this.queryManager = new QueryManager();
   }
 
@@ -29,8 +30,17 @@ export class World {
    * @returns The newly created entity
    */
   createEntity(): Entity {
-    const entity = new Entity(this.nextId++, this.queryManager);
-    this.entities.set(entity.getId(), entity);
+    const entity = Entity._create(ENTITY_CREATION_KEY);
+
+    // Listen to entity events and forward to query manager
+    entity.on("shapeChange", ({ entity, prevBitmask }) => {
+      this.queryManager.handleEntityShapeChange(entity, prevBitmask);
+    });
+
+    entity.on("valueChange", ({ entity, componentBitmask }) => {
+      this.queryManager.handleEntityValueChange(entity, componentBitmask);
+    });
+
     this.entitySet.add(entity);
     return entity;
   }
@@ -41,17 +51,61 @@ export class World {
    * @returns True if removed, false if not found
    */
   removeEntity(entity: Entity): boolean {
-    const entityId = entity.getId();
-    const existingEntity = this.entities.get(entityId);
-
-    if (existingEntity) {
-      existingEntity.dispose();
-      this.entitySet.delete(existingEntity);
+    if (this.entitySet.has(entity)) {
+      entity.dispose();
+      this.entitySet.delete(entity);
       this.queryManager.handleEntityRemove(entity);
-      return this.entities.delete(entityId);
+      return true;
     }
 
     return false;
+  }
+
+  /**
+   * Create a system instance
+   * @template T - The type of system to create
+   * @param SystemClass - The System class to instantiate
+   * @returns An instance of the system
+   */
+  createSystem<T extends System>(
+    SystemClass: typeof System &
+      (new (world: World, key: typeof SYSTEM_CREATION_KEY) => T)
+  ): T {
+    const system = SystemClass._create(this, SYSTEM_CREATION_KEY);
+
+    // Wrap the execute method in a proxy to add before/after hooks
+    const originalExecute = system.execute.bind(system);
+    system.execute = new Proxy(originalExecute, {
+      apply: (target, thisArg, argumentsList: any[]) => {
+        system._beforeExecute();
+        const result = Reflect.apply(target, thisArg, argumentsList);
+        return result;
+      },
+    }) as any;
+
+    return system;
+  }
+
+  /**
+   * Create a component definition
+   * @template T - The component schema type
+   * @param schema - The component schema built using field builders
+   * @returns A new Component instance with inferred type
+   * @example
+   * const Position = world.createComponent({
+   *   x: field.float32().default(0),
+   *   y: field.float32().default(0)
+   * });
+   */
+  createComponent<T extends ComponentSchema>(
+    schema: T
+  ): Component<InferComponentType<T>> {
+    const componentIndex = this.componentIndex++;
+    return Component._create<InferComponentType<T>>(
+      schema,
+      componentIndex,
+      COMPONENT_CREATION_KEY
+    );
   }
 
   /**
@@ -69,40 +123,13 @@ export class World {
   }
 
   /**
-   * Create a system instance
-   * @param SystemClass - The System class to instantiate
-   * @returns An instance of the system
-   */
-  createSystem<T extends System>(
-    SystemClass: typeof System &
-      (new (world: World, key: typeof SYSTEM_CREATION_KEY) => T)
-  ): T {
-    const system = SystemClass._create(this, SYSTEM_CREATION_KEY);
-
-    // Wrap the execute method in a proxy to add before/after hooks
-    const originalExecute = system.execute.bind(system);
-    system.execute = new Proxy(originalExecute, {
-      apply: (target, thisArg, argumentsList: any[]) => {
-        system._beforeExecute();
-        const result = Reflect.apply(target, thisArg, argumentsList);
-        system._afterExecute();
-        return result;
-      },
-    }) as any;
-
-    return system;
-  }
-
-  /**
    * Dispose of the world and free all resources
    */
   dispose(): void {
-    for (const entity of this.entities.values()) {
+    for (const entity of this.entitySet.values()) {
       entity.dispose();
     }
-    this.entities.clear();
     this.entitySet.clear();
     this.queryManager.clear();
-    this.nextId = 1;
   }
 }

@@ -7,7 +7,7 @@ Component instances now support **direct property access** using JavaScript Prox
 ## Before (Explicit get/set)
 
 ```typescript
-const player = Player.from({ name: "Hero", health: 100 });
+const player = Player._from({ name: "Hero", health: 100 });
 
 // Get values
 const health = player.get("health");
@@ -21,7 +21,7 @@ player.set("name", "Super Hero");
 ## After (Direct property access)
 
 ```typescript
-const player = Player.from({ name: "Hero", health: 100 });
+const player = Player._from({ name: "Hero", health: 100 });
 
 // Get values - just use the property!
 const health = player.health;
@@ -60,7 +60,7 @@ const Transform = component("Transform", {
   rotation: ecs.float32(),
 });
 
-const transform = Transform.from({ x: 0, y: 0, rotation: 0 });
+const transform = Transform._from({ x: 0, y: 0, rotation: 0 });
 
 // Natural movement
 transform.x += 5;
