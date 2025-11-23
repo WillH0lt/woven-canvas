@@ -1,0 +1,62 @@
+import type { EntityId } from "../../World";
+import type { ComponentBuffer, BooleanFieldDef } from "../types";
+import type { FieldHandler } from "./FieldHandler";
+
+export const BooleanFieldHandler: FieldHandler = {
+  initializeStorage(capacity: number, config: BooleanFieldDef) {
+    const buffer = new ArrayBuffer(capacity);
+    const view = new Uint8Array(buffer, 0, capacity);
+    return { buffer, view };
+  },
+
+  defineReadonly(
+    master: any,
+    field: string,
+    buffer: ComponentBuffer<any>,
+    getEntityId: () => EntityId
+  ) {
+    Object.defineProperty(master, field, {
+      enumerable: true,
+      configurable: false,
+      get: () => {
+        const array = (buffer as any)[field];
+        return Boolean(array[getEntityId()]);
+      },
+    });
+  },
+
+  defineWritable(
+    master: any,
+    field: string,
+    buffer: ComponentBuffer<any>,
+    getEntityId: () => EntityId
+  ) {
+    Object.defineProperty(master, field, {
+      enumerable: true,
+      configurable: false,
+      get: () => {
+        const array = (buffer as any)[field];
+        return Boolean(array[getEntityId()]);
+      },
+      set: (value: any) => {
+        const array = (buffer as any)[field];
+        array[getEntityId()] = value ? 1 : 0;
+      },
+    });
+  },
+
+  getDefaultValue(fieldDef: BooleanFieldDef) {
+    return fieldDef.default !== undefined ? fieldDef.default : false;
+  },
+
+  setValue(array: any, entityId: EntityId, value: any) {
+    array[entityId] = value ? 1 : 0;
+  },
+
+  growStorage(oldArray: any, newCapacity: number, config: BooleanFieldDef) {
+    const newBuffer = new ArrayBuffer(newCapacity);
+    const newView = new Uint8Array(newBuffer, 0, newCapacity);
+    newView.set(oldArray);
+    return { buffer: newBuffer, view: newView };
+  },
+};

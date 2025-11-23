@@ -34,11 +34,23 @@ const library: BenchmarkLibrary = {
       private particles = this.query((q) => q.with(Position, Velocity));
 
       execute() {
-        for (const entity of this.particles.current) {
-          const pos = entity.get(Position)!.value;
-          const vel = entity.get(Velocity)!.value;
-          pos.x += vel.x;
-          pos.y += vel.y;
+        this._beforeExecute();
+
+        const posX = Position.buffer.x;
+        const posY = Position.buffer.y;
+        const velX = Velocity.buffer.x;
+        const velY = Velocity.buffer.y;
+
+        for (const eid of this.particles.current) {
+          // const pos = Position.write(eid);
+          // const vel = Velocity.read(eid);
+
+          // pos.x += vel.x;
+          // pos.y += vel.y;
+
+          posX[eid] += velX[eid];
+          posY[eid] += velY[eid];
+
           updateCount++;
         }
       }
@@ -50,16 +62,16 @@ const library: BenchmarkLibrary = {
     return this.world.createEntity();
   },
   addPositionComponent(entity: any) {
-    entity.add(this.Position, { x: 100, y: 100 });
+    this.world.addComponent(entity, this.Position, { x: 0, y: 0 });
   },
   addVelocityComponent(entity: any) {
-    entity.add(this.Velocity, { x: 1.2, y: 1.7 });
+    this.world.addComponent(entity, this.Velocity, { x: 1.2, y: 1.7 });
   },
   removePositionComponent(entity: any) {
-    entity.remove(this.Position);
+    this.world.removeComponent(entity, this.Position);
   },
   removeVelocityComponent(entity: any) {
-    entity.remove(this.Velocity);
+    this.world.removeComponent(entity, this.Velocity);
   },
   destroyEntity(entity: any) {
     this.world?.removeEntity(entity);
@@ -68,7 +80,7 @@ const library: BenchmarkLibrary = {
     updateCount = 0;
   },
   updateMovementSystem() {
-    this.moveSystem.execute();
+    this.world!.execute(this.moveSystem);
   },
   getMovementSystemUpdateCount() {
     return updateCount;

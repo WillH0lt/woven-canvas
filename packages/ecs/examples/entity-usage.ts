@@ -209,3 +209,4 @@ const posVelQuery = doc.query((q) => q.with(Position, Velocity));
 console.log(`Entities with Position+Velocity: ${posVelQuery.count}`);
 const finalHealthQuery = doc.query((q) => q.with(Health));
 console.log(`Entities with Health: ${finalHealthQuery.count}`);
+

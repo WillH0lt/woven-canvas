@@ -109,17 +109,17 @@ function main() {
   enemy.add(NetworkSync, { entityId: 1002, lastSyncTime: 0 });
   enemy.add(Active);
 
-  networkSystem.execute();
-  cleanupSystem.execute();
+  world.execute(networkSystem);
+  world.execute(cleanupSystem);
 
   console.log("\n=== Frame 2: Normal operation ===");
-  networkSystem.execute();
-  cleanupSystem.execute();
+  world.execute(networkSystem);
+  world.execute(cleanupSystem);
 
   console.log("\n=== Frame 3: Removing enemy entity ===");
   world.removeEntity(enemy);
-  networkSystem.execute();
-  cleanupSystem.execute();
+  world.execute(networkSystem);
+  world.execute(cleanupSystem);
 
   console.log("\n=== Frame 4: Creating new entity and deactivating player ===");
   const item = world.createEntity();
@@ -130,12 +130,13 @@ function main() {
   // Removing Active component will remove player from Active query
   player.remove(Active);
 
-  networkSystem.execute();
-  cleanupSystem.execute();
+  world.execute(networkSystem);
+  world.execute(cleanupSystem);
 
   console.log("\n=== Frame 5: Normal operation again ===");
-  networkSystem.execute();
-  cleanupSystem.execute();
+  world.execute(networkSystem);
+  world.execute(cleanupSystem);
 }
 
 main();
+

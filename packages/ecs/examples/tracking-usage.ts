@@ -103,25 +103,26 @@ function demo() {
   player.add(Velocity, { dx: 1, dy: 1 });
 
   console.log("=== Frame 1: New entity ===");
-  movementSystem.execute();
-  loggerSystem.execute();
+  world.execute(movementSystem);
+  world.execute(loggerSystem);
 
   console.log("\n=== Frame 2: Movement updates position ===");
-  movementSystem.execute();
-  loggerSystem.execute();
+  world.execute(movementSystem);
+  world.execute(loggerSystem);
 
   console.log("\n=== Frame 3: External position modification ===");
   // Simulate external position change (e.g., teleport)
   player.get(Position)!.value.x = 100;
   player.get(Position)!.value.y = 100;
 
-  movementSystem.execute();
-  loggerSystem.execute();
+  world.execute(movementSystem);
+  world.execute(loggerSystem);
 
   console.log("\n=== Frame 4: Normal movement ===");
-  movementSystem.execute();
-  loggerSystem.execute();
+  world.execute(movementSystem);
+  world.execute(loggerSystem);
 }
 
 // Run the demo
 main();
+

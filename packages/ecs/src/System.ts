@@ -1,12 +1,5 @@
-import type { Entity } from "./Entity";
-import type { World } from "./World";
+import type { World, EntityId } from "./World";
 import type { Query, QueryBuilder } from "./Query";
-
-/**
- * @internal
- * Symbol used to ensure only World can create System instances
- */
-export const SYSTEM_CREATION_KEY = Symbol("SYSTEM_CREATION_KEY");
 
 /**
  * Base class for systems in the ECS framework
@@ -18,35 +11,11 @@ export abstract class System {
   readonly #queries: Query[] = [];
 
   /**
-   * Use World.createSystem() to create system instances
+   * Create a new system
    * @param world - The world this system belongs to
-   * @param _key - Internal key to restrict construction to World class
-   * @internal
    */
-  constructor(world: World, _key?: typeof SYSTEM_CREATION_KEY) {
-    if (_key !== SYSTEM_CREATION_KEY) {
-      throw new Error(
-        "Systems cannot be instantiated directly. Use world.createSystem() instead."
-      );
-    }
+  constructor(world: World) {
     this.#world = world;
-  }
-
-  /**
-   * Factory method for creating system instances - only callable by World
-   * @param world - The world to create the system in
-   * @param key - Internal key to verify caller is authorized
-   * @returns A new system instance
-   * @internal
-   */
-  static _create<T extends System>(
-    this: new (world: World, key: typeof SYSTEM_CREATION_KEY) => T,
-    world: World,
-    key: typeof SYSTEM_CREATION_KEY
-  ): T {
-    if (key !== SYSTEM_CREATION_KEY)
-      throw new Error("Use world.createSystem()");
-    return new this(world, key);
   }
 
   /**
@@ -74,7 +43,7 @@ export abstract class System {
    * Create a new entity in the world
    * @returns The newly created entity
    */
-  protected createEntity(): Entity {
+  protected createEntity(): EntityId {
     return this.#world.createEntity();
   }
 
@@ -83,13 +52,37 @@ export abstract class System {
    * @param entity - The entity instance to remove
    * @returns True if removed, false if not found
    */
-  protected removeEntity(entity: Entity): boolean {
-    return this.#world.removeEntity(entity);
+  protected removeEntity(entityId: EntityId): void {
+    return this.#world.removeEntity(entityId);
+  }
+
+  /**
+   * Add a component to an entity
+   * @param entityId - The entity ID to add the component to
+   * @param component - The component to add
+   * @param data - Optional initial data for the component
+   */
+  protected addComponent<T>(
+    entityId: EntityId,
+    component: any,
+    data?: Partial<T>
+  ): void {
+    return this.#world.addComponent(entityId, component, data);
+  }
+
+  /**
+   * Remove a component from an entity
+   * @param entityId - The entity ID to remove the component from
+   * @param component - The component to remove
+   */
+  protected removeComponent(entityId: EntityId, component: any): void {
+    return this.#world.removeComponent(entityId, component);
   }
 
   /**
    * Execute the system logic
-   * Override this method in derived classes
+   * Override this method in derived classes.
+   * Use world.execute(system) to run the system with proper lifecycle hooks.
    */
   abstract execute(): void;
 }

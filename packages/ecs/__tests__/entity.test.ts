@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { field, Entity, World } from "../src/index";
+import { field, World } from "../src/index";
+import type { EntityId } from "../src/index";
 
 describe("Entity", () => {
   let world: World;
@@ -28,103 +29,113 @@ describe("Entity", () => {
   });
 
   describe("Entity - Basic Operations", () => {
-    let entity: Entity;
+    let entity: EntityId;
 
     beforeEach(() => {
       entity = world.createEntity();
     });
 
     it("should add a component to entity", () => {
-      const pos = entity.add(Position, { x: 10, y: 20 });
+      world.addComponent(entity, Position, { x: 10, y: 20 });
+      const pos = Position.read(entity);
 
-      expect(pos.value.x).toBeCloseTo(10);
-      expect(pos.value.y).toBeCloseTo(20);
-      expect(entity.has(Position)).toBe(true);
+      expect(pos.x).toBeCloseTo(10);
+      expect(pos.y).toBeCloseTo(20);
+      expect(world.hasComponent(entity, Position)).toBe(true);
     });
 
     it("should throw error when adding duplicate component", () => {
-      entity.add(Position, { x: 10, y: 20 });
+      world.addComponent(entity, Position, { x: 10, y: 20 });
 
       expect(() => {
-        entity.add(Position, { x: 30, y: 40 });
+        world.addComponent(entity, Position, { x: 30, y: 40 });
       }).toThrow("Entity already has component:");
     });
 
     it("should get a component from entity", () => {
-      entity.add(Position, { x: 15, y: 25 });
+      world.addComponent(entity, Position, { x: 15, y: 25 });
 
-      const pos = entity.get(Position);
+      const pos = Position.read(entity);
       expect(pos).toBeDefined();
-      expect(pos!.value.x).toBeCloseTo(15);
-      expect(pos!.value.y).toBeCloseTo(25);
+      expect(pos!.x).toBeCloseTo(15);
+      expect(pos!.y).toBeCloseTo(25);
     });
 
-    it("should return undefined for non-existent component", () => {
-      const pos = entity.get(Position);
-      expect(pos).toBeUndefined();
+    it("should check hasComponent before reading", () => {
+      expect(world.hasComponent(entity, Position)).toBe(false);
+
+      world.addComponent(entity, Position, { x: 5, y: 10 });
+      expect(world.hasComponent(entity, Position)).toBe(true);
+
+      const pos = Position.read(entity);
+      expect(pos.x).toBeCloseTo(5);
+      expect(pos.y).toBeCloseTo(10);
     });
 
     it("should remove a component", () => {
-      entity.add(Position, { x: 10, y: 20 });
-      expect(entity.has(Position)).toBe(true);
+      world.addComponent(entity, Position, { x: 10, y: 20 });
+      expect(world.hasComponent(entity, Position)).toBe(true);
 
-      const removed = entity.remove(Position);
-      expect(removed).toBe(true);
-      expect(entity.has(Position)).toBe(false);
-    });
-
-    it("should return false when removing non-existent component", () => {
-      const removed = entity.remove(Position);
-      expect(removed).toBe(false);
+      world.removeComponent(entity, Position);
+      expect(world.hasComponent(entity, Position)).toBe(false);
     });
 
     it("should add multiple components", () => {
-      entity.add(Position, { x: 10, y: 20 });
-      entity.add(Velocity, { dx: 1, dy: 2 });
-      entity.add(Health, { current: 80, max: 100 });
+      world.addComponent(entity, Position, { x: 10, y: 20 });
+      world.addComponent(entity, Velocity, { dx: 1, dy: 2 });
+      world.addComponent(entity, Health, { current: 80, max: 100 });
 
-      expect(entity.has(Position)).toBe(true);
-      expect(entity.has(Velocity)).toBe(true);
-      expect(entity.has(Health)).toBe(true);
+      expect(world.hasComponent(entity, Position)).toBe(true);
+      expect(world.hasComponent(entity, Velocity)).toBe(true);
+      expect(world.hasComponent(entity, Health)).toBe(true);
     });
   });
 
   describe("World", () => {
     it("should remove entity by instance", () => {
       const entity = world.createEntity();
+      world.addComponent(entity, Position, { x: 10, y: 20 });
 
-      const removed = world.removeEntity(entity);
-      expect(removed).toBe(true);
+      expect(world.hasComponent(entity, Position)).toBe(true);
+
+      world.removeEntity(entity);
+      expect(() => world.hasComponent(entity, Position)).toThrow(
+        "Entity with ID"
+      );
     });
 
-    it("should return false when removing non-existent entity", () => {
+    it("should handle removing non-existent entity", () => {
       const otherWorld = new World();
       const entity = otherWorld.createEntity();
 
-      const removed = world.removeEntity(entity);
-      expect(removed).toBe(false);
+      // Entity from another world won't exist in this world
+      world.removeEntity(entity);
+      // hasComponent should throw for non-existent entity
+      expect(() => world.hasComponent(entity, Position)).toThrow(
+        "Entity with ID"
+      );
     });
   });
 
   describe("Real-World Usage", () => {
     it("should handle component lifecycle", () => {
       const entity = world.createEntity();
-      entity.add(Health, { current: 100, max: 100 });
+      world.addComponent(entity, Health, { current: 100, max: 100 });
 
       // Take damage
-      const health = entity.get(Health)!;
-      health.value.current -= 50;
+      const health = Health.write(entity);
+      health.current -= 50;
 
-      expect(health.value.current).toBe(50);
+      expect(health.current).toBe(50);
 
       // If health reaches 0, remove health component
-      health.value.current = 0;
+      health.current = 0;
 
-      if (health.value.current <= 0) {
-        entity.remove(Health);
+      if (health.current <= 0) {
+        world.removeComponent(entity, Health);
       }
 
-      expect(entity.has(Health)).toBe(false);
+      expect(world.hasComponent(entity, Health)).toBe(false);
     });
   });
 });

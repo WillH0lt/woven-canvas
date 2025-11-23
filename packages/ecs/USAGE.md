@@ -323,11 +323,11 @@ const entity = world.createEntity();
 entity.add(Position, { x: 0, y: 0 });
 entity.add(Velocity, { dx: 1, dy: 2 });
 
-moveSystem.execute(); // Entity appears in .added and .current
-// System._afterExecute() automatically clears added tracking
+world.execute(moveSystem); // Entity appears in .added and .current
+// world.execute() automatically calls _beforeExecute() which clears added tracking
 
 // Frame 2: Regular update
-moveSystem.execute(); // Entity only in .current, not .added
+world.execute(moveSystem); // Entity only in .current, not .added
 ```
 
 ### Query Modifiers
@@ -399,8 +399,8 @@ class MySystem extends System {
 }
 
 // In your game loop
-mySystem.execute(); // Frame 1: entities in .added
-mySystem.execute(); // Frame 2: only new entities in .added, previous ones cleared
+world.execute(mySystem); // Frame 1: entities in .added
+world.execute(mySystem); // Frame 2: only new entities in .added, previous ones cleared
 ```
 
 For queries created outside of systems, the tracking lists are cleared automatically when `_prepare()` is called at the start of the next frame.

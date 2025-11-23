@@ -104,15 +104,15 @@ function example() {
   entity1.add(Velocity, { dx: 1, dy: 2 });
   entity1.add(Sprite, { textureId: 1 });
 
-  // Run systems - System._afterExecute() automatically clears added after each execution
-  movementSystem.execute();
-  renderSystem.execute();
+  // Run systems - world.execute() automatically calls _beforeExecute() which clears added after each execution
+  world.execute(movementSystem);
+  world.execute(renderSystem);
 
   console.log("\n=== Frame 2: Regular updates ===");
 
   // Run systems again - no initialization this time
-  movementSystem.execute();
-  renderSystem.execute();
+  world.execute(movementSystem);
+  world.execute(renderSystem);
 
   console.log("\n=== Frame 3: Add new entity ===");
 
@@ -123,8 +123,8 @@ function example() {
   entity2.add(Sprite, { textureId: 2 });
 
   // Run systems - only new entity gets initialized
-  movementSystem.execute();
-  renderSystem.execute();
+  world.execute(movementSystem);
+  world.execute(renderSystem);
 
   console.log("\n=== Frame 4: Component addition ===");
 
@@ -134,8 +134,8 @@ function example() {
   entity3.add(Sprite, { textureId: 3 });
 
   // This won't appear in movers query yet
-  movementSystem.execute();
-  renderSystem.execute();
+  world.execute(movementSystem);
+  world.execute(renderSystem);
 
   console.log("\n=== Frame 5: Entity now matches query ===");
 
@@ -143,8 +143,8 @@ function example() {
   entity3.add(Velocity, { dx: 0, dy: -1 });
 
   // Entity3 will be initialized by movement system
-  movementSystem.execute();
-  renderSystem.execute();
+  world.execute(movementSystem);
+  world.execute(renderSystem);
 
   // Cleanup
   world.dispose();

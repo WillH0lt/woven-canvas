@@ -14,7 +14,6 @@ import type { BenchmarkLibrary } from "../types";
 
 let updateCount = 0;
 let query: any;
-let move: any;
 
 const library: BenchmarkLibrary = {
   name: "bitecs",
@@ -27,20 +26,25 @@ const library: BenchmarkLibrary = {
     this.world = createWorld();
 
     const { f32, ui16 } = Types;
-    const Vector2 = { x: f32, y: f32 };
-    this.Position = defineComponent(Vector2);
-    this.Velocity = defineComponent({ ...Vector2, speed: ui16 });
+    this.Position = defineComponent({ x: f32, y: f32 });
+    this.Velocity = defineComponent({ x: f32, y: f32, speed: ui16 });
 
     query = defineQuery([this.Position, this.Velocity]);
 
     const Position = this.Position;
     const Velocity = this.Velocity;
-    move = defineSystem((world: IWorld) => {
+    this.moveSystem = defineSystem((world: IWorld) => {
       const ents = query(world);
+
+      const posX = Position.x;
+      const posY = Position.y;
+      const velX = Velocity.x;
+      const velY = Velocity.y;
+
       for (let i = 0; i < ents.length; i++) {
         const eid = ents[i];
-        Position.x[eid] += Velocity.x[eid];
-        Position.y[eid] += Velocity.y[eid];
+        posX[eid] += velX[eid];
+        posY[eid] += velY[eid];
         updateCount++;
       }
       return world;
@@ -72,7 +76,7 @@ const library: BenchmarkLibrary = {
     updateCount = 0;
   },
   updateMovementSystem() {
-    move(this.world);
+    this.moveSystem(this.world);
   },
   getMovementSystemUpdateCount() {
     return updateCount;

@@ -267,12 +267,12 @@ class AISystem extends System {
   for (let frame = 0; frame < 3; frame++) {
     console.log(`\n===== FRAME ${frame + 1} =====`);
 
-    movementSystem.execute();
-    combatSystem.execute();
-    aiSystem.execute();
-    blockEditSystem.execute();
-    renderSystem.execute();
-    deathSystem.execute();
+    world.execute(movementSystem);
+    world.execute(combatSystem);
+    world.execute(aiSystem);
+    world.execute(blockEditSystem);
+    world.execute(renderSystem);
+    world.execute(deathSystem);
 
     console.log(`\nEntities remaining: ${world.getEntityCount()}`);
   }
@@ -284,3 +284,4 @@ class AISystem extends System {
 
 // Run the demo
 main();
+

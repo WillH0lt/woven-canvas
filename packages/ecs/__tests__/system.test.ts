@@ -32,20 +32,20 @@ describe("System", () => {
 
         execute(): void {
           const entity = this.createEntity();
-          entity.add(Position, { x: 10, y: 20 });
+          this.addComponent(entity, Position, { x: 10, y: 20 });
           this.createdEntity = true;
         }
       }
 
       const system = world.createSystem(TestSystem);
-      system.execute();
+      world.execute(system);
 
       expect(system.createdEntity).toBe(true);
     });
   });
 
   describe("System Execution Hooks", () => {
-    it("should call afterExecute hook which clears query added lists", () => {
+    it("should call beforeExecute hook which clears query added lists", () => {
       class TestSystem extends System {
         private entities = this.query((q) => q.with(Position));
         public addedCount = 0;
@@ -62,42 +62,22 @@ describe("System", () => {
 
       // First execution - create entity
       const e1 = world.createEntity();
-      e1.add(Position, { x: 0, y: 0 });
+      world.addComponent(e1, Position, { x: 0, y: 0 });
 
-      system.execute();
+      world.execute(system);
       expect(system.addedCount).toBe(1);
 
       // Second execution - added list should be cleared by afterExecute hook
       system.addedCount = 0;
-      system.execute();
+      world.execute(system);
       expect(system.addedCount).toBe(0);
 
       // Third execution - add new entity
       const e2 = world.createEntity();
-      e2.add(Position, { x: 10, y: 10 });
+      world.addComponent(e2, Position, { x: 10, y: 10 });
 
-      system.execute();
+      world.execute(system);
       expect(system.addedCount).toBe(1);
-    });
-
-    it("should proxy execute method to wrap with hooks", () => {
-      let executionOrder: string[] = [];
-
-      class TestSystem extends System {
-        // Override internal hooks to track execution
-        _beforeExecute(): void {
-          executionOrder.push("before");
-        }
-
-        execute(): void {
-          executionOrder.push("execute");
-        }
-      }
-
-      const system = world.createSystem(TestSystem);
-      system.execute();
-
-      expect(executionOrder).toEqual(["before", "execute"]);
     });
 
     it("should call tick which calls execute", () => {
@@ -112,7 +92,7 @@ describe("System", () => {
       const system = world.createSystem(TestSystem);
       expect(system.executed).toBe(false);
 
-      system.execute();
+      world.execute(system);
       expect(system.executed).toBe(true);
     });
   });
@@ -127,28 +107,28 @@ describe("System", () => {
         }
 
         execute(): void {
-          for (const entity of this.movingEntities.current) {
-            const pos = entity.get(Position)!;
-            pos.value.x += 1;
+          for (const entityId of this.movingEntities.current) {
+            const pos = Position.write(entityId);
+            pos.x += 1;
           }
         }
       }
 
       const system = world.createSystem(MovementSystem);
 
-      system.execute();
+      world.execute(system);
 
       expect(system.getCount()).toBe(0);
 
       const e1 = world.createEntity();
-      e1.add(Position, { x: 0, y: 0 });
+      world.addComponent(e1, Position, { x: 0, y: 0 });
 
-      system.execute();
+      world.execute(system);
 
       expect(system.getCount()).toBe(1);
 
-      const pos = e1.get(Position)!;
-      expect(pos.value.x).toBe(1);
+      const pos = Position.read(e1);
+      expect(pos.x).toBe(1);
     });
   });
 
@@ -166,13 +146,13 @@ describe("System", () => {
 
       expect(system.count).toBe(0);
 
-      system.execute();
+      world.execute(system);
       expect(system.count).toBe(1);
 
-      system.execute();
+      world.execute(system);
       expect(system.count).toBe(2);
 
-      system.execute();
+      world.execute(system);
       expect(system.count).toBe(3);
     });
   });

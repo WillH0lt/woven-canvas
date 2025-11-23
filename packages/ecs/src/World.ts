@@ -1,27 +1,36 @@
-import { Entity, ENTITY_CREATION_KEY } from "./Entity";
+// import { Entity } from "./Entity";
 import type { Query, QueryBuilder } from "./Query";
 import {
   Query as QueryClass,
   QueryBuilder as QueryBuilderClass,
 } from "./Query";
 import { QueryManager } from "./QueryManager";
-import { System, SYSTEM_CREATION_KEY } from "./System";
-import { Component, COMPONENT_CREATION_KEY } from "./Component";
-import type { ComponentSchema, InferComponentType } from "./Component";
+import { System } from "./System";
+import {
+  type ComponentSchema,
+  type InferComponentType,
+  Component,
+} from "./Component";
+
+export type EntityId = number;
+export type Entity = bigint;
 
 /**
  * World class - central manager for entities, components, and systems in the ECS framework.
  */
 export class World {
-  private entitySet: Set<Entity>;
+  // private entitySet: Set<Entity>;
+
+  private entityMap: Map<EntityId, Entity> = new Map();
   private queryManager: QueryManager;
   private componentIndex: number = 0;
+  private entityIdCounter: number = 0;
 
   /**
    * Create a new world instance
    */
   constructor() {
-    this.entitySet = new Set();
+    this.entityMap = new Map();
     this.queryManager = new QueryManager();
   }
 
@@ -29,20 +38,11 @@ export class World {
    * Create a new entity in this world
    * @returns The newly created entity
    */
-  createEntity(): Entity {
-    const entity = Entity._create(ENTITY_CREATION_KEY);
+  createEntity(): EntityId {
+    const entityId = this.entityIdCounter++;
+    this.entityMap.set(entityId, 0n);
 
-    // Listen to entity events and forward to query manager
-    entity.on("shapeChange", ({ entity, prevBitmask }) => {
-      this.queryManager.handleEntityShapeChange(entity, prevBitmask);
-    });
-
-    entity.on("valueChange", ({ entity, componentBitmask }) => {
-      this.queryManager.handleEntityValueChange(entity, componentBitmask);
-    });
-
-    this.entitySet.add(entity);
-    return entity;
+    return entityId;
   }
 
   /**
@@ -50,15 +50,9 @@ export class World {
    * @param entity - The entity instance to remove
    * @returns True if removed, false if not found
    */
-  removeEntity(entity: Entity): boolean {
-    if (this.entitySet.has(entity)) {
-      entity.dispose();
-      this.entitySet.delete(entity);
-      this.queryManager.handleEntityRemove(entity);
-      return true;
-    }
-
-    return false;
+  removeEntity(entityId: EntityId): void {
+    this.entityMap.delete(entityId);
+    this.queryManager.handleEntityRemove(entityId);
   }
 
   /**
@@ -67,23 +61,8 @@ export class World {
    * @param SystemClass - The System class to instantiate
    * @returns An instance of the system
    */
-  createSystem<T extends System>(
-    SystemClass: typeof System &
-      (new (world: World, key: typeof SYSTEM_CREATION_KEY) => T)
-  ): T {
-    const system = SystemClass._create(this, SYSTEM_CREATION_KEY);
-
-    // Wrap the execute method in a proxy to add before/after hooks
-    const originalExecute = system.execute.bind(system);
-    system.execute = new Proxy(originalExecute, {
-      apply: (target, thisArg, argumentsList: any[]) => {
-        system._beforeExecute();
-        const result = Reflect.apply(target, thisArg, argumentsList);
-        return result;
-      },
-    }) as any;
-
-    return system;
+  createSystem<T extends System>(SystemClass: new (world: World) => T): T {
+    return new SystemClass(this);
   }
 
   /**
@@ -97,15 +76,53 @@ export class World {
    *   y: field.float32().default(0)
    * });
    */
-  createComponent<T extends ComponentSchema>(
-    schema: T
-  ): Component<InferComponentType<T>> {
+  createComponent<T extends ComponentSchema>(schema: T): Component<T> {
     const componentIndex = this.componentIndex++;
-    return Component._create<InferComponentType<T>>(
-      schema,
-      componentIndex,
-      COMPONENT_CREATION_KEY
-    );
+    return new Component<T>(schema, componentIndex);
+  }
+
+  addComponent(
+    entityId: EntityId,
+    component: Component<any>,
+    data: any = {}
+  ): void {
+    let entity = this.entityMap.get(entityId);
+    if (entity === undefined) {
+      throw new Error(`Entity with ID ${entityId} does not exist.`);
+    }
+
+    // Check if entity already has this component
+    if ((entity & component.bitmask) !== 0n) {
+      throw new Error(
+        `Entity already has component: ${component.constructor.name}`
+      );
+    }
+
+    entity |= component.bitmask;
+    this.entityMap.set(entityId, entity);
+    component.from(entityId, data);
+
+    this.queryManager.handleEntityShapeChange(entityId, entity);
+  }
+
+  removeComponent(entityId: EntityId, component: Component<any>): void {
+    let entity = this.entityMap.get(entityId);
+    if (entity === undefined) {
+      throw new Error(`Entity with ID ${entityId} does not exist.`);
+    }
+
+    entity &= ~component.bitmask;
+    this.entityMap.set(entityId, entity);
+
+    this.queryManager.handleEntityShapeChange(entityId, entity);
+  }
+
+  hasComponent(entityId: EntityId, component: Component<any>): boolean {
+    const entity = this.entityMap.get(entityId);
+    if (entity === undefined) {
+      throw new Error(`Entity with ID ${entityId} does not exist.`);
+    }
+    return (entity & component.bitmask) !== 0n;
   }
 
   /**
@@ -117,19 +134,28 @@ export class World {
     const queryBuilder = new QueryBuilderClass();
     builder(queryBuilder);
     const matcher = queryBuilder._build();
-    const query = new QueryClass(matcher, this.entitySet);
+    const query = new QueryClass(matcher, this.entityMap);
     this.queryManager.addQuery(query);
     return query;
+  }
+
+  /**
+   * Execute a system with proper lifecycle hooks
+   * @param system - The system instance to execute
+   */
+  execute(system: System): void {
+    system._beforeExecute();
+    system.execute();
   }
 
   /**
    * Dispose of the world and free all resources
    */
   dispose(): void {
-    for (const entity of this.entitySet.values()) {
-      entity.dispose();
-    }
-    this.entitySet.clear();
-    this.queryManager.clear();
+    // for (const entity of this.entitySet.values()) {
+    //   entity.dispose();
+    // }
+    // this.entitySet.clear();
+    // this.queryManager.clear();
   }
 }

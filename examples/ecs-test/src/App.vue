@@ -45,7 +45,6 @@ const Position = world.createComponent({
 });
 
 const Block = world.createComponent({
-  id: field.uint32(),
   width: field.float32(),
   height: field.float32(),
 });
@@ -55,20 +54,16 @@ class SyncSystem extends System {
   private blocks = this.query((q) => q.with(Block, Position, Color));
 
   public execute(): void {
-    for (const blockEntity of this.blocks.current) {
-      const pos = blockEntity.get(Position)!;
-      const color = blockEntity.get(Color)!;
-      const block = blockEntity.get(Block)!;
-
-      blocks.value[block.value.id] = {
-        id: block.value.id,
-        width: block.value.width,
-        height: block.value.height,
-        x: pos.value.x,
-        y: pos.value.y,
-        red: color.value.red,
-        green: color.value.green,
-        blue: color.value.blue,
+    for (const eid of this.blocks.current) {
+      blocks.value[eid] = {
+        id: eid,
+        width: Block.buffer.width[eid],
+        height: Block.buffer.height[eid],
+        x: Position.buffer.x[eid],
+        y: Position.buffer.y[eid],
+        red: Color.buffer.red[eid],
+        green: Color.buffer.green[eid],
+        blue: Color.buffer.blue[eid],
       };
     }
   }
@@ -90,19 +85,23 @@ class MoveSystem extends System {
       this.movers.removed.length
     );
 
-    for (const entity of this.movers.added) {
-      // perform some initialization if needed
-      const pos = entity.get(Position)!;
-      pos.value.x += 10;
-      pos.value.y += 10;
-    }
+    // for (const eid of this.movers.added) {
+    //   // perform some initialization if needed
+    //   // const pos = this.read(eid, Position)
+    //   const pos = Position.read(eid);
 
-    for (const entity of this.movers.current) {
+    //   // pos.x
+    //   // const pos = entity.get(Position)!;
+    //   pos.x += 10;
+    //   pos.y += 10;
+    // }
+
+    for (const eid of this.movers.current) {
       // move entities in a circular pattern
-      const pos = entity.get(Position)!;
+      const pos = Position.read(eid);
       const time = Date.now() * 0.001;
-      pos.value.x += Math.cos(time) * 0.5;
-      pos.value.y += Math.sin(time) * 0.5;
+      Position.buffer.x[eid] += Math.cos(time) * 0.5;
+      Position.buffer.y[eid] += Math.sin(time) * 0.5;
     }
   }
 }
@@ -113,21 +112,20 @@ const moveSystem = world.createSystem(MoveSystem);
 
 // Create some blocks
 const block1 = world.createEntity();
-
-block1.add(Block, { id: 1, width: 50, height: 50 });
-block1.add(Position, { x: 200, y: 200 });
-block1.add(Color, { red: 0, green: 255, blue: 0 });
+world.addComponent(block1, Block, { width: 50, height: 50 });
+world.addComponent(block1, Position, { x: 200, y: 200 });
+world.addComponent(block1, Color, { red: 0, green: 255, blue: 0 });
 
 const block2 = world.createEntity();
-block2.add(Block, { id: 2, width: 75, height: 75 });
-block2.add(Position, { x: 250, y: 250 });
-block2.add(Color, { red: 255, green: 0, blue: 0 });
+world.addComponent(block2, Block, { width: 75, height: 75 });
+world.addComponent(block2, Position, { x: 250, y: 250 });
+world.addComponent(block2, Color, { red: 255, green: 0, blue: 0 });
 
 function loop() {
   requestAnimationFrame(loop);
 
-  moveSystem.execute();
-  syncSystem.execute();
+  world.execute(moveSystem);
+  world.execute(syncSystem);
 }
 
 loop();

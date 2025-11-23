@@ -1,4 +1,3 @@
-export { field, type Component } from "./Component";
+export { field, Component } from "./Component";
 export { System } from "./System";
-export { World } from "./World";
-export { Entity } from "./Entity";
+export { World, type EntityId } from "./World";

@@ -2,7 +2,7 @@ import type { BenchmarkContext } from "../types";
 
 export default {
   name: "Add/Remove",
-  iterations: 5000,
+  iterations: 10000,
   setup(ctx: BenchmarkContext) {
     ctx.setup();
   },

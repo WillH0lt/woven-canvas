@@ -53,11 +53,11 @@ describe("World", () => {
       const entity = doc.createEntity();
 
       // Should be able to add components that were registered
-      entity.add(Position, { x: 10, y: 20 });
-      entity.add(Velocity, { dx: 1, dy: 2 });
+      doc.addComponent(entity, Position, { x: 10, y: 20 });
+      doc.addComponent(entity, Velocity, { dx: 1, dy: 2 });
 
-      expect(entity.has(Position)).toBe(true);
-      expect(entity.has(Velocity)).toBe(true);
+      expect(doc.hasComponent(entity, Position)).toBe(true);
+      expect(doc.hasComponent(entity, Velocity)).toBe(true);
     });
   });
 
@@ -112,8 +112,8 @@ describe("World", () => {
       expect(testSystem.executed).toBe(false);
       expect(anotherSystem.value).toBe(42);
 
-      testSystem.execute();
-      anotherSystem.execute();
+      doc.execute(testSystem);
+      doc.execute(anotherSystem);
 
       expect(testSystem.executed).toBe(true);
       expect(anotherSystem.value).toBe(43);
@@ -125,36 +125,36 @@ describe("World", () => {
       const doc = new World();
 
       const entity = doc.createEntity();
-      entity.add(Position, { x: 100, y: 200 });
-      entity.add(Health, { current: 75, max: 100 });
+      doc.addComponent(entity, Position, { x: 100, y: 200 });
+      doc.addComponent(entity, Health, { current: 75, max: 100 });
 
-      const pos = entity.get(Position)!;
-      const health = entity.get(Health)!;
+      const pos = Position.read(entity);
+      const health = Health.read(entity);
 
-      expect(pos.value.x).toBeCloseTo(100);
-      expect(pos.value.y).toBeCloseTo(200);
-      expect(health.value.current).toBe(75);
-      expect(health.value.max).toBe(100);
+      expect(pos.x).toBeCloseTo(100);
+      expect(pos.y).toBeCloseTo(200);
+      expect(health.current).toBe(75);
+      expect(health.max).toBe(100);
     });
 
     it("should handle component value mutations", () => {
       const doc = new World();
 
       const entity = doc.createEntity();
-      entity.add(Position, { x: 0, y: 0 });
-      entity.add(Velocity, { dx: 5, dy: 3 });
+      doc.addComponent(entity, Position, { x: 0, y: 0 });
+      doc.addComponent(entity, Velocity, { dx: 5, dy: 3 });
 
-      const pos = entity.get(Position)!;
-      const vel = entity.get(Velocity)!;
+      const pos = Position.write(entity);
+      const vel = Velocity.read(entity);
 
       // Simulate 10 frames of movement
       for (let i = 0; i < 10; i++) {
-        pos.value.x += vel.value.dx;
-        pos.value.y += vel.value.dy;
+        pos.x += vel.dx;
+        pos.y += vel.dy;
       }
 
-      expect(pos.value.x).toBeCloseTo(50);
-      expect(pos.value.y).toBeCloseTo(30);
+      expect(pos.x).toBeCloseTo(50);
+      expect(pos.y).toBeCloseTo(30);
     });
 
     it("should handle many entities efficiently", () => {
@@ -163,10 +163,10 @@ describe("World", () => {
       // Create 100 entities
       for (let i = 0; i < 100; i++) {
         const entity = doc.createEntity();
-        entity.add(Position, { x: i, y: i });
+        doc.addComponent(entity, Position, { x: i, y: i });
 
         if (i % 2 === 0) {
-          entity.add(Health, { current: 100, max: 100 });
+          doc.addComponent(entity, Health, { current: 100, max: 100 });
         }
       }
     });

@@ -1,5 +1,5 @@
-import type { Entity } from "./Entity";
 import type { Query } from "./Query";
+import type { EntityId, Entity } from "./World";
 
 /**
  * QueryManager class - manages the set of queries and their lifecycle.
@@ -38,9 +38,9 @@ export class QueryManager {
    * @param entity - The entity that was created or updated
    * @param prevBitmask - The entity's previous component bitmask
    */
-  handleEntityShapeChange(entity: Entity, prevBitmask: bigint): void {
+  handleEntityShapeChange(entityId: EntityId, entity: Entity): void {
     for (const query of this.queries) {
-      query._handleEntityShapeChange(entity, prevBitmask);
+      query._handleEntityShapeChange(entityId, entity);
     }
   }
 
@@ -49,9 +49,9 @@ export class QueryManager {
    * Each query will remove the entity from its tracking
    * @param entity - The entity that was removed
    */
-  handleEntityRemove(entity: Entity): void {
+  handleEntityRemove(entityId: EntityId): void {
     for (const query of this.queries) {
-      query._handleEntityRemove(entity);
+      query._handleEntityRemove(entityId);
     }
   }
 
