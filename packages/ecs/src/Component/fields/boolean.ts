@@ -1,8 +1,8 @@
 import type { EntityId } from "../../World";
 import type { ComponentBuffer, BooleanFieldDef } from "../types";
-import type { FieldHandler } from "./FieldHandler";
+import type { Field } from "./field";
 
-export const BooleanFieldHandler: FieldHandler = {
+export const BooleanField: Field = {
   initializeStorage(capacity: number, config: BooleanFieldDef) {
     const buffer = new ArrayBuffer(capacity);
     const view = new Uint8Array(buffer, 0, capacity);

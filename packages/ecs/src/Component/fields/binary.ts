@@ -1,6 +1,6 @@
 import type { EntityId } from "../../World";
 import type { ComponentBuffer, BinaryFieldDef } from "../types";
-import type { FieldHandler } from "./FieldHandler";
+import type { Field } from "./field";
 
 const DEFAULT_BINARY_BYTES = 256;
 
@@ -84,7 +84,7 @@ export class BinaryBufferView {
   }
 }
 
-export const BinaryFieldHandler: FieldHandler = {
+export const BinaryField: Field = {
   initializeStorage(capacity: number, config: BinaryFieldDef) {
     const maxDataLength = config.maxLength || DEFAULT_BINARY_BYTES;
     // Add length prefix bytes to the user-specified max data length

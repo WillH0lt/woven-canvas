@@ -13,12 +13,12 @@ import type {
   FieldDef,
 } from "./types";
 import {
-  NumberFieldHandler,
-  BooleanFieldHandler,
-  StringFieldHandler,
-  BinaryFieldHandler,
-  type FieldTypeHandler,
-} from "./fieldHandlers";
+  NumberField,
+  BooleanField,
+  StringField,
+  BinaryField,
+  type Field,
+} from "./fields";
 
 const INITIAL_CAPACITY = 10000;
 
@@ -60,20 +60,19 @@ export class Component<T extends ComponentSchema> {
     const bufferProxy: any = {};
 
     // Initialize storage arrays for each field
-    for (const [field, builder] of Object.entries(schema)) {
+    for (const [fieldName, builder] of Object.entries(schema)) {
       const fieldDef = builder.def;
-      this.schema[field] = fieldDef;
-      this.fieldNames.push(field);
-
+      this.schema[fieldName] = fieldDef;
+      this.fieldNames.push(fieldName);
       // Get the appropriate handler for this field type
-      const handler = this.getFieldHandler(fieldDef.type);
-      const { buffer, view } = handler.initializeStorage(
+      const field = this.getField(fieldDef.type);
+      const { buffer, view } = field.initializeStorage(
         INITIAL_CAPACITY,
         fieldDef
       );
 
-      this.fieldBuffers.set(field, buffer);
-      bufferProxy[field] = view;
+      this.fieldBuffers.set(fieldName, buffer);
+      bufferProxy[fieldName] = view;
     }
 
     this.buffer = bufferProxy as ComponentBuffer<T>;
@@ -84,18 +83,18 @@ export class Component<T extends ComponentSchema> {
 
     // Define getters/setters on master instances for each field
     // Use dynamic references to this.buffer to support array growth
-    for (const [field, fieldDef] of Object.entries(this.schema)) {
-      const handler = this.getFieldHandler(fieldDef.type);
+    for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
+      const field = this.getField(fieldDef.type);
 
-      handler.defineReadonly(
+      field.defineReadonly(
         this.readonlyMaster,
-        field,
+        fieldName,
         this.buffer,
         () => this.readonlyEntityId
       );
-      handler.defineWritable(
+      field.defineWritable(
         this.writableMaster,
-        field,
+        fieldName,
         this.buffer,
         () => this.writableEntityId
       );
@@ -107,16 +106,16 @@ export class Component<T extends ComponentSchema> {
    * @param type - The field type
    * @returns The field type handler
    */
-  private getFieldHandler(type: string): FieldTypeHandler {
+  private getField(type: string): Field {
     switch (type) {
       case "string":
-        return StringFieldHandler;
+        return StringField;
       case "number":
-        return NumberFieldHandler;
+        return NumberField;
       case "boolean":
-        return BooleanFieldHandler;
+        return BooleanField;
       case "binary":
-        return BinaryFieldHandler;
+        return BinaryField;
       default:
         throw new Error(`Unknown field type: ${type}`);
     }
@@ -140,17 +139,18 @@ export class Component<T extends ComponentSchema> {
 
     // Populate each field's storage array using cached field names
     for (let i = 0; i < this.fieldNames.length; i++) {
-      const field = this.fieldNames[i];
-      const array = (this.buffer as any)[field];
-      const fieldDef = this.schema[field];
-      const handler = this.getFieldHandler(fieldDef.type);
+      const fieldName = this.fieldNames[i];
+      const array = (this.buffer as any)[fieldName];
+      const fieldDef = this.schema[fieldName];
+      const field = this.getField(fieldDef.type);
 
       // Get value from input data or use default
       const value =
-        data && field in data ? data[field] : handler.getDefaultValue(fieldDef);
-
+        data && fieldName in data
+          ? data[fieldName]
+          : field.getDefaultValue(fieldDef);
       // Store value using the handler
-      handler.setValue(array, entityId, value);
+      field.setValue(array, entityId, value);
     }
   }
 
@@ -190,19 +190,19 @@ export class Component<T extends ComponentSchema> {
     const currentCapacity = firstArray ? firstArray.length : INITIAL_CAPACITY;
     const newCapacity = Math.max(minCapacity, currentCapacity * 2);
 
-    for (const field of this.fieldNames) {
-      const oldArray = (this.buffer as any)[field];
-      const fieldDef = this.schema[field];
-      const handler = this.getFieldHandler(fieldDef.type);
+    for (const fieldName of this.fieldNames) {
+      const oldArray = (this.buffer as any)[fieldName];
+      const fieldDef = this.schema[fieldName];
+      const field = this.getField(fieldDef.type);
 
-      const { buffer, view } = handler.growStorage(
+      const { buffer, view } = field.growStorage(
         oldArray,
         newCapacity,
         fieldDef
       );
 
-      this.fieldBuffers.set(field, buffer);
-      (this.buffer as any)[field] = view;
+      this.fieldBuffers.set(fieldName, buffer);
+      (this.buffer as any)[fieldName] = view;
     }
   }
 }

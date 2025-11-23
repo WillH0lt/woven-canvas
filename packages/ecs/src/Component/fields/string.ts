@@ -1,6 +1,6 @@
 import type { EntityId } from "../../World";
 import type { ComponentBuffer, StringFieldDef } from "../types";
-import type { FieldHandler } from "./FieldHandler";
+import type { Field } from "./field";
 
 const DEFAULT_STRING_BYTES = 512;
 
@@ -64,7 +64,7 @@ export class StringBufferView {
   }
 }
 
-export const StringFieldHandler: FieldHandler = {
+export const StringField: Field = {
   initializeStorage(capacity: number, config: StringFieldDef) {
     const maxDataLength = config.maxLength || DEFAULT_STRING_BYTES;
     // Add length prefix bytes to the user-specified max data length

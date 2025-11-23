@@ -5,7 +5,7 @@ import type {
   NumberSubtype,
   TypedArray,
 } from "../types";
-import type { FieldHandler } from "./FieldHandler";
+import type { Field } from "./field";
 
 /**
  * Get the bytes per element for a numeric type
@@ -62,7 +62,7 @@ export function createTypedArray(
   }
 }
 
-export const NumberFieldHandler: FieldHandler = {
+export const NumberField: Field = {
   initializeStorage(capacity: number, config: NumberFieldDef) {
     const bytesPerElement = getBytesPerElement(config.btype);
     const buffer = new ArrayBuffer(capacity * bytesPerElement);

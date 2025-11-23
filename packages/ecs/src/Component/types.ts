@@ -1,5 +1,5 @@
-import type { StringBufferView } from "./fieldHandlers/string";
-import type { BinaryBufferView } from "./fieldHandlers/binary";
+import type { StringBufferView } from "./fields/string";
+import type { BinaryBufferView } from "./fields/binary";
 
 // Field type definitions
 export type FieldType = "string" | "number" | "boolean" | "binary";

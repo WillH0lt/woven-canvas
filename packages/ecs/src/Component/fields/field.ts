@@ -5,7 +5,7 @@ import type { ComponentBuffer } from "../types";
  * Common interface for field type handlers
  * Each field type (string, number, boolean) implements this interface
  */
-export interface FieldHandler {
+export interface Field {
   /**
    * Initialize storage for this field type
    * @param capacity - The initial capacity
