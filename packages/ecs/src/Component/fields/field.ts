@@ -10,12 +10,14 @@ export interface Field {
    * Initialize storage for this field type
    * @param capacity - The initial capacity
    * @param config - Type-specific configuration (e.g., maxLength for strings, btype for numbers)
-   * @returns The initialized buffer and backing ArrayBuffer
+   * @param BufferConstructor - The buffer constructor (SharedArrayBuffer or ArrayBuffer)
+   * @returns The initialized buffer and backing ArrayBufferLike
    */
   initializeStorage(
     capacity: number,
-    config: any
-  ): { buffer: ArrayBuffer; view: any };
+    config: any,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ): { buffer: ArrayBufferLike; view: any };
 
   /**
    * Define readonly property descriptor for this field type
@@ -65,11 +67,13 @@ export interface Field {
    * @param oldArray - The old storage array
    * @param newCapacity - The new capacity
    * @param config - Type-specific configuration
+   * @param BufferConstructor - The buffer constructor (SharedArrayBuffer or ArrayBuffer)
    * @returns The new buffer and view
    */
   growStorage(
     oldArray: any,
     newCapacity: number,
-    config: any
-  ): { buffer: ArrayBuffer; view: any };
+    config: any,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ): { buffer: ArrayBufferLike; view: any };
 }

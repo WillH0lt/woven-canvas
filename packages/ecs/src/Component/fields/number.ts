@@ -31,16 +31,16 @@ export function getBytesPerElement(btype: NumberSubtype): number {
 
 /**
  * Create the appropriate TypedArray based on field type
- * Uses ArrayBuffer as backing storage to enable future SharedArrayBuffer support
+ * Uses ArrayBufferLike as backing storage (SharedArrayBuffer or ArrayBuffer)
  * @param btype - The numeric type
  * @param size - The size of the array
- * @param buffer - The backing ArrayBuffer
+ * @param buffer - The backing ArrayBufferLike
  * @returns The created TypedArray
  */
 export function createTypedArray(
   btype: NumberSubtype,
   size: number,
-  buffer: ArrayBuffer
+  buffer: ArrayBufferLike
 ): TypedArray {
   switch (btype) {
     case "uint8":
@@ -63,9 +63,13 @@ export function createTypedArray(
 }
 
 export const NumberField: Field = {
-  initializeStorage(capacity: number, config: NumberFieldDef) {
+  initializeStorage(
+    capacity: number,
+    config: NumberFieldDef,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ) {
     const bytesPerElement = getBytesPerElement(config.btype);
-    const buffer = new ArrayBuffer(capacity * bytesPerElement);
+    const buffer = new BufferConstructor(capacity * bytesPerElement);
     const view = createTypedArray(config.btype, capacity, buffer);
     return { buffer, view };
   },
@@ -114,9 +118,14 @@ export const NumberField: Field = {
     array[entityId] = value;
   },
 
-  growStorage(oldArray: any, newCapacity: number, config: NumberFieldDef) {
+  growStorage(
+    oldArray: any,
+    newCapacity: number,
+    config: NumberFieldDef,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ) {
     const bytesPerElement = getBytesPerElement(config.btype);
-    const newBuffer = new ArrayBuffer(newCapacity * bytesPerElement);
+    const newBuffer = new BufferConstructor(newCapacity * bytesPerElement);
     const newView = createTypedArray(config.btype, newCapacity, newBuffer);
     newView.set(oldArray);
     return { buffer: newBuffer, view: newView };

@@ -14,7 +14,11 @@ export class BinaryBufferView {
   private capacity: number;
   public static readonly LENGTH_BYTES = 4; // uint32 for length prefix
 
-  constructor(buffer: ArrayBuffer, capacity: number, bytesPerEntry: number) {
+  constructor(
+    buffer: ArrayBufferLike,
+    capacity: number,
+    bytesPerEntry: number
+  ) {
     this.buffer = new Uint8Array(buffer);
     this.bytesPerEntry = bytesPerEntry;
     this.capacity = capacity;
@@ -85,11 +89,15 @@ export class BinaryBufferView {
 }
 
 export const BinaryField: Field = {
-  initializeStorage(capacity: number, config: BinaryFieldDef) {
+  initializeStorage(
+    capacity: number,
+    config: BinaryFieldDef,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ) {
     const maxDataLength = config.maxLength || DEFAULT_BINARY_BYTES;
     // Add length prefix bytes to the user-specified max data length
     const bytesPerEntry = maxDataLength + BinaryBufferView.LENGTH_BYTES;
-    const buffer = new ArrayBuffer(capacity * bytesPerEntry);
+    const buffer = new BufferConstructor(capacity * bytesPerEntry);
     const view = new BinaryBufferView(buffer, capacity, bytesPerEntry);
     return { buffer, view };
   },
@@ -140,11 +148,16 @@ export const BinaryField: Field = {
     array.set(entityId, value);
   },
 
-  growStorage(oldArray: any, newCapacity: number, config: BinaryFieldDef) {
+  growStorage(
+    oldArray: any,
+    newCapacity: number,
+    config: BinaryFieldDef,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ) {
     const maxDataLength = config.maxLength || DEFAULT_BINARY_BYTES;
     // Add length prefix bytes to the user-specified max data length
     const bytesPerEntry = maxDataLength + BinaryBufferView.LENGTH_BYTES;
-    const newBuffer = new ArrayBuffer(newCapacity * bytesPerEntry);
+    const newBuffer = new BufferConstructor(newCapacity * bytesPerEntry);
     const newView = new BinaryBufferView(newBuffer, newCapacity, bytesPerEntry);
 
     // Copy existing binary data to new buffer

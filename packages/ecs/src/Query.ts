@@ -129,9 +129,14 @@ class QueryMatcher {
   }
 }
 
+// Use SharedArrayBuffer if available for cross-thread sharing, fallback to ArrayBuffer
+const ArrayBufferImpl =
+  typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
+
 /**
  * Query result set that provides iteration over matching entities
  * Optimized for game loop performance with fast array iteration
+ * Uses SharedArrayBuffer for thread-safe sharing when available
  */
 export class Query {
   private matcher: QueryMatcher;
@@ -143,11 +148,14 @@ export class Query {
   private pendingRemovedSet = new Set<EntityId>();
   private pendingChangedSet = new Set<EntityId>();
 
-  // Cached arrays for fast iteration
+  // Fast arrays for iteration (regular JavaScript arrays for best performance)
   private entitiesArray: EntityId[] = [];
   private addedArray: EntityId[] = [];
   private removedArray: EntityId[] = [];
   private changedArray: EntityId[] = [];
+
+  // Map entity IDs to their index in entitiesArray for O(1) removal
+  private entityIndexMap = new Map<EntityId, number>();
 
   // Track if we need to update arrays
   private needsUpdate = false;
@@ -164,7 +172,9 @@ export class Query {
     for (const [entityId, entity] of entities.entries()) {
       if (this.matcher.matches(entity)) {
         this.entitySet.add(entityId);
+        const index = this.entitiesArray.length;
         this.entitiesArray.push(entityId);
+        this.entityIndexMap.set(entityId, index);
       }
     }
   }
@@ -200,6 +210,31 @@ export class Query {
    */
   get changed(): EntityId[] {
     return this.changedArray;
+  }
+
+  /**
+   * Convert query results to SharedArrayBuffers for cross-thread sharing
+   * @returns Object containing SharedArrayBuffers with entity data
+   */
+  toSharedBuffers(): {
+    entities: { buffer: ArrayBufferLike; length: number };
+    added: { buffer: ArrayBufferLike; length: number };
+    removed: { buffer: ArrayBufferLike; length: number };
+    changed: { buffer: ArrayBufferLike; length: number };
+  } {
+    const createSharedBuffer = (arr: EntityId[]) => {
+      const buffer = new ArrayBufferImpl(arr.length * 4);
+      const view = new Uint32Array(buffer);
+      view.set(arr);
+      return { buffer, length: arr.length };
+    };
+
+    return {
+      entities: createSharedBuffer(this.entitiesArray),
+      added: createSharedBuffer(this.addedArray),
+      removed: createSharedBuffer(this.removedArray),
+      changed: createSharedBuffer(this.changedArray),
+    };
   }
 
   /**
@@ -263,7 +298,7 @@ export class Query {
    * @internal
    */
   _prepare(): void {
-    // Always clear the reactive arrays (even if no updates)
+    // Always clear the reactive arrays
     this.addedArray.length = 0;
     this.removedArray.length = 0;
     this.changedArray.length = 0;
@@ -273,21 +308,26 @@ export class Query {
       return;
     }
 
-    // Process removals first - use efficient swap-and-pop
+    // Process removals first - use efficient swap-and-pop with O(1) index lookup
     if (this.pendingRemovedSet.size > 0) {
       for (const entity of this.pendingRemovedSet) {
         if (this.entitySet.has(entity)) {
           this.entitySet.delete(entity);
           this.removedArray.push(entity);
 
-          // Find and remove from array - swap with last element and pop
-          const index = this.entitiesArray.indexOf(entity);
-          if (index !== -1) {
+          // Use index map for O(1) lookup
+          const index = this.entityIndexMap.get(entity);
+          if (index !== undefined) {
             const lastIndex = this.entitiesArray.length - 1;
             if (index !== lastIndex) {
-              this.entitiesArray[index] = this.entitiesArray[lastIndex];
+              // Swap with last element
+              const lastEntity = this.entitiesArray[lastIndex];
+              this.entitiesArray[index] = lastEntity;
+              // Update the swapped entity's index
+              this.entityIndexMap.set(lastEntity, index);
             }
             this.entitiesArray.pop();
+            this.entityIndexMap.delete(entity);
           }
         }
       }
@@ -299,7 +339,9 @@ export class Query {
       for (const entity of this.pendingAddedSet) {
         if (!this.entitySet.has(entity)) {
           this.entitySet.add(entity);
+          const index = this.entitiesArray.length;
           this.entitiesArray.push(entity);
+          this.entityIndexMap.set(entity, index);
           this.addedArray.push(entity);
         }
       }

@@ -1,4 +1,3 @@
-// import { Entity } from "./Entity";
 import type { Query, QueryBuilder } from "./Query";
 import {
   Query as QueryClass,
@@ -6,6 +5,7 @@ import {
 } from "./Query";
 import { QueryManager } from "./QueryManager";
 import { System } from "./System";
+import { WorkerManager } from "./WorkerManager";
 import {
   type ComponentSchema,
   type InferComponentType,
@@ -25,6 +25,7 @@ export class World {
   private queryManager: QueryManager;
   private componentIndex: number = 0;
   private entityIdCounter: number = 0;
+  private workerManager: WorkerManager;
 
   /**
    * Create a new world instance
@@ -32,6 +33,7 @@ export class World {
   constructor() {
     this.entityMap = new Map();
     this.queryManager = new QueryManager();
+    this.workerManager = new WorkerManager();
   }
 
   /**
@@ -149,9 +151,37 @@ export class World {
   }
 
   /**
+   * Execute a system in parallel using web workers
+   * @param workerPath - Path to the worker file (must extend ParallelSystemBase)
+   * @param data - Optional data to pass to each worker instance
+   * @returns Promise that resolves when all parallel executions complete
+   * @example
+   * // Create a worker file (myWorker.ts):
+   * import { ParallelSystemBase } from '@infinitecanvas/ecs';
+   * class MyWorker extends ParallelSystemBase {
+   *   execute(data) {
+   *     // Your parallel computation
+   *   }
+   * }
+   * new MyWorker();
+   *
+   * // Then use it:
+   * await world.executeInParallel('./myWorker.ts');
+   */
+  async executeInParallel(workerPath: string, data?: any): Promise<void> {
+    const batches = Math.floor(navigator.hardwareConcurrency / 2) || 2;
+    await this.workerManager.executeInParallel(
+      workerPath,
+      batches,
+      this.entityMap
+    );
+  }
+
+  /**
    * Dispose of the world and free all resources
    */
   dispose(): void {
+    this.workerManager.dispose();
     // for (const entity of this.entitySet.values()) {
     //   entity.dispose();
     // }

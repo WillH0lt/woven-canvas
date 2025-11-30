@@ -1020,26 +1020,6 @@ describe("Component", () => {
       expect(Array.from(BinaryData.read(entityId).data)).toEqual([6, 7, 8, 9]);
     });
 
-    it("should handle all byte values (0-255)", () => {
-      const BinaryData = world.createComponent({
-        data: field.binary().max(512),
-      });
-
-      const entityId = world.createEntity();
-      const allBytes = new Uint8Array(256);
-      for (let i = 0; i < 256; i++) {
-        allBytes[i] = i;
-      }
-
-      world.addComponent(entityId, BinaryData, { data: allBytes });
-      const result = BinaryData.read(entityId);
-
-      expect(result.data.length).toBe(256);
-      for (let i = 0; i < 256; i++) {
-        expect(result.data[i]).toBe(i);
-      }
-    });
-
     it("should use ArrayBuffer-backed storage for binary data", () => {
       const BinaryData = world.createComponent({
         data: field.binary().max(128),

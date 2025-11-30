@@ -13,7 +13,11 @@ export class StringBufferView {
   private capacity: number;
   public static readonly LENGTH_BYTES = 4; // uint32 for length prefix
 
-  constructor(buffer: ArrayBuffer, capacity: number, bytesPerString: number) {
+  constructor(
+    buffer: ArrayBufferLike,
+    capacity: number,
+    bytesPerString: number
+  ) {
     this.buffer = new Uint8Array(buffer);
     this.bytesPerString = bytesPerString;
     this.capacity = capacity;
@@ -65,11 +69,15 @@ export class StringBufferView {
 }
 
 export const StringField: Field = {
-  initializeStorage(capacity: number, config: StringFieldDef) {
+  initializeStorage(
+    capacity: number,
+    config: StringFieldDef,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ) {
     const maxDataLength = config.maxLength || DEFAULT_STRING_BYTES;
     // Add length prefix bytes to the user-specified max data length
     const bytesPerString = maxDataLength + StringBufferView.LENGTH_BYTES;
-    const buffer = new ArrayBuffer(capacity * bytesPerString);
+    const buffer = new BufferConstructor(capacity * bytesPerString);
     const view = new StringBufferView(buffer, capacity, bytesPerString);
     return { buffer, view };
   },
@@ -118,11 +126,16 @@ export const StringField: Field = {
     array.set(entityId, value);
   },
 
-  growStorage(oldArray: any, newCapacity: number, config: StringFieldDef) {
+  growStorage(
+    oldArray: any,
+    newCapacity: number,
+    config: StringFieldDef,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ) {
     const maxDataLength = config.maxLength || DEFAULT_STRING_BYTES;
     // Add length prefix bytes to the user-specified max data length
     const bytesPerString = maxDataLength + StringBufferView.LENGTH_BYTES;
-    const newBuffer = new ArrayBuffer(newCapacity * bytesPerString);
+    const newBuffer = new BufferConstructor(newCapacity * bytesPerString);
     const newView = new StringBufferView(
       newBuffer,
       newCapacity,

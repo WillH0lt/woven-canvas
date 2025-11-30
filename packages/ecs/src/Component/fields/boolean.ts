@@ -3,8 +3,12 @@ import type { ComponentBuffer, BooleanFieldDef } from "../types";
 import type { Field } from "./field";
 
 export const BooleanField: Field = {
-  initializeStorage(capacity: number, config: BooleanFieldDef) {
-    const buffer = new ArrayBuffer(capacity);
+  initializeStorage(
+    capacity: number,
+    config: BooleanFieldDef,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ) {
+    const buffer = new BufferConstructor(capacity);
     const view = new Uint8Array(buffer, 0, capacity);
     return { buffer, view };
   },
@@ -53,8 +57,13 @@ export const BooleanField: Field = {
     array[entityId] = value ? 1 : 0;
   },
 
-  growStorage(oldArray: any, newCapacity: number, config: BooleanFieldDef) {
-    const newBuffer = new ArrayBuffer(newCapacity);
+  growStorage(
+    oldArray: any,
+    newCapacity: number,
+    config: BooleanFieldDef,
+    BufferConstructor: new (byteLength: number) => ArrayBufferLike
+  ) {
+    const newBuffer = new BufferConstructor(newCapacity);
     const newView = new Uint8Array(newBuffer, 0, newCapacity);
     newView.set(oldArray);
     return { buffer: newBuffer, view: newView };

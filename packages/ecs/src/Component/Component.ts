@@ -22,6 +22,10 @@ import {
 
 const INITIAL_CAPACITY = 10000;
 
+// Check if SharedArrayBuffer is available
+const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
+  typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
+
 /**
  * Component class that uses TypedArrays for efficient memory layout
  * Each component has a unique ID and bit position for fast query matching
@@ -31,8 +35,8 @@ export class Component<T extends ComponentSchema> {
   private schema: Record<string, FieldDef>;
   private fieldNames: string[];
 
-  // Store backing buffers for each numeric field (enables SharedArrayBuffer later)
-  private fieldBuffers: Map<string, ArrayBuffer> = new Map();
+  // Store backing buffers for each field (uses SharedArrayBuffer when available)
+  private fieldBuffers: Map<string, ArrayBufferLike> = new Map();
 
   // Typed buffer accessor for field access (e.g., Position.buffer.x[eid])
   readonly buffer: ComponentBuffer<T>;
@@ -68,7 +72,8 @@ export class Component<T extends ComponentSchema> {
       const field = this.getField(fieldDef.type);
       const { buffer, view } = field.initializeStorage(
         INITIAL_CAPACITY,
-        fieldDef
+        fieldDef,
+        BufferConstructor
       );
 
       this.fieldBuffers.set(fieldName, buffer);
@@ -198,7 +203,8 @@ export class Component<T extends ComponentSchema> {
       const { buffer, view } = field.growStorage(
         oldArray,
         newCapacity,
-        fieldDef
+        fieldDef,
+        BufferConstructor
       );
 
       this.fieldBuffers.set(fieldName, buffer);
