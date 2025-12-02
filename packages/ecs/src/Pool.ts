@@ -1,11 +1,17 @@
+import type { Component } from "./Component";
+import type { EntityBufferView } from "./EntityBuffer";
+
 /**
- * WorkerManager - manages a pool of web workers for parallel execution
+ * Pool - manages a pool of web workers for parallel execution
  */
-export class WorkerManager {
+export class Pool {
   private maxWorkers: number;
   private workerPool: Map<string, Worker[]> = new Map();
+  private initializedWorkers: Set<Worker> = new Set();
   private taskQueue: Array<() => void> = [];
   private activeWorkers = 0;
+  private entityBuffer: any = null;
+  private components: Record<string, Component<any>> = {};
 
   /**
    * Create a new WorkerManager instance
@@ -19,21 +25,91 @@ export class WorkerManager {
    * Execute a system in parallel using web workers
    * @param workerPath - Path to the worker file
    * @param batches - Number of parallel batches to run (default: 4)
+   * @param entityBuffer - Optional entity buffer to pass to workers
+   * @param components - Components registry to pass to workers
    * @param data - Optional data to pass to each worker
    * @returns Promise that resolves when all batches complete
    */
   async executeInParallel(
     workerPath: string,
     batches: number = 4,
-    data?: any
+    entityBuffer?: any,
+    components?: Record<string, Component<any>>
   ): Promise<void> {
+    // Store entity buffer and components for worker initialization
+    this.entityBuffer = entityBuffer;
+    this.components = components || {};
+
     const promises = [];
 
+    // Execute tasks (workers will be initialized on-demand)
     for (let i = 0; i < batches; i++) {
-      promises.push(this.executeTask(workerPath, i, data, []));
+      promises.push(this.executeTask(workerPath, i, []));
     }
 
     await Promise.all(promises);
+  }
+
+  /**
+   * Initialize a worker with the entity buffer
+   * @param worker - The worker to initialize
+   * @param index - Index of this worker
+   * @param entityBuffer - Optional entity buffer to pass
+   * @returns Promise that resolves when initialization is complete
+   */
+  private async initializeWorker(
+    worker: Worker,
+    index: number,
+    entityBuffer: EntityBufferView,
+    components: Record<string, Component<any>>
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Worker ${index} initialization timed out`));
+      }, 5000); // 5 second timeout
+
+      const messageHandler = (e: MessageEvent) => {
+        if (e.data.index === index) {
+          clearTimeout(timeout);
+          worker.removeEventListener("message", messageHandler);
+
+          if (e.data.error) {
+            reject(new Error(e.data.error));
+          } else {
+            resolve();
+          }
+        }
+      };
+
+      worker.addEventListener("message", messageHandler);
+
+      // Serialize component metadata and buffers for reconstruction in worker
+      const componentData: Record<string, any> = {};
+      for (const [name, component] of Object.entries(components)) {
+        // Find the component ID by checking the bitmask
+        let componentId = 0;
+        let mask = component.bitmask;
+        while (mask > 1) {
+          mask = mask >> 1;
+          componentId++;
+        }
+
+        componentData[name] = {
+          id: componentId,
+          name: component.name,
+          bitmask: component.bitmask,
+          buffer: component.buffer, // Transfer the SharedArrayBuffer-backed typed arrays
+        };
+      }
+
+      // Send initialization message with shared buffer
+      worker.postMessage({
+        type: "init",
+        index,
+        entityBuffer: entityBuffer.getBuffer(),
+        components: componentData,
+      });
+    });
   }
 
   /**
@@ -47,10 +123,20 @@ export class WorkerManager {
   private async executeTask(
     workerPath: string,
     index: number,
-    data: any,
     results: any[]
   ): Promise<any> {
     const worker = await this.getWorker(workerPath);
+
+    // Initialize worker if not already initialized
+    if (!this.initializedWorkers.has(worker)) {
+      await this.initializeWorker(
+        worker,
+        index,
+        this.entityBuffer,
+        this.components
+      );
+      this.initializedWorkers.add(worker);
+    }
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -84,7 +170,6 @@ export class WorkerManager {
       worker.postMessage({
         type: "execute",
         index,
-        data,
       });
     });
   }
@@ -176,7 +261,9 @@ export class WorkerManager {
       }
     }
     this.workerPool.clear();
+    this.initializedWorkers.clear();
     this.activeWorkers = 0;
     this.taskQueue = [];
+    this.entityBuffer = null;
   }
 }

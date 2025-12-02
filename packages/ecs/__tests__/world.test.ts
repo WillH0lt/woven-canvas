@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { field, World, System } from "../src/index";
+import { field, defineComponent, World } from "../src/index";
 
 describe("World", () => {
   let Position: any;
@@ -7,168 +7,284 @@ describe("World", () => {
   let Health: any;
 
   beforeEach(() => {
-    const tempWorld = new World();
-
     // Define test components
-    Position = tempWorld.createComponent({
+    Position = defineComponent("Position", {
       x: field.float32().default(0),
       y: field.float32().default(0),
     });
 
-    Velocity = tempWorld.createComponent({
+    Velocity = defineComponent("Velocity", {
       dx: field.float32().default(0),
       dy: field.float32().default(0),
     });
 
-    Health = tempWorld.createComponent({
+    Health = defineComponent("Health", {
       current: field.uint16().default(100),
       max: field.uint16().default(100),
     });
   });
 
+  describe("World Creation", () => {
+    it("should create a world with no components", () => {
+      const world = new World();
+      expect(world).toBeDefined();
+      expect(world.components).toEqual({});
+    });
+
+    it("should create a world with components", () => {
+      const world = new World({ Position, Velocity, Health });
+      expect(world).toBeDefined();
+      expect(world.components.Position).toBe(Position);
+      expect(world.components.Velocity).toBe(Velocity);
+      expect(world.components.Health).toBe(Health);
+    });
+
+    it("should initialize components with unique bitmasks", () => {
+      const world = new World({ Position, Velocity, Health });
+      expect(Position.bitmask).toBe(1); // 1 << 0
+      expect(Velocity.bitmask).toBe(2); // 1 << 1
+      expect(Health.bitmask).toBe(4); // 1 << 2
+    });
+  });
+
   describe("Entity Management", () => {
-    let doc: World;
+    it("should create entities", () => {
+      const world = new World();
+      const entity = world.createEntity();
 
-    beforeEach(() => {
-      doc = new World();
+      expect(entity).toBe(0);
+      expect(typeof entity).toBe("number");
     });
 
-    it("should create entities through entity manager", () => {
-      const entity = doc.createEntity();
+    it("should create multiple entities with sequential IDs", () => {
+      const world = new World();
+      const e1 = world.createEntity();
+      const e2 = world.createEntity();
+      const e3 = world.createEntity();
 
-      expect(entity).toBeDefined();
+      expect(e1).toBe(0);
+      expect(e2).toBe(1);
+      expect(e3).toBe(2);
     });
 
-    it("should track multiple entities", () => {
-      const e1 = doc.createEntity();
-      const e2 = doc.createEntity();
-      const e3 = doc.createEntity();
+    it("should remove entities", () => {
+      const world = new World({ Position });
+      const entity = world.createEntity();
+      world.addComponent(entity, Position, { x: 10, y: 20 });
 
-      expect(e1).toBeDefined();
-      expect(e2).toBeDefined();
-      expect(e3).toBeDefined();
+      world.removeEntity(entity);
+
+      expect(() => world.hasComponent(entity, Position)).toThrow();
     });
 
-    it("should allow entities to use registered components", () => {
-      const entity = doc.createEntity();
+    it("should handle many entities efficiently", () => {
+      const world = new World({ Position, Health });
 
-      // Should be able to add components that were registered
-      doc.addComponent(entity, Position, { x: 10, y: 20 });
-      doc.addComponent(entity, Velocity, { dx: 1, dy: 2 });
+      // Create 1000 entities
+      const entities = [];
+      for (let i = 0; i < 1000; i++) {
+        const entity = world.createEntity();
+        entities.push(entity);
+        world.addComponent(entity, Position, { x: i, y: i });
 
-      expect(doc.hasComponent(entity, Position)).toBe(true);
-      expect(doc.hasComponent(entity, Velocity)).toBe(true);
+        if (i % 2 === 0) {
+          world.addComponent(entity, Health, { current: 100, max: 100 });
+        }
+      }
+
+      expect(entities).toHaveLength(1000);
+      expect(entities[0]).toBe(0);
+      expect(entities[999]).toBe(999);
     });
   });
 
-  describe("System Management", () => {
-    class TestSystem extends System {
-      public executed = false;
+  describe("Component Operations", () => {
+    it("should add components to entities", () => {
+      const world = new World({ Position, Velocity });
+      const entity = world.createEntity();
 
-      execute(): void {
-        this.executed = true;
-      }
-    }
+      world.addComponent(entity, Position, { x: 10, y: 20 });
+      world.addComponent(entity, Velocity, { dx: 1, dy: 2 });
 
-    class AnotherSystem extends System {
-      public value = 42;
-
-      execute(): void {
-        this.value++;
-      }
-    }
-
-    it("should create world", () => {
-      const doc = new World();
-      expect(doc).toBeDefined();
+      expect(world.hasComponent(entity, Position)).toBe(true);
+      expect(world.hasComponent(entity, Velocity)).toBe(true);
     });
 
-    it("should create systems via constructor", () => {
-      const doc = new World();
+    it("should add components with default values", () => {
+      const world = new World({ Health });
+      const entity = world.createEntity();
 
-      const testSystem = doc.createSystem(TestSystem);
-      const anotherSystem = doc.createSystem(AnotherSystem);
+      world.addComponent(entity, Health, {});
 
-      expect(testSystem).toBeInstanceOf(TestSystem);
-      expect(anotherSystem).toBeInstanceOf(AnotherSystem);
+      expect(world.hasComponent(entity, Health)).toBe(true);
+      expect(Health.read(entity).current).toBe(100);
+      expect(Health.read(entity).max).toBe(100);
     });
 
-    it("should allow systems to be created", () => {
-      const doc = new World();
+    it("should remove components from entities", () => {
+      const world = new World({ Position, Velocity });
+      const entity = world.createEntity();
 
-      const system = doc.createSystem(TestSystem);
+      world.addComponent(entity, Position, { x: 10, y: 20 });
+      world.addComponent(entity, Velocity, { dx: 1, dy: 2 });
 
-      // Systems are independent, entities created through world
-      const entity = doc.createEntity();
-      expect(entity).toBeDefined();
+      expect(world.hasComponent(entity, Position)).toBe(true);
+      expect(world.hasComponent(entity, Velocity)).toBe(true);
+
+      world.removeComponent(entity, Position);
+
+      expect(world.hasComponent(entity, Position)).toBe(false);
+      expect(world.hasComponent(entity, Velocity)).toBe(true);
     });
 
-    it("should allow systems to execute and maintain state", () => {
-      const doc = new World();
+    it("should check for component existence", () => {
+      const world = new World({ Position, Velocity });
+      const entity = world.createEntity();
 
-      const testSystem = doc.createSystem(TestSystem);
-      const anotherSystem = doc.createSystem(AnotherSystem);
+      expect(world.hasComponent(entity, Position)).toBe(false);
 
-      expect(testSystem.executed).toBe(false);
-      expect(anotherSystem.value).toBe(42);
+      world.addComponent(entity, Position, { x: 10, y: 20 });
 
-      doc.execute(testSystem);
-      doc.execute(anotherSystem);
+      expect(world.hasComponent(entity, Position)).toBe(true);
+      expect(world.hasComponent(entity, Velocity)).toBe(false);
+    });
 
-      expect(testSystem.executed).toBe(true);
-      expect(anotherSystem.value).toBe(43);
+    it("should throw when checking component on non-existent entity", () => {
+      const world = new World({ Position });
+
+      expect(() => world.hasComponent(999, Position)).toThrow(
+        "Entity with ID 999 does not exist"
+      );
+    });
+
+    it("should throw when removing component from non-existent entity", () => {
+      const world = new World({ Position });
+
+      expect(() => world.removeComponent(999, Position)).toThrow(
+        "Entity with ID 999 does not exist"
+      );
     });
   });
 
-  describe("Integration Scenarios", () => {
-    it("should handle entity creation and component attachment", () => {
-      const doc = new World();
-
-      const entity = doc.createEntity();
-      doc.addComponent(entity, Position, { x: 100, y: 200 });
-      doc.addComponent(entity, Health, { current: 75, max: 100 });
+  describe("Component Data Access", () => {
+    it("should read component data", () => {
+      const world = new World({ Position });
+      const entity = world.createEntity();
+      world.addComponent(entity, Position, { x: 100, y: 200 });
 
       const pos = Position.read(entity);
+
+      expect(pos.x).toBeCloseTo(100);
+      expect(pos.y).toBeCloseTo(200);
+    });
+
+    it("should write component data", () => {
+      const world = new World({ Position });
+      const entity = world.createEntity();
+      world.addComponent(entity, Position, { x: 0, y: 0 });
+
+      const pos = Position.write(entity);
+      pos.x = 50;
+      pos.y = 75;
+
+      expect(Position.read(entity).x).toBeCloseTo(50);
+      expect(Position.read(entity).y).toBeCloseTo(75);
+    });
+
+    it("should handle multiple components per entity", () => {
+      const world = new World({ Position, Velocity, Health });
+      const entity = world.createEntity();
+
+      world.addComponent(entity, Position, { x: 100, y: 200 });
+      world.addComponent(entity, Velocity, { dx: 5, dy: 10 });
+      world.addComponent(entity, Health, { current: 75, max: 100 });
+
+      const pos = Position.read(entity);
+      const vel = Velocity.read(entity);
       const health = Health.read(entity);
 
       expect(pos.x).toBeCloseTo(100);
       expect(pos.y).toBeCloseTo(200);
+      expect(vel.dx).toBeCloseTo(5);
+      expect(vel.dy).toBeCloseTo(10);
       expect(health.current).toBe(75);
       expect(health.max).toBe(100);
     });
 
-    it("should handle component value mutations", () => {
-      const doc = new World();
+    it("should update component values independently", () => {
+      const world = new World({ Position, Velocity });
+      const entity = world.createEntity();
 
-      const entity = doc.createEntity();
-      doc.addComponent(entity, Position, { x: 0, y: 0 });
-      doc.addComponent(entity, Velocity, { dx: 5, dy: 3 });
-
-      const pos = Position.write(entity);
-      const vel = Velocity.read(entity);
+      world.addComponent(entity, Position, { x: 0, y: 0 });
+      world.addComponent(entity, Velocity, { dx: 5, dy: 3 });
 
       // Simulate 10 frames of movement
       for (let i = 0; i < 10; i++) {
+        const pos = Position.write(entity);
+        const vel = Velocity.read(entity);
         pos.x += vel.dx;
         pos.y += vel.dy;
       }
 
-      expect(pos.x).toBeCloseTo(50);
-      expect(pos.y).toBeCloseTo(30);
+      expect(Position.read(entity).x).toBeCloseTo(50);
+      expect(Position.read(entity).y).toBeCloseTo(30);
+      expect(Velocity.read(entity).dx).toBeCloseTo(5);
+      expect(Velocity.read(entity).dy).toBeCloseTo(3);
+    });
+  });
+
+  describe("Multiple Entities", () => {
+    it("should handle multiple entities with different component combinations", () => {
+      const world = new World({ Position, Velocity, Health });
+
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position, { x: 10, y: 20 });
+      world.addComponent(e1, Velocity, { dx: 1, dy: 2 });
+
+      const e2 = world.createEntity();
+      world.addComponent(e2, Position, { x: 30, y: 40 });
+
+      const e3 = world.createEntity();
+      world.addComponent(e3, Velocity, { dx: 5, dy: 5 });
+      world.addComponent(e3, Health, { current: 50, max: 100 });
+
+      expect(world.hasComponent(e1, Position)).toBe(true);
+      expect(world.hasComponent(e1, Velocity)).toBe(true);
+      expect(world.hasComponent(e1, Health)).toBe(false);
+
+      expect(world.hasComponent(e2, Position)).toBe(true);
+      expect(world.hasComponent(e2, Velocity)).toBe(false);
+      expect(world.hasComponent(e2, Health)).toBe(false);
+
+      expect(world.hasComponent(e3, Position)).toBe(false);
+      expect(world.hasComponent(e3, Velocity)).toBe(true);
+      expect(world.hasComponent(e3, Health)).toBe(true);
     });
 
-    it("should handle many entities efficiently", () => {
-      const doc = new World();
+    it("should keep entity data isolated", () => {
+      const world = new World({ Position });
 
-      // Create 100 entities
-      for (let i = 0; i < 100; i++) {
-        const entity = doc.createEntity();
-        doc.addComponent(entity, Position, { x: i, y: i });
+      const e1 = world.createEntity();
+      const e2 = world.createEntity();
 
-        if (i % 2 === 0) {
-          doc.addComponent(entity, Health, { current: 100, max: 100 });
-        }
-      }
+      world.addComponent(e1, Position, { x: 10, y: 20 });
+      world.addComponent(e2, Position, { x: 30, y: 40 });
+
+      Position.write(e1).x = 100;
+
+      expect(Position.read(e1).x).toBeCloseTo(100);
+      expect(Position.read(e2).x).toBeCloseTo(30);
+    });
+  });
+
+  describe("World Disposal", () => {
+    it("should dispose of world resources", () => {
+      const world = new World({ Position });
+
+      const entity = world.createEntity();
+      world.addComponent(entity, Position, { x: 10, y: 20 });
+
+      expect(() => world.dispose()).not.toThrow();
     });
   });
 });

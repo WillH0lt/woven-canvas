@@ -1,4 +1,4 @@
-import type { EntityId } from "../../World";
+import type { EntityId } from "../../types";
 import type { ComponentBuffer, StringFieldDef } from "../types";
 import type { Field } from "./field";
 

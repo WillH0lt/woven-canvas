@@ -5,7 +5,7 @@
 // add object type
 // add ComponentInstance.fromJson method
 
-import type { EntityId } from "../World";
+import type { EntityId } from "../types";
 import type {
   ComponentSchema,
   InferComponentType,
@@ -22,7 +22,6 @@ import {
 
 const INITIAL_CAPACITY = 10000;
 
-// Check if SharedArrayBuffer is available
 const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
@@ -30,8 +29,11 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
  * Component class that uses TypedArrays for efficient memory layout
  * Each component has a unique ID and bit position for fast query matching
  */
-export class Component<T extends ComponentSchema> {
-  readonly bitmask: bigint;
+export abstract class Component<T extends ComponentSchema> {
+  bitmask: number = 0;
+  name: string = "";
+  private _initialized: boolean = false;
+
   private schema: Record<string, FieldDef>;
   private fieldNames: string[];
 
@@ -39,7 +41,7 @@ export class Component<T extends ComponentSchema> {
   private fieldBuffers: Map<string, ArrayBufferLike> = new Map();
 
   // Typed buffer accessor for field access (e.g., Position.buffer.x[eid])
-  readonly buffer: ComponentBuffer<T>;
+  private _buffer: ComponentBuffer<T> | null = null;
 
   // Binding instances - master objects with getters/setters
   private readonly readonlyMaster: InferComponentType<T>;
@@ -54,20 +56,43 @@ export class Component<T extends ComponentSchema> {
    * @param schema - The component schema built using field builders
    * @param id - The unique index assigned by World
    */
-  constructor(schema: T, id: number) {
-    // Assign unique bit position for bitmask operations
-    this.bitmask = 1n << BigInt(id);
-
+  constructor(schema: T) {
     this.schema = {};
     this.fieldNames = [];
-
-    const bufferProxy: any = {};
 
     // Initialize storage arrays for each field
     for (const [fieldName, builder] of Object.entries(schema)) {
       const fieldDef = builder.def;
       this.schema[fieldName] = fieldDef;
       this.fieldNames.push(fieldName);
+    }
+
+    // Create master instances with property descriptors for direct buffer access
+    this.readonlyMaster = {} as InferComponentType<T>;
+    this.writableMaster = {} as InferComponentType<T>;
+  }
+
+  initialize(id: number): void {
+    // Guard against double initialization
+    if (this._initialized) {
+      throw new Error(
+        `Component "${this.name}" has already been initialized. ` +
+          `Each component instance can only be registered with one World. ` +
+          `If you need multiple worlds, define separate component instances for each.`
+      );
+    }
+    this._initialized = true;
+
+    // Assign unique bit position for bitmask operations (supports up to 31 components)
+    if (id >= 31) {
+      throw new Error(`Component ID ${id} exceeds maximum of 31 components`);
+    }
+    this.bitmask = 1 << id;
+
+    const bufferProxy: any = {};
+
+    // Initialize storage arrays for each field
+    for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
       // Get the appropriate handler for this field type
       const field = this.getField(fieldDef.type);
       const { buffer, view } = field.initializeStorage(
@@ -80,11 +105,40 @@ export class Component<T extends ComponentSchema> {
       bufferProxy[fieldName] = view;
     }
 
-    this.buffer = bufferProxy as ComponentBuffer<T>;
+    this._buffer = bufferProxy as ComponentBuffer<T>;
 
-    // Create master instances with property descriptors for direct buffer access
-    this.readonlyMaster = {} as InferComponentType<T>;
-    this.writableMaster = {} as InferComponentType<T>;
+    this.initializeMasters();
+  }
+
+  public get buffer(): ComponentBuffer<T> {
+    return this._buffer as ComponentBuffer<T>;
+  }
+
+  /**
+   * Initialize component in a worker context with transferred buffers
+   * @param id - The component ID
+   * @param bitmask - The component bitmask
+   * @param buffer - The transferred buffer object containing typed arrays
+   * @internal
+   */
+  initializeFromTransfer(
+    id: number,
+    bitmask: number,
+    buffer: ComponentBuffer<T>
+  ): void {
+    if (this._initialized) {
+      throw new Error(`Component "${this.name}" has already been initialized.`);
+    }
+    this._initialized = true;
+    this.bitmask = bitmask;
+    this._buffer = buffer;
+    this.initializeMasters();
+  }
+
+  private initializeMasters(): void {
+    if (this._buffer === null) {
+      throw new Error("Component buffers not initialized");
+    }
 
     // Define getters/setters on master instances for each field
     // Use dynamic references to this.buffer to support array growth
@@ -94,13 +148,13 @@ export class Component<T extends ComponentSchema> {
       field.defineReadonly(
         this.readonlyMaster,
         fieldName,
-        this.buffer,
+        this._buffer,
         () => this.readonlyEntityId
       );
       field.defineWritable(
         this.writableMaster,
         fieldName,
-        this.buffer,
+        this._buffer,
         () => this.writableEntityId
       );
     }
@@ -211,4 +265,62 @@ export class Component<T extends ComponentSchema> {
       (this.buffer as any)[fieldName] = view;
     }
   }
+}
+
+/**
+ * Define a component with a name and schema.
+ * This creates a component instance that can be registered with a World.
+ * Each component instance is tied to a single World.
+ *
+ * @template T - The component schema type
+ * @param name - The name of the component (e.g., "Position", "Velocity")
+ * @param schema - The component schema built using field builders
+ * @returns A component instance that extends Component<T>
+ *
+ * @example
+ * ```typescript
+ * import { field, defineComponent } from "@infinitecanvas/ecs";
+ *
+ * export const Position = defineComponent("Position", {
+ *   x: field.float32(),
+ *   y: field.float32(),
+ * });
+ *
+ * export const Velocity = defineComponent("Velocity", {
+ *   x: field.float32(),
+ *   y: field.float32(),
+ * });
+ *
+ * // Use in World registration
+ * import * as components from "./components";
+ * const world = new World(components);
+ *
+ * // Adding components to entities
+ * world.addComponent(entity, components.Position, { x: 0, y: 0 });
+ *
+ * // Reading component data
+ * const position = components.Position.read(entityId);
+ *
+ * // In queries (in workers)
+ * const entities = query(ctx, (q) => q.with(components.Position));
+ * ```
+ */
+export function defineComponent<T extends ComponentSchema>(
+  name: string,
+  schema: T
+): Component<T> {
+  class DefinedComponent extends Component<T> {
+    constructor() {
+      super(schema);
+      this.name = name;
+    }
+  }
+
+  // Set the class name for better debugging
+  Object.defineProperty(DefinedComponent, "name", {
+    value: name,
+    writable: false,
+  });
+
+  return new DefinedComponent();
 }

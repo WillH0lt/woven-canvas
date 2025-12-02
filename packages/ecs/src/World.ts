@@ -1,39 +1,37 @@
-import type { Query, QueryBuilder } from "./Query";
-import {
-  Query as QueryClass,
-  QueryBuilder as QueryBuilderClass,
-} from "./Query";
-import { QueryManager } from "./QueryManager";
-import { System } from "./System";
-import { WorkerManager } from "./WorkerManager";
-import {
-  type ComponentSchema,
-  type InferComponentType,
-  Component,
-} from "./Component";
-
-export type EntityId = number;
-export type Entity = bigint;
+import { Pool } from "./Pool";
+import { Component } from "./Component";
+import { EntityBufferView } from "./EntityBuffer";
+import type { EntityId } from "./types";
 
 /**
  * World class - central manager for entities, components, and systems in the ECS framework.
  */
 export class World {
-  // private entitySet: Set<Entity>;
-
-  private entityMap: Map<EntityId, Entity> = new Map();
-  private queryManager: QueryManager;
+  private entityBuffer: EntityBufferView | null = null;
   private componentIndex: number = 0;
   private entityIdCounter: number = 0;
-  private workerManager: WorkerManager;
+  private pool: Pool;
+
+  public components: Record<string, Component<any>> = {};
 
   /**
    * Create a new world instance
+   * @param components - Record of component instances to register with this world
+   * @example
+   * ```typescript
+   * import { Position, Velocity } from "./components";
+   * const world = new World({ Position, Velocity });
+   * ```
    */
-  constructor() {
-    this.entityMap = new Map();
-    this.queryManager = new QueryManager();
-    this.workerManager = new WorkerManager();
+  constructor(components: Record<string, Component<any>> = {}) {
+    this.pool = new Pool();
+
+    // Register each component instance
+    for (const componentName in components) {
+      const componentInstance = components[componentName];
+      componentInstance.initialize(this.componentIndex++);
+      this.components[componentName] = componentInstance;
+    }
   }
 
   /**
@@ -42,7 +40,12 @@ export class World {
    */
   createEntity(): EntityId {
     const entityId = this.entityIdCounter++;
-    this.entityMap.set(entityId, 0n);
+
+    if (!this.entityBuffer) {
+      this.entityBuffer = new EntityBufferView();
+    }
+
+    this.entityBuffer.create(entityId);
 
     return entityId;
   }
@@ -50,37 +53,10 @@ export class World {
   /**
    * Remove an entity from this world
    * @param entity - The entity instance to remove
-   * @returns True if removed, false if not found
    */
   removeEntity(entityId: EntityId): void {
-    this.entityMap.delete(entityId);
-    this.queryManager.handleEntityRemove(entityId);
-  }
-
-  /**
-   * Create a system instance
-   * @template T - The type of system to create
-   * @param SystemClass - The System class to instantiate
-   * @returns An instance of the system
-   */
-  createSystem<T extends System>(SystemClass: new (world: World) => T): T {
-    return new SystemClass(this);
-  }
-
-  /**
-   * Create a component definition
-   * @template T - The component schema type
-   * @param schema - The component schema built using field builders
-   * @returns A new Component instance with inferred type
-   * @example
-   * const Position = world.createComponent({
-   *   x: field.float32().default(0),
-   *   y: field.float32().default(0)
-   * });
-   */
-  createComponent<T extends ComponentSchema>(schema: T): Component<T> {
-    const componentIndex = this.componentIndex++;
-    return new Component<T>(schema, componentIndex);
+    this.entityBuffer?.delete(entityId);
+    // this.queryManager.handleEntityRemove(entityId);
   }
 
   addComponent(
@@ -88,92 +64,53 @@ export class World {
     component: Component<any>,
     data: any = {}
   ): void {
-    let entity = this.entityMap.get(entityId);
-    if (entity === undefined) {
-      throw new Error(`Entity with ID ${entityId} does not exist.`);
-    }
-
-    // Check if entity already has this component
-    if ((entity & component.bitmask) !== 0n) {
-      throw new Error(
-        `Entity already has component: ${component.constructor.name}`
-      );
-    }
-
-    entity |= component.bitmask;
-    this.entityMap.set(entityId, entity);
+    this.entityBuffer?.addComponentToEntity(entityId, component.bitmask);
     component.from(entityId, data);
 
-    this.queryManager.handleEntityShapeChange(entityId, entity);
+    // this.queryManager.handleEntityShapeChange(entityId);
   }
 
   removeComponent(entityId: EntityId, component: Component<any>): void {
-    let entity = this.entityMap.get(entityId);
-    if (entity === undefined) {
+    if (!this.entityBuffer?.has(entityId)) {
       throw new Error(`Entity with ID ${entityId} does not exist.`);
     }
 
-    entity &= ~component.bitmask;
-    this.entityMap.set(entityId, entity);
+    this.entityBuffer?.removeComponentFromEntity(entityId, component.bitmask);
 
-    this.queryManager.handleEntityShapeChange(entityId, entity);
+    // this.queryManager.handleEntityShapeChange(entityId);
   }
 
   hasComponent(entityId: EntityId, component: Component<any>): boolean {
-    const entity = this.entityMap.get(entityId);
-    if (entity === undefined) {
+    if (!this.entityBuffer?.has(entityId)) {
       throw new Error(`Entity with ID ${entityId} does not exist.`);
     }
-    return (entity & component.bitmask) !== 0n;
-  }
 
-  /**
-   * Create a query to find entities matching specific criteria
-   * @param builder - Function that builds the query using the QueryBuilder API
-   * @returns A Query object that provides matching entities
-   */
-  query(builder: (q: QueryBuilder) => QueryBuilder): Query {
-    const queryBuilder = new QueryBuilderClass();
-    builder(queryBuilder);
-    const matcher = queryBuilder._build();
-    const query = new QueryClass(matcher, this.entityMap);
-    this.queryManager.addQuery(query);
-    return query;
-  }
-
-  /**
-   * Execute a system with proper lifecycle hooks
-   * @param system - The system instance to execute
-   */
-  execute(system: System): void {
-    system._beforeExecute();
-    system.execute();
+    return this.entityBuffer.hasComponent(entityId, component.bitmask);
   }
 
   /**
    * Execute a system in parallel using web workers
-   * @param workerPath - Path to the worker file (must extend ParallelSystemBase)
+   * @param workerPath - Path to the worker file (must use setup() from @infinitecanvas/ecs)
    * @param data - Optional data to pass to each worker instance
    * @returns Promise that resolves when all parallel executions complete
    * @example
    * // Create a worker file (myWorker.ts):
-   * import { ParallelSystemBase } from '@infinitecanvas/ecs';
-   * class MyWorker extends ParallelSystemBase {
-   *   execute(data) {
-   *     // Your parallel computation
-   *   }
-   * }
-   * new MyWorker();
+   * import { setup } from '@infinitecanvas/ecs';
+   * const { entityBuffer } = setup(self, (data) => {
+   *   // Your parallel computation
+   *   console.log('Entity buffer:', entityBuffer);
+   * });
    *
    * // Then use it:
    * await world.executeInParallel('./myWorker.ts');
    */
-  async executeInParallel(workerPath: string, data?: any): Promise<void> {
-    const batches = Math.floor(navigator.hardwareConcurrency / 2) || 2;
-    await this.workerManager.executeInParallel(
+  async executeInParallel(workerPath: string): Promise<void> {
+    const batches = 1; // Math.floor(navigator.hardwareConcurrency / 2) || 2;
+    await this.pool.executeInParallel(
       workerPath,
       batches,
-      this.entityMap
+      this.entityBuffer,
+      this.components
     );
   }
 
@@ -181,11 +118,6 @@ export class World {
    * Dispose of the world and free all resources
    */
   dispose(): void {
-    this.workerManager.dispose();
-    // for (const entity of this.entitySet.values()) {
-    //   entity.dispose();
-    // }
-    // this.entitySet.clear();
-    // this.queryManager.clear();
+    this.pool.dispose();
   }
 }

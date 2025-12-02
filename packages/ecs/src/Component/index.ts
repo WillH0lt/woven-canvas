@@ -1,4 +1,4 @@
-export { Component } from "./Component";
+export { Component, defineComponent } from "./Component";
 export { field } from "./fieldBuilders";
 export type {
   ComponentSchema,
