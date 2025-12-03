@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ECS now uses an efficient binary buffer (`EntityBufferView`) to store entity data, with all bit operations encapsulated inside the buffer class. There is no exposed `Entity` type - all entity operations are performed through `EntityBufferView` methods using the entity ID. This provides better encapsulation, significant memory savings, improved performance, and enables easy sharing of entity data across threads using `SharedArrayBuffer`.
+The ECS now uses an efficient binary buffer (`EntityBuffer`) to store entity data, with all bit operations encapsulated inside the buffer class. There is no exposed `Entity` type - all entity operations are performed through `EntityBuffer` methods using the entity ID. This provides better encapsulation, significant memory savings, improved performance, and enables easy sharing of entity data across threads using `SharedArrayBuffer`.
 
 ## Memory Layout
 
@@ -54,7 +54,7 @@ Map<EntityId, Entity>; // Entity = bigint
 **New Approach (ArrayBuffer-based with number):**
 
 ```typescript
-EntityBufferView(Uint16Array); // Entity = number
+EntityBuffer(Uint16Array); // Entity = number
 // Per entity: 2 bytes
 // Total: 2 bytes per entity
 ```
@@ -69,7 +69,7 @@ EntityBufferView(Uint16Array); // Entity = number
 
 **Encapsulated Bit Operations:**
 
-- All bitwise operations hidden inside `EntityBufferView` methods
+- All bitwise operations hidden inside `EntityBuffer` methods
 - No entity masks exposed to user code
 - Operations use native JavaScript numbers (not bigints)
 - No conversion overhead when checking/adding/removing components
@@ -147,7 +147,7 @@ const world = new World(true);
 
 ### Entity Operations (Encapsulated)
 
-All entity operations now go through `EntityBufferView` methods. You never see the actual component masks:
+All entity operations now go through `EntityBuffer` methods. You never see the actual component masks:
 
 ```typescript
 // Creating entities
@@ -168,9 +168,9 @@ The `Entity` type no longer exists - only `EntityId` (which is just a number).
 
 ## Implementation Details
 
-### EntityBufferView Class
+### EntityBuffer Class
 
-Located in `src/EntityBuffer.ts`, the `EntityBufferView` class provides:
+Located in `src/EntityBuffer.ts`, the `EntityBuffer` class provides:
 
 - **`get(entityId)`**: Get entity component mask (returns `undefined` if dead)
 - **`set(entityId, entity)`**: Set entity component mask and mark as alive
@@ -216,7 +216,7 @@ The 9-bit component mask supports up to **512 unique components** per world. Thi
 If you need more components, you can:
 
 1. Use fewer, more general-purpose components
-2. Extend the bit layout (requires modifying `EntityBufferView`)
+2. Extend the bit layout (requires modifying `EntityBuffer`)
 
 ## Migration Guide
 

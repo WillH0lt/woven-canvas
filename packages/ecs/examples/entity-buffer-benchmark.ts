@@ -147,7 +147,7 @@ const removeTime = performance.now() - removeStart;
 console.log(`✓ Removed in ${removeTime.toFixed(2)}ms\n`);
 
 // Memory usage estimation
-const bytesPerEntity = 2; // EntityBufferView uses 2 bytes per entity
+const bytesPerEntity = 2; // EntityBuffer uses 2 bytes per entity
 const entityBufferSize = ENTITY_COUNT * bytesPerEntity;
 const componentDataSize =
   (ENTITY_COUNT / 3) * 8 + // Position (2 floats)

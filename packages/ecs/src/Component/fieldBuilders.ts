@@ -3,8 +3,16 @@ import type {
   NumberFieldDef,
   BooleanFieldDef,
   BinaryFieldDef,
+  ArrayFieldDef,
   NumberSubtype,
 } from "./types";
+
+/** Union type for all field builders that can be used as array elements */
+export type ElementFieldBuilder =
+  | StringFieldBuilder
+  | NumberFieldBuilder
+  | BooleanFieldBuilder
+  | BinaryFieldBuilder;
 
 // Field builder classes with fluent API
 export class StringFieldBuilder {
@@ -100,6 +108,43 @@ export class BinaryFieldBuilder {
   }
 }
 
+export class ArrayFieldBuilder<
+  T extends ElementFieldBuilder = ElementFieldBuilder
+> {
+  def: T extends StringFieldBuilder
+    ? ArrayFieldDef<StringFieldDef>
+    : T extends NumberFieldBuilder
+    ? ArrayFieldDef<NumberFieldDef>
+    : T extends BooleanFieldBuilder
+    ? ArrayFieldDef<BooleanFieldDef>
+    : T extends BinaryFieldBuilder
+    ? ArrayFieldDef<BinaryFieldDef>
+    : ArrayFieldDef;
+
+  /**
+   * Create an array field builder with the specified element type and max length
+   * @param elementBuilder - A field builder specifying the element type
+   * @param maxLength - The maximum number of elements in the array
+   */
+  constructor(elementBuilder: T, maxLength: number) {
+    this.def = {
+      type: "array",
+      elementDef: elementBuilder.def,
+      maxLength: maxLength,
+    } as any;
+  }
+
+  /**
+   * Set the default value for the array field
+   * @param value - The default value (array of the element type)
+   * @returns This builder for chaining
+   */
+  default(value: any[]): this {
+    this.def.default = value;
+    return this;
+  }
+}
+
 /**
  * Schema builder API for defining component fields
  * Provides factory functions for creating typed field builders
@@ -127,4 +172,31 @@ export const field = {
   boolean: () => new BooleanFieldBuilder(),
   /** Create a binary field builder for Uint8Array data */
   binary: () => new BinaryFieldBuilder(),
+  /**
+   * Create an array field builder for fixed-length arrays of any field type
+   * @param elementBuilder - A field builder specifying the element type (e.g., field.float32(), field.string().max(100))
+   * @param maxLength - The maximum number of elements in the array
+   * @returns An array field builder
+   * @example
+   * ```typescript
+   * // Array of floats
+   * const Polygon = defineComponent({
+   *   pts: field.array(field.float32(), 1024),
+   * });
+   *
+   * // Array of strings
+   * const Tags = defineComponent({
+   *   names: field.array(field.string().max(50), 10),
+   * });
+   *
+   * // Array of booleans
+   * const Flags = defineComponent({
+   *   bits: field.array(field.boolean(), 32),
+   * });
+   * ```
+   */
+  array: <T extends ElementFieldBuilder>(
+    elementBuilder: T,
+    maxLength: number
+  ) => new ArrayFieldBuilder(elementBuilder, maxLength),
 };

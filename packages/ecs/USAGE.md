@@ -8,6 +8,62 @@ A lightweight, type-safe ECS (Entity Component System) component library with a 
 - ⚡ **Fast**: Binary storage using DataView for efficient memory usage
 - 🎯 **Zod-like API**: Familiar, fluent API for defining component schemas
 - 📦 **Compact**: Minimal overhead, maximum performance
+- 🔄 **Flexible Systems**: Run systems on the main thread or in parallel using Web Workers
+
+## Quick Start
+
+```typescript
+import {
+  World,
+  defineComponent,
+  defineSystem,
+  defineWorkerSystem,
+  field,
+  query,
+} from "@infinitecanvas/ecs";
+
+// 1. Define components
+const Position = defineComponent({
+  x: field.float32(),
+  y: field.float32(),
+});
+
+const Velocity = defineComponent({
+  x: field.float32(),
+  y: field.float32(),
+});
+
+// 2. Create a world
+const world = new World({ Position, Velocity });
+
+// 3. Create entities
+const entity = world.createEntity();
+world.addComponent(entity, Position, { x: 0, y: 0 });
+world.addComponent(entity, Velocity, { x: 1, y: 1 });
+
+// 4. Define systems
+const movementSystem = defineSystem(
+  (ctx) => {
+    const entities = query(ctx, (q) => q.with(Position, Velocity));
+    for (const id of entities) {
+      const pos = Position.write(id);
+      const vel = Velocity.read(id);
+      pos.x += vel.x;
+      pos.y += vel.y;
+    }
+  },
+  { Position, Velocity }
+);
+
+// 5. Run systems
+async function gameLoop() {
+  await world.execute(movementSystem);
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+```
+
+For detailed information about systems, see [SYSTEMS.md](./docs/SYSTEMS.md).
 
 ## Basic Usage
 

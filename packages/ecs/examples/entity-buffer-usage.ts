@@ -1,9 +1,9 @@
-import { World, field, EntityBufferView } from "../src/index";
+import { World, field, EntityBuffer } from "../src/index";
 
 /**
  * Entity Buffer Usage Examples
  *
- * The EntityBufferView stores entities in an efficient binary format using ArrayBuffer.
+ * The EntityBuffer stores entities in an efficient binary format using ArrayBuffer.
  * Each entity uses only 2 bytes (16 bits):
  * - Bit 0: alive/dead flag
  * - Bits 1-9: component mask (supports up to 512 components)

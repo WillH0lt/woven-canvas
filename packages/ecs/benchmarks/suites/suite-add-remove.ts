@@ -23,5 +23,6 @@ export default {
     ctx.updateMovementSystem();
 
     ctx.destroyEntity(entity1);
+    ctx.destroyEntity(entity2);
   },
 };

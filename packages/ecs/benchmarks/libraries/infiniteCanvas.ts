@@ -1,4 +1,11 @@
-import { World, field, System } from "../../src";
+import {
+  World,
+  field,
+  defineSystem,
+  defineComponent,
+  defineQuery,
+  type Context,
+} from "../../src";
 
 import type { BenchmarkLibrary } from "../types";
 
@@ -12,51 +19,44 @@ const library: BenchmarkLibrary = {
   Velocity: null,
   moveSystem: null,
   setup() {
-    this.world = new World();
-
-    // Define components
-    this.Position = this.world.createComponent({
-      x: field.float32().default(0),
-      y: field.float32().default(0),
+    this.Position = defineComponent({
+      x: field.float32(),
+      y: field.float32(),
     });
 
-    this.Velocity = this.world.createComponent({
-      x: field.float32().default(0),
-      y: field.float32().default(0),
-      speed: field.uint16().default(0),
+    this.Velocity = defineComponent({
+      x: field.float32(),
+      y: field.float32(),
     });
+
+    this.world = new World(
+      {
+        Position: this.Position,
+        Velocity: this.Velocity,
+      },
+      { maxEntities: 20_000 }
+    );
 
     const Position = this.Position;
     const Velocity = this.Velocity;
 
-    // Create movement system
-    class MoveSystem extends System {
-      private particles = this.query((q) => q.with(Position, Velocity));
+    const query = defineQuery((q) => q.with(Position, Velocity));
 
-      execute() {
-        this._beforeExecute();
+    this.moveSystem = defineSystem((ctx: Context) => {
+      const posX = Position.buffer.x;
+      const posY = Position.buffer.y;
+      const velX = Velocity.buffer.x;
+      const velY = Velocity.buffer.y;
 
-        const posX = Position.buffer.x;
-        const posY = Position.buffer.y;
-        const velX = Velocity.buffer.x;
-        const velY = Velocity.buffer.y;
+      const particles = query.current(ctx);
+      for (let i = 0; i < particles.length; i++) {
+        const eid = particles[i];
+        posX[eid] += velX[eid];
+        posY[eid] += velY[eid];
 
-        for (const eid of this.particles.current) {
-          // const pos = Position.write(eid);
-          // const vel = Velocity.read(eid);
-
-          // pos.x += vel.x;
-          // pos.y += vel.y;
-
-          posX[eid] += velX[eid];
-          posY[eid] += velY[eid];
-
-          updateCount++;
-        }
+        updateCount++;
       }
-    }
-
-    this.moveSystem = this.world.createSystem(MoveSystem);
+    });
   },
   createEntity() {
     return this.world.createEntity();
@@ -74,13 +74,13 @@ const library: BenchmarkLibrary = {
     this.world.removeComponent(entity, this.Velocity);
   },
   destroyEntity(entity: any) {
-    this.world?.removeEntity(entity);
+    this.world.removeEntity(entity);
   },
   cleanup() {
     updateCount = 0;
   },
   updateMovementSystem() {
-    this.world!.execute(this.moveSystem);
+    this.world.execute(this.moveSystem);
   },
   getMovementSystemUpdateCount() {
     return updateCount;

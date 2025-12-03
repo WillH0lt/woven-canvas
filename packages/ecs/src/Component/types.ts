@@ -1,8 +1,9 @@
 import type { StringBufferView } from "./fields/string";
 import type { BinaryBufferView } from "./fields/binary";
+import type { ArrayBufferView } from "./fields/array";
 
 // Field type definitions
-export type FieldType = "string" | "number" | "boolean" | "binary";
+export type FieldType = "string" | "number" | "boolean" | "binary" | "array";
 
 export type NumberSubtype =
   | "uint8"
@@ -43,11 +44,29 @@ export interface BinaryFieldDef extends BaseField<Uint8Array> {
   default?: Uint8Array;
 }
 
+export interface ArrayFieldDef<
+  TElementDef extends
+    | StringFieldDef
+    | NumberFieldDef
+    | BooleanFieldDef
+    | BinaryFieldDef =
+    | StringFieldDef
+    | NumberFieldDef
+    | BooleanFieldDef
+    | BinaryFieldDef
+> extends BaseField<any[]> {
+  type: "array";
+  elementDef: TElementDef;
+  maxLength: number;
+  default?: any[];
+}
+
 export type FieldDef =
   | StringFieldDef
   | NumberFieldDef
   | BooleanFieldDef
-  | BinaryFieldDef;
+  | BinaryFieldDef
+  | ArrayFieldDef;
 
 // TypedArray union type
 export type TypedArray =
@@ -60,10 +79,28 @@ export type TypedArray =
   | Float32Array
   | Float64Array;
 
+// Helper type to infer element type from ArrayFieldDef
+type InferArrayElementType<TElementDef> = TElementDef extends StringFieldDef
+  ? string
+  : TElementDef extends NumberFieldDef
+  ? number
+  : TElementDef extends BooleanFieldDef
+  ? boolean
+  : TElementDef extends BinaryFieldDef
+  ? Uint8Array
+  : never;
+
 // Component schema and inference types
 export type ComponentSchema = Record<
   string,
-  { def: StringFieldDef | NumberFieldDef | BooleanFieldDef | BinaryFieldDef }
+  {
+    def:
+      | StringFieldDef
+      | NumberFieldDef
+      | BooleanFieldDef
+      | BinaryFieldDef
+      | ArrayFieldDef;
+  }
 >;
 
 export type InferComponentType<T extends ComponentSchema> = {
@@ -75,6 +112,8 @@ export type InferComponentType<T extends ComponentSchema> = {
     ? boolean
     : T[K]["def"] extends BinaryFieldDef
     ? Uint8Array
+    : T[K]["def"] extends ArrayFieldDef<infer TElementDef>
+    ? InferArrayElementType<TElementDef>[]
     : never;
 };
 
@@ -88,5 +127,7 @@ export type ComponentBuffer<T extends ComponentSchema> = {
     ? StringBufferView
     : T[K]["def"] extends BinaryFieldDef
     ? BinaryBufferView
+    : T[K]["def"] extends ArrayFieldDef
+    ? ArrayBufferView
     : never;
 };

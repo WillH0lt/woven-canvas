@@ -4,34 +4,49 @@ import type { QueryMasks } from "./types";
 const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
-export class EntityBufferView {
-  private buffer: ArrayBufferLike;
-  private view: Uint32Array;
-  private static readonly ALIVE_MASK = 0x80000000; // Bit 31 (last bit)
-  private _count = 0;
+// Metadata buffer layout:
+// [0] = length (highest allocated entity index + 1)
+const METADATA_LENGTH_INDEX = 0;
+const METADATA_SIZE = 1; // Number of Uint32 entries in metadata
 
-  constructor() {
-    this.buffer = new BufferConstructor(3200); // 100 entities * 4 bytes each
+export class EntityBuffer {
+  private buffer: ArrayBufferLike;
+  private metadataBuffer: ArrayBufferLike;
+  private view: Uint32Array;
+  private metadata: Uint32Array;
+  private static readonly ALIVE_MASK = 0x80000000; // Bit 31 (last bit)
+
+  constructor(maxEntities: number) {
+    this.buffer = new BufferConstructor(maxEntities * 4);
+    this.metadataBuffer = new BufferConstructor(METADATA_SIZE * 4);
     this.view = new Uint32Array(this.buffer);
+    this.metadata = new Uint32Array(this.metadataBuffer);
   }
 
   /**
-   * Create an EntityBufferView from a shared buffer (for workers)
-   * @param buffer - The SharedArrayBuffer from the main thread
-   * @returns A new EntityBufferView wrapping the shared buffer
+   * Create an EntityBuffer from shared buffers (for workers)
+   * @param buffer - The SharedArrayBuffer for entity data from the main thread
+   * @param metadataBuffer - The SharedArrayBuffer for metadata from the main thread
+   * @returns A new EntityBuffer wrapping the shared buffers
    */
-  static fromTransfer(buffer: ArrayBufferLike): EntityBufferView {
-    const instance = Object.create(EntityBufferView.prototype);
+  static fromTransfer(
+    buffer: ArrayBufferLike,
+    metadataBuffer: ArrayBufferLike
+  ): EntityBuffer {
+    const instance = Object.create(EntityBuffer.prototype);
     instance.buffer = buffer;
+    instance.metadataBuffer = metadataBuffer;
     instance.view = new Uint32Array(buffer);
+    instance.metadata = new Uint32Array(metadataBuffer);
     return instance;
   }
 
   /**
-   * Get the number of entities in the buffer, alive or dead
+   * The number of entities the buffer can hold
    */
-  get count(): number {
-    return this._count;
+  get length(): number {
+    // metadata[0] stores the highest allocated entity index + 1 for tight iteration bounds
+    return this.metadata[METADATA_LENGTH_INDEX];
   }
 
   /**
@@ -43,12 +58,23 @@ export class EntityBufferView {
   }
 
   /**
+   * Get the metadata buffer for workers
+   * @returns The SharedArrayBuffer for metadata that can be shared across threads
+   */
+  getMetadataBuffer(): ArrayBufferLike {
+    return this.metadataBuffer;
+  }
+
+  /**
    * Create a new entity (mark as alive with no components)
    * @param entityId - The entity ID (index in buffer)
    */
   create(entityId: EntityId): void {
-    this.view[entityId] = EntityBufferView.ALIVE_MASK;
-    this._count = Math.max(this._count, entityId + 1);
+    this.view[entityId] = EntityBuffer.ALIVE_MASK;
+    this.metadata[METADATA_LENGTH_INDEX] = Math.max(
+      this.metadata[METADATA_LENGTH_INDEX],
+      entityId + 1
+    );
   }
 
   /**
@@ -87,7 +113,7 @@ export class EntityBufferView {
    */
   matches(entityId: EntityId, masks: QueryMasks): boolean {
     const value = this.view[entityId];
-    if ((value & EntityBufferView.ALIVE_MASK) === 0) {
+    if ((value & EntityBuffer.ALIVE_MASK) === 0) {
       return false;
     }
 
@@ -127,6 +153,6 @@ export class EntityBufferView {
    * @returns True if the entity exists and is alive
    */
   has(entityId: EntityId): boolean {
-    return (this.view[entityId] & EntityBufferView.ALIVE_MASK) !== 0;
+    return (this.view[entityId] & EntityBuffer.ALIVE_MASK) !== 0;
   }
 }

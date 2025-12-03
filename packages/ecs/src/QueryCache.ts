@@ -1,0 +1,205 @@
+import type { QueryMasks } from "./types";
+
+const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
+  typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
+
+/**
+ * Buffer layout:
+ * Dense array: [count, entity0, entity1, entity2, ...]
+ * Sparse array: [sparseIdx0, sparseIdx1, ...] - maps entityId -> index in dense array (or 0xFFFFFFFF if not present)
+ */
+const DENSE_COUNT_INDEX = 0;
+const DENSE_DATA_START = 1;
+const SPARSE_NOT_PRESENT = 0xffffffff;
+
+/**
+ * QueryCache implements a sparse set stored in SharedArrayBuffer.
+ * This allows query results to be shared across threads with O(1) add/remove/has operations.
+ *
+ * Uses a sparse-dense set pattern:
+ * - Dense array: contiguous entity IDs for fast iteration
+ * - Sparse array: maps entity ID -> dense index for O(1) lookup
+ */
+export class QueryCache {
+  private denseBuffer: ArrayBufferLike;
+  private sparseBuffer: ArrayBufferLike;
+  private dense: Uint32Array;
+  private sparse: Uint32Array;
+  private masks: QueryMasks;
+  private maxEntities: number;
+
+  /**
+   * Create a new QueryCache
+   * @param masks - The query masks for matching entities
+   * @param maxEntities - Maximum number of entities that can be cached
+   */
+  constructor(masks: QueryMasks, maxEntities: number) {
+    this.masks = masks;
+    this.maxEntities = maxEntities;
+
+    // Dense buffer: count + maxEntities entity IDs
+    this.denseBuffer = new BufferConstructor(
+      (DENSE_DATA_START + maxEntities) * 4
+    );
+    this.dense = new Uint32Array(this.denseBuffer);
+    this.dense[DENSE_COUNT_INDEX] = 0;
+
+    // Sparse buffer: one slot per possible entity
+    this.sparseBuffer = new BufferConstructor(maxEntities * 4);
+    this.sparse = new Uint32Array(this.sparseBuffer);
+    // Initialize all to "not present"
+    this.sparse.fill(SPARSE_NOT_PRESENT);
+  }
+
+  /**
+   * Create a QueryCache from transferred SharedArrayBuffers
+   * @param denseBuffer - The SharedArrayBuffer for dense array
+   * @param sparseBuffer - The SharedArrayBuffer for sparse array
+   * @param masks - The query masks for matching entities
+   * @returns A new QueryCache wrapping the shared buffers
+   */
+  static fromTransfer(
+    denseBuffer: ArrayBufferLike,
+    sparseBuffer: ArrayBufferLike,
+    masks: QueryMasks
+  ): QueryCache {
+    const instance = Object.create(QueryCache.prototype) as QueryCache;
+    instance.denseBuffer = denseBuffer;
+    instance.sparseBuffer = sparseBuffer;
+    instance.dense = new Uint32Array(denseBuffer);
+    instance.sparse = new Uint32Array(sparseBuffer);
+    instance.masks = masks;
+    instance.maxEntities = instance.sparse.length;
+    return instance;
+  }
+
+  /**
+   * Get the dense buffer for transfer to workers
+   */
+  getDenseBuffer(): ArrayBufferLike {
+    return this.denseBuffer;
+  }
+
+  /**
+   * Get the sparse buffer for transfer to workers
+   */
+  getSparseBuffer(): ArrayBufferLike {
+    return this.sparseBuffer;
+  }
+
+  /**
+   * Get the query masks
+   */
+  getMasks(): QueryMasks {
+    return this.masks;
+  }
+
+  /**
+   * Get the number of entities in the cache
+   */
+  get count(): number {
+    return this.dense[DENSE_COUNT_INDEX];
+  }
+
+  /**
+   * Add an entity to the cache - O(1)
+   * @param entityId - The entity ID to add
+   */
+  add(entityId: number): void {
+    // Already in cache?
+    if (this.sparse[entityId] !== SPARSE_NOT_PRESENT) {
+      return;
+    }
+
+    const count = this.dense[DENSE_COUNT_INDEX];
+    if (count >= this.maxEntities) {
+      throw new Error("QueryCache is full");
+    }
+
+    // Add to dense array
+    this.dense[DENSE_DATA_START + count] = entityId;
+    // Update sparse array to point to new dense index
+    this.sparse[entityId] = count;
+    // Increment count
+    this.dense[DENSE_COUNT_INDEX] = count + 1;
+  }
+
+  /**
+   * Remove an entity from the cache - O(1) using swap-and-pop
+   * @param entityId - The entity ID to remove
+   */
+  remove(entityId: number): void {
+    const denseIdx = this.sparse[entityId];
+    if (denseIdx === SPARSE_NOT_PRESENT) {
+      return; // Not in cache
+    }
+
+    const count = this.dense[DENSE_COUNT_INDEX];
+    const lastIdx = count - 1;
+
+    if (denseIdx !== lastIdx) {
+      // Swap with last element
+      const lastEntityId = this.dense[DENSE_DATA_START + lastIdx];
+      this.dense[DENSE_DATA_START + denseIdx] = lastEntityId;
+      this.sparse[lastEntityId] = denseIdx;
+    }
+
+    // Mark as not present and decrement count
+    this.sparse[entityId] = SPARSE_NOT_PRESENT;
+    this.dense[DENSE_COUNT_INDEX] = lastIdx;
+  }
+
+  /**
+   * Check if an entity is in the cache - O(1)
+   * @param entityId - The entity ID to check
+   */
+  has(entityId: number): boolean {
+    return this.sparse[entityId] !== SPARSE_NOT_PRESENT;
+  }
+
+  /**
+   * Clear all entities from the cache
+   */
+  clear(): void {
+    const count = this.dense[DENSE_COUNT_INDEX];
+    // Clear sparse entries for all entities in dense array
+    for (let i = 0; i < count; i++) {
+      const entityId = this.dense[DENSE_DATA_START + i];
+      this.sparse[entityId] = SPARSE_NOT_PRESENT;
+    }
+    this.dense[DENSE_COUNT_INDEX] = 0;
+  }
+
+  /**
+   * Iterate over all cached entity IDs
+   * Returns a lightweight iterator that reads directly from the buffer
+   */
+  *[Symbol.iterator](): Generator<number> {
+    const count = this.dense[DENSE_COUNT_INDEX];
+    for (let i = 0; i < count; i++) {
+      yield this.dense[DENSE_DATA_START + i];
+    }
+  }
+
+  /**
+   * Get cached entities as an array (for compatibility)
+   * Note: Creates a new array - prefer using the iterator for better performance
+   */
+  toArray(): number[] {
+    const count = this.dense[DENSE_COUNT_INDEX];
+    const result = new Array(count);
+    for (let i = 0; i < count; i++) {
+      result[i] = this.dense[DENSE_DATA_START + i];
+    }
+    return result;
+  }
+
+  /**
+   * Get a view of the dense array without copying
+   * This is the fastest way to access the cached entities
+   */
+  getDenseView(): Uint32Array {
+    const count = this.dense[DENSE_COUNT_INDEX];
+    return this.dense.subarray(DENSE_DATA_START, DENSE_DATA_START + count);
+  }
+}

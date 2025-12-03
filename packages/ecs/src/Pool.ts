@@ -1,269 +1,219 @@
-import type { Component } from "./Component";
-import type { EntityBufferView } from "./EntityBuffer";
+// index pool used in EntityBuffer
+// copied from https://github.com/zandaqo/structurae
+
+type Bit = 0 | 1;
+
+type BitPosition = {
+  bucket: number;
+  position: number;
+};
 
 /**
- * Pool - manages a pool of web workers for parallel execution
+ * Lookup table for powers of 2
  */
-export class Pool {
-  private maxWorkers: number;
-  private workerPool: Map<string, Worker[]> = new Map();
-  private initializedWorkers: Set<Worker> = new Set();
-  private taskQueue: Array<() => void> = [];
-  private activeWorkers = 0;
-  private entityBuffer: any = null;
-  private components: Record<string, Component<any>> = {};
+const log2: Record<number, number> = {
+  1: 0,
+  2: 1,
+  4: 2,
+  8: 3,
+  16: 4,
+  32: 5,
+  64: 6,
+  128: 7,
+  256: 8,
+  512: 9,
+  1024: 10,
+  2048: 11,
+  4096: 12,
+  8192: 13,
+  16384: 14,
+  32768: 15,
+  65536: 16,
+  131072: 17,
+  262144: 18,
+  524288: 19,
+  1048576: 20,
+  2097152: 21,
+  4194304: 22,
+  8388608: 23,
+  16777216: 24,
+  33554432: 25,
+  67108864: 26,
+  134217728: 27,
+  268435456: 28,
+  536870912: 29,
+  1073741824: 30,
+  2147483648: 31,
+};
 
-  /**
-   * Create a new WorkerManager instance
-   * @param maxWorkers - Maximum number of workers to use (defaults to hardware concurrency)
-   */
-  constructor(maxWorkers?: number) {
-    this.maxWorkers = maxWorkers ?? navigator.hardwareConcurrency ?? 4;
+/**
+ * Returns the index of the Least Significant Bit in a number.
+ *
+ * @param value the number
+ * @return the index of LSB
+ */
+function getLSBIndex(value: number): number {
+  if (value === 2147483648) return 31;
+  return log2[value & -value];
+}
+
+/**
+ * Uses Uint32Array as an array or vector of bits. It's a simpler version of BitField
+ * that only sets and checks individual bits.
+ *
+ * @example
+ * const array = BitArray.create(10);
+ * array.getBit(0);
+ * //=> 0
+ * array.setBit(0).getBit(0);
+ * //=> 1
+ * array.size;
+ * //=> 10
+ * array.length;
+ * //=> 1
+ */
+class BitArray extends Uint32Array {
+  lastPosition: BitPosition = { bucket: 0, position: 0 };
+
+  static get [Symbol.species](): Uint32ArrayConstructor {
+    return Uint32Array;
   }
 
   /**
-   * Execute a system in parallel using web workers
-   * @param workerPath - Path to the worker file
-   * @param batches - Number of parallel batches to run (default: 4)
-   * @param entityBuffer - Optional entity buffer to pass to workers
-   * @param components - Components registry to pass to workers
-   * @param data - Optional data to pass to each worker
-   * @returns Promise that resolves when all batches complete
+   * The amount of bits in the array.
    */
-  async executeInParallel(
-    workerPath: string,
-    batches: number = 4,
-    entityBuffer?: any,
-    components?: Record<string, Component<any>>
-  ): Promise<void> {
-    // Store entity buffer and components for worker initialization
-    this.entityBuffer = entityBuffer;
-    this.components = components || {};
-
-    const promises = [];
-
-    // Execute tasks (workers will be initialized on-demand)
-    for (let i = 0; i < batches; i++) {
-      promises.push(this.executeTask(workerPath, i, []));
-    }
-
-    await Promise.all(promises);
+  get size(): number {
+    return this.length << 5;
   }
 
   /**
-   * Initialize a worker with the entity buffer
-   * @param worker - The worker to initialize
-   * @param index - Index of this worker
-   * @param entityBuffer - Optional entity buffer to pass
-   * @returns Promise that resolves when initialization is complete
+   * Creates a BitArray of the specified size.
+   *
+   * @param size the maximum amount of bits in the array
+   * @return a new BitArray
    */
-  private async initializeWorker(
-    worker: Worker,
-    index: number,
-    entityBuffer: EntityBufferView,
-    components: Record<string, Component<any>>
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error(`Worker ${index} initialization timed out`));
-      }, 5000); // 5 second timeout
+  static create<T extends typeof BitArray>(
+    this: T,
+    size: number
+  ): InstanceType<T> {
+    return new this(this.getLength(size)) as InstanceType<T>;
+  }
 
-      const messageHandler = (e: MessageEvent) => {
-        if (e.data.index === index) {
-          clearTimeout(timeout);
-          worker.removeEventListener("message", messageHandler);
+  /**
+   * Returns the length of the underlying TypedArray required to hold the given amount of bits.
+   *
+   * @param size the amount of bits
+   * @return the required length
+   */
+  static getLength(size: number): number {
+    return Math.ceil(size / 32);
+  }
 
-          if (e.data.error) {
-            reject(new Error(e.data.error));
-          } else {
-            resolve();
-          }
+  /**
+   * Returns the bit at a given index.
+   *
+   * @param index the index
+   * @return the bit
+   */
+  getBit(index: number): Bit {
+    const { bucket, position } = this.getBitPosition(index);
+    return ((this[bucket] >> position) & 1) as Bit;
+  }
+
+  getBitPosition(index: number): BitPosition {
+    const bucket = index >> 5;
+    this.lastPosition.bucket = bucket;
+    this.lastPosition.position = index - (bucket << 5);
+    return this.lastPosition;
+  }
+
+  /**
+   * Sets the bit at a given index.
+   *
+   * @param index the index
+   * @param value the value
+   * @return this
+   */
+  setBit(index: number, value: Bit = 1): this {
+    const { bucket, position } = this.getBitPosition(index);
+    this[bucket] = (this[bucket] & ~(1 << position)) | (value << position);
+    return this;
+  }
+}
+
+/**
+ * Implements a fast algorithm to manage availability of objects in an object pool using a BitArray.
+ *
+ * @example
+ * // create a pool of 1600 indexes
+ * const pool = Pool.create(100 * 16);
+ *
+ * // get the next available index and make it unavailable
+ * pool.get();
+ * //=> 0
+ * pool.get();
+ * //=> 1
+ *
+ * // set index available
+ * pool.free(0);
+ * pool.get();
+ * //=> 0
+ *
+ * pool.get();
+ * //=> 2
+ */
+export class Pool extends BitArray {
+  nextAvailable = 0;
+
+  /**
+   * Creates a Pool of the specified size.
+   *
+   * @param size the size of the pool
+   * @return a new Pool
+   */
+  static create<T extends typeof BitArray>(
+    this: T,
+    size: number
+  ): InstanceType<T> {
+    const pool = new this(this.getLength(size));
+    pool.fill(4294967295);
+    return pool as InstanceType<T>;
+  }
+
+  /**
+   * Makes a given index available.
+   *
+   * @param index index to be freed
+   */
+  free(index: number): void {
+    const { bucket, position } = this.getBitPosition(index);
+    this[bucket] |= 1 << position;
+    this.nextAvailable = bucket;
+  }
+
+  /**
+   * Gets the next available index in the pool.
+   *
+   * @return the next available index
+   */
+  get(): number {
+    const { nextAvailable } = this;
+    if (!~nextAvailable) return -1;
+    const record = this[nextAvailable];
+    const index = getLSBIndex(record);
+    this[nextAvailable] &= ~(1 << index);
+
+    // record is full, find next empty
+    if (this[nextAvailable] === 0) {
+      this.nextAvailable = -1;
+      for (let i = 0; i < this.length; i++) {
+        if (this[i] !== 0) {
+          this.nextAvailable = i;
+          break;
         }
-      };
-
-      worker.addEventListener("message", messageHandler);
-
-      // Serialize component metadata and buffers for reconstruction in worker
-      const componentData: Record<string, any> = {};
-      for (const [name, component] of Object.entries(components)) {
-        // Find the component ID by checking the bitmask
-        let componentId = 0;
-        let mask = component.bitmask;
-        while (mask > 1) {
-          mask = mask >> 1;
-          componentId++;
-        }
-
-        componentData[name] = {
-          id: componentId,
-          name: component.name,
-          bitmask: component.bitmask,
-          buffer: component.buffer, // Transfer the SharedArrayBuffer-backed typed arrays
-        };
-      }
-
-      // Send initialization message with shared buffer
-      worker.postMessage({
-        type: "init",
-        index,
-        entityBuffer: entityBuffer.getBuffer(),
-        components: componentData,
-      });
-    });
-  }
-
-  /**
-   * Execute a single task on a worker
-   * @param workerPath - Path to the worker file
-   * @param index - Index of this task
-   * @param data - Optional data to pass to the worker
-   * @param results - Array to store results
-   * @returns Promise that resolves with the task result
-   */
-  private async executeTask(
-    workerPath: string,
-    index: number,
-    results: any[]
-  ): Promise<any> {
-    const worker = await this.getWorker(workerPath);
-
-    // Initialize worker if not already initialized
-    if (!this.initializedWorkers.has(worker)) {
-      await this.initializeWorker(
-        worker,
-        index,
-        this.entityBuffer,
-        this.components
-      );
-      this.initializedWorkers.add(worker);
-    }
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        worker.terminate();
-        this.removeWorker(workerPath, worker);
-        reject(new Error(`Task ${index} timed out`));
-      }, 30000); // 30 second timeout
-
-      worker.onmessage = (e: MessageEvent) => {
-        clearTimeout(timeout);
-
-        if (e.data.error) {
-          results[index] = { error: e.data.error };
-          reject(new Error(e.data.error));
-        } else {
-          results[index] = e.data.result;
-          resolve(e.data.result);
-        }
-
-        this.releaseWorker(workerPath, worker);
-      };
-
-      worker.onerror = (error: ErrorEvent) => {
-        clearTimeout(timeout);
-        results[index] = { error: error.message };
-        reject(error);
-        this.releaseWorker(workerPath, worker);
-      };
-
-      // Send the task to the worker
-      worker.postMessage({
-        type: "execute",
-        index,
-      });
-    });
-  }
-
-  /**
-   * Get a worker from the pool or create a new one
-   * @param workerPath - Path to the worker file
-   * @returns Promise that resolves with a worker
-   */
-  private async getWorker(workerPath: string): Promise<Worker> {
-    // Get or create pool for this worker path
-    let pool = this.workerPool.get(workerPath);
-    if (!pool) {
-      pool = [];
-      this.workerPool.set(workerPath, pool);
-    }
-
-    // If we have idle workers for this path, reuse them
-    if (pool.length > 0) {
-      return pool.pop()!;
-    }
-
-    // If we're at max capacity, wait
-    if (this.activeWorkers >= this.maxWorkers) {
-      return new Promise<Worker>((resolve) => {
-        this.taskQueue.push(() => resolve);
-      });
-    }
-
-    // Create a new worker
-    this.activeWorkers++;
-    return this.createWorker(workerPath);
-  }
-
-  /**
-   * Create a new web worker from a file path
-   * @param workerPath - Path to the worker file
-   * @returns A new Worker instance
-   */
-  private createWorker(workerPath: string): Worker {
-    return new Worker(workerPath, { type: "module" });
-  }
-
-  /**
-   * Release a worker back to the pool or assign it to a queued task
-   * @param workerPath - Path to the worker file
-   * @param worker - The worker to release
-   */
-  private releaseWorker(workerPath: string, worker: Worker): void {
-    // If there are queued tasks, assign this worker to them
-    if (this.taskQueue.length > 0) {
-      const resolveFactory = this.taskQueue.shift();
-      if (resolveFactory) {
-        resolveFactory();
-      }
-    } else {
-      // Return worker to pool
-      const pool = this.workerPool.get(workerPath);
-      if (pool) {
-        pool.push(worker);
       }
     }
-  }
 
-  /**
-   * Remove a worker from the pool and decrement active worker count
-   * @param workerPath - Path to the worker file
-   * @param worker - The worker to remove
-   */
-  private removeWorker(workerPath: string, worker: Worker): void {
-    this.activeWorkers--;
-    const pool = this.workerPool.get(workerPath);
-    if (pool) {
-      const index = pool.indexOf(worker);
-      if (index > -1) {
-        pool.splice(index, 1);
-      }
-    }
-  }
-
-  /**
-   * Dispose of the worker manager and terminate all workers
-   */
-  dispose(): void {
-    // Terminate all workers in all pools
-    for (const pool of this.workerPool.values()) {
-      for (const worker of pool) {
-        worker.terminate();
-      }
-    }
-    this.workerPool.clear();
-    this.initializedWorkers.clear();
-    this.activeWorkers = 0;
-    this.taskQueue = [];
-    this.entityBuffer = null;
+    return (nextAvailable << 5) + index;
   }
 }

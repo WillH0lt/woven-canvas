@@ -9,6 +9,7 @@ export type {
   NumberFieldDef,
   BooleanFieldDef,
   BinaryFieldDef,
+  ArrayFieldDef,
   NumberSubtype,
   FieldType,
 } from "./types";

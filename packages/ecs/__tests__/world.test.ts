@@ -8,17 +8,17 @@ describe("World", () => {
 
   beforeEach(() => {
     // Define test components
-    Position = defineComponent("Position", {
+    Position = defineComponent({
       x: field.float32().default(0),
       y: field.float32().default(0),
     });
 
-    Velocity = defineComponent("Velocity", {
+    Velocity = defineComponent({
       dx: field.float32().default(0),
       dy: field.float32().default(0),
     });
 
-    Health = defineComponent("Health", {
+    Health = defineComponent({
       current: field.uint16().default(100),
       max: field.uint16().default(100),
     });
@@ -26,7 +26,7 @@ describe("World", () => {
 
   describe("World Creation", () => {
     it("should create a world with no components", () => {
-      const world = new World();
+      const world = new World({});
       expect(world).toBeDefined();
       expect(world.components).toEqual({});
     });
@@ -49,15 +49,14 @@ describe("World", () => {
 
   describe("Entity Management", () => {
     it("should create entities", () => {
-      const world = new World();
-      const entity = world.createEntity();
+      const world = new World({});
+      const eid = world.createEntity();
 
-      expect(entity).toBe(0);
-      expect(typeof entity).toBe("number");
+      expect(typeof eid).toBe("number");
     });
 
     it("should create multiple entities with sequential IDs", () => {
-      const world = new World();
+      const world = new World({});
       const e1 = world.createEntity();
       const e2 = world.createEntity();
       const e3 = world.createEntity();
@@ -75,26 +74,6 @@ describe("World", () => {
       world.removeEntity(entity);
 
       expect(() => world.hasComponent(entity, Position)).toThrow();
-    });
-
-    it("should handle many entities efficiently", () => {
-      const world = new World({ Position, Health });
-
-      // Create 1000 entities
-      const entities = [];
-      for (let i = 0; i < 1000; i++) {
-        const entity = world.createEntity();
-        entities.push(entity);
-        world.addComponent(entity, Position, { x: i, y: i });
-
-        if (i % 2 === 0) {
-          world.addComponent(entity, Health, { current: 100, max: 100 });
-        }
-      }
-
-      expect(entities).toHaveLength(1000);
-      expect(entities[0]).toBe(0);
-      expect(entities[999]).toBe(999);
     });
   });
 

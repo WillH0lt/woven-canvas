@@ -17,6 +17,7 @@ import {
   BooleanField,
   StringField,
   BinaryField,
+  ArrayField,
   type Field,
 } from "./fields";
 
@@ -31,7 +32,6 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
  */
 export abstract class Component<T extends ComponentSchema> {
   bitmask: number = 0;
-  name: string = "";
   private _initialized: boolean = false;
 
   private schema: Record<string, FieldDef>;
@@ -76,7 +76,7 @@ export abstract class Component<T extends ComponentSchema> {
     // Guard against double initialization
     if (this._initialized) {
       throw new Error(
-        `Component "${this.name}" has already been initialized. ` +
+        `Component has already been initialized. ` +
           `Each component instance can only be registered with one World. ` +
           `If you need multiple worlds, define separate component instances for each.`
       );
@@ -121,13 +121,9 @@ export abstract class Component<T extends ComponentSchema> {
    * @param buffer - The transferred buffer object containing typed arrays
    * @internal
    */
-  initializeFromTransfer(
-    id: number,
-    bitmask: number,
-    buffer: ComponentBuffer<T>
-  ): void {
+  initializeFromTransfer(bitmask: number, buffer: ComponentBuffer<T>): void {
     if (this._initialized) {
-      throw new Error(`Component "${this.name}" has already been initialized.`);
+      throw new Error(`Component has already been initialized.`);
     }
     this._initialized = true;
     this.bitmask = bitmask;
@@ -175,6 +171,8 @@ export abstract class Component<T extends ComponentSchema> {
         return BooleanField;
       case "binary":
         return BinaryField;
+      case "array":
+        return ArrayField;
       default:
         throw new Error(`Unknown field type: ${type}`);
     }
@@ -281,12 +279,12 @@ export abstract class Component<T extends ComponentSchema> {
  * ```typescript
  * import { field, defineComponent } from "@infinitecanvas/ecs";
  *
- * export const Position = defineComponent("Position", {
+ * export const Position = defineComponent({
  *   x: field.float32(),
  *   y: field.float32(),
  * });
  *
- * export const Velocity = defineComponent("Velocity", {
+ * export const Velocity = defineComponent({
  *   x: field.float32(),
  *   y: field.float32(),
  * });
@@ -306,21 +304,13 @@ export abstract class Component<T extends ComponentSchema> {
  * ```
  */
 export function defineComponent<T extends ComponentSchema>(
-  name: string,
   schema: T
 ): Component<T> {
   class DefinedComponent extends Component<T> {
     constructor() {
       super(schema);
-      this.name = name;
     }
   }
-
-  // Set the class name for better debugging
-  Object.defineProperty(DefinedComponent, "name", {
-    value: name,
-    writable: false,
-  });
 
   return new DefinedComponent();
 }

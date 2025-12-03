@@ -12,26 +12,26 @@ describe("Query", () => {
 
   beforeEach(() => {
     // Define test components
-    Position = defineComponent("Position", {
+    Position = defineComponent({
       x: field.float32().default(0),
       y: field.float32().default(0),
     });
 
-    Velocity = defineComponent("Velocity", {
+    Velocity = defineComponent({
       dx: field.float32().default(0),
       dy: field.float32().default(0),
     });
 
-    Health = defineComponent("Health", {
+    Health = defineComponent({
       current: field.uint16().default(100),
       max: field.uint16().default(100),
     });
 
-    Enemy = defineComponent("Enemy", {
+    Enemy = defineComponent({
       damage: field.uint8().default(10),
     });
 
-    Player = defineComponent("Player", {
+    Player = defineComponent({
       score: field.uint32().default(0),
     });
   });
@@ -51,8 +51,7 @@ describe("Query", () => {
       const e3 = world.createEntity();
       world.addComponent(e3, Velocity, { dx: 5, dy: 5 });
 
-      // Create context for query
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Query for entities with Position
       const results = Array.from(query(ctx, (q) => q.with(Position)));
@@ -78,7 +77,7 @@ describe("Query", () => {
       world.addComponent(e3, Velocity, { dx: 3, dy: 4 });
       world.addComponent(e3, Health);
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Query for entities with both Position AND Velocity
       const results = Array.from(query(ctx, (q) => q.with(Position, Velocity)));
@@ -103,7 +102,7 @@ describe("Query", () => {
       const e3 = world.createEntity();
       world.addComponent(e3, Position, { x: 50, y: 60 });
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Query for Position entities that are NOT enemies
       const results = Array.from(
@@ -128,7 +127,7 @@ describe("Query", () => {
       const e3 = world.createEntity();
       world.addComponent(e3, Health);
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Query for entities that are either Enemy OR Player
       const results = Array.from(query(ctx, (q) => q.any(Enemy, Player)));
@@ -160,7 +159,7 @@ describe("Query", () => {
       world.addComponent(e4, Position);
       world.addComponent(e4, Velocity);
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Query for: Position AND (Player OR Enemy) AND NOT Velocity
       const results = Array.from(
@@ -181,7 +180,7 @@ describe("Query", () => {
       const e1 = world.createEntity();
       // Don't add Position component
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       const results = Array.from(query(ctx, (q) => q.with(Position)));
 
@@ -199,7 +198,7 @@ describe("Query", () => {
       world.addComponent(e2, Position, { x: 10, y: 10 });
       world.addComponent(e2, Velocity, { dx: 2, dy: 2 });
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Use query in a for...of loop
       let count = 0;
@@ -244,7 +243,7 @@ describe("Query", () => {
         }
       }
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Query should be fast with bitmask operations
       const startTime = performance.now();
@@ -254,9 +253,9 @@ describe("Query", () => {
       const endTime = performance.now();
 
       // Entities with Position+Velocity but not Enemy
-      // i%2===0 (500) AND NOT (i%5===0 which gives Enemy)
-      // Result: entities 0,2,4,6,8... but not 0,5,10,15,20... = 320
-      expect(results.length).toBe(320);
+      // All entities have Position, i%2===0 have Velocity (500), i%5===0 have Enemy
+      // Even numbers without multiples of 10: 500 - 100 = 400
+      expect(results.length).toBe(400);
 
       // Should be very fast (under 10ms for 1000 entities)
       expect(endTime - startTime).toBeLessThan(10);
@@ -274,7 +273,7 @@ describe("Query", () => {
         }
       }
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       const startTime = performance.now();
       let count = 0;
@@ -283,9 +282,9 @@ describe("Query", () => {
       }
       const endTime = performance.now();
 
-      // Entities 0,2,4,6... up to index 798 have both components (400 total)
-      // This is limited by the entity buffer's growth strategy
-      expect(count).toBe(400);
+      // Entities 0,2,4,6... up to 4998 have both components (2500 total)
+      // All entities have Position, half have Velocity
+      expect(count).toBe(2500);
       expect(endTime - startTime).toBeLessThan(20);
     });
   });
@@ -302,7 +301,7 @@ describe("Query", () => {
       world.addComponent(e2, Position, { x: 30, y: 40 });
       world.addComponent(e2, Velocity, { dx: 3, dy: 4 });
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       const positions: Array<{ x: number; y: number }> = [];
       for (const entityId of query(ctx, (q) => q.with(Position, Velocity))) {
@@ -326,7 +325,7 @@ describe("Query", () => {
       world.addComponent(e2, Position, { x: 100, y: 200 });
       world.addComponent(e2, Velocity, { dx: -2, dy: -3 });
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Apply velocity to position
       for (const entityId of query(ctx, (q) => q.with(Position, Velocity))) {
@@ -350,7 +349,7 @@ describe("Query", () => {
       const e1 = world.createEntity();
       world.addComponent(e1, Position);
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       const results = Array.from(query(ctx, (q) => q.with(Enemy)));
 
@@ -367,7 +366,7 @@ describe("Query", () => {
         entities.push(e);
       }
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       const results = Array.from(query(ctx, (q) => q.with(Position)));
 
@@ -399,7 +398,7 @@ describe("Query", () => {
       world.addComponent(e4, Position);
       world.addComponent(e4, Health);
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       // Query: Position AND Health AND (Player OR Enemy) AND NOT Velocity
       const results = Array.from(
@@ -425,7 +424,7 @@ describe("Query", () => {
       world.addComponent(e1, Enemy);
       world.addComponent(e1, Player);
 
-      const ctx: Context = { entityBuffer: (world as any).entityBuffer };
+      const ctx = world.getContext();
 
       const results1 = Array.from(query(ctx, (q) => q.with(Position)));
       expect(results1).toContain(e1);

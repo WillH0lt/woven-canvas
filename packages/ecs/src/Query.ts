@@ -1,5 +1,68 @@
 import type { Component } from "./Component";
 import type { Context, QueryMasks } from "./types";
+import { QueryCache } from "./QueryCache";
+
+/**
+ * A lazily-initialized query that caches matching entities.
+ * Created via defineQuery() and connects to the query cache on first use.
+ */
+export class Query {
+  private cache: QueryCache | null = null;
+  private readonly builder: (q: QueryBuilder) => QueryBuilder;
+
+  /**
+   * @internal
+   */
+  constructor(builder: (q: QueryBuilder) => QueryBuilder) {
+    this.builder = builder;
+  }
+
+  private createCache(ctx: Context): QueryCache {
+    const queryBuilder = new QueryBuilder();
+    const configuredBuilder = this.builder(queryBuilder);
+    const masks = configuredBuilder._build();
+    const hash = configuredBuilder._getHash();
+
+    let cache: QueryCache;
+
+    // Check if query already exists in context cache
+    if (ctx.queryCache?.has(hash)) {
+      cache = ctx.queryCache.get(hash)!;
+    } else {
+      // Create new query cache
+      cache = new QueryCache(masks, ctx.maxEntities);
+      // Populate with matching entities
+      for (let i = 0; i < ctx.entityBuffer.length; i++) {
+        if (ctx.entityBuffer.has(i) && ctx.entityBuffer.matches(i, masks)) {
+          cache.add(i);
+        }
+      }
+
+      // Store in context cache if available
+      if (ctx.queryCache) {
+        ctx.queryCache.set(hash, cache);
+      }
+    }
+
+    return cache;
+  }
+
+  /**
+   * Get the current matching entities from the query cache.
+   * On first call, this will lazily initialize or connect to the cached query.
+   *
+   * @param ctx - The context object containing the entity buffer and query cache
+   * @returns An iterable of entity IDs matching the query criteria
+   */
+  current(ctx: Context): Uint32Array {
+    // Lazy initialization - connect to or create the cache on first use
+    if (this.cache === null) {
+      this.cache = this.createCache(ctx);
+    }
+
+    return this.cache.getDenseView();
+  }
+}
 
 /**
  * Query builder for filtering entities based on component composition
@@ -75,52 +138,41 @@ export class QueryBuilder {
       any: this.anyMask,
     };
   }
+
+  /**
+   * Get a unique hash key for this query configuration
+   * Used to look up cached queries
+   * @internal
+   */
+  _getHash(): string {
+    return `${this.withMask}:${this.withoutMask}:${this.anyMask}`;
+  }
 }
 
 /**
- * Create a query over the entity buffer to filter entities by component composition.
- * Use this within parallel systems to iterate over entities matching specific criteria.
+ * Define a query that lazily connects to or creates a query cache on first use.
+ * This allows defining queries at module scope before the context is available.
  *
- * @param ctx - The context object containing the entity buffer
  * @param builder - Function that configures the query using with/without/any methods on QueryBuilder
- * @returns An iterable of entity IDs matching the query criteria
+ * @returns A Query object with a current(ctx) method to get matching entities
  *
  * @example
- * // In a worker:
- * import { registerSystem, query } from '@infinitecanvas/ecs';
- * import { Position, Velocity, Dead } from './components';
+ * import { setupWorker, defineQuery, type Context } from "@infinitecanvas/ecs";
+ * import { Position, Velocity } from "./components";
  *
- * registerSystem(self, (ctx) => {
- *   // Query for entities with Position and Velocity, without Dead
- *   for (const entityId of query(ctx, q => q.with(Position, Velocity).without(Dead))) {
- *     // Process matching entities
- *     const pos = Position.get(entityId);
- *     console.log('Entity position:', pos);
+ * setupWorker(execute, { Position, Velocity });
+ *
+ * // Define query at module scope
+ * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
+ *
+ * function execute(ctx: Context) {
+ *   // Query lazily initializes on first call to current()
+ *   for (const eid of movingEntities.current(ctx)) {
+ *     const pos = Position.read(eid);
+ *     console.log(`Entity ${eid} Position: (${pos.x}, ${pos.y})`);
  *   }
- * }, { Position, Velocity, Dead });
+ * }
  */
-export function query(
-  ctx: Context,
-  builder: (q: QueryBuilder) => QueryBuilder
-): Iterable<number> {
-  const queryBuilder = new QueryBuilder();
-  const configuredBuilder = builder(queryBuilder);
-  const masks = configuredBuilder._build();
-
-  const entityBuffer = ctx.entityBuffer;
-
-  // Return an iterable that yields matching entity IDs
-  return {
-    *[Symbol.iterator]() {
-      const length = entityBuffer.count;
-      for (let entityId = 0; entityId < length; entityId++) {
-        if (
-          entityBuffer.has(entityId) &&
-          entityBuffer.matches(entityId, masks)
-        ) {
-          yield entityId;
-        }
-      }
-    },
-  };
+export function defineQuery(builder: (q: QueryBuilder) => QueryBuilder): Query {
+  return new Query(builder);
 }

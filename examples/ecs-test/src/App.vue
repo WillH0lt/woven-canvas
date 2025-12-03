@@ -14,10 +14,15 @@
 </template>
 
 <script setup lang="ts">
-import { field, World } from "@infinitecanvas/ecs";
+import {
+  defineSystem,
+  defineWorkerSystem,
+  World,
+  type Context,
+} from "@infinitecanvas/ecs";
 import { ref } from "vue";
 
-import * as comps from "./components";
+import * as components from "./components";
 
 interface BlockEntity {
   id: number;
@@ -32,39 +37,39 @@ interface BlockEntity {
 
 const blocks = ref<Record<string, BlockEntity>>({});
 
-// Create world
-const world = new World(comps);
-
-// const Color = world.createComponent({
-//   red: field.uint8(),
-//   green: field.uint8(),
-//   blue: field.uint8(),
-// });
-
-// const Block = world.createComponent({
-//   width: field.float32(),
-//   height: field.float32(),
-// });
+const world = new World(components);
 
 // Create some blocks
 const block1 = world.createEntity();
-world.addComponent(block1, comps.Velocity, { x: 50, y: 50 });
-world.addComponent(block1, comps.Position, { x: 200, y: 200 });
+world.addComponent(block1, components.Velocity, { x: 50, y: 50 });
+world.addComponent(block1, components.Position, { x: 200, y: 200 });
 
-// const block2 = world.createEntity();
-// world.addComponent(block2, comps.Velocity, { x: 75, y: 75 });
-// world.addComponent(block2, comps.Position, { x: 250, y: 250 });
+// Define main thread systems
+const system1 = defineSystem((ctx: Context) => {
+  console.log("System 1 running on main thread");
+});
 
+const system2 = defineSystem((ctx: Context) => {
+  console.log("System 2 running on main thread");
+});
+
+// Define worker system
+const system3 = defineWorkerSystem(
+  new URL("./readerWorker.ts", import.meta.url).href
+);
+
+let frameCount = 0;
 async function loop() {
-  await world.executeInParallel(
-    new URL("./writerWorker.ts", import.meta.url).href
-  );
+  // Execute all systems - main thread systems run in order,
+  // worker systems run in parallel
+  await world.execute(system1, system2, system3);
 
-  await world.executeInParallel(
-    new URL("./readerWorker.ts", import.meta.url).href
-  );
-
-  requestAnimationFrame(loop);
+  frameCount++;
+  if (frameCount < 10) {
+    requestAnimationFrame(loop);
+  } else {
+    console.log("Completed 10 frames");
+  }
 }
 
 loop();
