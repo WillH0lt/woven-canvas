@@ -52,28 +52,6 @@ export class QueryCache {
   }
 
   /**
-   * Create a QueryCache from transferred SharedArrayBuffers
-   * @param denseBuffer - The SharedArrayBuffer for dense array
-   * @param sparseBuffer - The SharedArrayBuffer for sparse array
-   * @param masks - The query masks for matching entities
-   * @returns A new QueryCache wrapping the shared buffers
-   */
-  static fromTransfer(
-    denseBuffer: ArrayBufferLike,
-    sparseBuffer: ArrayBufferLike,
-    masks: QueryMasks
-  ): QueryCache {
-    const instance = Object.create(QueryCache.prototype) as QueryCache;
-    instance.denseBuffer = denseBuffer;
-    instance.sparseBuffer = sparseBuffer;
-    instance.dense = new Uint32Array(denseBuffer);
-    instance.sparse = new Uint32Array(sparseBuffer);
-    instance.masks = masks;
-    instance.maxEntities = instance.sparse.length;
-    return instance;
-  }
-
-  /**
    * Get the dense buffer for transfer to workers
    */
   getDenseBuffer(): ArrayBufferLike {

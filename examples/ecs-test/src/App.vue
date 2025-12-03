@@ -15,6 +15,7 @@
 
 <script setup lang="ts">
 import {
+  defineQuery,
   defineSystem,
   defineWorkerSystem,
   World,
@@ -44,13 +45,20 @@ const block1 = world.createEntity();
 world.addComponent(block1, components.Velocity, { x: 50, y: 50 });
 world.addComponent(block1, components.Position, { x: 200, y: 200 });
 
+const query = defineQuery((q) =>
+  q.with(components.Position, components.Velocity)
+);
+
 // Define main thread systems
 const system1 = defineSystem((ctx: Context) => {
-  console.log("System 1 running on main thread");
-});
+  const entities = query.current(ctx);
+  for (const eid of entities) {
+    const position = components.Position.write(eid);
+    const velocity = components.Velocity.read(eid);
 
-const system2 = defineSystem((ctx: Context) => {
-  console.log("System 2 running on main thread");
+    position.x += velocity.x;
+    position.y += velocity.y;
+  }
 });
 
 // Define worker system
@@ -62,7 +70,7 @@ let frameCount = 0;
 async function loop() {
   // Execute all systems - main thread systems run in order,
   // worker systems run in parallel
-  await world.execute(system1, system2, system3);
+  await world.execute(system1, system3);
 
   frameCount++;
   if (frameCount < 10) {

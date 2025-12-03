@@ -121,7 +121,7 @@ export abstract class Component<T extends ComponentSchema> {
    * @param buffer - The transferred buffer object containing typed arrays
    * @internal
    */
-  initializeFromTransfer(bitmask: number, buffer: ComponentBuffer<T>): void {
+  fromTransfer(bitmask: number, buffer: ComponentBuffer<T>): void {
     if (this._initialized) {
       throw new Error(`Component has already been initialized.`);
     }

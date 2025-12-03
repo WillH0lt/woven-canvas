@@ -93,7 +93,7 @@ function handleMessage(
       for (const [name, comp] of Object.entries(e.data.componentData)) {
         const componentInstance = workerComponents[name];
 
-        componentInstance.initializeFromTransfer(comp.bitmask, comp.buffer);
+        componentInstance.fromTransfer(comp.bitmask, comp.buffer);
         components[name] = componentInstance;
       }
 
