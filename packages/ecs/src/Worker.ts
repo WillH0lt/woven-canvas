@@ -5,6 +5,7 @@ import type {
   WorkerIncomingMessage,
   WorkerSuccessResponse,
   WorkerErrorResponse,
+  ComponentTransferData,
 } from "./types";
 
 /**
@@ -12,50 +13,55 @@ import type {
  *
  * @example
  * // In your worker file (e.g., myWorker.ts):
- * import { defineSystem } from '@infinitecanvas/ecs';
+ * import { setupWorker, query, type WorkerContext } from '@infinitecanvas/ecs';
  * import { Position, Velocity } from './components';
  *
- * defineSystem(self, (ctx) => {
- *   // Your parallel computation here
- *   console.log('Running in worker!');
- *   console.log('Entity buffer available:', ctx.entityBuffer);
- * }, { Position, Velocity });
+ * setupWorker(execute);
+ *
+ * function execute(ctx: WorkerContext) {
+ *   for (const eid of query(ctx, (q) => q.with(Position, Velocity))) {
+ *     const pos = Position.read(eid);
+ *     console.log(`Entity ${eid} Position: (${pos.x}, ${pos.y})`);
+ *   }
+ * }
  */
 
 interface InternalContext {
   context: WorkerContext | null;
   execute: (ctx: WorkerContext) => void | Promise<void>;
+  componentTransferData: ComponentTransferData | null;
 }
 
 let internalContext: InternalContext | null = null;
 
 /**
  * Register a parallel system to run in a web worker.
- * Call this function in your worker file to set up the execution handler and initialize components.
+ * Call this function in your worker file to set up the execution handler.
+ * Components are automatically initialized when first accessed via queries.
  *
- * @param self - The worker's global scope (pass `self`)
  * @param execute - Function to execute when the worker receives a task. Receives a WorkerContext object with entityBuffer.
- * @param components - Record of component instances to initialize in the worker (e.g., { Position, Velocity })
  *
  * @example
+ * import { setupWorker, query, type WorkerContext } from '@infinitecanvas/ecs';
  * import { Position, Velocity } from './components';
  *
- * defineSystem(self, (ctx) => {
- *   // Your system logic here using the context
- *   console.log('Entity buffer:', ctx.entityBuffer);
- * }, { Position, Velocity });
+ * setupWorker(execute);
+ *
+ * function execute(ctx: WorkerContext) {
+ *   for (const eid of query(ctx, (q) => q.with(Position, Velocity))) {
+ *     const pos = Position.read(eid);
+ *     console.log(`Entity ${eid} Position: (${pos.x}, ${pos.y})`);
+ *   }
+ * }
  */
 export function setupWorker(
-  execute: (ctx: WorkerContext) => void | Promise<void>,
-  components: Record<string, Component<any>>
+  execute: (ctx: WorkerContext) => void | Promise<void>
 ): void {
-  // Store component instances for initialization
-  (self as any).__componentInstances = components;
-
   // Initialize internal context
   internalContext = {
     context: null,
     execute,
+    componentTransferData: null,
   };
 
   // Set up message handler for communication with main thread
@@ -85,25 +91,17 @@ function handleMessage(
 
   try {
     if (type === "init") {
-      // Initialize entity buffer if provided
-      const components: Record<string, Component<any>> = {};
-      const workerComponents = (self as any).__componentInstances || {};
-
-      // Initialize component instances in worker with transferred buffers
-      for (const [name, comp] of Object.entries(e.data.componentData)) {
-        const componentInstance = workerComponents[name];
-
-        componentInstance.fromTransfer(comp.bitmask, comp.buffer);
-        components[name] = componentInstance;
-      }
+      // Store component transfer data for lazy initialization
+      internalContext.componentTransferData = e.data.componentData;
 
       internalContext.context = {
         entityBuffer: EntityBuffer.fromTransfer(
           e.data.entitySAB,
-          e.data.entityMetadataSAB
+          e.data.componentCount
         ),
-        components,
+        components: {},
         maxEntities: e.data.maxEntities,
+        componentCount: e.data.componentCount,
         isWorker: true,
       };
       sendResult(self, index);
@@ -134,4 +132,38 @@ function sendResult(self: any, index: number): void {
 function sendError(self: any, index: number, error: string): void {
   const message: WorkerErrorResponse = { index, error };
   self.postMessage(message);
+}
+
+/**
+ * Initialize a component in the worker context from transferred data.
+ * This is called lazily when a component is first accessed via a query.
+ * @internal
+ */
+export function initializeComponentInWorker(
+  component: Component<any>
+): boolean {
+  if (!internalContext?.componentTransferData) {
+    return false;
+  }
+
+  const transferData = internalContext.componentTransferData[component.name];
+  if (!transferData) {
+    console.warn(
+      `Component "${component.name}" not found in transfer data. ` +
+        `Make sure it's registered with the World on the main thread.`
+    );
+    return false;
+  }
+
+  // Initialize the component with the transferred data
+  component.fromTransfer(transferData.componentId, transferData.buffer);
+  return true;
+}
+
+/**
+ * Reset the internal worker state. Only used for testing.
+ * @internal
+ */
+export function __resetWorkerState(): void {
+  internalContext = null;
 }

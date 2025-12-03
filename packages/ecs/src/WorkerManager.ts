@@ -83,7 +83,7 @@ export class WorkerManager {
       for (const [name, component] of Object.entries(ctx.components)) {
         componentData[name] = {
           name,
-          bitmask: component.bitmask,
+          componentId: component.componentId,
           buffer: component.buffer, // Transfer the SharedArrayBuffer-backed typed arrays
         };
       }
@@ -93,10 +93,9 @@ export class WorkerManager {
         type: "init",
         index,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
-        entityMetadataSAB:
-          ctx.entityBuffer.getMetadataBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities: ctx.maxEntities,
+        componentCount: ctx.componentCount,
       };
       worker.postMessage(initMessage);
     });

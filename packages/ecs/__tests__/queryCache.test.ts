@@ -4,9 +4,9 @@ import type { QueryMasks } from "../src/types";
 
 describe("QueryCache", () => {
   const defaultMasks: QueryMasks = {
-    with: 0b0011,
-    without: 0b0100,
-    any: 0b1000,
+    with: new Uint8Array([0b0011]),
+    without: new Uint8Array([0b0100]),
+    any: new Uint8Array([0b1000]),
     tracking: 0,
   };
 
@@ -284,7 +284,7 @@ describe("QueryCache", () => {
 
     it("should provide access to masks", () => {
       const cache = new QueryCache(defaultMasks, 100);
-      const masks = cache.getMasks();
+      const masks = cache.masks;
 
       expect(masks).toEqual(defaultMasks);
     });

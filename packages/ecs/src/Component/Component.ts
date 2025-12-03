@@ -21,18 +21,19 @@ import {
   type Field,
 } from "./fields";
 
-const INITIAL_CAPACITY = 10000;
-
 const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
 /**
  * Component class that uses TypedArrays for efficient memory layout
- * Each component has a unique ID and bit position for fast query matching
+ * Each component has a unique ID for fast query matching
  */
 export abstract class Component<T extends ComponentSchema> {
-  bitmask: number = 0;
-  private _initialized: boolean = false;
+  /** The unique component ID (0-based index) assigned during initialization */
+  componentId: number = -1;
+  name: string;
+
+  private initialized: boolean = false;
 
   private schema: Record<string, FieldDef>;
   private fieldNames: string[];
@@ -56,7 +57,9 @@ export abstract class Component<T extends ComponentSchema> {
    * @param schema - The component schema built using field builders
    * @param id - The unique index assigned by World
    */
-  constructor(schema: T) {
+  constructor(name: string, schema: T) {
+    this.name = name;
+
     this.schema = {};
     this.fieldNames = [];
 
@@ -72,22 +75,18 @@ export abstract class Component<T extends ComponentSchema> {
     this.writableMaster = {} as InferComponentType<T>;
   }
 
-  initialize(id: number): void {
+  initialize(id: number, maxEntities: number): void {
     // Guard against double initialization
-    if (this._initialized) {
+    if (this.initialized) {
       throw new Error(
         `Component has already been initialized. ` +
           `Each component instance can only be registered with one World. ` +
           `If you need multiple worlds, define separate component instances for each.`
       );
     }
-    this._initialized = true;
+    this.initialized = true;
 
-    // Assign unique bit position for bitmask operations (supports up to 31 components)
-    if (id >= 31) {
-      throw new Error(`Component ID ${id} exceeds maximum of 31 components`);
-    }
-    this.bitmask = 1 << id;
+    this.componentId = id;
 
     const bufferProxy: any = {};
 
@@ -96,7 +95,7 @@ export abstract class Component<T extends ComponentSchema> {
       // Get the appropriate handler for this field type
       const field = this.getField(fieldDef.type);
       const { buffer, view } = field.initializeStorage(
-        INITIAL_CAPACITY,
+        maxEntities,
         fieldDef,
         BufferConstructor
       );
@@ -116,17 +115,16 @@ export abstract class Component<T extends ComponentSchema> {
 
   /**
    * Initialize component in a worker context with transferred buffers
-   * @param id - The component ID
-   * @param bitmask - The component bitmask
+   * @param componentId - The component ID
    * @param buffer - The transferred buffer object containing typed arrays
    * @internal
    */
-  fromTransfer(bitmask: number, buffer: ComponentBuffer<T>): void {
-    if (this._initialized) {
+  fromTransfer(componentId: number, buffer: ComponentBuffer<T>): void {
+    if (this.initialized) {
       throw new Error(`Component has already been initialized.`);
     }
-    this._initialized = true;
-    this.bitmask = bitmask;
+    this.initialized = true;
+    this.componentId = componentId;
     this._buffer = buffer;
     this.initializeMasters();
   }
@@ -137,7 +135,6 @@ export abstract class Component<T extends ComponentSchema> {
     }
 
     // Define getters/setters on master instances for each field
-    // Use dynamic references to this.buffer to support array growth
     for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
       const field = this.getField(fieldDef.type);
 
@@ -185,15 +182,6 @@ export abstract class Component<T extends ComponentSchema> {
    * @internal
    */
   from(entityId: number, data: T): void {
-    // Ensure capacity first
-    const firstField = this.fieldNames[0];
-    if (firstField) {
-      const firstArray = (this.buffer as any)[firstField];
-      if (firstArray && entityId >= firstArray.length) {
-        this.growArrays(entityId + 1);
-      }
-    }
-
     // Populate each field's storage array using cached field names
     for (let i = 0; i < this.fieldNames.length; i++) {
       const fieldName = this.fieldNames[i];
@@ -234,34 +222,6 @@ export abstract class Component<T extends ComponentSchema> {
   write(entityId: EntityId): InferComponentType<T> {
     this.writableEntityId = entityId;
     return this.writableMaster;
-  }
-
-  /**
-   * Grow all storage arrays to accommodate more entities
-   * @param minCapacity - The minimum required capacity
-   * @internal
-   */
-  private growArrays(minCapacity: number): void {
-    const firstField = this.fieldNames[0];
-    const firstArray = firstField ? (this.buffer as any)[firstField] : null;
-    const currentCapacity = firstArray ? firstArray.length : INITIAL_CAPACITY;
-    const newCapacity = Math.max(minCapacity, currentCapacity * 2);
-
-    for (const fieldName of this.fieldNames) {
-      const oldArray = (this.buffer as any)[fieldName];
-      const fieldDef = this.schema[fieldName];
-      const field = this.getField(fieldDef.type);
-
-      const { buffer, view } = field.growStorage(
-        oldArray,
-        newCapacity,
-        fieldDef,
-        BufferConstructor
-      );
-
-      this.fieldBuffers.set(fieldName, buffer);
-      (this.buffer as any)[fieldName] = view;
-    }
   }
 }
 
@@ -304,11 +264,12 @@ export abstract class Component<T extends ComponentSchema> {
  * ```
  */
 export function defineComponent<T extends ComponentSchema>(
+  name: string,
   schema: T
 ): Component<T> {
   class DefinedComponent extends Component<T> {
     constructor() {
-      super(schema);
+      super(name, schema);
     }
   }
 

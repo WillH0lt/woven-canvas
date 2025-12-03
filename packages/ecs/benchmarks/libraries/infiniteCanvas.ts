@@ -19,23 +19,19 @@ const library: BenchmarkLibrary = {
   Velocity: null,
   moveSystem: null,
   setup() {
-    this.Position = defineComponent({
+    this.Position = defineComponent("Position", {
       x: field.float32(),
       y: field.float32(),
     });
 
-    this.Velocity = defineComponent({
+    this.Velocity = defineComponent("Velocity", {
       x: field.float32(),
       y: field.float32(),
     });
 
-    this.world = new World(
-      {
-        Position: this.Position,
-        Velocity: this.Velocity,
-      },
-      { maxEntities: 20_000 }
-    );
+    this.world = new World([this.Position, this.Velocity], {
+      maxEntities: 20_000,
+    });
 
     const Position = this.Position;
     const Velocity = this.Velocity;

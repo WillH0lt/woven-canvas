@@ -25,7 +25,7 @@ export class QueryCache {
   private sparseBuffer: ArrayBufferLike;
   private dense: Uint32Array;
   private sparse: Uint32Array;
-  private masks: QueryMasks;
+  private _masks: QueryMasks;
   private maxEntities: number;
 
   /**
@@ -34,7 +34,7 @@ export class QueryCache {
    * @param maxEntities - Maximum number of entities that can be cached
    */
   constructor(masks: QueryMasks, maxEntities: number) {
-    this.masks = masks;
+    this._masks = masks;
     this.maxEntities = maxEntities;
 
     // Dense buffer: count + maxEntities entity IDs
@@ -68,8 +68,8 @@ export class QueryCache {
   /**
    * Get the query masks
    */
-  getMasks(): QueryMasks {
-    return this.masks;
+  get masks(): QueryMasks {
+    return this._masks;
   }
 
   /**

@@ -4,41 +4,41 @@ import { field, defineComponent, World } from "../src";
 describe("Component", () => {
   describe("Component Lifecycle", () => {
     it("should prevent double initialization", () => {
-      const Position = defineComponent({
+      const Position = defineComponent("Position", {
         x: field.float32(),
         y: field.float32(),
       });
 
-      const world1 = new World({ Position });
+      const world1 = new World([Position]);
 
       expect(() => {
-        const world2 = new World({ Position });
+        const world2 = new World([Position]);
       }).toThrow(/already been initialized/);
     });
 
-    it("should assign unique bitmasks to components", () => {
-      const Position = defineComponent({
+    it("should assign unique componentIds to components", () => {
+      const Position = defineComponent("Position", {
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent({
+      const Velocity = defineComponent("Velocity", {
         x: field.float32(),
         y: field.float32(),
       });
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
 
-      expect(Position.bitmask).toBe(1); // 1 << 0
-      expect(Velocity.bitmask).toBe(2); // 1 << 1
+      expect(Position.componentId).toBe(0);
+      expect(Velocity.componentId).toBe(1);
     });
   });
 
   describe("Component Definition", () => {
     it("should create a component with string fields", () => {
-      const User = defineComponent({
+      const User = defineComponent("User", {
         name: field.string().max(50),
         email: field.string().max(100),
       });
-      const world = new World({ User });
+      const world = new World([User]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, User, {
@@ -52,12 +52,12 @@ describe("Component", () => {
     });
 
     it("should create a component with numeric fields", () => {
-      const Position = defineComponent({
+      const Position = defineComponent("Position", {
         x: field.float32(),
         y: field.float32(),
         z: field.float32(),
       });
-      const world = new World({ Position });
+      const world = new World([Position]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Position, { x: 1.5, y: 2.5, z: 3.5 });
@@ -69,13 +69,13 @@ describe("Component", () => {
     });
 
     it("should create a component with mixed field types", () => {
-      const Player = defineComponent({
+      const Player = defineComponent("Player", {
         name: field.string().max(30),
         health: field.uint8(),
         score: field.uint32(),
         speed: field.float32(),
       });
-      const world = new World({ Player });
+      const world = new World([Player]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Player, {
@@ -93,12 +93,12 @@ describe("Component", () => {
     });
 
     it("should support default values", () => {
-      const Config = defineComponent({
+      const Config = defineComponent("Config", {
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
         label: field.string().max(20).default("default"),
       });
-      const world = new World({ Config });
+      const world = new World([Config]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Config, {});
@@ -110,11 +110,11 @@ describe("Component", () => {
     });
 
     it("should override default values when provided", () => {
-      const Config = defineComponent({
+      const Config = defineComponent("Config", {
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
       });
-      const world = new World({ Config });
+      const world = new World([Config]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Config, { enabled: false, maxCount: 50 });
@@ -127,10 +127,10 @@ describe("Component", () => {
 
   describe("Read and Write Operations", () => {
     it("should allow reading and writing component values", () => {
-      const Counter = defineComponent({
+      const Counter = defineComponent("Counter", {
         count: field.uint32(),
       });
-      const world = new World({ Counter });
+      const world = new World([Counter]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Counter, { count: 0 });
@@ -142,10 +142,10 @@ describe("Component", () => {
     });
 
     it("should handle updates without affecting other entities", () => {
-      const Counter = defineComponent({
+      const Counter = defineComponent("Counter", {
         value: field.uint32(),
       });
-      const world = new World({ Counter });
+      const world = new World([Counter]);
 
       const entity1 = world.createEntity();
       const entity2 = world.createEntity();
@@ -161,7 +161,7 @@ describe("Component", () => {
 
   describe("Numeric Field Types", () => {
     it("should support all numeric types with correct ranges", () => {
-      const AllTypes = defineComponent({
+      const AllTypes = defineComponent("AllTypes", {
         u8: field.uint8(),
         u16: field.uint16(),
         u32: field.uint32(),
@@ -171,7 +171,7 @@ describe("Component", () => {
         f32: field.float32(),
         f64: field.float64(),
       });
-      const world = new World({ AllTypes });
+      const world = new World([AllTypes]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, AllTypes, {
@@ -197,7 +197,7 @@ describe("Component", () => {
     });
 
     it("should default numeric fields to 0 when not provided", () => {
-      const AllTypes = defineComponent({
+      const AllTypes = defineComponent("AllTypes", {
         u8: field.uint8(),
         u16: field.uint16(),
         u32: field.uint32(),
@@ -207,7 +207,7 @@ describe("Component", () => {
         f32: field.float32(),
         f64: field.float64(),
       });
-      const world = new World({ AllTypes });
+      const world = new World([AllTypes]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, AllTypes, {});
@@ -226,12 +226,12 @@ describe("Component", () => {
 
   describe("Boolean Field Handling", () => {
     it("should store and retrieve boolean values", () => {
-      const Flags = defineComponent({
+      const Flags = defineComponent("Flags", {
         isActive: field.boolean(),
         isVisible: field.boolean(),
         isEnabled: field.boolean(),
       });
-      const world = new World({ Flags });
+      const world = new World([Flags]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Flags, {
@@ -247,10 +247,10 @@ describe("Component", () => {
     });
 
     it("should default boolean fields to false when not provided", () => {
-      const Flags = defineComponent({
+      const Flags = defineComponent("Flags", {
         flag: field.boolean(),
       });
-      const world = new World({ Flags });
+      const world = new World([Flags]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Flags, {});
@@ -260,10 +260,10 @@ describe("Component", () => {
     });
 
     it("should allow updating boolean values", () => {
-      const Flags = defineComponent({
+      const Flags = defineComponent("Flags", {
         isActive: field.boolean(),
       });
-      const world = new World({ Flags });
+      const world = new World([Flags]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Flags, { isActive: false });
@@ -276,13 +276,13 @@ describe("Component", () => {
 
   describe("TypeScript Type Inference", () => {
     it("should provide correct types for component properties", () => {
-      const TestComponent = defineComponent({
+      const TestComponent = defineComponent("TestComponent", {
         name: field.string().max(20),
         count: field.uint32(),
         ratio: field.float32(),
         enabled: field.boolean(),
       });
-      const world = new World({ TestComponent });
+      const world = new World([TestComponent]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, TestComponent, {
@@ -307,10 +307,10 @@ describe("Component", () => {
 
   describe("String Field Handling", () => {
     it("should default to empty string when not provided", () => {
-      const User = defineComponent({
+      const User = defineComponent("User", {
         name: field.string().max(50),
       });
-      const world = new World({ User });
+      const world = new World([User]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, User, {});
@@ -320,10 +320,10 @@ describe("Component", () => {
     });
 
     it("should handle special characters and unicode", () => {
-      const Data = defineComponent({
+      const Data = defineComponent("Data", {
         text: field.string().max(100),
       });
-      const world = new World({ Data });
+      const world = new World([Data]);
 
       const entityId = world.createEntity();
       const specialString = "Hello! 👋 @#$%^&*() 日本語";
@@ -334,10 +334,10 @@ describe("Component", () => {
     });
 
     it("should handle multiple entities with different strings", () => {
-      const User = defineComponent({
+      const User = defineComponent("User", {
         name: field.string().max(50),
       });
-      const world = new World({ User });
+      const world = new World([User]);
 
       const entity1 = world.createEntity();
       const entity2 = world.createEntity();
@@ -353,10 +353,10 @@ describe("Component", () => {
     });
 
     it("should truncate strings that exceed maxLength", () => {
-      const Data = defineComponent({
+      const Data = defineComponent("Data", {
         shortText: field.string().max(10),
       });
-      const world = new World({ Data });
+      const world = new World([Data]);
 
       const entityId = world.createEntity();
       const longString = "This is a very long string";
@@ -368,10 +368,10 @@ describe("Component", () => {
     });
 
     it("should encode string length in buffer for stateless operation", () => {
-      const User = defineComponent({
+      const User = defineComponent("User", {
         name: field.string().max(50),
       });
-      const world = new World({ User });
+      const world = new World([User]);
 
       const entityId = world.createEntity();
       const testString = "Hello World";
@@ -391,12 +391,12 @@ describe("Component", () => {
   });
   describe("Default Value Handling", () => {
     it("should use defaults for missing fields when defined", () => {
-      const Config = defineComponent({
+      const Config = defineComponent("Config", {
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
         label: field.string().max(20).default("default"),
       });
-      const world = new World({ Config });
+      const world = new World([Config]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Config, {});
@@ -408,12 +408,12 @@ describe("Component", () => {
     });
 
     it("should use type-based fallbacks when no defaults defined", () => {
-      const Entity = defineComponent({
+      const Entity = defineComponent("Entity", {
         name: field.string().max(20),
         count: field.uint32(),
         active: field.boolean(),
       });
-      const world = new World({ Entity });
+      const world = new World([Entity]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Entity, {});
@@ -425,11 +425,11 @@ describe("Component", () => {
     });
 
     it("should prefer provided values over defaults", () => {
-      const Config = defineComponent({
+      const Config = defineComponent("Config", {
         enabled: field.boolean().default(true),
         count: field.uint32().default(10),
       });
-      const world = new World({ Config });
+      const world = new World([Config]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Config, {
@@ -445,10 +445,10 @@ describe("Component", () => {
 
   describe("Binary Field Handling", () => {
     it("should store and retrieve binary data", () => {
-      const BinaryData = defineComponent({
+      const BinaryData = defineComponent("BinaryData", {
         data: field.binary().max(128),
       });
-      const world = new World({ BinaryData });
+      const world = new World([BinaryData]);
 
       const entityId = world.createEntity();
       const testData = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
@@ -461,10 +461,10 @@ describe("Component", () => {
     });
 
     it("should default to empty Uint8Array when not provided", () => {
-      const BinaryData = defineComponent({
+      const BinaryData = defineComponent("BinaryData", {
         data: field.binary().max(128),
       });
-      const world = new World({ BinaryData });
+      const world = new World([BinaryData]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, BinaryData, {});
@@ -476,10 +476,10 @@ describe("Component", () => {
 
     it("should use default binary value when provided", () => {
       const defaultData = new Uint8Array([0xff, 0xfe, 0xfd]);
-      const BinaryData = defineComponent({
+      const BinaryData = defineComponent("BinaryData", {
         data: field.binary().max(128).default(defaultData),
       });
-      const world = new World({ BinaryData });
+      const world = new World([BinaryData]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, BinaryData, {});
@@ -489,10 +489,10 @@ describe("Component", () => {
     });
 
     it("should allow updating binary data", () => {
-      const BinaryData = defineComponent({
+      const BinaryData = defineComponent("BinaryData", {
         data: field.binary().max(128),
       });
-      const world = new World({ BinaryData });
+      const world = new World([BinaryData]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, BinaryData, {
@@ -506,10 +506,10 @@ describe("Component", () => {
     });
 
     it("should return copies to prevent mutations", () => {
-      const BinaryData = defineComponent({
+      const BinaryData = defineComponent("BinaryData", {
         data: field.binary().max(128),
       });
-      const world = new World({ BinaryData });
+      const world = new World([BinaryData]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, BinaryData, {
@@ -528,10 +528,10 @@ describe("Component", () => {
     });
 
     it("should handle multiple entities with different binary data", () => {
-      const BinaryData = defineComponent({
+      const BinaryData = defineComponent("BinaryData", {
         data: field.binary().max(128),
       });
-      const world = new World({ BinaryData });
+      const world = new World([BinaryData]);
 
       const entity1 = world.createEntity();
       const entity2 = world.createEntity();
@@ -550,10 +550,10 @@ describe("Component", () => {
     });
 
     it("should truncate binary data that exceeds maxLength", () => {
-      const BinaryData = defineComponent({
+      const BinaryData = defineComponent("BinaryData", {
         data: field.binary().max(20),
       });
-      const world = new World({ BinaryData });
+      const world = new World([BinaryData]);
 
       const entityId = world.createEntity();
       const largeData = new Uint8Array(100).fill(42);
@@ -565,13 +565,13 @@ describe("Component", () => {
     });
 
     it("should handle binary data in mixed components", () => {
-      const NetworkPacket = defineComponent({
+      const NetworkPacket = defineComponent("NetworkPacket", {
         packetId: field.uint32(),
         payload: field.binary().max(512),
         timestamp: field.float64(),
         sender: field.string().max(50),
       });
-      const world = new World({ NetworkPacket });
+      const world = new World([NetworkPacket]);
 
       const entityId = world.createEntity();
       const payload = new Uint8Array([
@@ -594,10 +594,10 @@ describe("Component", () => {
     });
 
     it("should encode binary length in buffer for stateless operation", () => {
-      const BinaryData = defineComponent({
+      const BinaryData = defineComponent("BinaryData", {
         data: field.binary().max(128),
       });
-      const world = new World({ BinaryData });
+      const world = new World([BinaryData]);
 
       const entityId = world.createEntity();
       const testData = new Uint8Array([10, 20, 30, 40, 50]);
@@ -620,10 +620,10 @@ describe("Component", () => {
 
   describe("Array Field Handling", () => {
     it("should store and retrieve array data", () => {
-      const Polygon = defineComponent({
+      const Polygon = defineComponent("Polygon", {
         pts: field.array(field.float32(), 1024),
       });
-      const world = new World({ Polygon });
+      const world = new World([Polygon]);
 
       const entityId = world.createEntity();
       const points = [1.5, 2.5, 3.5, 4.5, 5.5];
@@ -634,10 +634,10 @@ describe("Component", () => {
     });
 
     it("should default to empty array when not provided", () => {
-      const Polygon = defineComponent({
+      const Polygon = defineComponent("Polygon", {
         pts: field.array(field.float32(), 100),
       });
-      const world = new World({ Polygon });
+      const world = new World([Polygon]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Polygon, {});
@@ -647,10 +647,10 @@ describe("Component", () => {
     });
 
     it("should use default array value when provided", () => {
-      const Polygon = defineComponent({
+      const Polygon = defineComponent("Polygon", {
         pts: field.array(field.float32(), 100).default([1.0, 2.0, 3.0]),
       });
-      const world = new World({ Polygon });
+      const world = new World([Polygon]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Polygon, {});
@@ -660,10 +660,10 @@ describe("Component", () => {
     });
 
     it("should allow updating array data", () => {
-      const Polygon = defineComponent({
+      const Polygon = defineComponent("Polygon", {
         pts: field.array(field.float32(), 100),
       });
-      const world = new World({ Polygon });
+      const world = new World([Polygon]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Polygon, { pts: [1.0, 2.0] });
@@ -676,10 +676,10 @@ describe("Component", () => {
     });
 
     it("should handle multiple entities with different arrays", () => {
-      const Polygon = defineComponent({
+      const Polygon = defineComponent("Polygon", {
         pts: field.array(field.float32(), 100),
       });
-      const world = new World({ Polygon });
+      const world = new World([Polygon]);
 
       const e1 = world.createEntity();
       const e2 = world.createEntity();
@@ -692,10 +692,10 @@ describe("Component", () => {
     });
 
     it("should truncate arrays that exceed maxLength", () => {
-      const Polygon = defineComponent({
+      const Polygon = defineComponent("Polygon", {
         pts: field.array(field.float32(), 5),
       });
-      const world = new World({ Polygon });
+      const world = new World([Polygon]);
 
       const entityId = world.createEntity();
       const largeArray = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
@@ -707,12 +707,12 @@ describe("Component", () => {
     });
 
     it("should support different numeric array types", () => {
-      const MixedArrays = defineComponent({
+      const MixedArrays = defineComponent("MixedArrays", {
         floats: field.array(field.float32(), 10),
         ints: field.array(field.int32(), 10),
         bytes: field.array(field.uint8(), 10),
       });
-      const world = new World({ MixedArrays });
+      const world = new World([MixedArrays]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, MixedArrays, {
@@ -728,13 +728,13 @@ describe("Component", () => {
     });
 
     it("should handle arrays in mixed components", () => {
-      const Shape = defineComponent({
+      const Shape = defineComponent("Shape", {
         id: field.uint32(),
         name: field.string().max(50),
         pts: field.array(field.float32(), 100),
         visible: field.boolean(),
       });
-      const world = new World({ Shape });
+      const world = new World([Shape]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Shape, {
@@ -752,10 +752,10 @@ describe("Component", () => {
     });
 
     it("should store and retrieve string arrays", () => {
-      const Tags = defineComponent({
+      const Tags = defineComponent("Tags", {
         names: field.array(field.string().max(50), 10),
       });
-      const world = new World({ Tags });
+      const world = new World([Tags]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Tags, {
@@ -767,10 +767,10 @@ describe("Component", () => {
     });
 
     it("should store and retrieve boolean arrays", () => {
-      const Flags = defineComponent({
+      const Flags = defineComponent("Flags", {
         bits: field.array(field.boolean(), 8),
       });
-      const world = new World({ Flags });
+      const world = new World([Flags]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Flags, {
@@ -782,10 +782,10 @@ describe("Component", () => {
     });
 
     it("should store and retrieve binary arrays", () => {
-      const Chunks = defineComponent({
+      const Chunks = defineComponent("Chunks", {
         data: field.array(field.binary().max(32), 5),
       });
-      const world = new World({ Chunks });
+      const world = new World([Chunks]);
 
       const entityId = world.createEntity();
       const chunk1 = new Uint8Array([1, 2, 3]);
@@ -801,10 +801,10 @@ describe("Component", () => {
     });
 
     it("should handle empty strings in string arrays", () => {
-      const Tags = defineComponent({
+      const Tags = defineComponent("Tags", {
         names: field.array(field.string().max(50), 5),
       });
-      const world = new World({ Tags });
+      const world = new World([Tags]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Tags, {
@@ -816,12 +816,12 @@ describe("Component", () => {
     });
 
     it("should handle mixed element type arrays in same component", () => {
-      const MixedComponent = defineComponent({
+      const MixedComponent = defineComponent("MixedComponent", {
         numbers: field.array(field.float32(), 10),
         strings: field.array(field.string().max(20), 5),
         flags: field.array(field.boolean(), 8),
       });
-      const world = new World({ MixedComponent });
+      const world = new World([MixedComponent]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, MixedComponent, {
@@ -837,7 +837,7 @@ describe("Component", () => {
     });
 
     it("should use array default when provided for all element types", () => {
-      const Defaults = defineComponent({
+      const Defaults = defineComponent("Defaults", {
         nums: field.array(field.float32(), 10).default([1.0, 2.0, 3.0]),
         strs: field.array(field.string().max(20), 5).default(["a", "b"]),
         flags: field.array(field.boolean(), 8).default([true, false, true]),
@@ -845,7 +845,7 @@ describe("Component", () => {
           .array(field.binary().max(16), 3)
           .default([new Uint8Array([1, 2]), new Uint8Array([3, 4, 5])]),
       });
-      const world = new World({ Defaults });
+      const world = new World([Defaults]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Defaults, {});
@@ -860,13 +860,13 @@ describe("Component", () => {
     });
 
     it("should prefer array default over element type default", () => {
-      const Combo = defineComponent({
+      const Combo = defineComponent("Combo", {
         nums: field.array(field.float32().default(999), 10).default([1.0, 2.0]),
         strs: field
           .array(field.string().max(20).default("ignored"), 5)
           .default(["used"]),
       });
-      const world = new World({ Combo });
+      const world = new World([Combo]);
 
       const entityId = world.createEntity();
       world.addComponent(entityId, Combo, {});

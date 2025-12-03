@@ -12,33 +12,33 @@ describe("Query", () => {
 
   beforeEach(() => {
     // Define test components
-    Position = defineComponent({
+    Position = defineComponent("Position", {
       x: field.float32().default(0),
       y: field.float32().default(0),
     });
 
-    Velocity = defineComponent({
+    Velocity = defineComponent("Velocity", {
       dx: field.float32().default(0),
       dy: field.float32().default(0),
     });
 
-    Health = defineComponent({
+    Health = defineComponent("Health", {
       current: field.uint16().default(100),
       max: field.uint16().default(100),
     });
 
-    Enemy = defineComponent({
+    Enemy = defineComponent("Enemy", {
       damage: field.uint8().default(10),
     });
 
-    Player = defineComponent({
+    Player = defineComponent("Player", {
       score: field.uint32().default(0),
     });
   });
 
   describe("Query - Basic Operations", () => {
     it("should query entities with specific components", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
 
       // Create entities with different component combinations
       const e1 = world.createEntity();
@@ -64,7 +64,7 @@ describe("Query", () => {
     });
 
     it("should query entities with multiple required components", () => {
-      const world = new World({ Position, Velocity, Health });
+      const world = new World([Position, Velocity, Health]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position, { x: 10, y: 20 });
@@ -91,7 +91,7 @@ describe("Query", () => {
     });
 
     it("should query entities without specific components", () => {
-      const world = new World({ Position, Enemy, Player });
+      const world = new World([Position, Enemy, Player]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position, { x: 10, y: 20 });
@@ -117,7 +117,7 @@ describe("Query", () => {
     });
 
     it("should query entities with any of specified components", () => {
-      const world = new World({ Enemy, Player, Health });
+      const world = new World([Enemy, Player, Health]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Enemy);
@@ -141,7 +141,7 @@ describe("Query", () => {
     });
 
     it("should combine with, without, and any clauses", () => {
-      const world = new World({ Position, Velocity, Enemy, Player, Health });
+      const world = new World([Position, Velocity, Enemy, Player, Health]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position);
@@ -177,7 +177,7 @@ describe("Query", () => {
     });
 
     it("should handle empty queries", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
 
       // Create at least one entity so entityBuffer exists
       const e1 = world.createEntity();
@@ -192,7 +192,7 @@ describe("Query", () => {
     });
 
     it("should iterate over query results", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position, { x: 0, y: 0 });
@@ -225,7 +225,7 @@ describe("Query", () => {
 
   describe("Query - Performance", () => {
     it("should efficiently handle large numbers of entities", () => {
-      const world = new World({ Position, Velocity, Health, Enemy });
+      const world = new World([Position, Velocity, Health, Enemy]);
 
       // Create 1000 entities with various component combinations
       const entities = [];
@@ -251,11 +251,11 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Query should be fast with bitmask operations
-      const movingNonEnemyQuery = defineQuery((q) =>
+      const startTime = performance.now();
+      const perfQuery = defineQuery((q) =>
         q.with(Position, Velocity).without(Enemy)
       );
-      const startTime = performance.now();
-      const results = Array.from(movingNonEnemyQuery.current(ctx));
+      const results = Array.from(perfQuery.current(ctx));
       const endTime = performance.now();
 
       // Entities with Position+Velocity but not Enemy
@@ -268,7 +268,7 @@ describe("Query", () => {
     });
 
     it("should handle queries on large entity sets efficiently", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
 
       // Create many entities
       for (let i = 0; i < 5000; i++) {
@@ -281,10 +281,10 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
-      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
       const startTime = performance.now();
       let count = 0;
-      for (const _ of movingQuery.current(ctx)) {
+      const largeQuery = defineQuery((q) => q.with(Position, Velocity));
+      for (const _ of largeQuery.current(ctx)) {
         count++;
       }
       const endTime = performance.now();
@@ -298,7 +298,7 @@ describe("Query", () => {
 
   describe("Query - Component Data Access", () => {
     it("should allow reading component data during iteration", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position, { x: 10, y: 20 });
@@ -310,9 +310,9 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
-      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
       const positions: Array<{ x: number; y: number }> = [];
-      for (const entityId of movingQuery.current(ctx)) {
+      const readQuery = defineQuery((q) => q.with(Position, Velocity));
+      for (const entityId of readQuery.current(ctx)) {
         const pos = Position.read(entityId);
         positions.push({ x: pos.x, y: pos.y });
       }
@@ -323,7 +323,7 @@ describe("Query", () => {
     });
 
     it("should allow writing component data during iteration", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position, { x: 0, y: 0 });
@@ -336,8 +336,8 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Apply velocity to position
-      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
-      for (const entityId of movingQuery.current(ctx)) {
+      const writeQuery = defineQuery((q) => q.with(Position, Velocity));
+      for (const entityId of writeQuery.current(ctx)) {
         const pos = Position.write(entityId);
         const vel = Velocity.read(entityId);
         pos.x += vel.dx;
@@ -353,21 +353,21 @@ describe("Query", () => {
 
   describe("Query - Edge Cases", () => {
     it("should handle queries with no matching entities", () => {
-      const world = new World({ Position, Velocity, Enemy });
+      const world = new World([Position, Velocity, Enemy]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position);
 
       const ctx = world.getContext();
 
-      const enemyQuery = defineQuery((q) => q.with(Enemy));
-      const results = Array.from(enemyQuery.current(ctx));
+      const emptyQuery = defineQuery((q) => q.with(Enemy));
+      const results = Array.from(emptyQuery.current(ctx));
 
       expect(results).toHaveLength(0);
     });
 
     it("should handle queries with all entities matching", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
 
       const entities = [];
       for (let i = 0; i < 10; i++) {
@@ -378,8 +378,8 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
-      const positionQuery = defineQuery((q) => q.with(Position));
-      const results = Array.from(positionQuery.current(ctx));
+      const allMatchQuery = defineQuery((q) => q.with(Position));
+      const results = Array.from(allMatchQuery.current(ctx));
 
       expect(results).toHaveLength(10);
       for (const entity of entities) {
@@ -388,7 +388,7 @@ describe("Query", () => {
     });
 
     it("should handle complex multi-clause queries", () => {
-      const world = new World({ Position, Velocity, Health, Enemy, Player });
+      const world = new World([Position, Velocity, Health, Enemy, Player]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position);
@@ -425,7 +425,7 @@ describe("Query", () => {
     });
 
     it("should handle entity with all components", () => {
-      const world = new World({ Position, Velocity, Health, Enemy, Player });
+      const world = new World([Position, Velocity, Health, Enemy, Player]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position);
@@ -436,20 +436,18 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
-      const positionQuery = defineQuery((q) => q.with(Position));
-      const results1 = Array.from(positionQuery.current(ctx));
+      const query1 = defineQuery((q) => q.with(Position));
+      const results1 = Array.from(query1.current(ctx));
       expect(results1).toContain(e1);
 
-      const allComponentsQuery = defineQuery((q) =>
+      const query2 = defineQuery((q) =>
         q.with(Position, Velocity, Health, Enemy, Player)
       );
-      const results2 = Array.from(allComponentsQuery.current(ctx));
+      const results2 = Array.from(query2.current(ctx));
       expect(results2).toContain(e1);
 
-      const stationaryQuery = defineQuery((q) =>
-        q.with(Position).without(Velocity)
-      );
-      const results3 = Array.from(stationaryQuery.current(ctx));
+      const query3 = defineQuery((q) => q.with(Position).without(Velocity));
+      const results3 = Array.from(query3.current(ctx));
       expect(results3).not.toContain(e1);
     });
   });

@@ -1,10 +1,16 @@
-import { setupWorker, query, type Context } from "@infinitecanvas/ecs";
+import {
+  setupWorker,
+  defineQuery,
+  type WorkerContext,
+} from "@infinitecanvas/ecs";
 import { Position, Velocity } from "./components";
 
-setupWorker(execute, { Position, Velocity });
+setupWorker(execute);
 
-function execute(ctx: Context) {
-  const entities = query(ctx, (q) => q.with(Position, Velocity));
+const entitiesQuery = defineQuery((q) => q.with(Position, Velocity));
+
+function execute(ctx: WorkerContext) {
+  const entities = entitiesQuery.current(ctx);
 
   for (const entityId of entities) {
     const position = Position.write(entityId);

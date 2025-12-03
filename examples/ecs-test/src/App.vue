@@ -38,7 +38,7 @@ interface BlockEntity {
 
 const blocks = ref<Record<string, BlockEntity>>({});
 
-const world = new World(components);
+const world = new World(Object.values(components));
 
 // Create some blocks
 const block1 = world.createEntity();

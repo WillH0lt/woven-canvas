@@ -52,15 +52,19 @@ const physicsSystem = defineWorkerSystem(
 In your worker file (e.g., `physicsWorker.ts`):
 
 ```typescript
-import { setupWorker, query, type Context } from "@infinitecanvas/ecs";
+import {
+  setupWorker,
+  defineQuery,
+  type WorkerContext,
+} from "@infinitecanvas/ecs";
 import { Position, Velocity } from "./components";
 
-setupWorker(execute, { Position, Velocity });
+setupWorker(execute);
 
-function execute(ctx: Context) {
-  const entities = query(ctx, (q) => q.with(Position, Velocity));
+const movingEntities = defineQuery((q) => q.with(Position, Velocity));
 
-  for (const entityId of entities) {
+function execute(ctx: WorkerContext) {
+  for (const entityId of movingEntities.current(ctx)) {
     const pos = Position.write(entityId);
     const vel = Velocity.read(entityId);
     // Heavy computation here
@@ -176,7 +180,6 @@ async execute(...systems: System[]): Promise<void>
 
 ```typescript
 function setupWorker(
-  execute: (ctx: Context) => void | Promise<void>,
-  components: Record<string, Component<any>>
+  execute: (ctx: WorkerContext) => void | Promise<void>
 ): void;
 ```

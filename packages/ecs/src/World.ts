@@ -40,10 +40,7 @@ export class World {
    * });
    * ```
    */
-  constructor(
-    components: Record<string, Component<any>>,
-    options: WorldOptions = {}
-  ) {
+  constructor(components: Component<any>[], options: WorldOptions = {}) {
     const threads =
       options.threads ??
       (typeof navigator !== "undefined"
@@ -52,18 +49,25 @@ export class World {
 
     const maxEntities = options.maxEntities ?? 10_000;
 
+    // Count the number of components
+    const componentCount = Object.keys(components).length;
+
     this.workerManager = new WorkerManager(threads);
     this.pool = Pool.create(maxEntities);
+    this.pool.get(); // Reserve index 0 for EntityBuffer metadata
 
-    // initialize each component
-    for (const component of Object.values(components)) {
-      component.initialize(this.componentIndex++);
+    // initialize each component and build component map
+    const componentMap: Record<string, Component<any>> = {};
+    for (const component of components) {
+      component.initialize(this.componentIndex++, maxEntities);
+      componentMap[component.name] = component;
     }
 
     this.context = {
-      entityBuffer: new EntityBuffer(maxEntities),
-      components,
+      entityBuffer: new EntityBuffer(maxEntities, componentCount),
+      components: componentMap,
       maxEntities,
+      componentCount,
       isWorker: false,
       queries: new Map(),
     };
@@ -99,7 +103,10 @@ export class World {
     component: Component<any>,
     data: any = {}
   ): void {
-    this.context.entityBuffer.addComponentToEntity(entityId, component.bitmask);
+    this.context.entityBuffer.addComponentToEntity(
+      entityId,
+      component.componentId
+    );
     component.from(entityId, data);
 
     // Update query caches - check if entity now matches any queries
@@ -113,7 +120,7 @@ export class World {
 
     this.context.entityBuffer.removeComponentFromEntity(
       entityId,
-      component.bitmask
+      component.componentId
     );
 
     // Update query caches - check if entity no longer matches any queries
@@ -130,7 +137,7 @@ export class World {
       if (cache.has(entityId)) continue;
 
       // Check if entity now matches
-      if (this.context.entityBuffer.matches(entityId, cache.getMasks())) {
+      if (this.context.entityBuffer.matches(entityId, cache.masks)) {
         cache.add(entityId);
       }
     }
@@ -146,7 +153,7 @@ export class World {
       if (!cache.has(entityId)) continue;
 
       // Check if entity no longer matches
-      if (!this.context.entityBuffer.matches(entityId, cache.getMasks())) {
+      if (!this.context.entityBuffer.matches(entityId, cache.masks)) {
         cache.remove(entityId);
       }
     }
@@ -157,7 +164,10 @@ export class World {
       throw new Error(`Entity with ID ${entityId} does not exist.`);
     }
 
-    return this.context.entityBuffer.hasComponent(entityId, component.bitmask);
+    return this.context.entityBuffer.hasComponent(
+      entityId,
+      component.componentId
+    );
   }
 
   /**

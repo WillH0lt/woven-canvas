@@ -10,6 +10,7 @@ export interface BaseContext {
   entityBuffer: EntityBuffer;
   components: Record<string, Component<any>>;
   maxEntities: number;
+  componentCount: number;
 }
 
 /**
@@ -35,13 +36,14 @@ export interface WorkerContext extends BaseContext {
 export type AnyContext = Context | WorkerContext;
 
 /**
- * Interface representing the component masks for query matching
+ * Interface representing the component masks for query matching.
+ * Each mask is a Uint8Array where each element represents 8 component bits.
  */
 export interface QueryMasks {
   tracking: number;
-  with: number;
-  without: number;
-  any: number;
+  with: Uint8Array;
+  without: Uint8Array;
+  any: Uint8Array;
 }
 
 /**
@@ -90,7 +92,7 @@ export type System = MainThreadSystem | WorkerSystem;
 export type ComponentTransferData = {
   [name: string]: {
     name: string;
-    bitmask: number;
+    componentId: number;
     buffer: ComponentBuffer<any>;
   };
 };
@@ -102,9 +104,9 @@ export interface InitMessage {
   type: "init";
   index: number;
   entitySAB: SharedArrayBuffer;
-  entityMetadataSAB: SharedArrayBuffer;
   componentData: ComponentTransferData;
   maxEntities: number;
+  componentCount: number;
 }
 
 /**

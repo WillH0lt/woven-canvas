@@ -5,9 +5,9 @@ import {
 } from "@infinitecanvas/ecs";
 import { Position, Velocity } from "./components";
 
-setupWorker(execute, { Position, Velocity });
+setupWorker(execute);
 
-const entitiesQuery = defineQuery((q) => q.with(Position, Velocity));
+const entitiesQuery = defineQuery((q) => q.with(Position).without(Velocity));
 
 function execute(ctx: WorkerContext) {
   const entities = entitiesQuery.current(ctx);

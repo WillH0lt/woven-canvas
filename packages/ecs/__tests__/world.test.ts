@@ -8,52 +8,53 @@ describe("World", () => {
 
   beforeEach(() => {
     // Define test components
-    Position = defineComponent({
+    Position = defineComponent("Position", {
       x: field.float32().default(0),
       y: field.float32().default(0),
     });
 
-    Velocity = defineComponent({
+    Velocity = defineComponent("Velocity", {
       dx: field.float32().default(0),
       dy: field.float32().default(0),
     });
 
-    Health = defineComponent({
+    Health = defineComponent("Health", {
       current: field.uint16().default(100),
       max: field.uint16().default(100),
     });
   });
 
   describe("World Creation", () => {
-    it("should initialize components with unique bitmasks", () => {
-      new World({ Position, Velocity, Health });
-      expect(Position.bitmask).toBe(1); // 1 << 0
-      expect(Velocity.bitmask).toBe(2); // 1 << 1
-      expect(Health.bitmask).toBe(4); // 1 << 2
+    it("should initialize components with unique componentIds", () => {
+      new World([Position, Velocity, Health]);
+      expect(Position.componentId).toBe(0);
+      expect(Velocity.componentId).toBe(1);
+      expect(Health.componentId).toBe(2);
     });
   });
 
   describe("Entity Management", () => {
     it("should create entities", () => {
-      const world = new World({});
+      const world = new World([]);
       const eid = world.createEntity();
 
       expect(typeof eid).toBe("number");
     });
 
     it("should create multiple entities with sequential IDs", () => {
-      const world = new World({});
+      const world = new World([]);
       const e1 = world.createEntity();
       const e2 = world.createEntity();
       const e3 = world.createEntity();
 
-      expect(e1).toBe(0);
-      expect(e2).toBe(1);
-      expect(e3).toBe(2);
+      // Entity IDs start at 1 (index 0 is reserved for buffer metadata)
+      expect(e1).toBe(1);
+      expect(e2).toBe(2);
+      expect(e3).toBe(3);
     });
 
     it("should remove entities", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
       const entity = world.createEntity();
       world.addComponent(entity, Position, { x: 10, y: 20 });
 
@@ -65,7 +66,7 @@ describe("World", () => {
 
   describe("Component Operations", () => {
     it("should add components to entities", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
       const entity = world.createEntity();
 
       world.addComponent(entity, Position, { x: 10, y: 20 });
@@ -76,7 +77,7 @@ describe("World", () => {
     });
 
     it("should add components with default values", () => {
-      const world = new World({ Health });
+      const world = new World([Health]);
       const entity = world.createEntity();
 
       world.addComponent(entity, Health, {});
@@ -87,7 +88,7 @@ describe("World", () => {
     });
 
     it("should remove components from entities", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
       const entity = world.createEntity();
 
       world.addComponent(entity, Position, { x: 10, y: 20 });
@@ -103,7 +104,7 @@ describe("World", () => {
     });
 
     it("should check for component existence", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
       const entity = world.createEntity();
 
       expect(world.hasComponent(entity, Position)).toBe(false);
@@ -115,7 +116,7 @@ describe("World", () => {
     });
 
     it("should throw when checking component on non-existent entity", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
 
       expect(() => world.hasComponent(999, Position)).toThrow(
         "Entity with ID 999 does not exist"
@@ -123,7 +124,7 @@ describe("World", () => {
     });
 
     it("should throw when removing component from non-existent entity", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
 
       expect(() => world.removeComponent(999, Position)).toThrow(
         "Entity with ID 999 does not exist"
@@ -133,7 +134,7 @@ describe("World", () => {
 
   describe("Component Data Access", () => {
     it("should read component data", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
       const entity = world.createEntity();
       world.addComponent(entity, Position, { x: 100, y: 200 });
 
@@ -144,7 +145,7 @@ describe("World", () => {
     });
 
     it("should write component data", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
       const entity = world.createEntity();
       world.addComponent(entity, Position, { x: 0, y: 0 });
 
@@ -157,7 +158,7 @@ describe("World", () => {
     });
 
     it("should handle multiple components per entity", () => {
-      const world = new World({ Position, Velocity, Health });
+      const world = new World([Position, Velocity, Health]);
       const entity = world.createEntity();
 
       world.addComponent(entity, Position, { x: 100, y: 200 });
@@ -177,7 +178,7 @@ describe("World", () => {
     });
 
     it("should update component values independently", () => {
-      const world = new World({ Position, Velocity });
+      const world = new World([Position, Velocity]);
       const entity = world.createEntity();
 
       world.addComponent(entity, Position, { x: 0, y: 0 });
@@ -200,7 +201,7 @@ describe("World", () => {
 
   describe("Multiple Entities", () => {
     it("should handle multiple entities with different component combinations", () => {
-      const world = new World({ Position, Velocity, Health });
+      const world = new World([Position, Velocity, Health]);
 
       const e1 = world.createEntity();
       world.addComponent(e1, Position, { x: 10, y: 20 });
@@ -227,7 +228,7 @@ describe("World", () => {
     });
 
     it("should keep entity data isolated", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
 
       const e1 = world.createEntity();
       const e2 = world.createEntity();
@@ -244,7 +245,7 @@ describe("World", () => {
 
   describe("World Disposal", () => {
     it("should dispose of world resources", () => {
-      const world = new World({ Position });
+      const world = new World([Position]);
 
       const entity = world.createEntity();
       world.addComponent(entity, Position, { x: 10, y: 20 });

@@ -1,6 +1,43 @@
 import type { Component } from "./Component";
 import type { AnyContext, Context, QueryMasks } from "./types";
 import { QueryCache } from "./QueryCache";
+import { initializeComponentInWorker } from "./Worker";
+
+/**
+ * Helper to create an empty mask array
+ */
+function createEmptyMask(bytes: number): Uint8Array {
+  return new Uint8Array(bytes);
+}
+
+/**
+ * Helper to set a component bit in a mask array
+ * Component bits are packed 8 per byte
+ */
+function setComponentBit(mask: Uint8Array, componentId: number): void {
+  const byteIndex = Math.floor(componentId / 8);
+  const bitIndex = componentId % 8;
+
+  if (byteIndex < mask.length) {
+    mask[byteIndex] |= 1 << bitIndex;
+  }
+}
+
+/**
+ * Helper to generate a hash string from a mask
+ */
+function maskToHash(mask: Uint8Array): string {
+  return Array.from(mask).join(",");
+}
+
+/**
+ * Helper to generate a hash string from a QueryMasks object
+ */
+function masksToHash(masks: QueryMasks): string {
+  return `${maskToHash(masks.with)}:${maskToHash(masks.without)}:${maskToHash(
+    masks.any
+  )}`;
+}
 
 /**
  * A lazily-initialized query that caches matching entities.
@@ -23,12 +60,21 @@ export class Query {
   /**
    * Build and cache the query masks (lazy initialization)
    */
-  private ensureMasks(): void {
+  private ensureMasks(ctx: AnyContext): void {
     if (this.masks === null) {
-      const queryBuilder = new QueryBuilder();
+      const queryBuilder = new QueryBuilder(ctx.componentCount);
       const configuredBuilder = this.builder(queryBuilder);
+
+      // Initialize components before building masks
+      for (const component of configuredBuilder._getComponents()) {
+        // In workers, lazily initialize components that haven't been initialized yet
+        if (ctx.isWorker && component.componentId === -1) {
+          initializeComponentInWorker(component);
+        }
+      }
+
       this.masks = configuredBuilder._build();
-      this.hash = `${this.masks.with}:${this.masks.without}:${this.masks.any}`;
+      this.hash = masksToHash(this.masks);
     }
   }
 
@@ -45,8 +91,8 @@ export class Query {
     } else {
       // Create new query cache
       cache = new QueryCache(this.masks, ctx.maxEntities);
-      // Populate with matching entities
-      for (let i = 0; i < ctx.entityBuffer.length; i++) {
+      // Populate with matching entities (start at 1, index 0 is reserved for length)
+      for (let i = 1; i < ctx.entityBuffer.length; i++) {
         if (ctx.entityBuffer.matches(i, this.masks)) {
           cache.add(i);
         }
@@ -72,7 +118,8 @@ export class Query {
     // Allocate max possible size, then return subarray of actual matches
     const results = new Uint32Array(ctx.maxEntities);
     let count = 0;
-    for (let i = 0; i < ctx.entityBuffer.length; i++) {
+    // Start at 1, index 0 is reserved for length
+    for (let i = 1; i < ctx.entityBuffer.length; i++) {
       if (ctx.entityBuffer.matches(i, this.masks)) {
         results[count++] = i;
       }
@@ -91,7 +138,7 @@ export class Query {
    */
   current(ctx: AnyContext): Uint32Array {
     // Lazily initialize masks on first use
-    this.ensureMasks();
+    this.ensureMasks(ctx);
 
     // Workers calculate results fresh each time (no caching)
     if (ctx.isWorker) {
@@ -109,13 +156,31 @@ export class Query {
 
 /**
  * Query builder for filtering entities based on component composition
- * Uses bitmask operations for efficient matching
+ * Uses Uint8Array bitmask operations for efficient matching (8 components per byte)
  */
 export class QueryBuilder {
-  private withMask: number = 0;
-  private withoutMask: number = 0;
-  private anyMask: number = 0;
+  private withMask: Uint8Array;
+  private withoutMask: Uint8Array;
+  private anyMask: Uint8Array;
   private trackingMask: number = 0;
+  private components: Component<any>[] = [];
+
+  constructor(componentCount: number) {
+    const bytes = Math.ceil(componentCount / 8);
+
+    this.withMask = createEmptyMask(bytes);
+    this.withoutMask = createEmptyMask(bytes);
+    this.anyMask = createEmptyMask(bytes);
+  }
+
+  /**
+   * Track a component used in the query
+   */
+  private trackComponent(component: Component<any>): void {
+    if (!this.components.includes(component)) {
+      this.components.push(component);
+    }
+  }
 
   /**
    * Require entities to have all of the specified components
@@ -124,7 +189,8 @@ export class QueryBuilder {
    */
   with(...components: Component<any>[]): this {
     for (const component of components) {
-      this.withMask |= component.bitmask;
+      this.trackComponent(component);
+      setComponentBit(this.withMask, component.componentId);
     }
     return this;
   }
@@ -136,7 +202,8 @@ export class QueryBuilder {
    */
   without(...components: Component<any>[]): this {
     for (const component of components) {
-      this.withoutMask |= component.bitmask;
+      this.trackComponent(component);
+      setComponentBit(this.withoutMask, component.componentId);
     }
     return this;
   }
@@ -148,7 +215,8 @@ export class QueryBuilder {
    */
   any(...components: Component<any>[]): this {
     for (const component of components) {
-      this.anyMask |= component.bitmask;
+      this.trackComponent(component);
+      setComponentBit(this.anyMask, component.componentId);
     }
     return this;
   }
@@ -162,11 +230,22 @@ export class QueryBuilder {
    */
   withTracked(...components: Component<any>[]): this {
     for (const component of components) {
-      const mask = component.bitmask;
-      this.withMask |= mask;
-      this.trackingMask |= mask;
+      this.trackComponent(component);
+      setComponentBit(this.withMask, component.componentId);
+      // tracking still uses single number (legacy behavior for now)
+      if (component.componentId < 31) {
+        this.trackingMask |= 1 << component.componentId;
+      }
     }
     return this;
+  }
+
+  /**
+   * Get all components used in this query
+   * @internal
+   */
+  _getComponents(): Component<any>[] {
+    return this.components;
   }
 
   /**
@@ -181,15 +260,6 @@ export class QueryBuilder {
       any: this.anyMask,
     };
   }
-
-  /**
-   * Get a unique hash key for this query configuration
-   * Used to look up cached queries
-   * @internal
-   */
-  _getHash(): string {
-    return `${this.withMask}:${this.withoutMask}:${this.anyMask}`;
-  }
 }
 
 /**
@@ -203,7 +273,7 @@ export class QueryBuilder {
  * import { setupWorker, defineQuery, type WorkerContext } from "@infinitecanvas/ecs";
  * import { Position, Velocity } from "./components";
  *
- * setupWorker(execute, { Position, Velocity });
+ * setupWorker(execute);
  *
  * // Define query at module scope
  * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
