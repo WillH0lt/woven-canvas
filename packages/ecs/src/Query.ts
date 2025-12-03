@@ -60,18 +60,25 @@ export class Query {
   /**
    * Build and cache the query masks (lazy initialization)
    */
-  private ensureMasks(ctx: AnyContext): void {
+  private lazilyInitializeMasks(ctx: AnyContext): void {
     if (this.masks === null) {
-      const queryBuilder = new QueryBuilder(ctx.componentCount);
-      const configuredBuilder = this.builder(queryBuilder);
+      if (ctx.isWorker) {
+        // collect components that need initialization
+        const tempBuilder = new QueryBuilder(ctx.componentCount);
+        const configuredTempBuilder = this.builder(tempBuilder);
 
-      // Initialize components before building masks
-      for (const component of configuredBuilder._getComponents()) {
-        // In workers, lazily initialize components that haven't been initialized yet
-        if (ctx.isWorker && component.componentId === -1) {
-          initializeComponentInWorker(component);
+        // Initialize components BEFORE building masks (important for workers)
+        for (const component of configuredTempBuilder._getComponents()) {
+          // In workers, lazily initialize components that haven't been initialized yet
+          if (ctx.isWorker && component.componentId === -1) {
+            initializeComponentInWorker(component);
+          }
         }
       }
+
+      // build masks with correct componentIds
+      const queryBuilder = new QueryBuilder(ctx.componentCount);
+      const configuredBuilder = this.builder(queryBuilder);
 
       this.masks = configuredBuilder._build();
       this.hash = masksToHash(this.masks);
@@ -138,7 +145,7 @@ export class Query {
    */
   current(ctx: AnyContext): Uint32Array {
     // Lazily initialize masks on first use
-    this.ensureMasks(ctx);
+    this.lazilyInitializeMasks(ctx);
 
     // Workers calculate results fresh each time (no caching)
     if (ctx.isWorker) {
@@ -236,6 +243,23 @@ export class QueryBuilder {
       if (component.componentId < 31) {
         this.trackingMask |= 1 << component.componentId;
       }
+    }
+    return this;
+  }
+
+  /**
+   * Declare components that should be initialized in workers but are not part of the query criteria.
+   * This is useful when you need to read/write components that aren't used for filtering entities.
+   * @param components - Components to initialize in workers (does not affect query matching)
+   * @returns This query builder for chaining
+   *
+   * @example
+   * // Query for entities with Velocity, but also access Position component
+   * const query = defineQuery((q) => q.any(Velocity).using(Position));
+   */
+  using(...components: Component<any>[]): this {
+    for (const component of components) {
+      this.trackComponent(component);
     }
     return this;
   }

@@ -207,6 +207,13 @@ export abstract class Component<T extends ComponentSchema> {
    * @returns The readonly master object with the component's field values
    */
   read(entityId: EntityId): Readonly<InferComponentType<T>> {
+    if (!this.initialized) {
+      throw new Error(
+        `Component "${this.name}" has not been initialized. Ensure it was passed to the World constructor. ` +
+          `If using in a worker, make sure the component is included in a query and the query has run before accessing.`
+      );
+    }
+
     this.readonlyEntityId = entityId;
     return this.readonlyMaster;
   }
