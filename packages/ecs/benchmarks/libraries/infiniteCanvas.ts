@@ -49,6 +49,7 @@ const library: BenchmarkLibrary = {
       const velY = Velocity.buffer.y;
 
       const particles = query.current(ctx);
+      // console.log(`Updating ${particles.length} moving entities`);
       for (let i = 0; i < particles.length; i++) {
         const eid = particles[i];
         posX[eid] += velX[eid];

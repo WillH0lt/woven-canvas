@@ -835,5 +835,45 @@ describe("Component", () => {
       expect(result.strings).toEqual(["a", "b", "c"]);
       expect(result.flags).toEqual([true, false, true]);
     });
+
+    it("should use array default when provided for all element types", () => {
+      const Defaults = defineComponent({
+        nums: field.array(field.float32(), 10).default([1.0, 2.0, 3.0]),
+        strs: field.array(field.string().max(20), 5).default(["a", "b"]),
+        flags: field.array(field.boolean(), 8).default([true, false, true]),
+        bins: field
+          .array(field.binary().max(16), 3)
+          .default([new Uint8Array([1, 2]), new Uint8Array([3, 4, 5])]),
+      });
+      const world = new World({ Defaults });
+
+      const entityId = world.createEntity();
+      world.addComponent(entityId, Defaults, {});
+
+      const result = Defaults.read(entityId);
+      expect(result.nums).toEqual([1.0, 2.0, 3.0]);
+      expect(result.strs).toEqual(["a", "b"]);
+      expect(result.flags).toEqual([true, false, true]);
+      expect(result.bins.length).toBe(2);
+      expect(Array.from(result.bins[0])).toEqual([1, 2]);
+      expect(Array.from(result.bins[1])).toEqual([3, 4, 5]);
+    });
+
+    it("should prefer array default over element type default", () => {
+      const Combo = defineComponent({
+        nums: field.array(field.float32().default(999), 10).default([1.0, 2.0]),
+        strs: field
+          .array(field.string().max(20).default("ignored"), 5)
+          .default(["used"]),
+      });
+      const world = new World({ Combo });
+
+      const entityId = world.createEntity();
+      world.addComponent(entityId, Combo, {});
+
+      const result = Combo.read(entityId);
+      expect(result.nums).toEqual([1.0, 2.0]);
+      expect(result.strs).toEqual(["used"]);
+    });
   });
 });

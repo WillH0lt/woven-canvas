@@ -96,6 +96,7 @@ export class WorkerManager {
         entityMetadataSAB:
           ctx.entityBuffer.getMetadataBuffer() as SharedArrayBuffer,
         componentData,
+        maxEntities: ctx.maxEntities,
       };
       worker.postMessage(initMessage);
     });

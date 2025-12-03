@@ -1,14 +1,17 @@
 import type { Component } from "./Component";
-import type { Context, QueryMasks } from "./types";
+import type { AnyContext, Context, QueryMasks } from "./types";
 import { QueryCache } from "./QueryCache";
 
 /**
  * A lazily-initialized query that caches matching entities.
  * Created via defineQuery() and connects to the query cache on first use.
+ * On the main thread, results are cached. On workers, results are calculated fresh each time.
  */
 export class Query {
   private cache: QueryCache | null = null;
   private readonly builder: (q: QueryBuilder) => QueryBuilder;
+  private masks: QueryMasks | null = null;
+  private hash: string | null = null;
 
   /**
    * @internal
@@ -17,30 +20,41 @@ export class Query {
     this.builder = builder;
   }
 
-  private createCache(ctx: Context): QueryCache {
-    const queryBuilder = new QueryBuilder();
-    const configuredBuilder = this.builder(queryBuilder);
-    const masks = configuredBuilder._build();
-    const hash = configuredBuilder._getHash();
+  /**
+   * Build and cache the query masks (lazy initialization)
+   */
+  private ensureMasks(): void {
+    if (this.masks === null) {
+      const queryBuilder = new QueryBuilder();
+      const configuredBuilder = this.builder(queryBuilder);
+      this.masks = configuredBuilder._build();
+      this.hash = `${this.masks.with}:${this.masks.without}:${this.masks.any}`;
+    }
+  }
 
+  private createCache(ctx: Context): QueryCache {
     let cache: QueryCache;
 
+    if (!this.masks || !this.hash) {
+      throw new Error("Query masks or hash not initialized");
+    }
+
     // Check if query already exists in context cache
-    if (ctx.queryCache?.has(hash)) {
-      cache = ctx.queryCache.get(hash)!;
+    if (ctx.queries?.has(this.hash)) {
+      cache = ctx.queries.get(this.hash)!;
     } else {
       // Create new query cache
-      cache = new QueryCache(masks, ctx.maxEntities);
+      cache = new QueryCache(this.masks, ctx.maxEntities);
       // Populate with matching entities
       for (let i = 0; i < ctx.entityBuffer.length; i++) {
-        if (ctx.entityBuffer.has(i) && ctx.entityBuffer.matches(i, masks)) {
+        if (ctx.entityBuffer.matches(i, this.masks)) {
           cache.add(i);
         }
       }
 
       // Store in context cache if available
-      if (ctx.queryCache) {
-        ctx.queryCache.set(hash, cache);
+      if (ctx.queries) {
+        ctx.queries.set(this.hash, cache);
       }
     }
 
@@ -48,14 +62,43 @@ export class Query {
   }
 
   /**
-   * Get the current matching entities from the query cache.
-   * On first call, this will lazily initialize or connect to the cached query.
+   * Calculate matching entities without caching (for workers)
+   */
+  private calculateResults(ctx: AnyContext): Uint32Array {
+    if (!this.masks) {
+      throw new Error("Query masks not initialized");
+    }
+
+    // Allocate max possible size, then return subarray of actual matches
+    const results = new Uint32Array(ctx.maxEntities);
+    let count = 0;
+    for (let i = 0; i < ctx.entityBuffer.length; i++) {
+      if (ctx.entityBuffer.matches(i, this.masks)) {
+        results[count++] = i;
+      }
+    }
+
+    return results.subarray(0, count);
+  }
+
+  /**
+   * Get the current matching entities.
+   * On the main thread, results are cached for efficiency.
+   * On workers, results are calculated fresh each call.
    *
    * @param ctx - The context object containing the entity buffer and query cache
-   * @returns An iterable of entity IDs matching the query criteria
+   * @returns An array of entity IDs matching the query criteria
    */
-  current(ctx: Context): Uint32Array {
-    // Lazy initialization - connect to or create the cache on first use
+  current(ctx: AnyContext): Uint32Array {
+    // Lazily initialize masks on first use
+    this.ensureMasks();
+
+    // Workers calculate results fresh each time (no caching)
+    if (ctx.isWorker) {
+      return this.calculateResults(ctx);
+    }
+
+    // Main thread uses cached results
     if (this.cache === null) {
       this.cache = this.createCache(ctx);
     }
@@ -157,7 +200,7 @@ export class QueryBuilder {
  * @returns A Query object with a current(ctx) method to get matching entities
  *
  * @example
- * import { setupWorker, defineQuery, type Context } from "@infinitecanvas/ecs";
+ * import { setupWorker, defineQuery, type WorkerContext } from "@infinitecanvas/ecs";
  * import { Position, Velocity } from "./components";
  *
  * setupWorker(execute, { Position, Velocity });
@@ -165,7 +208,7 @@ export class QueryBuilder {
  * // Define query at module scope
  * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
  *
- * function execute(ctx: Context) {
+ * function execute(ctx: WorkerContext) {
  *   // Query lazily initializes on first call to current()
  *   for (const eid of movingEntities.current(ctx)) {
  *     const pos = Position.read(eid);

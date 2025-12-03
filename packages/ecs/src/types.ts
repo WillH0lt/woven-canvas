@@ -4,15 +4,35 @@ import type { ComponentBuffer } from "./Component/types";
 import type { QueryCache } from "./QueryCache";
 
 /**
- * Context object passed to parallel system execution functions.
- * Contains the entity buffer view for querying and accessing entity data within workers.
+ * Base context properties shared between main thread and worker contexts.
  */
-export interface Context {
+export interface BaseContext {
   entityBuffer: EntityBuffer;
   components: Record<string, Component<any>>;
-  queryCache: Map<string, QueryCache>;
   maxEntities: number;
 }
+
+/**
+ * Context object for main thread system execution.
+ * Contains the entity buffer and components for querying and accessing entity data.
+ */
+export interface Context extends BaseContext {
+  isWorker: false;
+  queries: Map<string, QueryCache>;
+}
+
+/**
+ * Context object for worker thread system execution.
+ * Contains the entity buffer view for querying and accessing entity data within workers.
+ */
+export interface WorkerContext extends BaseContext {
+  isWorker: true;
+}
+
+/**
+ * Union type for any context (main thread or worker).
+ */
+export type AnyContext = Context | WorkerContext;
 
 /**
  * Interface representing the component masks for query matching
@@ -30,9 +50,14 @@ export interface QueryMasks {
 export type EntityId = number;
 
 /**
- * System execution function signature
+ * System execution function signature for main thread systems
  */
 export type SystemFunction = (ctx: Context) => void;
+
+/**
+ * System execution function signature for worker systems
+ */
+export type WorkerSystemFunction = (ctx: WorkerContext) => void;
 
 /**
  * Base system interface
@@ -79,6 +104,7 @@ export interface InitMessage {
   entitySAB: SharedArrayBuffer;
   entityMetadataSAB: SharedArrayBuffer;
   componentData: ComponentTransferData;
+  maxEntities: number;
 }
 
 /**

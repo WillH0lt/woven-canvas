@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { field, defineComponent, World, query } from "../src";
+import { field, defineComponent, World, defineQuery } from "../src";
 import type { Context } from "../src";
 
 describe("Query", () => {
@@ -54,7 +54,8 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Query for entities with Position
-      const results = Array.from(query(ctx, (q) => q.with(Position)));
+      const positionQuery = defineQuery((q) => q.with(Position));
+      const results = Array.from(positionQuery.current(ctx));
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e1);
@@ -80,7 +81,8 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Query for entities with both Position AND Velocity
-      const results = Array.from(query(ctx, (q) => q.with(Position, Velocity)));
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+      const results = Array.from(movingQuery.current(ctx));
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e1);
@@ -105,9 +107,8 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Query for Position entities that are NOT enemies
-      const results = Array.from(
-        query(ctx, (q) => q.with(Position).without(Enemy))
-      );
+      const nonEnemyQuery = defineQuery((q) => q.with(Position).without(Enemy));
+      const results = Array.from(nonEnemyQuery.current(ctx));
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e2);
@@ -130,7 +131,8 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Query for entities that are either Enemy OR Player
-      const results = Array.from(query(ctx, (q) => q.any(Enemy, Player)));
+      const characterQuery = defineQuery((q) => q.any(Enemy, Player));
+      const results = Array.from(characterQuery.current(ctx));
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e1);
@@ -162,9 +164,10 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Query for: Position AND (Player OR Enemy) AND NOT Velocity
-      const results = Array.from(
-        query(ctx, (q) => q.with(Position).any(Player, Enemy).without(Velocity))
+      const complexQuery = defineQuery((q) =>
+        q.with(Position).any(Player, Enemy).without(Velocity)
       );
+      const results = Array.from(complexQuery.current(ctx));
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e2);
@@ -182,7 +185,8 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
-      const results = Array.from(query(ctx, (q) => q.with(Position)));
+      const positionQuery = defineQuery((q) => q.with(Position));
+      const results = Array.from(positionQuery.current(ctx));
 
       expect(results).toHaveLength(0);
     });
@@ -201,8 +205,9 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Use query in a for...of loop
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
       let count = 0;
-      for (const entityId of query(ctx, (q) => q.with(Position, Velocity))) {
+      for (const entityId of movingQuery.current(ctx)) {
         count++;
         const pos = Position.write(entityId);
         const vel = Velocity.read(entityId);
@@ -246,10 +251,11 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Query should be fast with bitmask operations
-      const startTime = performance.now();
-      const results = Array.from(
-        query(ctx, (q) => q.with(Position, Velocity).without(Enemy))
+      const movingNonEnemyQuery = defineQuery((q) =>
+        q.with(Position, Velocity).without(Enemy)
       );
+      const startTime = performance.now();
+      const results = Array.from(movingNonEnemyQuery.current(ctx));
       const endTime = performance.now();
 
       // Entities with Position+Velocity but not Enemy
@@ -275,9 +281,10 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
       const startTime = performance.now();
       let count = 0;
-      for (const _ of query(ctx, (q) => q.with(Position, Velocity))) {
+      for (const _ of movingQuery.current(ctx)) {
         count++;
       }
       const endTime = performance.now();
@@ -303,8 +310,9 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
       const positions: Array<{ x: number; y: number }> = [];
-      for (const entityId of query(ctx, (q) => q.with(Position, Velocity))) {
+      for (const entityId of movingQuery.current(ctx)) {
         const pos = Position.read(entityId);
         positions.push({ x: pos.x, y: pos.y });
       }
@@ -328,7 +336,8 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Apply velocity to position
-      for (const entityId of query(ctx, (q) => q.with(Position, Velocity))) {
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+      for (const entityId of movingQuery.current(ctx)) {
         const pos = Position.write(entityId);
         const vel = Velocity.read(entityId);
         pos.x += vel.dx;
@@ -351,7 +360,8 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
-      const results = Array.from(query(ctx, (q) => q.with(Enemy)));
+      const enemyQuery = defineQuery((q) => q.with(Enemy));
+      const results = Array.from(enemyQuery.current(ctx));
 
       expect(results).toHaveLength(0);
     });
@@ -368,7 +378,8 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
-      const results = Array.from(query(ctx, (q) => q.with(Position)));
+      const positionQuery = defineQuery((q) => q.with(Position));
+      const results = Array.from(positionQuery.current(ctx));
 
       expect(results).toHaveLength(10);
       for (const entity of entities) {
@@ -401,11 +412,10 @@ describe("Query", () => {
       const ctx = world.getContext();
 
       // Query: Position AND Health AND (Player OR Enemy) AND NOT Velocity
-      const results = Array.from(
-        query(ctx, (q) =>
-          q.with(Position, Health).any(Player, Enemy).without(Velocity)
-        )
+      const complexQuery = defineQuery((q) =>
+        q.with(Position, Health).any(Player, Enemy).without(Velocity)
       );
+      const results = Array.from(complexQuery.current(ctx));
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e1);
@@ -426,17 +436,20 @@ describe("Query", () => {
 
       const ctx = world.getContext();
 
-      const results1 = Array.from(query(ctx, (q) => q.with(Position)));
+      const positionQuery = defineQuery((q) => q.with(Position));
+      const results1 = Array.from(positionQuery.current(ctx));
       expect(results1).toContain(e1);
 
-      const results2 = Array.from(
-        query(ctx, (q) => q.with(Position, Velocity, Health, Enemy, Player))
+      const allComponentsQuery = defineQuery((q) =>
+        q.with(Position, Velocity, Health, Enemy, Player)
       );
+      const results2 = Array.from(allComponentsQuery.current(ctx));
       expect(results2).toContain(e1);
 
-      const results3 = Array.from(
-        query(ctx, (q) => q.with(Position).without(Velocity))
+      const stationaryQuery = defineQuery((q) =>
+        q.with(Position).without(Velocity)
       );
+      const results3 = Array.from(stationaryQuery.current(ctx));
       expect(results3).not.toContain(e1);
     });
   });

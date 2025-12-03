@@ -26,9 +26,6 @@ export class World {
   private workerManager: WorkerManager;
   private pool: Pool;
   private context: Context;
-  private maxEntities: number;
-
-  public components: Record<string, Component<any>> = {};
 
   /**
    * Create a new world instance
@@ -53,23 +50,22 @@ export class World {
         ? Math.max(1, (navigator.hardwareConcurrency ?? 4) - 1)
         : 3);
 
-    this.maxEntities = options.maxEntities ?? 10_000;
+    const maxEntities = options.maxEntities ?? 10_000;
 
     this.workerManager = new WorkerManager(threads);
-    this.pool = Pool.create(this.maxEntities);
+    this.pool = Pool.create(maxEntities);
 
-    // Register each component instance
-    for (const componentName in components) {
-      const componentInstance = components[componentName];
-      componentInstance.initialize(this.componentIndex++);
-      this.components[componentName] = componentInstance;
+    // initialize each component
+    for (const component of Object.values(components)) {
+      component.initialize(this.componentIndex++);
     }
 
     this.context = {
-      entityBuffer: new EntityBuffer(this.maxEntities),
-      components: this.components,
-      queryCache: new Map(),
-      maxEntities: this.maxEntities,
+      entityBuffer: new EntityBuffer(maxEntities),
+      components,
+      maxEntities,
+      isWorker: false,
+      queries: new Map(),
     };
   }
 
@@ -90,10 +86,8 @@ export class World {
    */
   removeEntity(entityId: EntityId): void {
     // Remove from all query caches before deleting
-    if (this.context.queryCache) {
-      for (const cache of this.context.queryCache.values()) {
-        cache.remove(entityId);
-      }
+    for (const cache of this.context.queries.values()) {
+      cache.remove(entityId);
     }
 
     this.context.entityBuffer.delete(entityId);
@@ -131,9 +125,7 @@ export class World {
    * @internal
    */
   private updateQueryCachesOnAdd(entityId: EntityId): void {
-    if (!this.context.queryCache) return;
-
-    for (const cache of this.context.queryCache.values()) {
+    for (const cache of this.context.queries.values()) {
       // Skip if already in cache
       if (cache.has(entityId)) continue;
 
@@ -149,9 +141,7 @@ export class World {
    * @internal
    */
   private updateQueryCachesOnRemove(entityId: EntityId): void {
-    if (!this.context.queryCache) return;
-
-    for (const cache of this.context.queryCache.values()) {
+    for (const cache of this.context.queries.values()) {
       // Skip if not in cache
       if (!cache.has(entityId)) continue;
 

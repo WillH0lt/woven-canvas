@@ -1,7 +1,7 @@
 import { EntityBuffer } from "./EntityBuffer";
 import type { Component } from "./Component";
 import type {
-  Context,
+  WorkerContext,
   WorkerIncomingMessage,
   WorkerSuccessResponse,
   WorkerErrorResponse,
@@ -23,8 +23,8 @@ import type {
  */
 
 interface InternalContext {
-  context: Context | null;
-  execute: (ctx: Context) => void | Promise<void>;
+  context: WorkerContext | null;
+  execute: (ctx: WorkerContext) => void | Promise<void>;
 }
 
 let internalContext: InternalContext | null = null;
@@ -34,7 +34,7 @@ let internalContext: InternalContext | null = null;
  * Call this function in your worker file to set up the execution handler and initialize components.
  *
  * @param self - The worker's global scope (pass `self`)
- * @param execute - Function to execute when the worker receives a task. Receives a Context object with entityBuffer.
+ * @param execute - Function to execute when the worker receives a task. Receives a WorkerContext object with entityBuffer.
  * @param components - Record of component instances to initialize in the worker (e.g., { Position, Velocity })
  *
  * @example
@@ -46,7 +46,7 @@ let internalContext: InternalContext | null = null;
  * }, { Position, Velocity });
  */
 export function setupWorker(
-  execute: (ctx: Context) => void | Promise<void>,
+  execute: (ctx: WorkerContext) => void | Promise<void>,
   components: Record<string, Component<any>>
 ): void {
   // Store component instances for initialization
@@ -103,6 +103,8 @@ function handleMessage(
           e.data.entityMetadataSAB
         ),
         components,
+        maxEntities: e.data.maxEntities,
+        isWorker: true,
       };
       sendResult(self, index);
     } else if (type === "execute") {

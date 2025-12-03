@@ -25,22 +25,8 @@ describe("World", () => {
   });
 
   describe("World Creation", () => {
-    it("should create a world with no components", () => {
-      const world = new World({});
-      expect(world).toBeDefined();
-      expect(world.components).toEqual({});
-    });
-
-    it("should create a world with components", () => {
-      const world = new World({ Position, Velocity, Health });
-      expect(world).toBeDefined();
-      expect(world.components.Position).toBe(Position);
-      expect(world.components.Velocity).toBe(Velocity);
-      expect(world.components.Health).toBe(Health);
-    });
-
     it("should initialize components with unique bitmasks", () => {
-      const world = new World({ Position, Velocity, Health });
+      new World({ Position, Velocity, Health });
       expect(Position.bitmask).toBe(1); // 1 << 0
       expect(Velocity.bitmask).toBe(2); // 1 << 1
       expect(Health.bitmask).toBe(4); // 1 << 2
