@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { field, defineComponent } from "../src/index";
 import { EntityBuffer } from "../src/EntityBuffer";
+import { EventBuffer } from "../src/EventBuffer";
 import {
   setupWorker,
   initializeComponentInWorker,
@@ -104,10 +105,13 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,
@@ -150,11 +154,14 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       // First, send init message
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,
@@ -229,6 +236,7 @@ describe("Worker", () => {
         type: "init",
         index: 1,
         entitySAB: new SharedArrayBuffer(100),
+        eventSAB: new SharedArrayBuffer(1024),
         componentData: {},
         maxEntities: 100,
         componentCount: 2,
@@ -266,10 +274,13 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,
@@ -318,10 +329,13 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,
@@ -380,10 +394,13 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,
@@ -433,10 +450,13 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,
@@ -484,10 +504,13 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,
@@ -534,10 +557,13 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,
@@ -585,10 +611,13 @@ describe("Worker", () => {
         },
       };
 
+      const eventBuffer = new EventBuffer();
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities,
         componentCount,

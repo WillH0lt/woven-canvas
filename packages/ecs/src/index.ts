@@ -12,3 +12,4 @@ export type {
 } from "./types";
 export { defineQuery, type QueryBuilder, type Query } from "./Query";
 export type { EntityBuffer } from "./EntityBuffer";
+export { EventBuffer, EventType } from "./EventBuffer";

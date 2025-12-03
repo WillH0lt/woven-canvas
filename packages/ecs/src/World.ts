@@ -1,6 +1,7 @@
 import { WorkerManager } from "./WorkerManager";
 import { Component } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
+import { EventBuffer } from "./EventBuffer";
 import { Pool } from "./Pool";
 import { QueryCache } from "./QueryCache";
 import type { EntityId, System, Context } from "./types";
@@ -16,6 +17,12 @@ export interface WorldOptions {
    * @default 10_000
    */
   maxEntities?: number;
+  /**
+   * Maximum number of events in the event ring buffer
+   * Should be large enough to hold all events between query reads
+   * @default 65_536
+   */
+  maxEvents?: number;
 }
 
 /**
@@ -48,6 +55,7 @@ export class World {
         : 3);
 
     const maxEntities = options.maxEntities ?? 10_000;
+    const maxEvents = options.maxEvents ?? 65_536;
 
     // Count the number of components
     const componentCount = Object.keys(components).length;
@@ -56,15 +64,19 @@ export class World {
     this.pool = Pool.create(maxEntities);
     this.pool.get(); // Reserve index 0 for EntityBuffer metadata
 
+    // Create the event buffer first so we can pass it to components
+    const eventBuffer = new EventBuffer(maxEvents);
+
     // initialize each component and build component map
     const componentMap: Record<string, Component<any>> = {};
     for (const component of components) {
-      component.initialize(this.componentIndex++, maxEntities);
+      component.initialize(this.componentIndex++, maxEntities, eventBuffer);
       componentMap[component.name] = component;
     }
 
     this.context = {
       entityBuffer: new EntityBuffer(maxEntities, componentCount),
+      eventBuffer,
       components: componentMap,
       maxEntities,
       componentCount,
@@ -80,6 +92,7 @@ export class World {
   createEntity(): EntityId {
     const entityId = this.pool.get();
     this.context.entityBuffer.create(entityId);
+    this.context.eventBuffer.pushAdded(entityId);
 
     return entityId;
   }
@@ -89,6 +102,9 @@ export class World {
    * @param entity - The entity instance to remove
    */
   removeEntity(entityId: EntityId): void {
+    // Push removed event before deleting (so we still have entity data if needed)
+    this.context.eventBuffer.pushRemoved(entityId);
+
     // Remove from all query caches before deleting
     for (const cache of this.context.queries.values()) {
       cache.remove(entityId);
@@ -191,6 +207,9 @@ export class World {
    * ```
    */
   async execute(...systems: System[]): Promise<void> {
+    // Increment tick at start of execute cycle
+    this.context.eventBuffer.incrementTick();
+
     const ctx = this.getContext();
 
     const workerSystems = systems.filter((system) => system.type === "worker");

@@ -93,6 +93,7 @@ export class WorkerManager {
         type: "init",
         index,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
+        eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
         componentData,
         maxEntities: ctx.maxEntities,
         componentCount: ctx.componentCount,

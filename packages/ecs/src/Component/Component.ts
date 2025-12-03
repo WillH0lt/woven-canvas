@@ -6,6 +6,7 @@
 // add ComponentInstance.fromJson method
 
 import type { EntityId } from "../types";
+import type { EventBuffer } from "../EventBuffer";
 import type {
   ComponentSchema,
   InferComponentType,
@@ -34,6 +35,9 @@ export abstract class Component<T extends ComponentSchema> {
   name: string;
 
   private initialized: boolean = false;
+
+  /** Reference to the event buffer for pushing CHANGED events */
+  private eventBuffer: EventBuffer | null = null;
 
   private schema: Record<string, FieldDef>;
   private fieldNames: string[];
@@ -75,7 +79,7 @@ export abstract class Component<T extends ComponentSchema> {
     this.writableMaster = {} as InferComponentType<T>;
   }
 
-  initialize(id: number, maxEntities: number): void {
+  initialize(id: number, maxEntities: number, eventBuffer: EventBuffer): void {
     // Guard against double initialization
     if (this.initialized) {
       throw new Error(
@@ -87,6 +91,7 @@ export abstract class Component<T extends ComponentSchema> {
     this.initialized = true;
 
     this.componentId = id;
+    this.eventBuffer = eventBuffer;
 
     const bufferProxy: any = {};
 
@@ -117,15 +122,21 @@ export abstract class Component<T extends ComponentSchema> {
    * Initialize component in a worker context with transferred buffers
    * @param componentId - The component ID
    * @param buffer - The transferred buffer object containing typed arrays
+   * @param eventBuffer - The event buffer for recording changes
    * @internal
    */
-  fromTransfer(componentId: number, buffer: ComponentBuffer<T>): void {
+  fromTransfer(
+    componentId: number,
+    buffer: ComponentBuffer<T>,
+    eventBuffer: EventBuffer
+  ): void {
     if (this.initialized) {
       throw new Error(`Component has already been initialized.`);
     }
     this.initialized = true;
     this.componentId = componentId;
     this._buffer = buffer;
+    this.eventBuffer = eventBuffer;
     this.initializeMasters();
   }
 
@@ -223,11 +234,18 @@ export abstract class Component<T extends ComponentSchema> {
    * Returns the writable master instance bound to the entity
    * Property access goes directly through getters/setters to the underlying buffers
    * Changes are immediate - no commit() needed
+   * Automatically pushes a CHANGED event to the event buffer for reactive queries
    * @param entityId - The entity ID to write to
    * @returns The writable master object for reading and writing component fields
    */
   write(entityId: EntityId): InferComponentType<T> {
     this.writableEntityId = entityId;
+
+    // Push CHANGED event if event buffer is available
+    if (this.eventBuffer) {
+      this.eventBuffer.pushChanged(entityId, this.componentId);
+    }
+
     return this.writableMaster;
   }
 }

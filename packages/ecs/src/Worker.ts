@@ -1,4 +1,5 @@
 import { EntityBuffer } from "./EntityBuffer";
+import { EventBuffer } from "./EventBuffer";
 import type { Component } from "./Component";
 import type {
   WorkerContext,
@@ -94,16 +95,20 @@ function handleMessage(
       // Store component transfer data for lazy initialization
       internalContext.componentTransferData = e.data.componentData;
 
+      const eventBuffer = EventBuffer.fromTransfer(e.data.eventSAB);
+
       internalContext.context = {
         entityBuffer: EntityBuffer.fromTransfer(
           e.data.entitySAB,
           e.data.componentCount
         ),
+        eventBuffer,
         components: {},
         maxEntities: e.data.maxEntities,
         componentCount: e.data.componentCount,
         isWorker: true,
       };
+
       sendResult(self, index);
     } else if (type === "execute") {
       // Execute the system
@@ -142,7 +147,7 @@ function sendError(self: any, index: number, error: string): void {
 export function initializeComponentInWorker(
   component: Component<any>
 ): boolean {
-  if (!internalContext?.componentTransferData) {
+  if (!internalContext?.componentTransferData || !internalContext.context) {
     return false;
   }
 
@@ -155,8 +160,12 @@ export function initializeComponentInWorker(
     return false;
   }
 
-  // Initialize the component with the transferred data
-  component.fromTransfer(transferData.componentId, transferData.buffer);
+  // Initialize the component with the transferred data and event buffer
+  component.fromTransfer(
+    transferData.componentId,
+    transferData.buffer,
+    internalContext.context.eventBuffer
+  );
   return true;
 }
 

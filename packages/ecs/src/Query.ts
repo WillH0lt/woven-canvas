@@ -1,6 +1,7 @@
 import type { Component } from "./Component";
 import type { AnyContext, Context, QueryMasks } from "./types";
 import { QueryCache } from "./QueryCache";
+import { EventType } from "./EventBuffer";
 import { initializeComponentInWorker } from "./Worker";
 
 /**
@@ -49,6 +50,15 @@ export class Query {
   private readonly builder: (q: QueryBuilder) => QueryBuilder;
   private masks: QueryMasks | null = null;
   private hash: string | null = null;
+
+  /**
+   * Tracks the last scanned index in the event buffer for each reactive query type.
+   * This allows efficient incremental scanning instead of scanning all events.
+   * Initialized to 0 (start of buffer).
+   */
+  private lastScannedIndexAdded: number = 0;
+  private lastScannedIndexRemoved: number = 0;
+  private lastScannedIndexChanged: number = 0;
 
   /**
    * @internal
@@ -158,6 +168,92 @@ export class Query {
     }
 
     return this.cache.getDenseView();
+  }
+
+  /**
+   * Get entities that were added (created) since the last time this query was checked.
+   * Only returns entities that match the query criteria.
+   *
+   * @param ctx - The context object containing the entity buffer and event buffer
+   * @returns An array of entity IDs that were added and match the query
+   */
+  added(ctx: AnyContext): Uint32Array {
+    this.lazilyInitializeMasks(ctx);
+
+    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
+      this.lastScannedIndexAdded,
+      EventType.ADDED
+    );
+
+    // Filter to only entities that currently match the query
+    const results: number[] = [];
+    for (const entityId of entities) {
+      if (ctx.entityBuffer.matches(entityId, this.masks!)) {
+        results.push(entityId);
+      }
+    }
+
+    this.lastScannedIndexAdded = newIndex;
+    return new Uint32Array(results);
+  }
+
+  /**
+   * Get entities that were removed (deleted) since the last time this query was checked.
+   * Returns entity IDs even though the entities no longer exist.
+   *
+   * @param ctx - The context object containing the entity buffer and event buffer
+   * @returns An array of entity IDs that were removed
+   */
+  removed(ctx: AnyContext): Uint32Array {
+    this.lazilyInitializeMasks(ctx);
+
+    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
+      this.lastScannedIndexRemoved,
+      EventType.REMOVED
+    );
+
+    // Note: We can't filter by query match since the entity is deleted.
+    // Return all removed entities - user can filter if needed.
+    this.lastScannedIndexRemoved = newIndex;
+    return entities;
+  }
+
+  /**
+   * Get entities whose tracked components have changed since the last time this query was checked.
+   * Only returns entities that match the query criteria and have changes to tracked components.
+   * Use .withTracked() in the query builder to specify which components to track.
+   *
+   * @param ctx - The context object containing the entity buffer and event buffer
+   * @returns An array of entity IDs with changed tracked components
+   */
+  changed(ctx: AnyContext): Uint32Array {
+    this.lazilyInitializeMasks(ctx);
+
+    const trackingMask = this.masks!.tracking;
+
+    // If no components are tracked, return empty
+    if (trackingMask === 0) {
+      // Still update the index to stay current
+      this.lastScannedIndexChanged = ctx.eventBuffer.getWriteIndex();
+      return new Uint32Array(0);
+    }
+
+    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
+      this.lastScannedIndexChanged,
+      EventType.CHANGED,
+      trackingMask
+    );
+
+    // Filter to only entities that currently match the query
+    const results: number[] = [];
+    for (const entityId of entities) {
+      if (ctx.entityBuffer.matches(entityId, this.masks!)) {
+        results.push(entityId);
+      }
+    }
+
+    this.lastScannedIndexChanged = newIndex;
+    return new Uint32Array(results);
   }
 }
 

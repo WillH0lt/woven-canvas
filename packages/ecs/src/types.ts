@@ -1,4 +1,5 @@
 import { EntityBuffer } from "./EntityBuffer";
+import { EventBuffer } from "./EventBuffer";
 import type { Component } from "./Component";
 import type { ComponentBuffer } from "./Component/types";
 import type { QueryCache } from "./QueryCache";
@@ -8,6 +9,7 @@ import type { QueryCache } from "./QueryCache";
  */
 export interface BaseContext {
   entityBuffer: EntityBuffer;
+  eventBuffer: EventBuffer;
   components: Record<string, Component<any>>;
   maxEntities: number;
   componentCount: number;
@@ -104,6 +106,7 @@ export interface InitMessage {
   type: "init";
   index: number;
   entitySAB: SharedArrayBuffer;
+  eventSAB: SharedArrayBuffer;
   componentData: ComponentTransferData;
   maxEntities: number;
   componentCount: number;
