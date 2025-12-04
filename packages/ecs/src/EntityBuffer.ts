@@ -53,13 +53,6 @@ export class EntityBuffer {
   }
 
   /**
-   * Get the base byte offset for a given entity
-   */
-  private getEntityOffset(entityId: EntityId): number {
-    return entityId * this.bytesPerEntity;
-  }
-
-  /**
    * Get the underlying shared buffer for workers
    * @returns The SharedArrayBuffer that can be shared across threads
    */
@@ -72,13 +65,15 @@ export class EntityBuffer {
    * @param entityId - The entity ID (index in buffer, must be >= 0)
    */
   create(entityId: EntityId): void {
-    const offset = this.getEntityOffset(entityId);
+    const offset = entityId * this.bytesPerEntity;
+    const view = this.view;
+    const bytesPerEntity = this.bytesPerEntity;
     // Clear all bytes for this entity
-    for (let i = 0; i < this.bytesPerEntity; i++) {
-      this.view[offset + i] = 0;
+    for (let i = 0; i < bytesPerEntity; i++) {
+      view[offset + i] = 0;
     }
     // Set alive flag in metadata byte
-    this.view[offset] = EntityBuffer.ALIVE_FLAG;
+    view[offset] = EntityBuffer.ALIVE_FLAG;
   }
 
   /**
@@ -89,9 +84,9 @@ export class EntityBuffer {
   addComponentToEntity(entityId: EntityId, componentId: number): void {
     // Component bits start at byte 1 (byte 0 is metadata)
     // componentId 0-7 -> byte 1, componentId 8-15 -> byte 2, etc.
-    const byteIndex = 1 + Math.floor(componentId / 8);
-    const bitIndex = componentId % 8;
-    const offset = this.getEntityOffset(entityId);
+    const byteIndex = 1 + (componentId >> 3);
+    const bitIndex = componentId & 7;
+    const offset = entityId * this.bytesPerEntity;
     this.view[offset + byteIndex] |= 1 << bitIndex;
   }
 
@@ -101,9 +96,9 @@ export class EntityBuffer {
    * @param componentId - The component ID (0 to componentCount-1)
    */
   removeComponentFromEntity(entityId: EntityId, componentId: number): void {
-    const byteIndex = 1 + Math.floor(componentId / 8);
-    const bitIndex = componentId % 8;
-    const offset = this.getEntityOffset(entityId);
+    const byteIndex = 1 + (componentId >> 3);
+    const bitIndex = componentId & 7;
+    const offset = entityId * this.bytesPerEntity;
     this.view[offset + byteIndex] &= ~(1 << bitIndex);
   }
 
@@ -114,9 +109,9 @@ export class EntityBuffer {
    * @returns True if the entity has the component
    */
   hasComponent(entityId: EntityId, componentId: number): boolean {
-    const byteIndex = 1 + Math.floor(componentId / 8);
-    const bitIndex = componentId % 8;
-    const offset = this.getEntityOffset(entityId);
+    const byteIndex = 1 + (componentId >> 3);
+    const bitIndex = componentId & 7;
+    const offset = entityId * this.bytesPerEntity;
     return (this.view[offset + byteIndex] & (1 << bitIndex)) !== 0;
   }
 
@@ -127,10 +122,12 @@ export class EntityBuffer {
    * @returns True if the entity matches the criteria
    */
   matches(entityId: EntityId, masks: QueryMasks): boolean {
-    const offset = this.getEntityOffset(entityId);
+    const bytesPerEntity = this.bytesPerEntity;
+    const offset = entityId * bytesPerEntity;
+    const view = this.view;
 
     // Check if alive (bit 0 of metadata byte)
-    if ((this.view[offset] & EntityBuffer.ALIVE_FLAG) === 0) {
+    if ((view[offset] & EntityBuffer.ALIVE_FLAG) === 0) {
       return false;
     }
 
@@ -140,12 +137,13 @@ export class EntityBuffer {
 
     // Component bytes start at offset + 1
     const componentOffset = offset + 1;
+    const maskLength = withMask.length;
 
     // Check 'with' criteria - entity must have ALL specified components
-    for (let i = 0; i < withMask.length; i++) {
+    for (let i = 0; i < maskLength; i++) {
       const mask = withMask[i];
       if (mask !== 0) {
-        const value = this.view[componentOffset + i];
+        const value = view[componentOffset + i];
         if ((value & mask) !== mask) {
           return false;
         }
@@ -153,10 +151,10 @@ export class EntityBuffer {
     }
 
     // Check 'without' criteria - entity must have NONE of the specified components
-    for (let i = 0; i < withoutMask.length; i++) {
+    for (let i = 0; i < maskLength; i++) {
       const mask = withoutMask[i];
       if (mask !== 0) {
-        const value = this.view[componentOffset + i];
+        const value = view[componentOffset + i];
         if ((value & mask) !== 0) {
           return false;
         }
@@ -166,11 +164,11 @@ export class EntityBuffer {
     // Check 'any' criteria - entity must have AT LEAST ONE of the specified components
     let hasAny = false;
     let anySpecified = false;
-    for (let i = 0; i < anyMask.length; i++) {
+    for (let i = 0; i < maskLength; i++) {
       const mask = anyMask[i];
       if (mask !== 0) {
         anySpecified = true;
-        const value = this.view[componentOffset + i];
+        const value = view[componentOffset + i];
         if ((value & mask) !== 0) {
           hasAny = true;
           break;
@@ -189,9 +187,11 @@ export class EntityBuffer {
    * @param entityId - The entity ID to remove
    */
   delete(entityId: EntityId): void {
-    const offset = this.getEntityOffset(entityId);
-    for (let i = 0; i < this.bytesPerEntity; i++) {
-      this.view[offset + i] = 0;
+    const offset = entityId * this.bytesPerEntity;
+    const view = this.view;
+    const bytesPerEntity = this.bytesPerEntity;
+    for (let i = 0; i < bytesPerEntity; i++) {
+      view[offset + i] = 0;
     }
   }
 
@@ -202,7 +202,7 @@ export class EntityBuffer {
    * @param entityId - The entity ID to mark as dead
    */
   markDead(entityId: EntityId): void {
-    const offset = this.getEntityOffset(entityId);
+    const offset = entityId * this.bytesPerEntity;
     // Clear only the alive flag, preserve component bits
     this.view[offset] &= ~EntityBuffer.ALIVE_FLAG;
   }
@@ -213,7 +213,7 @@ export class EntityBuffer {
    * @returns True if the entity exists and is alive
    */
   has(entityId: EntityId): boolean {
-    const offset = this.getEntityOffset(entityId);
+    const offset = entityId * this.bytesPerEntity;
     return (this.view[offset] & EntityBuffer.ALIVE_FLAG) !== 0;
   }
 }

@@ -8,36 +8,15 @@ const BufferConstructor: new (byteLength: number) => SharedArrayBuffer =
 
 /**
  * Returns the index of the Least Significant Bit in a number.
- * Uses bit manipulation to find the position of the lowest set bit.
  *
  * @param value the number
  * @return the index of LSB (0-31), or -1 if value is 0
  */
 function getLSBIndex(value: number): number {
   if (value === 0) return -1;
-  // Convert to unsigned 32-bit for proper handling
-  value = value >>> 0;
-  let index = 0;
-  if ((value & 0xffff) === 0) {
-    index += 16;
-    value >>>= 16;
-  }
-  if ((value & 0xff) === 0) {
-    index += 8;
-    value >>>= 8;
-  }
-  if ((value & 0xf) === 0) {
-    index += 4;
-    value >>>= 4;
-  }
-  if ((value & 0x3) === 0) {
-    index += 2;
-    value >>>= 2;
-  }
-  if ((value & 0x1) === 0) {
-    index += 1;
-  }
-  return index;
+  // Isolate the LSB: value & -value gives us a number with only the LSB set
+  // Then use 31 - clz32 to get the bit position
+  return 31 - Math.clz32(value & -value);
 }
 
 /**
@@ -170,17 +149,16 @@ export class Pool {
    */
   free(index: number): void {
     const bucket = (index >> 5) + Pool.DATA_OFFSET;
-    const bitPosition = index & 31;
-    const mask = 1 << bitPosition;
+    const mask = 1 << (index & 31);
 
     // Atomically set the bit to mark as available
     Atomics.or(this.view, bucket, mask);
 
-    // Update hint - try to set it to this bucket if current hint is exhausted
-    // This is a hint optimization, not critical for correctness
+    // Update hint - try to set it to this bucket if current hint is exhausted or higher
     const currentHint = Atomics.load(this.view, Pool.HINT_INDEX);
-    if (currentHint === -1 || bucket - Pool.DATA_OFFSET < currentHint) {
-      Atomics.store(this.view, Pool.HINT_INDEX, bucket - Pool.DATA_OFFSET);
+    const bucketIndex = bucket - Pool.DATA_OFFSET;
+    if (currentHint === -1 || bucketIndex < currentHint) {
+      Atomics.store(this.view, Pool.HINT_INDEX, bucketIndex);
     }
   }
 

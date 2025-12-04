@@ -12,11 +12,6 @@ describe("EventBuffer", () => {
     it("should initialize with write index 0", () => {
       expect(eventBuffer.getWriteIndex()).toBe(0);
     });
-
-    it("should create with default maxEvents", () => {
-      const defaultBuffer = new EventBuffer();
-      expect(defaultBuffer.getBuffer()).toBeDefined();
-    });
   });
 
   describe("push events", () => {
@@ -184,7 +179,7 @@ describe("EventBuffer", () => {
         0,
         EventType.ADDED
       );
-      expect(entities.length).toBe(3);
+      expect(entities.size).toBe(3);
       expect([...entities].sort()).toEqual([1, 2, 3]);
       expect(newIndex).toBe(3);
     });
@@ -195,7 +190,7 @@ describe("EventBuffer", () => {
 
       // First call
       const result1 = eventBuffer.collectEntitiesInRange(0, EventType.ADDED);
-      expect(result1.entities.length).toBe(2);
+      expect(result1.entities.size).toBe(2);
       expect(result1.newIndex).toBe(2);
 
       // Add more events
@@ -207,7 +202,7 @@ describe("EventBuffer", () => {
         result1.newIndex,
         EventType.ADDED
       );
-      expect(result2.entities.length).toBe(2);
+      expect(result2.entities.size).toBe(2);
       expect([...result2.entities].sort()).toEqual([3, 4]);
       expect(result2.newIndex).toBe(4);
     });
@@ -223,7 +218,7 @@ describe("EventBuffer", () => {
         result1.newIndex,
         EventType.ADDED
       );
-      expect(result2.entities.length).toBe(0);
+      expect(result2.entities.size).toBe(0);
       expect(result2.newIndex).toBe(1);
     });
 
@@ -237,7 +232,7 @@ describe("EventBuffer", () => {
         0,
         EventType.CHANGED
       );
-      expect(entities.length).toBe(2);
+      expect(entities.size).toBe(2);
       expect([...entities].sort()).toEqual([1, 2]);
     });
 
@@ -252,8 +247,8 @@ describe("EventBuffer", () => {
         EventType.CHANGED,
         new Uint8Array([0b010])
       );
-      expect(entities.length).toBe(1);
-      expect(entities[0]).toBe(2);
+      expect(entities.size).toBe(1);
+      expect(entities.has(2)).toBe(true);
     });
   });
 

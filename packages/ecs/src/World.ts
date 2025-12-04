@@ -105,14 +105,16 @@ export class World {
    * ```
    */
   async execute(...systems: System[]): Promise<void> {
-    const ctx = this.getContext();
+    const ctx = this.context;
     ctx.tick++;
 
     const currentEventIndex = ctx.eventBuffer.getWriteIndex();
 
     // Shift indices: current becomes previous, record new current
-    for (const system of systems) {
-      system.prevEventIndex = system.currEventIndex;
+    for (let i = 0; i < systems.length; i++) {
+      const system = systems[i];
+      const prevIndex = system.currEventIndex;
+      system.prevEventIndex = prevIndex;
       system.currEventIndex = currentEventIndex;
     }
 

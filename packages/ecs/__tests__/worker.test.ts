@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { field, defineComponent } from "../src/index";
 import { EntityBuffer } from "../src/EntityBuffer";
 import { EventBuffer } from "../src/EventBuffer";
+import { Pool } from "../src/Pool";
 import {
   setupWorker,
   initializeComponentInWorker,
@@ -88,7 +89,7 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       // Initialize components for transfer data
       Position.initialize(0, maxEntities, eventBuffer);
@@ -107,13 +108,19 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 
@@ -144,7 +151,7 @@ describe("Worker", () => {
         y: field.float32().default(0),
       });
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       TestPosition.initialize(0, maxEntities, eventBuffer);
 
@@ -156,14 +163,20 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       // First, send init message
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 
@@ -231,13 +244,19 @@ describe("Worker", () => {
       // Call setupWorker again to set up fresh state
       setupWorker(execute);
 
+      const pool = Pool.create(100);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: new SharedArrayBuffer(100),
         eventSAB: new SharedArrayBuffer(1024),
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData: {},
         maxEntities: 100,
+        maxEvents: 100,
         componentCount: 2,
       };
 
@@ -260,7 +279,7 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       const AsyncPosition = defineComponent("AsyncPosition", {
         x: field.float32().default(0),
@@ -275,13 +294,19 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 
@@ -315,7 +340,7 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       const ErrorPosition = defineComponent("ErrorPosition", {
         x: field.float32().default(0),
@@ -330,13 +355,19 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 
@@ -380,7 +411,7 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       const KnownComponent = defineComponent("KnownComponent", {
         x: field.float32().default(0),
@@ -395,13 +426,19 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 
@@ -434,7 +471,7 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       // Create and initialize a component on "main thread"
       const MainPosition = defineComponent("TransferPosition", {
@@ -451,13 +488,19 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 
@@ -490,7 +533,7 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       const ContextPosition = defineComponent("ContextPosition", {
         x: field.float32().default(0),
@@ -505,13 +548,19 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 
@@ -543,7 +592,7 @@ describe("Worker", () => {
       const maxEntities = 500;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       const CountPosition = defineComponent("CountPosition", {
         x: field.float32().default(0),
@@ -558,13 +607,19 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 
@@ -597,7 +652,7 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
-      const eventBuffer = new EventBuffer();
+      const eventBuffer = new EventBuffer(1000);
 
       const EmptyPosition = defineComponent("EmptyPosition", {
         x: field.float32().default(0),
@@ -612,13 +667,19 @@ describe("Worker", () => {
         },
       };
 
+      const pool = Pool.create(maxEntities);
+
       const initMessage: InitMessage = {
         type: "init",
         index: 1,
         entitySAB: entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: eventBuffer.getBuffer() as SharedArrayBuffer,
+        poolSAB: pool.getBuffer(),
+        poolBucketCount: pool.getBucketCount(),
+        poolSize: pool.getSize(),
         componentData,
         maxEntities,
+        maxEvents: 1000,
         componentCount,
       };
 

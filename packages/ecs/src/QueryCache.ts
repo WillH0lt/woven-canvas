@@ -84,22 +84,24 @@ export class QueryCache {
    * @param entityId - The entity ID to add
    */
   add(entityId: number): void {
+    const sparse = this.sparse;
     // Already in cache?
-    if (this.sparse[entityId] !== SPARSE_NOT_PRESENT) {
+    if (sparse[entityId] !== SPARSE_NOT_PRESENT) {
       return;
     }
 
-    const count = this.dense[DENSE_COUNT_INDEX];
+    const dense = this.dense;
+    const count = dense[DENSE_COUNT_INDEX];
     if (count >= this.maxEntities) {
       throw new Error("QueryCache is full");
     }
 
     // Add to dense array
-    this.dense[DENSE_DATA_START + count] = entityId;
+    dense[DENSE_DATA_START + count] = entityId;
     // Update sparse array to point to new dense index
-    this.sparse[entityId] = count;
+    sparse[entityId] = count;
     // Increment count
-    this.dense[DENSE_COUNT_INDEX] = count + 1;
+    dense[DENSE_COUNT_INDEX] = count + 1;
   }
 
   /**
@@ -107,24 +109,26 @@ export class QueryCache {
    * @param entityId - The entity ID to remove
    */
   remove(entityId: number): void {
-    const denseIdx = this.sparse[entityId];
+    const sparse = this.sparse;
+    const denseIdx = sparse[entityId];
     if (denseIdx === SPARSE_NOT_PRESENT) {
       return; // Not in cache
     }
 
-    const count = this.dense[DENSE_COUNT_INDEX];
+    const dense = this.dense;
+    const count = dense[DENSE_COUNT_INDEX];
     const lastIdx = count - 1;
 
     if (denseIdx !== lastIdx) {
       // Swap with last element
-      const lastEntityId = this.dense[DENSE_DATA_START + lastIdx];
-      this.dense[DENSE_DATA_START + denseIdx] = lastEntityId;
-      this.sparse[lastEntityId] = denseIdx;
+      const lastEntityId = dense[DENSE_DATA_START + lastIdx];
+      dense[DENSE_DATA_START + denseIdx] = lastEntityId;
+      sparse[lastEntityId] = denseIdx;
     }
 
     // Mark as not present and decrement count
-    this.sparse[entityId] = SPARSE_NOT_PRESENT;
-    this.dense[DENSE_COUNT_INDEX] = lastIdx;
+    sparse[entityId] = SPARSE_NOT_PRESENT;
+    dense[DENSE_COUNT_INDEX] = lastIdx;
   }
 
   /**

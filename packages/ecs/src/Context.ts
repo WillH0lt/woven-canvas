@@ -75,11 +75,11 @@ export function removeEntity(ctx: Context, entityId: EntityId): void {
  *   addComponent(ctx, entityId, Position, { x: 0, y: 0 });
  * }
  */
-export function addComponent(
+export function addComponent<T>(
   ctx: Context,
   entityId: EntityId,
   component: Component<any>,
-  data: any = {}
+  data: T = {} as T
 ): void {
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
   component.from(entityId, data);

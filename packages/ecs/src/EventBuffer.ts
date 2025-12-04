@@ -70,12 +70,13 @@ export class EventBuffer {
   private headerView: Uint32Array;
   private dataView: DataView;
   private readonly maxEvents: number;
+  private readonly reusableSet: Set<number> = new Set();
 
   /**
    * Create a new EventBuffer
    * @param maxEvents - Maximum number of events to store (ring buffer wraps)
    */
-  constructor(maxEvents: number = 65536) {
+  constructor(maxEvents: number) {
     this.maxEvents = maxEvents;
     const totalBytes = HEADER_SIZE + maxEvents * BYTES_PER_EVENT;
     this.buffer = new BufferConstructor(totalBytes);
@@ -98,6 +99,7 @@ export class EventBuffer {
     instance.headerView = new Uint32Array(buffer, 0, 2);
     instance.dataView = new DataView(buffer);
     instance.maxEvents = instance.headerView[MAX_EVENTS_OFFSET];
+    instance.reusableSet = new Set<number>();
     return instance;
   }
 
@@ -127,10 +129,11 @@ export class EventBuffer {
     const offset = HEADER_SIZE + index * BYTES_PER_EVENT;
 
     // Write event data (not atomic, but each slot is only written by one thread at a time)
-    this.dataView.setUint32(offset, entityId, true);
-    this.dataView.setUint8(offset + 4, eventType);
+    const dataView = this.dataView;
+    dataView.setUint32(offset, entityId, true);
+    dataView.setUint8(offset + 4, eventType);
     // Byte 5 is padding
-    this.dataView.setUint16(offset + 6, componentId, true);
+    dataView.setUint16(offset + 6, componentId, true);
   }
 
   /**
@@ -265,19 +268,19 @@ export class EventBuffer {
   }
 
   /**
-   * Collect entity IDs from events in a range, updating the caller's lastIndex.
-   * This is the efficient method for reactive queries.
+   * Collect entity IDs from events in a range directly into a Set.
+   * Optimized version that avoids the generator overhead.
    *
    * @param lastIndex - The last index this caller scanned (will be updated)
    * @param eventTypes - Bitmask of event types to include (e.g., EventType.ADDED | EventType.REMOVED)
    * @param componentMask - Optional: for CHANGED events, filter by component mask
-   * @returns Object with entities array and new lastIndex
+   * @returns Object with entities Set and new lastIndex
    */
   collectEntitiesInRange(
     lastIndex: number,
     eventTypes: number,
     componentMask?: Uint8Array
-  ): { entities: Uint32Array; newIndex: number } {
+  ): { entities: Set<number>; newIndex: number } {
     const currentWriteIndex = this.getWriteIndex();
 
     // Handle case where buffer has wrapped and we're too far behind
@@ -285,22 +288,79 @@ export class EventBuffer {
     if (currentWriteIndex - lastIndex > this.maxEvents) {
       // Start from the oldest available event
       lastIndex = currentWriteIndex - this.maxEvents;
+      console.warn(
+        "EventBuffer: Missed events due to buffer overflow, adjusting read index. Increase the maxEvents size to prevent this from happening."
+      );
     }
 
-    const seen = new Set<number>();
+    const seen = this.reusableSet;
+    seen.clear();
 
-    for (const event of this.getEventsInRange(
-      lastIndex % this.maxEvents,
-      currentWriteIndex % this.maxEvents,
-      eventTypes,
-      componentMask
-    )) {
-      seen.add(event.entityId);
+    const fromIndex = lastIndex % this.maxEvents;
+    const toIndex = currentWriteIndex % this.maxEvents;
+
+    // No new events
+    if (fromIndex === toIndex) {
+      return { entities: seen, newIndex: currentWriteIndex };
+    }
+
+    // Calculate how many events to scan
+    let eventsToScan: number;
+    if (toIndex >= fromIndex) {
+      eventsToScan = toIndex - fromIndex;
+    } else {
+      // Wrapped around
+      eventsToScan = this.maxEvents - fromIndex + toIndex;
+    }
+
+    // Cap at maxEvents to prevent infinite loops if indices get corrupted
+    if (eventsToScan > this.maxEvents) {
+      eventsToScan = this.maxEvents;
+    }
+
+    // Direct inline scanning without generator overhead
+    const dataView = this.dataView;
+    const maxEvents = this.maxEvents;
+
+    for (let i = 0; i < eventsToScan; i++) {
+      const index = (fromIndex + i) % maxEvents;
+      const offset = HEADER_SIZE + index * BYTES_PER_EVENT;
+
+      const eventType = dataView.getUint8(offset + 4) as EventTypeValue;
+
+      // Filter by event type bitmask
+      if ((eventType & eventTypes) === 0) continue;
+
+      // Filter by component mask for CHANGED events
+      if (componentMask !== undefined && eventType === EventType.CHANGED) {
+        const componentId = dataView.getUint16(offset + 6, true);
+        const byteIndex = componentId >> 3; // Math.floor(componentId / 8)
+        const bitIndex = componentId & 7; // componentId % 8
+        if (
+          byteIndex >= componentMask.length ||
+          (componentMask[byteIndex] & (1 << bitIndex)) === 0
+        ) {
+          continue;
+        }
+      }
+
+      const entityId = dataView.getUint32(offset, true);
+      seen.add(entityId);
     }
 
     return {
-      entities: new Uint32Array([...seen]),
+      entities: seen,
       newIndex: currentWriteIndex,
     };
+  }
+
+  /**
+   * Fast check if there are any events between two indices
+   * @param fromIndex - Start index
+   * @param toIndex - End index (exclusive)
+   * @returns True if there are events to process
+   */
+  hasEventsInRange(fromIndex: number, toIndex: number): boolean {
+    return fromIndex !== toIndex;
   }
 }

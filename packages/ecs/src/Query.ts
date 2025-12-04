@@ -4,6 +4,8 @@ import { QueryCache } from "./QueryCache";
 import { EventType, EventTypeMask } from "./EventBuffer";
 import { initializeComponentInWorker } from "./Worker";
 
+const EMPTY_UINT32_ARRAY = new Uint32Array(0);
+
 /**
  * Helper to create an empty mask array
  */
@@ -69,8 +71,14 @@ export class Query {
    * When any of current(), added(), or removed() is called, we update
    * all results in one pass and cache them here.
    */
-  private cachedAdded: Uint32Array | null = null;
-  private cachedRemoved: Uint32Array | null = null;
+  private cachedAdded = EMPTY_UINT32_ARRAY;
+  private cachedRemoved = EMPTY_UINT32_ARRAY;
+
+  /**
+   * Reusable arrays to avoid allocations during updates
+   */
+  private addedList: number[] = [];
+  private removedList: number[] = [];
 
   /**
    * The tick number at the time of the last update.
@@ -91,7 +99,12 @@ export class Query {
   /**
    * Cached changed results for the current tick
    */
-  private cachedChanged: Uint32Array | null = null;
+  private cachedChanged = EMPTY_UINT32_ARRAY;
+
+  /**
+   * Cached component mask for filtering events
+   */
+  private queryComponentMask: Uint8Array | null = null;
 
   /**
    * @internal
@@ -141,7 +154,7 @@ export class Query {
     const { entities } = ctx.eventBuffer.collectEntitiesInRange(
       0,
       EventType.ADDED,
-      undefined // No component filter needed for ADDED events
+      undefined
     );
 
     // Add entities that are still alive and match the query
@@ -164,8 +177,13 @@ export class Query {
   /**
    * Get a combined component mask for this query (with + without + any)
    * Used to filter component events to only relevant ones
+   * Cached after first call.
    */
   private getQueryComponentMask(): Uint8Array {
+    if (this.queryComponentMask) {
+      return this.queryComponentMask;
+    }
+
     if (!this.masks) {
       throw new Error("Query masks not initialized");
     }
@@ -176,6 +194,7 @@ export class Query {
       combined[i] =
         this.masks.with[i] | this.masks.without[i] | this.masks.any[i];
     }
+    this.queryComponentMask = combined;
     return combined;
   }
 
@@ -193,42 +212,59 @@ export class Query {
       return false;
     }
 
+    // Fast path: check if there are any new events
+    const currentWriteIndex = ctx.eventBuffer.getWriteIndex();
+    if (currentWriteIndex === this.lastScannedIndex) {
+      this.lastUpdateTick = ctx.tick;
+      this.cachedAdded = EMPTY_UINT32_ARRAY;
+      this.cachedRemoved = EMPTY_UINT32_ARRAY;
+      return false;
+    }
+
     // Get component mask for filtering events
     const queryComponentMask = this.getQueryComponentMask();
 
-    // Collect all entities that had relevant events
+    // Collect all entities that had relevant events (reuses Set)
     const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
       this.lastScannedIndex,
       EventTypeMask.ALL, // Get all event types - we'll categorize them ourselves
       queryComponentMask
     );
 
+    // Reuse arrays - clear them first
+    const addedList = this.addedList;
+    const removedList = this.removedList;
+    addedList.length = 0;
+    removedList.length = 0;
+
     // Categorize entities into added and removed
-    const addedList: number[] = [];
-    const removedList: number[] = [];
+    const cache = this.cache!;
+    const masks = this.masks!;
+    const entityBuffer = ctx.entityBuffer;
 
     for (const entityId of entities) {
-      const existsNow = ctx.entityBuffer.has(entityId);
-      const matchesNow =
-        existsNow && ctx.entityBuffer.matches(entityId, this.masks!);
-      const wasInCache = this.cache?.has(entityId) ?? false;
+      const existsNow = entityBuffer.has(entityId);
+      const matchesNow = existsNow && entityBuffer.matches(entityId, masks);
+      const wasInCache = cache.has(entityId);
 
       if (matchesNow && !wasInCache) {
         // Entity now matches but wasn't in cache -> added
         addedList.push(entityId);
-        this.cache?.add(entityId);
+        cache.add(entityId);
       } else if (!matchesNow && wasInCache) {
         // Entity no longer matches but was in cache -> removed
         removedList.push(entityId);
-        this.cache?.remove(entityId);
+        cache.remove(entityId);
       }
-      // If matchesNow && wasInCache: still matches, no change
-      // If !matchesNow && !wasInCache: still doesn't match, no change
     }
 
-    // Cache the results
-    this.cachedAdded = new Uint32Array(addedList);
-    this.cachedRemoved = new Uint32Array(removedList);
+    // Cache the results - only allocate if we have results
+    this.cachedAdded =
+      addedList.length > 0 ? new Uint32Array(addedList) : EMPTY_UINT32_ARRAY;
+    this.cachedRemoved =
+      removedList.length > 0
+        ? new Uint32Array(removedList)
+        : EMPTY_UINT32_ARRAY;
 
     // Update tracking indices
     this.lastScannedIndex = newIndex;
@@ -246,9 +282,9 @@ export class Query {
     if (this.cache === null) {
       this.cache = this.createCache(ctx);
       // New cache starts with empty added/removed/changed since we just populated it
-      this.cachedAdded = new Uint32Array(0);
-      this.cachedRemoved = new Uint32Array(0);
-      this.cachedChanged = new Uint32Array(0);
+      this.cachedAdded = EMPTY_UINT32_ARRAY;
+      this.cachedRemoved = EMPTY_UINT32_ARRAY;
+      this.cachedChanged = EMPTY_UINT32_ARRAY;
       return;
     }
 
@@ -289,7 +325,7 @@ export class Query {
     // Ensure cache is up-to-date
     this.ensureUpdated(ctx);
 
-    return this.cachedAdded ?? new Uint32Array(0);
+    return this.cachedAdded;
   }
 
   /**
@@ -307,7 +343,7 @@ export class Query {
     // Ensure cache is up-to-date
     this.ensureUpdated(ctx);
 
-    return this.cachedRemoved ?? new Uint32Array(0);
+    return this.cachedRemoved;
   }
 
   /**
@@ -329,8 +365,8 @@ export class Query {
 
     // Already up-to-date for this tick, return cached result
     if (ctx.tick === this.lastChangedTick) {
-      const result = this.cachedChanged ?? new Uint32Array(0);
-      this.cachedChanged = new Uint32Array(0);
+      const result = this.cachedChanged;
+      this.cachedChanged = EMPTY_UINT32_ARRAY;
       return result;
     }
 
@@ -339,7 +375,7 @@ export class Query {
     // If no components are tracked, return empty
     if (trackingMask.every((byte) => byte === 0)) {
       this.lastChangedTick = ctx.tick;
-      this.cachedChanged = new Uint32Array(0);
+      this.cachedChanged = EMPTY_UINT32_ARRAY;
       return this.cachedChanged;
     }
 
@@ -359,7 +395,8 @@ export class Query {
 
     this.lastChangedScannedIndex = newIndex;
     this.lastChangedTick = ctx.tick;
-    this.cachedChanged = new Uint32Array(results);
+    this.cachedChanged =
+      results.length > 0 ? new Uint32Array(results) : EMPTY_UINT32_ARRAY;
 
     return this.cachedChanged;
   }
