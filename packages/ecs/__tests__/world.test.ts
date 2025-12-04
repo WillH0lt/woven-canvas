@@ -58,10 +58,9 @@ describe("World", () => {
       const e2 = createEntity(ctx);
       const e3 = createEntity(ctx);
 
-      // Entity IDs start at 1 (index 0 is reserved for buffer metadata)
-      expect(e1).toBe(1);
-      expect(e2).toBe(2);
-      expect(e3).toBe(3);
+      expect(e1).toBe(0);
+      expect(e2).toBe(1);
+      expect(e3).toBe(2);
     });
 
     it("should remove entities", () => {

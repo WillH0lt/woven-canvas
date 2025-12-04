@@ -22,6 +22,8 @@ export function defineSystem(execute: SystemFunction): MainThreadSystem {
   return {
     type: "main",
     execute,
+    prevEventIndex: 0,
+    currEventIndex: 0,
   };
 }
 
@@ -41,5 +43,7 @@ export function defineWorkerSystem(path: string): WorkerSystem {
   return {
     type: "worker",
     path,
+    prevEventIndex: 0,
+    currEventIndex: 0,
   };
 }

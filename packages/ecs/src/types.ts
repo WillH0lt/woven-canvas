@@ -20,6 +20,8 @@ export interface Context {
   components: Record<string, Component<any>>;
   // Maximum number of entities supported in the world.
   maxEntities: number;
+  // Maximum number of events in the event ring buffer.
+  maxEvents: number;
   // Total number of registered components in the world.
   componentCount: number;
   // Tick incremented each time execute is called.
@@ -57,6 +59,16 @@ export type WorkerSystemFunction = (ctx: Context) => void;
  */
 export interface BaseSystem {
   readonly type: "main" | "worker";
+  /**
+   * Event buffer index from the previous execution.
+   * Used for deferred entity ID reclamation.
+   */
+  prevEventIndex: number;
+  /**
+   * Event buffer index at the start of the current execution.
+   * Updated before each execution, then moved to prevEventIndex after.
+   */
+  currEventIndex: number;
 }
 
 /**
@@ -101,6 +113,7 @@ export interface InitMessage {
   poolSize: number;
   componentData: ComponentTransferData;
   maxEntities: number;
+  maxEvents: number;
   componentCount: number;
 }
 

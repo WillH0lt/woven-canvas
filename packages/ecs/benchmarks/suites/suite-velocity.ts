@@ -6,11 +6,11 @@ export default {
   setup(ctx: BenchmarkContext) {
     ctx.setup();
   },
-  perform(ctx: BenchmarkContext) {
+  async perform(ctx: BenchmarkContext) {
     const entity = ctx.createEntity();
     ctx.addPositionComponent(entity);
     ctx.addVelocityComponent(entity);
 
-    ctx.updateMovementSystem();
+    await ctx.updateMovementSystem();
   },
 };

@@ -14,7 +14,7 @@ export interface BenchmarkContext {
   removeVelocityComponent(entity: any): void;
   destroyEntity(entity: any): void;
   cleanup(): void;
-  updateMovementSystem(): void;
+  updateMovementSystem(): void | Promise<void>;
   getMovementSystemUpdateCount(): number;
 }
 

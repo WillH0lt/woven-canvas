@@ -328,19 +328,6 @@ describe("EntityBuffer", () => {
       expect(newBuffer.hasComponent(5, 0)).toBe(true);
       expect(newBuffer.hasComponent(5, 2)).toBe(true);
     });
-
-    it("should share length state across instances", () => {
-      buffer.create(5);
-      expect(buffer.length).toBe(6);
-
-      const newBuffer = EntityBuffer.fromTransfer(buffer.getBuffer(), 8);
-      expect(newBuffer.length).toBe(6);
-
-      // Creating in original should update both
-      buffer.create(10);
-      expect(buffer.length).toBe(11);
-      expect(newBuffer.length).toBe(11);
-    });
   });
 
   describe("multi-byte component support", () => {

@@ -113,6 +113,7 @@ function handleMessage(
         pool,
         components: {},
         maxEntities: e.data.maxEntities,
+        maxEvents: e.data.maxEvents,
         componentCount: e.data.componentCount,
         tick: 0,
       };

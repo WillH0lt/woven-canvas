@@ -7,9 +7,6 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
 /**
  * EntityBuffer manages entity states and their associated components
  * using a compact SharedArrayBuffer layout for efficient cross-thread access.
- *   Buffer layout:
- *     [0...3] = length as Uint32 (highest allocated entity index + 1)
- *     [4...] = entity data, each entity has `bytesPerEntity` bytes
  *   Entity layout:
  *     [0] = metadata byte (bit 0 = alive, bits 1-7 reserved for future use)
  *     [1...] = component bytes (8 components per byte)
@@ -32,8 +29,7 @@ export class EntityBuffer {
     const componentBytes = Math.ceil(componentCount / 8);
     this.bytesPerEntity = 1 + componentBytes;
 
-    // 4 bytes for length + entity data
-    const totalBytes = 4 + maxEntities * this.bytesPerEntity;
+    const totalBytes = maxEntities * this.bytesPerEntity;
     this.buffer = new BufferConstructor(totalBytes);
     this.view = new Uint8Array(this.buffer);
   }
@@ -60,17 +56,7 @@ export class EntityBuffer {
    * Get the base byte offset for a given entity
    */
   private getEntityOffset(entityId: EntityId): number {
-    // Skip 4 bytes for length, then entityId * bytesPerEntity
-    return 4 + entityId * this.bytesPerEntity;
-  }
-
-  /**
-   * The number of entities the buffer can hold (highest allocated entity index + 1)
-   */
-  get length(): number {
-    // Use Int32Array for atomics compatibility
-    const int32View = new Int32Array(this.buffer, 0, 1);
-    return Atomics.load(int32View, 0);
+    return entityId * this.bytesPerEntity;
   }
 
   /**
@@ -93,22 +79,6 @@ export class EntityBuffer {
     }
     // Set alive flag in metadata byte
     this.view[offset] = EntityBuffer.ALIVE_FLAG;
-    // Atomically update length if this entity ID is higher
-    const newLength = entityId + 1;
-    const int32View = new Int32Array(this.buffer, 0, 1);
-    let currentLength = Atomics.load(int32View, 0);
-    while (newLength > currentLength) {
-      const oldLength = Atomics.compareExchange(
-        int32View,
-        0,
-        currentLength,
-        newLength
-      );
-      if (oldLength === currentLength) {
-        break; // Successfully updated
-      }
-      currentLength = oldLength; // Retry with the actual current value
-    }
   }
 
   /**
@@ -215,7 +185,7 @@ export class EntityBuffer {
   }
 
   /**
-   * Mark an entity as dead (removes it from the buffer)
+   * Mark an entity as dead (clears all data including component bits)
    * @param entityId - The entity ID to remove
    */
   delete(entityId: EntityId): void {
@@ -223,6 +193,18 @@ export class EntityBuffer {
     for (let i = 0; i < this.bytesPerEntity; i++) {
       this.view[offset + i] = 0;
     }
+  }
+
+  /**
+   * Mark an entity as dead but preserve component data.
+   * This allows .removed() queries to still read component values.
+   * The entity will no longer match any queries (alive check fails).
+   * @param entityId - The entity ID to mark as dead
+   */
+  markDead(entityId: EntityId): void {
+    const offset = this.getEntityOffset(entityId);
+    // Clear only the alive flag, preserve component bits
+    this.view[offset] &= ~EntityBuffer.ALIVE_FLAG;
   }
 
   /**

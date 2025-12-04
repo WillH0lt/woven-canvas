@@ -133,17 +133,28 @@ export class Query {
 
     // Create new query cache
     const cache = new QueryCache(this.masks, ctx.maxEntities);
-    // Populate with matching entities (start at 1, index 0 is reserved for length)
-    for (let i = 1; i < ctx.entityBuffer.length; i++) {
-      if (ctx.entityBuffer.matches(i, this.masks)) {
-        cache.add(i);
+
+    // Get current write position
+    const currentWriteIndex = ctx.eventBuffer.getWriteIndex();
+
+    // Populate cache by scanning all ADDED events from the beginning
+    const { entities } = ctx.eventBuffer.collectEntitiesInRange(
+      0,
+      EventType.ADDED,
+      undefined // No component filter needed for ADDED events
+    );
+
+    // Add entities that are still alive and match the query
+    for (const entityId of entities) {
+      if (ctx.entityBuffer.matches(entityId, this.masks)) {
+        cache.add(entityId);
       }
     }
 
     // Initialize lastScannedIndex to current write position
     // so we don't process events that happened before the cache was created
-    this.lastScannedIndex = ctx.eventBuffer.getWriteIndex();
-    this.lastChangedScannedIndex = this.lastScannedIndex;
+    this.lastScannedIndex = currentWriteIndex;
+    this.lastChangedScannedIndex = currentWriteIndex;
     this.lastUpdateTick = ctx.tick;
     this.lastChangedTick = ctx.tick;
 

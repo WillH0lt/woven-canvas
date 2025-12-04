@@ -1,7 +1,7 @@
 import { WorkerManager } from "./WorkerManager";
 import { Component } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
-import { EventBuffer } from "./EventBuffer";
+import { EventBuffer, EventType } from "./EventBuffer";
 import { Pool } from "./Pool";
 import type { System, Context } from "./types";
 
@@ -61,7 +61,6 @@ export class World {
 
     this.workerManager = new WorkerManager(threads);
     this.pool = Pool.create(maxEntities);
-    this.pool.get(); // Reserve index 0 for EntityBuffer metadata
 
     // Create the event buffer first so we can pass it to components
     const eventBuffer = new EventBuffer(maxEvents);
@@ -78,6 +77,7 @@ export class World {
       eventBuffer,
       components: componentMap,
       maxEntities,
+      maxEvents,
       componentCount,
       pool: this.pool,
       tick: 0,
@@ -106,9 +106,15 @@ export class World {
    */
   async execute(...systems: System[]): Promise<void> {
     const ctx = this.getContext();
-
-    // Increment frame number so queries know to update their caches
     ctx.tick++;
+
+    const currentEventIndex = ctx.eventBuffer.getWriteIndex();
+
+    // Shift indices: current becomes previous, record new current
+    for (const system of systems) {
+      system.prevEventIndex = system.currEventIndex;
+      system.currEventIndex = currentEventIndex;
+    }
 
     const workerSystems = systems.filter((system) => system.type === "worker");
     const mainThreadSystems = systems.filter(
@@ -125,6 +131,43 @@ export class World {
 
     // Wait for all worker systems to complete
     await Promise.all(promises);
+
+    // Reclaim entities from events that all systems have now processed.
+    // Find the bounds across all systems and reclaim once.
+    // This happens after all systems complete so removed entity data is still readable.
+    const minPrevIndex = Math.min(...systems.map((s) => s.prevEventIndex));
+    const maxCurrIndex = Math.max(...systems.map((s) => s.currEventIndex));
+    this.reclaimRemovedEntityIds(minPrevIndex, maxCurrIndex);
+  }
+
+  /**
+   * Reclaim entity IDs from entities that this system has already seen.
+   * Scans REMOVED events between the system's prevEventIndex and currEventIndex.
+   * @param system - The system to reclaim entities for
+   */
+  private reclaimRemovedEntityIds(fromIndex: number, toIndex: number): void {
+    // Nothing to reclaim on first run or if no new events
+    if (fromIndex === toIndex) {
+      return;
+    }
+
+    const ctx = this.context;
+    const maxEvents = ctx.maxEvents;
+
+    // Scan for REMOVED events and reclaim those entity IDs
+    for (const event of ctx.eventBuffer.getEventsInRange(
+      fromIndex % maxEvents,
+      toIndex % maxEvents,
+      EventType.REMOVED
+    )) {
+      // Only reclaim if the entity is still dead (not recreated)
+      if (!ctx.entityBuffer.has(event.entityId)) {
+        // Free the entity ID back to the pool
+        ctx.pool.free(event.entityId);
+        // Clear the entity data now that we're done with it
+        ctx.entityBuffer.delete(event.entityId);
+      }
+    }
   }
 
   /**

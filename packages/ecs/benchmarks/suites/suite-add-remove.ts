@@ -6,7 +6,7 @@ export default {
   setup(ctx: BenchmarkContext) {
     ctx.setup();
   },
-  perform(ctx: BenchmarkContext) {
+  async perform(ctx: BenchmarkContext) {
     const entity1 = ctx.createEntity();
     const entity2 = ctx.createEntity();
 
@@ -16,11 +16,11 @@ export default {
     ctx.addPositionComponent(entity2);
     ctx.addVelocityComponent(entity2);
 
-    ctx.updateMovementSystem();
+    await ctx.updateMovementSystem();
 
     ctx.removePositionComponent(entity1);
 
-    ctx.updateMovementSystem();
+    await ctx.updateMovementSystem();
 
     ctx.destroyEntity(entity1);
     ctx.destroyEntity(entity2);

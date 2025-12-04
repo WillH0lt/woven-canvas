@@ -99,6 +99,7 @@ export class WorkerManager {
         poolSize: ctx.pool.getSize(),
         componentData,
         maxEntities: ctx.maxEntities,
+        maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,
       };
       worker.postMessage(initMessage);

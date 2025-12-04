@@ -30,8 +30,12 @@ export function createEntity(ctx: Context): EntityId {
 }
 
 /**
- * Remove an entity in a worker thread.
- * Uses atomic operations to safely free the entity ID.
+ * Remove an entity.
+ * The entity is marked as dead but its component data is preserved until
+ * the ID is reclaimed and reused. This allows .removed() queries to still
+ * read component data from recently removed entities.
+ *
+ * ID reclamation happens automatically when the pool is exhausted.
  *
  * @param ctx - The context
  * @param entityId - The entity ID to remove
@@ -46,9 +50,12 @@ export function createEntity(ctx: Context): EntityId {
  * }
  */
 export function removeEntity(ctx: Context, entityId: EntityId): void {
+  // Emit the REMOVED event so queries can track this removal
   ctx.eventBuffer.pushRemoved(entityId);
-  ctx.entityBuffer.delete(entityId);
-  ctx.pool.free(entityId);
+
+  // Mark entity as dead but preserve component data
+  // The ID will be reclaimed later when the pool is exhausted
+  ctx.entityBuffer.markDead(entityId);
 }
 
 /**

@@ -35,7 +35,7 @@ const library: BenchmarkLibrary = {
     });
 
     this.world = new World([this.Position, this.Velocity], {
-      maxEntities: 20_000,
+      maxEntities: 10_001, // Velocity suite creates 10000 entities without destroying
     });
 
     this.ctx = this.world.getContext();
@@ -83,8 +83,8 @@ const library: BenchmarkLibrary = {
   cleanup() {
     updateCount = 0;
   },
-  updateMovementSystem() {
-    this.world.execute(this.moveSystem);
+  async updateMovementSystem() {
+    await this.world.execute(this.moveSystem);
   },
   getMovementSystemUpdateCount() {
     return updateCount;
