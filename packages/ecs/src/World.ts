@@ -3,7 +3,7 @@ import { Component } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer } from "./EventBuffer";
 import { Pool } from "./Pool";
-import type { EntityId, System, Context } from "./types";
+import type { System, Context } from "./types";
 
 export interface WorldOptions {
   /**
@@ -82,76 +82,6 @@ export class World {
       pool: this.pool,
       tick: 0,
     };
-  }
-
-  /**
-   * Create a new entity in this world
-   * @returns The newly created entity
-   */
-  createEntity(): EntityId {
-    const entityId = this.pool.get();
-    this.context.entityBuffer.create(entityId);
-    this.context.eventBuffer.pushAdded(entityId);
-
-    return entityId;
-  }
-
-  /**
-   * Remove an entity from this world
-   * @param entity - The entity instance to remove
-   */
-  removeEntity(entityId: EntityId): void {
-    // Push removed event before deleting (so we still have entity data if needed)
-    this.context.eventBuffer.pushRemoved(entityId);
-
-    this.context.entityBuffer.delete(entityId);
-    this.pool.free(entityId);
-  }
-
-  addComponent(
-    entityId: EntityId,
-    component: Component<any>,
-    data: any = {}
-  ): void {
-    this.context.entityBuffer.addComponentToEntity(
-      entityId,
-      component.componentId
-    );
-    component.from(entityId, data);
-
-    // Push component added event for reactive queries
-    this.context.eventBuffer.pushComponentAdded(
-      entityId,
-      component.componentId
-    );
-  }
-
-  removeComponent(entityId: EntityId, component: Component<any>): void {
-    if (!this.context.entityBuffer.has(entityId)) {
-      throw new Error(`Entity with ID ${entityId} does not exist.`);
-    }
-
-    this.context.entityBuffer.removeComponentFromEntity(
-      entityId,
-      component.componentId
-    );
-
-    // Push component removed event for reactive queries
-    this.context.eventBuffer.pushComponentRemoved(
-      entityId,
-      component.componentId
-    );
-  }
-
-  hasComponent(entityId: EntityId, component: Component<any>): boolean {
-    if (!this.context.entityBuffer.has(entityId)) {
-      throw new Error(`Entity with ID ${entityId} does not exist.`);
-    }
-
-    return this.context.entityBuffer.hasComponent(
-      entityId,
-      component.componentId
-    );
   }
 
   /**

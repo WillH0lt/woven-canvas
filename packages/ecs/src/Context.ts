@@ -1,0 +1,142 @@
+import type { Context, EntityId } from "./types";
+import type { Component } from "./Component";
+
+/**
+ * Create a new entity in a worker thread.
+ * Uses atomic operations to safely allocate an entity ID across threads.
+ *
+ * @param ctx - The context
+ * @returns The newly created entity ID
+ * @throws Error if the entity pool is exhausted
+ *
+ * @example
+ * import { setupWorker, createEntity, type Context } from '@infinitecanvas/ecs';
+ * import { Position } from './components';
+ *
+ * setupWorker(execute);
+ *
+ * function execute(ctx: Context) {
+ *   const entityId = createEntity(ctx);
+ *   Position.write(entityId, { x: 0, y: 0 });
+ * }
+ */
+export function createEntity(ctx: Context): EntityId {
+  const entityId = ctx.pool.get();
+
+  ctx.entityBuffer.create(entityId);
+  ctx.eventBuffer.pushAdded(entityId);
+
+  return entityId;
+}
+
+/**
+ * Remove an entity in a worker thread.
+ * Uses atomic operations to safely free the entity ID.
+ *
+ * @param ctx - The context
+ * @param entityId - The entity ID to remove
+ *
+ * @example
+ * import { setupWorker, removeEntity, type Context } from '@infinitecanvas/ecs';
+ *
+ * setupWorker(execute);
+ *
+ * function execute(ctx: Context) {
+ *   removeEntity(ctx, someEntityId);
+ * }
+ */
+export function removeEntity(ctx: Context, entityId: EntityId): void {
+  ctx.eventBuffer.pushRemoved(entityId);
+  ctx.entityBuffer.delete(entityId);
+  ctx.pool.free(entityId);
+}
+
+/**
+ * Add a component to an entity.
+ * Works on both main thread and worker threads.
+ *
+ * @param ctx - The context
+ * @param entityId - The entity ID to add the component to
+ * @param component - The component to add
+ * @param data - Optional initial data for the component
+ *
+ * @example
+ * import { addComponent, type Context } from '@infinitecanvas/ecs';
+ * import { Position } from './components';
+ *
+ * function execute(ctx: Context) {
+ *   addComponent(ctx, entityId, Position, { x: 0, y: 0 });
+ * }
+ */
+export function addComponent(
+  ctx: Context,
+  entityId: EntityId,
+  component: Component<any>,
+  data: any = {}
+): void {
+  ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
+  component.from(entityId, data);
+  ctx.eventBuffer.pushComponentAdded(entityId, component.componentId);
+}
+
+/**
+ * Remove a component from an entity.
+ * Works on both main thread and worker threads.
+ *
+ * @param ctx - The context
+ * @param entityId - The entity ID to remove the component from
+ * @param component - The component to remove
+ * @throws Error if the entity does not exist
+ *
+ * @example
+ * import { removeComponent, type Context } from '@infinitecanvas/ecs';
+ * import { Position } from './components';
+ *
+ * function execute(ctx: Context) {
+ *   removeComponent(ctx, entityId, Position);
+ * }
+ */
+export function removeComponent(
+  ctx: Context,
+  entityId: EntityId,
+  component: Component<any>
+): void {
+  if (!ctx.entityBuffer.has(entityId)) {
+    throw new Error(`Entity with ID ${entityId} does not exist.`);
+  }
+
+  ctx.entityBuffer.removeComponentFromEntity(entityId, component.componentId);
+  ctx.eventBuffer.pushComponentRemoved(entityId, component.componentId);
+}
+
+/**
+ * Check if an entity has a component.
+ * Works on both main thread and worker threads.
+ *
+ * @param ctx - The context
+ * @param entityId - The entity ID to check
+ * @param component - The component to check for
+ * @returns True if the entity has the component, false otherwise
+ * @throws Error if the entity does not exist
+ *
+ * @example
+ * import { hasComponent, type Context } from '@infinitecanvas/ecs';
+ * import { Position } from './components';
+ *
+ * function execute(ctx: Context) {
+ *   if (hasComponent(ctx, entityId, Position)) {
+ *     // Entity has Position component
+ *   }
+ * }
+ */
+export function hasComponent(
+  ctx: Context,
+  entityId: EntityId,
+  component: Component<any>
+): boolean {
+  if (!ctx.entityBuffer.has(entityId)) {
+    throw new Error(`Entity with ID ${entityId} does not exist.`);
+  }
+
+  return ctx.entityBuffer.hasComponent(entityId, component.componentId);
+}

@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { field, defineComponent, World } from "../src";
+import {
+  field,
+  defineComponent,
+  World,
+  createEntity,
+  addComponent,
+} from "../src";
 
 describe("Component", () => {
   describe("Component Lifecycle", () => {
@@ -39,9 +45,10 @@ describe("Component", () => {
         email: field.string().max(100),
       });
       const world = new World([User]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, User, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, User, {
         name: "Alice",
         email: "alice@example.com",
       });
@@ -58,9 +65,10 @@ describe("Component", () => {
         z: field.float32(),
       });
       const world = new World([Position]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Position, { x: 1.5, y: 2.5, z: 3.5 });
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Position, { x: 1.5, y: 2.5, z: 3.5 });
       const pos = Position.read(entityId);
 
       expect(pos.x).toBeCloseTo(1.5);
@@ -76,9 +84,10 @@ describe("Component", () => {
         speed: field.float32(),
       });
       const world = new World([Player]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Player, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Player, {
         name: "Bob",
         health: 100,
         score: 1500,
@@ -99,9 +108,10 @@ describe("Component", () => {
         label: field.string().max(20).default("default"),
       });
       const world = new World([Config]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Config, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Config, {});
       const config = Config.read(entityId);
 
       expect(config.enabled).toBe(true);
@@ -115,9 +125,10 @@ describe("Component", () => {
         maxCount: field.uint16().default(100),
       });
       const world = new World([Config]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Config, { enabled: false, maxCount: 50 });
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Config, { enabled: false, maxCount: 50 });
       const config = Config.read(entityId);
 
       expect(config.enabled).toBe(false);
@@ -131,9 +142,10 @@ describe("Component", () => {
         count: field.uint32(),
       });
       const world = new World([Counter]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Counter, { count: 0 });
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Counter, { count: 0 });
 
       expect(Counter.read(entityId).count).toBe(0);
 
@@ -146,11 +158,12 @@ describe("Component", () => {
         value: field.uint32(),
       });
       const world = new World([Counter]);
+      const ctx = world.getContext();
 
-      const entity1 = world.createEntity();
-      const entity2 = world.createEntity();
-      world.addComponent(entity1, Counter, { value: 10 });
-      world.addComponent(entity2, Counter, { value: 20 });
+      const entity1 = createEntity(ctx);
+      const entity2 = createEntity(ctx);
+      addComponent(ctx, entity1, Counter, { value: 10 });
+      addComponent(ctx, entity2, Counter, { value: 20 });
 
       Counter.write(entity1).value = 100;
 
@@ -172,9 +185,10 @@ describe("Component", () => {
         f64: field.float64(),
       });
       const world = new World([AllTypes]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, AllTypes, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, AllTypes, {
         u8: 255,
         u16: 65535,
         u32: 4294967295,
@@ -208,9 +222,10 @@ describe("Component", () => {
         f64: field.float64(),
       });
       const world = new World([AllTypes]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, AllTypes, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, AllTypes, {});
       const values = AllTypes.read(entityId);
 
       expect(values.u8).toBe(0);
@@ -232,9 +247,10 @@ describe("Component", () => {
         isEnabled: field.boolean(),
       });
       const world = new World([Flags]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Flags, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Flags, {
         isActive: true,
         isVisible: false,
         isEnabled: true,
@@ -251,9 +267,10 @@ describe("Component", () => {
         flag: field.boolean(),
       });
       const world = new World([Flags]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Flags, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Flags, {});
       const flags = Flags.read(entityId);
 
       expect(flags.flag).toBe(false);
@@ -264,9 +281,10 @@ describe("Component", () => {
         isActive: field.boolean(),
       });
       const world = new World([Flags]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Flags, { isActive: false });
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Flags, { isActive: false });
       expect(Flags.read(entityId).isActive).toBe(false);
 
       Flags.write(entityId).isActive = true;
@@ -283,9 +301,10 @@ describe("Component", () => {
         enabled: field.boolean(),
       });
       const world = new World([TestComponent]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, TestComponent, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, TestComponent, {
         name: "test",
         count: 42,
         ratio: 0.5,
@@ -311,9 +330,10 @@ describe("Component", () => {
         name: field.string().max(50),
       });
       const world = new World([User]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, User, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, User, {});
       const user = User.read(entityId);
 
       expect(user.name).toBe("");
@@ -324,10 +344,11 @@ describe("Component", () => {
         text: field.string().max(100),
       });
       const world = new World([Data]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const specialString = "Hello! 👋 @#$%^&*() 日本語";
-      world.addComponent(entityId, Data, { text: specialString });
+      addComponent(ctx, entityId, Data, { text: specialString });
       const data = Data.read(entityId);
 
       expect(data.text).toBe(specialString);
@@ -338,14 +359,15 @@ describe("Component", () => {
         name: field.string().max(50),
       });
       const world = new World([User]);
+      const ctx = world.getContext();
 
-      const entity1 = world.createEntity();
-      const entity2 = world.createEntity();
-      const entity3 = world.createEntity();
+      const entity1 = createEntity(ctx);
+      const entity2 = createEntity(ctx);
+      const entity3 = createEntity(ctx);
 
-      world.addComponent(entity1, User, { name: "Alice" });
-      world.addComponent(entity2, User, { name: "Bob" });
-      world.addComponent(entity3, User, { name: "Charlie" });
+      addComponent(ctx, entity1, User, { name: "Alice" });
+      addComponent(ctx, entity2, User, { name: "Bob" });
+      addComponent(ctx, entity3, User, { name: "Charlie" });
 
       expect(User.read(entity1).name).toBe("Alice");
       expect(User.read(entity2).name).toBe("Bob");
@@ -357,10 +379,11 @@ describe("Component", () => {
         shortText: field.string().max(10),
       });
       const world = new World([Data]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const longString = "This is a very long string";
-      world.addComponent(entityId, Data, { shortText: longString });
+      addComponent(ctx, entityId, Data, { shortText: longString });
 
       const data = Data.read(entityId);
       expect(data.shortText.length).toBeLessThanOrEqual(10);
@@ -372,10 +395,11 @@ describe("Component", () => {
         name: field.string().max(50),
       });
       const world = new World([User]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const testString = "Hello World";
-      world.addComponent(entityId, User, { name: testString });
+      addComponent(ctx, entityId, User, { name: testString });
 
       const buffer = (User.buffer as any).name.getBuffer();
       const offset = entityId * 54; // 50 data + 4 length header
@@ -397,9 +421,10 @@ describe("Component", () => {
         label: field.string().max(20).default("default"),
       });
       const world = new World([Config]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Config, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Config, {});
       const config = Config.read(entityId);
 
       expect(config.enabled).toBe(true);
@@ -414,9 +439,10 @@ describe("Component", () => {
         active: field.boolean(),
       });
       const world = new World([Entity]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Entity, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Entity, {});
       const entity = Entity.read(entityId);
 
       expect(entity.name).toBe("");
@@ -430,9 +456,10 @@ describe("Component", () => {
         count: field.uint32().default(10),
       });
       const world = new World([Config]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Config, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Config, {
         enabled: false,
         count: 5,
       });
@@ -449,10 +476,11 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const testData = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
-      world.addComponent(entityId, BinaryData, { data: testData });
+      addComponent(ctx, entityId, BinaryData, { data: testData });
       const result = BinaryData.read(entityId);
 
       expect(result.data).toBeInstanceOf(Uint8Array);
@@ -465,9 +493,10 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, BinaryData, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, BinaryData, {});
       const result = BinaryData.read(entityId);
 
       expect(result.data).toBeInstanceOf(Uint8Array);
@@ -480,9 +509,10 @@ describe("Component", () => {
         data: field.binary().max(128).default(defaultData),
       });
       const world = new World([BinaryData]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, BinaryData, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, BinaryData, {});
       const result = BinaryData.read(entityId);
 
       expect(Array.from(result.data)).toEqual([0xff, 0xfe, 0xfd]);
@@ -493,9 +523,10 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, BinaryData, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, BinaryData, {
         data: new Uint8Array([1, 2, 3]),
       });
 
@@ -510,9 +541,10 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, BinaryData, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, BinaryData, {
         data: new Uint8Array([1, 2, 3, 4, 5]),
       });
 
@@ -532,14 +564,15 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
+      const ctx = world.getContext();
 
-      const entity1 = world.createEntity();
-      const entity2 = world.createEntity();
+      const entity1 = createEntity(ctx);
+      const entity2 = createEntity(ctx);
 
-      world.addComponent(entity1, BinaryData, {
+      addComponent(ctx, entity1, BinaryData, {
         data: new Uint8Array([1, 2, 3]),
       });
-      world.addComponent(entity2, BinaryData, {
+      addComponent(ctx, entity2, BinaryData, {
         data: new Uint8Array([4, 5, 6, 7, 8]),
       });
 
@@ -554,10 +587,11 @@ describe("Component", () => {
         data: field.binary().max(20),
       });
       const world = new World([BinaryData]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const largeData = new Uint8Array(100).fill(42);
-      world.addComponent(entityId, BinaryData, { data: largeData });
+      addComponent(ctx, entityId, BinaryData, { data: largeData });
 
       const result = BinaryData.read(entityId);
       expect(result.data.length).toBeLessThanOrEqual(20);
@@ -572,13 +606,14 @@ describe("Component", () => {
         sender: field.string().max(50),
       });
       const world = new World([NetworkPacket]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const payload = new Uint8Array([
         0x01, 0x02, 0x48, 0x65, 0x6c, 0x6c, 0x6f,
       ]);
 
-      world.addComponent(entityId, NetworkPacket, {
+      addComponent(ctx, entityId, NetworkPacket, {
         packetId: 12345,
         payload: payload,
         timestamp: Date.now(),
@@ -598,10 +633,11 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const testData = new Uint8Array([10, 20, 30, 40, 50]);
-      world.addComponent(entityId, BinaryData, { data: testData });
+      addComponent(ctx, entityId, BinaryData, { data: testData });
 
       const buffer = BinaryData.buffer.data.getBuffer();
       const offset = entityId * 132; // 128 data + 4 length header
@@ -624,10 +660,11 @@ describe("Component", () => {
         pts: field.array(field.float32(), 1024),
       });
       const world = new World([Polygon]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const points = [1.5, 2.5, 3.5, 4.5, 5.5];
-      world.addComponent(entityId, Polygon, { pts: points });
+      addComponent(ctx, entityId, Polygon, { pts: points });
 
       const result = Polygon.read(entityId);
       expect(result.pts).toEqual(points);
@@ -638,9 +675,10 @@ describe("Component", () => {
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Polygon, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Polygon, {});
 
       const result = Polygon.read(entityId);
       expect(result.pts).toEqual([]);
@@ -651,9 +689,10 @@ describe("Component", () => {
         pts: field.array(field.float32(), 100).default([1.0, 2.0, 3.0]),
       });
       const world = new World([Polygon]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Polygon, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Polygon, {});
 
       const result = Polygon.read(entityId);
       expect(result.pts).toEqual([1.0, 2.0, 3.0]);
@@ -664,9 +703,10 @@ describe("Component", () => {
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Polygon, { pts: [1.0, 2.0] });
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Polygon, { pts: [1.0, 2.0] });
 
       const polygon = Polygon.write(entityId);
       polygon.pts = [10.0, 20.0, 30.0];
@@ -680,12 +720,13 @@ describe("Component", () => {
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
+      const ctx = world.getContext();
 
-      const e1 = world.createEntity();
-      const e2 = world.createEntity();
+      const e1 = createEntity(ctx);
+      const e2 = createEntity(ctx);
 
-      world.addComponent(e1, Polygon, { pts: [1.0, 2.0] });
-      world.addComponent(e2, Polygon, { pts: [3.0, 4.0, 5.0] });
+      addComponent(ctx, e1, Polygon, { pts: [1.0, 2.0] });
+      addComponent(ctx, e2, Polygon, { pts: [3.0, 4.0, 5.0] });
 
       expect(Polygon.read(e1).pts).toEqual([1.0, 2.0]);
       expect(Polygon.read(e2).pts).toEqual([3.0, 4.0, 5.0]);
@@ -696,10 +737,11 @@ describe("Component", () => {
         pts: field.array(field.float32(), 5),
       });
       const world = new World([Polygon]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const largeArray = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
-      world.addComponent(entityId, Polygon, { pts: largeArray });
+      addComponent(ctx, entityId, Polygon, { pts: largeArray });
 
       const result = Polygon.read(entityId);
       expect(result.pts.length).toBe(5);
@@ -713,9 +755,10 @@ describe("Component", () => {
         bytes: field.array(field.uint8(), 10),
       });
       const world = new World([MixedArrays]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, MixedArrays, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, MixedArrays, {
         floats: [1.5, 2.5, 3.5],
         ints: [-10, 0, 10],
         bytes: [255, 128, 0],
@@ -735,9 +778,10 @@ describe("Component", () => {
         visible: field.boolean(),
       });
       const world = new World([Shape]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Shape, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Shape, {
         id: 42,
         name: "triangle",
         pts: [0.0, 0.0, 1.0, 0.0, 0.5, 1.0],
@@ -756,9 +800,10 @@ describe("Component", () => {
         names: field.array(field.string().max(50), 10),
       });
       const world = new World([Tags]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Tags, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Tags, {
         names: ["alpha", "beta", "gamma"],
       });
 
@@ -771,9 +816,10 @@ describe("Component", () => {
         bits: field.array(field.boolean(), 8),
       });
       const world = new World([Flags]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Flags, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Flags, {
         bits: [true, false, true, true, false],
       });
 
@@ -786,11 +832,12 @@ describe("Component", () => {
         data: field.array(field.binary().max(32), 5),
       });
       const world = new World([Chunks]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
+      const entityId = createEntity(ctx);
       const chunk1 = new Uint8Array([1, 2, 3]);
       const chunk2 = new Uint8Array([4, 5, 6, 7]);
-      world.addComponent(entityId, Chunks, {
+      addComponent(ctx, entityId, Chunks, {
         data: [chunk1, chunk2],
       });
 
@@ -805,9 +852,10 @@ describe("Component", () => {
         names: field.array(field.string().max(50), 5),
       });
       const world = new World([Tags]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Tags, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Tags, {
         names: ["hello", "", "world"],
       });
 
@@ -822,9 +870,10 @@ describe("Component", () => {
         flags: field.array(field.boolean(), 8),
       });
       const world = new World([MixedComponent]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, MixedComponent, {
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, MixedComponent, {
         numbers: [1.5, 2.5, 3.5],
         strings: ["a", "b", "c"],
         flags: [true, false, true],
@@ -846,9 +895,10 @@ describe("Component", () => {
           .default([new Uint8Array([1, 2]), new Uint8Array([3, 4, 5])]),
       });
       const world = new World([Defaults]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Defaults, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Defaults, {});
 
       const result = Defaults.read(entityId);
       expect(result.nums).toEqual([1.0, 2.0, 3.0]);
@@ -867,9 +917,10 @@ describe("Component", () => {
           .default(["used"]),
       });
       const world = new World([Combo]);
+      const ctx = world.getContext();
 
-      const entityId = world.createEntity();
-      world.addComponent(entityId, Combo, {});
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Combo, {});
 
       const result = Combo.read(entityId);
       expect(result.nums).toEqual([1.0, 2.0]);

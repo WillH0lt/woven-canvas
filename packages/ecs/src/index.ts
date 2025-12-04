@@ -1,6 +1,13 @@
 export { field, type Component, defineComponent } from "./Component";
 export { World } from "./World";
-export { setupWorker, createEntity, removeEntity } from "./Worker";
+export { setupWorker } from "./Worker";
+export {
+  createEntity,
+  removeEntity,
+  addComponent,
+  removeComponent,
+  hasComponent,
+} from "./Context";
 export { defineSystem, defineWorkerSystem } from "./System";
 export type { Context, System, MainThreadSystem, WorkerSystem } from "./types";
 export { defineQuery, type QueryBuilder, type Query } from "./Query";
