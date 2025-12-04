@@ -8,7 +8,7 @@ import {
   __resetWorkerState,
 } from "../src/Worker";
 import type {
-  WorkerContext,
+  Context,
   InitMessage,
   ExecuteMessage,
   WorkerSuccessResponse,
@@ -183,14 +183,13 @@ describe("Worker", () => {
       // Execute should have been called with context
       expect(execute).toHaveBeenCalledTimes(1);
 
-      const callArg = execute.mock.calls[0][0] as WorkerContext;
+      const callArg = execute.mock.calls[0][0] as Context;
       // Check entityBuffer has expected properties
       expect(callArg.entityBuffer).toBeDefined();
       expect(callArg.entityBuffer).toBeInstanceOf(EntityBuffer);
       expect(callArg.components).toEqual({});
       expect(callArg.maxEntities).toBe(maxEntities);
       expect(callArg.componentCount).toBe(componentCount);
-      expect(callArg.isWorker).toBe(true);
 
       // Should send success response
       expect(mockPostMessage).toHaveBeenCalledWith({
@@ -477,11 +476,11 @@ describe("Worker", () => {
     });
   });
 
-  describe("WorkerContext", () => {
-    it("should have isWorker set to true", () => {
-      let capturedContext: WorkerContext | null = null;
+  describe("Context", () => {
+    it("should have correct context properties", () => {
+      let capturedContext: Context | null = null;
 
-      const execute = vi.fn((ctx: WorkerContext) => {
+      const execute = vi.fn((ctx: Context) => {
         capturedContext = ctx;
       });
 
@@ -528,13 +527,13 @@ describe("Worker", () => {
       } as MessageEvent<ExecuteMessage>);
 
       expect(capturedContext).not.toBeNull();
-      expect(capturedContext!.isWorker).toBe(true);
+      expect(capturedContext!.entityBuffer).toBeDefined();
     });
 
     it("should have correct maxEntities and componentCount", () => {
-      let capturedContext: WorkerContext | null = null;
+      let capturedContext: Context | null = null;
 
-      const execute = vi.fn((ctx: WorkerContext) => {
+      const execute = vi.fn((ctx: Context) => {
         capturedContext = ctx;
       });
 
@@ -586,9 +585,9 @@ describe("Worker", () => {
     });
 
     it("should have empty components object initially", () => {
-      let capturedContext: WorkerContext | null = null;
+      let capturedContext: Context | null = null;
 
-      const execute = vi.fn((ctx: WorkerContext) => {
+      const execute = vi.fn((ctx: Context) => {
         capturedContext = ctx;
       });
 

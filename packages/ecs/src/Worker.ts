@@ -4,7 +4,7 @@ import { Pool } from "./Pool";
 import type { Component } from "./Component";
 import type {
   EntityId,
-  WorkerContext,
+  Context,
   WorkerIncomingMessage,
   WorkerSuccessResponse,
   WorkerErrorResponse,
@@ -16,12 +16,12 @@ import type {
  *
  * @example
  * // In your worker file (e.g., myWorker.ts):
- * import { setupWorker, query, type WorkerContext } from '@infinitecanvas/ecs';
+ * import { setupWorker, query, type Context } from '@infinitecanvas/ecs';
  * import { Position, Velocity } from './components';
  *
  * setupWorker(execute);
  *
- * function execute(ctx: WorkerContext) {
+ * function execute(ctx: Context) {
  *   for (const eid of query(ctx, (q) => q.with(Position, Velocity))) {
  *     const pos = Position.read(eid);
  *     console.log(`Entity ${eid} Position: (${pos.x}, ${pos.y})`);
@@ -30,8 +30,8 @@ import type {
  */
 
 interface InternalContext {
-  context: WorkerContext | null;
-  execute: (ctx: WorkerContext) => void | Promise<void>;
+  context: Context | null;
+  execute: (ctx: Context) => void | Promise<void>;
   componentTransferData: ComponentTransferData | null;
 }
 
@@ -42,15 +42,15 @@ let internalContext: InternalContext | null = null;
  * Call this function in your worker file to set up the execution handler.
  * Components are automatically initialized when first accessed via queries.
  *
- * @param execute - Function to execute when the worker receives a task. Receives a WorkerContext object with entityBuffer.
+ * @param execute - Function to execute when the worker receives a task. Receives a Context object with entityBuffer.
  *
  * @example
- * import { setupWorker, query, type WorkerContext } from '@infinitecanvas/ecs';
+ * import { setupWorker, query, type Context } from '@infinitecanvas/ecs';
  * import { Position, Velocity } from './components';
  *
  * setupWorker(execute);
  *
- * function execute(ctx: WorkerContext) {
+ * function execute(ctx: Context) {
  *   for (const eid of query(ctx, (q) => q.with(Position, Velocity))) {
  *     const pos = Position.read(eid);
  *     console.log(`Entity ${eid} Position: (${pos.x}, ${pos.y})`);
@@ -58,7 +58,7 @@ let internalContext: InternalContext | null = null;
  * }
  */
 export function setupWorker(
-  execute: (ctx: WorkerContext) => void | Promise<void>
+  execute: (ctx: Context) => void | Promise<void>
 ): void {
   // Initialize internal context
   internalContext = {
@@ -114,7 +114,7 @@ function handleMessage(
         components: {},
         maxEntities: e.data.maxEntities,
         componentCount: e.data.componentCount,
-        isWorker: true,
+        tick: 0,
       };
 
       sendResult(self, index);
@@ -123,6 +123,8 @@ function handleMessage(
       if (!internalContext.context) {
         throw new Error("Entity buffer not initialized");
       }
+      // Increment frame number so queries know to update their caches
+      internalContext.context.tick++;
       internalContext.execute(internalContext.context);
       sendResult(self, index);
     }
@@ -189,22 +191,22 @@ export function __resetWorkerState(): void {
  * Create a new entity in a worker thread.
  * Uses atomic operations to safely allocate an entity ID across threads.
  *
- * @param ctx - The worker context
+ * @param ctx - The context
  * @returns The newly created entity ID
  * @throws Error if the entity pool is exhausted
  *
  * @example
- * import { setupWorker, createEntity, type WorkerContext } from '@infinitecanvas/ecs';
+ * import { setupWorker, createEntity, type Context } from '@infinitecanvas/ecs';
  * import { Position } from './components';
  *
  * setupWorker(execute);
  *
- * function execute(ctx: WorkerContext) {
+ * function execute(ctx: Context) {
  *   const entityId = createEntity(ctx);
  *   Position.write(entityId, { x: 0, y: 0 });
  * }
  */
-export function createEntity(ctx: WorkerContext): EntityId {
+export function createEntity(ctx: Context): EntityId {
   const entityId = ctx.pool.get();
 
   ctx.entityBuffer.create(entityId);
@@ -217,19 +219,19 @@ export function createEntity(ctx: WorkerContext): EntityId {
  * Remove an entity in a worker thread.
  * Uses atomic operations to safely free the entity ID.
  *
- * @param ctx - The worker context
+ * @param ctx - The context
  * @param entityId - The entity ID to remove
  *
  * @example
- * import { setupWorker, removeEntity, type WorkerContext } from '@infinitecanvas/ecs';
+ * import { setupWorker, removeEntity, type Context } from '@infinitecanvas/ecs';
  *
  * setupWorker(execute);
  *
- * function execute(ctx: WorkerContext) {
+ * function execute(ctx: Context) {
  *   removeEntity(ctx, someEntityId);
  * }
  */
-export function removeEntity(ctx: WorkerContext, entityId: EntityId): void {
+export function removeEntity(ctx: Context, entityId: EntityId): void {
   ctx.eventBuffer.pushRemoved(entityId);
   ctx.entityBuffer.delete(entityId);
   ctx.pool.free(entityId);

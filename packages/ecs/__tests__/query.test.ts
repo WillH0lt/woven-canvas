@@ -468,14 +468,18 @@ describe("Query", () => {
       world.addComponent(e1, Position, { x: 10, y: 20 });
       world.addComponent(e1, Velocity, { dx: 1, dy: 2 });
 
+      // Simulate next frame - query updates are frame-based
+      ctx.tick++;
+
       // Should appear in added()
       added = Array.from(movingQuery.added(ctx));
       expect(added).toHaveLength(1);
       expect(added).toContain(e1);
 
-      // Second call should return empty (already processed)
+      // Second call in same frame should return cached value
       added = Array.from(movingQuery.added(ctx));
-      expect(added).toHaveLength(0);
+      expect(added).toHaveLength(1);
+      expect(added).toContain(e1);
     });
 
     it("should return entity in added() when component is added to existing entity", () => {
@@ -488,7 +492,8 @@ describe("Query", () => {
       const e1 = world.createEntity();
       world.addComponent(e1, Position, { x: 10, y: 20 });
 
-      // Clear the added buffer
+      // Simulate next frame and clear the added buffer
+      ctx.tick++;
       movingQuery.added(ctx);
 
       // Entity doesn't match query yet
@@ -496,6 +501,9 @@ describe("Query", () => {
 
       // Now add Velocity - entity should match
       world.addComponent(e1, Velocity, { dx: 1, dy: 2 });
+
+      // Simulate next frame
+      ctx.tick++;
 
       // Entity should now appear in added()
       const added = Array.from(movingQuery.added(ctx));
@@ -517,12 +525,16 @@ describe("Query", () => {
       world.addComponent(e1, Position);
       world.addComponent(e1, Velocity);
 
-      // Clear the added/removed buffers
+      // Simulate next frame and clear the added/removed buffers
+      ctx.tick++;
       movingQuery.added(ctx);
       movingQuery.removed(ctx);
 
       // Delete the entity
       world.removeEntity(e1);
+
+      // Simulate next frame
+      ctx.tick++;
 
       // Should appear in removed()
       const removed = Array.from(movingQuery.removed(ctx));
@@ -541,7 +553,8 @@ describe("Query", () => {
       world.addComponent(e1, Position);
       world.addComponent(e1, Velocity);
 
-      // Clear the buffers
+      // Simulate next frame and clear the buffers
+      ctx.tick++;
       movingQuery.added(ctx);
       movingQuery.removed(ctx);
 
@@ -550,6 +563,9 @@ describe("Query", () => {
 
       // Remove Velocity - entity should no longer match
       world.removeComponent(e1, Velocity);
+
+      // Simulate next frame
+      ctx.tick++;
 
       // Entity should appear in removed()
       const removed = Array.from(movingQuery.removed(ctx));
@@ -573,12 +589,16 @@ describe("Query", () => {
       world.addComponent(e1, Velocity);
       world.addComponent(e1, Health);
 
-      // Clear buffers
+      // Simulate next frame and clear buffers
+      ctx.tick++;
       positionQuery.added(ctx);
       positionQuery.removed(ctx);
 
       // Remove Velocity - entity should still match (query only requires Position)
       world.removeComponent(e1, Velocity);
+
+      // Simulate next frame
+      ctx.tick++;
 
       // Entity should NOT appear in removed() since it still matches
       const removed = Array.from(positionQuery.removed(ctx));
@@ -600,7 +620,8 @@ describe("Query", () => {
       world.addComponent(e1, Position);
       world.addComponent(e1, Enemy);
 
-      // Clear buffers
+      // Simulate next frame and clear buffers
+      ctx.tick++;
       nonEnemyQuery.added(ctx);
       nonEnemyQuery.removed(ctx);
 
@@ -609,6 +630,9 @@ describe("Query", () => {
 
       // Remove Enemy - now entity should match
       world.removeComponent(e1, Enemy);
+
+      // Simulate next frame
+      ctx.tick++;
 
       // Entity should appear in added()
       const added = Array.from(nonEnemyQuery.added(ctx));
@@ -627,7 +651,8 @@ describe("Query", () => {
       const e1 = world.createEntity();
       world.addComponent(e1, Position);
 
-      // Clear buffers
+      // Simulate next frame and clear buffers
+      ctx.tick++;
       nonEnemyQuery.added(ctx);
       nonEnemyQuery.removed(ctx);
 
@@ -636,6 +661,9 @@ describe("Query", () => {
 
       // Add Enemy - now entity should NOT match
       world.addComponent(e1, Enemy);
+
+      // Simulate next frame
+      ctx.tick++;
 
       // Entity should appear in removed()
       const removed = Array.from(nonEnemyQuery.removed(ctx));
@@ -660,13 +688,17 @@ describe("Query", () => {
       const e3 = world.createEntity();
       world.addComponent(e3, Position);
 
-      // Clear buffers
+      // Simulate next frame and clear buffers
+      ctx.tick++;
       movingQuery.added(ctx);
       movingQuery.removed(ctx);
 
       // Add Velocity to e1 and e2
       world.addComponent(e1, Velocity);
       world.addComponent(e2, Velocity);
+
+      // Simulate next frame
+      ctx.tick++;
 
       // Check added
       let added = Array.from(movingQuery.added(ctx));
@@ -677,6 +709,9 @@ describe("Query", () => {
 
       // Remove Velocity from e1
       world.removeComponent(e1, Velocity);
+
+      // Simulate next frame
+      ctx.tick++;
 
       // Check removed
       const removed = Array.from(movingQuery.removed(ctx));
@@ -697,7 +732,8 @@ describe("Query", () => {
       // Create entity with no components
       const e1 = world.createEntity();
 
-      // Clear buffers
+      // Simulate next frame and clear buffers
+      ctx.tick++;
       query.added(ctx);
 
       // Add all three components
@@ -705,10 +741,54 @@ describe("Query", () => {
       world.addComponent(e1, Velocity);
       world.addComponent(e1, Health);
 
+      // Simulate next frame
+      ctx.tick++;
+
       // Entity should appear only once in added()
       const added = Array.from(query.added(ctx));
       expect(added).toHaveLength(1);
       expect(added).toContain(e1);
+    });
+
+    it("should return consistent results within the same frame", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+
+      // Create entities
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position);
+      world.addComponent(e1, Velocity);
+      const e2 = world.createEntity();
+      world.addComponent(e2, Position);
+      world.addComponent(e2, Velocity);
+
+      // Simulate next frame
+      ctx.tick++;
+
+      // First call to current()
+      const current1 = Array.from(movingQuery.current(ctx));
+      expect(current1).toHaveLength(2);
+
+      // Second call in same frame should return identical results
+      const current2 = Array.from(movingQuery.current(ctx));
+      expect(current2).toEqual(current1);
+
+      // Even if we create more entities during the same frame...
+      const e3 = world.createEntity();
+      world.addComponent(e3, Position);
+      world.addComponent(e3, Velocity);
+
+      // ...the results should still be the same within this frame
+      const current3 = Array.from(movingQuery.current(ctx));
+      expect(current3).toEqual(current1);
+
+      // But on the next frame, we see the new entity
+      ctx.tick++;
+      const current4 = Array.from(movingQuery.current(ctx));
+      expect(current4).toHaveLength(3);
+      expect(current4).toContain(e3);
     });
   });
 });

@@ -1,5 +1,5 @@
 import type { Component } from "./Component";
-import type { AnyContext, Context, QueryMasks } from "./types";
+import type { Context, QueryMasks } from "./types";
 import { QueryCache } from "./QueryCache";
 import { EventType, EventTypeMask } from "./EventBuffer";
 import { initializeComponentInWorker } from "./Worker";
@@ -43,7 +43,14 @@ function masksToHash(masks: QueryMasks): string {
 /**
  * A lazily-initialized query that caches matching entities.
  * Created via defineQuery() and connects to the query cache on first use.
- * On the main thread, results are cached. On workers, results are calculated fresh each time.
+ * Works identically on main thread and worker threads.
+ *
+ * The query updates its own cache by scanning the EventBuffer. The first call to
+ * current(), added(), or removed() per tick triggers a unified update that:
+ * 1. Scans events since the last update
+ * 2. Determines which entities were added/removed from the query result
+ * 3. Updates the QueryCache accordingly
+ * 4. Caches added/removed arrays for subsequent calls in the same tick
  */
 export class Query {
   private cache: QueryCache | null = null;
@@ -52,13 +59,39 @@ export class Query {
   private hash: string | null = null;
 
   /**
-   * Tracks the last scanned index in the event buffer for each reactive query type.
-   * This allows efficient incremental scanning instead of scanning all events.
-   * Initialized to 0 (start of buffer).
+   * Tracks the last scanned index in the event buffer.
+   * Used to efficiently scan only new events since the last update.
    */
-  private lastScannedIndexAdded: number = 0;
-  private lastScannedIndexRemoved: number = 0;
-  private lastScannedIndexChanged: number = 0;
+  private lastScannedIndex: number = 0;
+
+  /**
+   * Cached results from the last update - stored per tick.
+   * When any of current(), added(), or removed() is called, we update
+   * all results in one pass and cache them here.
+   */
+  private cachedAdded: Uint32Array | null = null;
+  private cachedRemoved: Uint32Array | null = null;
+
+  /**
+   * The tick number at the time of the last update.
+   * Used to determine if we need to re-process events.
+   */
+  private lastUpdateTick: number = -1;
+
+  /**
+   * Separate tracking for changed() since it uses different event types
+   */
+  private lastChangedTick: number = -1;
+
+  /**
+   * Separate scanned index for changed() events
+   */
+  private lastChangedScannedIndex: number = 0;
+
+  /**
+   * Cached changed results for the current tick
+   */
+  private cachedChanged: Uint32Array | null = null;
 
   /**
    * @internal
@@ -70,19 +103,17 @@ export class Query {
   /**
    * Build and cache the query masks (lazy initialization)
    */
-  private lazilyInitializeMasks(ctx: AnyContext): void {
+  private lazilyInitializeMasks(ctx: Context): void {
     if (this.masks === null) {
-      if (ctx.isWorker) {
-        // collect components that need initialization
-        const tempBuilder = new QueryBuilder(ctx.componentCount);
-        const configuredTempBuilder = this.builder(tempBuilder);
+      // collect components that need initialization
+      const tempBuilder = new QueryBuilder(ctx.componentCount);
+      const configuredTempBuilder = this.builder(tempBuilder);
 
-        // Initialize components BEFORE building masks (important for workers)
-        for (const component of configuredTempBuilder._getComponents()) {
-          // In workers, lazily initialize components that haven't been initialized yet
-          if (ctx.isWorker && component.componentId === -1) {
-            initializeComponentInWorker(component);
-          }
+      // Initialize components BEFORE building masks (important for workers)
+      for (const component of configuredTempBuilder._getComponents()) {
+        // Lazily initialize components that haven't been initialized yet
+        if (component.componentId === -1) {
+          initializeComponentInWorker(component);
         }
       }
 
@@ -96,150 +127,27 @@ export class Query {
   }
 
   private createCache(ctx: Context): QueryCache {
-    let cache: QueryCache;
-
     if (!this.masks || !this.hash) {
       throw new Error("Query masks or hash not initialized");
     }
 
-    // Check if query already exists in context cache
-    if (ctx.queries?.has(this.hash)) {
-      cache = ctx.queries.get(this.hash)!;
-    } else {
-      // Create new query cache
-      cache = new QueryCache(this.masks, ctx.maxEntities);
-      // Populate with matching entities (start at 1, index 0 is reserved for length)
-      for (let i = 1; i < ctx.entityBuffer.length; i++) {
-        if (ctx.entityBuffer.matches(i, this.masks)) {
-          cache.add(i);
-        }
-      }
-
-      // Store in context cache if available
-      if (ctx.queries) {
-        ctx.queries.set(this.hash, cache);
-      }
-    }
-
-    return cache;
-  }
-
-  /**
-   * Calculate matching entities without caching (for workers)
-   */
-  private calculateResults(ctx: AnyContext): Uint32Array {
-    if (!this.masks) {
-      throw new Error("Query masks not initialized");
-    }
-
-    // Allocate max possible size, then return subarray of actual matches
-    const results = new Uint32Array(ctx.maxEntities);
-    let count = 0;
-    // Start at 1, index 0 is reserved for length
+    // Create new query cache
+    const cache = new QueryCache(this.masks, ctx.maxEntities);
+    // Populate with matching entities (start at 1, index 0 is reserved for length)
     for (let i = 1; i < ctx.entityBuffer.length; i++) {
       if (ctx.entityBuffer.matches(i, this.masks)) {
-        results[count++] = i;
+        cache.add(i);
       }
     }
 
-    return results.subarray(0, count);
-  }
+    // Initialize lastScannedIndex to current write position
+    // so we don't process events that happened before the cache was created
+    this.lastScannedIndex = ctx.eventBuffer.getWriteIndex();
+    this.lastChangedScannedIndex = this.lastScannedIndex;
+    this.lastUpdateTick = ctx.tick;
+    this.lastChangedTick = ctx.tick;
 
-  /**
-   * Get the current matching entities.
-   * On the main thread, results are cached for efficiency.
-   * On workers, results are calculated fresh each call.
-   *
-   * @param ctx - The context object containing the entity buffer and query cache
-   * @returns An array of entity IDs matching the query criteria
-   */
-  current(ctx: AnyContext): Uint32Array {
-    // Lazily initialize masks on first use
-    this.lazilyInitializeMasks(ctx);
-
-    // Workers calculate results fresh each time (no caching)
-    if (ctx.isWorker) {
-      return this.calculateResults(ctx);
-    }
-
-    // Main thread uses cached results
-    if (this.cache === null) {
-      this.cache = this.createCache(ctx);
-    }
-
-    return this.cache.getDenseView();
-  }
-
-  /**
-   * Get entities that were added (created) since the last time this query was checked.
-   * Only returns entities that match the query criteria.
-   * This includes:
-   * - Newly created entities (ADDED event)
-   * - Entities that now match due to component changes (COMPONENT_ADDED/COMPONENT_REMOVED)
-   *
-   * @param ctx - The context object containing the entity buffer and event buffer
-   * @returns An array of entity IDs that were added and match the query
-   */
-  added(ctx: AnyContext): Uint32Array {
-    this.lazilyInitializeMasks(ctx);
-
-    // Get component mask for this query to filter COMPONENT_ADDED/REMOVED events
-    const queryComponentMask = this.getQueryComponentMask();
-
-    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
-      this.lastScannedIndexAdded,
-      EventTypeMask.QUERY_ADDED,
-      queryComponentMask
-    );
-
-    // Filter to only entities that currently match the query
-    const results: number[] = [];
-    for (const entityId of entities) {
-      if (ctx.entityBuffer.matches(entityId, this.masks!)) {
-        results.push(entityId);
-      }
-    }
-
-    this.lastScannedIndexAdded = newIndex;
-    return new Uint32Array(results);
-  }
-
-  /**
-   * Get entities that were removed (deleted) since the last time this query was checked.
-   * This includes:
-   * - Deleted entities (REMOVED event)
-   * - Entities that no longer match due to component changes (COMPONENT_ADDED/COMPONENT_REMOVED)
-   *
-   * @param ctx - The context object containing the entity buffer and event buffer
-   * @returns An array of entity IDs that were removed or no longer match
-   */
-  removed(ctx: AnyContext): Uint32Array {
-    this.lazilyInitializeMasks(ctx);
-
-    // Get component mask for this query to filter COMPONENT_ADDED/REMOVED events
-    const queryComponentMask = this.getQueryComponentMask();
-
-    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
-      this.lastScannedIndexRemoved,
-      EventTypeMask.QUERY_REMOVED,
-      queryComponentMask
-    );
-
-    // Filter: include entities that are deleted OR no longer match the query
-    const results: number[] = [];
-    for (const entityId of entities) {
-      // Entity was deleted (no longer exists)
-      if (!ctx.entityBuffer.has(entityId)) {
-        results.push(entityId);
-      }
-      // Entity exists but no longer matches query
-      else if (!ctx.entityBuffer.matches(entityId, this.masks!)) {
-        results.push(entityId);
-      }
-    }
-
-    this.lastScannedIndexRemoved = newIndex;
-    return new Uint32Array(results);
+    return cache;
   }
 
   /**
@@ -261,27 +169,171 @@ export class Query {
   }
 
   /**
+   * Perform a unified update of the query cache by scanning new events.
+   * This is called by the first of current(), added(), or removed() per tick.
+   * It computes both added and removed entities in a single pass and updates the cache.
+   *
+   * @param ctx - The context object
+   * @returns true if an update was performed, false if already up-to-date
+   */
+  private updateFromEvents(ctx: Context): boolean {
+    // Already up-to-date for this tick
+    if (ctx.tick === this.lastUpdateTick) {
+      return false;
+    }
+
+    // Get component mask for filtering events
+    const queryComponentMask = this.getQueryComponentMask();
+
+    // Collect all entities that had relevant events
+    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
+      this.lastScannedIndex,
+      EventTypeMask.ALL, // Get all event types - we'll categorize them ourselves
+      queryComponentMask
+    );
+
+    // Categorize entities into added and removed
+    const addedList: number[] = [];
+    const removedList: number[] = [];
+
+    for (const entityId of entities) {
+      const existsNow = ctx.entityBuffer.has(entityId);
+      const matchesNow =
+        existsNow && ctx.entityBuffer.matches(entityId, this.masks!);
+      const wasInCache = this.cache?.has(entityId) ?? false;
+
+      if (matchesNow && !wasInCache) {
+        // Entity now matches but wasn't in cache -> added
+        addedList.push(entityId);
+        this.cache?.add(entityId);
+      } else if (!matchesNow && wasInCache) {
+        // Entity no longer matches but was in cache -> removed
+        removedList.push(entityId);
+        this.cache?.remove(entityId);
+      }
+      // If matchesNow && wasInCache: still matches, no change
+      // If !matchesNow && !wasInCache: still doesn't match, no change
+    }
+
+    // Cache the results
+    this.cachedAdded = new Uint32Array(addedList);
+    this.cachedRemoved = new Uint32Array(removedList);
+
+    // Update tracking indices
+    this.lastScannedIndex = newIndex;
+    this.lastUpdateTick = ctx.tick;
+
+    return true;
+  }
+
+  /**
+   * Ensure the cache is initialized and up-to-date with recent events.
+   * Called before any query method returns results.
+   */
+  private ensureUpdated(ctx: Context): void {
+    // Initialize cache if needed
+    if (this.cache === null) {
+      this.cache = this.createCache(ctx);
+      // New cache starts with empty added/removed/changed since we just populated it
+      this.cachedAdded = new Uint32Array(0);
+      this.cachedRemoved = new Uint32Array(0);
+      this.cachedChanged = new Uint32Array(0);
+      return;
+    }
+
+    // Update from events if there are new ones
+    this.updateFromEvents(ctx);
+  }
+
+  /**
+   * Get the current matching entities.
+   * Results are cached and updated incrementally from the event buffer.
+   *
+   * @param ctx - The context object containing the entity buffer and query cache
+   * @returns An array of entity IDs matching the query criteria
+   */
+  current(ctx: Context): Uint32Array {
+    // Lazily initialize masks on first use
+    this.lazilyInitializeMasks(ctx);
+
+    // Ensure cache is up-to-date
+    this.ensureUpdated(ctx);
+
+    return this.cache!.getDenseView();
+  }
+
+  /**
+   * Get entities that were added (created) since the last time this query was checked.
+   * Only returns entities that match the query criteria.
+   * This includes:
+   * - Newly created entities (ADDED event)
+   * - Entities that now match due to component changes (COMPONENT_ADDED/COMPONENT_REMOVED)
+   *
+   * @param ctx - The context object containing the entity buffer and event buffer
+   * @returns An array of entity IDs that were added and match the query
+   */
+  added(ctx: Context): Uint32Array {
+    this.lazilyInitializeMasks(ctx);
+
+    // Ensure cache is up-to-date
+    this.ensureUpdated(ctx);
+
+    return this.cachedAdded ?? new Uint32Array(0);
+  }
+
+  /**
+   * Get entities that were removed (deleted) since the last time this query was checked.
+   * This includes:
+   * - Deleted entities (REMOVED event)
+   * - Entities that no longer match due to component changes (COMPONENT_ADDED/COMPONENT_REMOVED)
+   *
+   * @param ctx - The context object containing the entity buffer and event buffer
+   * @returns An array of entity IDs that were removed or no longer match
+   */
+  removed(ctx: Context): Uint32Array {
+    this.lazilyInitializeMasks(ctx);
+
+    // Ensure cache is up-to-date
+    this.ensureUpdated(ctx);
+
+    return this.cachedRemoved ?? new Uint32Array(0);
+  }
+
+  /**
    * Get entities whose tracked components have changed since the last time this query was checked.
    * Only returns entities that match the query criteria and have changes to tracked components.
    * Use .withTracked() in the query builder to specify which components to track.
    *
+   * Note: changed() uses separate tracking from added()/removed() since it monitors
+   * different event types (CHANGED vs ADDED/REMOVED/COMPONENT_ADDED/COMPONENT_REMOVED).
+   *
    * @param ctx - The context object containing the entity buffer and event buffer
    * @returns An array of entity IDs with changed tracked components
    */
-  changed(ctx: AnyContext): Uint32Array {
+  changed(ctx: Context): Uint32Array {
     this.lazilyInitializeMasks(ctx);
+
+    // Ensure cache is initialized
+    this.ensureUpdated(ctx);
+
+    // Already up-to-date for this tick, return cached result
+    if (ctx.tick === this.lastChangedTick) {
+      const result = this.cachedChanged ?? new Uint32Array(0);
+      this.cachedChanged = new Uint32Array(0);
+      return result;
+    }
 
     const trackingMask = this.masks!.tracking;
 
     // If no components are tracked, return empty
     if (trackingMask.every((byte) => byte === 0)) {
-      // Still update the index to stay current
-      this.lastScannedIndexChanged = ctx.eventBuffer.getWriteIndex();
-      return new Uint32Array(0);
+      this.lastChangedTick = ctx.tick;
+      this.cachedChanged = new Uint32Array(0);
+      return this.cachedChanged;
     }
 
     const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
-      this.lastScannedIndexChanged,
+      this.lastChangedScannedIndex,
       EventType.CHANGED,
       trackingMask
     );
@@ -294,8 +346,11 @@ export class Query {
       }
     }
 
-    this.lastScannedIndexChanged = newIndex;
-    return new Uint32Array(results);
+    this.lastChangedScannedIndex = newIndex;
+    this.lastChangedTick = ctx.tick;
+    this.cachedChanged = new Uint32Array(results);
+
+    return this.cachedChanged;
   }
 }
 
@@ -430,7 +485,7 @@ export class QueryBuilder {
  * @returns A Query object with a current(ctx) method to get matching entities
  *
  * @example
- * import { setupWorker, defineQuery, type WorkerContext } from "@infinitecanvas/ecs";
+ * import { setupWorker, defineQuery, type Context } from "@infinitecanvas/ecs";
  * import { Position, Velocity } from "./components";
  *
  * setupWorker(execute);
@@ -438,7 +493,7 @@ export class QueryBuilder {
  * // Define query at module scope
  * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
  *
- * function execute(ctx: WorkerContext) {
+ * function execute(ctx: Context) {
  *   // Query lazily initializes on first call to current()
  *   for (const eid of movingEntities.current(ctx)) {
  *     const pos = Position.read(eid);

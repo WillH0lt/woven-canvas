@@ -3,41 +3,28 @@ import { EventBuffer } from "./EventBuffer";
 import { Pool } from "./Pool";
 import type { Component } from "./Component";
 import type { ComponentBuffer } from "./Component/types";
-import type { QueryCache } from "./QueryCache";
 
 /**
- * Base context properties shared between main thread and worker contexts.
- */
-export interface BaseContext {
-  entityBuffer: EntityBuffer;
-  eventBuffer: EventBuffer;
-  pool: Pool;
-  components: Record<string, Component<any>>;
-  maxEntities: number;
-  componentCount: number;
-}
-
-/**
- * Context object for main thread system execution.
+ * Context object for system execution.
  * Contains the entity buffer and components for querying and accessing entity data.
+ * Works identically on main thread and worker threads.
  */
-export interface Context extends BaseContext {
-  isWorker: false;
-  queries: Map<string, QueryCache>;
+export interface Context {
+  // Entity buffer containing all entities and their components.
+  entityBuffer: EntityBuffer;
+  // Event buffer for tracking entity and component changes.
+  eventBuffer: EventBuffer;
+  // Entity id pool for allocating and freeing entity IDs.
+  pool: Pool;
+  // Registered components in the world, keyed by component name.
+  components: Record<string, Component<any>>;
+  // Maximum number of entities supported in the world.
+  maxEntities: number;
+  // Total number of registered components in the world.
+  componentCount: number;
+  // Tick incremented each time execute is called.
+  tick: number;
 }
-
-/**
- * Context object for worker thread system execution.
- * Contains the entity buffer view for querying and accessing entity data within workers.
- */
-export interface WorkerContext extends BaseContext {
-  isWorker: true;
-}
-
-/**
- * Union type for any context (main thread or worker).
- */
-export type AnyContext = Context | WorkerContext;
 
 /**
  * Interface representing the component masks for query matching.
@@ -63,7 +50,7 @@ export type SystemFunction = (ctx: Context) => void;
 /**
  * System execution function signature for worker systems
  */
-export type WorkerSystemFunction = (ctx: WorkerContext) => void;
+export type WorkerSystemFunction = (ctx: Context) => void;
 
 /**
  * Base system interface

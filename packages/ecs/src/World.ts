@@ -3,7 +3,6 @@ import { Component } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer } from "./EventBuffer";
 import { Pool } from "./Pool";
-import { QueryCache } from "./QueryCache";
 import type { EntityId, System, Context } from "./types";
 
 export interface WorldOptions {
@@ -55,7 +54,7 @@ export class World {
         : 3);
 
     const maxEntities = options.maxEntities ?? 10_000;
-    const maxEvents = options.maxEvents ?? 65_536;
+    const maxEvents = options.maxEvents ?? 131_072;
 
     // Count the number of components
     const componentCount = Object.keys(components).length;
@@ -80,9 +79,8 @@ export class World {
       components: componentMap,
       maxEntities,
       componentCount,
-      isWorker: false,
-      queries: new Map(),
       pool: this.pool,
+      tick: 0,
     };
   }
 
@@ -106,11 +104,6 @@ export class World {
     // Push removed event before deleting (so we still have entity data if needed)
     this.context.eventBuffer.pushRemoved(entityId);
 
-    // Remove from all query caches before deleting
-    for (const cache of this.context.queries.values()) {
-      cache.remove(entityId);
-    }
-
     this.context.entityBuffer.delete(entityId);
     this.pool.free(entityId);
   }
@@ -131,20 +124,6 @@ export class World {
       entityId,
       component.componentId
     );
-
-    // Update query caches - entity may now match OR no longer match queries
-    for (const cache of this.context.queries.values()) {
-      const matches = this.context.entityBuffer.matches(entityId, cache.masks);
-      const inCache = cache.has(entityId);
-
-      if (matches && !inCache) {
-        // Entity now matches - add to cache
-        cache.add(entityId);
-      } else if (!matches && inCache) {
-        // Entity no longer matches (e.g., added a component in without() clause) - remove from cache
-        cache.remove(entityId);
-      }
-    }
   }
 
   removeComponent(entityId: EntityId, component: Component<any>): void {
@@ -162,20 +141,6 @@ export class World {
       entityId,
       component.componentId
     );
-
-    // Update query caches - entity may now match OR no longer match queries
-    for (const cache of this.context.queries.values()) {
-      const matches = this.context.entityBuffer.matches(entityId, cache.masks);
-      const inCache = cache.has(entityId);
-
-      if (matches && !inCache) {
-        // Entity now matches (e.g., removed a component in without() clause) - add to cache
-        cache.add(entityId);
-      } else if (!matches && inCache) {
-        // Entity no longer matches - remove from cache
-        cache.remove(entityId);
-      }
-    }
   }
 
   hasComponent(entityId: EntityId, component: Component<any>): boolean {
@@ -211,6 +176,9 @@ export class World {
    */
   async execute(...systems: System[]): Promise<void> {
     const ctx = this.getContext();
+
+    // Increment frame number so queries know to update their caches
+    ctx.tick++;
 
     const workerSystems = systems.filter((system) => system.type === "worker");
     const mainThreadSystems = systems.filter(
