@@ -19,6 +19,7 @@ import {
   StringField,
   BinaryField,
   ArrayField,
+  EnumField,
   type Field,
 } from "./fields";
 
@@ -153,13 +154,15 @@ export abstract class Component<T extends ComponentSchema> {
         this.readonlyMaster,
         fieldName,
         this._buffer,
-        () => this.readonlyEntityId
+        () => this.readonlyEntityId,
+        fieldDef
       );
       field.defineWritable(
         this.writableMaster,
         fieldName,
         this._buffer,
-        () => this.writableEntityId
+        () => this.writableEntityId,
+        fieldDef
       );
     }
   }
@@ -181,6 +184,8 @@ export abstract class Component<T extends ComponentSchema> {
         return BinaryField;
       case "array":
         return ArrayField;
+      case "enum":
+        return EnumField;
       default:
         throw new Error(`Unknown field type: ${type}`);
     }
@@ -201,10 +206,18 @@ export abstract class Component<T extends ComponentSchema> {
       const field = this.getField(fieldDef.type);
 
       // Get value from input data or use default
-      const value =
+      let value =
         data && fieldName in data
           ? data[fieldName]
           : field.getDefaultValue(fieldDef);
+
+      // For enum fields, convert string value to index
+      if (fieldDef.type === "enum" && typeof value === "string") {
+        const sortedValues = [...(fieldDef as any).values].sort();
+        const index = sortedValues.indexOf(value);
+        value = index >= 0 ? index : 0;
+      }
+
       // Store value using the handler
       field.setValue(array, entityId, value);
     }

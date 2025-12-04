@@ -4,6 +4,7 @@ import type {
   BooleanFieldDef,
   BinaryFieldDef,
   ArrayFieldDef,
+  EnumFieldDef,
   NumberSubtype,
 } from "./types";
 
@@ -145,6 +146,34 @@ export class ArrayFieldBuilder<
   }
 }
 
+/** Helper type to extract string values from an enum-like const object */
+type EnumValues<T extends Record<string, string>> = T[keyof T];
+
+export class EnumFieldBuilder<T extends string = string> {
+  def: EnumFieldDef<T>;
+
+  /**
+   * Create an enum field builder with the specified enum values
+   * @param enumObj - An object with string values (typically a const object)
+   */
+  constructor(enumObj: Record<string, T>) {
+    this.def = {
+      type: "enum",
+      values: Object.values(enumObj) as T[],
+    };
+  }
+
+  /**
+   * Set the default value for the enum field
+   * @param value - The default value (must be one of the enum values)
+   * @returns This builder for chaining
+   */
+  default(value: T): this {
+    this.def.default = value;
+    return this;
+  }
+}
+
 /**
  * Schema builder API for defining component fields
  * Provides factory functions for creating typed field builders
@@ -172,6 +201,29 @@ export const field = {
   boolean: () => new BooleanFieldBuilder(),
   /** Create a binary field builder for Uint8Array data */
   binary: () => new BinaryFieldBuilder(),
+  /**
+   * Create an enum field builder for type-safe enum values
+   * @param enumObj - An object with string values (typically a const object like `{ A: 'A', B: 'B' } as const`)
+   * @returns An enum field builder
+   * @example
+   * ```typescript
+   * const ShareMode = {
+   *   None: 'None',
+   *   ReadOnly: 'ReadOnly',
+   *   ReadWrite: 'ReadWrite'
+   * } as const;
+   *
+   * type ShareMode = (typeof ShareMode)[keyof typeof ShareMode];
+   *
+   * const Document = defineComponent("Document", {
+   *   shareMode: field.enum(ShareMode).default(ShareMode.None),
+   * });
+   * ```
+   */
+  enum: <T extends Record<string, string>>(enumObj: T) =>
+    new EnumFieldBuilder<EnumValues<T>>(
+      enumObj as unknown as Record<string, EnumValues<T>>
+    ),
   /**
    * Create an array field builder for fixed-length arrays of any field type
    * @param elementBuilder - A field builder specifying the element type (e.g., field.float32(), field.string().max(100))

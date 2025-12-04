@@ -125,30 +125,4 @@ export const StringField: Field = {
   setValue(array: any, entityId: EntityId, value: any) {
     array.set(entityId, value);
   },
-
-  growStorage(
-    oldArray: any,
-    newCapacity: number,
-    config: StringFieldDef,
-    BufferConstructor: new (byteLength: number) => ArrayBufferLike
-  ) {
-    const maxDataLength = config.maxLength || DEFAULT_STRING_BYTES;
-    // Add length prefix bytes to the user-specified max data length
-    const bytesPerString = maxDataLength + StringBufferView.LENGTH_BYTES;
-    const newBuffer = new BufferConstructor(newCapacity * bytesPerString);
-    const newView = new StringBufferView(
-      newBuffer,
-      newCapacity,
-      bytesPerString
-    );
-
-    // Copy existing strings to new buffer
-    const oldView = oldArray as StringBufferView;
-    const oldBuffer = oldView.getBuffer();
-    const newBufferArray = newView.getBuffer();
-    const bytesToCopy = Math.min(oldBuffer.length, newBufferArray.length);
-    newBufferArray.set(oldBuffer.subarray(0, bytesToCopy));
-
-    return { buffer: newBuffer, view: newView };
-  },
 };

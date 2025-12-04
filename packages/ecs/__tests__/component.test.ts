@@ -927,4 +927,215 @@ describe("Component", () => {
       expect(result.strs).toEqual(["used"]);
     });
   });
+
+  describe("Enum Field Handling", () => {
+    const ShareMode = {
+      None: "None",
+      ReadOnly: "ReadOnly",
+      ReadWrite: "ReadWrite",
+    } as const;
+
+    type ShareMode = (typeof ShareMode)[keyof typeof ShareMode];
+
+    const Status = {
+      Pending: "Pending",
+      Active: "Active",
+      Completed: "Completed",
+      Cancelled: "Cancelled",
+    } as const;
+
+    type Status = (typeof Status)[keyof typeof Status];
+
+    it("should store and retrieve enum values", () => {
+      const Document = defineComponent("Document", {
+        shareMode: field.enum(ShareMode),
+      });
+      const world = new World([Document]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Document, { shareMode: ShareMode.ReadOnly });
+      const doc = Document.read(entityId);
+
+      expect(doc.shareMode).toBe("ReadOnly");
+    });
+
+    it("should use first enum value as default when no default specified", () => {
+      const Document = defineComponent("Document", {
+        shareMode: field.enum(ShareMode),
+      });
+      const world = new World([Document]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Document, {});
+      const doc = Document.read(entityId);
+
+      expect(doc.shareMode).toBe("None");
+    });
+
+    it("should use explicit default when provided", () => {
+      const Document = defineComponent("Document", {
+        shareMode: field.enum(ShareMode).default(ShareMode.ReadWrite),
+      });
+      const world = new World([Document]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Document, {});
+      const doc = Document.read(entityId);
+
+      expect(doc.shareMode).toBe("ReadWrite");
+    });
+
+    it("should allow updating enum values", () => {
+      const Task = defineComponent("Task", {
+        status: field.enum(Status).default(Status.Pending),
+      });
+      const world = new World([Task]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Task, {});
+
+      expect(Task.read(entityId).status).toBe("Pending");
+
+      Task.write(entityId).status = Status.Active;
+      expect(Task.read(entityId).status).toBe("Active");
+
+      Task.write(entityId).status = Status.Completed;
+      expect(Task.read(entityId).status).toBe("Completed");
+    });
+
+    it("should work with multiple enum fields", () => {
+      const Priority = {
+        Low: "Low",
+        Medium: "Medium",
+        High: "High",
+      } as const;
+
+      const Item = defineComponent("Item", {
+        shareMode: field.enum(ShareMode).default(ShareMode.None),
+        status: field.enum(Status).default(Status.Pending),
+        priority: field.enum(Priority).default(Priority.Medium),
+      });
+      const world = new World([Item]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Item, {
+        shareMode: ShareMode.ReadWrite,
+        status: Status.Active,
+        priority: Priority.High,
+      });
+
+      const item = Item.read(entityId);
+      expect(item.shareMode).toBe("ReadWrite");
+      expect(item.status).toBe("Active");
+      expect(item.priority).toBe("High");
+    });
+
+    it("should work with mixed field types including enum", () => {
+      const Entity = defineComponent("Entity", {
+        name: field.string().max(50),
+        shareMode: field.enum(ShareMode),
+        count: field.uint32(),
+        active: field.boolean(),
+      });
+      const world = new World([Entity]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Entity, {
+        name: "TestEntity",
+        shareMode: ShareMode.ReadOnly,
+        count: 42,
+        active: true,
+      });
+
+      const entity = Entity.read(entityId);
+      expect(entity.name).toBe("TestEntity");
+      expect(entity.shareMode).toBe("ReadOnly");
+      expect(entity.count).toBe(42);
+      expect(entity.active).toBe(true);
+    });
+
+    it("should handle enum values with longer strings", () => {
+      const LongEnum = {
+        VeryLongEnumValueOne: "VeryLongEnumValueOne",
+        AnotherVeryLongEnumValue: "AnotherVeryLongEnumValue",
+        ShortValue: "ShortValue",
+      } as const;
+
+      const Config = defineComponent("Config", {
+        setting: field.enum(LongEnum),
+      });
+      const world = new World([Config]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Config, {
+        setting: LongEnum.AnotherVeryLongEnumValue,
+      });
+
+      expect(Config.read(entityId).setting).toBe("AnotherVeryLongEnumValue");
+    });
+
+    it("should isolate enum values between entities", () => {
+      const Task = defineComponent("Task", {
+        status: field.enum(Status).default(Status.Pending),
+      });
+      const world = new World([Task]);
+      const ctx = world.getContext();
+
+      const entity1 = createEntity(ctx);
+      const entity2 = createEntity(ctx);
+
+      addComponent(ctx, entity1, Task, { status: Status.Active });
+      addComponent(ctx, entity2, Task, { status: Status.Completed });
+
+      expect(Task.read(entity1).status).toBe("Active");
+      expect(Task.read(entity2).status).toBe("Completed");
+
+      Task.write(entity1).status = Status.Cancelled;
+      expect(Task.read(entity1).status).toBe("Cancelled");
+      expect(Task.read(entity2).status).toBe("Completed");
+    });
+
+    it("should use alphabetically first value as default (sorted storage)", () => {
+      // Values are stored sorted: Active, Cancelled, Completed, Pending
+      // So default (index 0) should be "Active"
+      const Task = defineComponent("Task", {
+        status: field.enum(Status), // No explicit default
+      });
+      const world = new World([Task]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Task, {});
+
+      // "Active" comes first alphabetically
+      expect(Task.read(entityId).status).toBe("Active");
+    });
+
+    it("should have correct TypeScript types for enum values", () => {
+      const Document = defineComponent("Document", {
+        shareMode: field.enum(ShareMode).default(ShareMode.None),
+      });
+      const world = new World([Document]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Document, { shareMode: ShareMode.ReadOnly });
+      const doc = Document.read(entityId);
+
+      // This is a compile-time type check - if types are wrong, this wouldn't compile
+      const mode: ShareMode = doc.shareMode;
+      expect(mode).toBe("ReadOnly");
+
+      // Verify we can assign back to the component
+      Document.write(entityId).shareMode = ShareMode.ReadWrite;
+      expect(Document.read(entityId).shareMode).toBe("ReadWrite");
+    });
+  });
 });

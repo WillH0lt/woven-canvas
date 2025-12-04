@@ -147,26 +147,4 @@ export const BinaryField: Field = {
   setValue(array: any, entityId: EntityId, value: any) {
     array.set(entityId, value);
   },
-
-  growStorage(
-    oldArray: any,
-    newCapacity: number,
-    config: BinaryFieldDef,
-    BufferConstructor: new (byteLength: number) => ArrayBufferLike
-  ) {
-    const maxDataLength = config.maxLength || DEFAULT_BINARY_BYTES;
-    // Add length prefix bytes to the user-specified max data length
-    const bytesPerEntry = maxDataLength + BinaryBufferView.LENGTH_BYTES;
-    const newBuffer = new BufferConstructor(newCapacity * bytesPerEntry);
-    const newView = new BinaryBufferView(newBuffer, newCapacity, bytesPerEntry);
-
-    // Copy existing binary data to new buffer
-    const oldView = oldArray as BinaryBufferView;
-    const oldBuffer = oldView.getBuffer();
-    const newBufferArray = newView.getBuffer();
-    const bytesToCopy = Math.min(oldBuffer.length, newBufferArray.length);
-    newBufferArray.set(oldBuffer.subarray(0, bytesToCopy));
-
-    return { buffer: newBuffer, view: newView };
-  },
 };

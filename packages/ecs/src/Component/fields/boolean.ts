@@ -56,16 +56,4 @@ export const BooleanField: Field = {
   setValue(array: any, entityId: EntityId, value: any) {
     array[entityId] = value ? 1 : 0;
   },
-
-  growStorage(
-    oldArray: any,
-    newCapacity: number,
-    config: BooleanFieldDef,
-    BufferConstructor: new (byteLength: number) => ArrayBufferLike
-  ) {
-    const newBuffer = new BufferConstructor(newCapacity);
-    const newView = new Uint8Array(newBuffer, 0, newCapacity);
-    newView.set(oldArray);
-    return { buffer: newBuffer, view: newView };
-  },
 };

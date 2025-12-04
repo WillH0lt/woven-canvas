@@ -25,12 +25,14 @@ export interface Field {
    * @param field - The field name
    * @param buffer - The buffer accessor
    * @param getEntityId - Function to get the current entity ID
+   * @param fieldDef - Optional field definition (used by enum fields for value mapping)
    */
   defineReadonly(
     master: any,
     field: string,
     buffer: ComponentBuffer<any>,
-    getEntityId: () => EntityId
+    getEntityId: () => EntityId,
+    fieldDef?: any
   ): void;
 
   /**
@@ -39,12 +41,14 @@ export interface Field {
    * @param field - The field name
    * @param buffer - The buffer accessor
    * @param getEntityId - Function to get the current entity ID
+   * @param fieldDef - Optional field definition (used by enum fields for value mapping)
    */
   defineWritable(
     master: any,
     field: string,
     buffer: ComponentBuffer<any>,
-    getEntityId: () => EntityId
+    getEntityId: () => EntityId,
+    fieldDef?: any
   ): void;
 
   /**
@@ -61,19 +65,4 @@ export interface Field {
    * @param value - The value to set
    */
   setValue(array: any, entityId: EntityId, value: any): void;
-
-  /**
-   * Grow the storage array to accommodate more entities
-   * @param oldArray - The old storage array
-   * @param newCapacity - The new capacity
-   * @param config - Type-specific configuration
-   * @param BufferConstructor - The buffer constructor (SharedArrayBuffer or ArrayBuffer)
-   * @returns The new buffer and view
-   */
-  growStorage(
-    oldArray: any,
-    newCapacity: number,
-    config: any,
-    BufferConstructor: new (byteLength: number) => ArrayBufferLike
-  ): { buffer: ArrayBufferLike; view: any };
 }

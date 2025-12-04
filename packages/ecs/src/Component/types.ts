@@ -3,7 +3,13 @@ import type { BinaryBufferView } from "./fields/binary";
 import type { ArrayBufferView } from "./fields/array";
 
 // Field type definitions
-export type FieldType = "string" | "number" | "boolean" | "binary" | "array";
+export type FieldType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "binary"
+  | "array"
+  | "enum";
 
 export type NumberSubtype =
   | "uint8"
@@ -44,6 +50,12 @@ export interface BinaryFieldDef extends BaseField<Uint8Array> {
   default?: Uint8Array;
 }
 
+export interface EnumFieldDef<T extends string = string> extends BaseField<T> {
+  type: "enum";
+  values: readonly T[];
+  default?: T;
+}
+
 export interface ArrayFieldDef<
   TElementDef extends
     | StringFieldDef
@@ -66,6 +78,7 @@ export type FieldDef =
   | NumberFieldDef
   | BooleanFieldDef
   | BinaryFieldDef
+  | EnumFieldDef<any>
   | ArrayFieldDef;
 
 // TypedArray union type
@@ -99,12 +112,15 @@ export type ComponentSchema = Record<
       | NumberFieldDef
       | BooleanFieldDef
       | BinaryFieldDef
+      | EnumFieldDef<any>
       | ArrayFieldDef;
   }
 >;
 
 export type InferComponentType<T extends ComponentSchema> = {
-  [K in keyof T]: T[K]["def"] extends StringFieldDef
+  [K in keyof T]: T[K]["def"] extends EnumFieldDef<infer TEnum>
+    ? TEnum
+    : T[K]["def"] extends StringFieldDef
     ? string
     : T[K]["def"] extends NumberFieldDef
     ? number
@@ -127,6 +143,8 @@ export type ComponentBuffer<T extends ComponentSchema> = {
     ? StringBufferView
     : T[K]["def"] extends BinaryFieldDef
     ? BinaryBufferView
+    : T[K]["def"] extends EnumFieldDef<any>
+    ? Uint16Array
     : T[K]["def"] extends ArrayFieldDef
     ? ArrayBufferView
     : never;

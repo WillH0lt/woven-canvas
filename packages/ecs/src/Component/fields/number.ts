@@ -117,17 +117,4 @@ export const NumberField: Field = {
   setValue(array: any, entityId: EntityId, value: any) {
     array[entityId] = value;
   },
-
-  growStorage(
-    oldArray: any,
-    newCapacity: number,
-    config: NumberFieldDef,
-    BufferConstructor: new (byteLength: number) => ArrayBufferLike
-  ) {
-    const bytesPerElement = getBytesPerElement(config.btype);
-    const newBuffer = new BufferConstructor(newCapacity * bytesPerElement);
-    const newView = createTypedArray(config.btype, newCapacity, newBuffer);
-    newView.set(oldArray);
-    return { buffer: newBuffer, view: newView };
-  },
 };
