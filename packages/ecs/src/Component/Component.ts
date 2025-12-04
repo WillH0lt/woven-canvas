@@ -19,6 +19,7 @@ import {
   StringField,
   BinaryField,
   ArrayField,
+  TupleField,
   EnumField,
   type Field,
 } from "./fields";
@@ -184,6 +185,8 @@ export abstract class Component<T extends ComponentSchema> {
         return BinaryField;
       case "array":
         return ArrayField;
+      case "tuple":
+        return TupleField;
       case "enum":
         return EnumField;
       default:

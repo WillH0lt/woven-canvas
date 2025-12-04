@@ -1138,4 +1138,209 @@ describe("Component", () => {
       expect(Document.read(entityId).shareMode).toBe("ReadWrite");
     });
   });
+
+  describe("Tuple Field Handling", () => {
+    it("should store and retrieve tuple data", () => {
+      const Position = defineComponent("Position", {
+        coords: field.tuple(field.float32(), 2),
+      });
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Position, { coords: [1.5, 2.5] });
+
+      const result = Position.read(entityId);
+      expect(result.coords).toEqual([1.5, 2.5]);
+    });
+
+    it("should default to zeros when not provided", () => {
+      const Position = defineComponent("Position", {
+        coords: field.tuple(field.float32(), 3),
+      });
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Position, {});
+
+      const result = Position.read(entityId);
+      expect(result.coords).toEqual([0, 0, 0]);
+    });
+
+    it("should use default tuple value when provided", () => {
+      const Position = defineComponent("Position", {
+        coords: field.tuple(field.float32(), 2).default([10, 20]),
+      });
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Position, {});
+
+      const result = Position.read(entityId);
+      expect(result.coords).toEqual([10, 20]);
+    });
+
+    it("should allow updating tuple data", () => {
+      const Position = defineComponent("Position", {
+        coords: field.tuple(field.float32(), 2),
+      });
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Position, { coords: [1.0, 2.0] });
+
+      const position = Position.write(entityId);
+      position.coords = [10.0, 20.0];
+
+      const result = Position.read(entityId);
+      expect(result.coords).toEqual([10.0, 20.0]);
+    });
+
+    it("should handle multiple entities with different tuples", () => {
+      const Position = defineComponent("Position", {
+        coords: field.tuple(field.float32(), 2),
+      });
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const e1 = createEntity(ctx);
+      const e2 = createEntity(ctx);
+
+      addComponent(ctx, e1, Position, { coords: [1.0, 2.0] });
+      addComponent(ctx, e2, Position, { coords: [3.0, 4.0] });
+
+      expect(Position.read(e1).coords).toEqual([1.0, 2.0]);
+      expect(Position.read(e2).coords).toEqual([3.0, 4.0]);
+    });
+
+    it("should support different numeric tuple types", () => {
+      const MixedTuples = defineComponent("MixedTuples", {
+        floatPair: field.tuple(field.float32(), 2),
+        intTriple: field.tuple(field.int32(), 3),
+        byteQuad: field.tuple(field.uint8(), 4),
+      });
+      const world = new World([MixedTuples]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, MixedTuples, {
+        floatPair: [1.5, 2.5],
+        intTriple: [-10, 0, 10],
+        byteQuad: [255, 128, 64, 0],
+      });
+
+      const result = MixedTuples.read(entityId);
+      expect(result.floatPair).toEqual([1.5, 2.5]);
+      expect(result.intTriple).toEqual([-10, 0, 10]);
+      expect(result.byteQuad).toEqual([255, 128, 64, 0]);
+    });
+
+    it("should handle tuples in mixed components", () => {
+      const Transform = defineComponent("Transform", {
+        id: field.uint32(),
+        position: field.tuple(field.float32(), 3),
+        rotation: field.tuple(field.float32(), 4),
+        active: field.boolean(),
+      });
+      const world = new World([Transform]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Transform, {
+        id: 42,
+        position: [1.0, 2.0, 3.0],
+        rotation: [0.0, 0.0, 0.0, 1.0],
+        active: true,
+      });
+
+      const result = Transform.read(entityId);
+      expect(result.id).toBe(42);
+      expect(result.position).toEqual([1.0, 2.0, 3.0]);
+      expect(result.rotation).toEqual([0.0, 0.0, 0.0, 1.0]);
+      expect(result.active).toBe(true);
+    });
+
+    it("should store and retrieve string tuples", () => {
+      const NamePair = defineComponent("NamePair", {
+        names: field.tuple(field.string().max(50), 2),
+      });
+      const world = new World([NamePair]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, NamePair, {
+        names: ["first", "last"],
+      });
+
+      const result = NamePair.read(entityId);
+      expect(result.names).toEqual(["first", "last"]);
+    });
+
+    it("should store and retrieve boolean tuples", () => {
+      const Flags = defineComponent("Flags", {
+        bits: field.tuple(field.boolean(), 4),
+      });
+      const world = new World([Flags]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Flags, {
+        bits: [true, false, true, false],
+      });
+
+      const result = Flags.read(entityId);
+      expect(result.bits).toEqual([true, false, true, false]);
+    });
+
+    it("should store and retrieve binary tuples", () => {
+      const DataPair = defineComponent("DataPair", {
+        chunks: field.tuple(field.binary().max(32), 2),
+      });
+      const world = new World([DataPair]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      const chunk1 = new Uint8Array([1, 2, 3]);
+      const chunk2 = new Uint8Array([4, 5, 6, 7]);
+      addComponent(ctx, entityId, DataPair, {
+        chunks: [chunk1, chunk2],
+      });
+
+      const result = DataPair.read(entityId);
+      expect(result.chunks.length).toBe(2);
+      expect(Array.from(result.chunks[0])).toEqual([1, 2, 3]);
+      expect(Array.from(result.chunks[1])).toEqual([4, 5, 6, 7]);
+    });
+
+    it("should default string tuples to empty strings", () => {
+      const NamePair = defineComponent("NamePair", {
+        names: field.tuple(field.string().max(50), 2),
+      });
+      const world = new World([NamePair]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, NamePair, {});
+
+      const result = NamePair.read(entityId);
+      expect(result.names).toEqual(["", ""]);
+    });
+
+    it("should default boolean tuples to false", () => {
+      const Flags = defineComponent("Flags", {
+        bits: field.tuple(field.boolean(), 3),
+      });
+      const world = new World([Flags]);
+      const ctx = world.getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Flags, {});
+
+      const result = Flags.read(entityId);
+      expect(result.bits).toEqual([false, false, false]);
+    });
+  });
 });

@@ -10,6 +10,7 @@ export type {
   BooleanFieldDef,
   BinaryFieldDef,
   ArrayFieldDef,
+  TupleFieldDef,
   NumberSubtype,
   FieldType,
 } from "./types";

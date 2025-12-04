@@ -4,6 +4,7 @@ import type {
   BooleanFieldDef,
   BinaryFieldDef,
   ArrayFieldDef,
+  TupleFieldDef,
   EnumFieldDef,
   NumberSubtype,
 } from "./types";
@@ -146,6 +147,63 @@ export class ArrayFieldBuilder<
   }
 }
 
+// Helper type to create a fixed-length tuple type
+type CreateTuple<
+  T,
+  N extends number,
+  R extends T[] = []
+> = R["length"] extends N ? R : CreateTuple<T, N, [...R, T]>;
+
+// Helper type to infer element type from field builder
+type InferElementType<T extends ElementFieldBuilder> =
+  T extends StringFieldBuilder
+    ? string
+    : T extends NumberFieldBuilder
+    ? number
+    : T extends BooleanFieldBuilder
+    ? boolean
+    : T extends BinaryFieldBuilder
+    ? Uint8Array
+    : never;
+
+export class TupleFieldBuilder<
+  T extends ElementFieldBuilder = ElementFieldBuilder,
+  L extends number = number
+> {
+  def: T extends StringFieldBuilder
+    ? TupleFieldDef<StringFieldDef, L>
+    : T extends NumberFieldBuilder
+    ? TupleFieldDef<NumberFieldDef, L>
+    : T extends BooleanFieldBuilder
+    ? TupleFieldDef<BooleanFieldDef, L>
+    : T extends BinaryFieldBuilder
+    ? TupleFieldDef<BinaryFieldDef, L>
+    : TupleFieldDef<any, L>;
+
+  /**
+   * Create a tuple field builder with the specified element type and length
+   * @param elementBuilder - A field builder specifying the element type
+   * @param length - The fixed length of the tuple
+   */
+  constructor(elementBuilder: T, length: L) {
+    this.def = {
+      type: "tuple",
+      elementDef: elementBuilder.def,
+      length: length,
+    } as any;
+  }
+
+  /**
+   * Set the default value for the tuple field
+   * @param value - The default value (tuple of the element type)
+   * @returns This builder for chaining
+   */
+  default(value: CreateTuple<InferElementType<T>, L>): this {
+    this.def.default = value as any[];
+    return this;
+  }
+}
+
 /** Helper type to extract string values from an enum-like const object */
 type EnumValues<T extends Record<string, string>> = T[keyof T];
 
@@ -251,4 +309,28 @@ export const field = {
     elementBuilder: T,
     maxLength: number
   ) => new ArrayFieldBuilder(elementBuilder, maxLength),
+  /**
+   * Create a tuple field builder for fixed-length typed tuples
+   * @param elementBuilder - A field builder specifying the element type (e.g., field.float32(), field.string().max(100))
+   * @param length - The exact length of the tuple
+   * @returns A tuple field builder with proper TypeScript tuple type inference
+   * @example
+   * ```typescript
+   * // Position as a 2D tuple
+   * const Position = defineComponent("Position", {
+   *   coords: field.tuple(field.float32(), 2).default([0, 0]),
+   * });
+   * // coords is typed as [number, number]
+   *
+   * // RGB color tuple
+   * const Color = defineComponent("Color", {
+   *   rgb: field.tuple(field.uint8(), 3).default([255, 255, 255]),
+   * });
+   * // rgb is typed as [number, number, number]
+   * ```
+   */
+  tuple: <T extends ElementFieldBuilder, L extends number>(
+    elementBuilder: T,
+    length: L
+  ) => new TupleFieldBuilder(elementBuilder, length),
 };

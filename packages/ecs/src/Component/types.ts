@@ -1,6 +1,7 @@
 import type { StringBufferView } from "./fields/string";
 import type { BinaryBufferView } from "./fields/binary";
 import type { ArrayBufferView } from "./fields/array";
+import type { TupleBufferView } from "./fields/tuple";
 
 // Field type definitions
 export type FieldType =
@@ -9,6 +10,7 @@ export type FieldType =
   | "boolean"
   | "binary"
   | "array"
+  | "tuple"
   | "enum";
 
 export type NumberSubtype =
@@ -73,13 +75,32 @@ export interface ArrayFieldDef<
   default?: any[];
 }
 
+export interface TupleFieldDef<
+  TElementDef extends
+    | StringFieldDef
+    | NumberFieldDef
+    | BooleanFieldDef
+    | BinaryFieldDef =
+    | StringFieldDef
+    | NumberFieldDef
+    | BooleanFieldDef
+    | BinaryFieldDef,
+  TLength extends number = number
+> extends BaseField<any[]> {
+  type: "tuple";
+  elementDef: TElementDef;
+  length: TLength;
+  default?: any[];
+}
+
 export type FieldDef =
   | StringFieldDef
   | NumberFieldDef
   | BooleanFieldDef
   | BinaryFieldDef
   | EnumFieldDef<any>
-  | ArrayFieldDef;
+  | ArrayFieldDef
+  | TupleFieldDef;
 
 // TypedArray union type
 export type TypedArray =
@@ -103,6 +124,13 @@ type InferArrayElementType<TElementDef> = TElementDef extends StringFieldDef
   ? Uint8Array
   : never;
 
+// Helper type to create a fixed-length tuple type
+type CreateTuple<
+  T,
+  N extends number,
+  R extends T[] = []
+> = R["length"] extends N ? R : CreateTuple<T, N, [...R, T]>;
+
 // Component schema and inference types
 export type ComponentSchema = Record<
   string,
@@ -113,7 +141,8 @@ export type ComponentSchema = Record<
       | BooleanFieldDef
       | BinaryFieldDef
       | EnumFieldDef<any>
-      | ArrayFieldDef;
+      | ArrayFieldDef
+      | TupleFieldDef;
   }
 >;
 
@@ -130,6 +159,8 @@ export type InferComponentType<T extends ComponentSchema> = {
     ? Uint8Array
     : T[K]["def"] extends ArrayFieldDef<infer TElementDef>
     ? InferArrayElementType<TElementDef>[]
+    : T[K]["def"] extends TupleFieldDef<infer TElementDef, infer TLength>
+    ? CreateTuple<InferArrayElementType<TElementDef>, TLength>
     : never;
 };
 
@@ -147,5 +178,7 @@ export type ComponentBuffer<T extends ComponentSchema> = {
     ? Uint16Array
     : T[K]["def"] extends ArrayFieldDef
     ? ArrayBufferView
+    : T[K]["def"] extends TupleFieldDef
+    ? TupleBufferView
     : never;
 };
