@@ -18,6 +18,8 @@ import {
   defineQuery,
   defineSystem,
   defineWorkerSystem,
+  createEntity,
+  addComponent,
   World,
   type Context,
 } from "@infinitecanvas/ecs";
@@ -39,11 +41,12 @@ interface BlockEntity {
 const blocks = ref<Record<string, BlockEntity>>({});
 
 const world = new World(Object.values(components));
+const ctx = world.getContext();
 
 // Create some blocks
-const block1 = world.createEntity();
-world.addComponent(block1, components.Velocity, { x: 50, y: 50 });
-world.addComponent(block1, components.Position, { x: 200, y: 200 });
+const block1 = createEntity(ctx);
+addComponent(ctx, block1, components.Velocity, { x: 50, y: 50 });
+addComponent(ctx, block1, components.Position, { x: 200, y: 200 });
 
 const query = defineQuery((q) =>
   q.with(components.Position, components.Velocity)

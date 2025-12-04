@@ -28,6 +28,7 @@ const library: BenchmarkLibrary = {
   name: "miniplex",
   suites: ["Add/Remove", "Destroy", "Velocity"],
   world: null as any,
+  ctx: null as any,
   Position: null as any,
   Velocity: null as any,
   moveSystem: null as any,

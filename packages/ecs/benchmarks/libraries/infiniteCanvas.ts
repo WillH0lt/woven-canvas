@@ -4,6 +4,10 @@ import {
   defineSystem,
   defineComponent,
   defineQuery,
+  createEntity,
+  addComponent,
+  removeComponent,
+  removeEntity,
   type Context,
 } from "../../src";
 
@@ -15,6 +19,7 @@ const library: BenchmarkLibrary = {
   name: "infinitecanvas-ecs",
   suites: ["Add/Remove", "Destroy", "Velocity"],
   world: null,
+  ctx: null,
   Position: null,
   Velocity: null,
   moveSystem: null,
@@ -33,6 +38,8 @@ const library: BenchmarkLibrary = {
       maxEntities: 20_000,
     });
 
+    this.ctx = this.world.getContext();
+
     const Position = this.Position;
     const Velocity = this.Velocity;
 
@@ -47,7 +54,7 @@ const library: BenchmarkLibrary = {
       const particles = query.current(ctx);
       // console.log(`Updating ${particles.length} moving entities`);
       for (let i = 0; i < particles.length; i++) {
-        const eid = particles[i];
+        const eid = particles[i]!;
         posX[eid] += velX[eid];
         posY[eid] += velY[eid];
 
@@ -56,22 +63,22 @@ const library: BenchmarkLibrary = {
     });
   },
   createEntity() {
-    return this.world.createEntity();
+    return createEntity(this.ctx);
   },
   addPositionComponent(entity: any) {
-    this.world.addComponent(entity, this.Position, { x: 0, y: 0 });
+    addComponent(this.ctx, entity, this.Position, { x: 0, y: 0 });
   },
   addVelocityComponent(entity: any) {
-    this.world.addComponent(entity, this.Velocity, { x: 1.1, y: 1.1 });
+    addComponent(this.ctx, entity, this.Velocity, { x: 1.1, y: 1.1 });
   },
   removePositionComponent(entity: any) {
-    this.world.removeComponent(entity, this.Position);
+    removeComponent(this.ctx, entity, this.Position);
   },
   removeVelocityComponent(entity: any) {
-    this.world.removeComponent(entity, this.Velocity);
+    removeComponent(this.ctx, entity, this.Velocity);
   },
   destroyEntity(entity: any) {
-    this.world.removeEntity(entity);
+    removeEntity(this.ctx, entity);
   },
   cleanup() {
     updateCount = 0;

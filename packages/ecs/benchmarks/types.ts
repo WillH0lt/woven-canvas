@@ -22,6 +22,7 @@ export interface BenchmarkLibrary {
   name: string;
   suites: string[];
   world: any;
+  ctx: any;
   Position: any;
   Velocity: any;
   moveSystem: any;

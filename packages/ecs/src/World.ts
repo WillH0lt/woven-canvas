@@ -19,7 +19,7 @@ export interface WorldOptions {
   /**
    * Maximum number of events in the event ring buffer
    * Should be large enough to hold all events between query reads
-   * @default 65_536
+   * @default 131_072
    */
   maxEvents?: number;
 }

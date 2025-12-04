@@ -19,6 +19,7 @@ const library: BenchmarkLibrary = {
   name: "bitecs",
   suites: ["Add/Remove", "Destroy", "Velocity"],
   world: null,
+  ctx: null,
   Position: null,
   Velocity: null,
   moveSystem: null,
