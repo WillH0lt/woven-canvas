@@ -241,10 +241,7 @@ export abstract class Component<T extends ComponentSchema> {
   write(entityId: EntityId): InferComponentType<T> {
     this.writableEntityId = entityId;
 
-    // Push CHANGED event if event buffer is available
-    if (this.eventBuffer) {
-      this.eventBuffer.pushChanged(entityId, this.componentId);
-    }
+    this.eventBuffer?.pushChanged(entityId, this.componentId);
 
     return this.writableMaster;
   }
@@ -269,24 +266,6 @@ export abstract class Component<T extends ComponentSchema> {
  *   y: field.float32(),
  * });
  *
- * export const Velocity = defineComponent({
- *   x: field.float32(),
- *   y: field.float32(),
- * });
- *
- * // Use in World registration
- * import * as components from "./components";
- * const world = new World(components);
- *
- * // Adding components to entities
- * world.addComponent(entity, components.Position, { x: 0, y: 0 });
- *
- * // Reading component data
- * const position = components.Position.read(entityId);
- *
- * // In queries (in workers)
- * const entities = query(ctx, (q) => q.with(components.Position));
- * ```
  */
 export function defineComponent<T extends ComponentSchema>(
   name: string,

@@ -17,7 +17,6 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
 export class EntityBuffer {
   private buffer: ArrayBufferLike;
   private view: Uint8Array;
-  private lengthView: Uint32Array; // For atomic length access
   private readonly bytesPerEntity: number;
 
   // Metadata byte flags
@@ -37,7 +36,6 @@ export class EntityBuffer {
     const totalBytes = 4 + maxEntities * this.bytesPerEntity;
     this.buffer = new BufferConstructor(totalBytes);
     this.view = new Uint8Array(this.buffer);
-    this.lengthView = new Uint32Array(this.buffer, 0, 1);
   }
 
   /**
@@ -53,7 +51,6 @@ export class EntityBuffer {
     const instance = Object.create(EntityBuffer.prototype);
     instance.buffer = buffer;
     instance.view = new Uint8Array(buffer);
-    instance.lengthView = new Uint32Array(buffer, 0, 1);
     const componentBytes = Math.ceil(componentCount / 8);
     instance.bytesPerEntity = 1 + componentBytes;
     return instance;
@@ -71,7 +68,9 @@ export class EntityBuffer {
    * The number of entities the buffer can hold (highest allocated entity index + 1)
    */
   get length(): number {
-    return this.lengthView[0];
+    // Use Int32Array for atomics compatibility
+    const int32View = new Int32Array(this.buffer, 0, 1);
+    return Atomics.load(int32View, 0);
   }
 
   /**
@@ -94,9 +93,21 @@ export class EntityBuffer {
     }
     // Set alive flag in metadata byte
     this.view[offset] = EntityBuffer.ALIVE_FLAG;
-    // Update length
-    if (entityId + 1 > this.lengthView[0]) {
-      this.lengthView[0] = entityId + 1;
+    // Atomically update length if this entity ID is higher
+    const newLength = entityId + 1;
+    const int32View = new Int32Array(this.buffer, 0, 1);
+    let currentLength = Atomics.load(int32View, 0);
+    while (newLength > currentLength) {
+      const oldLength = Atomics.compareExchange(
+        int32View,
+        0,
+        currentLength,
+        newLength
+      );
+      if (oldLength === currentLength) {
+        break; // Successfully updated
+      }
+      currentLength = oldLength; // Retry with the actual current value
     }
   }
 

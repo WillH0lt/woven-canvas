@@ -1,7 +1,7 @@
 import type { Component } from "./Component";
 import type { AnyContext, Context, QueryMasks } from "./types";
 import { QueryCache } from "./QueryCache";
-import { EventType } from "./EventBuffer";
+import { EventType, EventTypeMask } from "./EventBuffer";
 import { initializeComponentInWorker } from "./Worker";
 
 /**
@@ -173,6 +173,9 @@ export class Query {
   /**
    * Get entities that were added (created) since the last time this query was checked.
    * Only returns entities that match the query criteria.
+   * This includes:
+   * - Newly created entities (ADDED event)
+   * - Entities that now match due to component changes (COMPONENT_ADDED/COMPONENT_REMOVED)
    *
    * @param ctx - The context object containing the entity buffer and event buffer
    * @returns An array of entity IDs that were added and match the query
@@ -180,9 +183,13 @@ export class Query {
   added(ctx: AnyContext): Uint32Array {
     this.lazilyInitializeMasks(ctx);
 
+    // Get component mask for this query to filter COMPONENT_ADDED/REMOVED events
+    const queryComponentMask = this.getQueryComponentMask();
+
     const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
       this.lastScannedIndexAdded,
-      EventType.ADDED
+      EventTypeMask.QUERY_ADDED,
+      queryComponentMask
     );
 
     // Filter to only entities that currently match the query
@@ -199,23 +206,58 @@ export class Query {
 
   /**
    * Get entities that were removed (deleted) since the last time this query was checked.
-   * Returns entity IDs even though the entities no longer exist.
+   * This includes:
+   * - Deleted entities (REMOVED event)
+   * - Entities that no longer match due to component changes (COMPONENT_ADDED/COMPONENT_REMOVED)
    *
    * @param ctx - The context object containing the entity buffer and event buffer
-   * @returns An array of entity IDs that were removed
+   * @returns An array of entity IDs that were removed or no longer match
    */
   removed(ctx: AnyContext): Uint32Array {
     this.lazilyInitializeMasks(ctx);
 
+    // Get component mask for this query to filter COMPONENT_ADDED/REMOVED events
+    const queryComponentMask = this.getQueryComponentMask();
+
     const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
       this.lastScannedIndexRemoved,
-      EventType.REMOVED
+      EventTypeMask.QUERY_REMOVED,
+      queryComponentMask
     );
 
-    // Note: We can't filter by query match since the entity is deleted.
-    // Return all removed entities - user can filter if needed.
+    // Filter: include entities that are deleted OR no longer match the query
+    const results: number[] = [];
+    for (const entityId of entities) {
+      // Entity was deleted (no longer exists)
+      if (!ctx.entityBuffer.has(entityId)) {
+        results.push(entityId);
+      }
+      // Entity exists but no longer matches query
+      else if (!ctx.entityBuffer.matches(entityId, this.masks!)) {
+        results.push(entityId);
+      }
+    }
+
     this.lastScannedIndexRemoved = newIndex;
-    return entities;
+    return new Uint32Array(results);
+  }
+
+  /**
+   * Get a combined component mask for this query (with + without + any)
+   * Used to filter component events to only relevant ones
+   */
+  private getQueryComponentMask(): Uint8Array {
+    if (!this.masks) {
+      throw new Error("Query masks not initialized");
+    }
+
+    // Combine all component masks (OR them together)
+    const combined = new Uint8Array(this.masks.with.length);
+    for (let i = 0; i < combined.length; i++) {
+      combined[i] =
+        this.masks.with[i] | this.masks.without[i] | this.masks.any[i];
+    }
+    return combined;
   }
 
   /**
@@ -232,7 +274,7 @@ export class Query {
     const trackingMask = this.masks!.tracking;
 
     // If no components are tracked, return empty
-    if (trackingMask === 0) {
+    if (trackingMask.every((byte) => byte === 0)) {
       // Still update the index to stay current
       this.lastScannedIndexChanged = ctx.eventBuffer.getWriteIndex();
       return new Uint32Array(0);
@@ -265,7 +307,7 @@ export class QueryBuilder {
   private withMask: Uint8Array;
   private withoutMask: Uint8Array;
   private anyMask: Uint8Array;
-  private trackingMask: number = 0;
+  private trackingMask: Uint8Array;
   private components: Component<any>[] = [];
 
   constructor(componentCount: number) {
@@ -274,6 +316,7 @@ export class QueryBuilder {
     this.withMask = createEmptyMask(bytes);
     this.withoutMask = createEmptyMask(bytes);
     this.anyMask = createEmptyMask(bytes);
+    this.trackingMask = createEmptyMask(bytes);
   }
 
   /**
@@ -335,10 +378,7 @@ export class QueryBuilder {
     for (const component of components) {
       this.trackComponent(component);
       setComponentBit(this.withMask, component.componentId);
-      // tracking still uses single number (legacy behavior for now)
-      if (component.componentId < 31) {
-        this.trackingMask |= 1 << component.componentId;
-      }
+      setComponentBit(this.trackingMask, component.componentId);
     }
     return this;
   }

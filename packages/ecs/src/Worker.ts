@@ -1,7 +1,9 @@
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer } from "./EventBuffer";
+import { Pool } from "./Pool";
 import type { Component } from "./Component";
 import type {
+  EntityId,
   WorkerContext,
   WorkerIncomingMessage,
   WorkerSuccessResponse,
@@ -96,6 +98,11 @@ function handleMessage(
       internalContext.componentTransferData = e.data.componentData;
 
       const eventBuffer = EventBuffer.fromTransfer(e.data.eventSAB);
+      const pool = Pool.fromTransfer(
+        e.data.poolSAB,
+        e.data.poolBucketCount,
+        e.data.poolSize
+      );
 
       internalContext.context = {
         entityBuffer: EntityBuffer.fromTransfer(
@@ -103,6 +110,7 @@ function handleMessage(
           e.data.componentCount
         ),
         eventBuffer,
+        pool,
         components: {},
         maxEntities: e.data.maxEntities,
         componentCount: e.data.componentCount,
@@ -175,4 +183,54 @@ export function initializeComponentInWorker(
  */
 export function __resetWorkerState(): void {
   internalContext = null;
+}
+
+/**
+ * Create a new entity in a worker thread.
+ * Uses atomic operations to safely allocate an entity ID across threads.
+ *
+ * @param ctx - The worker context
+ * @returns The newly created entity ID
+ * @throws Error if the entity pool is exhausted
+ *
+ * @example
+ * import { setupWorker, createEntity, type WorkerContext } from '@infinitecanvas/ecs';
+ * import { Position } from './components';
+ *
+ * setupWorker(execute);
+ *
+ * function execute(ctx: WorkerContext) {
+ *   const entityId = createEntity(ctx);
+ *   Position.write(entityId, { x: 0, y: 0 });
+ * }
+ */
+export function createEntity(ctx: WorkerContext): EntityId {
+  const entityId = ctx.pool.get();
+
+  ctx.entityBuffer.create(entityId);
+  ctx.eventBuffer.pushAdded(entityId);
+
+  return entityId;
+}
+
+/**
+ * Remove an entity in a worker thread.
+ * Uses atomic operations to safely free the entity ID.
+ *
+ * @param ctx - The worker context
+ * @param entityId - The entity ID to remove
+ *
+ * @example
+ * import { setupWorker, removeEntity, type WorkerContext } from '@infinitecanvas/ecs';
+ *
+ * setupWorker(execute);
+ *
+ * function execute(ctx: WorkerContext) {
+ *   removeEntity(ctx, someEntityId);
+ * }
+ */
+export function removeEntity(ctx: WorkerContext, entityId: EntityId): void {
+  ctx.eventBuffer.pushRemoved(entityId);
+  ctx.entityBuffer.delete(entityId);
+  ctx.pool.free(entityId);
 }

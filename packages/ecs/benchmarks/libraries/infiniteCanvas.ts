@@ -62,7 +62,7 @@ const library: BenchmarkLibrary = {
     this.world.addComponent(entity, this.Position, { x: 0, y: 0 });
   },
   addVelocityComponent(entity: any) {
-    this.world.addComponent(entity, this.Velocity, { x: 1.2, y: 1.7 });
+    this.world.addComponent(entity, this.Velocity, { x: 1.1, y: 1.1 });
   },
   removePositionComponent(entity: any) {
     this.world.removeComponent(entity, this.Position);

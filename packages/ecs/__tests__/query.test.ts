@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { field, defineComponent, World, defineQuery } from "../src";
-import type { Context } from "../src";
+import type { Context, Component } from "../src";
 
 describe("Query", () => {
-  let Position: any;
-  let Velocity: any;
-  let Health: any;
-  let Enemy: any;
-  let Player: any;
+  let Position: Component<any>;
+  let Velocity: Component<any>;
+  let Health: Component<any>;
+  let Enemy: Component<any>;
+  let Player: Component<any>;
 
   beforeEach(() => {
     // Define test components
@@ -209,8 +209,8 @@ describe("Query", () => {
       let count = 0;
       for (const entityId of movingQuery.current(ctx)) {
         count++;
-        const pos = Position.write(entityId);
-        const vel = Velocity.read(entityId);
+        const pos = Position.write(entityId) as { x: number; y: number };
+        const vel = Velocity.read(entityId) as { dx: number; dy: number };
 
         // Move entity
         pos.x += vel.dx;
@@ -313,7 +313,7 @@ describe("Query", () => {
       const positions: Array<{ x: number; y: number }> = [];
       const readQuery = defineQuery((q) => q.with(Position, Velocity));
       for (const entityId of readQuery.current(ctx)) {
-        const pos = Position.read(entityId);
+        const pos = Position.read(entityId) as { x: number; y: number };
         positions.push({ x: pos.x, y: pos.y });
       }
 
@@ -338,8 +338,8 @@ describe("Query", () => {
       // Apply velocity to position
       const writeQuery = defineQuery((q) => q.with(Position, Velocity));
       for (const entityId of writeQuery.current(ctx)) {
-        const pos = Position.write(entityId);
-        const vel = Velocity.read(entityId);
+        const pos = Position.write(entityId) as { x: number; y: number };
+        const vel = Velocity.read(entityId) as { dx: number; dy: number };
         pos.x += vel.dx;
         pos.y += vel.dy;
       }
@@ -449,6 +449,266 @@ describe("Query", () => {
       const query3 = defineQuery((q) => q.with(Position).without(Velocity));
       const results3 = Array.from(query3.current(ctx));
       expect(results3).not.toContain(e1);
+    });
+  });
+
+  describe("Query - Reactive added()/removed()", () => {
+    it("should return entities in added() when entity is created and matches query", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+
+      // Initially no added entities
+      let added = Array.from(movingQuery.added(ctx));
+      expect(added).toHaveLength(0);
+
+      // Create an entity that matches the query
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position, { x: 10, y: 20 });
+      world.addComponent(e1, Velocity, { dx: 1, dy: 2 });
+
+      // Should appear in added()
+      added = Array.from(movingQuery.added(ctx));
+      expect(added).toHaveLength(1);
+      expect(added).toContain(e1);
+
+      // Second call should return empty (already processed)
+      added = Array.from(movingQuery.added(ctx));
+      expect(added).toHaveLength(0);
+    });
+
+    it("should return entity in added() when component is added to existing entity", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+
+      // Create entity with only Position
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position, { x: 10, y: 20 });
+
+      // Clear the added buffer
+      movingQuery.added(ctx);
+
+      // Entity doesn't match query yet
+      expect(Array.from(movingQuery.current(ctx))).toHaveLength(0);
+
+      // Now add Velocity - entity should match
+      world.addComponent(e1, Velocity, { dx: 1, dy: 2 });
+
+      // Entity should now appear in added()
+      const added = Array.from(movingQuery.added(ctx));
+      expect(added).toHaveLength(1);
+      expect(added).toContain(e1);
+
+      // And in current()
+      expect(Array.from(movingQuery.current(ctx))).toContain(e1);
+    });
+
+    it("should return entity in removed() when entity is deleted", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+
+      // Create entity
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position);
+      world.addComponent(e1, Velocity);
+
+      // Clear the added/removed buffers
+      movingQuery.added(ctx);
+      movingQuery.removed(ctx);
+
+      // Delete the entity
+      world.removeEntity(e1);
+
+      // Should appear in removed()
+      const removed = Array.from(movingQuery.removed(ctx));
+      expect(removed).toHaveLength(1);
+      expect(removed).toContain(e1);
+    });
+
+    it("should return entity in removed() when component is removed from existing entity", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+
+      // Create entity with both components
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position);
+      world.addComponent(e1, Velocity);
+
+      // Clear the buffers
+      movingQuery.added(ctx);
+      movingQuery.removed(ctx);
+
+      // Entity matches query
+      expect(Array.from(movingQuery.current(ctx))).toContain(e1);
+
+      // Remove Velocity - entity should no longer match
+      world.removeComponent(e1, Velocity);
+
+      // Entity should appear in removed()
+      const removed = Array.from(movingQuery.removed(ctx));
+      expect(removed).toHaveLength(1);
+      expect(removed).toContain(e1);
+
+      // And should no longer be in current()
+      expect(Array.from(movingQuery.current(ctx))).not.toContain(e1);
+    });
+
+    it("should not return entity in removed() if component removal doesn't affect query match", () => {
+      const world = new World([Position, Velocity, Health]);
+      const ctx = world.getContext();
+
+      // Query only requires Position
+      const positionQuery = defineQuery((q) => q.with(Position));
+
+      // Create entity with Position, Velocity, and Health
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position);
+      world.addComponent(e1, Velocity);
+      world.addComponent(e1, Health);
+
+      // Clear buffers
+      positionQuery.added(ctx);
+      positionQuery.removed(ctx);
+
+      // Remove Velocity - entity should still match (query only requires Position)
+      world.removeComponent(e1, Velocity);
+
+      // Entity should NOT appear in removed() since it still matches
+      const removed = Array.from(positionQuery.removed(ctx));
+      expect(removed).toHaveLength(0);
+
+      // Should still be in current()
+      expect(Array.from(positionQuery.current(ctx))).toContain(e1);
+    });
+
+    it("should handle without() clause correctly for added()", () => {
+      const world = new World([Position, Velocity, Enemy]);
+      const ctx = world.getContext();
+
+      // Query for Position WITHOUT Enemy
+      const nonEnemyQuery = defineQuery((q) => q.with(Position).without(Enemy));
+
+      // Create entity with Position and Enemy - should NOT match
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position);
+      world.addComponent(e1, Enemy);
+
+      // Clear buffers
+      nonEnemyQuery.added(ctx);
+      nonEnemyQuery.removed(ctx);
+
+      // Entity should not be in current
+      expect(Array.from(nonEnemyQuery.current(ctx))).not.toContain(e1);
+
+      // Remove Enemy - now entity should match
+      world.removeComponent(e1, Enemy);
+
+      // Entity should appear in added()
+      const added = Array.from(nonEnemyQuery.added(ctx));
+      expect(added).toHaveLength(1);
+      expect(added).toContain(e1);
+    });
+
+    it("should handle without() clause correctly for removed()", () => {
+      const world = new World([Position, Velocity, Enemy]);
+      const ctx = world.getContext();
+
+      // Query for Position WITHOUT Enemy
+      const nonEnemyQuery = defineQuery((q) => q.with(Position).without(Enemy));
+
+      // Create entity with only Position - should match
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position);
+
+      // Clear buffers
+      nonEnemyQuery.added(ctx);
+      nonEnemyQuery.removed(ctx);
+
+      // Entity should be in current
+      expect(Array.from(nonEnemyQuery.current(ctx))).toContain(e1);
+
+      // Add Enemy - now entity should NOT match
+      world.addComponent(e1, Enemy);
+
+      // Entity should appear in removed()
+      const removed = Array.from(nonEnemyQuery.removed(ctx));
+      expect(removed).toHaveLength(1);
+      expect(removed).toContain(e1);
+
+      // Should not be in current anymore
+      expect(Array.from(nonEnemyQuery.current(ctx))).not.toContain(e1);
+    });
+
+    it("should handle multiple entities being added and removed", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+
+      // Create multiple entities
+      const e1 = world.createEntity();
+      world.addComponent(e1, Position);
+      const e2 = world.createEntity();
+      world.addComponent(e2, Position);
+      const e3 = world.createEntity();
+      world.addComponent(e3, Position);
+
+      // Clear buffers
+      movingQuery.added(ctx);
+      movingQuery.removed(ctx);
+
+      // Add Velocity to e1 and e2
+      world.addComponent(e1, Velocity);
+      world.addComponent(e2, Velocity);
+
+      // Check added
+      let added = Array.from(movingQuery.added(ctx));
+      expect(added).toHaveLength(2);
+      expect(added).toContain(e1);
+      expect(added).toContain(e2);
+      expect(added).not.toContain(e3);
+
+      // Remove Velocity from e1
+      world.removeComponent(e1, Velocity);
+
+      // Check removed
+      const removed = Array.from(movingQuery.removed(ctx));
+      expect(removed).toHaveLength(1);
+      expect(removed).toContain(e1);
+
+      // e2 should still be in current
+      expect(Array.from(movingQuery.current(ctx))).toContain(e2);
+      expect(Array.from(movingQuery.current(ctx))).not.toContain(e1);
+    });
+
+    it("should only return entity once even if multiple relevant components change", () => {
+      const world = new World([Position, Velocity, Health]);
+      const ctx = world.getContext();
+
+      const query = defineQuery((q) => q.with(Position, Velocity, Health));
+
+      // Create entity with no components
+      const e1 = world.createEntity();
+
+      // Clear buffers
+      query.added(ctx);
+
+      // Add all three components
+      world.addComponent(e1, Position);
+      world.addComponent(e1, Velocity);
+      world.addComponent(e1, Health);
+
+      // Entity should appear only once in added()
+      const added = Array.from(query.added(ctx));
+      expect(added).toHaveLength(1);
+      expect(added).toContain(e1);
     });
   });
 });

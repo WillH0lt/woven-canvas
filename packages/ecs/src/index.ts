@@ -1,6 +1,6 @@
 export { field, type Component, defineComponent } from "./Component";
 export { World } from "./World";
-export { setupWorker } from "./Worker";
+export { setupWorker, createEntity, removeEntity } from "./Worker";
 export { defineSystem, defineWorkerSystem } from "./System";
 export type {
   Context,

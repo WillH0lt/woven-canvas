@@ -1,5 +1,6 @@
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer } from "./EventBuffer";
+import { Pool } from "./Pool";
 import type { Component } from "./Component";
 import type { ComponentBuffer } from "./Component/types";
 import type { QueryCache } from "./QueryCache";
@@ -10,6 +11,7 @@ import type { QueryCache } from "./QueryCache";
 export interface BaseContext {
   entityBuffer: EntityBuffer;
   eventBuffer: EventBuffer;
+  pool: Pool;
   components: Record<string, Component<any>>;
   maxEntities: number;
   componentCount: number;
@@ -42,7 +44,7 @@ export type AnyContext = Context | WorkerContext;
  * Each mask is a Uint8Array where each element represents 8 component bits.
  */
 export interface QueryMasks {
-  tracking: number;
+  tracking: Uint8Array;
   with: Uint8Array;
   without: Uint8Array;
   any: Uint8Array;
@@ -107,6 +109,9 @@ export interface InitMessage {
   index: number;
   entitySAB: SharedArrayBuffer;
   eventSAB: SharedArrayBuffer;
+  poolSAB: SharedArrayBuffer;
+  poolBucketCount: number;
+  poolSize: number;
   componentData: ComponentTransferData;
   maxEntities: number;
   componentCount: number;

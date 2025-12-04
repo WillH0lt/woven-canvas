@@ -88,9 +88,11 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
+      const eventBuffer = new EventBuffer();
+
       // Initialize components for transfer data
-      Position.initialize(0, maxEntities);
-      Velocity.initialize(1, maxEntities);
+      Position.initialize(0, maxEntities, eventBuffer);
+      Velocity.initialize(1, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         Position: {
@@ -104,8 +106,6 @@ describe("Worker", () => {
           buffer: Velocity.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       const initMessage: InitMessage = {
         type: "init",
@@ -144,7 +144,9 @@ describe("Worker", () => {
         y: field.float32().default(0),
       });
 
-      TestPosition.initialize(0, maxEntities);
+      const eventBuffer = new EventBuffer();
+
+      TestPosition.initialize(0, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         TestPosition: {
@@ -153,8 +155,6 @@ describe("Worker", () => {
           buffer: TestPosition.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       // First, send init message
       const initMessage: InitMessage = {
@@ -261,10 +261,12 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
+      const eventBuffer = new EventBuffer();
+
       const AsyncPosition = defineComponent("AsyncPosition", {
         x: field.float32().default(0),
       });
-      AsyncPosition.initialize(0, maxEntities);
+      AsyncPosition.initialize(0, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         AsyncPosition: {
@@ -273,8 +275,6 @@ describe("Worker", () => {
           buffer: AsyncPosition.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       const initMessage: InitMessage = {
         type: "init",
@@ -316,10 +316,12 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
+      const eventBuffer = new EventBuffer();
+
       const ErrorPosition = defineComponent("ErrorPosition", {
         x: field.float32().default(0),
       });
-      ErrorPosition.initialize(0, maxEntities);
+      ErrorPosition.initialize(0, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         ErrorPosition: {
@@ -328,8 +330,6 @@ describe("Worker", () => {
           buffer: ErrorPosition.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       const initMessage: InitMessage = {
         type: "init",
@@ -381,10 +381,12 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
+      const eventBuffer = new EventBuffer();
+
       const KnownComponent = defineComponent("KnownComponent", {
         x: field.float32().default(0),
       });
-      KnownComponent.initialize(0, maxEntities);
+      KnownComponent.initialize(0, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         KnownComponent: {
@@ -393,8 +395,6 @@ describe("Worker", () => {
           buffer: KnownComponent.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       const initMessage: InitMessage = {
         type: "init",
@@ -435,12 +435,14 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
+      const eventBuffer = new EventBuffer();
+
       // Create and initialize a component on "main thread"
       const MainPosition = defineComponent("TransferPosition", {
         x: field.float32().default(0),
         y: field.float32().default(0),
       });
-      MainPosition.initialize(0, maxEntities);
+      MainPosition.initialize(0, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         TransferPosition: {
@@ -449,8 +451,6 @@ describe("Worker", () => {
           buffer: MainPosition.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       const initMessage: InitMessage = {
         type: "init",
@@ -491,10 +491,12 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
+      const eventBuffer = new EventBuffer();
+
       const ContextPosition = defineComponent("ContextPosition", {
         x: field.float32().default(0),
       });
-      ContextPosition.initialize(0, maxEntities);
+      ContextPosition.initialize(0, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         ContextPosition: {
@@ -503,8 +505,6 @@ describe("Worker", () => {
           buffer: ContextPosition.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       const initMessage: InitMessage = {
         type: "init",
@@ -544,10 +544,12 @@ describe("Worker", () => {
       const maxEntities = 500;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
+      const eventBuffer = new EventBuffer();
+
       const CountPosition = defineComponent("CountPosition", {
         x: field.float32().default(0),
       });
-      CountPosition.initialize(0, maxEntities);
+      CountPosition.initialize(0, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         CountPosition: {
@@ -556,8 +558,6 @@ describe("Worker", () => {
           buffer: CountPosition.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       const initMessage: InitMessage = {
         type: "init",
@@ -598,10 +598,12 @@ describe("Worker", () => {
       const maxEntities = 100;
       const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
+      const eventBuffer = new EventBuffer();
+
       const EmptyPosition = defineComponent("EmptyPosition", {
         x: field.float32().default(0),
       });
-      EmptyPosition.initialize(0, maxEntities);
+      EmptyPosition.initialize(0, maxEntities, eventBuffer);
 
       const componentData: ComponentTransferData = {
         EmptyPosition: {
@@ -610,8 +612,6 @@ describe("Worker", () => {
           buffer: EmptyPosition.buffer,
         },
       };
-
-      const eventBuffer = new EventBuffer();
 
       const initMessage: InitMessage = {
         type: "init",

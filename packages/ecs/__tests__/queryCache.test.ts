@@ -7,7 +7,7 @@ describe("QueryCache", () => {
     with: new Uint8Array([0b0011]),
     without: new Uint8Array([0b0100]),
     any: new Uint8Array([0b1000]),
-    tracking: 0,
+    tracking: new Uint8Array([0]),
   };
 
   describe("Basic Operations", () => {

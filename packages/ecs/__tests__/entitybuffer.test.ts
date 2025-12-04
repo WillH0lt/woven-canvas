@@ -14,7 +14,7 @@ function masks(
     with: new Uint8Array([withMask]),
     without: new Uint8Array([withoutMask]),
     any: new Uint8Array([anyMask]),
-    tracking: 0,
+    tracking: new Uint8Array([0]),
   };
 }
 
@@ -381,7 +381,7 @@ describe("EntityBuffer", () => {
         with: new Uint8Array([0, 1]), // bit 0 of byte 2 = component 8
         without: new Uint8Array([0, 0]),
         any: new Uint8Array([0, 0]),
-        tracking: 0,
+        tracking: new Uint8Array([0, 0]),
       };
 
       expect(largeBuffer.matches(1, multiWordMask)).toBe(true);
