@@ -15,6 +15,10 @@ function masks(
     without: new Uint8Array([withoutMask]),
     any: new Uint8Array([anyMask]),
     tracking: new Uint8Array([0]),
+    hasTracking: false,
+    hasWith: withMask !== 0,
+    hasWithout: withoutMask !== 0,
+    hasAny: anyMask !== 0,
   };
 }
 
@@ -369,6 +373,10 @@ describe("EntityBuffer", () => {
         without: new Uint8Array([0, 0]),
         any: new Uint8Array([0, 0]),
         tracking: new Uint8Array([0, 0]),
+        hasTracking: false,
+        hasWith: true,
+        hasWithout: false,
+        hasAny: false,
       };
 
       expect(largeBuffer.matches(1, multiWordMask)).toBe(true);

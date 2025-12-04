@@ -35,7 +35,7 @@ const library: BenchmarkLibrary = {
     });
 
     this.world = new World([this.Position, this.Velocity], {
-      maxEntities: 10_001, // Velocity suite creates 10000 entities without destroying
+      maxEntities: 20_001, // Velocity suite creates 10000 entities without destroying
     });
 
     this.ctx = this.world.getContext();
@@ -52,7 +52,6 @@ const library: BenchmarkLibrary = {
       const velY = Velocity.buffer.y;
 
       const particles = query.current(ctx);
-      // console.log(`Updating ${particles.length} moving entities`);
       for (let i = 0; i < particles.length; i++) {
         const eid = particles[i]!;
         posX[eid] += velX[eid];

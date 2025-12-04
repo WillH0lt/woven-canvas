@@ -8,6 +8,10 @@ describe("QueryCache", () => {
     without: new Uint8Array([0b0100]),
     any: new Uint8Array([0b1000]),
     tracking: new Uint8Array([0]),
+    hasTracking: false,
+    hasWith: true,
+    hasWithout: true,
+    hasAny: true,
   };
 
   describe("Basic Operations", () => {

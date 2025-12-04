@@ -207,6 +207,10 @@ export class Query {
    * @returns true if an update was performed, false if already up-to-date
    */
   private updateFromEvents(ctx: Context): boolean {
+    if (!this.masks || !this.cache) {
+      throw new Error("Query masks or cache not initialized");
+    }
+
     // Already up-to-date for this tick
     if (ctx.tick === this.lastUpdateTick) {
       return false;
@@ -238,8 +242,8 @@ export class Query {
     removedList.length = 0;
 
     // Categorize entities into added and removed
-    const cache = this.cache!;
-    const masks = this.masks!;
+    const cache = this.cache;
+    const masks = this.masks;
     const entityBuffer = ctx.entityBuffer;
 
     for (const entityId of entities) {
@@ -358,6 +362,10 @@ export class Query {
    * @returns An array of entity IDs with changed tracked components
    */
   changed(ctx: Context): Uint32Array {
+    if (!this.masks) {
+      throw new Error("Query masks not initialized");
+    }
+
     this.lazilyInitializeMasks(ctx);
 
     // Ensure cache is initialized
@@ -370,10 +378,9 @@ export class Query {
       return result;
     }
 
-    const trackingMask = this.masks!.tracking;
-
     // If no components are tracked, return empty
-    if (trackingMask.every((byte) => byte === 0)) {
+    // Use pre-computed hasTracking flag for fast path
+    if (!this.masks.hasTracking) {
       this.lastChangedTick = ctx.tick;
       this.cachedChanged = EMPTY_UINT32_ARRAY;
       return this.cachedChanged;
@@ -382,13 +389,13 @@ export class Query {
     const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
       this.lastChangedScannedIndex,
       EventType.CHANGED,
-      trackingMask
+      this.masks.tracking
     );
 
     // Filter to only entities that currently match the query
     const results: number[] = [];
     for (const entityId of entities) {
-      if (ctx.entityBuffer.matches(entityId, this.masks!)) {
+      if (ctx.entityBuffer.matches(entityId, this.masks)) {
         results.push(entityId);
       }
     }
@@ -516,11 +523,22 @@ export class QueryBuilder {
    * @internal
    */
   _build(): QueryMasks {
+    // Pre-compute whether each mask has any non-zero values
+    // This allows fast-path skipping in EntityBuffer.matches()
+    const hasTracking = !this.trackingMask.every((byte) => byte === 0);
+    const hasWith = !this.withMask.every((byte) => byte === 0);
+    const hasWithout = !this.withoutMask.every((byte) => byte === 0);
+    const hasAny = !this.anyMask.every((byte) => byte === 0);
+
     return {
       tracking: this.trackingMask,
       with: this.withMask,
       without: this.withoutMask,
       any: this.anyMask,
+      hasTracking,
+      hasWith,
+      hasWithout,
+      hasAny,
     };
   }
 }

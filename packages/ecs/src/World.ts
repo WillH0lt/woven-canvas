@@ -30,7 +30,6 @@ export interface WorldOptions {
 export class World {
   private componentIndex = 0;
   private workerManager: WorkerManager;
-  private pool: Pool;
   private context: Context;
 
   /**
@@ -60,7 +59,6 @@ export class World {
     const componentCount = Object.keys(components).length;
 
     this.workerManager = new WorkerManager(threads);
-    this.pool = Pool.create(maxEntities);
 
     // Create the event buffer first so we can pass it to components
     const eventBuffer = new EventBuffer(maxEvents);
@@ -79,7 +77,7 @@ export class World {
       maxEntities,
       maxEvents,
       componentCount,
-      pool: this.pool,
+      pool: Pool.create(maxEntities),
       tick: 0,
     };
   }
@@ -154,12 +152,11 @@ export class World {
     }
 
     const ctx = this.context;
-    const maxEvents = ctx.maxEvents;
 
     // Scan for REMOVED events and reclaim those entity IDs
     for (const event of ctx.eventBuffer.getEventsInRange(
-      fromIndex % maxEvents,
-      toIndex % maxEvents,
+      fromIndex,
+      toIndex,
       EventType.REMOVED
     )) {
       // Only reclaim if the entity is still dead (not recreated)

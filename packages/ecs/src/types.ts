@@ -37,6 +37,11 @@ export interface QueryMasks {
   with: Uint8Array;
   without: Uint8Array;
   any: Uint8Array;
+
+  hasTracking: boolean;
+  hasWith: boolean;
+  hasWithout: boolean;
+  hasAny: boolean;
 }
 
 /**

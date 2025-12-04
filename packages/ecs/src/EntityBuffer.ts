@@ -131,52 +131,57 @@ export class EntityBuffer {
       return false;
     }
 
-    const withMask = masks.with;
-    const withoutMask = masks.without;
-    const anyMask = masks.any;
-
     // Component bytes start at offset + 1
     const componentOffset = offset + 1;
-    const maskLength = withMask.length;
 
     // Check 'with' criteria - entity must have ALL specified components
-    for (let i = 0; i < maskLength; i++) {
-      const mask = withMask[i];
-      if (mask !== 0) {
-        const value = view[componentOffset + i];
-        if ((value & mask) !== mask) {
-          return false;
+    if (masks.hasWith) {
+      const withMask = masks.with;
+      const maskLength = withMask.length;
+      for (let i = 0; i < maskLength; i++) {
+        const mask = withMask[i];
+        if (mask !== 0) {
+          const value = view[componentOffset + i];
+          if ((value & mask) !== mask) {
+            return false;
+          }
         }
       }
     }
 
     // Check 'without' criteria - entity must have NONE of the specified components
-    for (let i = 0; i < maskLength; i++) {
-      const mask = withoutMask[i];
-      if (mask !== 0) {
-        const value = view[componentOffset + i];
-        if ((value & mask) !== 0) {
-          return false;
+    if (masks.hasWithout) {
+      const withoutMask = masks.without;
+      const maskLength = withoutMask.length;
+      for (let i = 0; i < maskLength; i++) {
+        const mask = withoutMask[i];
+        if (mask !== 0) {
+          const value = view[componentOffset + i];
+          if ((value & mask) !== 0) {
+            return false;
+          }
         }
       }
     }
 
     // Check 'any' criteria - entity must have AT LEAST ONE of the specified components
-    let hasAny = false;
-    let anySpecified = false;
-    for (let i = 0; i < maskLength; i++) {
-      const mask = anyMask[i];
-      if (mask !== 0) {
-        anySpecified = true;
-        const value = view[componentOffset + i];
-        if ((value & mask) !== 0) {
-          hasAny = true;
-          break;
+    if (masks.hasAny) {
+      const anyMask = masks.any;
+      const maskLength = anyMask.length;
+      let foundAny = false;
+      for (let i = 0; i < maskLength; i++) {
+        const mask = anyMask[i];
+        if (mask !== 0) {
+          const value = view[componentOffset + i];
+          if ((value & mask) !== 0) {
+            foundAny = true;
+            break;
+          }
         }
       }
-    }
-    if (anySpecified && !hasAny) {
-      return false;
+      if (!foundAny) {
+        return false;
+      }
     }
 
     return true;
