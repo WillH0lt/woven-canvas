@@ -85,6 +85,8 @@ export class WorkerManager {
           name,
           componentId: component.componentId,
           buffer: component.buffer, // Transfer the SharedArrayBuffer-backed typed arrays
+          schema: component.schema,
+          isSingleton: component.isSingleton,
         };
       }
 

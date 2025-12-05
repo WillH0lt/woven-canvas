@@ -1,9 +1,8 @@
 import type { Context } from "./types";
-import type { Component } from "./Component";
+import type { Component, ComponentDef } from "./Component";
 import type { ComponentSchema, InferComponentType } from "./Component/types";
 import { EventType } from "./EventBuffer";
 import { SINGLETON_ENTITY_ID } from "./Component";
-import { initializeComponentInWorker } from "./Worker";
 
 /**
  * A reference to a singleton with its own change tracking state.
@@ -27,7 +26,7 @@ import { initializeComponentInWorker } from "./Worker";
  * ```
  */
 export class Singleton<T extends ComponentSchema> {
-  private readonly singleton: Component<T>;
+  private readonly singletonDef: ComponentDef<T>;
 
   /**
    * Tracks the last scanned index in the event buffer.
@@ -54,36 +53,32 @@ export class Singleton<T extends ComponentSchema> {
   /**
    * @internal
    */
-  constructor(singleton: Component<T>) {
-    this.singleton = singleton;
+  constructor(singletonDef: ComponentDef<T>) {
+    this.singletonDef = singletonDef;
   }
 
   /**
-   * Ensure the singleton is initialized in the current context.
+   * Get the singleton component instance from context.
    */
-  private ensureInitialized(): void {
-    if (!this.singleton.isSingleton) {
+  private getInstance(ctx: Context): Component<T> {
+    const component = ctx.components[this.singletonDef.name] as
+      | Component<T>
+      | undefined;
+    if (!component) {
       throw new Error(
-        `"${this.singleton.name}" is not a singleton. Use defineSingleton() to create singletons.`
+        `Singleton "${this.singletonDef.name}" is not registered with this World.`
       );
     }
-
-    if (this.singleton.isInitialized()) {
-      return;
-    }
-
-    // Try to initialize from worker transfer data
-    if (!initializeComponentInWorker(this.singleton)) {
+    if (!component.isSingleton) {
       throw new Error(
-        `Singleton "${this.singleton.name}" could not be initialized. ` +
-          `Make sure it's registered with the World on the main thread.`
+        `"${this.singletonDef.name}" is not a singleton. Use defineSingleton() to create singletons.`
       );
     }
+    return component;
   }
 
   /**
    * Read the singleton's data (readonly access).
-   * Lazily initializes the singleton in workers if needed.
    *
    * @param ctx - The context object
    * @returns The readonly singleton data
@@ -92,20 +87,18 @@ export class Singleton<T extends ComponentSchema> {
    * ```typescript
    * const mouse = useSingleton(Mouse);
    *
-   * function execute() {
-   *   const data = mouse.read();
+   * function execute(ctx: Context) {
+   *   const data = mouse.read(ctx);
    *   console.log(`Mouse at (${data.x}, ${data.y})`);
    * }
    * ```
    */
-  read(): Readonly<InferComponentType<T>> {
-    this.ensureInitialized();
-    return this.singleton.readSingleton();
+  read(ctx: Context): Readonly<InferComponentType<T>> {
+    return this.getInstance(ctx).readSingleton();
   }
 
   /**
    * Write to the singleton's data.
-   * Lazily initializes the singleton in workers if needed.
    * Automatically triggers a change event for tracking.
    *
    * @param ctx - The context object
@@ -115,16 +108,15 @@ export class Singleton<T extends ComponentSchema> {
    * ```typescript
    * const mouse = useSingleton(Mouse);
    *
-   * function execute() {
-   *   const data = mouse.write();
+   * function execute(ctx: Context) {
+   *   const data = mouse.write(ctx);
    *   data.x = event.clientX;
    *   data.y = event.clientY;
    * }
    * ```
    */
-  write(): InferComponentType<T> {
-    this.ensureInitialized();
-    return this.singleton.writeSingleton();
+  write(ctx: Context): InferComponentType<T> {
+    return this.getInstance(ctx).writeSingleton();
   }
 
   /**
@@ -148,7 +140,7 @@ export class Singleton<T extends ComponentSchema> {
    * ```
    */
   changed(ctx: Context): boolean {
-    this.ensureInitialized();
+    const component = this.getInstance(ctx);
 
     // Initialize on first use - set lastScannedIndex to current position
     // so we don't report changes that happened before this ref was first used
@@ -172,26 +164,25 @@ export class Singleton<T extends ComponentSchema> {
       return false;
     }
 
-    // Scan for CHANGED events with our singleton's entity ID and component ID
-    const componentId = this.singleton.componentId;
-    let found = false;
+    // Create a component mask for just this singleton's component
+    const componentId = component.componentId;
+    const byteIndex = componentId >> 3;
+    const bitIndex = componentId & 7;
+    const componentMask = new Uint8Array(byteIndex + 1);
+    componentMask[byteIndex] = 1 << bitIndex;
 
-    for (const event of ctx.eventBuffer.getEventsInRange(
+    // Collect entities with CHANGED events for this component
+    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
       this.lastScannedIndex,
-      currentWriteIndex,
-      EventType.CHANGED
-    )) {
-      if (
-        event.entityId === SINGLETON_ENTITY_ID &&
-        event.componentId === componentId
-      ) {
-        found = true;
-        break;
-      }
-    }
+      EventType.CHANGED,
+      componentMask
+    );
+
+    // Check if our singleton entity is in the set
+    const found = entities.has(SINGLETON_ENTITY_ID);
 
     // Update tracking state
-    this.lastScannedIndex = currentWriteIndex;
+    this.lastScannedIndex = newIndex;
     this.lastChangedTick = ctx.tick;
     this.cachedChanged = found;
 
@@ -204,7 +195,7 @@ export class Singleton<T extends ComponentSchema> {
  * Similar to useQuery(), each useSingleton() call creates a new
  * reference that tracks changes independently.
  *
- * @param singleton - The singleton component created with defineSingleton()
+ * @param singletonDef - The singleton component definition created with defineSingleton()
  * @returns A Singleton for reading, writing, and tracking changes
  *
  * @example
@@ -228,7 +219,7 @@ export class Singleton<T extends ComponentSchema> {
  * ```
  */
 export function useSingleton<T extends ComponentSchema>(
-  singleton: Component<T>
+  singletonDef: ComponentDef<T>
 ): Singleton<T> {
-  return new Singleton(singleton);
+  return new Singleton(singletonDef);
 }

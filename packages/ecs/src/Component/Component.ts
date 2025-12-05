@@ -5,7 +5,7 @@
 // add object type
 // add ComponentInstance.fromJson method
 
-import type { EntityId } from "../types";
+import type { EntityId, Context } from "../types";
 import type { EventBuffer } from "../EventBuffer";
 import type {
   ComponentSchema,
@@ -58,11 +58,9 @@ export class Component<T extends ComponentSchema> {
   /** Reference to the event buffer for pushing CHANGED events */
   private eventBuffer: EventBuffer | null = null;
 
-  private schema: Record<string, FieldDef>;
+  /** The component schema (field definitions) */
+  readonly schema: Record<string, FieldDef>;
   private fieldNames: string[];
-
-  // Store backing buffers for each field (uses SharedArrayBuffer when available)
-  private fieldBuffers: Map<string, ArrayBufferLike> = new Map();
 
   // Typed buffer accessor for field access (e.g., Position.buffer.x[eid])
   private _buffer: ComponentBuffer<T> | null = null;
@@ -76,23 +74,82 @@ export class Component<T extends ComponentSchema> {
   private writableEntityId: EntityId = 0;
 
   /**
+   * Create a Component instance from a ComponentDef descriptor.
+   * @param def - The component definition
+   * @returns A new Component instance
+   */
+  static fromDef<T extends ComponentSchema>(
+    def: ComponentDef<T>
+  ): Component<T> {
+    return new Component<T>(def.name, def.schema, def.isSingleton);
+  }
+
+  /**
+   * Create a Component instance from transfer data (for worker threads).
+   * @param name - The component name
+   * @param transferData - The transfer data containing buffer, componentId, schema, etc.
+   * @param eventBuffer - The event buffer for recording changes
+   * @returns A new initialized Component instance
+   * @internal
+   */
+  static fromTransferData<T extends ComponentSchema>(
+    name: string,
+    transferData: {
+      componentId: number;
+      buffer: ComponentBuffer<T>;
+      schema: Record<string, FieldDef>;
+      isSingleton: boolean;
+    },
+    eventBuffer: EventBuffer
+  ): Component<T> {
+    const component = new Component<T>(
+      name,
+      transferData.schema as any,
+      transferData.isSingleton,
+      true // isPrebuiltSchema
+    );
+    component.fromTransfer(
+      transferData.componentId,
+      transferData.buffer,
+      eventBuffer
+    );
+    return component;
+  }
+
+  /**
    * Create a new component definition
    * @param name - The component name
-   * @param schema - The component schema built using field builders
+   * @param schema - The component schema built using field builders OR a pre-built schema (FieldDef)
    * @param isSingleton - Whether this is a singleton (default: false)
+   * @param isPrebuiltSchema - If true, schema is already in FieldDef form (internal use for transfers)
    */
-  constructor(name: string, schema: T, isSingleton: boolean = false) {
+  constructor(
+    name: string,
+    schema: T | Record<string, FieldDef>,
+    isSingleton: boolean = false,
+    isPrebuiltSchema: boolean = false
+  ) {
     this.name = name;
     this.isSingleton = isSingleton;
 
     this.schema = {};
     this.fieldNames = [];
 
-    // Initialize storage arrays for each field
-    for (const [fieldName, builder] of Object.entries(schema)) {
-      const fieldDef = builder.def;
-      this.schema[fieldName] = fieldDef;
-      this.fieldNames.push(fieldName);
+    if (isPrebuiltSchema) {
+      // Schema is already in FieldDef form (from transfer)
+      for (const [fieldName, fieldDef] of Object.entries(
+        schema as Record<string, FieldDef>
+      )) {
+        this.schema[fieldName] = fieldDef;
+        this.fieldNames.push(fieldName);
+      }
+    } else {
+      // Initialize storage arrays for each field (schema has field builders)
+      for (const [fieldName, builder] of Object.entries(schema as T)) {
+        const fieldDef = (builder as any).def;
+        this.schema[fieldName] = fieldDef;
+        this.fieldNames.push(fieldName);
+      }
     }
 
     // Create master instances with property descriptors for direct buffer access
@@ -129,7 +186,6 @@ export class Component<T extends ComponentSchema> {
         BufferConstructor
       );
 
-      this.fieldBuffers.set(fieldName, buffer);
       bufferProxy[fieldName] = view;
     }
 
@@ -145,13 +201,6 @@ export class Component<T extends ComponentSchema> {
 
   public get buffer(): ComponentBuffer<T> {
     return this._buffer as ComponentBuffer<T>;
-  }
-
-  /**
-   * Check if this component is initialized
-   */
-  isInitialized(): boolean {
-    return this.initialized;
   }
 
   /**
@@ -287,13 +336,6 @@ export class Component<T extends ComponentSchema> {
    * @returns The readonly master object with the component's field values
    */
   read(entityId: EntityId): Readonly<InferComponentType<T>> {
-    if (!this.initialized) {
-      throw new Error(
-        `Component "${this.name}" has not been initialized. Ensure it was passed to the World constructor. ` +
-          `If using in a worker, make sure the component is included in a query and the query has run before accessing.`
-      );
-    }
-
     this.readonlyEntityId = entityId;
     return this.readonlyMaster;
   }
@@ -322,17 +364,6 @@ export class Component<T extends ComponentSchema> {
    * @internal - Use readSingleton(Component) for proper initialization handling
    */
   readSingleton(): Readonly<InferComponentType<T>> {
-    if (!this.isSingleton) {
-      throw new Error(
-        `Component "${this.name}" is not a singleton. Use read(entityId) instead.`
-      );
-    }
-    if (!this.initialized) {
-      throw new Error(
-        `Singleton "${this.name}" has not been initialized. ` +
-          `Use readSingleton(${this.name}) to access it, which handles initialization.`
-      );
-    }
     this.readonlyEntityId = SINGLETON_INDEX;
     return this.readonlyMaster;
   }
@@ -345,17 +376,6 @@ export class Component<T extends ComponentSchema> {
    * @internal - Use writeSingleton(Component) for proper initialization handling
    */
   writeSingleton(): InferComponentType<T> {
-    if (!this.isSingleton) {
-      throw new Error(
-        `Component "${this.name}" is not a singleton. Use write(entityId) instead.`
-      );
-    }
-    if (!this.initialized) {
-      throw new Error(
-        `Singleton "${this.name}" has not been initialized. ` +
-          `Use writeSingleton(${this.name}) to access it, which handles initialization.`
-      );
-    }
     this.writableEntityId = SINGLETON_INDEX;
 
     // Push change event using sentinel entity ID
@@ -366,14 +386,88 @@ export class Component<T extends ComponentSchema> {
 }
 
 /**
+ * Component definition class that serves as a descriptor and provides
+ * read/write access to component data via context lookup.
+ */
+export class ComponentDef<T extends ComponentSchema> {
+  readonly name: string;
+  readonly schema: T;
+  readonly isSingleton: boolean;
+
+  constructor(name: string, schema: T, isSingleton: boolean = false) {
+    this.name = name;
+    this.schema = schema;
+    this.isSingleton = isSingleton;
+  }
+
+  /**
+   * Get the Component instance from the context.
+   * @internal
+   */
+  getInstance(ctx: Context): Component<T> {
+    const instance = ctx.components[this.name] as Component<T> | undefined;
+    if (!instance) {
+      throw new Error(
+        `Component "${this.name}" is not registered with this World.`
+      );
+    }
+    return instance;
+  }
+
+  /**
+   * Get the component ID for this component in the given context.
+   */
+  getComponentId(ctx: Context): number {
+    return this.getInstance(ctx).componentId;
+  }
+
+  /**
+   * Read a component's data for a specific entity.
+   * @param ctx - The context containing the component instance
+   * @param entityId - The entity ID to read from
+   * @returns The readonly component data
+   */
+  read(ctx: Context, entityId: EntityId): Readonly<InferComponentType<T>> {
+    return this.getInstance(ctx).read(entityId);
+  }
+
+  /**
+   * Write to a component's data for a specific entity.
+   * @param ctx - The context containing the component instance
+   * @param entityId - The entity ID to write to
+   * @returns The writable component data
+   */
+  write(ctx: Context, entityId: EntityId): InferComponentType<T> {
+    return this.getInstance(ctx).write(entityId);
+  }
+
+  /**
+   * Read a singleton's data (no entity ID needed).
+   * @param ctx - The context containing the singleton instance
+   * @returns The readonly singleton data
+   */
+  readSingleton(ctx: Context): Readonly<InferComponentType<T>> {
+    return this.getInstance(ctx).readSingleton();
+  }
+
+  /**
+   * Write to a singleton's data (no entity ID needed).
+   * @param ctx - The context containing the singleton instance
+   * @returns The writable singleton data
+   */
+  writeSingleton(ctx: Context): InferComponentType<T> {
+    return this.getInstance(ctx).writeSingleton();
+  }
+}
+
+/**
  * Define a component with a name and schema.
- * This creates a component instance that can be registered with a World.
- * Each component instance is tied to a single World.
+ * Returns a ComponentDef that can be used to create per-world Component instances.
  *
  * @template T - The component schema type
  * @param name - The name of the component (e.g., "Position", "Velocity")
  * @param schema - The component schema built using field builders
- * @returns A component instance that extends Component<T>
+ * @returns A ComponentDef descriptor
  *
  * @example
  * ```typescript
@@ -388,19 +482,19 @@ export class Component<T extends ComponentSchema> {
 export function defineComponent<T extends ComponentSchema>(
   name: string,
   schema: T
-): Component<T> {
-  return new Component<T>(name, schema, false);
+): ComponentDef<T> {
+  return new ComponentDef(name, schema, false);
 }
 
 /**
  * Define a singleton with a name and schema.
- * A singleton is a component with exactly one instance that always exists.
+ * A singleton is a component with exactly one instance per world.
  * No entity ID is needed to access it.
  *
  * @template T - The singleton schema type
  * @param name - The name of the singleton (e.g., "Mouse", "Time")
  * @param schema - The singleton schema built using field builders
- * @returns A Component instance configured as a singleton
+ * @returns A ComponentDef descriptor configured as a singleton
  *
  * @example
  * ```typescript
@@ -416,6 +510,6 @@ export function defineComponent<T extends ComponentSchema>(
 export function defineSingleton<T extends ComponentSchema>(
   name: string,
   schema: T
-): Component<T> {
-  return new Component<T>(name, schema, true);
+): ComponentDef<T> {
+  return new ComponentDef(name, schema, true);
 }

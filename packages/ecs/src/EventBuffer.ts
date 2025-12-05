@@ -198,76 +198,6 @@ export class EventBuffer {
   }
 
   /**
-   * Get the maximum number of events this buffer can hold
-   */
-  getMaxEvents(): number {
-    return this.maxEvents;
-  }
-
-  /**
-   * Iterate over events in a range of indices.
-   * Handles wrap-around for ring buffer.
-   *
-   * @param fromIndex - Start index (inclusive)
-   * @param toIndex - End index (exclusive), this is the writeIndex
-   * @param eventTypes - Optional: bitmask of event types to include (e.g., EventType.ADDED | EventType.REMOVED)
-   * @param componentMask - Optional: for CHANGED events, filter by component mask
-   * @yields Event objects matching the criteria
-   */
-  *getEventsInRange(
-    fromIndex: number,
-    toIndex: number,
-    eventTypes?: number,
-    componentMask?: Uint8Array
-  ): Generator<{
-    entityId: number;
-    eventType: EventTypeValue;
-    componentId: number;
-  }> {
-    // No new events
-    if (fromIndex === toIndex) return;
-
-    // Calculate how many events to scan
-    let eventsToScan: number;
-    if (toIndex >= fromIndex) {
-      eventsToScan = toIndex - fromIndex;
-    } else {
-      // Wrapped around - this shouldn't happen with proper tracking
-      // but handle it gracefully by scanning from fromIndex to maxEvents, then 0 to toIndex
-      eventsToScan = this.maxEvents - fromIndex + toIndex;
-    }
-
-    // Cap at maxEvents to prevent infinite loops if indices get corrupted
-    eventsToScan = Math.min(eventsToScan, this.maxEvents);
-
-    for (let i = 0; i < eventsToScan; i++) {
-      const index = (fromIndex + i) % this.maxEvents;
-      const event = this.readEvent(index);
-
-      // Filter by event type bitmask if specified
-      if (eventTypes !== undefined && (event.eventType & eventTypes) === 0)
-        continue;
-
-      // Filter by component mask for CHANGED events
-      if (
-        componentMask !== undefined &&
-        event.eventType === EventType.CHANGED
-      ) {
-        const byteIndex = Math.floor(event.componentId / 8);
-        const bitIndex = event.componentId % 8;
-        if (
-          byteIndex >= componentMask.length ||
-          (componentMask[byteIndex] & (1 << bitIndex)) === 0
-        ) {
-          continue;
-        }
-      }
-
-      yield event;
-    }
-  }
-
-  /**
    * Collect entity IDs from events in a range directly into a Set.
    * Optimized version that avoids the generator overhead.
    *
@@ -352,15 +282,5 @@ export class EventBuffer {
       entities: seen,
       newIndex: currentWriteIndex,
     };
-  }
-
-  /**
-   * Fast check if there are any events between two indices
-   * @param fromIndex - Start index
-   * @param toIndex - End index (exclusive)
-   * @returns True if there are events to process
-   */
-  hasEventsInRange(fromIndex: number, toIndex: number): boolean {
-    return fromIndex !== toIndex;
   }
 }

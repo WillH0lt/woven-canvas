@@ -1,5 +1,3 @@
-import type { QueryMasks } from "./types";
-
 const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
@@ -25,16 +23,13 @@ export class QueryCache {
   private sparseBuffer: ArrayBufferLike;
   private dense: Uint32Array;
   private sparse: Uint32Array;
-  private _masks: QueryMasks;
   private maxEntities: number;
 
   /**
    * Create a new QueryCache
-   * @param masks - The query masks for matching entities
    * @param maxEntities - Maximum number of entities that can be cached
    */
-  constructor(masks: QueryMasks, maxEntities: number) {
-    this._masks = masks;
+  constructor(maxEntities: number) {
     this.maxEntities = maxEntities;
 
     // Dense buffer: count + maxEntities entity IDs
@@ -49,27 +44,6 @@ export class QueryCache {
     this.sparse = new Uint32Array(this.sparseBuffer);
     // Initialize all to "not present"
     this.sparse.fill(SPARSE_NOT_PRESENT);
-  }
-
-  /**
-   * Get the dense buffer for transfer to workers
-   */
-  getDenseBuffer(): ArrayBufferLike {
-    return this.denseBuffer;
-  }
-
-  /**
-   * Get the sparse buffer for transfer to workers
-   */
-  getSparseBuffer(): ArrayBufferLike {
-    return this.sparseBuffer;
-  }
-
-  /**
-   * Get the query masks
-   */
-  get masks(): QueryMasks {
-    return this._masks;
   }
 
   /**
@@ -137,30 +111,6 @@ export class QueryCache {
    */
   has(entityId: number): boolean {
     return this.sparse[entityId] !== SPARSE_NOT_PRESENT;
-  }
-
-  /**
-   * Clear all entities from the cache
-   */
-  clear(): void {
-    const count = this.dense[DENSE_COUNT_INDEX];
-    // Clear sparse entries for all entities in dense array
-    for (let i = 0; i < count; i++) {
-      const entityId = this.dense[DENSE_DATA_START + i];
-      this.sparse[entityId] = SPARSE_NOT_PRESENT;
-    }
-    this.dense[DENSE_COUNT_INDEX] = 0;
-  }
-
-  /**
-   * Iterate over all cached entity IDs
-   * Returns a lightweight iterator that reads directly from the buffer
-   */
-  *[Symbol.iterator](): Generator<number> {
-    const count = this.dense[DENSE_COUNT_INDEX];
-    for (let i = 0; i < count; i++) {
-      yield this.dense[DENSE_DATA_START + i];
-    }
   }
 
   /**

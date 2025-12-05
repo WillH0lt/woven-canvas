@@ -16,7 +16,7 @@ const MouseRef = useSingleton(Mouse);
 function execute(ctx: Context) {
   // Check if mouse changed and read its data
   if (MouseRef.changed(ctx)) {
-    const mouse = MouseRef.read();
+    const mouse = MouseRef.read(ctx);
     console.log(`Mouse moved to (${mouse.x}, ${mouse.y})`);
   }
 

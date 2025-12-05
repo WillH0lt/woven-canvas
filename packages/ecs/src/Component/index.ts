@@ -3,6 +3,7 @@ export {
   defineComponent,
   defineSingleton,
   SINGLETON_ENTITY_ID,
+  type ComponentDef,
 } from "./Component";
 export { field } from "./fieldBuilders";
 export type {

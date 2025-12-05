@@ -2,7 +2,8 @@ import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer } from "./EventBuffer";
 import { Pool } from "./Pool";
 import type { Component } from "./Component";
-import type { ComponentBuffer } from "./Component/types";
+import type { Query } from "./Query";
+import type { ComponentBuffer, FieldDef } from "./Component/types";
 
 /**
  * Context object for system execution.
@@ -18,6 +19,8 @@ export interface Context {
   pool: Pool;
   // Registered components in the world, keyed by component name.
   components: Record<string, Component<any>>;
+  // Registered queries in the world, keyed by query name.
+  queries: Record<string, Query>;
   // Maximum number of entities supported in the world.
   maxEntities: number;
   // Maximum number of events in the event ring buffer.
@@ -102,6 +105,8 @@ export type ComponentTransferData = {
     name: string;
     componentId: number;
     buffer: ComponentBuffer<any>;
+    schema: Record<string, FieldDef>;
+    isSingleton: boolean;
   };
 };
 

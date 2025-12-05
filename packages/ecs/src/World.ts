@@ -1,5 +1,5 @@
 import { WorkerManager } from "./WorkerManager";
-import { Component } from "./Component";
+import { Component, type ComponentDef } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer, EventType } from "./EventBuffer";
 import { Pool } from "./Pool";
@@ -34,7 +34,7 @@ export class World {
 
   /**
    * Create a new world instance
-   * @param components - Array of components to register
+   * @param componentDefs - Array of component definitions to register
    * @param options - Configuration options for the world
    * @example
    * ```typescript
@@ -45,7 +45,7 @@ export class World {
    * });
    * ```
    */
-  constructor(components: Component<any>[], options: WorldOptions = {}) {
+  constructor(componentDefs: ComponentDef<any>[], options: WorldOptions = {}) {
     const threads =
       options.threads ??
       (typeof navigator !== "undefined"
@@ -56,15 +56,16 @@ export class World {
     const maxEvents = options.maxEvents ?? 131_072;
 
     // Count the number of components
-    const componentCount = Object.keys(components).length;
+    const componentCount = componentDefs.length;
 
     this.workerManager = new WorkerManager(threads);
 
     const eventBuffer = new EventBuffer(maxEvents);
 
-    // Initialize each component and build component map
+    // Create Component instances from defs and initialize them
     const componentMap: Record<string, Component<any>> = {};
-    for (const component of components) {
+    for (const def of componentDefs) {
+      const component = Component.fromDef(def);
       component.initialize(this.componentIndex++, maxEntities, eventBuffer);
       componentMap[component.name] = component;
     }
@@ -73,6 +74,7 @@ export class World {
       entityBuffer: new EntityBuffer(maxEntities, componentCount),
       eventBuffer,
       components: componentMap,
+      queries: {},
       maxEntities,
       maxEvents,
       componentCount,
@@ -152,18 +154,19 @@ export class World {
 
     const ctx = this.context;
 
-    // Scan for REMOVED events and reclaim those entity IDs
-    for (const event of ctx.eventBuffer.getEventsInRange(
+    // Collect all entities with REMOVED events
+    const { entities } = ctx.eventBuffer.collectEntitiesInRange(
       fromIndex,
-      toIndex,
       EventType.REMOVED
-    )) {
-      // Only reclaim if the entity is still dead (not recreated)
-      if (!ctx.entityBuffer.has(event.entityId)) {
+    );
+
+    // Reclaim entity IDs for entities that are still dead (not recreated)
+    for (const entityId of entities) {
+      if (!ctx.entityBuffer.has(entityId)) {
         // Free the entity ID back to the pool
-        ctx.pool.free(event.entityId);
+        ctx.pool.free(entityId);
         // Clear the entity data now that we're done with it
-        ctx.entityBuffer.delete(event.entityId);
+        ctx.entityBuffer.delete(entityId);
       }
     }
   }

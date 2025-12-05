@@ -10,14 +10,14 @@ import {
   addComponent,
   removeComponent,
 } from "../src";
-import type { Context, Component } from "../src";
+import type { Context, ComponentDef } from "../src";
 
 describe("Query", () => {
-  let Position: Component<any>;
-  let Velocity: Component<any>;
-  let Health: Component<any>;
-  let Enemy: Component<any>;
-  let Player: Component<any>;
+  let Position: ComponentDef<any>;
+  let Velocity: ComponentDef<any>;
+  let Health: ComponentDef<any>;
+  let Enemy: ComponentDef<any>;
+  let Player: ComponentDef<any>;
 
   beforeEach(() => {
     // Define test components
@@ -211,8 +211,8 @@ describe("Query", () => {
       let count = 0;
       for (const entityId of movingQuery.current(ctx)) {
         count++;
-        const pos = Position.write(entityId) as { x: number; y: number };
-        const vel = Velocity.read(entityId) as { dx: number; dy: number };
+        const pos = Position.write(ctx, entityId) as { x: number; y: number };
+        const vel = Velocity.read(ctx, entityId) as { dx: number; dy: number };
 
         // Move entity
         pos.x += vel.dx;
@@ -220,8 +220,8 @@ describe("Query", () => {
       }
 
       expect(count).toBe(2);
-      expect(Position.read(e1).x).toBeCloseTo(1);
-      expect(Position.read(e2).x).toBeCloseTo(12);
+      expect(Position.read(ctx, e1).x).toBeCloseTo(1);
+      expect(Position.read(ctx, e2).x).toBeCloseTo(12);
     });
   });
 
@@ -312,7 +312,7 @@ describe("Query", () => {
       const positions: Array<{ x: number; y: number }> = [];
       const readQuery = useQuery((q) => q.with(Position, Velocity));
       for (const entityId of readQuery.current(ctx)) {
-        const pos = Position.read(entityId) as { x: number; y: number };
+        const pos = Position.read(ctx, entityId) as { x: number; y: number };
         positions.push({ x: pos.x, y: pos.y });
       }
 
@@ -336,16 +336,16 @@ describe("Query", () => {
       // Apply velocity to position
       const writeQuery = useQuery((q) => q.with(Position, Velocity));
       for (const entityId of writeQuery.current(ctx)) {
-        const pos = Position.write(entityId) as { x: number; y: number };
-        const vel = Velocity.read(entityId) as { dx: number; dy: number };
+        const pos = Position.write(ctx, entityId) as { x: number; y: number };
+        const vel = Velocity.read(ctx, entityId) as { dx: number; dy: number };
         pos.x += vel.dx;
         pos.y += vel.dy;
       }
 
-      expect(Position.read(e1).x).toBeCloseTo(5);
-      expect(Position.read(e1).y).toBeCloseTo(10);
-      expect(Position.read(e2).x).toBeCloseTo(98);
-      expect(Position.read(e2).y).toBeCloseTo(197);
+      expect(Position.read(ctx, e1).x).toBeCloseTo(5);
+      expect(Position.read(ctx, e1).y).toBeCloseTo(10);
+      expect(Position.read(ctx, e2).x).toBeCloseTo(98);
+      expect(Position.read(ctx, e2).y).toBeCloseTo(197);
     });
   });
 

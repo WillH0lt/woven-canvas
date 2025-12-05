@@ -1,7 +1,6 @@
 import type { Context, EntityId } from "./types";
-import type { Component } from "./Component";
-import type { ComponentSchema } from "./Component/types";
-import { initializeComponentInWorker } from "./Worker";
+import type { Component, ComponentDef } from "./Component";
+import type { ComponentSchema, InferComponentType } from "./Component/types";
 
 /**
  * Create a new entity in a worker thread.
@@ -77,14 +76,15 @@ export function removeEntity(ctx: Context, entityId: EntityId): void {
  *   addComponent(ctx, entityId, Position, { x: 0, y: 0 });
  * }
  */
-export function addComponent<T>(
+export function addComponent<T extends ComponentSchema>(
   ctx: Context,
   entityId: EntityId,
-  component: Component<any>,
-  data: T = {} as T
+  componentDef: ComponentDef<T>,
+  data: Partial<InferComponentType<T>> = {} as any
 ): void {
+  const component = componentDef.getInstance(ctx);
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
-  component.from(entityId, data);
+  component.from(entityId, data as any);
   ctx.eventBuffer.pushComponentAdded(entityId, component.componentId);
 }
 
@@ -105,15 +105,16 @@ export function addComponent<T>(
  *   removeComponent(ctx, entityId, Position);
  * }
  */
-export function removeComponent(
+export function removeComponent<T extends ComponentSchema>(
   ctx: Context,
   entityId: EntityId,
-  component: Component<any>
+  componentDef: ComponentDef<T>
 ): void {
   if (!ctx.entityBuffer.has(entityId)) {
     throw new Error(`Entity with ID ${entityId} does not exist.`);
   }
 
+  const component = componentDef.getInstance(ctx);
   ctx.entityBuffer.removeComponentFromEntity(entityId, component.componentId);
   ctx.eventBuffer.pushComponentRemoved(entityId, component.componentId);
 }
@@ -138,41 +139,15 @@ export function removeComponent(
  *   }
  * }
  */
-export function hasComponent(
+export function hasComponent<T extends ComponentSchema>(
   ctx: Context,
   entityId: EntityId,
-  component: Component<any>
+  componentDef: ComponentDef<T>
 ): boolean {
   if (!ctx.entityBuffer.has(entityId)) {
     throw new Error(`Entity with ID ${entityId} does not exist.`);
   }
 
+  const component = componentDef.getInstance(ctx);
   return ctx.entityBuffer.hasComponent(entityId, component.componentId);
-}
-
-/**
- * Ensure a singleton is initialized in the current context.
- * On the main thread, singletons are initialized by the World.
- * In workers, this lazily initializes the singleton from transfer data.
- */
-function ensureSingletonInitialized<T extends ComponentSchema>(
-  singleton: Component<T>
-): void {
-  if (!singleton.isSingleton) {
-    throw new Error(
-      `"${singleton.name}" is not a singleton. Use defineSingleton() to create singletons.`
-    );
-  }
-
-  if (singleton.isInitialized()) {
-    return;
-  }
-
-  // Try to initialize from worker transfer data
-  if (!initializeComponentInWorker(singleton)) {
-    throw new Error(
-      `Singleton "${singleton.name}" could not be initialized. ` +
-        `Make sure it's registered with the World on the main thread.`
-    );
-  }
 }

@@ -1,7 +1,7 @@
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer } from "./EventBuffer";
 import { Pool } from "./Pool";
-import type { Component } from "./Component";
+import { Component } from "./Component";
 import type {
   EntityId,
   Context,
@@ -104,6 +104,19 @@ function handleMessage(
         e.data.poolSize
       );
 
+      // Create Component instances from transfer data
+      const components: Record<string, Component<any>> = {};
+      for (const [name, transferData] of Object.entries(
+        internalContext.componentTransferData
+      )) {
+        const component = Component.fromTransferData(
+          name,
+          transferData,
+          eventBuffer
+        );
+        components[name] = component;
+      }
+
       internalContext.context = {
         entityBuffer: EntityBuffer.fromTransfer(
           e.data.entitySAB,
@@ -111,7 +124,8 @@ function handleMessage(
         ),
         eventBuffer,
         pool,
-        components: {},
+        components,
+        queries: {},
         maxEntities: e.data.maxEntities,
         maxEvents: e.data.maxEvents,
         componentCount: e.data.componentCount,
@@ -148,36 +162,6 @@ function sendResult(self: any, index: number): void {
 function sendError(self: any, index: number, error: string): void {
   const message: WorkerErrorResponse = { index, error };
   self.postMessage(message);
-}
-
-/**
- * Initialize a component in the worker context from transferred data.
- * This is called lazily when a component is first accessed via a query.
- * @internal
- */
-export function initializeComponentInWorker(
-  component: Component<any>
-): boolean {
-  if (!internalContext?.componentTransferData || !internalContext.context) {
-    return false;
-  }
-
-  const transferData = internalContext.componentTransferData[component.name];
-  if (!transferData) {
-    console.warn(
-      `Component "${component.name}" not found in transfer data. ` +
-        `Make sure it's registered with the World on the main thread.`
-    );
-    return false;
-  }
-
-  // Initialize the component with the transferred data and event buffer
-  component.fromTransfer(
-    transferData.componentId,
-    transferData.buffer,
-    internalContext.context.eventBuffer
-  );
-  return true;
 }
 
 /**

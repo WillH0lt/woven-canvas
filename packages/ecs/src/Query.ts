@@ -1,8 +1,8 @@
-import type { Component } from "./Component";
+import type { ComponentDef } from "./Component";
 import type { Context, QueryMasks } from "./types";
+import type { ComponentSchema } from "./Component/types";
 import { QueryCache } from "./QueryCache";
 import { EventType, EventTypeMask } from "./EventBuffer";
-import { initializeComponentInWorker } from "./Worker";
 
 const EMPTY_UINT32_ARRAY = new Uint32Array(0);
 
@@ -27,25 +27,8 @@ function setComponentBit(mask: Uint8Array, componentId: number): void {
 }
 
 /**
- * Helper to generate a hash string from a mask
- */
-function maskToHash(mask: Uint8Array): string {
-  return Array.from(mask).join(",");
-}
-
-/**
- * Helper to generate a hash string from a QueryMasks object
- */
-function masksToHash(masks: QueryMasks): string {
-  return `${maskToHash(masks.with)}:${maskToHash(masks.without)}:${maskToHash(
-    masks.any
-  )}`;
-}
-
-/**
- * A lazily-initialized query that caches matching entities.
- * Created via useQuery() and connects to the query cache on first use.
- * Works identically on main thread and worker threads.
+ * A per-context query instance that caches matching entities.
+ * Created from a QueryDef when first used with a specific context.
  *
  * The query updates its own cache by scanning the EventBuffer. The first call to
  * current(), added(), or removed() per tick triggers a unified update that:
@@ -55,97 +38,28 @@ function masksToHash(masks: QueryMasks): string {
  * 4. Caches added/removed arrays for subsequent calls in the same tick
  */
 export class Query {
-  private cache: QueryCache | null = null;
-  private readonly builder: (q: QueryBuilder) => QueryBuilder;
-  private masks: QueryMasks | null = null;
-  private hash: string | null = null;
+  readonly cache: QueryCache;
+  readonly masks: QueryMasks;
 
-  /**
-   * Tracks the last scanned index in the event buffer.
-   * Used to efficiently scan only new events since the last update.
-   */
-  private lastScannedIndex: number = 0;
-
-  /**
-   * Cached results from the last update - stored per tick.
-   * When any of current(), added(), or removed() is called, we update
-   * all results in one pass and cache them here.
-   */
-  private cachedAdded = EMPTY_UINT32_ARRAY;
-  private cachedRemoved = EMPTY_UINT32_ARRAY;
-
-  /**
-   * Reusable arrays to avoid allocations during updates
-   */
+  private queryComponentMask: Uint8Array | null = null;
+  private lastScannedIndex: number;
+  private lastUpdateTick: number;
+  private cachedAdded: Uint32Array = EMPTY_UINT32_ARRAY;
+  private cachedRemoved: Uint32Array = EMPTY_UINT32_ARRAY;
+  private lastChangedTick: number;
+  private lastChangedScannedIndex: number;
+  private cachedChanged: Uint32Array = EMPTY_UINT32_ARRAY;
   private addedList: number[] = [];
   private removedList: number[] = [];
 
   /**
-   * The tick number at the time of the last update.
-   * Used to determine if we need to re-process events.
+   * @internal - Use QueryDef.getInstance(ctx) instead
    */
-  private lastUpdateTick: number = -1;
+  constructor(ctx: Context, masks: QueryMasks) {
+    this.masks = masks;
 
-  /**
-   * Separate tracking for changed() since it uses different event types
-   */
-  private lastChangedTick: number = -1;
-
-  /**
-   * Separate scanned index for changed() events
-   */
-  private lastChangedScannedIndex: number = 0;
-
-  /**
-   * Cached changed results for the current tick
-   */
-  private cachedChanged = EMPTY_UINT32_ARRAY;
-
-  /**
-   * Cached component mask for filtering events
-   */
-  private queryComponentMask: Uint8Array | null = null;
-
-  /**
-   * @internal
-   */
-  constructor(builder: (q: QueryBuilder) => QueryBuilder) {
-    this.builder = builder;
-  }
-
-  /**
-   * Build and cache the query masks (lazy initialization)
-   */
-  private lazilyInitializeMasks(ctx: Context): void {
-    if (this.masks === null) {
-      // collect components that need initialization
-      const tempBuilder = new QueryBuilder(ctx.componentCount);
-      const configuredTempBuilder = this.builder(tempBuilder);
-
-      // Initialize components BEFORE building masks (important for workers)
-      for (const component of configuredTempBuilder._getComponents()) {
-        // Lazily initialize components that haven't been initialized yet
-        if (component.componentId === -1) {
-          initializeComponentInWorker(component);
-        }
-      }
-
-      // build masks with correct componentIds
-      const queryBuilder = new QueryBuilder(ctx.componentCount);
-      const configuredBuilder = this.builder(queryBuilder);
-
-      this.masks = configuredBuilder._build();
-      this.hash = masksToHash(this.masks);
-    }
-  }
-
-  private createCache(ctx: Context): QueryCache {
-    if (!this.masks || !this.hash) {
-      throw new Error("Query masks or hash not initialized");
-    }
-
-    // Create new query cache
-    const cache = new QueryCache(this.masks, ctx.maxEntities);
+    // Create the query cache
+    this.cache = new QueryCache(ctx.maxEntities);
 
     // Get current write position
     const currentWriteIndex = ctx.eventBuffer.getWriteIndex();
@@ -153,25 +67,22 @@ export class Query {
     // Populate cache by scanning all ADDED events from the beginning
     const { entities } = ctx.eventBuffer.collectEntitiesInRange(
       0,
-      EventType.ADDED,
+      EventTypeMask.QUERY_ADDED,
       undefined
     );
 
     // Add entities that are still alive and match the query
     for (const entityId of entities) {
-      if (ctx.entityBuffer.matches(entityId, this.masks)) {
-        cache.add(entityId);
+      if (ctx.entityBuffer.matches(entityId, masks)) {
+        this.cache.add(entityId);
       }
     }
 
-    // Initialize lastScannedIndex to current write position
-    // so we don't process events that happened before the cache was created
+    // Initialize tracking indices to current position
     this.lastScannedIndex = currentWriteIndex;
     this.lastChangedScannedIndex = currentWriteIndex;
     this.lastUpdateTick = ctx.tick;
     this.lastChangedTick = ctx.tick;
-
-    return cache;
   }
 
   /**
@@ -182,10 +93,6 @@ export class Query {
   private getQueryComponentMask(): Uint8Array {
     if (this.queryComponentMask) {
       return this.queryComponentMask;
-    }
-
-    if (!this.masks) {
-      throw new Error("Query masks not initialized");
     }
 
     // Combine all component masks (OR them together)
@@ -207,10 +114,6 @@ export class Query {
    * @returns true if an update was performed, false if already up-to-date
    */
   private updateFromEvents(ctx: Context): boolean {
-    if (!this.masks || !this.cache) {
-      throw new Error("Query masks or cache not initialized");
-    }
-
     // Already up-to-date for this tick
     if (ctx.tick === this.lastUpdateTick) {
       return false;
@@ -278,21 +181,10 @@ export class Query {
   }
 
   /**
-   * Ensure the cache is initialized and up-to-date with recent events.
+   * Ensure the cache is up-to-date with recent events.
    * Called before any query method returns results.
    */
   private ensureUpdated(ctx: Context): void {
-    // Initialize cache if needed
-    if (this.cache === null) {
-      this.cache = this.createCache(ctx);
-      // New cache starts with empty added/removed/changed since we just populated it
-      this.cachedAdded = EMPTY_UINT32_ARRAY;
-      this.cachedRemoved = EMPTY_UINT32_ARRAY;
-      this.cachedChanged = EMPTY_UINT32_ARRAY;
-      return;
-    }
-
-    // Update from events if there are new ones
     this.updateFromEvents(ctx);
   }
 
@@ -304,13 +196,8 @@ export class Query {
    * @returns An array of entity IDs matching the query criteria
    */
   current(ctx: Context): Uint32Array {
-    // Lazily initialize masks on first use
-    this.lazilyInitializeMasks(ctx);
-
-    // Ensure cache is up-to-date
     this.ensureUpdated(ctx);
-
-    return this.cache!.getDenseView();
+    return this.cache.getDenseView();
   }
 
   /**
@@ -324,11 +211,7 @@ export class Query {
    * @returns An array of entity IDs that were added and match the query
    */
   added(ctx: Context): Uint32Array {
-    this.lazilyInitializeMasks(ctx);
-
-    // Ensure cache is up-to-date
     this.ensureUpdated(ctx);
-
     return this.cachedAdded;
   }
 
@@ -342,11 +225,7 @@ export class Query {
    * @returns An array of entity IDs that were removed or no longer match
    */
   removed(ctx: Context): Uint32Array {
-    this.lazilyInitializeMasks(ctx);
-
-    // Ensure cache is up-to-date
     this.ensureUpdated(ctx);
-
     return this.cachedRemoved;
   }
 
@@ -362,13 +241,6 @@ export class Query {
    * @returns An array of entity IDs with changed tracked components
    */
   changed(ctx: Context): Uint32Array {
-    if (!this.masks) {
-      throw new Error("Query masks not initialized");
-    }
-
-    this.lazilyInitializeMasks(ctx);
-
-    // Ensure cache is initialized
     this.ensureUpdated(ctx);
 
     // Already up-to-date for this tick, return cached result
@@ -410,6 +282,104 @@ export class Query {
 }
 
 /**
+ * A query definition that can be used across multiple Worlds.
+ * Created via useQuery() and creates per-context Query instances on first use.
+ *
+ * This is a descriptor - it holds the query configuration but no runtime state.
+ * Each World gets its own Query instance with isolated state.
+ */
+export class QueryDef {
+  private readonly builder: (q: QueryBuilder) => QueryBuilder;
+
+  /**
+   * Unique name for this query, used as key in context.queries
+   */
+  readonly name: string;
+
+  private static queryCounter = 0;
+
+  /**
+   * @internal
+   */
+  constructor(builder: (q: QueryBuilder) => QueryBuilder) {
+    this.builder = builder;
+    this.name = `query_${QueryDef.queryCounter++}`;
+  }
+
+  /**
+   * Get or create the Query instance for a specific context.
+   * The Query is cached in ctx.queries for subsequent calls.
+   *
+   * @param ctx - The context (World) to get the query for
+   * @returns The Query instance for this context
+   */
+  getInstance(ctx: Context): Query {
+    // Check if already created for this context
+    let query = ctx.queries[this.name];
+    if (query) {
+      return query;
+    }
+
+    // Build masks with component IDs from context
+    const queryBuilder = new QueryBuilder(ctx.componentCount, ctx);
+    const configuredBuilder = this.builder(queryBuilder);
+    const masks = configuredBuilder._build();
+
+    // Create the Query instance
+    query = new Query(ctx, masks);
+
+    // Store in context for reuse
+    ctx.queries[this.name] = query;
+
+    return query;
+  }
+
+  /**
+   * Get the current matching entities.
+   * Convenience method that gets the Query instance and calls current().
+   *
+   * @param ctx - The context object
+   * @returns An array of entity IDs matching the query criteria
+   */
+  current(ctx: Context): Uint32Array {
+    return this.getInstance(ctx).current(ctx);
+  }
+
+  /**
+   * Get entities that were added since the last check.
+   * Convenience method that gets the Query instance and calls added().
+   *
+   * @param ctx - The context object
+   * @returns An array of entity IDs that were added
+   */
+  added(ctx: Context): Uint32Array {
+    return this.getInstance(ctx).added(ctx);
+  }
+
+  /**
+   * Get entities that were removed since the last check.
+   * Convenience method that gets the Query instance and calls removed().
+   *
+   * @param ctx - The context object
+   * @returns An array of entity IDs that were removed
+   */
+  removed(ctx: Context): Uint32Array {
+    return this.getInstance(ctx).removed(ctx);
+  }
+
+  /**
+   * Get entities whose tracked components have changed.
+   * Convenience method that gets the Query instance and calls changed().
+   *
+   * @param ctx - The context object
+   * @returns An array of entity IDs with changed tracked components
+   */
+  changed(ctx: Context): Uint32Array {
+    return this.getInstance(ctx).changed(ctx);
+  }
+}
+
+/**
  * Query builder for filtering entities based on component composition
  * Uses Uint8Array bitmask operations for efficient matching (8 components per byte)
  */
@@ -418,61 +388,63 @@ export class QueryBuilder {
   private withoutMask: Uint8Array;
   private anyMask: Uint8Array;
   private trackingMask: Uint8Array;
-  private components: Component<any>[] = [];
+  private ctx: Context;
 
-  constructor(componentCount: number) {
+  constructor(componentCount: number, ctx: Context) {
     const bytes = Math.ceil(componentCount / 8);
 
     this.withMask = createEmptyMask(bytes);
     this.withoutMask = createEmptyMask(bytes);
     this.anyMask = createEmptyMask(bytes);
     this.trackingMask = createEmptyMask(bytes);
+    this.ctx = ctx;
   }
 
   /**
-   * Track a component used in the query
+   * Get the component ID from the context for a given ComponentDef
    */
-  private trackComponent(component: Component<any>): void {
-    if (!this.components.includes(component)) {
-      this.components.push(component);
+  private getComponentId(componentDef: ComponentDef<ComponentSchema>): number {
+    const component = this.ctx.components[componentDef.name];
+    if (!component) {
+      throw new Error(
+        `Component "${componentDef.name}" is not registered with this World.`
+      );
     }
+    return component.componentId;
   }
 
   /**
    * Require entities to have all of the specified components
-   * @param components - Components that must be present
+   * @param componentDefs - Components that must be present
    * @returns This query builder for chaining
    */
-  with(...components: Component<any>[]): this {
-    for (const component of components) {
-      this.trackComponent(component);
-      setComponentBit(this.withMask, component.componentId);
+  with(...componentDefs: ComponentDef<any>[]): this {
+    for (const componentDef of componentDefs) {
+      setComponentBit(this.withMask, this.getComponentId(componentDef));
     }
     return this;
   }
 
   /**
    * Require entities to NOT have any of the specified components
-   * @param components - Components that must NOT be present
+   * @param componentDefs - Components that must NOT be present
    * @returns This query builder for chaining
    */
-  without(...components: Component<any>[]): this {
-    for (const component of components) {
-      this.trackComponent(component);
-      setComponentBit(this.withoutMask, component.componentId);
+  without(...componentDefs: ComponentDef<any>[]): this {
+    for (const componentDef of componentDefs) {
+      setComponentBit(this.withoutMask, this.getComponentId(componentDef));
     }
     return this;
   }
 
   /**
    * Require entities to have at least one of the specified components
-   * @param components - Components where at least one must be present
+   * @param componentDefs - Components where at least one must be present
    * @returns This query builder for chaining
    */
-  any(...components: Component<any>[]): this {
-    for (const component of components) {
-      this.trackComponent(component);
-      setComponentBit(this.anyMask, component.componentId);
+  any(...componentDefs: ComponentDef<any>[]): this {
+    for (const componentDef of componentDefs) {
+      setComponentBit(this.anyMask, this.getComponentId(componentDef));
     }
     return this;
   }
@@ -481,41 +453,16 @@ export class QueryBuilder {
    * Require entities to have all of the specified components AND track changes to them
    * When a tracked component's value changes, the entity will appear in query.changed
    * This combines the functionality of with() and tracking()
-   * @param components - Components that must be present and should be tracked for changes
+   * @param componentDefs - Components that must be present and should be tracked for changes
    * @returns This query builder for chaining
    */
-  withTracked(...components: Component<any>[]): this {
-    for (const component of components) {
-      this.trackComponent(component);
-      setComponentBit(this.withMask, component.componentId);
-      setComponentBit(this.trackingMask, component.componentId);
+  withTracked(...componentDefs: ComponentDef<any>[]): this {
+    for (const componentDef of componentDefs) {
+      const componentId = this.getComponentId(componentDef);
+      setComponentBit(this.withMask, componentId);
+      setComponentBit(this.trackingMask, componentId);
     }
     return this;
-  }
-
-  /**
-   * Declare components that should be initialized in workers but are not part of the query criteria.
-   * This is useful when you need to read/write components that aren't used for filtering entities.
-   * @param components - Components to initialize in workers (does not affect query matching)
-   * @returns This query builder for chaining
-   *
-   * @example
-   * // Query for entities with Velocity, but also access Position component
-   * const query = useQuery((q) => q.any(Velocity).using(Position));
-   */
-  using(...components: Component<any>[]): this {
-    for (const component of components) {
-      this.trackComponent(component);
-    }
-    return this;
-  }
-
-  /**
-   * Get all components used in this query
-   * @internal
-   */
-  _getComponents(): Component<any>[] {
-    return this.components;
   }
 
   /**
@@ -548,7 +495,7 @@ export class QueryBuilder {
  * This allows defining queries at module scope before the context is available.
  *
  * @param builder - Function that configures the query using with/without/any methods on QueryBuilder
- * @returns A Query object with a current(ctx) method to get matching entities
+ * @returns A QueryDef object with current(ctx), added(ctx), removed(ctx), changed(ctx) methods
  *
  * @example
  * import { setupWorker, useQuery, type Context } from "@infinitecanvas/ecs";
@@ -562,11 +509,11 @@ export class QueryBuilder {
  * function execute(ctx: Context) {
  *   // Query lazily initializes on first call to current()
  *   for (const eid of movingEntities.current(ctx)) {
- *     const pos = Position.read(eid);
+ *     const pos = Position.read(ctx, eid);
  *     console.log(`Entity ${eid} Position: (${pos.x}, ${pos.y})`);
  *   }
  * }
  */
-export function useQuery(builder: (q: QueryBuilder) => QueryBuilder): Query {
-  return new Query(builder);
+export function useQuery(builder: (q: QueryBuilder) => QueryBuilder): QueryDef {
+  return new QueryDef(builder);
 }

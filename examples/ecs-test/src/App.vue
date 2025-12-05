@@ -57,7 +57,7 @@ const MouseRef = useSingleton(components.Mouse);
 const system1 = defineSystem((ctx: Context) => {
   console.log("executing");
 
-  const mouse = MouseRef.write();
+  const mouse = MouseRef.write(ctx);
   mouse.x += 1;
   mouse.y += 1;
 });

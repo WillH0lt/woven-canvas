@@ -9,6 +9,7 @@ import {
   removeComponent,
   removeEntity,
   type Context,
+  type ComponentDef,
 } from "../../src";
 
 import type { BenchmarkLibrary } from "../types";
@@ -20,8 +21,8 @@ const library: BenchmarkLibrary = {
   suites: ["Add/Remove", "Destroy", "Velocity"],
   world: null,
   ctx: null,
-  Position: null,
-  Velocity: null,
+  Position: null as ComponentDef<any> | null,
+  Velocity: null as ComponentDef<any> | null,
   moveSystem: null,
   setup() {
     this.Position = defineComponent("Position", {
@@ -46,10 +47,14 @@ const library: BenchmarkLibrary = {
     const query = useQuery((q) => q.with(Position, Velocity));
 
     this.moveSystem = defineSystem((ctx: Context) => {
-      const posX = Position.buffer.x;
-      const posY = Position.buffer.y;
-      const velX = Velocity.buffer.x;
-      const velY = Velocity.buffer.y;
+      // Get component instances from context
+      const positionComponent = Position.getInstance(ctx);
+      const velocityComponent = Velocity.getInstance(ctx);
+
+      const posX = positionComponent.buffer.x;
+      const posY = positionComponent.buffer.y;
+      const velX = velocityComponent.buffer.x;
+      const velY = velocityComponent.buffer.y;
 
       const particles = query.current(ctx);
       for (let i = 0; i < particles.length; i++) {
@@ -65,10 +70,10 @@ const library: BenchmarkLibrary = {
     return createEntity(this.ctx);
   },
   addPositionComponent(entity: any) {
-    addComponent(this.ctx, entity, this.Position, { x: 0, y: 0 });
+    addComponent(this.ctx, entity, this.Position, { x: 0, y: 0 } as any);
   },
   addVelocityComponent(entity: any) {
-    addComponent(this.ctx, entity, this.Velocity, { x: 1.1, y: 1.1 });
+    addComponent(this.ctx, entity, this.Velocity, { x: 1.1, y: 1.1 } as any);
   },
   removePositionComponent(entity: any) {
     removeComponent(this.ctx, entity, this.Position);

@@ -9,7 +9,7 @@ function execute(ctx: Context) {
   const entities = entitiesQuery.current(ctx);
 
   for (const entityId of entities) {
-    const position = Position.write(entityId);
+    const position = Position.write(ctx, entityId);
 
     position.x += 1;
     position.y += 1;

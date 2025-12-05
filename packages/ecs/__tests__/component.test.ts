@@ -9,17 +9,21 @@ import {
 
 describe("Component", () => {
   describe("Component Lifecycle", () => {
-    it("should prevent double initialization", () => {
+    it("should allow the same ComponentDef to be used with multiple worlds", () => {
       const Position = defineComponent("Position", {
         x: field.float32(),
         y: field.float32(),
       });
 
       const world1 = new World([Position]);
+      const ctx1 = world1.getContext();
 
-      expect(() => {
-        const world2 = new World([Position]);
-      }).toThrow(/already been initialized/);
+      const world2 = new World([Position]);
+      const ctx2 = world2.getContext();
+
+      // Both worlds should have the component
+      expect(Position.getComponentId(ctx1)).toBe(0);
+      expect(Position.getComponentId(ctx2)).toBe(0);
     });
 
     it("should assign unique componentIds to components", () => {
@@ -32,9 +36,10 @@ describe("Component", () => {
         y: field.float32(),
       });
       const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
 
-      expect(Position.componentId).toBe(0);
-      expect(Velocity.componentId).toBe(1);
+      expect(Position.getComponentId(ctx)).toBe(0);
+      expect(Velocity.getComponentId(ctx)).toBe(1);
     });
   });
 
@@ -52,7 +57,7 @@ describe("Component", () => {
         name: "Alice",
         email: "alice@example.com",
       });
-      const user = User.read(entityId);
+      const user = User.read(ctx, entityId);
 
       expect(user.name).toBe("Alice");
       expect(user.email).toBe("alice@example.com");
@@ -69,7 +74,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, { x: 1.5, y: 2.5, z: 3.5 });
-      const pos = Position.read(entityId);
+      const pos = Position.read(ctx, entityId);
 
       expect(pos.x).toBeCloseTo(1.5);
       expect(pos.y).toBeCloseTo(2.5);
@@ -93,7 +98,7 @@ describe("Component", () => {
         score: 1500,
         speed: 5.5,
       });
-      const player = Player.read(entityId);
+      const player = Player.read(ctx, entityId);
 
       expect(player.name).toBe("Bob");
       expect(player.health).toBe(100);
@@ -112,7 +117,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Config, {});
-      const config = Config.read(entityId);
+      const config = Config.read(ctx, entityId);
 
       expect(config.enabled).toBe(true);
       expect(config.maxCount).toBe(100);
@@ -129,7 +134,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Config, { enabled: false, maxCount: 50 });
-      const config = Config.read(entityId);
+      const config = Config.read(ctx, entityId);
 
       expect(config.enabled).toBe(false);
       expect(config.maxCount).toBe(50);
@@ -147,10 +152,10 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Counter, { count: 0 });
 
-      expect(Counter.read(entityId).count).toBe(0);
+      expect(Counter.read(ctx, entityId).count).toBe(0);
 
-      Counter.write(entityId).count = 42;
-      expect(Counter.read(entityId).count).toBe(42);
+      Counter.write(ctx, entityId).count = 42;
+      expect(Counter.read(ctx, entityId).count).toBe(42);
     });
 
     it("should handle updates without affecting other entities", () => {
@@ -165,10 +170,10 @@ describe("Component", () => {
       addComponent(ctx, entity1, Counter, { value: 10 });
       addComponent(ctx, entity2, Counter, { value: 20 });
 
-      Counter.write(entity1).value = 100;
+      Counter.write(ctx, entity1).value = 100;
 
-      expect(Counter.read(entity1).value).toBe(100);
-      expect(Counter.read(entity2).value).toBe(20);
+      expect(Counter.read(ctx, entity1).value).toBe(100);
+      expect(Counter.read(ctx, entity2).value).toBe(20);
     });
   });
 
@@ -198,7 +203,7 @@ describe("Component", () => {
         f32: 3.14159,
         f64: 3.141592653589793,
       });
-      const values = AllTypes.read(entityId);
+      const values = AllTypes.read(ctx, entityId);
 
       expect(values.u8).toBe(255);
       expect(values.u16).toBe(65535);
@@ -226,7 +231,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, AllTypes, {});
-      const values = AllTypes.read(entityId);
+      const values = AllTypes.read(ctx, entityId);
 
       expect(values.u8).toBe(0);
       expect(values.u16).toBe(0);
@@ -255,7 +260,7 @@ describe("Component", () => {
         isVisible: false,
         isEnabled: true,
       });
-      const flags = Flags.read(entityId);
+      const flags = Flags.read(ctx, entityId);
 
       expect(flags.isActive).toBe(true);
       expect(flags.isVisible).toBe(false);
@@ -271,7 +276,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, {});
-      const flags = Flags.read(entityId);
+      const flags = Flags.read(ctx, entityId);
 
       expect(flags.flag).toBe(false);
     });
@@ -285,10 +290,10 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, { isActive: false });
-      expect(Flags.read(entityId).isActive).toBe(false);
+      expect(Flags.read(ctx, entityId).isActive).toBe(false);
 
-      Flags.write(entityId).isActive = true;
-      expect(Flags.read(entityId).isActive).toBe(true);
+      Flags.write(ctx, entityId).isActive = true;
+      expect(Flags.read(ctx, entityId).isActive).toBe(true);
     });
   });
 
@@ -310,7 +315,7 @@ describe("Component", () => {
         ratio: 0.5,
         enabled: true,
       });
-      const instance = TestComponent.read(entityId);
+      const instance = TestComponent.read(ctx, entityId);
 
       const name: string = instance.name;
       const count: number = instance.count;
@@ -334,7 +339,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, User, {});
-      const user = User.read(entityId);
+      const user = User.read(ctx, entityId);
 
       expect(user.name).toBe("");
     });
@@ -349,7 +354,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       const specialString = "Hello! 👋 @#$%^&*() 日本語";
       addComponent(ctx, entityId, Data, { text: specialString });
-      const data = Data.read(entityId);
+      const data = Data.read(ctx, entityId);
 
       expect(data.text).toBe(specialString);
     });
@@ -369,9 +374,9 @@ describe("Component", () => {
       addComponent(ctx, entity2, User, { name: "Bob" });
       addComponent(ctx, entity3, User, { name: "Charlie" });
 
-      expect(User.read(entity1).name).toBe("Alice");
-      expect(User.read(entity2).name).toBe("Bob");
-      expect(User.read(entity3).name).toBe("Charlie");
+      expect(User.read(ctx, entity1).name).toBe("Alice");
+      expect(User.read(ctx, entity2).name).toBe("Bob");
+      expect(User.read(ctx, entity3).name).toBe("Charlie");
     });
 
     it("should truncate strings that exceed maxLength", () => {
@@ -385,7 +390,7 @@ describe("Component", () => {
       const longString = "This is a very long string";
       addComponent(ctx, entityId, Data, { shortText: longString });
 
-      const data = Data.read(entityId);
+      const data = Data.read(ctx, entityId);
       expect(data.shortText.length).toBeLessThanOrEqual(10);
       expect(data.shortText).toBe(longString.substring(0, 10));
     });
@@ -401,7 +406,7 @@ describe("Component", () => {
       const testString = "Hello World";
       addComponent(ctx, entityId, User, { name: testString });
 
-      const buffer = (User.buffer as any).name.getBuffer();
+      const buffer = (User.getInstance(ctx).buffer as any).name.getBuffer();
       const offset = entityId * 54; // 50 data + 4 length header
       const storedLength =
         buffer[offset] |
@@ -410,7 +415,7 @@ describe("Component", () => {
         (buffer[offset + 3] << 24);
 
       expect(storedLength).toBe(11);
-      expect(User.read(entityId).name).toBe(testString);
+      expect(User.read(ctx, entityId).name).toBe(testString);
     });
   });
   describe("Default Value Handling", () => {
@@ -425,7 +430,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Config, {});
-      const config = Config.read(entityId);
+      const config = Config.read(ctx, entityId);
 
       expect(config.enabled).toBe(true);
       expect(config.maxCount).toBe(100);
@@ -443,7 +448,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Entity, {});
-      const entity = Entity.read(entityId);
+      const entity = Entity.read(ctx, entityId);
 
       expect(entity.name).toBe("");
       expect(entity.count).toBe(0);
@@ -463,7 +468,7 @@ describe("Component", () => {
         enabled: false,
         count: 5,
       });
-      const config = Config.read(entityId);
+      const config = Config.read(ctx, entityId);
 
       expect(config.enabled).toBe(false);
       expect(config.count).toBe(5);
@@ -481,7 +486,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       const testData = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
       addComponent(ctx, entityId, BinaryData, { data: testData });
-      const result = BinaryData.read(entityId);
+      const result = BinaryData.read(ctx, entityId);
 
       expect(result.data).toBeInstanceOf(Uint8Array);
       expect(result.data.length).toBe(8);
@@ -497,7 +502,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, BinaryData, {});
-      const result = BinaryData.read(entityId);
+      const result = BinaryData.read(ctx, entityId);
 
       expect(result.data).toBeInstanceOf(Uint8Array);
       expect(result.data.length).toBe(0);
@@ -513,7 +518,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, BinaryData, {});
-      const result = BinaryData.read(entityId);
+      const result = BinaryData.read(ctx, entityId);
 
       expect(Array.from(result.data)).toEqual([0xff, 0xfe, 0xfd]);
     });
@@ -530,9 +535,9 @@ describe("Component", () => {
         data: new Uint8Array([1, 2, 3]),
       });
 
-      BinaryData.write(entityId).data = new Uint8Array([4, 5, 6, 7]);
+      BinaryData.write(ctx, entityId).data = new Uint8Array([4, 5, 6, 7]);
 
-      const result = BinaryData.read(entityId);
+      const result = BinaryData.read(ctx, entityId);
       expect(Array.from(result.data)).toEqual([4, 5, 6, 7]);
     });
 
@@ -548,14 +553,14 @@ describe("Component", () => {
         data: new Uint8Array([1, 2, 3, 4, 5]),
       });
 
-      const read1 = BinaryData.read(entityId);
-      const read2 = BinaryData.read(entityId);
+      const read1 = BinaryData.read(ctx, entityId);
+      const read2 = BinaryData.read(ctx, entityId);
 
       expect(read1.data).not.toBe(read2.data);
       expect(Array.from(read1.data)).toEqual(Array.from(read2.data));
 
       read1.data[0] = 99;
-      const read3 = BinaryData.read(entityId);
+      const read3 = BinaryData.read(ctx, entityId);
       expect(read3.data[0]).toBe(1);
     });
 
@@ -576,8 +581,8 @@ describe("Component", () => {
         data: new Uint8Array([4, 5, 6, 7, 8]),
       });
 
-      expect(Array.from(BinaryData.read(entity1).data)).toEqual([1, 2, 3]);
-      expect(Array.from(BinaryData.read(entity2).data)).toEqual([
+      expect(Array.from(BinaryData.read(ctx, entity1).data)).toEqual([1, 2, 3]);
+      expect(Array.from(BinaryData.read(ctx, entity2).data)).toEqual([
         4, 5, 6, 7, 8,
       ]);
     });
@@ -593,7 +598,7 @@ describe("Component", () => {
       const largeData = new Uint8Array(100).fill(42);
       addComponent(ctx, entityId, BinaryData, { data: largeData });
 
-      const result = BinaryData.read(entityId);
+      const result = BinaryData.read(ctx, entityId);
       expect(result.data.length).toBeLessThanOrEqual(20);
       expect(result.data.every((b: number) => b === 42)).toBe(true);
     });
@@ -620,7 +625,7 @@ describe("Component", () => {
         sender: "server",
       });
 
-      const result = NetworkPacket.read(entityId);
+      const result = NetworkPacket.read(ctx, entityId);
       expect(result.packetId).toBe(12345);
       expect(Array.from(result.payload)).toEqual([
         0x01, 0x02, 0x48, 0x65, 0x6c, 0x6c, 0x6f,
@@ -639,7 +644,7 @@ describe("Component", () => {
       const testData = new Uint8Array([10, 20, 30, 40, 50]);
       addComponent(ctx, entityId, BinaryData, { data: testData });
 
-      const buffer = BinaryData.buffer.data.getBuffer();
+      const buffer = BinaryData.getInstance(ctx).buffer.data.getBuffer();
       const offset = entityId * 132; // 128 data + 4 length header
       const storedLength =
         buffer[offset] |
@@ -666,7 +671,7 @@ describe("Component", () => {
       const points = [1.5, 2.5, 3.5, 4.5, 5.5];
       addComponent(ctx, entityId, Polygon, { pts: points });
 
-      const result = Polygon.read(entityId);
+      const result = Polygon.read(ctx, entityId);
       expect(result.pts).toEqual(points);
     });
 
@@ -680,7 +685,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Polygon, {});
 
-      const result = Polygon.read(entityId);
+      const result = Polygon.read(ctx, entityId);
       expect(result.pts).toEqual([]);
     });
 
@@ -694,7 +699,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Polygon, {});
 
-      const result = Polygon.read(entityId);
+      const result = Polygon.read(ctx, entityId);
       expect(result.pts).toEqual([1.0, 2.0, 3.0]);
     });
 
@@ -708,10 +713,10 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Polygon, { pts: [1.0, 2.0] });
 
-      const polygon = Polygon.write(entityId);
+      const polygon = Polygon.write(ctx, entityId);
       polygon.pts = [10.0, 20.0, 30.0];
 
-      const result = Polygon.read(entityId);
+      const result = Polygon.read(ctx, entityId);
       expect(result.pts).toEqual([10.0, 20.0, 30.0]);
     });
 
@@ -728,8 +733,8 @@ describe("Component", () => {
       addComponent(ctx, e1, Polygon, { pts: [1.0, 2.0] });
       addComponent(ctx, e2, Polygon, { pts: [3.0, 4.0, 5.0] });
 
-      expect(Polygon.read(e1).pts).toEqual([1.0, 2.0]);
-      expect(Polygon.read(e2).pts).toEqual([3.0, 4.0, 5.0]);
+      expect(Polygon.read(ctx, e1).pts).toEqual([1.0, 2.0]);
+      expect(Polygon.read(ctx, e2).pts).toEqual([3.0, 4.0, 5.0]);
     });
 
     it("should truncate arrays that exceed maxLength", () => {
@@ -743,7 +748,7 @@ describe("Component", () => {
       const largeArray = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
       addComponent(ctx, entityId, Polygon, { pts: largeArray });
 
-      const result = Polygon.read(entityId);
+      const result = Polygon.read(ctx, entityId);
       expect(result.pts.length).toBe(5);
       expect(result.pts).toEqual([1.0, 2.0, 3.0, 4.0, 5.0]);
     });
@@ -764,7 +769,7 @@ describe("Component", () => {
         bytes: [255, 128, 0],
       });
 
-      const result = MixedArrays.read(entityId);
+      const result = MixedArrays.read(ctx, entityId);
       expect(result.floats).toEqual([1.5, 2.5, 3.5]);
       expect(result.ints).toEqual([-10, 0, 10]);
       expect(result.bytes).toEqual([255, 128, 0]);
@@ -788,7 +793,7 @@ describe("Component", () => {
         visible: true,
       });
 
-      const result = Shape.read(entityId);
+      const result = Shape.read(ctx, entityId);
       expect(result.id).toBe(42);
       expect(result.name).toBe("triangle");
       expect(result.pts).toEqual([0.0, 0.0, 1.0, 0.0, 0.5, 1.0]);
@@ -807,7 +812,7 @@ describe("Component", () => {
         names: ["alpha", "beta", "gamma"],
       });
 
-      const result = Tags.read(entityId);
+      const result = Tags.read(ctx, entityId);
       expect(result.names).toEqual(["alpha", "beta", "gamma"]);
     });
 
@@ -823,7 +828,7 @@ describe("Component", () => {
         bits: [true, false, true, true, false],
       });
 
-      const result = Flags.read(entityId);
+      const result = Flags.read(ctx, entityId);
       expect(result.bits).toEqual([true, false, true, true, false]);
     });
 
@@ -841,7 +846,7 @@ describe("Component", () => {
         data: [chunk1, chunk2],
       });
 
-      const result = Chunks.read(entityId);
+      const result = Chunks.read(ctx, entityId);
       expect(result.data.length).toBe(2);
       expect(Array.from(result.data[0])).toEqual([1, 2, 3]);
       expect(Array.from(result.data[1])).toEqual([4, 5, 6, 7]);
@@ -859,7 +864,7 @@ describe("Component", () => {
         names: ["hello", "", "world"],
       });
 
-      const result = Tags.read(entityId);
+      const result = Tags.read(ctx, entityId);
       expect(result.names).toEqual(["hello", "", "world"]);
     });
 
@@ -879,7 +884,7 @@ describe("Component", () => {
         flags: [true, false, true],
       });
 
-      const result = MixedComponent.read(entityId);
+      const result = MixedComponent.read(ctx, entityId);
       expect(result.numbers).toEqual([1.5, 2.5, 3.5]);
       expect(result.strings).toEqual(["a", "b", "c"]);
       expect(result.flags).toEqual([true, false, true]);
@@ -900,7 +905,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Defaults, {});
 
-      const result = Defaults.read(entityId);
+      const result = Defaults.read(ctx, entityId);
       expect(result.nums).toEqual([1.0, 2.0, 3.0]);
       expect(result.strs).toEqual(["a", "b"]);
       expect(result.flags).toEqual([true, false, true]);
@@ -922,7 +927,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Combo, {});
 
-      const result = Combo.read(entityId);
+      const result = Combo.read(ctx, entityId);
       expect(result.nums).toEqual([1.0, 2.0]);
       expect(result.strs).toEqual(["used"]);
     });
@@ -955,7 +960,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Document, { shareMode: ShareMode.ReadOnly });
-      const doc = Document.read(entityId);
+      const doc = Document.read(ctx, entityId);
 
       expect(doc.shareMode).toBe("ReadOnly");
     });
@@ -969,7 +974,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Document, {});
-      const doc = Document.read(entityId);
+      const doc = Document.read(ctx, entityId);
 
       expect(doc.shareMode).toBe("None");
     });
@@ -983,7 +988,7 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Document, {});
-      const doc = Document.read(entityId);
+      const doc = Document.read(ctx, entityId);
 
       expect(doc.shareMode).toBe("ReadWrite");
     });
@@ -998,13 +1003,13 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Task, {});
 
-      expect(Task.read(entityId).status).toBe("Pending");
+      expect(Task.read(ctx, entityId).status).toBe("Pending");
 
-      Task.write(entityId).status = Status.Active;
-      expect(Task.read(entityId).status).toBe("Active");
+      Task.write(ctx, entityId).status = Status.Active;
+      expect(Task.read(ctx, entityId).status).toBe("Active");
 
-      Task.write(entityId).status = Status.Completed;
-      expect(Task.read(entityId).status).toBe("Completed");
+      Task.write(ctx, entityId).status = Status.Completed;
+      expect(Task.read(ctx, entityId).status).toBe("Completed");
     });
 
     it("should work with multiple enum fields", () => {
@@ -1029,7 +1034,7 @@ describe("Component", () => {
         priority: Priority.High,
       });
 
-      const item = Item.read(entityId);
+      const item = Item.read(ctx, entityId);
       expect(item.shareMode).toBe("ReadWrite");
       expect(item.status).toBe("Active");
       expect(item.priority).toBe("High");
@@ -1053,7 +1058,7 @@ describe("Component", () => {
         active: true,
       });
 
-      const entity = Entity.read(entityId);
+      const entity = Entity.read(ctx, entityId);
       expect(entity.name).toBe("TestEntity");
       expect(entity.shareMode).toBe("ReadOnly");
       expect(entity.count).toBe(42);
@@ -1078,7 +1083,9 @@ describe("Component", () => {
         setting: LongEnum.AnotherVeryLongEnumValue,
       });
 
-      expect(Config.read(entityId).setting).toBe("AnotherVeryLongEnumValue");
+      expect(Config.read(ctx, entityId).setting).toBe(
+        "AnotherVeryLongEnumValue"
+      );
     });
 
     it("should isolate enum values between entities", () => {
@@ -1094,12 +1101,12 @@ describe("Component", () => {
       addComponent(ctx, entity1, Task, { status: Status.Active });
       addComponent(ctx, entity2, Task, { status: Status.Completed });
 
-      expect(Task.read(entity1).status).toBe("Active");
-      expect(Task.read(entity2).status).toBe("Completed");
+      expect(Task.read(ctx, entity1).status).toBe("Active");
+      expect(Task.read(ctx, entity2).status).toBe("Completed");
 
-      Task.write(entity1).status = Status.Cancelled;
-      expect(Task.read(entity1).status).toBe("Cancelled");
-      expect(Task.read(entity2).status).toBe("Completed");
+      Task.write(ctx, entity1).status = Status.Cancelled;
+      expect(Task.read(ctx, entity1).status).toBe("Cancelled");
+      expect(Task.read(ctx, entity2).status).toBe("Completed");
     });
 
     it("should use alphabetically first value as default (sorted storage)", () => {
@@ -1115,7 +1122,7 @@ describe("Component", () => {
       addComponent(ctx, entityId, Task, {});
 
       // "Active" comes first alphabetically
-      expect(Task.read(entityId).status).toBe("Active");
+      expect(Task.read(ctx, entityId).status).toBe("Active");
     });
 
     it("should have correct TypeScript types for enum values", () => {
@@ -1127,15 +1134,15 @@ describe("Component", () => {
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Document, { shareMode: ShareMode.ReadOnly });
-      const doc = Document.read(entityId);
+      const doc = Document.read(ctx, entityId);
 
       // This is a compile-time type check - if types are wrong, this wouldn't compile
       const mode: ShareMode = doc.shareMode;
       expect(mode).toBe("ReadOnly");
 
       // Verify we can assign back to the component
-      Document.write(entityId).shareMode = ShareMode.ReadWrite;
-      expect(Document.read(entityId).shareMode).toBe("ReadWrite");
+      Document.write(ctx, entityId).shareMode = ShareMode.ReadWrite;
+      expect(Document.read(ctx, entityId).shareMode).toBe("ReadWrite");
     });
   });
 
@@ -1150,7 +1157,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, { coords: [1.5, 2.5] });
 
-      const result = Position.read(entityId);
+      const result = Position.read(ctx, entityId);
       expect(result.coords).toEqual([1.5, 2.5]);
     });
 
@@ -1164,7 +1171,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, {});
 
-      const result = Position.read(entityId);
+      const result = Position.read(ctx, entityId);
       expect(result.coords).toEqual([0, 0, 0]);
     });
 
@@ -1178,7 +1185,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, {});
 
-      const result = Position.read(entityId);
+      const result = Position.read(ctx, entityId);
       expect(result.coords).toEqual([10, 20]);
     });
 
@@ -1192,10 +1199,10 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, { coords: [1.0, 2.0] });
 
-      const position = Position.write(entityId);
+      const position = Position.write(ctx, entityId);
       position.coords = [10.0, 20.0];
 
-      const result = Position.read(entityId);
+      const result = Position.read(ctx, entityId);
       expect(result.coords).toEqual([10.0, 20.0]);
     });
 
@@ -1212,8 +1219,8 @@ describe("Component", () => {
       addComponent(ctx, e1, Position, { coords: [1.0, 2.0] });
       addComponent(ctx, e2, Position, { coords: [3.0, 4.0] });
 
-      expect(Position.read(e1).coords).toEqual([1.0, 2.0]);
-      expect(Position.read(e2).coords).toEqual([3.0, 4.0]);
+      expect(Position.read(ctx, e1).coords).toEqual([1.0, 2.0]);
+      expect(Position.read(ctx, e2).coords).toEqual([3.0, 4.0]);
     });
 
     it("should support different numeric tuple types", () => {
@@ -1232,7 +1239,7 @@ describe("Component", () => {
         byteQuad: [255, 128, 64, 0],
       });
 
-      const result = MixedTuples.read(entityId);
+      const result = MixedTuples.read(ctx, entityId);
       expect(result.floatPair).toEqual([1.5, 2.5]);
       expect(result.intTriple).toEqual([-10, 0, 10]);
       expect(result.byteQuad).toEqual([255, 128, 64, 0]);
@@ -1256,7 +1263,7 @@ describe("Component", () => {
         active: true,
       });
 
-      const result = Transform.read(entityId);
+      const result = Transform.read(ctx, entityId);
       expect(result.id).toBe(42);
       expect(result.position).toEqual([1.0, 2.0, 3.0]);
       expect(result.rotation).toEqual([0.0, 0.0, 0.0, 1.0]);
@@ -1275,7 +1282,7 @@ describe("Component", () => {
         names: ["first", "last"],
       });
 
-      const result = NamePair.read(entityId);
+      const result = NamePair.read(ctx, entityId);
       expect(result.names).toEqual(["first", "last"]);
     });
 
@@ -1291,7 +1298,7 @@ describe("Component", () => {
         bits: [true, false, true, false],
       });
 
-      const result = Flags.read(entityId);
+      const result = Flags.read(ctx, entityId);
       expect(result.bits).toEqual([true, false, true, false]);
     });
 
@@ -1309,7 +1316,7 @@ describe("Component", () => {
         chunks: [chunk1, chunk2],
       });
 
-      const result = DataPair.read(entityId);
+      const result = DataPair.read(ctx, entityId);
       expect(result.chunks.length).toBe(2);
       expect(Array.from(result.chunks[0])).toEqual([1, 2, 3]);
       expect(Array.from(result.chunks[1])).toEqual([4, 5, 6, 7]);
@@ -1325,7 +1332,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, NamePair, {});
 
-      const result = NamePair.read(entityId);
+      const result = NamePair.read(ctx, entityId);
       expect(result.names).toEqual(["", ""]);
     });
 
@@ -1339,7 +1346,7 @@ describe("Component", () => {
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, {});
 
-      const result = Flags.read(entityId);
+      const result = Flags.read(ctx, entityId);
       expect(result.bits).toEqual([false, false, false]);
     });
   });
