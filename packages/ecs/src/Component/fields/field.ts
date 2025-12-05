@@ -1,62 +1,77 @@
 import type { EntityId } from "../../types";
-import type { ComponentBuffer } from "../types";
+import type { ComponentBuffer, FieldDef } from "../types";
 
 /**
- * Common interface for field type handlers
- * Each field type (string, number, boolean) implements this interface
+ * Function to check if an entity is alive (used by ref fields for lazy validation)
  */
-export interface Field {
+export type IsEntityAlive = (entityId: EntityId) => boolean;
+
+/**
+ * Options for creating field handler instances.
+ * Used to pass extra context needed by special field types (ref).
+ */
+export interface FieldOptions {
+  /** Function to check entity liveness (required for ref fields) */
+  isEntityAlive?: IsEntityAlive;
+}
+
+/**
+ * Abstract base class for field type handlers.
+ * Each field type (string, number, boolean, etc.) extends this class.
+ * Field instances are created per-field and store their fieldDef.
+ */
+export abstract class Field<TFieldDef extends FieldDef = FieldDef> {
+  /** The field definition containing type-specific configuration */
+  protected readonly fieldDef: TFieldDef;
+
+  constructor(fieldDef: TFieldDef, _options?: FieldOptions) {
+    this.fieldDef = fieldDef;
+  }
+
   /**
    * Initialize storage for this field type
    * @param capacity - The initial capacity
-   * @param config - Type-specific configuration (e.g., maxLength for strings, btype for numbers)
    * @param BufferConstructor - The buffer constructor (SharedArrayBuffer or ArrayBuffer)
    * @returns The initialized buffer and backing ArrayBufferLike
    */
-  initializeStorage(
+  abstract initializeStorage(
     capacity: number,
-    config: any,
     BufferConstructor: new (byteLength: number) => ArrayBufferLike
   ): { buffer: ArrayBufferLike; view: any };
 
   /**
    * Define readonly property descriptor for this field type
    * @param master - The master object to define the property on
-   * @param field - The field name
+   * @param fieldName - The field name
    * @param buffer - The buffer accessor
    * @param getEntityId - Function to get the current entity ID
-   * @param fieldDef - Optional field definition (used by enum fields for value mapping)
    */
-  defineReadonly(
+  abstract defineReadonly(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
-    getEntityId: () => EntityId,
-    fieldDef?: any
+    getEntityId: () => EntityId
   ): void;
 
   /**
    * Define writable property descriptor for this field type
    * @param master - The master object to define the property on
-   * @param field - The field name
+   * @param fieldName - The field name
    * @param buffer - The buffer accessor
    * @param getEntityId - Function to get the current entity ID
-   * @param fieldDef - Optional field definition (used by enum fields for value mapping)
    */
-  defineWritable(
+  abstract defineWritable(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
-    getEntityId: () => EntityId,
-    fieldDef?: any
+    getEntityId: () => EntityId
   ): void;
 
   /**
    * Get the default value for this field type
-   * @param fieldDef - The field definition
    * @returns The default value
    */
-  getDefaultValue(fieldDef: any): any;
+  abstract getDefaultValue(): any;
 
   /**
    * Set a value in the storage
@@ -64,5 +79,5 @@ export interface Field {
    * @param entityId - The entity ID
    * @param value - The value to set
    */
-  setValue(array: any, entityId: EntityId, value: any): void;
+  abstract setValue(array: any, entityId: EntityId, value: any): void;
 }

@@ -7,7 +7,7 @@ import type {
   BooleanFieldDef,
   BinaryFieldDef,
 } from "../types";
-import type { Field } from "./field";
+import { Field } from "./field";
 import { getBytesPerElement } from "./number";
 
 const DEFAULT_STRING_BYTES = 512;
@@ -295,16 +295,15 @@ export class ArrayBufferView {
   }
 }
 
-export const ArrayField: Field = {
+export class ArrayField extends Field<ArrayFieldDef> {
   initializeStorage(
     capacity: number,
-    config: ArrayFieldDef,
     BufferConstructor: new (byteLength: number) => ArrayBufferLike
   ) {
-    const bytesPerElement = getElementBytesPerEntry(config.elementDef);
+    const bytesPerElement = getElementBytesPerEntry(this.fieldDef.elementDef);
     // Add array length prefix bytes
     const bytesPerEntry =
-      config.maxLength * bytesPerElement + ArrayBufferView.LENGTH_BYTES;
+      this.fieldDef.maxLength * bytesPerElement + ArrayBufferView.LENGTH_BYTES;
 
     // Ensure proper alignment for typed arrays (8-byte alignment for float64)
     const alignedBytesPerEntry = Math.ceil(bytesPerEntry / 8) * 8;
@@ -314,53 +313,53 @@ export const ArrayField: Field = {
       buffer,
       capacity,
       alignedBytesPerEntry,
-      config.elementDef,
-      config.maxLength
+      this.fieldDef.elementDef,
+      this.fieldDef.maxLength
     );
     return { buffer, view };
-  },
+  }
 
   defineReadonly(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
-    Object.defineProperty(master, field, {
+    Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         return array.get(getEntityId());
       },
     });
-  },
+  }
 
   defineWritable(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
-    Object.defineProperty(master, field, {
+    Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         return array.get(getEntityId());
       },
       set: (value: any) => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         array.set(getEntityId(), value);
       },
     });
-  },
+  }
 
-  getDefaultValue(fieldDef: ArrayFieldDef) {
-    return fieldDef.default !== undefined ? fieldDef.default : [];
-  },
+  getDefaultValue() {
+    return this.fieldDef.default !== undefined ? this.fieldDef.default : [];
+  }
 
   setValue(array: any, entityId: EntityId, value: any) {
     array.set(entityId, value);
-  },
-};
+  }
+}

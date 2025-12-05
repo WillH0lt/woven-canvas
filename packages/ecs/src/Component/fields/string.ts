@@ -1,6 +1,6 @@
 import type { EntityId } from "../../types";
 import type { ComponentBuffer, StringFieldDef } from "../types";
-import type { Field } from "./field";
+import { Field } from "./field";
 
 const DEFAULT_STRING_BYTES = 512;
 
@@ -68,61 +68,60 @@ export class StringBufferView {
   }
 }
 
-export const StringField: Field = {
+export class StringField extends Field<StringFieldDef> {
   initializeStorage(
     capacity: number,
-    config: StringFieldDef,
     BufferConstructor: new (byteLength: number) => ArrayBufferLike
   ) {
-    const maxDataLength = config.maxLength || DEFAULT_STRING_BYTES;
+    const maxDataLength = this.fieldDef.maxLength || DEFAULT_STRING_BYTES;
     // Add length prefix bytes to the user-specified max data length
     const bytesPerString = maxDataLength + StringBufferView.LENGTH_BYTES;
     const buffer = new BufferConstructor(capacity * bytesPerString);
     const view = new StringBufferView(buffer, capacity, bytesPerString);
     return { buffer, view };
-  },
+  }
 
   defineReadonly(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
-    Object.defineProperty(master, field, {
+    Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         return array.get(getEntityId());
       },
     });
-  },
+  }
 
   defineWritable(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
-    Object.defineProperty(master, field, {
+    Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         return array.get(getEntityId());
       },
       set: (value: any) => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         array.set(getEntityId(), value);
       },
     });
-  },
+  }
 
-  getDefaultValue(fieldDef: StringFieldDef) {
-    return fieldDef.default !== undefined ? fieldDef.default : "";
-  },
+  getDefaultValue() {
+    return this.fieldDef.default !== undefined ? this.fieldDef.default : "";
+  }
 
   setValue(array: any, entityId: EntityId, value: any) {
     array.set(entityId, value);
-  },
-};
+  }
+}

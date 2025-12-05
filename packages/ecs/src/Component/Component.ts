@@ -5,8 +5,9 @@
 // add object type
 // add ComponentInstance.fromJson method
 
-import type { EntityId, Context } from "../types";
+import type { EntityId, Context, ComponentTransferData } from "../types";
 import type { EventBuffer } from "../EventBuffer";
+import type { EntityBuffer } from "../EntityBuffer";
 import type {
   ComponentSchema,
   InferComponentType,
@@ -21,11 +22,31 @@ import {
   ArrayField,
   TupleField,
   EnumField,
-  type Field,
+  RefField,
+  Field,
+  type FieldOptions,
 } from "./fields";
 
 const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
+
+/**
+ * Registry mapping field type names to their field class constructors.
+ * Used to instantiate the appropriate field handler for each field type.
+ */
+const FIELD_REGISTRY: Record<
+  string,
+  new (fieldDef: any, options?: FieldOptions) => Field
+> = {
+  string: StringField,
+  number: NumberField,
+  boolean: BooleanField,
+  binary: BinaryField,
+  array: ArrayField,
+  tuple: TupleField,
+  enum: EnumField,
+  ref: RefField,
+};
 
 /**
  * Sentinel entity ID used for singleton change events.
@@ -48,6 +69,8 @@ const SINGLETON_INDEX = 0;
 export class Component<T extends ComponentSchema> {
   /** The unique component ID (0-based index) assigned during initialization */
   componentId: number = -1;
+
+  /** The component name defined by the user */
   name: string;
 
   /** Whether this component is a singleton (single instance, no entity ID) */
@@ -58,9 +81,15 @@ export class Component<T extends ComponentSchema> {
   /** Reference to the event buffer for pushing CHANGED events */
   private eventBuffer: EventBuffer | null = null;
 
+  /** Reference to the entity buffer for checking entity liveness (used by ref fields) */
+  private entityBuffer: EntityBuffer | null = null;
+
   /** The component schema (field definitions) */
   readonly schema: Record<string, FieldDef>;
   private fieldNames: string[];
+
+  /** Field handler instances for each field */
+  private fields: Record<string, Field> = {};
 
   // Typed buffer accessor for field access (e.g., Position.buffer.x[eid])
   private _buffer: ComponentBuffer<T> | null = null;
@@ -89,18 +118,15 @@ export class Component<T extends ComponentSchema> {
    * @param name - The component name
    * @param transferData - The transfer data containing buffer, componentId, schema, etc.
    * @param eventBuffer - The event buffer for recording changes
+   * @param entityBuffer - The entity buffer for checking entity liveness
    * @returns A new initialized Component instance
    * @internal
    */
   static fromTransferData<T extends ComponentSchema>(
     name: string,
-    transferData: {
-      componentId: number;
-      buffer: ComponentBuffer<T>;
-      schema: Record<string, FieldDef>;
-      isSingleton: boolean;
-    },
-    eventBuffer: EventBuffer
+    transferData: ComponentTransferData,
+    eventBuffer: EventBuffer,
+    entityBuffer: EntityBuffer
   ): Component<T> {
     const component = new Component<T>(
       name,
@@ -111,7 +137,8 @@ export class Component<T extends ComponentSchema> {
     component.fromTransfer(
       transferData.componentId,
       transferData.buffer,
-      eventBuffer
+      eventBuffer,
+      entityBuffer
     );
     return component;
   }
@@ -135,30 +162,59 @@ export class Component<T extends ComponentSchema> {
     this.schema = {};
     this.fieldNames = [];
 
-    if (isPrebuiltSchema) {
-      // Schema is already in FieldDef form (from transfer)
-      for (const [fieldName, fieldDef] of Object.entries(
-        schema as Record<string, FieldDef>
-      )) {
-        this.schema[fieldName] = fieldDef;
-        this.fieldNames.push(fieldName);
-      }
-    } else {
-      // Initialize storage arrays for each field (schema has field builders)
-      for (const [fieldName, builder] of Object.entries(schema as T)) {
-        const fieldDef = (builder as any).def;
-        this.schema[fieldName] = fieldDef;
-        this.fieldNames.push(fieldName);
-      }
-    }
+    this.parseSchema(schema, isPrebuiltSchema);
 
     // Create master instances with property descriptors for direct buffer access
     this.readonlyMaster = {} as InferComponentType<T>;
     this.writableMaster = {} as InferComponentType<T>;
   }
 
-  initialize(id: number, maxEntities: number, eventBuffer: EventBuffer): void {
-    // Guard against double initialization
+  /**
+   * Parse the schema and populate fieldNames and schema properties.
+   * @param schema - The schema (either pre-built FieldDef or field builders)
+   * @param isPrebuiltSchema - Whether the schema is already in FieldDef form
+   */
+  private parseSchema(
+    schema: T | Record<string, FieldDef>,
+    isPrebuiltSchema: boolean
+  ): void {
+    for (const [fieldName, fieldOrBuilder] of Object.entries(schema)) {
+      const fieldDef = isPrebuiltSchema
+        ? (fieldOrBuilder as FieldDef)
+        : (fieldOrBuilder as any).def;
+      this.schema[fieldName] = fieldDef;
+      this.fieldNames.push(fieldName);
+    }
+  }
+
+  initialize(
+    id: number,
+    maxEntities: number,
+    eventBuffer: EventBuffer,
+    entityBuffer: EntityBuffer
+  ): void {
+    this.ensureNotInitialized();
+    this.initialized = true;
+
+    this.componentId = id;
+    this.eventBuffer = eventBuffer;
+    this.entityBuffer = entityBuffer;
+
+    const bufferSize = this.isSingleton ? 1 : maxEntities;
+    this._buffer = this.createFieldBuffers(bufferSize);
+
+    this.initializeMasters();
+
+    if (this.isSingleton) {
+      this.initializeSingletonDefaults();
+    }
+  }
+
+  /**
+   * Ensure the component has not been initialized yet.
+   * @throws Error if already initialized
+   */
+  private ensureNotInitialized(): void {
     if (this.initialized) {
       throw new Error(
         `Component has already been initialized. ` +
@@ -166,37 +222,44 @@ export class Component<T extends ComponentSchema> {
           `If you need multiple worlds, define separate component instances for each.`
       );
     }
-    this.initialized = true;
+  }
 
-    this.componentId = id;
-    this.eventBuffer = eventBuffer;
-
-    // Singletons only need buffer space for 1 entity
-    const bufferSize = this.isSingleton ? 1 : maxEntities;
-
+  /**
+   * Create buffer storage for all fields.
+   * Also creates field handler instances for each field.
+   * @param bufferSize - The number of entities to allocate space for
+   * @returns The component buffer proxy
+   */
+  private createFieldBuffers(bufferSize: number): ComponentBuffer<T> {
     const bufferProxy: any = {};
 
-    // Initialize storage arrays for each field
     for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
-      // Get the appropriate handler for this field type
-      const field = this.getField(fieldDef.type);
-      const { buffer, view } = field.initializeStorage(
-        bufferSize,
-        fieldDef,
-        BufferConstructor
-      );
-
+      const field = this.createFieldInstance(fieldDef);
+      this.fields[fieldName] = field;
+      const { view } = field.initializeStorage(bufferSize, BufferConstructor);
       bufferProxy[fieldName] = view;
     }
 
-    this._buffer = bufferProxy as ComponentBuffer<T>;
+    return bufferProxy as ComponentBuffer<T>;
+  }
 
-    this.initializeMasters();
-
-    // Initialize singleton with default values
-    if (this.isSingleton) {
-      this.initializeSingletonDefaults();
+  /**
+   * Create a field handler instance for the given field definition.
+   * @param fieldDef - The field definition
+   * @returns The field handler instance
+   */
+  private createFieldInstance(fieldDef: FieldDef): Field {
+    const FieldClass = FIELD_REGISTRY[fieldDef.type];
+    if (!FieldClass) {
+      throw new Error(`Unknown field type: ${fieldDef.type}`);
     }
+
+    const options: FieldOptions = {};
+    if (fieldDef.type === "ref") {
+      options.isEntityAlive = (entityId) => this.entityBuffer!.has(entityId);
+    }
+
+    return new FieldClass(fieldDef, options);
   }
 
   public get buffer(): ComponentBuffer<T> {
@@ -208,20 +271,27 @@ export class Component<T extends ComponentSchema> {
    * @param componentId - The component ID
    * @param buffer - The transferred buffer object containing typed arrays
    * @param eventBuffer - The event buffer for recording changes
+   * @param entityBuffer - The entity buffer for checking entity liveness
    * @internal
    */
   fromTransfer(
     componentId: number,
     buffer: ComponentBuffer<T>,
-    eventBuffer: EventBuffer
+    eventBuffer: EventBuffer,
+    entityBuffer: EntityBuffer
   ): void {
-    if (this.initialized) {
-      throw new Error(`Component has already been initialized.`);
-    }
+    this.ensureNotInitialized();
     this.initialized = true;
     this.componentId = componentId;
     this._buffer = buffer;
     this.eventBuffer = eventBuffer;
+    this.entityBuffer = entityBuffer;
+
+    // Create field instances for transferred component
+    for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
+      this.fields[fieldName] = this.createFieldInstance(fieldDef);
+    }
+
     this.initializeMasters();
   }
 
@@ -236,10 +306,9 @@ export class Component<T extends ComponentSchema> {
     for (let i = 0; i < this.fieldNames.length; i++) {
       const fieldName = this.fieldNames[i];
       const array = (this._buffer as any)[fieldName];
-      const fieldDef = this.schema[fieldName];
-      const field = this.getField(fieldDef.type);
+      const field = this.fields[fieldName];
 
-      const value = field.getDefaultValue(fieldDef);
+      const value = field.getDefaultValue();
       field.setValue(array, SINGLETON_INDEX, value);
     }
   }
@@ -250,49 +319,21 @@ export class Component<T extends ComponentSchema> {
     }
 
     // Define getters/setters on master instances for each field
-    for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
-      const field = this.getField(fieldDef.type);
+    for (const fieldName of this.fieldNames) {
+      const field = this.fields[fieldName];
 
       field.defineReadonly(
         this.readonlyMaster,
         fieldName,
         this._buffer,
-        () => this.readonlyEntityId,
-        fieldDef
+        () => this.readonlyEntityId
       );
       field.defineWritable(
         this.writableMaster,
         fieldName,
         this._buffer,
-        () => this.writableEntityId,
-        fieldDef
+        () => this.writableEntityId
       );
-    }
-  }
-
-  /**
-   * Get the appropriate field type handler
-   * @param type - The field type
-   * @returns The field type handler
-   */
-  private getField(type: string): Field {
-    switch (type) {
-      case "string":
-        return StringField;
-      case "number":
-        return NumberField;
-      case "boolean":
-        return BooleanField;
-      case "binary":
-        return BinaryField;
-      case "array":
-        return ArrayField;
-      case "tuple":
-        return TupleField;
-      case "enum":
-        return EnumField;
-      default:
-        throw new Error(`Unknown field type: ${type}`);
     }
   }
 
@@ -302,28 +343,15 @@ export class Component<T extends ComponentSchema> {
    * @param data - The raw data to create the component instance from
    * @internal
    */
-  from(entityId: number, data: T): void {
-    // Populate each field's storage array using cached field names
+  copyData(entityId: number, data: T): void {
     for (let i = 0; i < this.fieldNames.length; i++) {
       const fieldName = this.fieldNames[i];
       const array = (this.buffer as any)[fieldName];
-      const fieldDef = this.schema[fieldName];
-      const field = this.getField(fieldDef.type);
+      const field = this.fields[fieldName];
 
-      // Get value from input data or use default
-      let value =
-        data && fieldName in data
-          ? data[fieldName]
-          : field.getDefaultValue(fieldDef);
+      const hasValue = data && fieldName in data;
+      const value = hasValue ? data[fieldName] : field.getDefaultValue();
 
-      // For enum fields, convert string value to index
-      if (fieldDef.type === "enum" && typeof value === "string") {
-        const sortedValues = [...(fieldDef as any).values].sort();
-        const index = sortedValues.indexOf(value);
-        value = index >= 0 ? index : 0;
-      }
-
-      // Store value using the handler
       field.setValue(array, entityId, value);
     }
   }

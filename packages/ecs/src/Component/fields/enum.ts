@@ -1,33 +1,39 @@
 import type { EntityId } from "../../types";
 import type { ComponentBuffer, EnumFieldDef } from "../types";
-import type { Field } from "./field";
+import { Field } from "./field";
 
 /**
- * EnumField stores enum values as indices into a sorted array of values.
- * This is more efficient than storing strings:
- * - Uses 2 bytes (Uint16) per entity, supporting up to 65536 enum values
- * - Values are sorted alphabetically for consistent ordering
+ * EnumField handler for enum-typed component fields.
+ * Uses 2 bytes (Uint16) per entity, supporting up to 65536 enum values.
+ * Values are sorted alphabetically for consistent ordering.
  */
-export const EnumField: Field = {
+export class EnumField extends Field<EnumFieldDef> {
+  private readonly sortedValues: string[];
+  private readonly valueToIndex: Map<string, number>;
+
+  constructor(fieldDef: EnumFieldDef) {
+    super(fieldDef);
+    this.sortedValues = [...fieldDef.values].sort();
+    this.valueToIndex = new Map<string, number>();
+    this.sortedValues.forEach((v, i) => this.valueToIndex.set(v, i));
+  }
+
   initializeStorage(
     capacity: number,
-    config: EnumFieldDef,
     BufferConstructor: new (byteLength: number) => ArrayBufferLike
   ) {
     const buffer = new BufferConstructor(capacity * 2); // 2 bytes per Uint16
     const view = new Uint16Array(buffer);
     return { buffer, view };
-  },
+  }
 
   defineReadonly(
     master: any,
     fieldName: string,
     buffer: ComponentBuffer<any>,
-    getEntityId: () => EntityId,
-    fieldDef?: EnumFieldDef
+    getEntityId: () => EntityId
   ) {
-    // Sort values alphabetically for consistent ordering
-    const sortedValues = fieldDef ? [...fieldDef.values].sort() : [];
+    const sortedValues = this.sortedValues;
 
     Object.defineProperty(master, fieldName, {
       enumerable: true,
@@ -38,19 +44,16 @@ export const EnumField: Field = {
         return sortedValues[index] ?? sortedValues[0] ?? "";
       },
     });
-  },
+  }
 
   defineWritable(
     master: any,
     fieldName: string,
     buffer: ComponentBuffer<any>,
-    getEntityId: () => EntityId,
-    fieldDef?: EnumFieldDef
+    getEntityId: () => EntityId
   ) {
-    // Sort values alphabetically and create lookup map
-    const sortedValues = fieldDef ? [...fieldDef.values].sort() : [];
-    const valueToIndex = new Map<string, number>();
-    sortedValues.forEach((v, i) => valueToIndex.set(v, i));
+    const sortedValues = this.sortedValues;
+    const valueToIndex = this.valueToIndex;
 
     Object.defineProperty(master, fieldName, {
       enumerable: true,
@@ -68,21 +71,23 @@ export const EnumField: Field = {
         }
       },
     });
-  },
+  }
 
-  getDefaultValue(fieldDef: EnumFieldDef) {
-    // Sort values to match storage order
-    const sortedValues = [...fieldDef.values].sort();
-
+  getDefaultValue() {
     // Return index of default value, or 0 if not specified
-    if (fieldDef.default !== undefined) {
-      const index = sortedValues.indexOf(fieldDef.default);
+    if (this.fieldDef.default !== undefined) {
+      const index = this.sortedValues.indexOf(this.fieldDef.default);
       return index >= 0 ? index : 0;
     }
     return 0;
-  },
+  }
 
-  setValue(array: Uint16Array, entityId: EntityId, value: number) {
-    array[entityId] = value;
-  },
-};
+  setValue(array: Uint16Array, entityId: EntityId, value: string | number) {
+    if (typeof value === "string") {
+      const index = this.valueToIndex.get(value);
+      array[entityId] = index !== undefined ? index : 0;
+    } else {
+      array[entityId] = value;
+    }
+  }
+}

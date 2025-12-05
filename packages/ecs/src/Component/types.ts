@@ -11,7 +11,8 @@ export type FieldType =
   | "binary"
   | "array"
   | "tuple"
-  | "enum";
+  | "enum"
+  | "ref";
 
 export type NumberSubtype =
   | "uint8"
@@ -93,6 +94,10 @@ export interface TupleFieldDef<
   default?: any[];
 }
 
+export interface RefFieldDef extends BaseField<number | null> {
+  type: "ref";
+}
+
 export type FieldDef =
   | StringFieldDef
   | NumberFieldDef
@@ -100,7 +105,8 @@ export type FieldDef =
   | BinaryFieldDef
   | EnumFieldDef<any>
   | ArrayFieldDef
-  | TupleFieldDef;
+  | TupleFieldDef
+  | RefFieldDef;
 
 // TypedArray union type
 export type TypedArray =
@@ -142,7 +148,8 @@ export type ComponentSchema = Record<
       | BinaryFieldDef
       | EnumFieldDef<any>
       | ArrayFieldDef
-      | TupleFieldDef;
+      | TupleFieldDef
+      | RefFieldDef;
   }
 >;
 
@@ -161,6 +168,8 @@ export type InferComponentType<T extends ComponentSchema> = {
     ? InferArrayElementType<TElementDef>[]
     : T[K]["def"] extends TupleFieldDef<infer TElementDef, infer TLength>
     ? CreateTuple<InferArrayElementType<TElementDef>, TLength>
+    : T[K]["def"] extends RefFieldDef
+    ? number | null
     : never;
 };
 
@@ -180,5 +189,7 @@ export type ComponentBuffer<T extends ComponentSchema> = {
     ? ArrayBufferView
     : T[K]["def"] extends TupleFieldDef
     ? TupleBufferView
+    : T[K]["def"] extends RefFieldDef
+    ? Uint32Array
     : never;
 };

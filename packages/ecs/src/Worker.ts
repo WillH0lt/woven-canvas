@@ -8,7 +8,7 @@ import type {
   WorkerIncomingMessage,
   WorkerSuccessResponse,
   WorkerErrorResponse,
-  ComponentTransferData,
+  ComponentTransferMap,
 } from "./types";
 
 /**
@@ -32,7 +32,7 @@ import type {
 interface InternalContext {
   context: Context | null;
   execute: (ctx: Context) => void | Promise<void>;
-  componentTransferData: ComponentTransferData | null;
+  ComponentTransferMap: ComponentTransferMap | null;
 }
 
 let internalContext: InternalContext | null = null;
@@ -64,7 +64,7 @@ export function setupWorker(
   internalContext = {
     context: null,
     execute,
-    componentTransferData: null,
+    ComponentTransferMap: null,
   };
 
   // Set up message handler for communication with main thread
@@ -95,7 +95,7 @@ function handleMessage(
   try {
     if (type === "init") {
       // Store component transfer data for lazy initialization
-      internalContext.componentTransferData = e.data.componentData;
+      internalContext.ComponentTransferMap = e.data.componentData;
 
       const eventBuffer = EventBuffer.fromTransfer(e.data.eventSAB);
       const pool = Pool.fromTransfer(
@@ -103,25 +103,27 @@ function handleMessage(
         e.data.poolBucketCount,
         e.data.poolSize
       );
+      const entityBuffer = EntityBuffer.fromTransfer(
+        e.data.entitySAB,
+        e.data.componentCount
+      );
 
       // Create Component instances from transfer data
       const components: Record<string, Component<any>> = {};
       for (const [name, transferData] of Object.entries(
-        internalContext.componentTransferData
+        internalContext.ComponentTransferMap
       )) {
         const component = Component.fromTransferData(
           name,
           transferData,
-          eventBuffer
+          eventBuffer,
+          entityBuffer
         );
         components[name] = component;
       }
 
       internalContext.context = {
-        entityBuffer: EntityBuffer.fromTransfer(
-          e.data.entitySAB,
-          e.data.componentCount
-        ),
+        entityBuffer,
         eventBuffer,
         pool,
         components,

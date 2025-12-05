@@ -7,6 +7,7 @@ import type {
   TupleFieldDef,
   EnumFieldDef,
   NumberSubtype,
+  RefFieldDef,
 } from "./types";
 
 /** Union type for all field builders that can be used as array elements */
@@ -233,6 +234,19 @@ export class EnumFieldBuilder<T extends string = string> {
 }
 
 /**
+ * Builder for entity reference fields.
+ * Refs store an entity ID (or null).
+ *
+ * When a referenced entity is deleted, the ref is lazily set to null
+ * on the next read (no eager scanning required).
+ */
+export class RefFieldBuilder {
+  def: RefFieldDef = {
+    type: "ref",
+  };
+}
+
+/**
  * Schema builder API for defining component fields
  * Provides factory functions for creating typed field builders
  */
@@ -333,4 +347,24 @@ export const field = {
     elementBuilder: T,
     length: L
   ) => new TupleFieldBuilder(elementBuilder, length),
+  /**
+   * Create an entity reference field builder.
+   * Refs store an entity ID (or null) and support automatic cleanup on deletion.
+   * @returns A ref field builder
+   * @example
+   * ```typescript
+   * const Child = defineComponent("Child", {
+   *   parent: field.ref().cascade(), // Delete child when parent is deleted
+   * });
+   *
+   * const Player = defineComponent("Player", {
+   *   target: field.ref().nullify(), // Set to null when target is deleted
+   * });
+   *
+   * const OrderItem = defineComponent("OrderItem", {
+   *   product: field.ref().restrict(), // Prevent product deletion while referenced
+   * });
+   * ```
+   */
+  ref: () => new RefFieldBuilder(),
 };

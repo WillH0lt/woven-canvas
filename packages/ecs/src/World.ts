@@ -61,17 +61,23 @@ export class World {
     this.workerManager = new WorkerManager(threads);
 
     const eventBuffer = new EventBuffer(maxEvents);
+    const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
     // Create Component instances from defs and initialize them
     const componentMap: Record<string, Component<any>> = {};
     for (const def of componentDefs) {
       const component = Component.fromDef(def);
-      component.initialize(this.componentIndex++, maxEntities, eventBuffer);
+      component.initialize(
+        this.componentIndex++,
+        maxEntities,
+        eventBuffer,
+        entityBuffer
+      );
       componentMap[component.name] = component;
     }
 
     this.context = {
-      entityBuffer: new EntityBuffer(maxEntities, componentCount),
+      entityBuffer,
       eventBuffer,
       components: componentMap,
       queries: {},

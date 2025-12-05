@@ -5,7 +5,7 @@ import type {
   NumberSubtype,
   TypedArray,
 } from "../types";
-import type { Field } from "./field";
+import { Field } from "./field";
 
 /**
  * Get the bytes per element for a numeric type
@@ -62,59 +62,58 @@ export function createTypedArray(
   }
 }
 
-export const NumberField: Field = {
+export class NumberField extends Field<NumberFieldDef> {
   initializeStorage(
     capacity: number,
-    config: NumberFieldDef,
     BufferConstructor: new (byteLength: number) => ArrayBufferLike
   ) {
-    const bytesPerElement = getBytesPerElement(config.btype);
+    const bytesPerElement = getBytesPerElement(this.fieldDef.btype);
     const buffer = new BufferConstructor(capacity * bytesPerElement);
-    const view = createTypedArray(config.btype, capacity, buffer);
+    const view = createTypedArray(this.fieldDef.btype, capacity, buffer);
     return { buffer, view };
-  },
+  }
 
   defineReadonly(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
-    Object.defineProperty(master, field, {
+    Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         return array[getEntityId()];
       },
     });
-  },
+  }
 
   defineWritable(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
-    Object.defineProperty(master, field, {
+    Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         return array[getEntityId()];
       },
       set: (value: any) => {
-        const array = (buffer as any)[field];
+        const array = (buffer as any)[fieldName];
         array[getEntityId()] = value;
       },
     });
-  },
+  }
 
-  getDefaultValue(fieldDef: NumberFieldDef) {
-    return fieldDef.default !== undefined ? fieldDef.default : 0;
-  },
+  getDefaultValue() {
+    return this.fieldDef.default !== undefined ? this.fieldDef.default : 0;
+  }
 
   setValue(array: any, entityId: EntityId, value: any) {
     array[entityId] = value;
-  },
-};
+  }
+}

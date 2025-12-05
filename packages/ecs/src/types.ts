@@ -101,14 +101,14 @@ export interface WorkerSystem extends BaseSystem {
 export type System = MainThreadSystem | WorkerSystem;
 
 export type ComponentTransferData = {
-  [name: string]: {
-    name: string;
-    componentId: number;
-    buffer: ComponentBuffer<any>;
-    schema: Record<string, FieldDef>;
-    isSingleton: boolean;
-  };
+  name: string;
+  componentId: number;
+  buffer: ComponentBuffer<any>;
+  schema: Record<string, FieldDef>;
+  isSingleton: boolean;
 };
+
+export type ComponentTransferMap = Record<string, ComponentTransferData>;
 
 /**
  * Message sent from main thread to initialize the worker

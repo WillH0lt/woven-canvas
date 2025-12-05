@@ -17,6 +17,7 @@ export type {
   BinaryFieldDef,
   ArrayFieldDef,
   TupleFieldDef,
+  RefFieldDef,
   NumberSubtype,
   FieldType,
 } from "./types";

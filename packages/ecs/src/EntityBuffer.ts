@@ -10,11 +10,17 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
  *   Entity layout:
  *     [0] = metadata byte (bit 0 = alive, bits 1-7 reserved for future use)
  *     [1...] = component bytes (8 components per byte)
+ * 
+ * Also maintains a separate generation counter array for detecting stale entity refs.
  */
 export class EntityBuffer {
   private buffer: ArrayBufferLike;
   private view: Uint8Array;
   private readonly bytesPerEntity: number;
+
+  /** Generation counters for each entity slot - incremented when entity is recycled */
+  private generationBuffer: ArrayBufferLike;
+  private generations: Uint8Array;
 
   // Metadata byte flags
   private static readonly ALIVE_FLAG = 0x01; // Bit 0 of metadata byte

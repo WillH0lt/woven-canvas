@@ -1,5 +1,5 @@
 import type {
-  ComponentTransferData,
+  ComponentTransferMap,
   Context,
   WorkerSystem,
   InitMessage,
@@ -79,7 +79,7 @@ export class WorkerManager {
       worker.addEventListener("message", messageHandler);
 
       // Serialize component metadata and buffers for reconstruction in worker
-      const componentData: ComponentTransferData = {};
+      const componentData: ComponentTransferMap = {};
       for (const [name, component] of Object.entries(ctx.components)) {
         componentData[name] = {
           name,

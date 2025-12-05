@@ -7,7 +7,7 @@ import type {
   BooleanFieldDef,
   BinaryFieldDef,
 } from "../types";
-import type { Field } from "./field";
+import { Field } from "./field";
 import { getBytesPerElement } from "./number";
 
 const DEFAULT_STRING_BYTES = 512;
@@ -276,15 +276,14 @@ export class TupleBufferView {
   }
 }
 
-export const TupleField: Field = {
+export class TupleField extends Field<TupleFieldDef> {
   initializeStorage(
     capacity: number,
-    config: TupleFieldDef,
     BufferConstructor: new (byteLength: number) => ArrayBufferLike
   ) {
-    const bytesPerElement = getElementBytesPerEntry(config.elementDef);
+    const bytesPerElement = getElementBytesPerEntry(this.fieldDef.elementDef);
     // No length prefix needed for tuples - fixed size
-    const bytesPerEntry = config.length * bytesPerElement;
+    const bytesPerEntry = this.fieldDef.length * bytesPerElement;
 
     // Ensure proper alignment for typed arrays (8-byte alignment for float64)
     const alignedBytesPerEntry = Math.ceil(bytesPerEntry / 8) * 8;
@@ -294,61 +293,61 @@ export const TupleField: Field = {
       buffer,
       capacity,
       alignedBytesPerEntry,
-      config.elementDef,
-      config.length
+      this.fieldDef.elementDef,
+      this.fieldDef.length
     );
     return { buffer, view };
-  },
+  }
 
   defineReadonly(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
-    Object.defineProperty(master, field, {
+    Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
-        const tuple = (buffer as any)[field];
+        const tuple = (buffer as any)[fieldName];
         return tuple.get(getEntityId());
       },
     });
-  },
+  }
 
   defineWritable(
     master: any,
-    field: string,
+    fieldName: string,
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
-    Object.defineProperty(master, field, {
+    Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
-        const tuple = (buffer as any)[field];
+        const tuple = (buffer as any)[fieldName];
         return tuple.get(getEntityId());
       },
       set: (value: any) => {
-        const tuple = (buffer as any)[field];
+        const tuple = (buffer as any)[fieldName];
         tuple.set(getEntityId(), value);
       },
     });
-  },
+  }
 
-  getDefaultValue(fieldDef: TupleFieldDef) {
-    if (fieldDef.default !== undefined) {
-      return fieldDef.default;
+  getDefaultValue() {
+    if (this.fieldDef.default !== undefined) {
+      return this.fieldDef.default;
     }
     // Return an array filled with default values for the element type
-    const elementDefault = getElementDefault(fieldDef.elementDef);
-    return Array(fieldDef.length).fill(elementDefault);
-  },
+    const elementDefault = getElementDefault(this.fieldDef.elementDef);
+    return Array(this.fieldDef.length).fill(elementDefault);
+  }
 
   setValue(tuple: any, entityId: EntityId, value: any) {
     tuple.set(entityId, value);
-  },
-};
+  }
+}
 
 /**
  * Get the default value for an element type

@@ -13,6 +13,7 @@ export {
   addComponent,
   removeComponent,
   hasComponent,
+  getBackrefs,
 } from "./Context";
 export { useSingleton, type Singleton } from "./Singleton";
 export { defineSystem, defineWorkerSystem } from "./System";
@@ -25,3 +26,5 @@ export {
 } from "./Query";
 export type { EntityBuffer } from "./EntityBuffer";
 export { EventBuffer, EventType } from "./EventBuffer";
+export { NULL_REF } from "./Component/fields/ref";
+export type { RefFieldDef } from "./Component/types";

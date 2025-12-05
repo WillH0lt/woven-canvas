@@ -1,6 +1,7 @@
 import type { Context, EntityId } from "./types";
 import type { Component, ComponentDef } from "./Component";
 import type { ComponentSchema, InferComponentType } from "./Component/types";
+import { NULL_REF } from "./Component/fields/ref";
 
 /**
  * Create a new entity in a worker thread.
@@ -31,10 +32,62 @@ export function createEntity(ctx: Context): EntityId {
 }
 
 /**
+ * Get all entities that reference a target entity via a specific ref field.
+ * This is useful for finding "children" or related entities.
+ *
+ * @param ctx - The context
+ * @param targetEntity - The entity being referenced
+ * @param componentDef - The component containing the ref field
+ * @param fieldName - The name of the ref field
+ * @returns Array of entity IDs that reference the target
+ *
+ * @example
+ * ```typescript
+ * import { getBackrefs, type Context } from '@infinitecanvas/ecs';
+ *
+ * const Child = defineComponent("Child", {
+ *   parent: field.ref(),
+ * });
+ *
+ * function getChildren(ctx: Context, parentId: EntityId): EntityId[] {
+ *   return getBackrefs(ctx, parentId, Child, "parent");
+ * }
+ * ```
+ */
+export function getBackrefs<T extends ComponentSchema>(
+  ctx: Context,
+  targetEntity: EntityId,
+  componentDef: ComponentDef<T>,
+  fieldName: keyof T & string
+): EntityId[] {
+  const component = componentDef.getInstance(ctx);
+
+  const results: EntityId[] = [];
+  const buffer = (component.buffer as any)[fieldName] as Uint32Array;
+
+  // Scan all alive entities that have this component
+  for (let eid = 0; eid < ctx.maxEntities; eid++) {
+    if (
+      ctx.entityBuffer.has(eid) &&
+      ctx.entityBuffer.hasComponent(eid, component.componentId)
+    ) {
+      if (buffer[eid] === targetEntity) {
+        results.push(eid);
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
  * Remove an entity.
  * The entity is marked as dead but its component data is preserved until
  * the ID is reclaimed and reused. This allows .removed() queries to still
  * read component data from recently removed entities.
+ *
+ * Ref fields use lazy validation: refs pointing to deleted entities are
+ * automatically nullified when read, avoiding expensive scans on delete.
  *
  * ID reclamation happens automatically when the pool is exhausted.
  *
@@ -51,6 +104,11 @@ export function createEntity(ctx: Context): EntityId {
  * }
  */
 export function removeEntity(ctx: Context, entityId: EntityId): void {
+  // Skip if already dead
+  if (!ctx.entityBuffer.has(entityId)) {
+    return;
+  }
+
   // Emit the REMOVED event so queries can track this removal
   ctx.eventBuffer.pushRemoved(entityId);
 
@@ -84,7 +142,7 @@ export function addComponent<T extends ComponentSchema>(
 ): void {
   const component = componentDef.getInstance(ctx);
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
-  component.from(entityId, data as any);
+  component.copyData(entityId, data as any);
   ctx.eventBuffer.pushComponentAdded(entityId, component.componentId);
 }
 
