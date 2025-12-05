@@ -6,4 +6,4 @@ export { ArrayField } from "./array";
 export { TupleField } from "./tuple";
 export { EnumField } from "./enum";
 export { RefField, NULL_REF } from "./ref";
-export { Field, type FieldOptions, type IsEntityAlive } from "./field";
+export { Field } from "./field";

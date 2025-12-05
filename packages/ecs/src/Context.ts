@@ -4,6 +4,11 @@ import type { ComponentSchema, InferComponentType } from "./Component/types";
 import { NULL_REF } from "./Component/fields/ref";
 
 /**
+ * Ref packing constants (must match ref.ts)
+ */
+const ENTITY_ID_MASK = 0x01ffffff; // 25 bits
+
+/**
  * Create a new entity in a worker thread.
  * Uses atomic operations to safely allocate an entity ID across threads.
  *
@@ -71,8 +76,13 @@ export function getBackrefs<T extends ComponentSchema>(
       ctx.entityBuffer.has(eid) &&
       ctx.entityBuffer.hasComponent(eid, component.componentId)
     ) {
-      if (buffer[eid] === targetEntity) {
-        results.push(eid);
+      const packedRef = buffer[eid];
+      if (packedRef !== NULL_REF) {
+        // Unpack the entity ID from the ref
+        const refEntityId = packedRef & ENTITY_ID_MASK;
+        if (refEntityId === targetEntity) {
+          results.push(eid);
+        }
       }
     }
   }

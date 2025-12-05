@@ -272,6 +272,56 @@ describe("Ref Field", () => {
       expect(ctx.entityBuffer.has(node3)).toBe(true);
       expect(Node.read(ctx, node3).next).toBeNull();
     });
+
+    it("should detect stale refs after entity ID recycling", () => {
+      const Child = defineComponent("Child", {
+        parent: field.ref(),
+      });
+      const world = new World([Child], { maxEntities: 10 });
+      const ctx = world.getContext();
+
+      // Create parent and child with ref
+      const parentId = createEntity(ctx);
+      const childId = createEntity(ctx);
+      addComponent(ctx, childId, Child, { parent: parentId });
+
+      expect(Child.read(ctx, childId).parent).toBe(parentId);
+
+      // Delete the parent - this frees the ID for reuse
+      removeEntity(ctx, parentId);
+      ctx.pool.free(parentId);
+
+      // Create a new entity - it should get the recycled ID
+      const newEntityId = createEntity(ctx);
+      expect(newEntityId).toBe(parentId); // Same ID, but different entity
+
+      // The child's ref should be null because generation changed
+      expect(Child.read(ctx, childId).parent).toBeNull();
+    });
+
+    it("should correctly reference new entity after ID recycling", () => {
+      const Child = defineComponent("Child", {
+        parent: field.ref(),
+      });
+      const world = new World([Child], { maxEntities: 10 });
+      const ctx = world.getContext();
+
+      // Create and delete an entity to recycle its ID
+      const oldParentId = createEntity(ctx);
+      removeEntity(ctx, oldParentId);
+      ctx.pool.free(oldParentId);
+
+      // Create a new entity with recycled ID
+      const newParentId = createEntity(ctx);
+      expect(newParentId).toBe(oldParentId);
+
+      // Create a child and set ref to the new entity
+      const childId = createEntity(ctx);
+      addComponent(ctx, childId, Child, { parent: newParentId });
+
+      // Ref should be valid because we set it after the new entity was created
+      expect(Child.read(ctx, childId).parent).toBe(newParentId);
+    });
   });
 
   describe("getBackrefs", () => {

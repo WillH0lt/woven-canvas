@@ -18,8 +18,12 @@ export class EntityBuffer {
   private view: Uint8Array;
   private readonly bytesPerEntity: number;
 
-  // Metadata byte flags
-  private static readonly ALIVE_FLAG = 0x01; // Bit 0 of metadata byte
+  // Metadata byte layout:
+  // - Bit 0: alive flag
+  // - Bits 1-7: generation counter (0-127, wraps around)
+  private static readonly ALIVE_FLAG = 0x01;
+  private static readonly GENERATION_MASK = 0xfe; // Bits 1-7
+  private static readonly GENERATION_SHIFT = 1;
 
   /**
    * Create a new EntityBuffer
@@ -64,18 +68,29 @@ export class EntityBuffer {
 
   /**
    * Create a new entity (mark as alive with no components)
+   * Increments the generation counter to invalidate any stale refs.
    * @param entityId - The entity ID (index in buffer, must be >= 0)
    */
   create(entityId: EntityId): void {
     const offset = entityId * this.bytesPerEntity;
     const view = this.view;
     const bytesPerEntity = this.bytesPerEntity;
+
+    // Get current generation and increment it (wraps at 128)
+    const oldMetadata = view[offset];
+    const oldGeneration =
+      (oldMetadata & EntityBuffer.GENERATION_MASK) >>
+      EntityBuffer.GENERATION_SHIFT;
+    const newGeneration = (oldGeneration + 1) & 0x7f; // 7 bits = 0-127
+
     // Clear all bytes for this entity
     for (let i = 0; i < bytesPerEntity; i++) {
       view[offset + i] = 0;
     }
-    // Set alive flag in metadata byte
-    view[offset] = EntityBuffer.ALIVE_FLAG;
+    // Set alive flag and new generation in metadata byte
+    view[offset] =
+      EntityBuffer.ALIVE_FLAG |
+      (newGeneration << EntityBuffer.GENERATION_SHIFT);
   }
 
   /**
@@ -222,5 +237,19 @@ export class EntityBuffer {
   has(entityId: EntityId): boolean {
     const offset = entityId * this.bytesPerEntity;
     return (this.view[offset] & EntityBuffer.ALIVE_FLAG) !== 0;
+  }
+
+  /**
+   * Get the generation counter for an entity slot.
+   * Used by ref fields to detect stale references after entity recycling.
+   * @param entityId - The entity ID
+   * @returns The generation counter (0-127)
+   */
+  getGeneration(entityId: EntityId): number {
+    const offset = entityId * this.bytesPerEntity;
+    return (
+      (this.view[offset] & EntityBuffer.GENERATION_MASK) >>
+      EntityBuffer.GENERATION_SHIFT
+    );
   }
 }

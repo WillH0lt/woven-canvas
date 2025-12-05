@@ -24,7 +24,6 @@ import {
   EnumField,
   RefField,
   Field,
-  type FieldOptions,
 } from "./fields";
 
 const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
@@ -33,11 +32,9 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
 /**
  * Registry mapping field type names to their field class constructors.
  * Used to instantiate the appropriate field handler for each field type.
+ * Note: RefField is handled separately since it needs EntityBuffer.
  */
-const FIELD_REGISTRY: Record<
-  string,
-  new (fieldDef: any, options?: FieldOptions) => Field
-> = {
+const FIELD_REGISTRY: Record<string, new (fieldDef: any) => Field> = {
   string: StringField,
   number: NumberField,
   boolean: BooleanField,
@@ -45,7 +42,6 @@ const FIELD_REGISTRY: Record<
   array: ArrayField,
   tuple: TupleField,
   enum: EnumField,
-  ref: RefField,
 };
 
 /**
@@ -249,17 +245,16 @@ export class Component<T extends ComponentSchema> {
    * @returns The field handler instance
    */
   private createFieldInstance(fieldDef: FieldDef): Field {
+    if (fieldDef.type === "ref") {
+      return new RefField(fieldDef, this.entityBuffer!);
+    }
+
     const FieldClass = FIELD_REGISTRY[fieldDef.type];
     if (!FieldClass) {
       throw new Error(`Unknown field type: ${fieldDef.type}`);
     }
 
-    const options: FieldOptions = {};
-    if (fieldDef.type === "ref") {
-      options.isEntityAlive = (entityId) => this.entityBuffer!.has(entityId);
-    }
-
-    return new FieldClass(fieldDef, options);
+    return new FieldClass(fieldDef);
   }
 
   public get buffer(): ComponentBuffer<T> {

@@ -2,20 +2,6 @@ import type { EntityId } from "../../types";
 import type { ComponentBuffer, FieldDef } from "../types";
 
 /**
- * Function to check if an entity is alive (used by ref fields for lazy validation)
- */
-export type IsEntityAlive = (entityId: EntityId) => boolean;
-
-/**
- * Options for creating field handler instances.
- * Used to pass extra context needed by special field types (ref).
- */
-export interface FieldOptions {
-  /** Function to check entity liveness (required for ref fields) */
-  isEntityAlive?: IsEntityAlive;
-}
-
-/**
  * Abstract base class for field type handlers.
  * Each field type (string, number, boolean, etc.) extends this class.
  * Field instances are created per-field and store their fieldDef.
@@ -24,7 +10,7 @@ export abstract class Field<TFieldDef extends FieldDef = FieldDef> {
   /** The field definition containing type-specific configuration */
   protected readonly fieldDef: TFieldDef;
 
-  constructor(fieldDef: TFieldDef, _options?: FieldOptions) {
+  constructor(fieldDef: TFieldDef) {
     this.fieldDef = fieldDef;
   }
 
