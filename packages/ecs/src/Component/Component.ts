@@ -28,13 +28,30 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
 /**
+ * Sentinel entity ID used for singleton change events.
+ * Uses max u32 value which will never be used by real entities.
+ */
+export const SINGLETON_ENTITY_ID = 0xffffffff;
+
+/**
+ * Index used to access singleton data in the buffer (always 0 since there's only one instance)
+ */
+const SINGLETON_INDEX = 0;
+
+/**
  * Component class that uses TypedArrays for efficient memory layout
  * Each component has a unique ID for fast query matching
+ *
+ * Can also be used as a singleton (single instance, no entity ID needed)
+ * by setting isSingleton = true during construction.
  */
 export abstract class Component<T extends ComponentSchema> {
   /** The unique component ID (0-based index) assigned during initialization */
   componentId: number = -1;
   name: string;
+
+  /** Whether this component is a singleton (single instance, no entity ID) */
+  readonly isSingleton: boolean;
 
   private initialized: boolean = false;
 
@@ -60,11 +77,13 @@ export abstract class Component<T extends ComponentSchema> {
 
   /**
    * Create a new component definition
+   * @param name - The component name
    * @param schema - The component schema built using field builders
-   * @param id - The unique index assigned by World
+   * @param isSingleton - Whether this is a singleton (default: false)
    */
-  constructor(name: string, schema: T) {
+  constructor(name: string, schema: T, isSingleton: boolean = false) {
     this.name = name;
+    this.isSingleton = isSingleton;
 
     this.schema = {};
     this.fieldNames = [];
@@ -95,6 +114,9 @@ export abstract class Component<T extends ComponentSchema> {
     this.componentId = id;
     this.eventBuffer = eventBuffer;
 
+    // Singletons only need buffer space for 1 entity
+    const bufferSize = this.isSingleton ? 1 : maxEntities;
+
     const bufferProxy: any = {};
 
     // Initialize storage arrays for each field
@@ -102,7 +124,7 @@ export abstract class Component<T extends ComponentSchema> {
       // Get the appropriate handler for this field type
       const field = this.getField(fieldDef.type);
       const { buffer, view } = field.initializeStorage(
-        maxEntities,
+        bufferSize,
         fieldDef,
         BufferConstructor
       );
@@ -114,10 +136,22 @@ export abstract class Component<T extends ComponentSchema> {
     this._buffer = bufferProxy as ComponentBuffer<T>;
 
     this.initializeMasters();
+
+    // Initialize singleton with default values
+    if (this.isSingleton) {
+      this.initializeSingletonDefaults();
+    }
   }
 
   public get buffer(): ComponentBuffer<T> {
     return this._buffer as ComponentBuffer<T>;
+  }
+
+  /**
+   * Check if this component is initialized
+   */
+  isInitialized(): boolean {
+    return this.initialized;
   }
 
   /**
@@ -140,6 +174,25 @@ export abstract class Component<T extends ComponentSchema> {
     this._buffer = buffer;
     this.eventBuffer = eventBuffer;
     this.initializeMasters();
+  }
+
+  /**
+   * Initialize singleton with default values
+   */
+  private initializeSingletonDefaults(): void {
+    if (this._buffer === null) {
+      throw new Error("Component buffers not initialized");
+    }
+
+    for (let i = 0; i < this.fieldNames.length; i++) {
+      const fieldName = this.fieldNames[i];
+      const array = (this._buffer as any)[fieldName];
+      const fieldDef = this.schema[fieldName];
+      const field = this.getField(fieldDef.type);
+
+      const value = field.getDefaultValue(fieldDef);
+      field.setValue(array, SINGLETON_INDEX, value);
+    }
   }
 
   private initializeMasters(): void {
@@ -261,6 +314,55 @@ export abstract class Component<T extends ComponentSchema> {
 
     return this.writableMaster;
   }
+
+  /**
+   * Read a singleton's data (no entity ID needed).
+   * Only valid for singleton components.
+   * @returns The readonly singleton data
+   * @internal - Use readSingleton(Component) for proper initialization handling
+   */
+  readSingleton(): Readonly<InferComponentType<T>> {
+    if (!this.isSingleton) {
+      throw new Error(
+        `Component "${this.name}" is not a singleton. Use read(entityId) instead.`
+      );
+    }
+    if (!this.initialized) {
+      throw new Error(
+        `Singleton "${this.name}" has not been initialized. ` +
+          `Use readSingleton(${this.name}) to access it, which handles initialization.`
+      );
+    }
+    this.readonlyEntityId = SINGLETON_INDEX;
+    return this.readonlyMaster;
+  }
+
+  /**
+   * Write to a singleton's data (no entity ID needed).
+   * Only valid for singleton components.
+   * Automatically pushes a CHANGED event using SINGLETON_ENTITY_ID.
+   * @returns The writable singleton data
+   * @internal - Use writeSingleton(Component) for proper initialization handling
+   */
+  writeSingleton(): InferComponentType<T> {
+    if (!this.isSingleton) {
+      throw new Error(
+        `Component "${this.name}" is not a singleton. Use write(entityId) instead.`
+      );
+    }
+    if (!this.initialized) {
+      throw new Error(
+        `Singleton "${this.name}" has not been initialized. ` +
+          `Use writeSingleton(${this.name}) to access it, which handles initialization.`
+      );
+    }
+    this.writableEntityId = SINGLETON_INDEX;
+
+    // Push change event using sentinel entity ID
+    this.eventBuffer?.pushChanged(SINGLETON_ENTITY_ID, this.componentId);
+
+    return this.writableMaster;
+  }
 }
 
 /**
@@ -277,11 +379,11 @@ export abstract class Component<T extends ComponentSchema> {
  * ```typescript
  * import { field, defineComponent } from "@infinitecanvas/ecs";
  *
- * export const Position = defineComponent({
+ * export const Position = defineComponent("Position", {
  *   x: field.float32(),
  *   y: field.float32(),
  * });
- *
+ * ```
  */
 export function defineComponent<T extends ComponentSchema>(
   name: string,
@@ -289,9 +391,43 @@ export function defineComponent<T extends ComponentSchema>(
 ): Component<T> {
   class DefinedComponent extends Component<T> {
     constructor() {
-      super(name, schema);
+      super(name, schema, false);
     }
   }
 
   return new DefinedComponent();
+}
+
+/**
+ * Define a singleton with a name and schema.
+ * A singleton is a component with exactly one instance that always exists.
+ * No entity ID is needed to access it.
+ *
+ * @template T - The singleton schema type
+ * @param name - The name of the singleton (e.g., "Mouse", "Time")
+ * @param schema - The singleton schema built using field builders
+ * @returns A Component instance configured as a singleton
+ *
+ * @example
+ * ```typescript
+ * import { field, defineSingleton } from "@infinitecanvas/ecs";
+ *
+ * export const Mouse = defineSingleton("Mouse", {
+ *   x: field.float32().default(0),
+ *   y: field.float32().default(0),
+ *   pressed: field.boolean().default(false),
+ * });
+ * ```
+ */
+export function defineSingleton<T extends ComponentSchema>(
+  name: string,
+  schema: T
+): Component<T> {
+  class DefinedSingleton extends Component<T> {
+    constructor() {
+      super(name, schema, true);
+    }
+  }
+
+  return new DefinedSingleton();
 }

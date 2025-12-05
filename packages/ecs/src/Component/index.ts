@@ -1,4 +1,9 @@
-export { Component, defineComponent } from "./Component";
+export {
+  Component,
+  defineComponent,
+  defineSingleton,
+  SINGLETON_ENTITY_ID,
+} from "./Component";
 export { field } from "./fieldBuilders";
 export type {
   ComponentSchema,

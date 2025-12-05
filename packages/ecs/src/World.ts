@@ -34,12 +34,12 @@ export class World {
 
   /**
    * Create a new world instance
+   * @param components - Array of components to register
    * @param options - Configuration options for the world
    * @example
    * ```typescript
    * import { Position, Velocity } from "./components";
-   * const world = new World({
-   *   components: { Position, Velocity },
+   * const world = new World([Position, Velocity], {
    *   threads: 4,
    *   maxEntities: 50_000
    * });
@@ -60,10 +60,9 @@ export class World {
 
     this.workerManager = new WorkerManager(threads);
 
-    // Create the event buffer first so we can pass it to components
     const eventBuffer = new EventBuffer(maxEvents);
 
-    // initialize each component and build component map
+    // Initialize each component and build component map
     const componentMap: Record<string, Component<any>> = {};
     for (const component of components) {
       component.initialize(this.componentIndex++, maxEntities, eventBuffer);

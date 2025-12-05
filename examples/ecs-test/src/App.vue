@@ -21,6 +21,7 @@ import {
   createEntity,
   addComponent,
   World,
+  useSingleton,
   type Context,
 } from "@infinitecanvas/ecs";
 import { ref } from "vue";
@@ -52,16 +53,15 @@ const query = defineQuery((q) =>
   q.with(components.Position, components.Velocity)
 );
 
+const MouseRef = useSingleton(components.Mouse);
+
 // Define main thread systems
 const system1 = defineSystem((ctx: Context) => {
-  const entities = query.current(ctx);
-  for (const eid of entities) {
-    const position = components.Position.write(eid);
-    const velocity = components.Velocity.read(eid);
+  console.log("executing");
 
-    position.x += velocity.x;
-    position.y += velocity.y;
-  }
+  const mouse = MouseRef.write();
+  mouse.x += 1;
+  mouse.y += 1;
 });
 
 // Define worker system

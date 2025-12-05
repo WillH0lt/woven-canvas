@@ -1,5 +1,7 @@
 import type { Context, EntityId } from "./types";
 import type { Component } from "./Component";
+import type { ComponentSchema } from "./Component/types";
+import { initializeComponentInWorker } from "./Worker";
 
 /**
  * Create a new entity in a worker thread.
@@ -146,4 +148,31 @@ export function hasComponent(
   }
 
   return ctx.entityBuffer.hasComponent(entityId, component.componentId);
+}
+
+/**
+ * Ensure a singleton is initialized in the current context.
+ * On the main thread, singletons are initialized by the World.
+ * In workers, this lazily initializes the singleton from transfer data.
+ */
+function ensureSingletonInitialized<T extends ComponentSchema>(
+  singleton: Component<T>
+): void {
+  if (!singleton.isSingleton) {
+    throw new Error(
+      `"${singleton.name}" is not a singleton. Use defineSingleton() to create singletons.`
+    );
+  }
+
+  if (singleton.isInitialized()) {
+    return;
+  }
+
+  // Try to initialize from worker transfer data
+  if (!initializeComponentInWorker(singleton)) {
+    throw new Error(
+      `Singleton "${singleton.name}" could not be initialized. ` +
+        `Make sure it's registered with the World on the main thread.`
+    );
+  }
 }
