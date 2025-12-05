@@ -63,7 +63,7 @@ describe("Query", () => {
 
       // Query for entities with Position
       const positionQuery = useQuery((q) => q.with(Position));
-      const results = Array.from(positionQuery.current(ctx));
+      const results = positionQuery.current(ctx);
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e1);
@@ -89,7 +89,7 @@ describe("Query", () => {
 
       // Query for entities with both Position AND Velocity
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
-      const results = Array.from(movingQuery.current(ctx));
+      const results = movingQuery.current(ctx);
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e1);
@@ -114,7 +114,7 @@ describe("Query", () => {
 
       // Query for Position entities that are NOT enemies
       const nonEnemyQuery = useQuery((q) => q.with(Position).without(Enemy));
-      const results = Array.from(nonEnemyQuery.current(ctx));
+      const results = nonEnemyQuery.current(ctx);
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e2);
@@ -137,7 +137,7 @@ describe("Query", () => {
 
       // Query for entities that are either Enemy OR Player
       const characterQuery = useQuery((q) => q.any(Enemy, Player));
-      const results = Array.from(characterQuery.current(ctx));
+      const results = characterQuery.current(ctx);
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e1);
@@ -171,7 +171,7 @@ describe("Query", () => {
       const complexQuery = useQuery((q) =>
         q.with(Position).any(Player, Enemy).without(Velocity)
       );
-      const results = Array.from(complexQuery.current(ctx));
+      const results = complexQuery.current(ctx);
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e2);
@@ -189,7 +189,7 @@ describe("Query", () => {
       // Don't add Position component
 
       const positionQuery = useQuery((q) => q.with(Position));
-      const results = Array.from(positionQuery.current(ctx));
+      const results = positionQuery.current(ctx);
 
       expect(results).toHaveLength(0);
     });
@@ -256,7 +256,7 @@ describe("Query", () => {
       const perfQuery = useQuery((q) =>
         q.with(Position, Velocity).without(Enemy)
       );
-      const results = Array.from(perfQuery.current(ctx));
+      const results = perfQuery.current(ctx);
       const endTime = performance.now();
 
       // Entities with Position+Velocity but not Enemy
@@ -358,7 +358,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Position);
 
       const emptyQuery = useQuery((q) => q.with(Enemy));
-      const results = Array.from(emptyQuery.current(ctx));
+      const results = emptyQuery.current(ctx);
 
       expect(results).toHaveLength(0);
     });
@@ -375,7 +375,7 @@ describe("Query", () => {
       }
 
       const allMatchQuery = useQuery((q) => q.with(Position));
-      const results = Array.from(allMatchQuery.current(ctx));
+      const results = allMatchQuery.current(ctx);
 
       expect(results).toHaveLength(10);
       for (const entity of entities) {
@@ -410,7 +410,7 @@ describe("Query", () => {
       const complexQuery = useQuery((q) =>
         q.with(Position, Health).any(Player, Enemy).without(Velocity)
       );
-      const results = Array.from(complexQuery.current(ctx));
+      const results = complexQuery.current(ctx);
 
       expect(results).toHaveLength(2);
       expect(results).toContain(e1);
@@ -431,17 +431,17 @@ describe("Query", () => {
       addComponent(ctx, e1, Player);
 
       const query1 = useQuery((q) => q.with(Position));
-      const results1 = Array.from(query1.current(ctx));
+      const results1 = query1.current(ctx);
       expect(results1).toContain(e1);
 
       const query2 = useQuery((q) =>
         q.with(Position, Velocity, Health, Enemy, Player)
       );
-      const results2 = Array.from(query2.current(ctx));
+      const results2 = query2.current(ctx);
       expect(results2).toContain(e1);
 
       const query3 = useQuery((q) => q.with(Position).without(Velocity));
-      const results3 = Array.from(query3.current(ctx));
+      const results3 = query3.current(ctx);
       expect(results3).not.toContain(e1);
     });
   });
@@ -454,7 +454,7 @@ describe("Query", () => {
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
 
       // Initially no added entities
-      let added = Array.from(movingQuery.added(ctx));
+      let added = movingQuery.added(ctx);
       expect(added).toHaveLength(0);
 
       // Create an entity that matches the query
@@ -466,12 +466,12 @@ describe("Query", () => {
       ctx.tick++;
 
       // Should appear in added()
-      added = Array.from(movingQuery.added(ctx));
+      added = movingQuery.added(ctx);
       expect(added).toHaveLength(1);
       expect(added).toContain(e1);
 
       // Second call in same frame should return cached value
-      added = Array.from(movingQuery.added(ctx));
+      added = movingQuery.added(ctx);
       expect(added).toHaveLength(1);
       expect(added).toContain(e1);
     });
@@ -491,7 +491,7 @@ describe("Query", () => {
       movingQuery.added(ctx);
 
       // Entity doesn't match query yet
-      expect(Array.from(movingQuery.current(ctx))).toHaveLength(0);
+      expect(movingQuery.current(ctx)).toHaveLength(0);
 
       // Now add Velocity - entity should match
       addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
@@ -500,12 +500,12 @@ describe("Query", () => {
       ctx.tick++;
 
       // Entity should now appear in added()
-      const added = Array.from(movingQuery.added(ctx));
+      const added = movingQuery.added(ctx);
       expect(added).toHaveLength(1);
       expect(added).toContain(e1);
 
       // And in current()
-      expect(Array.from(movingQuery.current(ctx))).toContain(e1);
+      expect(movingQuery.current(ctx)).toContain(e1);
     });
 
     it("should return entity in removed() when entity is deleted", () => {
@@ -531,7 +531,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Should appear in removed()
-      const removed = Array.from(movingQuery.removed(ctx));
+      const removed = movingQuery.removed(ctx);
       expect(removed).toHaveLength(1);
       expect(removed).toContain(e1);
     });
@@ -553,7 +553,7 @@ describe("Query", () => {
       movingQuery.removed(ctx);
 
       // Entity matches query
-      expect(Array.from(movingQuery.current(ctx))).toContain(e1);
+      expect(movingQuery.current(ctx)).toContain(e1);
 
       // Remove Velocity - entity should no longer match
       removeComponent(ctx, e1, Velocity);
@@ -562,12 +562,12 @@ describe("Query", () => {
       ctx.tick++;
 
       // Entity should appear in removed()
-      const removed = Array.from(movingQuery.removed(ctx));
+      const removed = movingQuery.removed(ctx);
       expect(removed).toHaveLength(1);
       expect(removed).toContain(e1);
 
       // And should no longer be in current()
-      expect(Array.from(movingQuery.current(ctx))).not.toContain(e1);
+      expect(movingQuery.current(ctx)).not.toContain(e1);
     });
 
     it("should not return entity in removed() if component removal doesn't affect query match", () => {
@@ -595,11 +595,11 @@ describe("Query", () => {
       ctx.tick++;
 
       // Entity should NOT appear in removed() since it still matches
-      const removed = Array.from(positionQuery.removed(ctx));
+      const removed = positionQuery.removed(ctx);
       expect(removed).toHaveLength(0);
 
       // Should still be in current()
-      expect(Array.from(positionQuery.current(ctx))).toContain(e1);
+      expect(positionQuery.current(ctx)).toContain(e1);
     });
 
     it("should handle without() clause correctly for added()", () => {
@@ -620,7 +620,7 @@ describe("Query", () => {
       nonEnemyQuery.removed(ctx);
 
       // Entity should not be in current
-      expect(Array.from(nonEnemyQuery.current(ctx))).not.toContain(e1);
+      expect(nonEnemyQuery.current(ctx)).not.toContain(e1);
 
       // Remove Enemy - now entity should match
       removeComponent(ctx, e1, Enemy);
@@ -629,7 +629,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Entity should appear in added()
-      const added = Array.from(nonEnemyQuery.added(ctx));
+      const added = nonEnemyQuery.added(ctx);
       expect(added).toHaveLength(1);
       expect(added).toContain(e1);
     });
@@ -651,7 +651,7 @@ describe("Query", () => {
       nonEnemyQuery.removed(ctx);
 
       // Entity should be in current
-      expect(Array.from(nonEnemyQuery.current(ctx))).toContain(e1);
+      expect(nonEnemyQuery.current(ctx)).toContain(e1);
 
       // Add Enemy - now entity should NOT match
       addComponent(ctx, e1, Enemy);
@@ -660,12 +660,12 @@ describe("Query", () => {
       ctx.tick++;
 
       // Entity should appear in removed()
-      const removed = Array.from(nonEnemyQuery.removed(ctx));
+      const removed = nonEnemyQuery.removed(ctx);
       expect(removed).toHaveLength(1);
       expect(removed).toContain(e1);
 
       // Should not be in current anymore
-      expect(Array.from(nonEnemyQuery.current(ctx))).not.toContain(e1);
+      expect(nonEnemyQuery.current(ctx)).not.toContain(e1);
     });
 
     it("should handle multiple entities being added and removed", () => {
@@ -695,7 +695,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Check added
-      let added = Array.from(movingQuery.added(ctx));
+      let added = movingQuery.added(ctx);
       expect(added).toHaveLength(2);
       expect(added).toContain(e1);
       expect(added).toContain(e2);
@@ -708,13 +708,13 @@ describe("Query", () => {
       ctx.tick++;
 
       // Check removed
-      const removed = Array.from(movingQuery.removed(ctx));
+      const removed = movingQuery.removed(ctx);
       expect(removed).toHaveLength(1);
       expect(removed).toContain(e1);
 
       // e2 should still be in current
-      expect(Array.from(movingQuery.current(ctx))).toContain(e2);
-      expect(Array.from(movingQuery.current(ctx))).not.toContain(e1);
+      expect(movingQuery.current(ctx)).toContain(e2);
+      expect(movingQuery.current(ctx)).not.toContain(e1);
     });
 
     it("should only return entity once even if multiple relevant components change", () => {
@@ -739,7 +739,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Entity should appear only once in added()
-      const added = Array.from(query.added(ctx));
+      const added = query.added(ctx);
       expect(added).toHaveLength(1);
       expect(added).toContain(e1);
     });
@@ -762,11 +762,11 @@ describe("Query", () => {
       ctx.tick++;
 
       // First call to current()
-      const current1 = Array.from(movingQuery.current(ctx));
+      const current1 = movingQuery.current(ctx);
       expect(current1).toHaveLength(2);
 
       // Second call in same frame should return identical results
-      const current2 = Array.from(movingQuery.current(ctx));
+      const current2 = movingQuery.current(ctx);
       expect(current2).toEqual(current1);
 
       // Even if we create more entities during the same frame...
@@ -775,12 +775,12 @@ describe("Query", () => {
       addComponent(ctx, e3, Velocity);
 
       // ...the results should still be the same within this frame
-      const current3 = Array.from(movingQuery.current(ctx));
+      const current3 = movingQuery.current(ctx);
       expect(current3).toEqual(current1);
 
       // But on the next frame, we see the new entity
       ctx.tick++;
-      const current4 = Array.from(movingQuery.current(ctx));
+      const current4 = movingQuery.current(ctx);
       expect(current4).toHaveLength(3);
       expect(current4).toContain(e3);
     });

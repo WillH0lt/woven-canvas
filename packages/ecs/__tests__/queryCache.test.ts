@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { QueryCache } from "../src/QueryCache";
 
 describe("QueryCache", () => {

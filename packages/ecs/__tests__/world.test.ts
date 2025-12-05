@@ -524,8 +524,8 @@ describe("World", () => {
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
 
       // Query results are per-context
-      const world1Results = Array.from(movingQuery.current(ctx1));
-      const world2Results = Array.from(movingQuery.current(ctx2));
+      const world1Results = movingQuery.current(ctx1);
+      const world2Results = movingQuery.current(ctx2);
 
       expect(world1Results).toHaveLength(2);
       expect(world2Results).toHaveLength(5);
