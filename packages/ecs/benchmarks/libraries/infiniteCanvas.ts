@@ -3,7 +3,7 @@ import {
   field,
   defineSystem,
   defineComponent,
-  defineQuery,
+  useQuery,
   createEntity,
   addComponent,
   removeComponent,
@@ -43,7 +43,7 @@ const library: BenchmarkLibrary = {
     const Position = this.Position;
     const Velocity = this.Velocity;
 
-    const query = defineQuery((q) => q.with(Position, Velocity));
+    const query = useQuery((q) => q.with(Position, Velocity));
 
     this.moveSystem = defineSystem((ctx: Context) => {
       const posX = Position.buffer.x;

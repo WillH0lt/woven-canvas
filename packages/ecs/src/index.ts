@@ -16,6 +16,6 @@ export {
 export { useSingleton, type Singleton } from "./Singleton";
 export { defineSystem, defineWorkerSystem } from "./System";
 export type { Context, System, MainThreadSystem, WorkerSystem } from "./types";
-export { defineQuery, type QueryBuilder, type Query } from "./Query";
+export { useQuery, type QueryBuilder, type Query } from "./Query";
 export type { EntityBuffer } from "./EntityBuffer";
 export { EventBuffer, EventType } from "./EventBuffer";

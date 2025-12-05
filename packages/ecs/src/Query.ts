@@ -44,7 +44,7 @@ function masksToHash(masks: QueryMasks): string {
 
 /**
  * A lazily-initialized query that caches matching entities.
- * Created via defineQuery() and connects to the query cache on first use.
+ * Created via useQuery() and connects to the query cache on first use.
  * Works identically on main thread and worker threads.
  *
  * The query updates its own cache by scanning the EventBuffer. The first call to
@@ -501,7 +501,7 @@ export class QueryBuilder {
    *
    * @example
    * // Query for entities with Velocity, but also access Position component
-   * const query = defineQuery((q) => q.any(Velocity).using(Position));
+   * const query = useQuery((q) => q.any(Velocity).using(Position));
    */
   using(...components: Component<any>[]): this {
     for (const component of components) {
@@ -551,13 +551,13 @@ export class QueryBuilder {
  * @returns A Query object with a current(ctx) method to get matching entities
  *
  * @example
- * import { setupWorker, defineQuery, type Context } from "@infinitecanvas/ecs";
+ * import { setupWorker, useQuery, type Context } from "@infinitecanvas/ecs";
  * import { Position, Velocity } from "./components";
  *
  * setupWorker(execute);
  *
  * // Define query at module scope
- * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
+ * const movingEntities = useQuery((q) => q.with(Position, Velocity));
  *
  * function execute(ctx: Context) {
  *   // Query lazily initializes on first call to current()
@@ -567,6 +567,6 @@ export class QueryBuilder {
  *   }
  * }
  */
-export function defineQuery(builder: (q: QueryBuilder) => QueryBuilder): Query {
+export function useQuery(builder: (q: QueryBuilder) => QueryBuilder): Query {
   return new Query(builder);
 }

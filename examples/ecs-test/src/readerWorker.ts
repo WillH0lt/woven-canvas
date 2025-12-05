@@ -1,6 +1,6 @@
 import {
   setupWorker,
-  defineQuery,
+  useQuery,
   useSingleton,
   type Context,
 } from "@infinitecanvas/ecs";
@@ -9,9 +9,7 @@ import { Position, Velocity, Mouse } from "./components";
 setupWorker(execute);
 
 // Query that tracks changes to Position
-const entitiesQuery = defineQuery((q) =>
-  q.with(Velocity).withTracked(Position)
-);
+const entitiesQuery = useQuery((q) => q.with(Velocity).withTracked(Position));
 
 const MouseRef = useSingleton(Mouse);
 

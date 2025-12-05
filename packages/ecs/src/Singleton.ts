@@ -201,7 +201,7 @@ export class Singleton<T extends ComponentSchema> {
 
 /**
  * Create a singleton reference with independent change tracking.
- * Similar to defineQuery(), each useSingleton() call creates a new
+ * Similar to useQuery(), each useSingleton() call creates a new
  * reference that tracks changes independently.
  *
  * @param singleton - The singleton component created with defineSingleton()

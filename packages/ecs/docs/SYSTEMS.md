@@ -52,12 +52,12 @@ const physicsSystem = defineWorkerSystem(
 In your worker file (e.g., `physicsWorker.ts`):
 
 ```typescript
-import { setupWorker, defineQuery, type Context } from "@infinitecanvas/ecs";
+import { setupWorker, useQuery, type Context } from "@infinitecanvas/ecs";
 import { Position, Velocity } from "./components";
 
 setupWorker(execute);
 
-const movingEntities = defineQuery((q) => q.with(Position, Velocity));
+const movingEntities = useQuery((q) => q.with(Position, Velocity));
 
 function execute(ctx: Context) {
   for (const entityId of movingEntities.current(ctx)) {

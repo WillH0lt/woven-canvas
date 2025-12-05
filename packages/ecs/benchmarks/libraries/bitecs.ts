@@ -1,7 +1,7 @@
 import {
   createWorld,
   defineComponent,
-  defineQuery,
+  useQuery,
   defineSystem,
   addComponent,
   removeComponent,
@@ -30,7 +30,7 @@ const library: BenchmarkLibrary = {
     this.Position = defineComponent({ x: f32, y: f32 });
     this.Velocity = defineComponent({ x: f32, y: f32, speed: ui16 });
 
-    query = defineQuery([this.Position, this.Velocity]);
+    query = useQuery([this.Position, this.Velocity]);
 
     const Position = this.Position;
     const Velocity = this.Velocity;

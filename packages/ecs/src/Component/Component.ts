@@ -45,7 +45,7 @@ const SINGLETON_INDEX = 0;
  * Can also be used as a singleton (single instance, no entity ID needed)
  * by setting isSingleton = true during construction.
  */
-export abstract class Component<T extends ComponentSchema> {
+export class Component<T extends ComponentSchema> {
   /** The unique component ID (0-based index) assigned during initialization */
   componentId: number = -1;
   name: string;
@@ -389,13 +389,7 @@ export function defineComponent<T extends ComponentSchema>(
   name: string,
   schema: T
 ): Component<T> {
-  class DefinedComponent extends Component<T> {
-    constructor() {
-      super(name, schema, false);
-    }
-  }
-
-  return new DefinedComponent();
+  return new Component<T>(name, schema, false);
 }
 
 /**
@@ -423,11 +417,5 @@ export function defineSingleton<T extends ComponentSchema>(
   name: string,
   schema: T
 ): Component<T> {
-  class DefinedSingleton extends Component<T> {
-    constructor() {
-      super(name, schema, true);
-    }
-  }
-
-  return new DefinedSingleton();
+  return new Component<T>(name, schema, true);
 }

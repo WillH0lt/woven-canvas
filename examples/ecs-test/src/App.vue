@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import {
-  defineQuery,
+  useQuery,
   defineSystem,
   defineWorkerSystem,
   createEntity,
@@ -49,9 +49,7 @@ const block1 = createEntity(ctx);
 addComponent(ctx, block1, components.Velocity, { x: 50, y: 50 });
 addComponent(ctx, block1, components.Position, { x: 200, y: 200 });
 
-const query = defineQuery((q) =>
-  q.with(components.Position, components.Velocity)
-);
+const query = useQuery((q) => q.with(components.Position, components.Velocity));
 
 const MouseRef = useSingleton(components.Mouse);
 
