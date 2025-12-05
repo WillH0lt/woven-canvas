@@ -121,7 +121,7 @@ export interface InitMessage {
   poolSAB: SharedArrayBuffer;
   poolBucketCount: number;
   poolSize: number;
-  componentData: ComponentTransferData;
+  componentTransferMap: ComponentTransferMap;
   maxEntities: number;
   maxEvents: number;
   componentCount: number;

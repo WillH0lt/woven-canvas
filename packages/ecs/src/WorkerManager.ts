@@ -79,9 +79,9 @@ export class WorkerManager {
       worker.addEventListener("message", messageHandler);
 
       // Serialize component metadata and buffers for reconstruction in worker
-      const componentData: ComponentTransferMap = {};
+      const componentTransferMap: ComponentTransferMap = {};
       for (const [name, component] of Object.entries(ctx.components)) {
-        componentData[name] = {
+        componentTransferMap[name] = {
           name,
           componentId: component.componentId,
           buffer: component.buffer, // Transfer the SharedArrayBuffer-backed typed arrays
@@ -99,7 +99,7 @@ export class WorkerManager {
         poolSAB: ctx.pool.getBuffer(),
         poolBucketCount: ctx.pool.getBucketCount(),
         poolSize: ctx.pool.getSize(),
-        componentData,
+        componentTransferMap,
         maxEntities: ctx.maxEntities,
         maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,

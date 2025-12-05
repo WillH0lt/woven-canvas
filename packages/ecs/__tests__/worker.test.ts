@@ -91,9 +91,9 @@ describe("Worker", () => {
       const ctx = world.getContext();
 
       // Create component transfer data from the context
-      const componentData: ComponentTransferMap = {};
+      const componentTransferMap: ComponentTransferMap = {};
       for (const [name, component] of Object.entries(ctx.components)) {
-        componentData[name] = {
+        componentTransferMap[name] = {
           name,
           componentId: component.componentId,
           buffer: component.buffer,
@@ -112,7 +112,7 @@ describe("Worker", () => {
         poolSAB: pool.getBuffer(),
         poolBucketCount: pool.getBucketCount(),
         poolSize: pool.getSize(),
-        componentData,
+        componentTransferMap,
         maxEntities: ctx.maxEntities,
         maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,
@@ -145,9 +145,9 @@ describe("Worker", () => {
       const ctx = world.getContext();
 
       // Create component transfer data from the context
-      const componentData: ComponentTransferMap = {};
+      const componentTransferMap: ComponentTransferMap = {};
       for (const [name, component] of Object.entries(ctx.components)) {
-        componentData[name] = {
+        componentTransferMap[name] = {
           name,
           componentId: component.componentId,
           buffer: component.buffer,
@@ -167,7 +167,7 @@ describe("Worker", () => {
         poolSAB: pool.getBuffer(),
         poolBucketCount: pool.getBucketCount(),
         poolSize: pool.getSize(),
-        componentData,
+        componentTransferMap,
         maxEntities: ctx.maxEntities,
         maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,
@@ -246,9 +246,9 @@ describe("Worker", () => {
       const ctx = world.getContext();
 
       // Create component transfer data from the context
-      const componentData: ComponentTransferMap = {};
+      const componentTransferMap: ComponentTransferMap = {};
       for (const [name, component] of Object.entries(ctx.components)) {
-        componentData[name] = {
+        componentTransferMap[name] = {
           name,
           componentId: component.componentId,
           buffer: component.buffer,
@@ -268,7 +268,7 @@ describe("Worker", () => {
         poolSAB: pool.getBuffer(),
         poolBucketCount: pool.getBucketCount(),
         poolSize: pool.getSize(),
-        componentData,
+        componentTransferMap,
         maxEntities: ctx.maxEntities,
         maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,
@@ -314,9 +314,9 @@ describe("Worker", () => {
       const ctx = world.getContext();
 
       // Create component transfer data from the context
-      const componentData: ComponentTransferMap = {};
+      const componentTransferMap: ComponentTransferMap = {};
       for (const [name, component] of Object.entries(ctx.components)) {
-        componentData[name] = {
+        componentTransferMap[name] = {
           name,
           componentId: component.componentId,
           buffer: component.buffer,
@@ -335,7 +335,7 @@ describe("Worker", () => {
         poolSAB: pool.getBuffer(),
         poolBucketCount: pool.getBucketCount(),
         poolSize: pool.getSize(),
-        componentData,
+        componentTransferMap,
         maxEntities: ctx.maxEntities,
         maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,
@@ -381,9 +381,9 @@ describe("Worker", () => {
       addComponent(ctx, eid, TestPosition, { x: 42, y: 24 });
 
       // Create component transfer data from the context
-      const componentData: ComponentTransferMap = {};
+      const componentTransferMap: ComponentTransferMap = {};
       for (const [name, component] of Object.entries(ctx.components)) {
-        componentData[name] = {
+        componentTransferMap[name] = {
           name,
           componentId: component.componentId,
           buffer: component.buffer,
@@ -402,7 +402,7 @@ describe("Worker", () => {
         poolSAB: pool.getBuffer(),
         poolBucketCount: pool.getBucketCount(),
         poolSize: pool.getSize(),
-        componentData,
+        componentTransferMap,
         maxEntities: ctx.maxEntities,
         maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,
@@ -446,9 +446,9 @@ describe("Worker", () => {
       const ctx = world.getContext();
 
       // Create component transfer data
-      const componentData: ComponentTransferMap = {};
+      const componentTransferMap: ComponentTransferMap = {};
       for (const [name, component] of Object.entries(ctx.components)) {
-        componentData[name] = {
+        componentTransferMap[name] = {
           name,
           componentId: component.componentId,
           buffer: component.buffer,
@@ -467,7 +467,7 @@ describe("Worker", () => {
         poolSAB: pool.getBuffer(),
         poolBucketCount: pool.getBucketCount(),
         poolSize: pool.getSize(),
-        componentData,
+        componentTransferMap,
         maxEntities: ctx.maxEntities,
         maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,

@@ -95,7 +95,7 @@ function handleMessage(
   try {
     if (type === "init") {
       // Store component transfer data for lazy initialization
-      internalContext.ComponentTransferMap = e.data.componentData;
+      internalContext.ComponentTransferMap = e.data.componentTransferMap;
 
       const eventBuffer = EventBuffer.fromTransfer(e.data.eventSAB);
       const pool = Pool.fromTransfer(
