@@ -80,12 +80,12 @@ function handleMessage(
   e: MessageEvent<WorkerIncomingMessage>,
   self: any
 ): void {
-  const { type, index } = e.data;
+  const { type, threadIndex } = e.data;
 
   if (!internalContext) {
     sendError(
       self,
-      index,
+      threadIndex,
       "Worker not initialized. Call defineSystem(...) first."
     );
 
@@ -135,9 +135,11 @@ function handleMessage(
         maxEvents: e.data.maxEvents,
         componentCount: e.data.componentCount,
         tick: 0,
+        threadIndex: e.data.threadIndex,
+        threadCount: e.data.threadCount,
       };
 
-      sendResult(self, index);
+      sendResult(self, threadIndex);
     } else if (type === "execute") {
       // Execute the system
       if (!internalContext.context) {
@@ -145,27 +147,28 @@ function handleMessage(
       }
       // Increment frame number so queries know to update their caches
       internalContext.context.tick++;
+      internalContext.context.threadIndex = threadIndex;
       internalContext.execute(internalContext.context);
-      sendResult(self, index);
+      sendResult(self, threadIndex);
     }
   } catch (error: any) {
-    sendError(self, index, error.message);
+    sendError(self, threadIndex, error.message);
   }
 }
 
 /**
  * Send a successful result back to the main thread
  */
-function sendResult(self: any, index: number): void {
-  const message: WorkerSuccessResponse = { index, result: true };
+function sendResult(self: any, threadIndex: number): void {
+  const message: WorkerSuccessResponse = { threadIndex, result: true };
   self.postMessage(message);
 }
 
 /**
  * Send an error back to the main thread
  */
-function sendError(self: any, index: number, error: string): void {
-  const message: WorkerErrorResponse = { index, error };
+function sendError(self: any, threadIndex: number, error: string): void {
+  const message: WorkerErrorResponse = { threadIndex, error };
   self.postMessage(message);
 }
 

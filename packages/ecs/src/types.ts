@@ -29,6 +29,18 @@ export interface Context {
   componentCount: number;
   // Tick incremented each time execute is called.
   tick: number;
+  /**
+   * Index of the current worker thread (0-based).
+   * On the main thread, this is always 0.
+   * In workers, this identifies which partition of work this thread handles.
+   */
+  threadIndex: number;
+  /**
+   * Total number of worker threads for the current system.
+   * On the main thread, this is always 1.
+   * In workers, queries automatically partition results based on threadIndex/threadCount.
+   */
+  threadCount: number;
 }
 
 /**
@@ -88,11 +100,39 @@ export interface MainThreadSystem extends BaseSystem {
 }
 
 /**
+ * Priority levels for worker system execution
+ */
+export type WorkerPriority = "low" | "normal" | "high";
+
+/**
+ * Options for configuring worker system behavior
+ */
+export interface WorkerSystemOptions {
+  /**
+   * Number of worker threads to spawn for this system.
+   * Each thread runs the same worker code in parallel.
+   * @default 1
+   */
+  threads?: number;
+  /**
+   * Priority level for worker scheduling.
+   * Higher priority workers are started first when multiple worker systems run together.
+   * - 'high': Started first (priority value: 2)
+   * - 'normal': Default priority (priority value: 1)
+   * - 'low': Started last (priority value: 0)
+   * @default 'normal'
+   */
+  priority?: WorkerPriority;
+}
+
+/**
  * Worker system
  */
 export interface WorkerSystem extends BaseSystem {
   readonly type: "worker";
   readonly path: string;
+  readonly threads: number;
+  readonly priority: WorkerPriority;
 }
 
 /**
@@ -115,7 +155,6 @@ export type ComponentTransferMap = Record<string, ComponentTransferData>;
  */
 export interface InitMessage {
   type: "init";
-  index: number;
   entitySAB: SharedArrayBuffer;
   eventSAB: SharedArrayBuffer;
   poolSAB: SharedArrayBuffer;
@@ -125,6 +164,8 @@ export interface InitMessage {
   maxEntities: number;
   maxEvents: number;
   componentCount: number;
+  threadIndex: number;
+  threadCount: number;
 }
 
 /**
@@ -132,7 +173,7 @@ export interface InitMessage {
  */
 export interface ExecuteMessage {
   type: "execute";
-  index: number;
+  threadIndex: number;
 }
 
 /**
@@ -144,7 +185,7 @@ export type WorkerIncomingMessage = InitMessage | ExecuteMessage;
  * Success response from worker to main thread
  */
 export interface WorkerSuccessResponse {
-  index: number;
+  threadIndex: number;
   result: true;
 }
 
@@ -152,7 +193,7 @@ export interface WorkerSuccessResponse {
  * Error response from worker to main thread
  */
 export interface WorkerErrorResponse {
-  index: number;
+  threadIndex: number;
   error: string;
 }
 

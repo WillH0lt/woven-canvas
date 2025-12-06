@@ -106,7 +106,8 @@ describe("Worker", () => {
 
       const initMessage: InitMessage = {
         type: "init",
-        index: 1,
+        threadIndex: 1,
+        threadCount: 1,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
         poolSAB: pool.getBuffer(),
@@ -124,7 +125,7 @@ describe("Worker", () => {
 
       // Should send success response
       expect(mockPostMessage).toHaveBeenCalledWith({
-        index: 1,
+        threadIndex: 1,
         result: true,
       } satisfies WorkerSuccessResponse);
     });
@@ -161,7 +162,8 @@ describe("Worker", () => {
       // First, send init message
       const initMessage: InitMessage = {
         type: "init",
-        index: 1,
+        threadIndex: 1,
+        threadCount: 1,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
         poolSAB: pool.getBuffer(),
@@ -179,7 +181,7 @@ describe("Worker", () => {
       // Then send execute message
       const executeMessage: ExecuteMessage = {
         type: "execute",
-        index: 2,
+        threadIndex: 1,
       };
 
       mockSelf.onmessage!({
@@ -198,7 +200,7 @@ describe("Worker", () => {
 
       // Should send success response
       expect(mockPostMessage).toHaveBeenCalledWith({
-        index: 2,
+        threadIndex: 1,
         result: true,
       } satisfies WorkerSuccessResponse);
     });
@@ -211,7 +213,7 @@ describe("Worker", () => {
       // Send execute without init
       const executeMessage: ExecuteMessage = {
         type: "execute",
-        index: 1,
+        threadIndex: 1,
       };
 
       mockSelf.onmessage!({
@@ -221,7 +223,7 @@ describe("Worker", () => {
       // Should send error response
       expect(mockPostMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          index: 1,
+          threadIndex: 1,
           error: expect.any(String),
         } satisfies WorkerErrorResponse)
       );
@@ -262,7 +264,8 @@ describe("Worker", () => {
       // First, send init message
       const initMessage: InitMessage = {
         type: "init",
-        index: 1,
+        threadIndex: 1,
+        threadCount: 1,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
         poolSAB: pool.getBuffer(),
@@ -280,7 +283,7 @@ describe("Worker", () => {
       // Then send execute message
       const executeMessage: ExecuteMessage = {
         type: "execute",
-        index: 2,
+        threadIndex: 2,
       };
 
       mockSelf.onmessage!({
@@ -289,7 +292,7 @@ describe("Worker", () => {
 
       // Should send error response
       expect(mockPostMessage).toHaveBeenCalledWith({
-        index: 2,
+        threadIndex: 2,
         error: "Test error",
       } satisfies WorkerErrorResponse);
     });
@@ -329,7 +332,8 @@ describe("Worker", () => {
 
       const initMessage: InitMessage = {
         type: "init",
-        index: 1,
+        threadIndex: 1,
+        threadCount: 1,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
         poolSAB: pool.getBuffer(),
@@ -345,7 +349,7 @@ describe("Worker", () => {
 
       const executeMessage: ExecuteMessage = {
         type: "execute",
-        index: 2,
+        threadIndex: 1,
       };
 
       mockSelf.onmessage!({
@@ -396,7 +400,8 @@ describe("Worker", () => {
 
       const initMessage: InitMessage = {
         type: "init",
-        index: 1,
+        threadIndex: 1,
+        threadCount: 1,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
         poolSAB: pool.getBuffer(),
@@ -412,7 +417,7 @@ describe("Worker", () => {
 
       const executeMessage: ExecuteMessage = {
         type: "execute",
-        index: 2,
+        threadIndex: 1,
       };
 
       mockSelf.onmessage!({
@@ -461,7 +466,8 @@ describe("Worker", () => {
 
       const initMessage: InitMessage = {
         type: "init",
-        index: 1,
+        threadIndex: 1,
+        threadCount: 1,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
         poolSAB: pool.getBuffer(),
@@ -478,7 +484,7 @@ describe("Worker", () => {
       // Execute multiple times
       for (let i = 0; i < 3; i++) {
         mockSelf.onmessage!({
-          data: { type: "execute", index: i + 2 } as ExecuteMessage,
+          data: { type: "execute", threadIndex: i + 2 } as ExecuteMessage,
         } as MessageEvent<ExecuteMessage>);
       }
 

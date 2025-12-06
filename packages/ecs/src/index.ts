@@ -17,7 +17,14 @@ export {
 } from "./Context";
 export { useSingleton, type Singleton } from "./Singleton";
 export { defineSystem, defineWorkerSystem } from "./System";
-export type { Context, System, MainThreadSystem, WorkerSystem } from "./types";
+export type {
+  Context,
+  System,
+  MainThreadSystem,
+  WorkerSystem,
+  WorkerSystemOptions,
+  WorkerPriority,
+} from "./types";
 export {
   useQuery,
   type QueryBuilder,

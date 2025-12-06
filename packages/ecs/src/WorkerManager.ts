@@ -14,8 +14,8 @@ export class WorkerManager {
   private maxWorkers: number;
   private workerPool: Map<string, Worker[]> = new Map();
   private initializedWorkers: Set<Worker> = new Set();
-  private taskQueue: Array<() => void> = [];
-  private activeWorkers = 0;
+  private taskQueue: Map<string, Array<(worker: Worker) => void>> = new Map();
+  private busyWorkers = 0;
 
   /**
    * Create a new WorkerManager instance
@@ -36,11 +36,18 @@ export class WorkerManager {
    */
   async execute(workerSystem: WorkerSystem, ctx: Context): Promise<void> {
     const promises = [];
-    const batches = 1;
+    const threads = workerSystem.threads;
+
+    if (threads > this.maxWorkers) {
+      throw new Error(
+        `Worker system requests ${threads} threads, but World was configured with only ${this.maxWorkers} max workers. ` +
+          `Increase the 'threads' option in World constructor or reduce the worker system's thread count.`
+      );
+    }
 
     // Execute tasks (workers will be initialized on-demand)
-    for (let i = 0; i < batches; i++) {
-      promises.push(this.executeTask(ctx, workerSystem.path, i));
+    for (let i = 0; i < threads; i++) {
+      promises.push(this.executeTask(ctx, workerSystem.path, i, threads));
     }
 
     await Promise.all(promises);
@@ -56,15 +63,16 @@ export class WorkerManager {
   private async initializeWorker(
     ctx: Context,
     worker: Worker,
-    index: number
+    threadIndex: number,
+    threadCount: number
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error(`Worker ${index} initialization timed out`));
+        reject(new Error(`Worker ${threadIndex} initialization timed out`));
       }, 5000); // 5 second timeout
 
       const messageHandler = (e: MessageEvent<WorkerOutgoingMessage>) => {
-        if (e.data.index === index) {
+        if (e.data.threadIndex === threadIndex) {
           clearTimeout(timeout);
           worker.removeEventListener("message", messageHandler);
 
@@ -93,7 +101,6 @@ export class WorkerManager {
       // Send initialization message with shared buffers
       const initMessage: InitMessage = {
         type: "init",
-        index,
         entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
         eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
         poolSAB: ctx.pool.getBuffer(),
@@ -103,6 +110,8 @@ export class WorkerManager {
         maxEntities: ctx.maxEntities,
         maxEvents: ctx.maxEvents,
         componentCount: ctx.componentCount,
+        threadIndex,
+        threadCount,
       };
       worker.postMessage(initMessage);
     });
@@ -118,13 +127,14 @@ export class WorkerManager {
   private async executeTask(
     ctx: Context,
     workerPath: string,
-    index: number
+    threadIndex: number,
+    threadCount: number
   ): Promise<any> {
     const worker = await this.getWorker(workerPath);
 
     // Initialize worker if not already initialized
     if (!this.initializedWorkers.has(worker)) {
-      await this.initializeWorker(ctx, worker, index);
+      await this.initializeWorker(ctx, worker, threadIndex, threadCount);
       this.initializedWorkers.add(worker);
     }
 
@@ -132,8 +142,8 @@ export class WorkerManager {
       const timeout = setTimeout(() => {
         worker.terminate();
         this.removeWorker(workerPath, worker);
-        reject(new Error(`Task ${index} timed out`));
-      }, 30000); // 30 second timeout
+        reject(new Error(`Task ${threadIndex} timed out`));
+      }, 5000); // 5 second timeout
 
       worker.onmessage = (e: MessageEvent<WorkerOutgoingMessage>) => {
         clearTimeout(timeout);
@@ -150,13 +160,14 @@ export class WorkerManager {
       worker.onerror = (error: ErrorEvent) => {
         clearTimeout(timeout);
         reject(error);
-        this.releaseWorker(workerPath, worker);
+        // this.releaseWorker(workerPath, worker);
+        this.removeWorker(workerPath, worker);
       };
 
       // Send the task to the worker
       const executeMessage: ExecuteMessage = {
         type: "execute",
-        index,
+        threadIndex,
       };
       worker.postMessage(executeMessage);
     });
@@ -177,18 +188,24 @@ export class WorkerManager {
 
     // If we have idle workers for this path, reuse them
     if (pool.length > 0) {
+      this.busyWorkers++;
       return pool.pop()!;
     }
 
-    // If we're at max capacity, wait
-    if (this.activeWorkers >= this.maxWorkers) {
+    // If we're at max busy capacity, wait for a worker to become available
+    if (this.busyWorkers >= this.maxWorkers) {
       return new Promise<Worker>((resolve) => {
-        this.taskQueue.push(() => resolve);
+        let queue = this.taskQueue.get(workerPath);
+        if (!queue) {
+          queue = [];
+          this.taskQueue.set(workerPath, queue);
+        }
+        queue.push(resolve);
       });
     }
 
     // Create a new worker
-    this.activeWorkers++;
+    this.busyWorkers++;
     return this.createWorker(workerPath);
   }
 
@@ -207,28 +224,68 @@ export class WorkerManager {
    * @param worker - The worker to release
    */
   private releaseWorker(workerPath: string, worker: Worker): void {
-    // If there are queued tasks, assign this worker to them
-    if (this.taskQueue.length > 0) {
-      const resolveFactory = this.taskQueue.shift();
-      if (resolveFactory) {
-        resolveFactory();
+    // If there are queued tasks for this worker path, assign this worker to them
+    // (worker stays busy, no change to busyWorkers count)
+    const queue = this.taskQueue.get(workerPath);
+    if (queue && queue.length > 0) {
+      const resolveWithWorker = queue.shift();
+      if (resolveWithWorker) {
+        resolveWithWorker(worker);
+        return;
       }
-    } else {
-      // Return worker to pool
-      const pool = this.workerPool.get(workerPath);
-      if (pool) {
-        pool.push(worker);
+    }
+
+    // Check if there are queued tasks for other worker paths
+    for (const [otherPath, otherQueue] of this.taskQueue.entries()) {
+      if (otherPath !== workerPath && otherQueue.length > 0) {
+        // Return this worker to its pool (becomes idle)
+        const pool = this.workerPool.get(workerPath);
+        if (pool) {
+          pool.push(worker);
+        }
+        // Worker is now idle, decrement busy count
+        this.busyWorkers--;
+
+        // Get or create a worker for the waiting task
+        let otherPool = this.workerPool.get(otherPath);
+        if (!otherPool) {
+          otherPool = [];
+          this.workerPool.set(otherPath, otherPool);
+        }
+
+        const resolveWithWorker = otherQueue.shift();
+        if (resolveWithWorker) {
+          if (otherPool.length > 0) {
+            // Reuse existing idle worker for other path
+            this.busyWorkers++;
+            resolveWithWorker(otherPool.pop()!);
+          } else {
+            // Create new worker for other path
+            this.busyWorkers++;
+            const newWorker = this.createWorker(otherPath);
+            resolveWithWorker(newWorker);
+          }
+        }
+        return;
       }
+    }
+
+    // No queued tasks, return worker to pool (becomes idle)
+    this.busyWorkers--;
+    const pool = this.workerPool.get(workerPath);
+    if (pool) {
+      pool.push(worker);
     }
   }
 
   /**
-   * Remove a worker from the pool and decrement active worker count
+   * Remove a worker from the pool and decrement busy worker count
    * @param workerPath - Path to the worker file
    * @param worker - The worker to remove
    */
   private removeWorker(workerPath: string, worker: Worker): void {
-    this.activeWorkers--;
+    this.busyWorkers--;
+    this.initializedWorkers.delete(worker);
     const pool = this.workerPool.get(workerPath);
     if (pool) {
       const index = pool.indexOf(worker);
@@ -250,7 +307,7 @@ export class WorkerManager {
     }
     this.workerPool.clear();
     this.initializedWorkers.clear();
-    this.activeWorkers = 0;
-    this.taskQueue = [];
+    this.busyWorkers = 0;
+    this.taskQueue.clear();
   }
 }

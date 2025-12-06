@@ -1,4 +1,9 @@
-import type { SystemFunction, MainThreadSystem, WorkerSystem } from "./types";
+import type {
+  SystemFunction,
+  MainThreadSystem,
+  WorkerSystem,
+  WorkerSystemOptions,
+} from "./types";
 
 /**
  * Define a system that runs on the main thread.
@@ -31,18 +36,31 @@ export function defineSystem(execute: SystemFunction): MainThreadSystem {
  * Define a system that runs in a web worker.
  * The worker file must use setupWorker() to define its execution logic.
  * @param workerPath - Path to the worker file (use new URL('./worker.ts', import.meta.url).href)
+ * @param options - Optional configuration for worker behavior
  * @returns A WorkerSystem object
  * @example
  * ```typescript
+ * // Basic usage
  * const parallelSystem = defineWorkerSystem(
  *   new URL('./physicsWorker.ts', import.meta.url).href
  * );
+ *
+ * // With options
+ * const physicsSystem = defineWorkerSystem(
+ *   new URL('./physicsWorker.ts', import.meta.url).href,
+ *   { threads: 4, priority: 'high' }
+ * );
  * ```
  */
-export function defineWorkerSystem(path: string): WorkerSystem {
+export function defineWorkerSystem(
+  path: string,
+  options: WorkerSystemOptions = {}
+): WorkerSystem {
   return {
     type: "worker",
     path,
+    threads: options.threads ?? 1,
+    priority: options.priority ?? "normal",
     prevEventIndex: 0,
     currEventIndex: 0,
   };

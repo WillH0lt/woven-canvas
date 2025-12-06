@@ -192,12 +192,68 @@ export class Query {
    * Get the current matching entities.
    * Results are cached and updated incrementally from the event buffer.
    *
+   * When running in a worker with multiple threads (threadCount > 1),
+   * results are automatically partitioned so each thread processes
+   * a different subset of entities.
+   *
    * @param ctx - The context object containing the entity buffer and query cache
    * @returns An array of entity IDs matching the query criteria
    */
   current(ctx: Context): Uint32Array {
     this.ensureUpdated(ctx);
-    return this.cache.getDenseView();
+    const allEntities = this.cache.getDenseView();
+
+    // If single-threaded, return all entities
+    if (ctx.threadCount <= 1) {
+      return allEntities;
+    }
+
+    // Partition entities across threads
+    return this.partitionEntities(
+      allEntities,
+      ctx.threadIndex,
+      ctx.threadCount
+    );
+  }
+
+  /**
+   * Partition an array of entities for a specific thread.
+   * Uses simple modulo distribution: entity goes to thread (entityId % threadCount).
+   * This ensures consistent, deterministic partitioning without communication.
+   *
+   * @param entities - Array of entity IDs to partition
+   * @param threadIndex - Index of the current thread (0-based)
+   * @param threadCount - Total number of threads
+   * @returns Array of entity IDs belonging to this thread's partition
+   */
+  private partitionEntities(
+    entities: Uint32Array,
+    threadIndex: number,
+    threadCount: number
+  ): Uint32Array {
+    // Count entities belonging to this thread
+    let count = 0;
+    for (let i = 0; i < entities.length; i++) {
+      if (entities[i] % threadCount === threadIndex) {
+        count++;
+      }
+    }
+
+    // If no entities for this thread, return empty array
+    if (count === 0) {
+      return EMPTY_UINT32_ARRAY;
+    }
+
+    // Build the partitioned result
+    const result = new Uint32Array(count);
+    let resultIndex = 0;
+    for (let i = 0; i < entities.length; i++) {
+      if (entities[i] % threadCount === threadIndex) {
+        result[resultIndex++] = entities[i];
+      }
+    }
+
+    return result;
   }
 
   /**

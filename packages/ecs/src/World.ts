@@ -8,7 +8,7 @@ import type { System, Context } from "./types";
 export interface WorldOptions {
   /**
    * Number of worker threads to use for parallel execution
-   * @default navigator.hardwareConcurrency - 1
+   * @default navigator.hardwareConcurrency
    */
   threads?: number;
   /**
@@ -49,7 +49,7 @@ export class World {
     const threads =
       options.threads ??
       (typeof navigator !== "undefined"
-        ? Math.max(1, (navigator.hardwareConcurrency ?? 4) - 1)
+        ? Math.max(1, navigator.hardwareConcurrency ?? 4)
         : 3);
 
     const maxEntities = options.maxEntities ?? 10_000;
@@ -86,6 +86,8 @@ export class World {
       componentCount,
       pool: Pool.create(maxEntities),
       tick: 0,
+      threadIndex: 0,
+      threadCount: 1,
     };
   }
 
@@ -128,7 +130,13 @@ export class World {
       (system) => system.type === "main"
     );
 
-    const promises = workerSystems.map((system) =>
+    // Sort worker systems by priority (high -> normal -> low)
+    const priorityOrder = { high: 2, normal: 1, low: 0 };
+    const sortedWorkerSystems = [...workerSystems].sort(
+      (a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]
+    );
+
+    const promises = sortedWorkerSystems.map((system) =>
       this.workerManager.execute(system, ctx)
     );
 
