@@ -263,7 +263,7 @@ describe("EventBuffer", () => {
       eventBuffer.pushRemoved(99);
 
       const buffer = eventBuffer.getBuffer();
-      const transferred = EventBuffer.fromTransfer(buffer);
+      const transferred = EventBuffer.fromTransfer(buffer, 1000);
 
       // Should see same data
       expect(transferred.getWriteIndex()).toBe(2);
@@ -278,7 +278,7 @@ describe("EventBuffer", () => {
 
     it("should allow writes from transferred buffer", () => {
       const buffer = eventBuffer.getBuffer();
-      const transferred = EventBuffer.fromTransfer(buffer);
+      const transferred = EventBuffer.fromTransfer(buffer, 1000);
 
       transferred.pushChanged(123, 5);
 

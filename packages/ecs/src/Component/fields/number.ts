@@ -62,7 +62,22 @@ export function createTypedArray(
   }
 }
 
+/**
+ * Check if a number subtype supports Atomics operations
+ * Float32Array and Float64Array do not support Atomics
+ */
+function supportsAtomics(btype: NumberSubtype): boolean {
+  return btype !== "float32" && btype !== "float64";
+}
+
 export class NumberField extends Field<NumberFieldDef> {
+  private readonly useAtomics: boolean;
+
+  constructor(fieldDef: NumberFieldDef) {
+    super(fieldDef);
+    this.useAtomics = supportsAtomics(fieldDef.btype);
+  }
+
   initializeStorage(
     capacity: number,
     BufferConstructor: new (byteLength: number) => ArrayBufferLike
@@ -79,11 +94,15 @@ export class NumberField extends Field<NumberFieldDef> {
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
+    const useAtomics = this.useAtomics;
     Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
         const array = (buffer as any)[fieldName];
+        if (useAtomics) {
+          return Atomics.load(array, getEntityId());
+        }
         return array[getEntityId()];
       },
     });
@@ -95,16 +114,24 @@ export class NumberField extends Field<NumberFieldDef> {
     buffer: ComponentBuffer<any>,
     getEntityId: () => EntityId
   ) {
+    const useAtomics = this.useAtomics;
     Object.defineProperty(master, fieldName, {
       enumerable: true,
       configurable: false,
       get: () => {
         const array = (buffer as any)[fieldName];
+        if (useAtomics) {
+          return Atomics.load(array, getEntityId());
+        }
         return array[getEntityId()];
       },
       set: (value: any) => {
         const array = (buffer as any)[fieldName];
-        array[getEntityId()] = value;
+        if (useAtomics) {
+          Atomics.store(array, getEntityId(), value);
+        } else {
+          array[getEntityId()] = value;
+        }
       },
     });
   }
@@ -114,6 +141,10 @@ export class NumberField extends Field<NumberFieldDef> {
   }
 
   setValue(array: any, entityId: EntityId, value: any) {
-    array[entityId] = value;
+    if (this.useAtomics) {
+      Atomics.store(array, entityId, value);
+    } else {
+      array[entityId] = value;
+    }
   }
 }

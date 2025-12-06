@@ -50,11 +50,9 @@ const BYTES_PER_EVENT = 8;
 /**
  * Header layout:
  *   [0..3]  writeIndex (u32, atomic) - next write position (wraps around)
- *   [4..7]  maxEvents (u32) - capacity of the ring buffer
  */
-const HEADER_SIZE = 8;
+const HEADER_SIZE = 4;
 const WRITE_INDEX_OFFSET = 0;
-const MAX_EVENTS_OFFSET = 1;
 
 /**
  * EventBuffer implements a lock-free ring buffer for entity events.
@@ -68,7 +66,7 @@ const MAX_EVENTS_OFFSET = 1;
 export class EventBuffer {
   private buffer: ArrayBufferLike;
   private headerView: Uint32Array;
-  private dataView: DataView;
+  private dataView: Uint32Array; // Each event is 2 Uint32s (8 bytes)
   private readonly maxEvents: number;
   private readonly reusableSet: Set<number> = new Set();
 
@@ -80,25 +78,26 @@ export class EventBuffer {
     this.maxEvents = maxEvents;
     const totalBytes = HEADER_SIZE + maxEvents * BYTES_PER_EVENT;
     this.buffer = new BufferConstructor(totalBytes);
-    this.headerView = new Uint32Array(this.buffer, 0, 2);
-    this.dataView = new DataView(this.buffer);
+    this.headerView = new Uint32Array(this.buffer, 0, 1);
+    // Each event is 2 Uint32s, starting after the header
+    this.dataView = new Uint32Array(this.buffer, HEADER_SIZE);
 
-    // Initialize header
-    this.headerView[WRITE_INDEX_OFFSET] = 0;
-    this.headerView[MAX_EVENTS_OFFSET] = maxEvents;
+    // Initialize header atomically
+    Atomics.store(this.headerView, WRITE_INDEX_OFFSET, 0);
   }
 
   /**
    * Create an EventBuffer from a shared buffer (for workers)
    * @param buffer - The SharedArrayBuffer from the main thread
+   * @param maxEvents - Maximum number of events (must match the original buffer)
    * @returns A new EventBuffer wrapping the shared buffer
    */
-  static fromTransfer(buffer: ArrayBufferLike): EventBuffer {
+  static fromTransfer(buffer: ArrayBufferLike, maxEvents: number): EventBuffer {
     const instance = Object.create(EventBuffer.prototype);
     instance.buffer = buffer;
-    instance.headerView = new Uint32Array(buffer, 0, 2);
-    instance.dataView = new DataView(buffer);
-    instance.maxEvents = instance.headerView[MAX_EVENTS_OFFSET];
+    instance.headerView = new Uint32Array(buffer, 0, 1);
+    instance.dataView = new Uint32Array(buffer, HEADER_SIZE);
+    instance.maxEvents = maxEvents;
     instance.reusableSet = new Set<number>();
     return instance;
   }
@@ -125,15 +124,19 @@ export class EventBuffer {
     const index =
       Atomics.add(this.headerView, WRITE_INDEX_OFFSET, 1) % this.maxEvents;
 
-    // Calculate byte offset for this event
-    const offset = HEADER_SIZE + index * BYTES_PER_EVENT;
+    // Each event is 2 Uint32 elements in the dataView array
+    // Event layout in Uint32 terms:
+    //   [index*2]   = entityId (u32)
+    //   [index*2+1] = eventType (u8) | padding (u8) | componentId (u16) packed as u32
+    const dataIndex = index * 2;
 
-    // Write event data (not atomic, but each slot is only written by one thread at a time)
-    const dataView = this.dataView;
-    dataView.setUint32(offset, entityId, true);
-    dataView.setUint8(offset + 4, eventType);
-    // Byte 5 is padding
-    dataView.setUint16(offset + 6, componentId, true);
+    // Write event data atomically
+    // Pack eventType and componentId into second u32 (little-endian layout)
+    // Bytes: [eventType, padding, componentId low, componentId high]
+    const packedData = eventType | (componentId << 16);
+
+    Atomics.store(this.dataView, dataIndex, entityId);
+    Atomics.store(this.dataView, dataIndex + 1, packedData);
   }
 
   /**
@@ -181,12 +184,15 @@ export class EventBuffer {
     eventType: EventTypeValue;
     componentId: number;
   } {
-    const offset = HEADER_SIZE + index * BYTES_PER_EVENT;
+    const dataIndex = index * 2;
+
+    const entityId = Atomics.load(this.dataView, dataIndex);
+    const packedData = Atomics.load(this.dataView, dataIndex + 1);
 
     return {
-      entityId: this.dataView.getUint32(offset, true),
-      eventType: this.dataView.getUint8(offset + 4) as EventTypeValue,
-      componentId: this.dataView.getUint16(offset + 6, true),
+      entityId,
+      eventType: (packedData & 0xff) as EventTypeValue,
+      componentId: (packedData >> 16) & 0xffff,
     };
   }
 
@@ -254,16 +260,18 @@ export class EventBuffer {
 
     for (let i = 0; i < eventsToScan; i++) {
       const index = (fromIndex + i) % maxEvents;
-      const offset = HEADER_SIZE + index * BYTES_PER_EVENT;
+      const dataIndex = index * 2;
 
-      const eventType = dataView.getUint8(offset + 4) as EventTypeValue;
+      // Read packed data atomically
+      const packedData = Atomics.load(dataView, dataIndex + 1);
+      const eventType = (packedData & 0xff) as EventTypeValue;
 
       // Filter by event type bitmask
       if ((eventType & eventTypes) === 0) continue;
 
       // Filter by component mask for CHANGED events
       if (componentMask !== undefined && eventType === EventType.CHANGED) {
-        const componentId = dataView.getUint16(offset + 6, true);
+        const componentId = (packedData >> 16) & 0xffff;
         const byteIndex = componentId >> 3; // Math.floor(componentId / 8)
         const bitIndex = componentId & 7; // componentId % 8
         if (
@@ -274,7 +282,7 @@ export class EventBuffer {
         }
       }
 
-      const entityId = dataView.getUint32(offset, true);
+      const entityId = Atomics.load(dataView, dataIndex);
       seen.add(entityId);
     }
 

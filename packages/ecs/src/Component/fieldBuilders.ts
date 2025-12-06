@@ -8,7 +8,38 @@ import type {
   EnumFieldDef,
   NumberSubtype,
   RefFieldDef,
+  FieldDef,
 } from "./types";
+
+/**
+ * Abstract base class for all field builders.
+ * Provides a common interface and type constraint for field definitions.
+ */
+export abstract class FieldBuilder<D extends FieldDef = FieldDef> {
+  abstract readonly def: D;
+}
+
+/** Valid element types for array and tuple fields */
+const VALID_ELEMENT_TYPES = new Set(["string", "number", "boolean", "binary"]);
+
+/**
+ * Validate that an element builder is valid for use in array/tuple fields
+ * @throws Error if the element builder is not a valid type
+ */
+function validateElementBuilder(
+  elementBuilder: FieldBuilder,
+  containerType: "array" | "tuple"
+): void {
+  const elementType = elementBuilder.def.type;
+
+  if (!VALID_ELEMENT_TYPES.has(elementType)) {
+    throw new Error(
+      `Invalid ${containerType} element type: "${elementType}". ` +
+        `Only primitive types are allowed: string, number, boolean, binary. ` +
+        `Nested ${containerType}s, tuples, arrays, enums, and refs are not supported.`
+    );
+  }
+}
 
 /** Union type for all field builders that can be used as array elements */
 export type ElementFieldBuilder =
@@ -18,7 +49,7 @@ export type ElementFieldBuilder =
   | BinaryFieldBuilder;
 
 // Field builder classes with fluent API
-export class StringFieldBuilder {
+export class StringFieldBuilder extends FieldBuilder<StringFieldDef> {
   def: StringFieldDef = {
     type: "string",
   };
@@ -44,7 +75,7 @@ export class StringFieldBuilder {
   }
 }
 
-export class NumberFieldBuilder {
+export class NumberFieldBuilder extends FieldBuilder<NumberFieldDef> {
   def: NumberFieldDef;
 
   /**
@@ -52,6 +83,7 @@ export class NumberFieldBuilder {
    * @param btype - The binary type for the number field
    */
   constructor(btype: NumberSubtype) {
+    super();
     this.def = {
       type: "number",
       btype: btype,
@@ -69,7 +101,7 @@ export class NumberFieldBuilder {
   }
 }
 
-export class BooleanFieldBuilder {
+export class BooleanFieldBuilder extends FieldBuilder<BooleanFieldDef> {
   def: BooleanFieldDef = {
     type: "boolean",
   };
@@ -85,7 +117,7 @@ export class BooleanFieldBuilder {
   }
 }
 
-export class BinaryFieldBuilder {
+export class BinaryFieldBuilder extends FieldBuilder<BinaryFieldDef> {
   def: BinaryFieldDef = {
     type: "binary",
   };
@@ -113,7 +145,7 @@ export class BinaryFieldBuilder {
 
 export class ArrayFieldBuilder<
   T extends ElementFieldBuilder = ElementFieldBuilder
-> {
+> extends FieldBuilder<ArrayFieldDef> {
   def: T extends StringFieldBuilder
     ? ArrayFieldDef<StringFieldDef>
     : T extends NumberFieldBuilder
@@ -128,8 +160,11 @@ export class ArrayFieldBuilder<
    * Create an array field builder with the specified element type and max length
    * @param elementBuilder - A field builder specifying the element type
    * @param maxLength - The maximum number of elements in the array
+   * @throws Error if elementBuilder is not a valid element type
    */
   constructor(elementBuilder: T, maxLength: number) {
+    super();
+    validateElementBuilder(elementBuilder, "array");
     this.def = {
       type: "array",
       elementDef: elementBuilder.def,
@@ -170,7 +205,7 @@ type InferElementType<T extends ElementFieldBuilder> =
 export class TupleFieldBuilder<
   T extends ElementFieldBuilder = ElementFieldBuilder,
   L extends number = number
-> {
+> extends FieldBuilder<TupleFieldDef> {
   def: T extends StringFieldBuilder
     ? TupleFieldDef<StringFieldDef, L>
     : T extends NumberFieldBuilder
@@ -185,8 +220,11 @@ export class TupleFieldBuilder<
    * Create a tuple field builder with the specified element type and length
    * @param elementBuilder - A field builder specifying the element type
    * @param length - The fixed length of the tuple
+   * @throws Error if elementBuilder is not a valid element type
    */
   constructor(elementBuilder: T, length: L) {
+    super();
+    validateElementBuilder(elementBuilder, "tuple");
     this.def = {
       type: "tuple",
       elementDef: elementBuilder.def,
@@ -208,7 +246,9 @@ export class TupleFieldBuilder<
 /** Helper type to extract string values from an enum-like const object */
 type EnumValues<T extends Record<string, string>> = T[keyof T];
 
-export class EnumFieldBuilder<T extends string = string> {
+export class EnumFieldBuilder<T extends string = string> extends FieldBuilder<
+  EnumFieldDef<T>
+> {
   def: EnumFieldDef<T>;
 
   /**
@@ -216,6 +256,7 @@ export class EnumFieldBuilder<T extends string = string> {
    * @param enumObj - An object with string values (typically a const object)
    */
   constructor(enumObj: Record<string, T>) {
+    super();
     this.def = {
       type: "enum",
       values: Object.values(enumObj) as T[],
@@ -240,7 +281,7 @@ export class EnumFieldBuilder<T extends string = string> {
  * When a referenced entity is deleted, the ref is lazily set to null
  * on the next read (no eager scanning required).
  */
-export class RefFieldBuilder {
+export class RefFieldBuilder extends FieldBuilder<RefFieldDef> {
   def: RefFieldDef = {
     type: "ref",
   };

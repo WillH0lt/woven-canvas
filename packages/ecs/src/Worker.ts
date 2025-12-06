@@ -97,7 +97,10 @@ function handleMessage(
       // Store component transfer data for lazy initialization
       internalContext.ComponentTransferMap = e.data.componentTransferMap;
 
-      const eventBuffer = EventBuffer.fromTransfer(e.data.eventSAB);
+      const eventBuffer = EventBuffer.fromTransfer(
+        e.data.eventSAB,
+        e.data.maxEvents
+      );
       const pool = Pool.fromTransfer(
         e.data.poolSAB,
         e.data.poolBucketCount,

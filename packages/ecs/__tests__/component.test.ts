@@ -660,6 +660,37 @@ describe("Component", () => {
   });
 
   describe("Array Field Handling", () => {
+    it("should throw error when using nested array as element type", () => {
+      expect(() => {
+        field.array(field.array(field.float32(), 10) as any, 5);
+      }).toThrow(/Invalid array element type/);
+    });
+
+    it("should throw error when using tuple as element type", () => {
+      expect(() => {
+        field.array(field.tuple(field.float32(), 2) as any, 5);
+      }).toThrow(/Invalid array element type/);
+    });
+
+    it("should throw error when using enum as element type", () => {
+      const Status = { A: "A", B: "B" } as const;
+      expect(() => {
+        field.array(field.enum(Status) as any, 5);
+      }).toThrow(/Invalid array element type/);
+    });
+
+    it("should throw error when using ref as element type", () => {
+      expect(() => {
+        field.array(field.ref() as any, 5);
+      }).toThrow(/Invalid array element type/);
+    });
+
+    it("should throw error when element builder is not an object", () => {
+      expect(() => {
+        field.array(123 as any, 5);
+      }).toThrow();
+    });
+
     it("should store and retrieve array data", () => {
       const Polygon = defineComponent("Polygon", {
         pts: field.array(field.float32(), 1024),
@@ -1147,6 +1178,37 @@ describe("Component", () => {
   });
 
   describe("Tuple Field Handling", () => {
+    it("should throw error when using nested tuple as element type", () => {
+      expect(() => {
+        field.tuple(field.tuple(field.float32(), 2) as any, 3);
+      }).toThrow(/Invalid tuple element type/);
+    });
+
+    it("should throw error when using array as element type", () => {
+      expect(() => {
+        field.tuple(field.array(field.float32(), 10) as any, 3);
+      }).toThrow(/Invalid tuple element type/);
+    });
+
+    it("should throw error when using enum as element type", () => {
+      const Status = { A: "A", B: "B" } as const;
+      expect(() => {
+        field.tuple(field.enum(Status) as any, 3);
+      }).toThrow(/Invalid tuple element type/);
+    });
+
+    it("should throw error when using ref as element type", () => {
+      expect(() => {
+        field.tuple(field.ref() as any, 3);
+      }).toThrow(/Invalid tuple element type/);
+    });
+
+    it("should throw error when element builder is not an object", () => {
+      expect(() => {
+        field.tuple("invalid" as any, 3);
+      }).toThrow();
+    });
+
     it("should store and retrieve tuple data", () => {
       const Position = defineComponent("Position", {
         coords: field.tuple(field.float32(), 2),

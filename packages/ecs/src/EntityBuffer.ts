@@ -77,7 +77,7 @@ export class EntityBuffer {
     const bytesPerEntity = this.bytesPerEntity;
 
     // Get current generation and increment it (wraps at 128)
-    const oldMetadata = view[offset];
+    const oldMetadata = Atomics.load(view, offset);
     const oldGeneration =
       (oldMetadata & EntityBuffer.GENERATION_MASK) >>
       EntityBuffer.GENERATION_SHIFT;
@@ -85,12 +85,14 @@ export class EntityBuffer {
 
     // Clear all bytes for this entity
     for (let i = 0; i < bytesPerEntity; i++) {
-      view[offset + i] = 0;
+      Atomics.store(view, offset + i, 0);
     }
     // Set alive flag and new generation in metadata byte
-    view[offset] =
-      EntityBuffer.ALIVE_FLAG |
-      (newGeneration << EntityBuffer.GENERATION_SHIFT);
+    Atomics.store(
+      view,
+      offset,
+      EntityBuffer.ALIVE_FLAG | (newGeneration << EntityBuffer.GENERATION_SHIFT)
+    );
   }
 
   /**
@@ -104,7 +106,7 @@ export class EntityBuffer {
     const byteIndex = 1 + (componentId >> 3);
     const bitIndex = componentId & 7;
     const offset = entityId * this.bytesPerEntity;
-    this.view[offset + byteIndex] |= 1 << bitIndex;
+    Atomics.or(this.view, offset + byteIndex, 1 << bitIndex);
   }
 
   /**
@@ -116,7 +118,7 @@ export class EntityBuffer {
     const byteIndex = 1 + (componentId >> 3);
     const bitIndex = componentId & 7;
     const offset = entityId * this.bytesPerEntity;
-    this.view[offset + byteIndex] &= ~(1 << bitIndex);
+    Atomics.and(this.view, offset + byteIndex, ~(1 << bitIndex));
   }
 
   /**
@@ -129,7 +131,9 @@ export class EntityBuffer {
     const byteIndex = 1 + (componentId >> 3);
     const bitIndex = componentId & 7;
     const offset = entityId * this.bytesPerEntity;
-    return (this.view[offset + byteIndex] & (1 << bitIndex)) !== 0;
+    return (
+      (Atomics.load(this.view, offset + byteIndex) & (1 << bitIndex)) !== 0
+    );
   }
 
   /**
@@ -144,7 +148,7 @@ export class EntityBuffer {
     const view = this.view;
 
     // Check if alive (bit 0 of metadata byte)
-    if ((view[offset] & EntityBuffer.ALIVE_FLAG) === 0) {
+    if ((Atomics.load(view, offset) & EntityBuffer.ALIVE_FLAG) === 0) {
       return false;
     }
 
@@ -158,7 +162,7 @@ export class EntityBuffer {
       for (let i = 0; i < maskLength; i++) {
         const mask = withMask[i];
         if (mask !== 0) {
-          const value = view[componentOffset + i];
+          const value = Atomics.load(view, componentOffset + i);
           if ((value & mask) !== mask) {
             return false;
           }
@@ -173,7 +177,7 @@ export class EntityBuffer {
       for (let i = 0; i < maskLength; i++) {
         const mask = withoutMask[i];
         if (mask !== 0) {
-          const value = view[componentOffset + i];
+          const value = Atomics.load(view, componentOffset + i);
           if ((value & mask) !== 0) {
             return false;
           }
@@ -189,7 +193,7 @@ export class EntityBuffer {
       for (let i = 0; i < maskLength; i++) {
         const mask = anyMask[i];
         if (mask !== 0) {
-          const value = view[componentOffset + i];
+          const value = Atomics.load(view, componentOffset + i);
           if ((value & mask) !== 0) {
             foundAny = true;
             break;
@@ -213,7 +217,7 @@ export class EntityBuffer {
     const view = this.view;
     const bytesPerEntity = this.bytesPerEntity;
     for (let i = 0; i < bytesPerEntity; i++) {
-      view[offset + i] = 0;
+      Atomics.store(view, offset + i, 0);
     }
   }
 
@@ -226,7 +230,7 @@ export class EntityBuffer {
   markDead(entityId: EntityId): void {
     const offset = entityId * this.bytesPerEntity;
     // Clear only the alive flag, preserve component bits
-    this.view[offset] &= ~EntityBuffer.ALIVE_FLAG;
+    Atomics.and(this.view, offset, ~EntityBuffer.ALIVE_FLAG);
   }
 
   /**
@@ -236,7 +240,7 @@ export class EntityBuffer {
    */
   has(entityId: EntityId): boolean {
     const offset = entityId * this.bytesPerEntity;
-    return (this.view[offset] & EntityBuffer.ALIVE_FLAG) !== 0;
+    return (Atomics.load(this.view, offset) & EntityBuffer.ALIVE_FLAG) !== 0;
   }
 
   /**
@@ -248,7 +252,7 @@ export class EntityBuffer {
   getGeneration(entityId: EntityId): number {
     const offset = entityId * this.bytesPerEntity;
     return (
-      (this.view[offset] & EntityBuffer.GENERATION_MASK) >>
+      (Atomics.load(this.view, offset) & EntityBuffer.GENERATION_MASK) >>
       EntityBuffer.GENERATION_SHIFT
     );
   }

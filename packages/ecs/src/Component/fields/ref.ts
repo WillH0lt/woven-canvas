@@ -76,7 +76,7 @@ export class RefField extends Field<RefFieldDef> {
       configurable: false,
       get: () => {
         const array = buffer[fieldName] as Uint32Array;
-        const packedRef = array[getEntityId()];
+        const packedRef = Atomics.load(array, getEntityId());
         if (packedRef === NULL_REF) {
           return null;
         }
@@ -111,7 +111,7 @@ export class RefField extends Field<RefFieldDef> {
       configurable: false,
       get: () => {
         const array = buffer[fieldName] as Uint32Array;
-        const packedRef = array[getEntityId()];
+        const packedRef = Atomics.load(array, getEntityId());
         if (packedRef === NULL_REF) {
           return null;
         }
@@ -133,11 +133,11 @@ export class RefField extends Field<RefFieldDef> {
       set: (value: EntityId | null) => {
         const array = buffer[fieldName] as Uint32Array;
         if (value === null) {
-          array[getEntityId()] = NULL_REF;
+          Atomics.store(array, getEntityId(), NULL_REF);
         } else {
           // Pack the entity ID with its current generation
           const generation = entityBuffer.getGeneration(value);
-          array[getEntityId()] = packRef(value, generation);
+          Atomics.store(array, getEntityId(), packRef(value, generation));
         }
       },
     });
@@ -149,12 +149,12 @@ export class RefField extends Field<RefFieldDef> {
   }
 
   setValue(array: Uint32Array, entityId: EntityId, value: EntityId | null) {
-    if (value === null) {
-      array[entityId] = NULL_REF;
+    if (value === null || value === NULL_REF) {
+      Atomics.store(array, entityId, NULL_REF);
     } else {
       // Pack the entity ID with its current generation
       const generation = this.entityBuffer.getGeneration(value);
-      array[entityId] = packRef(value, generation);
+      Atomics.store(array, entityId, packRef(value, generation));
     }
   }
 }

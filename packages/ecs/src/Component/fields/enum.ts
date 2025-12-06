@@ -40,7 +40,7 @@ export class EnumField extends Field<EnumFieldDef> {
       configurable: false,
       get: () => {
         const array = (buffer as any)[fieldName] as Uint16Array;
-        const index = array[getEntityId()];
+        const index = Atomics.load(array, getEntityId());
         return sortedValues[index] ?? sortedValues[0] ?? "";
       },
     });
@@ -60,14 +60,14 @@ export class EnumField extends Field<EnumFieldDef> {
       configurable: false,
       get: () => {
         const array = (buffer as any)[fieldName] as Uint16Array;
-        const index = array[getEntityId()];
+        const index = Atomics.load(array, getEntityId());
         return sortedValues[index] ?? sortedValues[0] ?? "";
       },
       set: (value: string) => {
         const array = (buffer as any)[fieldName] as Uint16Array;
         const index = valueToIndex.get(value);
         if (index !== undefined) {
-          array[getEntityId()] = index;
+          Atomics.store(array, getEntityId(), index);
         }
       },
     });
@@ -85,9 +85,9 @@ export class EnumField extends Field<EnumFieldDef> {
   setValue(array: Uint16Array, entityId: EntityId, value: string | number) {
     if (typeof value === "string") {
       const index = this.valueToIndex.get(value);
-      array[entityId] = index !== undefined ? index : 0;
+      Atomics.store(array, entityId, index !== undefined ? index : 0);
     } else {
-      array[entityId] = value;
+      Atomics.store(array, entityId, value);
     }
   }
 }

@@ -87,6 +87,7 @@ function createTypedArrayAtOffset(
  */
 export class ArrayBufferView {
   private buffer: ArrayBufferLike;
+  private uint8View: Uint8Array;
   private bytesPerEntry: number;
   private bytesPerElement: number;
   private capacity: number;
@@ -110,6 +111,7 @@ export class ArrayBufferView {
     maxLength: number
   ) {
     this.buffer = buffer;
+    this.uint8View = new Uint8Array(buffer);
     this.bytesPerEntry = bytesPerEntry;
     this.bytesPerElement = getElementBytesPerEntry(elementDef);
     this.capacity = capacity;
@@ -122,14 +124,34 @@ export class ArrayBufferView {
   }
 
   /**
+   * Read a uint32 value atomically from the buffer
+   */
+  private readUint32(byteOffset: number): number {
+    const b0 = Atomics.load(this.uint8View, byteOffset);
+    const b1 = Atomics.load(this.uint8View, byteOffset + 1);
+    const b2 = Atomics.load(this.uint8View, byteOffset + 2);
+    const b3 = Atomics.load(this.uint8View, byteOffset + 3);
+    return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+  }
+
+  /**
+   * Write a uint32 value atomically to the buffer
+   */
+  private writeUint32(byteOffset: number, value: number): void {
+    Atomics.store(this.uint8View, byteOffset, value & 0xff);
+    Atomics.store(this.uint8View, byteOffset + 1, (value >> 8) & 0xff);
+    Atomics.store(this.uint8View, byteOffset + 2, (value >> 16) & 0xff);
+    Atomics.store(this.uint8View, byteOffset + 3, (value >> 24) & 0xff);
+  }
+
+  /**
    * Get array data for an entity
    * @param index - The entity index
    * @returns An array containing the data
    */
   get(index: number): any[] {
     const offset = index * this.bytesPerEntry;
-    const lengthView = new Uint32Array(this.buffer, offset, 1);
-    const storedLength = lengthView[0];
+    const storedLength = this.readUint32(offset);
 
     if (storedLength === 0) {
       return [];
@@ -146,28 +168,46 @@ export class ArrayBufferView {
           this.buffer,
           dataOffset
         );
+        const useAtomics =
+          this.elementDef.btype !== "float32" &&
+          this.elementDef.btype !== "float64";
         for (let i = 0; i < storedLength; i++) {
-          result.push(typedArray[i]);
+          // For integer types, use Atomics; for floats, use direct access
+          // (floats don't support Atomics but are atomic on aligned access)
+          if (useAtomics) {
+            result.push(
+              Atomics.load(
+                typedArray as Exclude<
+                  typeof typedArray,
+                  Float32Array | Float64Array
+                >,
+                i
+              )
+            );
+          } else {
+            result.push(typedArray[i]);
+          }
         }
         break;
       }
       case "boolean": {
-        const boolArray = new Uint8Array(this.buffer, dataOffset, storedLength);
         for (let i = 0; i < storedLength; i++) {
-          result.push(boolArray[i] !== 0);
+          result.push(Atomics.load(this.uint8View, dataOffset + i) !== 0);
         }
         break;
       }
       case "string": {
         for (let i = 0; i < storedLength; i++) {
           const strOffset = dataOffset + i * this.bytesPerElement;
-          const strLenView = new Uint32Array(this.buffer, strOffset, 1);
-          const strLen = strLenView[0];
+          const strLen = this.readUint32(strOffset);
           if (strLen === 0) {
             result.push("");
           } else {
-            const strData = new Uint8Array(this.buffer, strOffset + 4, strLen);
-            result.push(textDecoder.decode(strData));
+            const stringBytes = new Uint8Array(strLen);
+            for (let j = 0; j < strLen; j++) {
+              stringBytes[j] = Atomics.load(this.uint8View, strOffset + 4 + j);
+            }
+            result.push(textDecoder.decode(stringBytes));
           }
         }
         break;
@@ -175,13 +215,15 @@ export class ArrayBufferView {
       case "binary": {
         for (let i = 0; i < storedLength; i++) {
           const binOffset = dataOffset + i * this.bytesPerElement;
-          const binLenView = new Uint32Array(this.buffer, binOffset, 1);
-          const binLen = binLenView[0];
+          const binLen = this.readUint32(binOffset);
           if (binLen === 0) {
             result.push(new Uint8Array(0));
           } else {
-            const binData = new Uint8Array(this.buffer, binOffset + 4, binLen);
-            result.push(new Uint8Array(binData)); // Return a copy
+            const binData = new Uint8Array(binLen);
+            for (let j = 0; j < binLen; j++) {
+              binData[j] = Atomics.load(this.uint8View, binOffset + 4 + j);
+            }
+            result.push(binData);
           }
         }
         break;
@@ -200,19 +242,16 @@ export class ArrayBufferView {
     const offset = index * this.bytesPerEntry;
     const elementsToCopy = Math.min(value.length, this.maxLength);
 
-    // Write array length prefix
-    const lengthView = new Uint32Array(this.buffer, offset, 1);
-    lengthView[0] = elementsToCopy;
+    // Write array length prefix atomically
+    this.writeUint32(offset, elementsToCopy);
 
     const dataOffset = offset + ArrayBufferView.LENGTH_BYTES;
 
     // Clear the data area first
-    const clearView = new Uint8Array(
-      this.buffer,
-      dataOffset,
-      this.maxLength * this.bytesPerElement
-    );
-    clearView.fill(0);
+    const totalDataBytes = this.maxLength * this.bytesPerElement;
+    for (let i = 0; i < totalDataBytes; i++) {
+      Atomics.store(this.uint8View, dataOffset + i, 0);
+    }
 
     if (elementsToCopy === 0) return;
 
@@ -224,19 +263,29 @@ export class ArrayBufferView {
           this.buffer,
           dataOffset
         );
+        const useAtomics =
+          this.elementDef.btype !== "float32" &&
+          this.elementDef.btype !== "float64";
         for (let i = 0; i < elementsToCopy; i++) {
-          typedArray[i] = value[i];
+          // For integer types, use Atomics; for floats, use direct access
+          if (useAtomics) {
+            Atomics.store(
+              typedArray as Exclude<
+                typeof typedArray,
+                Float32Array | Float64Array
+              >,
+              i,
+              value[i]
+            );
+          } else {
+            typedArray[i] = value[i];
+          }
         }
         break;
       }
       case "boolean": {
-        const boolArray = new Uint8Array(
-          this.buffer,
-          dataOffset,
-          elementsToCopy
-        );
         for (let i = 0; i < elementsToCopy; i++) {
-          boolArray[i] = value[i] ? 1 : 0;
+          Atomics.store(this.uint8View, dataOffset + i, value[i] ? 1 : 0);
         }
         break;
       }
@@ -248,17 +297,13 @@ export class ArrayBufferView {
           const encoded = textEncoder.encode(str);
           const bytesToCopy = Math.min(encoded.length, maxDataBytes);
 
-          // Write string length
-          const strLenView = new Uint32Array(this.buffer, strOffset, 1);
-          strLenView[0] = bytesToCopy;
+          // Write string length atomically
+          this.writeUint32(strOffset, bytesToCopy);
 
-          // Write string data
-          const strData = new Uint8Array(
-            this.buffer,
-            strOffset + 4,
-            bytesToCopy
-          );
-          strData.set(encoded.subarray(0, bytesToCopy));
+          // Write string data atomically
+          for (let j = 0; j < bytesToCopy; j++) {
+            Atomics.store(this.uint8View, strOffset + 4 + j, encoded[j]);
+          }
         }
         break;
       }
@@ -269,17 +314,13 @@ export class ArrayBufferView {
           const bin = value[i] as Uint8Array;
           const bytesToCopy = Math.min(bin.length, maxDataBytes);
 
-          // Write binary length
-          const binLenView = new Uint32Array(this.buffer, binOffset, 1);
-          binLenView[0] = bytesToCopy;
+          // Write binary length atomically
+          this.writeUint32(binOffset, bytesToCopy);
 
-          // Write binary data
-          const binData = new Uint8Array(
-            this.buffer,
-            binOffset + 4,
-            bytesToCopy
-          );
-          binData.set(bin.subarray(0, bytesToCopy));
+          // Write binary data atomically
+          for (let j = 0; j < bytesToCopy; j++) {
+            Atomics.store(this.uint8View, binOffset + 4 + j, bin[j]);
+          }
         }
         break;
       }

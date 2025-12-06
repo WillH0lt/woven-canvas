@@ -23,7 +23,7 @@ export class BooleanField extends Field<BooleanFieldDef> {
       configurable: false,
       get: () => {
         const array = (buffer as any)[fieldName];
-        return Boolean(array[getEntityId()]);
+        return Boolean(Atomics.load(array, getEntityId()));
       },
     });
   }
@@ -39,11 +39,11 @@ export class BooleanField extends Field<BooleanFieldDef> {
       configurable: false,
       get: () => {
         const array = (buffer as any)[fieldName];
-        return Boolean(array[getEntityId()]);
+        return Boolean(Atomics.load(array, getEntityId()));
       },
       set: (value: any) => {
         const array = (buffer as any)[fieldName];
-        array[getEntityId()] = value ? 1 : 0;
+        Atomics.store(array, getEntityId(), value ? 1 : 0);
       },
     });
   }
@@ -53,6 +53,6 @@ export class BooleanField extends Field<BooleanFieldDef> {
   }
 
   setValue(array: any, entityId: EntityId, value: any) {
-    array[entityId] = value ? 1 : 0;
+    Atomics.store(array, entityId, value ? 1 : 0);
   }
 }

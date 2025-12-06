@@ -29,17 +29,18 @@ export class StringBufferView {
 
   get(index: number): string {
     const offset = index * this.bytesPerString;
-    const b0 = this.buffer[offset];
-    const b1 = this.buffer[offset + 1];
-    const b2 = this.buffer[offset + 2];
-    const b3 = this.buffer[offset + 3];
+    const b0 = Atomics.load(this.buffer, offset);
+    const b1 = Atomics.load(this.buffer, offset + 1);
+    const b2 = Atomics.load(this.buffer, offset + 2);
+    const b3 = Atomics.load(this.buffer, offset + 3);
     const storedLength = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
     if (storedLength === 0) return "";
     const dataStart = offset + StringBufferView.LENGTH_BYTES;
-    const stringBytes = this.buffer.subarray(
-      dataStart,
-      dataStart + storedLength
-    );
+    // Read string bytes atomically
+    const stringBytes = new Uint8Array(storedLength);
+    for (let i = 0; i < storedLength; i++) {
+      stringBytes[i] = Atomics.load(this.buffer, dataStart + i);
+    }
     return textDecoder.decode(stringBytes);
   }
 
@@ -48,19 +49,23 @@ export class StringBufferView {
     const encoded = textEncoder.encode(value);
     const maxDataBytes = this.bytesPerString - StringBufferView.LENGTH_BYTES;
     const bytesToCopy = Math.min(encoded.length, maxDataBytes);
-    this.buffer[offset] = bytesToCopy & 0xff;
-    this.buffer[offset + 1] = (bytesToCopy >> 8) & 0xff;
-    this.buffer[offset + 2] = (bytesToCopy >> 16) & 0xff;
-    this.buffer[offset + 3] = (bytesToCopy >> 24) & 0xff;
-    this.buffer.fill(
-      0,
-      offset + StringBufferView.LENGTH_BYTES,
-      offset + this.bytesPerString
-    );
-    this.buffer.set(
-      encoded.subarray(0, bytesToCopy),
-      offset + StringBufferView.LENGTH_BYTES
-    );
+
+    // Write length prefix atomically
+    Atomics.store(this.buffer, offset, bytesToCopy & 0xff);
+    Atomics.store(this.buffer, offset + 1, (bytesToCopy >> 8) & 0xff);
+    Atomics.store(this.buffer, offset + 2, (bytesToCopy >> 16) & 0xff);
+    Atomics.store(this.buffer, offset + 3, (bytesToCopy >> 24) & 0xff);
+
+    // Clear the data area first
+    const dataStart = offset + StringBufferView.LENGTH_BYTES;
+    for (let i = 0; i < maxDataBytes; i++) {
+      Atomics.store(this.buffer, dataStart + i, 0);
+    }
+
+    // Write string data atomically
+    for (let i = 0; i < bytesToCopy; i++) {
+      Atomics.store(this.buffer, dataStart + i, encoded[i]);
+    }
   }
 
   getBuffer(): Uint8Array {
