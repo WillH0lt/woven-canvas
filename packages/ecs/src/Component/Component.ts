@@ -424,6 +424,41 @@ export class Component<T extends ComponentSchema> {
     // Push change event using sentinel entity ID
     this.eventBuffer?.pushChanged(SINGLETON_ENTITY_ID, this.componentId);
   }
+
+  /**
+   * Create a plain object snapshot of entity's component data.
+   * Unlike read(), this returns a regular object that can be safely spread,
+   * stored, or passed around without the getter/setter binding behavior.
+   *
+   * Use this when you need to:
+   * - Copy component data to another data structure
+   * - Store component state for later comparison
+   * - Pass component data to external code
+   *
+   * @param entityId - The entity ID to snapshot
+   * @returns A plain object copy of the component's field values
+   */
+  snapshot(entityId: EntityId): InferComponentType<T> {
+    const result = {} as InferComponentType<T>;
+    for (let i = 0; i < this.fieldNames.length; i++) {
+      const fieldName = this.fieldNames[i];
+      const array = (this.buffer as any)[fieldName];
+      (result as any)[fieldName] = array.get
+        ? array.get(entityId)
+        : array[entityId];
+    }
+    return result;
+  }
+
+  /**
+   * Create a plain object snapshot of singleton's data.
+   * Unlike readSingleton(), this returns a regular object that can be safely spread.
+   *
+   * @returns A plain object copy of the singleton's field values
+   */
+  snapshotSingleton(): InferComponentType<T> {
+    return this.snapshot(SINGLETON_INDEX);
+  }
 }
 
 /**
@@ -493,6 +528,33 @@ export class ComponentDef<T extends ComponentSchema> {
   }
 
   /**
+   * Create a plain object snapshot of entity's component data.
+   * Unlike read(), this returns a regular object that can be safely spread,
+   * stored, or passed around without the getter/setter binding behavior.
+   *
+   * Use this when you need to:
+   * - Copy component data to another data structure
+   * - Store component state for later comparison
+   * - Pass component data to external code
+   *
+   * @param ctx - The context containing the component instance
+   * @param entityId - The entity ID to snapshot
+   * @returns A plain object copy of the component's field values
+   *
+   * @example
+   * ```typescript
+   * // WRONG - captures getter reference, not value
+   * state[entityId].Position = Position.read(ctx, entityId);
+   *
+   * // RIGHT - creates a plain object copy
+   * state[entityId].Position = Position.snapshot(ctx, entityId);
+   * ```
+   */
+  snapshot(ctx: Context, entityId: EntityId): InferComponentType<T> {
+    return this._getInstance(ctx).snapshot(entityId);
+  }
+
+  /**
    * Read a singleton's data (no entity ID needed).
    * @param ctx - The context containing the singleton instance
    * @returns The readonly singleton data
@@ -517,6 +579,17 @@ export class ComponentDef<T extends ComponentSchema> {
    */
   copySingleton(ctx: Context, data: T): void {
     this._getInstance(ctx).copy(SINGLETON_INDEX, data);
+  }
+
+  /**
+   * Create a plain object snapshot of singleton's data.
+   * Unlike readSingleton(), this returns a regular object that can be safely spread.
+   *
+   * @param ctx - The context containing the singleton instance
+   * @returns A plain object copy of the singleton's field values
+   */
+  snapshotSingleton(ctx: Context): InferComponentType<T> {
+    return this._getInstance(ctx).snapshotSingleton();
   }
 }
 

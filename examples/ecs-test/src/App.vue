@@ -115,23 +115,21 @@ world.subscribe(stateQuery, ({ added, removed, changed }) => {
   // preferred way to sync data from world -> application
   for (const entityId of added) {
     state[entityId] = {};
-    // Read all component data for newly added entity
-    // const pos = components.Position.read(ctx, entityId);
-    // const size = components.Size.read(ctx, entityId);
-    // const color = components.Color.read(ctx, entityId);
-    state[entityId].Position = components.Position.read(ctx, entityId);
-    state[entityId].Size = components.Size.read(ctx, entityId);
-    state[entityId].Color = components.Color.read(ctx, entityId);
+    state[entityId].Position = components.Position.snapshot(ctx, entityId);
+    state[entityId].Size = components.Size.snapshot(ctx, entityId);
+    state[entityId].Color = components.Color.snapshot(ctx, entityId);
   }
+
   for (const entityId of removed) {
     delete state[entityId];
   }
+
   for (const entityId of changed) {
     // Re-read all tracked components for changed entities
     if (state[entityId]) {
-      state[entityId].Position = components.Position.read(ctx, entityId);
-      state[entityId].Size = components.Size.read(ctx, entityId);
-      state[entityId].Color = components.Color.read(ctx, entityId);
+      state[entityId].Position = components.Position.snapshot(ctx, entityId);
+      state[entityId].Size = components.Size.snapshot(ctx, entityId);
+      state[entityId].Color = components.Color.snapshot(ctx, entityId);
     }
   }
 });

@@ -175,6 +175,69 @@ describe("Component", () => {
       expect(Counter.read(ctx, entity1).value).toBe(100);
       expect(Counter.read(ctx, entity2).value).toBe(20);
     });
+
+    it("should create a plain object snapshot that is independent of entity binding", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entity1 = createEntity(ctx);
+      const entity2 = createEntity(ctx);
+      addComponent(ctx, entity1, Position, { x: 100, y: 200 });
+      addComponent(ctx, entity2, Position, { x: 1, y: 2 });
+
+      // Take snapshot of entity1
+      const snapshot1 = Position.snapshot(ctx, entity1);
+
+      // Verify snapshot has correct values
+      expect(snapshot1.x).toBeCloseTo(100);
+      expect(snapshot1.y).toBeCloseTo(200);
+
+      // Read entity2 (which would change the master object binding)
+      const _read2 = Position.read(ctx, entity2);
+
+      // Snapshot should still have entity1's values (it's a plain object copy)
+      expect(snapshot1.x).toBeCloseTo(100);
+      expect(snapshot1.y).toBeCloseTo(200);
+
+      // Verify it's a plain object (no getters)
+      const descriptor = Object.getOwnPropertyDescriptor(snapshot1, "x");
+      expect(descriptor?.get).toBeUndefined();
+      expect(descriptor?.value).toBeCloseTo(100);
+    });
+
+    it("should allow spreading snapshot without the getter footgun", () => {
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+      const world = new World([Velocity]);
+      const ctx = world.getContext();
+
+      const entity1 = createEntity(ctx);
+      const entity2 = createEntity(ctx);
+      addComponent(ctx, entity1, Velocity, { dx: 10, dy: 20 });
+      addComponent(ctx, entity2, Velocity, { dx: 1, dy: 2 });
+
+      // Store snapshots in an external state object
+      const state: Record<number, { dx: number; dy: number }> = {};
+      state[entity1] = Velocity.snapshot(ctx, entity1);
+      state[entity2] = Velocity.snapshot(ctx, entity2);
+
+      // Verify both snapshots have correct independent values
+      expect(state[entity1].dx).toBeCloseTo(10);
+      expect(state[entity1].dy).toBeCloseTo(20);
+      expect(state[entity2].dx).toBeCloseTo(1);
+      expect(state[entity2].dy).toBeCloseTo(2);
+
+      // Spread the snapshot
+      const spread = { ...state[entity1] };
+      expect(spread.dx).toBeCloseTo(10);
+      expect(spread.dy).toBeCloseTo(20);
+    });
   });
 
   describe("Numeric Field Types", () => {
