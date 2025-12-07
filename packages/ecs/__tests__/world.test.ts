@@ -531,4 +531,397 @@ describe("World", () => {
       expect(world2Results).toHaveLength(5);
     });
   });
+
+  describe("Subscribe and Sync", () => {
+    it("should emit 'added' when entity enters the query", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const query = useQuery((q) => q.with(Position));
+      const receivedAdded: number[] = [];
+      world.subscribe(query, ({ added }) => {
+        receivedAdded.push(...added);
+      });
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+      world.sync();
+
+      // Should receive 'added' when entity enters the query
+      expect(receivedAdded).toHaveLength(1);
+      expect(receivedAdded[0]).toBe(entity);
+    });
+
+    it("should not fire events for entities that do not match the query", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      // Query only for entities with Velocity
+      const query = useQuery((q) => q.with(Velocity));
+      const receivedAdded: number[] = [];
+      world.subscribe(query, ({ added }) => {
+        receivedAdded.push(...added);
+      });
+
+      // Create entity with only Position (should not match)
+      const entity1 = createEntity(ctx);
+      addComponent(ctx, entity1, Position, { x: 0, y: 0 });
+
+      // Create entity with Velocity (should match)
+      const entity2 = createEntity(ctx);
+      addComponent(ctx, entity2, Velocity, { dx: 1, dy: 1 });
+
+      world.sync();
+
+      // Should only receive events for entity2
+      expect(receivedAdded).toHaveLength(1);
+      expect(receivedAdded[0]).toBe(entity2);
+    });
+
+    it("should emit 'removed' when entity leaves the query (entity deleted)", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+
+      const query = useQuery((q) => q.with(Position));
+      world.sync(); // Clear the initial events
+
+      const receivedRemoved: number[] = [];
+      world.subscribe(query, ({ removed }) => {
+        receivedRemoved.push(...removed);
+      });
+
+      removeEntity(ctx, entity);
+      world.sync();
+
+      expect(receivedRemoved).toHaveLength(1);
+      expect(receivedRemoved[0]).toBe(entity);
+    });
+
+    it("should emit 'removed' when entity leaves the query (component removed)", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+      addComponent(ctx, entity, Velocity, { dx: 1, dy: 1 });
+
+      // Query for entities with both Position AND Velocity
+      const query = useQuery((q) => q.with(Position, Velocity));
+      world.sync(); // Clear initial events
+
+      const receivedRemoved: number[] = [];
+      world.subscribe(query, ({ removed }) => {
+        receivedRemoved.push(...removed);
+      });
+
+      // Remove Velocity - entity should leave the query
+      removeComponent(ctx, entity, Velocity);
+      world.sync();
+
+      expect(receivedRemoved).toHaveLength(1);
+      expect(receivedRemoved[0]).toBe(entity);
+    });
+
+    it("should emit 'added' when entity enters the query (component added)", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+
+      // Query for entities with both Position AND Velocity
+      const query = useQuery((q) => q.with(Position, Velocity));
+      world.sync(); // Clear initial events
+
+      const receivedAdded: number[] = [];
+      world.subscribe(query, ({ added }) => {
+        receivedAdded.push(...added);
+      });
+
+      // Add Velocity - entity should enter the query
+      addComponent(ctx, entity, Velocity, { dx: 1, dy: 1 });
+      world.sync();
+
+      expect(receivedAdded).toHaveLength(1);
+      expect(receivedAdded[0]).toBe(entity);
+    });
+
+    it("should emit 'changed' when tracked component changes", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+
+      // Use tracking() to track Position changes
+      const query = useQuery((q) => q.with(Position).tracking(Position));
+      world.sync(); // Clear the initial events
+
+      const receivedChanged: number[] = [];
+      world.subscribe(query, ({ changed }) => {
+        receivedChanged.push(...changed);
+      });
+
+      // Modify the component
+      const pos = Position.write(ctx, entity);
+      pos.x = 100;
+      world.sync();
+
+      expect(receivedChanged).toHaveLength(1);
+      expect(receivedChanged[0]).toBe(entity);
+    });
+
+    it("should not emit 'changed' for non-tracked components", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+      addComponent(ctx, entity, Velocity, { dx: 1, dy: 1 });
+
+      // Query with Position but only track Velocity
+      const query = useQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+      world.sync(); // Clear the initial events
+
+      const receivedChanged: number[] = [];
+      world.subscribe(query, ({ changed }) => {
+        receivedChanged.push(...changed);
+      });
+
+      // Modify Position (not tracked) - should not emit
+      const pos = Position.write(ctx, entity);
+      pos.x = 100;
+      world.sync();
+
+      expect(receivedChanged).toHaveLength(0);
+
+      // Modify Velocity (tracked) - should emit
+      const vel = Velocity.write(ctx, entity);
+      vel.dx = 50;
+      world.sync();
+
+      expect(receivedChanged).toHaveLength(1);
+      expect(receivedChanged[0]).toBe(entity);
+    });
+
+    it("should support multiple subscribers with different queries", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const positionQuery = useQuery((q) => q.with(Position));
+      const velocityQuery = useQuery((q) => q.with(Velocity));
+
+      const positionAdded: number[] = [];
+      const velocityAdded: number[] = [];
+
+      world.subscribe(positionQuery, ({ added }) => {
+        positionAdded.push(...added);
+      });
+      world.subscribe(velocityQuery, ({ added }) => {
+        velocityAdded.push(...added);
+      });
+
+      // Create entity with only Position
+      const e1 = createEntity(ctx);
+      addComponent(ctx, e1, Position, { x: 0, y: 0 });
+
+      // Create entity with only Velocity
+      const e2 = createEntity(ctx);
+      addComponent(ctx, e2, Velocity, { dx: 1, dy: 1 });
+
+      world.sync();
+
+      // Position subscriber should only see e1
+      expect(positionAdded).toHaveLength(1);
+      expect(positionAdded[0]).toBe(e1);
+
+      // Velocity subscriber should only see e2
+      expect(velocityAdded).toHaveLength(1);
+      expect(velocityAdded[0]).toBe(e2);
+    });
+
+    it("should support unsubscribing", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const query = useQuery((q) => q.with(Position));
+      const receivedAdded: number[] = [];
+      const unsubscribe = world.subscribe(query, ({ added }) => {
+        receivedAdded.push(...added);
+      });
+
+      const e1 = createEntity(ctx);
+      addComponent(ctx, e1, Position, { x: 0, y: 0 });
+      world.sync();
+      expect(receivedAdded).toHaveLength(1);
+
+      unsubscribe();
+
+      const e2 = createEntity(ctx);
+      addComponent(ctx, e2, Position, { x: 0, y: 0 });
+      world.sync();
+      // Should still be 1 since we unsubscribed
+      expect(receivedAdded).toHaveLength(1);
+    });
+
+    it("should not call subscribers if no matching events occurred", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      // Subscribe only to Velocity entities
+      const query = useQuery((q) => q.with(Velocity));
+      let callCount = 0;
+      world.subscribe(query, () => {
+        callCount++;
+      });
+
+      // Create entity with only Position (doesn't match query)
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+
+      world.sync();
+      world.sync();
+      world.sync();
+
+      expect(callCount).toBe(0);
+    });
+
+    it("should batch multiple 'added' events in a single sync call", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const query = useQuery((q) => q.with(Position));
+      const receivedBatches: number[][] = [];
+      world.subscribe(query, ({ added }) => {
+        receivedBatches.push([...added]);
+      });
+
+      // Create multiple entities before syncing
+      const e1 = createEntity(ctx);
+      const e2 = createEntity(ctx);
+      const e3 = createEntity(ctx);
+      addComponent(ctx, e1, Position, { x: 0, y: 0 });
+      addComponent(ctx, e2, Position, { x: 0, y: 0 });
+      addComponent(ctx, e3, Position, { x: 0, y: 0 });
+
+      world.sync();
+
+      // Should have received one batch with 3 'added' entities
+      expect(receivedBatches).toHaveLength(1);
+      expect(receivedBatches[0]).toHaveLength(3);
+    });
+
+    it("should only emit 'added' once per entity even with multiple component adds", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      // Query that matches when entity has Position
+      const query = useQuery((q) => q.with(Position));
+      const receivedAdded: number[] = [];
+      world.subscribe(query, ({ added }) => {
+        receivedAdded.push(...added);
+      });
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+      addComponent(ctx, entity, Velocity, { dx: 1, dy: 1 }); // Adding more components
+      world.sync();
+
+      // Should only get one 'added' entity
+      expect(receivedAdded).toHaveLength(1);
+    });
+  });
 });

@@ -1,11 +1,32 @@
 import type { ComponentDef } from "./Component";
-import type { Context, QueryMasks } from "./types";
+import type { Context, EntityId, QueryMasks } from "./types";
 import type { ComponentSchema } from "./Component/types";
 import { QueryCache } from "./QueryCache";
-import { EventType, EventTypeMask } from "./EventBuffer";
+import { EventType, EventTypeMask, type EventTypeValue } from "./EventBuffer";
 
 const EMPTY_UINT32_ARRAY = new Uint32Array(0);
 const EMPTY_NUMBER_ARRAY: number[] = [];
+
+/**
+ * Result of processing events for a query
+ */
+export interface QueryEventResult {
+  /** Entity IDs that entered the query (now match, didn't before) */
+  added: EntityId[];
+  /** Entity IDs that left the query (no longer match, did before) */
+  removed: EntityId[];
+  /** Entity IDs with tracked component changes (still in query) */
+  changed: EntityId[];
+}
+
+/**
+ * Raw event structure from EventBuffer
+ */
+export interface RawEvent {
+  entityId: EntityId;
+  eventType: EventTypeValue;
+  componentId: number;
+}
 
 /**
  * Helper to create an empty mask array
@@ -28,6 +49,95 @@ function setComponentBit(mask: Uint8Array, componentId: number): void {
 }
 
 /**
+ * Check if a component ID is set in a mask
+ */
+function isComponentInMask(mask: Uint8Array, componentId: number): boolean {
+  const byteIndex = componentId >> 3;
+  const bitIndex = componentId & 7;
+  return byteIndex < mask.length && (mask[byteIndex] & (1 << bitIndex)) !== 0;
+}
+
+/**
+ * Process raw events and determine which entities entered/left the query and which had tracked changes.
+ * This is the core logic shared between Query and World.sync().
+ *
+ * @param rawEvents - Array of raw events from EventBuffer
+ * @param masks - Query masks for filtering
+ * @param matchedEntities - Set of entity IDs currently matched (will be mutated)
+ * @param ctx - Context for checking current entity state
+ * @returns Object with added, removed, and changed entity information
+ */
+export function processQueryEvents(
+  rawEvents: RawEvent[],
+  masks: QueryMasks,
+  matchedEntities: Set<EntityId>,
+  ctx: Context
+): QueryEventResult {
+  const added: EntityId[] = [];
+  const removed: EntityId[] = [];
+  const changed: EntityId[] = [];
+
+  // Track entities already processed this batch to avoid duplicates
+  const addedThisBatch = new Set<EntityId>();
+  const removedThisBatch = new Set<EntityId>();
+  const changedThisBatch = new Set<EntityId>();
+
+  for (const raw of rawEvents) {
+    const entityId = raw.entityId;
+    const wasMatched = matchedEntities.has(entityId);
+
+    if (raw.eventType === EventType.REMOVED) {
+      // Entity was deleted from world
+      if (wasMatched && !removedThisBatch.has(entityId)) {
+        removedThisBatch.add(entityId);
+        matchedEntities.delete(entityId);
+        removed.push(entityId);
+      }
+    } else if (raw.eventType === EventType.ADDED) {
+      // Entity was created - check if it matches query
+      const matchesNow = ctx.entityBuffer.matches(entityId, masks);
+      if (matchesNow && !wasMatched && !addedThisBatch.has(entityId)) {
+        addedThisBatch.add(entityId);
+        matchedEntities.add(entityId);
+        added.push(entityId);
+      }
+    } else if (
+      raw.eventType === EventType.COMPONENT_ADDED ||
+      raw.eventType === EventType.COMPONENT_REMOVED
+    ) {
+      // Component added/removed - check if entity entered or left query
+      const matchesNow =
+        ctx.entityBuffer.has(entityId) &&
+        ctx.entityBuffer.matches(entityId, masks);
+
+      if (matchesNow && !wasMatched && !addedThisBatch.has(entityId)) {
+        // Entity now matches query
+        addedThisBatch.add(entityId);
+        matchedEntities.add(entityId);
+        added.push(entityId);
+      } else if (!matchesNow && wasMatched && !removedThisBatch.has(entityId)) {
+        // Entity no longer matches query
+        removedThisBatch.add(entityId);
+        matchedEntities.delete(entityId);
+        removed.push(entityId);
+      }
+    } else if (raw.eventType === EventType.CHANGED) {
+      // Component data changed - only emit if entity is in query and component is tracked
+      const stillMatched = matchedEntities.has(entityId);
+      if (stillMatched && masks.hasTracking) {
+        const isTracked = isComponentInMask(masks.tracking, raw.componentId);
+        if (isTracked && !changedThisBatch.has(entityId)) {
+          changedThisBatch.add(entityId);
+          changed.push(entityId);
+        }
+      }
+    }
+  }
+
+  return { added, removed, changed };
+}
+
+/**
  * A per-context query instance that caches matching entities.
  * Created from a QueryDef when first used with a specific context.
  *
@@ -42,19 +152,16 @@ export class Query {
   readonly cache: QueryCache;
   readonly masks: QueryMasks;
 
-  private queryComponentMask: Uint8Array | null = null;
   private lastScannedIndex: number;
   private lastUpdateTick: number;
   private cachedAdded: number[] = EMPTY_NUMBER_ARRAY;
   private cachedRemoved: number[] = EMPTY_NUMBER_ARRAY;
-  private lastChangedTick: number;
-  private lastChangedScannedIndex: number;
   private cachedChanged: number[] = EMPTY_NUMBER_ARRAY;
-  private addedList: number[] = [];
-  private removedList: number[] = [];
+  /** Tracked entities as a Set for use with processQueryEvents */
+  private matchedEntities: Set<EntityId>;
 
   /**
-   * @internal - Use QueryDef.getInstance(ctx) instead
+   * @internal - Use QueryDef._getInstance(ctx) instead
    */
   constructor(ctx: Context, masks: QueryMasks) {
     this.masks = masks;
@@ -72,38 +179,20 @@ export class Query {
       undefined
     );
 
+    // Initialize matched entities set for tracking
+    this.matchedEntities = new Set<EntityId>();
+
     // Add entities that are still alive and match the query
     for (const entityId of entities) {
       if (ctx.entityBuffer.matches(entityId, masks)) {
         this.cache.add(entityId);
+        this.matchedEntities.add(entityId);
       }
     }
 
     // Initialize tracking indices to current position
     this.lastScannedIndex = currentWriteIndex;
-    this.lastChangedScannedIndex = currentWriteIndex;
     this.lastUpdateTick = ctx.tick;
-    this.lastChangedTick = ctx.tick;
-  }
-
-  /**
-   * Get a combined component mask for this query (with + without + any)
-   * Used to filter component events to only relevant ones
-   * Cached after first call.
-   */
-  private getQueryComponentMask(): Uint8Array {
-    if (this.queryComponentMask) {
-      return this.queryComponentMask;
-    }
-
-    // Combine all component masks (OR them together)
-    const combined = new Uint8Array(this.masks.with.length);
-    for (let i = 0; i < combined.length; i++) {
-      combined[i] =
-        this.masks.with[i] | this.masks.without[i] | this.masks.any[i];
-    }
-    this.queryComponentMask = combined;
-    return combined;
   }
 
   /**
@@ -129,47 +218,34 @@ export class Query {
       return false;
     }
 
-    // Get component mask for filtering events
-    const queryComponentMask = this.getQueryComponentMask();
-
-    // Collect all entities that had relevant events (reuses Set)
-    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
-      this.lastScannedIndex,
-      EventTypeMask.ALL, // Get all event types - we'll categorize them ourselves
-      queryComponentMask
+    // Read raw events
+    const { events: rawEvents, newIndex } = ctx.eventBuffer.readEvents(
+      this.lastScannedIndex
     );
 
-    // Reuse arrays - clear them first
-    const addedList = this.addedList;
-    const removedList = this.removedList;
-    addedList.length = 0;
-    removedList.length = 0;
+    // Use shared logic to process events
+    const result = processQueryEvents(
+      rawEvents,
+      this.masks,
+      this.matchedEntities,
+      ctx
+    );
 
-    // Categorize entities into added and removed
-    const cache = this.cache;
-    const masks = this.masks;
-    const entityBuffer = ctx.entityBuffer;
-
-    for (const entityId of entities) {
-      const existsNow = entityBuffer.has(entityId);
-      const matchesNow = existsNow && entityBuffer.matches(entityId, masks);
-      const wasInCache = cache.has(entityId);
-
-      if (matchesNow && !wasInCache) {
-        // Entity now matches but wasn't in cache -> added
-        addedList.push(entityId);
-        cache.add(entityId);
-      } else if (!matchesNow && wasInCache) {
-        // Entity no longer matches but was in cache -> removed
-        removedList.push(entityId);
-        cache.remove(entityId);
-      }
+    // Update the QueryCache to match the matchedEntities set
+    for (const entityId of result.added) {
+      this.cache.add(entityId);
+    }
+    for (const entityId of result.removed) {
+      this.cache.remove(entityId);
     }
 
-    // Cache the results - swap the arrays to avoid allocations
-    this.cachedAdded = addedList.length > 0 ? addedList : EMPTY_NUMBER_ARRAY;
+    // Cache the results
+    this.cachedAdded =
+      result.added.length > 0 ? result.added : EMPTY_NUMBER_ARRAY;
     this.cachedRemoved =
-      removedList.length > 0 ? removedList : EMPTY_NUMBER_ARRAY;
+      result.removed.length > 0 ? result.removed : EMPTY_NUMBER_ARRAY;
+    this.cachedChanged =
+      result.changed.length > 0 ? result.changed : EMPTY_NUMBER_ARRAY;
 
     // Partition for multi-threaded access
     if (ctx.threadCount > 1) {
@@ -183,11 +259,12 @@ export class Query {
         ctx.threadIndex,
         ctx.threadCount
       );
+      this.cachedChanged = this.partitionEntities(
+        this.cachedChanged,
+        ctx.threadIndex,
+        ctx.threadCount
+      );
     }
-
-    // Allocate new lists for next update (the old ones are now cached)
-    this.addedList = [];
-    this.removedList = [];
 
     // Update tracking indices
     this.lastScannedIndex = newIndex;
@@ -292,55 +369,11 @@ export class Query {
    * Only returns entities that match the query criteria and have changes to tracked components.
    * Use .tracking() in the query builder to specify which components to track.
    *
-   * Note: changed() uses separate tracking from added()/removed() since it monitors
-   * different event types (CHANGED vs ADDED/REMOVED/COMPONENT_ADDED/COMPONENT_REMOVED).
-   *
    * @param ctx - The context object containing the entity buffer and event buffer
    * @returns An array of entity IDs with changed tracked components
    */
   changed(ctx: Context): number[] {
     this.ensureUpdated(ctx);
-
-    // Already up-to-date for this tick, return cached result
-    if (ctx.tick === this.lastChangedTick) {
-      return this.cachedChanged;
-    }
-
-    // If no components are tracked, return empty
-    // Use pre-computed hasTracking flag for fast path
-    if (!this.masks.hasTracking) {
-      this.lastChangedTick = ctx.tick;
-      this.cachedChanged = EMPTY_NUMBER_ARRAY;
-      return this.cachedChanged;
-    }
-
-    const { entities, newIndex } = ctx.eventBuffer.collectEntitiesInRange(
-      this.lastChangedScannedIndex,
-      EventType.CHANGED,
-      this.masks.tracking
-    );
-
-    // Filter to only entities that currently match the query
-    const results: number[] = [];
-    for (const entityId of entities) {
-      if (ctx.entityBuffer.matches(entityId, this.masks)) {
-        results.push(entityId);
-      }
-    }
-
-    this.lastChangedScannedIndex = newIndex;
-    this.lastChangedTick = ctx.tick;
-    this.cachedChanged = results.length > 0 ? results : EMPTY_NUMBER_ARRAY;
-
-    // Partition for multi-threaded access
-    if (ctx.threadCount > 1) {
-      this.cachedChanged = this.partitionEntities(
-        this.cachedChanged,
-        ctx.threadIndex,
-        ctx.threadCount
-      );
-    }
-
     return this.cachedChanged;
   }
 }
@@ -377,7 +410,7 @@ export class QueryDef {
    * @param ctx - The context (World) to get the query for
    * @returns The Query instance for this context
    */
-  getInstance(ctx: Context): Query {
+  _getInstance(ctx: Context): Query {
     // Check if already created for this context
     let query = ctx.queries[this.name];
     if (query) {
@@ -385,9 +418,7 @@ export class QueryDef {
     }
 
     // Build masks with component IDs from context
-    const queryBuilder = new QueryBuilder(ctx.componentCount, ctx);
-    const configuredBuilder = this.builder(queryBuilder);
-    const masks = configuredBuilder._build();
+    const masks = this._getMasks(ctx);
 
     // Create the Query instance
     query = new Query(ctx, masks);
@@ -399,6 +430,19 @@ export class QueryDef {
   }
 
   /**
+   * Get the query masks for a specific context without creating a full Query instance.
+   * Useful for lightweight filtering operations that don't need caching.
+   *
+   * @param ctx - The context (World) to get masks for
+   * @returns The query masks for entity matching
+   */
+  _getMasks(ctx: Context): QueryMasks {
+    const queryBuilder = new QueryBuilder(ctx.componentCount, ctx);
+    const configuredBuilder = this.builder(queryBuilder);
+    return configuredBuilder._build();
+  }
+
+  /**
    * Get the current matching entities.
    * Convenience method that gets the Query instance and calls current().
    *
@@ -406,7 +450,7 @@ export class QueryDef {
    * @returns An array of entity IDs matching the query criteria
    */
   current(ctx: Context): Uint32Array | number[] {
-    return this.getInstance(ctx).current(ctx);
+    return this._getInstance(ctx).current(ctx);
   }
 
   /**
@@ -417,7 +461,7 @@ export class QueryDef {
    * @returns An array of entity IDs that were added
    */
   added(ctx: Context): number[] {
-    return this.getInstance(ctx).added(ctx);
+    return this._getInstance(ctx).added(ctx);
   }
 
   /**
@@ -428,7 +472,7 @@ export class QueryDef {
    * @returns An array of entity IDs that were removed
    */
   removed(ctx: Context): number[] {
-    return this.getInstance(ctx).removed(ctx);
+    return this._getInstance(ctx).removed(ctx);
   }
 
   /**
@@ -439,7 +483,7 @@ export class QueryDef {
    * @returns An array of entity IDs with changed tracked components
    */
   changed(ctx: Context): number[] {
-    return this.getInstance(ctx).changed(ctx);
+    return this._getInstance(ctx).changed(ctx);
   }
 }
 

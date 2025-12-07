@@ -5,7 +5,11 @@ export {
   defineComponent,
   defineSingleton,
 } from "./Component";
-export { World } from "./World";
+export {
+  World,
+  type WorldSyncResult,
+  type WorldSubscribeCallback,
+} from "./World";
 export { setupWorker } from "./Worker";
 export {
   createEntity,
@@ -27,9 +31,12 @@ export type {
 } from "./types";
 export {
   useQuery,
+  processQueryEvents,
   type QueryBuilder,
   type Query,
   type QueryDef,
+  type QueryEventResult,
+  type RawEvent,
 } from "./Query";
 export type { EntityBuffer } from "./EntityBuffer";
 export { EventBuffer, EventType } from "./EventBuffer";

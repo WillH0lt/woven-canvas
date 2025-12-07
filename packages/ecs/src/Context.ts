@@ -65,7 +65,7 @@ export function getBackrefs<T extends ComponentSchema>(
   componentDef: ComponentDef<T>,
   fieldName: keyof T & string
 ): EntityId[] {
-  const component = componentDef.getInstance(ctx);
+  const component = componentDef._getInstance(ctx);
 
   const results: EntityId[] = [];
   const buffer = (component.buffer as any)[fieldName] as Uint32Array;
@@ -150,7 +150,7 @@ export function addComponent<T extends ComponentSchema>(
   componentDef: ComponentDef<T>,
   data: Partial<InferComponentType<T>> = {} as any
 ): void {
-  const component = componentDef.getInstance(ctx);
+  const component = componentDef._getInstance(ctx);
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
   component.copy(entityId, data as any);
   ctx.eventBuffer.pushComponentAdded(entityId, component.componentId);
@@ -182,7 +182,7 @@ export function removeComponent<T extends ComponentSchema>(
     throw new Error(`Entity with ID ${entityId} does not exist.`);
   }
 
-  const component = componentDef.getInstance(ctx);
+  const component = componentDef._getInstance(ctx);
   ctx.entityBuffer.removeComponentFromEntity(entityId, component.componentId);
   ctx.eventBuffer.pushComponentRemoved(entityId, component.componentId);
 }
@@ -216,6 +216,6 @@ export function hasComponent<T extends ComponentSchema>(
     throw new Error(`Entity with ID ${entityId} does not exist.`);
   }
 
-  const component = componentDef.getInstance(ctx);
+  const component = componentDef._getInstance(ctx);
   return ctx.entityBuffer.hasComponent(entityId, component.componentId);
 }

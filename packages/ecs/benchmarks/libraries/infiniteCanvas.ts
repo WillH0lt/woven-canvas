@@ -48,8 +48,8 @@ const library: BenchmarkLibrary = {
 
     this.moveSystem = defineSystem((ctx: Context) => {
       // Get component instances from context
-      const positionComponent = Position.getInstance(ctx);
-      const velocityComponent = Velocity.getInstance(ctx);
+      const positionComponent = Position._getInstance(ctx);
+      const velocityComponent = Velocity._getInstance(ctx);
 
       const posX = positionComponent.buffer.x;
       const posY = positionComponent.buffer.y;

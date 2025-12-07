@@ -60,7 +60,7 @@ export class Singleton<T extends ComponentSchema> {
   /**
    * Get the singleton component instance from context.
    */
-  private getInstance(ctx: Context): Component<T> {
+  private _getInstance(ctx: Context): Component<T> {
     const component = ctx.components[this.singletonDef.name] as
       | Component<T>
       | undefined;
@@ -94,7 +94,7 @@ export class Singleton<T extends ComponentSchema> {
    * ```
    */
   read(ctx: Context): Readonly<InferComponentType<T>> {
-    return this.getInstance(ctx).readSingleton();
+    return this._getInstance(ctx).readSingleton();
   }
 
   /**
@@ -116,7 +116,7 @@ export class Singleton<T extends ComponentSchema> {
    * ```
    */
   write(ctx: Context): InferComponentType<T> {
-    return this.getInstance(ctx).writeSingleton();
+    return this._getInstance(ctx).writeSingleton();
   }
 
   /**
@@ -140,7 +140,7 @@ export class Singleton<T extends ComponentSchema> {
    * ```
    */
   changed(ctx: Context): boolean {
-    const component = this.getInstance(ctx);
+    const component = this._getInstance(ctx);
 
     // Initialize on first use - set lastScannedIndex to current position
     // so we don't report changes that happened before this ref was first used

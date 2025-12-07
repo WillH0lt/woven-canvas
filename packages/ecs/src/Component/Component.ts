@@ -445,7 +445,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * Get the Component instance from the context.
    * @internal
    */
-  getInstance(ctx: Context): Component<T> {
+  _getInstance(ctx: Context): Component<T> {
     const instance = ctx.components[this.name] as Component<T> | undefined;
     if (!instance) {
       throw new Error(
@@ -459,7 +459,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * Get the component ID for this component in the given context.
    */
   getComponentId(ctx: Context): number {
-    return this.getInstance(ctx).componentId;
+    return this._getInstance(ctx).componentId;
   }
 
   /**
@@ -469,7 +469,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * @returns The readonly component data
    */
   read(ctx: Context, entityId: EntityId): Readonly<InferComponentType<T>> {
-    return this.getInstance(ctx).read(entityId);
+    return this._getInstance(ctx).read(entityId);
   }
 
   /**
@@ -479,7 +479,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * @returns The writable component data
    */
   write(ctx: Context, entityId: EntityId): InferComponentType<T> {
-    return this.getInstance(ctx).write(entityId);
+    return this._getInstance(ctx).write(entityId);
   }
 
   /**
@@ -489,7 +489,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * @param data - The raw data to create the component instance from
    */
   copy(ctx: Context, entityId: EntityId, data: T): void {
-    this.getInstance(ctx).copy(entityId, data);
+    this._getInstance(ctx).copy(entityId, data);
   }
 
   /**
@@ -498,7 +498,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * @returns The readonly singleton data
    */
   readSingleton(ctx: Context): Readonly<InferComponentType<T>> {
-    return this.getInstance(ctx).readSingleton();
+    return this._getInstance(ctx).readSingleton();
   }
 
   /**
@@ -507,7 +507,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * @returns The writable singleton data
    */
   writeSingleton(ctx: Context): InferComponentType<T> {
-    return this.getInstance(ctx).writeSingleton();
+    return this._getInstance(ctx).writeSingleton();
   }
 
   /**
@@ -516,7 +516,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * @param data - The raw data to create the singleton instance from
    */
   copySingleton(ctx: Context, data: T): void {
-    this.getInstance(ctx).copy(SINGLETON_INDEX, data);
+    this._getInstance(ctx).copy(SINGLETON_INDEX, data);
   }
 }
 

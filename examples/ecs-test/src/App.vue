@@ -19,15 +19,16 @@
 <script setup lang="ts">
 import {
   defineSystem,
-  defineWorkerSystem,
   createEntity,
+  getBackrefs,
   addComponent,
+  removeEntity,
   World,
-  useSingleton,
   type Context,
-  Store,
   useQuery,
-  useVueStore,
+  removeComponent,
+  hasComponent,
+  type WorldSyncResult,
 } from "@infinitecanvas/ecs";
 import { reactive } from "vue";
 
@@ -48,17 +49,10 @@ for (let i = 0; i < 1; i++) {
   addComponent(ctx, block1, components.Color, { red: 255, green: 0, blue: 0 });
 }
 
-// Initialize Store - automatically syncs with existing entities
-const store = new Store(world);
-const state = useVueStore(store, reactive);
-
 // Change color via the store (demonstrates Store -> ECS sync)
 function changeColor(entityId: number) {
-  store.set(entityId, components.Color, {
-    red: Math.floor(Math.random() * 255),
-    green: Math.floor(Math.random() * 255),
-    blue: Math.floor(Math.random() * 255),
-  });
+  // need to defer writes to the start of the frame
+  const color = components.Color.write(ctx, entityId);
 }
 
 const query = useQuery((q) =>
@@ -93,19 +87,77 @@ const system1 = defineSystem((ctx: Context) => {
   // }
 });
 
-// data in
-addComponent(ctx, 0, Position, { x: 100, y: 100 });
-createEntity(ctx);
-getBackrefs(ctx);
+// // data in
+// // get all these methods to work when called with world context
+
+// // can work already
+// createEntity(ctx);
+
+// // needs to be defered to start of the frame
+// removeEntity(ctx, 1);
+// addComponent(ctx, 1, Position, { x: 200, y: 200 });
+// removeComponent(ctx, 1, Position);
+
+// // can work already
+// getBackrefs(ctx, 1, Position, "x");
+// hasComponent(ctx, 1, Position);
+
+// // can work
+// query.current(ctx);
+
+const state = reactive<Record<number, any>>({});
+
+const stateQuery = useQuery((q) =>
+  q.tracking(components.Position, components.Size, components.Color)
+);
+
+world.subscribe(stateQuery, ({ added, removed, changed }) => {
+  // preferred way to sync data from world -> application
+  for (const entityId of added) {
+    state[entityId] = {};
+    // Read all component data for newly added entity
+    // const pos = components.Position.read(ctx, entityId);
+    // const size = components.Size.read(ctx, entityId);
+    // const color = components.Color.read(ctx, entityId);
+    state[entityId].Position = components.Position.read(ctx, entityId);
+    state[entityId].Size = components.Size.read(ctx, entityId);
+    state[entityId].Color = components.Color.read(ctx, entityId);
+  }
+  for (const entityId of removed) {
+    delete state[entityId];
+  }
+  for (const entityId of changed) {
+    // Re-read all tracked components for changed entities
+    if (state[entityId]) {
+      state[entityId].Position = components.Position.read(ctx, entityId);
+      state[entityId].Size = components.Size.read(ctx, entityId);
+      state[entityId].Color = components.Color.read(ctx, entityId);
+    }
+  }
+});
+
+// // data out
+// world.subscribe(query, (event) => {
+//   for (const eid of event.added) {
+//     console.log(`Entity ${eid} added to query`);
+//   }
+//   for (const eid of event.removed) {
+//     console.log(`Entity ${eid} removed from query`);
+//   }
+//   for (const eid of event.changed) {
+//     console.log(`Entity ${eid} changed in query`);
+//   }
+// });
 
 async function loop() {
-  await world.frame(async (execute) => {
-    await execute(system1);
-  });
+  world.sync();
 
-  store.sync();
+  await world.execute(system1);
 
-  await world.execute(system1); // , systemA, systemB);
+  // await world.frame(async (execute) => {
+  //   await execute(system1);
+  // });
+
   requestAnimationFrame(loop);
 }
 

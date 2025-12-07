@@ -406,7 +406,7 @@ describe("Component", () => {
       const testString = "Hello World";
       addComponent(ctx, entityId, User, { name: testString });
 
-      const buffer = (User.getInstance(ctx).buffer as any).name.getBuffer();
+      const buffer = (User._getInstance(ctx).buffer as any).name.getBuffer();
       const offset = entityId * 54; // 50 data + 4 length header
       const storedLength =
         buffer[offset] |
@@ -644,7 +644,7 @@ describe("Component", () => {
       const testData = new Uint8Array([10, 20, 30, 40, 50]);
       addComponent(ctx, entityId, BinaryData, { data: testData });
 
-      const buffer = BinaryData.getInstance(ctx).buffer.data.getBuffer();
+      const buffer = BinaryData._getInstance(ctx).buffer.data.getBuffer();
       const offset = entityId * 132; // 128 data + 4 length header
       const storedLength =
         buffer[offset] |
