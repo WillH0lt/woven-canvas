@@ -152,7 +152,7 @@ export function addComponent<T extends ComponentSchema>(
 ): void {
   const component = componentDef.getInstance(ctx);
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
-  component.copyData(entityId, data as any);
+  component.copy(entityId, data as any);
   ctx.eventBuffer.pushComponentAdded(entityId, component.componentId);
 }
 

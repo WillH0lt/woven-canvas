@@ -1,21 +1,23 @@
 <template>
   <div
-    v-for="block in blocks"
-    :key="block.id"
+    v-for="(entity, eid) in state"
+    :key="eid"
     :style="{
       position: 'absolute',
-      width: block.width + 'px',
-      height: block.height + 'px',
-      left: block.x + 'px',
-      top: block.y + 'px',
-      backgroundColor: `rgb(${block.red}, ${block.green}, ${block.blue})`,
+      width: (entity.Size?.width ?? 50) + 'px',
+      height: (entity.Size?.height ?? 50) + 'px',
+      left: (entity.Position?.x ?? 0) + 'px',
+      top: (entity.Position?.y ?? 0) + 'px',
+      backgroundColor: `rgb(${entity.Color?.red ?? 255}, ${
+        entity.Color?.green ?? 0
+      }, ${entity.Color?.blue ?? 0})`,
     }"
+    @click="changeColor(Number(eid))"
   ></div>
 </template>
 
 <script setup lang="ts">
 import {
-  useQuery,
   defineSystem,
   defineWorkerSystem,
   createEntity,
@@ -23,69 +25,88 @@ import {
   World,
   useSingleton,
   type Context,
+  Store,
+  useQuery,
+  useVueStore,
 } from "@infinitecanvas/ecs";
-import { ref } from "vue";
+import { reactive } from "vue";
 
 import * as components from "./components";
-
-interface BlockEntity {
-  id: number;
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  red: number;
-  green: number;
-  blue: number;
-}
-
-const blocks = ref<Record<string, BlockEntity>>({});
 
 const world = new World(Object.values(components), { threads: 4 });
 const ctx = world.getContext();
 
-// Create some blocks
-
-for (let i = 0; i < 5; i++) {
+// Create some blocks before initializing Store
+for (let i = 0; i < 1; i++) {
   const block1 = createEntity(ctx);
-  addComponent(ctx, block1, components.Velocity, { x: 50, y: 50 });
+  addComponent(ctx, block1, components.Velocity, {
+    x: Math.random() * 5,
+    y: Math.random() * 5,
+  });
   addComponent(ctx, block1, components.Position, { x: 200, y: 200 });
+  addComponent(ctx, block1, components.Size, { width: 50, height: 50 });
+  addComponent(ctx, block1, components.Color, { red: 255, green: 0, blue: 0 });
 }
 
-const Mouse = useSingleton(components.MouseSingleton);
+// Initialize Store - automatically syncs with existing entities
+const store = new Store(world);
+const state = useVueStore(store, reactive);
+
+// Change color via the store (demonstrates Store -> ECS sync)
+function changeColor(entityId: number) {
+  store.set(entityId, components.Color, {
+    red: Math.floor(Math.random() * 255),
+    green: Math.floor(Math.random() * 255),
+    blue: Math.floor(Math.random() * 255),
+  });
+}
+
+const query = useQuery((q) =>
+  q
+    .with(components.Position, components.Velocity, components.Size)
+    .tracking(components.Color)
+);
 
 // Define main thread systems
 const system1 = defineSystem((ctx: Context) => {
-  console.log("executing");
+  for (const eid of query.current(ctx)) {
+    const pos = components.Position.write(ctx, eid);
+    const vel = components.Velocity.write(ctx, eid);
+    const size = components.Size.read(ctx, eid);
 
-  const mouse = Mouse.write(ctx);
-  mouse.x += 1;
-  mouse.y += 1;
+    pos.x += vel.x * 0.1;
+    pos.y += vel.y * 0.1;
+
+    if (pos.x <= 0 || pos.x + size.width >= window.innerWidth) {
+      vel.x *= -1;
+      pos.x = Math.max(0, Math.min(pos.x, window.innerWidth - size.width));
+    }
+
+    if (pos.y <= 0 || pos.y + size.height >= window.innerHeight) {
+      vel.y *= -1;
+      pos.y = Math.max(0, Math.min(pos.y, window.innerHeight - size.height));
+    }
+  }
+  // for (const eid of query.changed(ctx)) {
+  //   const color = components.Color.read(ctx, eid);
+  //   console.log(`color: ${color.red}, ${color.green}, ${color.blue}`);
+  // }
 });
 
-// Define worker system
-const systemA = defineWorkerSystem(
-  new URL("./WorkerA.ts", import.meta.url).href,
-  { threads: 4, priority: "high" }
-);
+// data in
+addComponent(ctx, 0, Position, { x: 100, y: 100 });
+createEntity(ctx);
+getBackrefs(ctx);
 
-const systemB = defineWorkerSystem(
-  new URL("./WorkerB.ts", import.meta.url).href,
-  { threads: 4, priority: "high" }
-);
-
-let frameCount = 0;
 async function loop() {
-  // Execute all systems - main thread systems run in order,
-  // worker systems run in parallel
-  await world.execute(system1, systemA, systemB);
+  await world.frame(async (execute) => {
+    await execute(system1);
+  });
 
-  frameCount++;
-  if (frameCount < 10) {
-    requestAnimationFrame(loop);
-  } else {
-    console.log("Completed 10 frames");
-  }
+  store.sync();
+
+  await world.execute(system1); // , systemA, systemB);
+  requestAnimationFrame(loop);
 }
 
 loop();

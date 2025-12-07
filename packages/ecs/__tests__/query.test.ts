@@ -785,4 +785,298 @@ describe("Query", () => {
       expect(current4).toContain(e3);
     });
   });
+
+  describe("Query - Partitioning", () => {
+    it("should partition added() entities for a specific thread", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      // Set up multi-threaded context before querying
+      ctx.threadCount = 2;
+      ctx.threadIndex = 0;
+
+      const movingQuery = useQuery((q) => q.with(Position, Velocity));
+      // Initialize the query to set up tracking indices
+      movingQuery.added(ctx);
+
+      // Create 6 entities with Position and Velocity
+      const entities: number[] = [];
+      for (let i = 0; i < 6; i++) {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position);
+        addComponent(ctx, e, Velocity);
+        entities.push(e);
+      }
+
+      // Simulate next frame
+      ctx.tick++;
+
+      // Thread 0 sees entities where entityId % 2 === 0
+      const added0 = movingQuery.added(ctx);
+      const expected0 = entities.filter((e) => e % 2 === 0);
+      expect(added0).toHaveLength(expected0.length);
+      for (const e of expected0) {
+        expect(added0).toContain(e);
+      }
+    });
+
+    it("should partition added() entities for thread 1", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      // Set up multi-threaded context before querying - thread 1
+      ctx.threadCount = 2;
+      ctx.threadIndex = 1;
+
+      const movingQuery = useQuery((q) => q.with(Position, Velocity));
+      // Initialize the query to set up tracking indices
+      movingQuery.added(ctx);
+
+      // Create 6 entities with Position and Velocity
+      const entities: number[] = [];
+      for (let i = 0; i < 6; i++) {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position);
+        addComponent(ctx, e, Velocity);
+        entities.push(e);
+      }
+
+      // Simulate next frame
+      ctx.tick++;
+
+      // Thread 1 sees entities where entityId % 2 === 1
+      const added1 = movingQuery.added(ctx);
+      const expected1 = entities.filter((e) => e % 2 === 1);
+      expect(added1).toHaveLength(expected1.length);
+      for (const e of expected1) {
+        expect(added1).toContain(e);
+      }
+    });
+
+    it("should partition removed() entities across threads", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      // Set up multi-threaded context
+      ctx.threadCount = 2;
+      ctx.threadIndex = 0;
+
+      const movingQuery = useQuery((q) => q.with(Position, Velocity));
+      // Initialize the query to set up tracking indices
+      movingQuery.added(ctx);
+
+      // Create 6 entities with Position and Velocity
+      const entities: number[] = [];
+      for (let i = 0; i < 6; i++) {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position);
+        addComponent(ctx, e, Velocity);
+        entities.push(e);
+      }
+
+      // Consume added
+      ctx.tick++;
+      movingQuery.added(ctx);
+
+      // Remove all entities
+      for (const e of entities) {
+        removeEntity(ctx, e);
+      }
+
+      // Simulate next frame
+      ctx.tick++;
+
+      // Thread 0 sees removed entities where entityId % 2 === 0
+      const removed0 = movingQuery.removed(ctx);
+      const expected0 = entities.filter((e) => e % 2 === 0);
+      expect(removed0).toHaveLength(expected0.length);
+      for (const e of expected0) {
+        expect(removed0).toContain(e);
+      }
+    });
+
+    it("should partition changed() entities across threads", () => {
+      const TrackedPosition = defineComponent("TrackedPosition", {
+        x: field.float32().default(0),
+        y: field.float32().default(0),
+      });
+
+      const world = new World([TrackedPosition]);
+      const ctx = world.getContext();
+
+      // Set up multi-threaded context
+      ctx.threadCount = 2;
+      ctx.threadIndex = 0;
+
+      const trackedQuery = useQuery((q) => q.tracking(TrackedPosition));
+      // Initialize the query to set up tracking indices
+      trackedQuery.added(ctx);
+      trackedQuery.changed(ctx);
+
+      // Create 6 entities with TrackedPosition
+      const entities: number[] = [];
+      for (let i = 0; i < 6; i++) {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, TrackedPosition);
+        entities.push(e);
+      }
+
+      // Consume initial added
+      ctx.tick++;
+      trackedQuery.added(ctx);
+      trackedQuery.changed(ctx);
+
+      // Change all entities
+      for (const e of entities) {
+        const writer = TrackedPosition.write(ctx, e);
+        writer.x = e * 10;
+      }
+
+      // Simulate next frame
+      ctx.tick++;
+
+      // Thread 0 sees changed entities where entityId % 2 === 0
+      const changed0 = trackedQuery.changed(ctx);
+      const expected0 = entities.filter((e) => e % 2 === 0);
+      expect(changed0).toHaveLength(expected0.length);
+      for (const e of expected0) {
+        expect(changed0).toContain(e);
+      }
+    });
+
+    it("should not partition when threadCount is 1", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      // Single-threaded (default)
+      ctx.threadCount = 1;
+      ctx.threadIndex = 0;
+
+      const movingQuery = useQuery((q) => q.with(Position, Velocity));
+      // Initialize the query to set up tracking indices
+      movingQuery.added(ctx);
+
+      // Create 6 entities
+      const entities: number[] = [];
+      for (let i = 0; i < 6; i++) {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position);
+        addComponent(ctx, e, Velocity);
+        entities.push(e);
+      }
+
+      // Simulate next frame
+      ctx.tick++;
+
+      // Single thread should see all entities
+      const added = movingQuery.added(ctx);
+      expect(added).toHaveLength(6);
+      for (const e of entities) {
+        expect(added).toContain(e);
+      }
+    });
+
+    it("should partition current() entities across threads", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      // Set up 3 threads, thread 0
+      ctx.threadCount = 3;
+      ctx.threadIndex = 0;
+
+      const movingQuery = useQuery((q) => q.with(Position, Velocity));
+
+      // Create 6 entities
+      const entities: number[] = [];
+      for (let i = 0; i < 6; i++) {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position);
+        addComponent(ctx, e, Velocity);
+        entities.push(e);
+      }
+
+      // Simulate next frame
+      ctx.tick++;
+
+      // Thread 0 sees entities where entityId % 3 === 0
+      const current0 = movingQuery.current(ctx);
+      const expected0 = entities.filter((e) => e % 3 === 0);
+      expect(current0).toHaveLength(expected0.length);
+      for (const e of expected0) {
+        expect(current0).toContain(e);
+      }
+    });
+
+    it("should ensure all partitions together cover all entities", () => {
+      // Test thread 0
+      const world0 = new World([Position, Velocity]);
+      const ctx0 = world0.getContext();
+      ctx0.threadCount = 3;
+      ctx0.threadIndex = 0;
+      const query0 = useQuery((q) => q.with(Position, Velocity));
+      query0.added(ctx0); // Initialize
+
+      // Test thread 1
+      const world1 = new World([Position, Velocity]);
+      const ctx1 = world1.getContext();
+      ctx1.threadCount = 3;
+      ctx1.threadIndex = 1;
+      const query1 = useQuery((q) => q.with(Position, Velocity));
+      query1.added(ctx1); // Initialize
+
+      // Test thread 2
+      const world2 = new World([Position, Velocity]);
+      const ctx2 = world2.getContext();
+      ctx2.threadCount = 3;
+      ctx2.threadIndex = 2;
+      const query2 = useQuery((q) => q.with(Position, Velocity));
+      query2.added(ctx2); // Initialize
+
+      // Create same entities in all worlds
+      const entities0: number[] = [];
+      const entities1: number[] = [];
+      const entities2: number[] = [];
+      for (let i = 0; i < 9; i++) {
+        const e0 = createEntity(ctx0);
+        addComponent(ctx0, e0, Position);
+        addComponent(ctx0, e0, Velocity);
+        entities0.push(e0);
+
+        const e1 = createEntity(ctx1);
+        addComponent(ctx1, e1, Position);
+        addComponent(ctx1, e1, Velocity);
+        entities1.push(e1);
+
+        const e2 = createEntity(ctx2);
+        addComponent(ctx2, e2, Position);
+        addComponent(ctx2, e2, Velocity);
+        entities2.push(e2);
+      }
+
+      // Entities should have same IDs since they're created in same order
+      expect(entities0).toEqual(entities1);
+      expect(entities1).toEqual(entities2);
+
+      // Simulate next frame
+      ctx0.tick++;
+      ctx1.tick++;
+      ctx2.tick++;
+
+      const added0 = query0.added(ctx0);
+      const added1 = query1.added(ctx1);
+      const added2 = query2.added(ctx2);
+
+      // Each partition should have 3 entities (9 / 3)
+      expect(added0.length + added1.length + added2.length).toBe(9);
+
+      // No overlap between partitions
+      const all = new Set([...added0, ...added1, ...added2]);
+      expect(all.size).toBe(9);
+
+      // All original entities covered
+      for (const e of entities0) {
+        expect(all.has(e)).toBe(true);
+      }
+    });
+  });
 });

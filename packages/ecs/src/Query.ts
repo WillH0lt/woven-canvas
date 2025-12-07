@@ -5,6 +5,7 @@ import { QueryCache } from "./QueryCache";
 import { EventType, EventTypeMask } from "./EventBuffer";
 
 const EMPTY_UINT32_ARRAY = new Uint32Array(0);
+const EMPTY_NUMBER_ARRAY: number[] = [];
 
 /**
  * Helper to create an empty mask array
@@ -44,11 +45,11 @@ export class Query {
   private queryComponentMask: Uint8Array | null = null;
   private lastScannedIndex: number;
   private lastUpdateTick: number;
-  private cachedAdded: Uint32Array = EMPTY_UINT32_ARRAY;
-  private cachedRemoved: Uint32Array = EMPTY_UINT32_ARRAY;
+  private cachedAdded: number[] = EMPTY_NUMBER_ARRAY;
+  private cachedRemoved: number[] = EMPTY_NUMBER_ARRAY;
   private lastChangedTick: number;
   private lastChangedScannedIndex: number;
-  private cachedChanged: Uint32Array = EMPTY_UINT32_ARRAY;
+  private cachedChanged: number[] = EMPTY_NUMBER_ARRAY;
   private addedList: number[] = [];
   private removedList: number[] = [];
 
@@ -123,8 +124,8 @@ export class Query {
     const currentWriteIndex = ctx.eventBuffer.getWriteIndex();
     if (currentWriteIndex === this.lastScannedIndex) {
       this.lastUpdateTick = ctx.tick;
-      this.cachedAdded = EMPTY_UINT32_ARRAY;
-      this.cachedRemoved = EMPTY_UINT32_ARRAY;
+      this.cachedAdded = EMPTY_NUMBER_ARRAY;
+      this.cachedRemoved = EMPTY_NUMBER_ARRAY;
       return false;
     }
 
@@ -165,13 +166,28 @@ export class Query {
       }
     }
 
-    // Cache the results - only allocate if we have results
-    this.cachedAdded =
-      addedList.length > 0 ? new Uint32Array(addedList) : EMPTY_UINT32_ARRAY;
+    // Cache the results - swap the arrays to avoid allocations
+    this.cachedAdded = addedList.length > 0 ? addedList : EMPTY_NUMBER_ARRAY;
     this.cachedRemoved =
-      removedList.length > 0
-        ? new Uint32Array(removedList)
-        : EMPTY_UINT32_ARRAY;
+      removedList.length > 0 ? removedList : EMPTY_NUMBER_ARRAY;
+
+    // Partition for multi-threaded access
+    if (ctx.threadCount > 1) {
+      this.cachedAdded = this.partitionEntities(
+        this.cachedAdded,
+        ctx.threadIndex,
+        ctx.threadCount
+      );
+      this.cachedRemoved = this.partitionEntities(
+        this.cachedRemoved,
+        ctx.threadIndex,
+        ctx.threadCount
+      );
+    }
+
+    // Allocate new lists for next update (the old ones are now cached)
+    this.addedList = [];
+    this.removedList = [];
 
     // Update tracking indices
     this.lastScannedIndex = newIndex;
@@ -199,7 +215,7 @@ export class Query {
    * @param ctx - The context object containing the entity buffer and query cache
    * @returns An array of entity IDs matching the query criteria
    */
-  current(ctx: Context): Uint32Array {
+  current(ctx: Context): Uint32Array | number[] {
     this.ensureUpdated(ctx);
     const allEntities = this.cache.getDenseView();
 
@@ -227,33 +243,19 @@ export class Query {
    * @returns Array of entity IDs belonging to this thread's partition
    */
   private partitionEntities(
-    entities: Uint32Array,
+    entities: Uint32Array | number[],
     threadIndex: number,
     threadCount: number
-  ): Uint32Array {
-    // Count entities belonging to this thread
-    let count = 0;
-    for (let i = 0; i < entities.length; i++) {
-      if (entities[i] % threadCount === threadIndex) {
-        count++;
-      }
-    }
-
-    // If no entities for this thread, return empty array
-    if (count === 0) {
-      return EMPTY_UINT32_ARRAY;
-    }
-
+  ): number[] {
     // Build the partitioned result
-    const result = new Uint32Array(count);
-    let resultIndex = 0;
+    const result: number[] = [];
     for (let i = 0; i < entities.length; i++) {
       if (entities[i] % threadCount === threadIndex) {
-        result[resultIndex++] = entities[i];
+        result.push(entities[i]);
       }
     }
 
-    return result;
+    return result.length > 0 ? result : EMPTY_NUMBER_ARRAY;
   }
 
   /**
@@ -266,7 +268,7 @@ export class Query {
    * @param ctx - The context object containing the entity buffer and event buffer
    * @returns An array of entity IDs that were added and match the query
    */
-  added(ctx: Context): Uint32Array {
+  added(ctx: Context): number[] {
     this.ensureUpdated(ctx);
     return this.cachedAdded;
   }
@@ -280,7 +282,7 @@ export class Query {
    * @param ctx - The context object containing the entity buffer and event buffer
    * @returns An array of entity IDs that were removed or no longer match
    */
-  removed(ctx: Context): Uint32Array {
+  removed(ctx: Context): number[] {
     this.ensureUpdated(ctx);
     return this.cachedRemoved;
   }
@@ -288,7 +290,7 @@ export class Query {
   /**
    * Get entities whose tracked components have changed since the last time this query was checked.
    * Only returns entities that match the query criteria and have changes to tracked components.
-   * Use .withTracked() in the query builder to specify which components to track.
+   * Use .tracking() in the query builder to specify which components to track.
    *
    * Note: changed() uses separate tracking from added()/removed() since it monitors
    * different event types (CHANGED vs ADDED/REMOVED/COMPONENT_ADDED/COMPONENT_REMOVED).
@@ -296,21 +298,19 @@ export class Query {
    * @param ctx - The context object containing the entity buffer and event buffer
    * @returns An array of entity IDs with changed tracked components
    */
-  changed(ctx: Context): Uint32Array {
+  changed(ctx: Context): number[] {
     this.ensureUpdated(ctx);
 
     // Already up-to-date for this tick, return cached result
     if (ctx.tick === this.lastChangedTick) {
-      const result = this.cachedChanged;
-      this.cachedChanged = EMPTY_UINT32_ARRAY;
-      return result;
+      return this.cachedChanged;
     }
 
     // If no components are tracked, return empty
     // Use pre-computed hasTracking flag for fast path
     if (!this.masks.hasTracking) {
       this.lastChangedTick = ctx.tick;
-      this.cachedChanged = EMPTY_UINT32_ARRAY;
+      this.cachedChanged = EMPTY_NUMBER_ARRAY;
       return this.cachedChanged;
     }
 
@@ -330,8 +330,16 @@ export class Query {
 
     this.lastChangedScannedIndex = newIndex;
     this.lastChangedTick = ctx.tick;
-    this.cachedChanged =
-      results.length > 0 ? new Uint32Array(results) : EMPTY_UINT32_ARRAY;
+    this.cachedChanged = results.length > 0 ? results : EMPTY_NUMBER_ARRAY;
+
+    // Partition for multi-threaded access
+    if (ctx.threadCount > 1) {
+      this.cachedChanged = this.partitionEntities(
+        this.cachedChanged,
+        ctx.threadIndex,
+        ctx.threadCount
+      );
+    }
 
     return this.cachedChanged;
   }
@@ -397,7 +405,7 @@ export class QueryDef {
    * @param ctx - The context object
    * @returns An array of entity IDs matching the query criteria
    */
-  current(ctx: Context): Uint32Array {
+  current(ctx: Context): Uint32Array | number[] {
     return this.getInstance(ctx).current(ctx);
   }
 
@@ -408,7 +416,7 @@ export class QueryDef {
    * @param ctx - The context object
    * @returns An array of entity IDs that were added
    */
-  added(ctx: Context): Uint32Array {
+  added(ctx: Context): number[] {
     return this.getInstance(ctx).added(ctx);
   }
 
@@ -419,7 +427,7 @@ export class QueryDef {
    * @param ctx - The context object
    * @returns An array of entity IDs that were removed
    */
-  removed(ctx: Context): Uint32Array {
+  removed(ctx: Context): number[] {
     return this.getInstance(ctx).removed(ctx);
   }
 
@@ -430,7 +438,7 @@ export class QueryDef {
    * @param ctx - The context object
    * @returns An array of entity IDs with changed tracked components
    */
-  changed(ctx: Context): Uint32Array {
+  changed(ctx: Context): number[] {
     return this.getInstance(ctx).changed(ctx);
   }
 }
@@ -512,7 +520,7 @@ export class QueryBuilder {
    * @param componentDefs - Components that must be present and should be tracked for changes
    * @returns This query builder for chaining
    */
-  withTracked(...componentDefs: ComponentDef<any>[]): this {
+  tracking(...componentDefs: ComponentDef<any>[]): this {
     for (const componentDef of componentDefs) {
       const componentId = this.getComponentId(componentDef);
       setComponentBit(this.withMask, componentId);

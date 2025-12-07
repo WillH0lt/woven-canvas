@@ -69,15 +69,12 @@ export class Component<T extends ComponentSchema> {
   /** The component name defined by the user */
   name: string;
 
-  /** Whether this component is a singleton (single instance, no entity ID) */
   readonly isSingleton: boolean;
 
   private initialized: boolean = false;
 
-  /** Reference to the event buffer for pushing CHANGED events */
   private eventBuffer: EventBuffer | null = null;
 
-  /** Reference to the entity buffer for checking entity liveness (used by ref fields) */
   private entityBuffer: EntityBuffer | null = null;
 
   /** The component schema (field definitions) */
@@ -165,24 +162,6 @@ export class Component<T extends ComponentSchema> {
     this.writableMaster = {} as InferComponentType<T>;
   }
 
-  /**
-   * Parse the schema and populate fieldNames and schema properties.
-   * @param schema - The schema (either pre-built FieldDef or field builders)
-   * @param isPrebuiltSchema - Whether the schema is already in FieldDef form
-   */
-  private parseSchema(
-    schema: T | Record<string, FieldDef>,
-    isPrebuiltSchema: boolean
-  ): void {
-    for (const [fieldName, fieldOrBuilder] of Object.entries(schema)) {
-      const fieldDef = isPrebuiltSchema
-        ? (fieldOrBuilder as FieldDef)
-        : (fieldOrBuilder as any).def;
-      this.schema[fieldName] = fieldDef;
-      this.fieldNames.push(fieldName);
-    }
-  }
-
   initialize(
     id: number,
     maxEntities: number,
@@ -203,6 +182,57 @@ export class Component<T extends ComponentSchema> {
 
     if (this.isSingleton) {
       this.initializeSingletonDefaults();
+    }
+  }
+
+  /**
+   * Initialize component in a worker context with transferred buffers
+   * @param componentId - The component ID
+   * @param buffer - The transferred buffer object containing typed arrays
+   * @param eventBuffer - The event buffer for recording changes
+   * @param entityBuffer - The entity buffer for checking entity liveness
+   * @internal
+   */
+  fromTransfer(
+    componentId: number,
+    buffer: ComponentBuffer<T>,
+    eventBuffer: EventBuffer,
+    entityBuffer: EntityBuffer
+  ): void {
+    this.ensureNotInitialized();
+    this.initialized = true;
+    this.componentId = componentId;
+    this._buffer = buffer;
+    this.eventBuffer = eventBuffer;
+    this.entityBuffer = entityBuffer;
+
+    // Create field instances for transferred component
+    for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
+      this.fields[fieldName] = this.createFieldInstance(fieldDef);
+    }
+
+    this.initializeMasters();
+
+    if (this.isSingleton) {
+      this.initializeSingletonDefaults();
+    }
+  }
+
+  /**
+   * Parse the schema and populate fieldNames and schema properties.
+   * @param schema - The schema (either pre-built FieldDef or field builders)
+   * @param isPrebuiltSchema - Whether the schema is already in FieldDef form
+   */
+  private parseSchema(
+    schema: T | Record<string, FieldDef>,
+    isPrebuiltSchema: boolean
+  ): void {
+    for (const [fieldName, fieldOrBuilder] of Object.entries(schema)) {
+      const fieldDef = isPrebuiltSchema
+        ? (fieldOrBuilder as FieldDef)
+        : (fieldOrBuilder as any).def;
+      this.schema[fieldName] = fieldDef;
+      this.fieldNames.push(fieldName);
     }
   }
 
@@ -262,35 +292,6 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Initialize component in a worker context with transferred buffers
-   * @param componentId - The component ID
-   * @param buffer - The transferred buffer object containing typed arrays
-   * @param eventBuffer - The event buffer for recording changes
-   * @param entityBuffer - The entity buffer for checking entity liveness
-   * @internal
-   */
-  fromTransfer(
-    componentId: number,
-    buffer: ComponentBuffer<T>,
-    eventBuffer: EventBuffer,
-    entityBuffer: EntityBuffer
-  ): void {
-    this.ensureNotInitialized();
-    this.initialized = true;
-    this.componentId = componentId;
-    this._buffer = buffer;
-    this.eventBuffer = eventBuffer;
-    this.entityBuffer = entityBuffer;
-
-    // Create field instances for transferred component
-    for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
-      this.fields[fieldName] = this.createFieldInstance(fieldDef);
-    }
-
-    this.initializeMasters();
-  }
-
-  /**
    * Initialize singleton with default values
    */
   private initializeSingletonDefaults(): void {
@@ -308,6 +309,9 @@ export class Component<T extends ComponentSchema> {
     }
   }
 
+  /**
+   * Define getters/setters on master instances for direct buffer access
+   */
   private initializeMasters(): void {
     if (this._buffer === null) {
       throw new Error("Component buffers not initialized");
@@ -333,12 +337,13 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Create a component instance from raw data
+   * Copy data into a component instance.
+   * Pushes a CHANGED event for the entity
    * @param entityId - The entity ID to populate
    * @param data - The raw data to create the component instance from
    * @internal
    */
-  copyData(entityId: number, data: T): void {
+  copy(entityId: number, data: T): void {
     for (let i = 0; i < this.fieldNames.length; i++) {
       const fieldName = this.fieldNames[i];
       const array = (this.buffer as any)[fieldName];
@@ -349,10 +354,12 @@ export class Component<T extends ComponentSchema> {
 
       field.setValue(array, entityId, value);
     }
+
+    this.eventBuffer?.pushChanged(entityId, this.componentId);
   }
 
   /**
-   * Read a component's data for a specific entity
+   * Read entity's component data
    * Returns the readonly master instance bound to the entity
    * Property access goes directly through getters to the underlying buffers
    * @param entityId - The entity ID to read from
@@ -364,11 +371,10 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Write to a component's data for a specific entity
+   * Write to entity's component data
    * Returns the writable master instance bound to the entity
    * Property access goes directly through getters/setters to the underlying buffers
-   * Changes are immediate - no commit() needed
-   * Automatically pushes a CHANGED event to the event buffer for reactive queries
+   * Pushes a CHANGED event to the event buffer for reactive queries
    * @param entityId - The entity ID to write to
    * @returns The writable master object for reading and writing component fields
    */
@@ -405,6 +411,18 @@ export class Component<T extends ComponentSchema> {
     this.eventBuffer?.pushChanged(SINGLETON_ENTITY_ID, this.componentId);
 
     return this.writableMaster;
+  }
+
+  /**
+   * Copy data into a singleton.
+   * @param data - The raw data to create the singleton instance from
+   * @internal
+   */
+  copySingleton(data: T): void {
+    this.copy(SINGLETON_INDEX, data);
+
+    // Push change event using sentinel entity ID
+    this.eventBuffer?.pushChanged(SINGLETON_ENTITY_ID, this.componentId);
   }
 }
 
@@ -445,7 +463,7 @@ export class ComponentDef<T extends ComponentSchema> {
   }
 
   /**
-   * Read a component's data for a specific entity.
+   * Read entity's component data
    * @param ctx - The context containing the component instance
    * @param entityId - The entity ID to read from
    * @returns The readonly component data
@@ -455,13 +473,23 @@ export class ComponentDef<T extends ComponentSchema> {
   }
 
   /**
-   * Write to a component's data for a specific entity.
+   * Write to entity's component data.
    * @param ctx - The context containing the component instance
    * @param entityId - The entity ID to write to
    * @returns The writable component data
    */
   write(ctx: Context, entityId: EntityId): InferComponentType<T> {
     return this.getInstance(ctx).write(entityId);
+  }
+
+  /**
+   * Copy data into a component.
+   * @param ctx - The context containing the component instance
+   * @param entityId - The entity ID to populate
+   * @param data - The raw data to create the component instance from
+   */
+  copy(ctx: Context, entityId: EntityId, data: T): void {
+    this.getInstance(ctx).copy(entityId, data);
   }
 
   /**
@@ -480,6 +508,15 @@ export class ComponentDef<T extends ComponentSchema> {
    */
   writeSingleton(ctx: Context): InferComponentType<T> {
     return this.getInstance(ctx).writeSingleton();
+  }
+
+  /**
+   * Copy data into a singleton.
+   * @param ctx - The context containing the singleton instance
+   * @param data - The raw data to create the singleton instance from
+   */
+  copySingleton(ctx: Context, data: T): void {
+    this.getInstance(ctx).copy(SINGLETON_INDEX, data);
   }
 }
 

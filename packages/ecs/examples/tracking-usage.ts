@@ -32,7 +32,7 @@ function main() {
   // Example 1: Track changes to a single component
   class PositionChangeLogger extends System {
   // Track changes to Position component only
-  private movers = this.query((q) => q.withTracked(Position));
+  private movers = this.query((q) => q.tracking(Position));
 
   public execute(): void {
     // Log entities whose position changed
@@ -47,7 +47,7 @@ function main() {
   // Example 2: Track changes to multiple components
   class CombatSystem extends System {
   // Track changes to both Position and Health
-  private combatants = this.query((q) => q.withTracked(Position, Health));
+  private combatants = this.query((q) => q.tracking(Position, Health));
 
   public execute(): void {
     // Process entities whose position or health changed
@@ -64,7 +64,7 @@ function main() {
   // Example 3: Track specific component in multi-component query
   class MovementSystem extends System {
   // Only track Position changes, even though we also require Velocity
-  private entities = this.query((q) => q.withTracked(Position).with(Velocity));
+  private entities = this.query((q) => q.tracking(Position).with(Velocity));
 
   public execute(): void {
     console.log("\n--- Frame Update ---");

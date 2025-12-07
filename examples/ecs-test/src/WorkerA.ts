@@ -9,7 +9,7 @@ import { Position, Velocity, MouseSingleton } from "./components";
 setupWorker(execute);
 
 // Query that tracks changes to Position
-const entitiesQuery = useQuery((q) => q.with(Velocity).withTracked(Position));
+const entitiesQuery = useQuery((q) => q.with(Velocity).tracking(Position));
 
 const Mouse = useSingleton(MouseSingleton);
 

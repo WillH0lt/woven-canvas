@@ -291,4 +291,65 @@ export class EventBuffer {
       newIndex: currentWriteIndex,
     };
   }
+
+  /**
+   * Read events since the last index.
+   * @param lastIndex - The last index read.
+   * @returns Object with events array and the new write index.
+   */
+  readEvents(lastIndex: number): {
+    events: Array<{
+      entityId: EntityId;
+      eventType: EventTypeValue;
+      componentId: number;
+    }>;
+    newIndex: number;
+  } {
+    const currentWriteIndex = this.getWriteIndex();
+    const events: Array<{
+      entityId: EntityId;
+      eventType: EventTypeValue;
+      componentId: number;
+    }> = [];
+
+    // Handle case where buffer has wrapped and we're too far behind
+    if (currentWriteIndex - lastIndex > this.maxEvents) {
+      lastIndex = currentWriteIndex - this.maxEvents;
+    }
+
+    const fromIndex = lastIndex % this.maxEvents;
+    const toIndex = currentWriteIndex % this.maxEvents;
+
+    if (fromIndex === toIndex) {
+      return { events, newIndex: currentWriteIndex };
+    }
+
+    let eventsToScan: number;
+    if (toIndex >= fromIndex) {
+      eventsToScan = toIndex - fromIndex;
+    } else {
+      eventsToScan = this.maxEvents - fromIndex + toIndex;
+    }
+
+    if (eventsToScan > this.maxEvents) {
+      eventsToScan = this.maxEvents;
+    }
+
+    const dataView = this.dataView;
+    const maxEvents = this.maxEvents;
+
+    for (let i = 0; i < eventsToScan; i++) {
+      const index = (fromIndex + i) % maxEvents;
+      const dataIndex = index * 2;
+
+      const packedData = Atomics.load(dataView, dataIndex + 1);
+      const eventType = (packedData & 0xff) as EventTypeValue;
+      const componentId = (packedData >> 16) & 0xffff;
+      const entityId = Atomics.load(dataView, dataIndex);
+
+      events.push({ entityId, eventType, componentId });
+    }
+
+    return { events, newIndex: currentWriteIndex };
+  }
 }

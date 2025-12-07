@@ -2,17 +2,17 @@
 
 ## Overview
 
-The `.withTracked()` method allows you to require components and monitor their value changes in queries. When a tracked component's value is modified, the entity will appear in `query.changed` on the next frame.
+The `.tracking()` method allows you to require components and monitor their value changes in queries. When a tracked component's value is modified, the entity will appear in `query.changed` on the next frame.
 
 ## API
 
 ```typescript
-world.query((q) => q.withTracked(Position));
+world.query((q) => q.tracking(Position));
 ```
 
 ### Methods
 
-- **`.withTracked(...components)`**: Require entities to have all specified components AND track changes to them
+- **`.tracking(...components)`**: Require entities to have all specified components AND track changes to them
   - Combines the functionality of `.with()` and change tracking
   - Can track one or multiple components
   - Returns the query builder for chaining
@@ -29,7 +29,7 @@ world.query((q) => q.withTracked(Position));
 
 ```typescript
 class PositionChangeSystem extends System {
-  private entities = this.query((q) => q.withTracked(Position));
+  private entities = this.query((q) => q.tracking(Position));
 
   public execute(): void {
     for (const entity of this.entities.changed) {
@@ -44,7 +44,7 @@ class PositionChangeSystem extends System {
 
 ```typescript
 class CombatSystem extends System {
-  private combatants = this.query((q) => q.withTracked(Position, Health));
+  private combatants = this.query((q) => q.tracking(Position, Health));
 
   public execute(): void {
     // Processes entities where Position OR Health changed
@@ -59,7 +59,7 @@ class CombatSystem extends System {
 
 ```typescript
 // Track Position changes, but don't track Velocity changes
-const query = world.query((q) => q.withTracked(Position).with(Velocity));
+const query = world.query((q) => q.tracking(Position).with(Velocity));
 
 // Only position modifications will add entity to query.changed
 // Velocity modifications will not trigger change tracking
@@ -79,7 +79,7 @@ const query = world.query((q) => q.withTracked(Position).with(Velocity));
 - Uses bitmask operations for efficient component tracking
 - Leverages JavaScript Proxy to intercept property modifications
 - Maintains consistency with existing ECS reactive query patterns
-- Zero overhead when `.withTracked()` is not used
+- Zero overhead when `.tracking()` is not used
 
 ## Performance
 
