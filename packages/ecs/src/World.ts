@@ -3,28 +3,19 @@ import { Component, type ComponentDef } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer, EventType } from "./EventBuffer";
 import { Pool } from "./Pool";
-import { removeEntity, addComponent, removeComponent } from "./Context";
-import { type QueryDef, processQueryEvents } from "./Query";
+import { type QueryDef } from "./Query";
 import type { System, Context, EntityId, QueryMasks } from "./types";
-
-/**
- * Result of sync events for a subscriber
- */
-export interface WorldSyncResult {
-  /** Entity IDs that entered the query (now match, didn't before) */
-  added: EntityId[];
-  /** Entity IDs that left the query (no longer match, did before) */
-  removed: EntityId[];
-  /** Entity IDs with tracked component changes (still in query) */
-  changed: EntityId[];
-}
 
 /**
  * Callback type for world event subscribers
  */
 export type WorldSubscribeCallback = (
   ctx: Context,
-  result: WorldSyncResult
+  result: {
+    added: number[];
+    changed: number[];
+    removed: number[];
+  }
 ) => void;
 
 /**
@@ -32,11 +23,8 @@ export type WorldSubscribeCallback = (
  */
 interface Subscriber {
   queryDef: QueryDef;
-  masks: QueryMasks;
   callback: WorldSubscribeCallback;
-  lastEventIndex: number;
-  /** Set of entity IDs that matched the query (for tracking removed entities) */
-  matchedEntities: Set<EntityId>;
+  readerId: string;
 }
 
 /**
@@ -67,9 +55,16 @@ export interface WorldOptions {
  * World class - central manager for entities, components, and systems in the ECS framework.
  */
 export class World {
+  private static worldCounter = 0;
+
   private componentIndex = 0;
   private workerManager: WorkerManager;
   private context: Context;
+
+  /** Unique identifier for this world instance */
+  private readonly worldId: number;
+  /** Counter for generating unique subscriber IDs */
+  private subscriberCounter = 0;
 
   /** Subscribers to world events */
   private subscribers: Subscriber[] = [];
@@ -123,11 +118,12 @@ export class World {
       this.componentIdToDef.set(this.componentIndex - 1, def);
     }
 
+    this.worldId = World.worldCounter++;
+
     this.context = {
       entityBuffer,
       eventBuffer,
       components: componentMap,
-      queries: {},
       maxEntities,
       maxEvents,
       componentCount,
@@ -135,6 +131,7 @@ export class World {
       tick: 0,
       threadIndex: 0,
       threadCount: 1,
+      readerId: `world_${this.worldId}`,
     };
   }
 
@@ -193,7 +190,12 @@ export class World {
     );
 
     for (const system of mainThreadSystems) {
-      system.execute(ctx);
+      // Set readerId for this system's query instances
+      const readerId = `world_${this.worldId}_system_${system.id}`;
+      system.execute({
+        ...ctx,
+        readerId,
+      });
     }
 
     // Wait for all worker systems to complete
@@ -264,33 +266,24 @@ export class World {
    */
   subscribe(queryDef: QueryDef, callback: WorldSubscribeCallback): () => void {
     const ctx = this.context;
-    const masks = queryDef._getMasks(ctx);
 
-    // Build initial set of matched entities by scanning existing entities
-    const matchedEntities = new Set<EntityId>();
-    for (let eid = 0; eid < ctx.maxEntities; eid++) {
-      if (ctx.entityBuffer.has(eid) && ctx.entityBuffer.matches(eid, masks)) {
-        matchedEntities.add(eid);
-      }
-    }
+    // Generate unique reader ID for this subscriber
+    const subscriberId = this.subscriberCounter++;
+    const readerId = `world_${this.worldId}_subscriber_${subscriberId}`;
+
+    // Eagerly initialize the QueryInstance so the reader starts from current write index.
+    // This ensures events written after subscription are detected in sync().
+    queryDef._getInstance({
+      ...ctx,
+      readerId,
+    });
 
     const subscriber: Subscriber = {
       queryDef,
-      masks,
       callback,
-      lastEventIndex: ctx.eventBuffer.getWriteIndex(),
-      matchedEntities,
+      readerId,
     };
     this.subscribers.push(subscriber);
-
-    // Fire initial callback with all existing matched entities as "added"
-    if (matchedEntities.size > 0) {
-      callback(ctx, {
-        added: Array.from(matchedEntities),
-        removed: [],
-        changed: [],
-      });
-    }
 
     return () => {
       const index = this.subscribers.indexOf(subscriber);
@@ -312,14 +305,14 @@ export class World {
    * ```
    */
   sync(): void {
-    const ctx = this.context;
+    this.context.tick++;
 
     // Execute all nextSync callbacks first
     if (this.nextSyncCallbacks.length > 0) {
       const callbacks = this.nextSyncCallbacks;
       this.nextSyncCallbacks = [];
       for (const callback of callbacks) {
-        callback(ctx);
+        callback(this.context);
       }
     }
 
@@ -328,35 +321,30 @@ export class World {
     }
 
     for (const subscriber of this.subscribers) {
-      const { events: rawEvents, newIndex } = ctx.eventBuffer.readEvents(
-        subscriber.lastEventIndex
-      );
-      subscriber.lastEventIndex = newIndex;
+      // Set readerId so query uses this subscriber's instance
+      const ctx = {
+        ...this.context,
+        readerId: subscriber.readerId,
+      };
 
-      if (rawEvents.length === 0) {
-        continue;
-      }
+      const queryDef = subscriber.queryDef;
 
-      const { masks, matchedEntities } = subscriber;
-
-      const result = processQueryEvents(rawEvents, masks, matchedEntities, ctx);
+      const results = {
+        added: queryDef.added(ctx),
+        removed: queryDef.removed(ctx),
+        changed: queryDef.changed(ctx),
+      };
 
       // Check if there are any events to report
       if (
-        result.added.length === 0 &&
-        result.removed.length === 0 &&
-        result.changed.length === 0
+        results.added.length === 0 &&
+        results.removed.length === 0 &&
+        results.changed.length === 0
       ) {
         continue;
       }
 
-      const syncResult: WorldSyncResult = {
-        added: result.added,
-        removed: result.removed,
-        changed: result.changed,
-      };
-
-      subscriber.callback(ctx, syncResult);
+      subscriber.callback(ctx, results);
     }
   }
 

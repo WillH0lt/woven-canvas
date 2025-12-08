@@ -1,15 +1,74 @@
 import type {
   SystemFunction,
-  MainThreadSystem,
-  WorkerSystem,
   WorkerSystemOptions,
+  WorkerPriority,
 } from "./types";
+
+/**
+ * Base class for all systems. Provides a unique ID for each system instance.
+ */
+export abstract class BaseSystemClass {
+  private static systemCounter = 0;
+
+  /** Unique identifier for this system instance */
+  readonly id: number;
+
+  /** System type discriminator */
+  abstract readonly type: "main" | "worker";
+
+  /**
+   * Event buffer index from the previous execution.
+   * Used for deferred entity ID reclamation.
+   */
+  prevEventIndex: number = 0;
+
+  /**
+   * Event buffer index at the start of the current execution.
+   * Updated before each execution, then moved to prevEventIndex after.
+   */
+  currEventIndex: number = 0;
+
+  constructor() {
+    this.id = BaseSystemClass.systemCounter++;
+  }
+}
+
+/**
+ * Main thread system class.
+ * Created via defineSystem().
+ */
+export class MainThreadSystemClass extends BaseSystemClass {
+  readonly type = "main" as const;
+  readonly execute: SystemFunction;
+
+  constructor(execute: SystemFunction) {
+    super();
+    this.execute = execute;
+  }
+}
+
+/**
+ * Worker system class.
+ * Created via defineWorkerSystem().
+ */
+export class WorkerSystemClass extends BaseSystemClass {
+  readonly type = "worker" as const;
+  readonly path: string;
+  readonly threads: number;
+  readonly priority: WorkerPriority;
+
+  constructor(path: string, options: WorkerSystemOptions = {}) {
+    super();
+    this.path = path;
+    this.threads = options.threads ?? 1;
+    this.priority = options.priority ?? "normal";
+  }
+}
 
 /**
  * Define a system that runs on the main thread.
  * @param execute - Function to execute when the system runs
- * @param components - Record of component instances used by this system
- * @returns A MainThreadSystem object
+ * @returns A MainThreadSystemClass object
  * @example
  * ```typescript
  * const movementSystem = defineSystem((ctx) => {
@@ -23,13 +82,8 @@ import type {
  * }, { Position, Velocity });
  * ```
  */
-export function defineSystem(execute: SystemFunction): MainThreadSystem {
-  return {
-    type: "main",
-    execute,
-    prevEventIndex: 0,
-    currEventIndex: 0,
-  };
+export function defineSystem(execute: SystemFunction): MainThreadSystemClass {
+  return new MainThreadSystemClass(execute);
 }
 
 /**
@@ -37,7 +91,7 @@ export function defineSystem(execute: SystemFunction): MainThreadSystem {
  * The worker file must use setupWorker() to define its execution logic.
  * @param workerPath - Path to the worker file (use new URL('./worker.ts', import.meta.url).href)
  * @param options - Optional configuration for worker behavior
- * @returns A WorkerSystem object
+ * @returns A WorkerSystemClass object
  * @example
  * ```typescript
  * // Basic usage
@@ -55,13 +109,6 @@ export function defineSystem(execute: SystemFunction): MainThreadSystem {
 export function defineWorkerSystem(
   path: string,
   options: WorkerSystemOptions = {}
-): WorkerSystem {
-  return {
-    type: "worker",
-    path,
-    threads: options.threads ?? 1,
-    priority: options.priority ?? "normal",
-    prevEventIndex: 0,
-    currEventIndex: 0,
-  };
+): WorkerSystemClass {
+  return new WorkerSystemClass(path, options);
 }

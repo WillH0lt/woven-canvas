@@ -130,13 +130,13 @@ function handleMessage(
         eventBuffer,
         pool,
         components,
-        queries: {},
         maxEntities: e.data.maxEntities,
         maxEvents: e.data.maxEvents,
         componentCount: e.data.componentCount,
         tick: 0,
         threadIndex: e.data.threadIndex,
         threadCount: e.data.threadCount,
+        readerId: "worker",
       };
 
       sendResult(self, threadIndex);

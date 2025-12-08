@@ -2,7 +2,7 @@ import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer } from "./EventBuffer";
 import { Pool } from "./Pool";
 import type { Component } from "./Component";
-import type { Query } from "./Query";
+import type { QueryInstance } from "./Query";
 import type { ComponentBuffer, FieldDef } from "./Component/types";
 
 /**
@@ -19,8 +19,6 @@ export interface Context {
   pool: Pool;
   // Registered components in the world, keyed by component name.
   components: Record<string, Component<any>>;
-  // Registered queries in the world, keyed by query name.
-  queries: Record<string, Query>;
   // Maximum number of entities supported in the world.
   maxEntities: number;
   // Maximum number of events in the event ring buffer.
@@ -41,6 +39,13 @@ export interface Context {
    * In workers, queries automatically partition results based on threadIndex/threadCount.
    */
   threadCount: number;
+  /**
+   * Unique identifier for the current reader context.
+   * Used by QueryDef to create separate QueryInstance per consumer (system, subscriber, etc.).
+   * Format: "world_{worldId}" for default, "world_{worldId}_system_{systemId}" for systems,
+   * "world_{worldId}_subscriber_{subscriberId}" for subscribers.
+   */
+  readerId: string;
 }
 
 /**
@@ -75,31 +80,6 @@ export type SystemFunction = (ctx: Context) => void;
 export type WorkerSystemFunction = (ctx: Context) => void;
 
 /**
- * Base system interface
- */
-export interface BaseSystem {
-  readonly type: "main" | "worker";
-  /**
-   * Event buffer index from the previous execution.
-   * Used for deferred entity ID reclamation.
-   */
-  prevEventIndex: number;
-  /**
-   * Event buffer index at the start of the current execution.
-   * Updated before each execution, then moved to prevEventIndex after.
-   */
-  currEventIndex: number;
-}
-
-/**
- * Main thread system
- */
-export interface MainThreadSystem extends BaseSystem {
-  readonly type: "main";
-  readonly execute: SystemFunction;
-}
-
-/**
  * Priority levels for worker system execution
  */
 export type WorkerPriority = "low" | "normal" | "high";
@@ -125,15 +105,27 @@ export interface WorkerSystemOptions {
   priority?: WorkerPriority;
 }
 
+// Import system classes for type exports
+import type {
+  BaseSystemClass,
+  MainThreadSystemClass,
+  WorkerSystemClass,
+} from "./System";
+
 /**
- * Worker system
+ * Base system type (alias for BaseSystemClass)
  */
-export interface WorkerSystem extends BaseSystem {
-  readonly type: "worker";
-  readonly path: string;
-  readonly threads: number;
-  readonly priority: WorkerPriority;
-}
+export type BaseSystem = BaseSystemClass;
+
+/**
+ * Main thread system type (alias for MainThreadSystemClass)
+ */
+export type MainThreadSystem = MainThreadSystemClass;
+
+/**
+ * Worker system type (alias for WorkerSystemClass)
+ */
+export type WorkerSystem = WorkerSystemClass;
 
 /**
  * Union type for all system types

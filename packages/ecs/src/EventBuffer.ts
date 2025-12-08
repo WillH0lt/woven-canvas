@@ -110,6 +110,14 @@ export class EventBuffer {
   }
 
   /**
+   * Get the data view for direct event access (used for optimized event processing)
+   * @internal
+   */
+  getDataView(): Uint32Array {
+    return this.dataView;
+  }
+
+  /**
    * Push an event to the ring buffer (thread-safe)
    * @param entityId - The entity ID
    * @param eventType - The type of event (ADDED, REMOVED, CHANGED)
