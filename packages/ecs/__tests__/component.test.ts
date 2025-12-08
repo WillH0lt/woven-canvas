@@ -16,10 +16,10 @@ describe("Component", () => {
       });
 
       const world1 = new World([Position]);
-      const ctx1 = world1.getContext();
+      const ctx1 = world1._getContext();
 
       const world2 = new World([Position]);
-      const ctx2 = world2.getContext();
+      const ctx2 = world2._getContext();
 
       // Both worlds should have the component
       expect(Position.getComponentId(ctx1)).toBe(0);
@@ -36,7 +36,7 @@ describe("Component", () => {
         y: field.float32(),
       });
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       expect(Position.getComponentId(ctx)).toBe(0);
       expect(Velocity.getComponentId(ctx)).toBe(1);
@@ -50,7 +50,7 @@ describe("Component", () => {
         email: field.string().max(100),
       });
       const world = new World([User]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, User, {
@@ -70,7 +70,7 @@ describe("Component", () => {
         z: field.float32(),
       });
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, { x: 1.5, y: 2.5, z: 3.5 });
@@ -89,7 +89,7 @@ describe("Component", () => {
         speed: field.float32(),
       });
       const world = new World([Player]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Player, {
@@ -113,7 +113,7 @@ describe("Component", () => {
         label: field.string().max(20).default("default"),
       });
       const world = new World([Config]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Config, {});
@@ -130,7 +130,7 @@ describe("Component", () => {
         maxCount: field.uint16().default(100),
       });
       const world = new World([Config]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Config, { enabled: false, maxCount: 50 });
@@ -147,7 +147,7 @@ describe("Component", () => {
         count: field.uint32(),
       });
       const world = new World([Counter]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Counter, { count: 0 });
@@ -163,7 +163,7 @@ describe("Component", () => {
         value: field.uint32(),
       });
       const world = new World([Counter]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity1 = createEntity(ctx);
       const entity2 = createEntity(ctx);
@@ -182,7 +182,7 @@ describe("Component", () => {
         y: field.float32(),
       });
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity1 = createEntity(ctx);
       const entity2 = createEntity(ctx);
@@ -215,7 +215,7 @@ describe("Component", () => {
         dy: field.float32(),
       });
       const world = new World([Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity1 = createEntity(ctx);
       const entity2 = createEntity(ctx);
@@ -253,7 +253,7 @@ describe("Component", () => {
         f64: field.float64(),
       });
       const world = new World([AllTypes]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, AllTypes, {
@@ -290,7 +290,7 @@ describe("Component", () => {
         f64: field.float64(),
       });
       const world = new World([AllTypes]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, AllTypes, {});
@@ -315,7 +315,7 @@ describe("Component", () => {
         isEnabled: field.boolean(),
       });
       const world = new World([Flags]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, {
@@ -335,7 +335,7 @@ describe("Component", () => {
         flag: field.boolean(),
       });
       const world = new World([Flags]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, {});
@@ -349,7 +349,7 @@ describe("Component", () => {
         isActive: field.boolean(),
       });
       const world = new World([Flags]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, { isActive: false });
@@ -369,7 +369,7 @@ describe("Component", () => {
         enabled: field.boolean(),
       });
       const world = new World([TestComponent]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, TestComponent, {
@@ -398,7 +398,7 @@ describe("Component", () => {
         name: field.string().max(50),
       });
       const world = new World([User]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, User, {});
@@ -412,7 +412,7 @@ describe("Component", () => {
         text: field.string().max(100),
       });
       const world = new World([Data]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const specialString = "Hello! 👋 @#$%^&*() 日本語";
@@ -427,7 +427,7 @@ describe("Component", () => {
         name: field.string().max(50),
       });
       const world = new World([User]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity1 = createEntity(ctx);
       const entity2 = createEntity(ctx);
@@ -447,7 +447,7 @@ describe("Component", () => {
         shortText: field.string().max(10),
       });
       const world = new World([Data]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const longString = "This is a very long string";
@@ -463,7 +463,7 @@ describe("Component", () => {
         name: field.string().max(50),
       });
       const world = new World([User]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const testString = "Hello World";
@@ -489,7 +489,7 @@ describe("Component", () => {
         label: field.string().max(20).default("default"),
       });
       const world = new World([Config]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Config, {});
@@ -507,7 +507,7 @@ describe("Component", () => {
         active: field.boolean(),
       });
       const world = new World([Entity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Entity, {});
@@ -524,7 +524,7 @@ describe("Component", () => {
         count: field.uint32().default(10),
       });
       const world = new World([Config]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Config, {
@@ -544,7 +544,7 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const testData = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
@@ -561,7 +561,7 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, BinaryData, {});
@@ -577,7 +577,7 @@ describe("Component", () => {
         data: field.binary().max(128).default(defaultData),
       });
       const world = new World([BinaryData]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, BinaryData, {});
@@ -591,7 +591,7 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, BinaryData, {
@@ -609,7 +609,7 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, BinaryData, {
@@ -632,7 +632,7 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity1 = createEntity(ctx);
       const entity2 = createEntity(ctx);
@@ -655,7 +655,7 @@ describe("Component", () => {
         data: field.binary().max(20),
       });
       const world = new World([BinaryData]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const largeData = new Uint8Array(100).fill(42);
@@ -674,7 +674,7 @@ describe("Component", () => {
         sender: field.string().max(50),
       });
       const world = new World([NetworkPacket]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const payload = new Uint8Array([
@@ -701,7 +701,7 @@ describe("Component", () => {
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const testData = new Uint8Array([10, 20, 30, 40, 50]);
@@ -759,7 +759,7 @@ describe("Component", () => {
         pts: field.array(field.float32(), 1024),
       });
       const world = new World([Polygon]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const points = [1.5, 2.5, 3.5, 4.5, 5.5];
@@ -774,7 +774,7 @@ describe("Component", () => {
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Polygon, {});
@@ -788,7 +788,7 @@ describe("Component", () => {
         pts: field.array(field.float32(), 100).default([1.0, 2.0, 3.0]),
       });
       const world = new World([Polygon]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Polygon, {});
@@ -802,7 +802,7 @@ describe("Component", () => {
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Polygon, { pts: [1.0, 2.0] });
@@ -819,7 +819,7 @@ describe("Component", () => {
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       const e2 = createEntity(ctx);
@@ -836,7 +836,7 @@ describe("Component", () => {
         pts: field.array(field.float32(), 5),
       });
       const world = new World([Polygon]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const largeArray = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
@@ -854,7 +854,7 @@ describe("Component", () => {
         bytes: field.array(field.uint8(), 10),
       });
       const world = new World([MixedArrays]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, MixedArrays, {
@@ -877,7 +877,7 @@ describe("Component", () => {
         visible: field.boolean(),
       });
       const world = new World([Shape]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Shape, {
@@ -899,7 +899,7 @@ describe("Component", () => {
         names: field.array(field.string().max(50), 10),
       });
       const world = new World([Tags]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Tags, {
@@ -915,7 +915,7 @@ describe("Component", () => {
         bits: field.array(field.boolean(), 8),
       });
       const world = new World([Flags]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, {
@@ -931,7 +931,7 @@ describe("Component", () => {
         data: field.array(field.binary().max(32), 5),
       });
       const world = new World([Chunks]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const chunk1 = new Uint8Array([1, 2, 3]);
@@ -951,7 +951,7 @@ describe("Component", () => {
         names: field.array(field.string().max(50), 5),
       });
       const world = new World([Tags]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Tags, {
@@ -969,7 +969,7 @@ describe("Component", () => {
         flags: field.array(field.boolean(), 8),
       });
       const world = new World([MixedComponent]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, MixedComponent, {
@@ -994,7 +994,7 @@ describe("Component", () => {
           .default([new Uint8Array([1, 2]), new Uint8Array([3, 4, 5])]),
       });
       const world = new World([Defaults]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Defaults, {});
@@ -1016,7 +1016,7 @@ describe("Component", () => {
           .default(["used"]),
       });
       const world = new World([Combo]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Combo, {});
@@ -1050,7 +1050,7 @@ describe("Component", () => {
         shareMode: field.enum(ShareMode),
       });
       const world = new World([Document]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Document, { shareMode: ShareMode.ReadOnly });
@@ -1064,7 +1064,7 @@ describe("Component", () => {
         shareMode: field.enum(ShareMode),
       });
       const world = new World([Document]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Document, {});
@@ -1078,7 +1078,7 @@ describe("Component", () => {
         shareMode: field.enum(ShareMode).default(ShareMode.ReadWrite),
       });
       const world = new World([Document]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Document, {});
@@ -1092,7 +1092,7 @@ describe("Component", () => {
         status: field.enum(Status).default(Status.Pending),
       });
       const world = new World([Task]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Task, {});
@@ -1119,7 +1119,7 @@ describe("Component", () => {
         priority: field.enum(Priority).default(Priority.Medium),
       });
       const world = new World([Item]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Item, {
@@ -1142,7 +1142,7 @@ describe("Component", () => {
         active: field.boolean(),
       });
       const world = new World([Entity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Entity, {
@@ -1170,7 +1170,7 @@ describe("Component", () => {
         setting: field.enum(LongEnum),
       });
       const world = new World([Config]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Config, {
@@ -1187,7 +1187,7 @@ describe("Component", () => {
         status: field.enum(Status).default(Status.Pending),
       });
       const world = new World([Task]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity1 = createEntity(ctx);
       const entity2 = createEntity(ctx);
@@ -1210,7 +1210,7 @@ describe("Component", () => {
         status: field.enum(Status), // No explicit default
       });
       const world = new World([Task]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Task, {});
@@ -1224,7 +1224,7 @@ describe("Component", () => {
         shareMode: field.enum(ShareMode).default(ShareMode.None),
       });
       const world = new World([Document]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Document, { shareMode: ShareMode.ReadOnly });
@@ -1277,7 +1277,7 @@ describe("Component", () => {
         coords: field.tuple(field.float32(), 2),
       });
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, { coords: [1.5, 2.5] });
@@ -1291,7 +1291,7 @@ describe("Component", () => {
         coords: field.tuple(field.float32(), 3),
       });
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, {});
@@ -1305,7 +1305,7 @@ describe("Component", () => {
         coords: field.tuple(field.float32(), 2).default([10, 20]),
       });
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, {});
@@ -1319,7 +1319,7 @@ describe("Component", () => {
         coords: field.tuple(field.float32(), 2),
       });
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Position, { coords: [1.0, 2.0] });
@@ -1336,7 +1336,7 @@ describe("Component", () => {
         coords: field.tuple(field.float32(), 2),
       });
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       const e2 = createEntity(ctx);
@@ -1355,7 +1355,7 @@ describe("Component", () => {
         byteQuad: field.tuple(field.uint8(), 4),
       });
       const world = new World([MixedTuples]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, MixedTuples, {
@@ -1378,7 +1378,7 @@ describe("Component", () => {
         active: field.boolean(),
       });
       const world = new World([Transform]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Transform, {
@@ -1400,7 +1400,7 @@ describe("Component", () => {
         names: field.tuple(field.string().max(50), 2),
       });
       const world = new World([NamePair]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, NamePair, {
@@ -1416,7 +1416,7 @@ describe("Component", () => {
         bits: field.tuple(field.boolean(), 4),
       });
       const world = new World([Flags]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, {
@@ -1432,7 +1432,7 @@ describe("Component", () => {
         chunks: field.tuple(field.binary().max(32), 2),
       });
       const world = new World([DataPair]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       const chunk1 = new Uint8Array([1, 2, 3]);
@@ -1452,7 +1452,7 @@ describe("Component", () => {
         names: field.tuple(field.string().max(50), 2),
       });
       const world = new World([NamePair]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, NamePair, {});
@@ -1466,7 +1466,7 @@ describe("Component", () => {
         bits: field.tuple(field.boolean(), 3),
       });
       const world = new World([Flags]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entityId = createEntity(ctx);
       addComponent(ctx, entityId, Flags, {});

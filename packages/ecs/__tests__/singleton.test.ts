@@ -17,7 +17,7 @@ describe("Singleton", () => {
       });
 
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const mouseRef = useSingleton(Mouse);
       const mouse = mouseRef.read(ctx);
@@ -32,7 +32,7 @@ describe("Singleton", () => {
         pressed: field.boolean().default(false),
       });
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const mouseRef = useSingleton(Mouse);
       const mouse = mouseRef.read(ctx);
@@ -49,7 +49,7 @@ describe("Singleton", () => {
         isPaused: field.boolean().default(false),
       });
       const world = new World([GameState]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const stateRef = useSingleton(GameState);
       const state = stateRef.read(ctx);
@@ -67,7 +67,7 @@ describe("Singleton", () => {
         elapsed: field.float32().default(0),
       });
       const world = new World([Time]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const timeRef = useSingleton(Time);
       const time = timeRef.read(ctx);
@@ -81,7 +81,7 @@ describe("Singleton", () => {
         y: field.float32(),
       });
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const mouseRef = useSingleton(Mouse);
       const mouse = mouseRef.write(ctx);
@@ -98,7 +98,7 @@ describe("Singleton", () => {
         value: field.uint32().default(0),
       });
       const world = new World([Counter]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const counterRef = useSingleton(Counter);
 
@@ -121,7 +121,7 @@ describe("Singleton", () => {
         y: field.float32().default(24),
       });
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const mouseRef = useSingleton(Mouse);
       const mouse = mouseRef.read(ctx);
@@ -135,7 +135,7 @@ describe("Singleton", () => {
         y: field.float32(),
       });
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const mouseRef = useSingleton(Mouse);
       const mouse = mouseRef.write(ctx);
@@ -155,7 +155,7 @@ describe("Singleton", () => {
         y: field.float32(),
       });
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const mouseRef = useSingleton(Mouse);
 
@@ -177,7 +177,7 @@ describe("Singleton", () => {
         y: field.float32(),
       });
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const mouseRef = useSingleton(Mouse);
 
@@ -199,7 +199,7 @@ describe("Singleton", () => {
         y: field.float32(),
       });
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const mouseRef = useSingleton(Mouse);
 
@@ -228,7 +228,7 @@ describe("Singleton", () => {
         y: field.float32(),
       });
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Two independent references to the same singleton
       const mouseRef1 = useSingleton(Mouse);
@@ -266,7 +266,7 @@ describe("Singleton", () => {
       });
 
       const world = new World([Position, Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Check that both work
       const mouseRef = useSingleton(Mouse);
@@ -294,7 +294,7 @@ describe("Singleton", () => {
       });
 
       const world = new World([Mouse, Time]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       expect(Mouse.getComponentId(ctx)).toBe(0);
       expect(Time.getComponentId(ctx)).toBe(1);
@@ -309,7 +309,7 @@ describe("Singleton", () => {
       });
 
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       let systemRan = false;
       const mouseRef = useSingleton(Mouse);
@@ -338,10 +338,10 @@ describe("Singleton", () => {
       });
 
       const world1 = new World([Mouse]);
-      const ctx1 = world1.getContext();
+      const ctx1 = world1._getContext();
 
       const world2 = new World([Mouse]);
-      const ctx2 = world2.getContext();
+      const ctx2 = world2._getContext();
 
       // Each world should have independent singletons
       const mouseRef = useSingleton(Mouse);
@@ -367,7 +367,7 @@ describe("Singleton", () => {
       });
 
       const world = new World([Mouse]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const otherRef = useSingleton(OtherSingleton);
 

@@ -48,7 +48,7 @@ describe("Query", () => {
   describe("Query - Basic Operations", () => {
     it("should query entities with specific components", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create entities with different component combinations
       const e1 = createEntity(ctx);
@@ -73,7 +73,7 @@ describe("Query", () => {
 
     it("should query entities with multiple required components", () => {
       const world = new World([Position, Velocity, Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position, { x: 10, y: 20 });
@@ -99,7 +99,7 @@ describe("Query", () => {
 
     it("should query entities without specific components", () => {
       const world = new World([Position, Enemy, Player]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position, { x: 10, y: 20 });
@@ -124,7 +124,7 @@ describe("Query", () => {
 
     it("should query entities with any of specified components", () => {
       const world = new World([Enemy, Player, Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Enemy);
@@ -147,7 +147,7 @@ describe("Query", () => {
 
     it("should combine with, without, and any clauses", () => {
       const world = new World([Position, Velocity, Enemy, Player, Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position);
@@ -182,7 +182,7 @@ describe("Query", () => {
 
     it("should handle empty queries", () => {
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create at least one entity so entityBuffer exists
       const e1 = createEntity(ctx);
@@ -196,7 +196,7 @@ describe("Query", () => {
 
     it("should iterate over query results", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position, { x: 0, y: 0 });
@@ -228,7 +228,7 @@ describe("Query", () => {
   describe("Query - Performance", () => {
     it("should efficiently handle large numbers of entities", () => {
       const world = new World([Position, Velocity, Health, Enemy]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create 1000 entities with various component combinations
       const entities = [];
@@ -270,7 +270,7 @@ describe("Query", () => {
 
     it("should handle queries on large entity sets efficiently", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create many entities
       for (let i = 0; i < 5000; i++) {
@@ -299,7 +299,7 @@ describe("Query", () => {
   describe("Query - Component Data Access", () => {
     it("should allow reading component data during iteration", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position, { x: 10, y: 20 });
@@ -323,7 +323,7 @@ describe("Query", () => {
 
     it("should allow writing component data during iteration", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position, { x: 0, y: 0 });
@@ -352,7 +352,7 @@ describe("Query", () => {
   describe("Query - Edge Cases", () => {
     it("should handle queries with no matching entities", () => {
       const world = new World([Position, Velocity, Enemy]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position);
@@ -365,7 +365,7 @@ describe("Query", () => {
 
     it("should handle queries with all entities matching", () => {
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entities = [];
       for (let i = 0; i < 10; i++) {
@@ -385,7 +385,7 @@ describe("Query", () => {
 
     it("should handle complex multi-clause queries", () => {
       const world = new World([Position, Velocity, Health, Enemy, Player]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position);
@@ -421,7 +421,7 @@ describe("Query", () => {
 
     it("should handle entity with all components", () => {
       const world = new World([Position, Velocity, Health, Enemy, Player]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position);
@@ -449,7 +449,7 @@ describe("Query", () => {
   describe("Query - Reactive added()/removed()", () => {
     it("should return entities in added() when entity is created and matches query", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
 
@@ -478,7 +478,7 @@ describe("Query", () => {
 
     it("should return entity in added() when component is added to existing entity", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
 
@@ -510,7 +510,7 @@ describe("Query", () => {
 
     it("should return entity in removed() when entity is deleted", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
 
@@ -538,7 +538,7 @@ describe("Query", () => {
 
     it("should return entity in removed() when component is removed from existing entity", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
 
@@ -572,7 +572,7 @@ describe("Query", () => {
 
     it("should not return entity in removed() if component removal doesn't affect query match", () => {
       const world = new World([Position, Velocity, Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Query only requires Position
       const positionQuery = useQuery((q) => q.with(Position));
@@ -604,7 +604,7 @@ describe("Query", () => {
 
     it("should handle without() clause correctly for added()", () => {
       const world = new World([Position, Velocity, Enemy]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Query for Position WITHOUT Enemy
       const nonEnemyQuery = useQuery((q) => q.with(Position).without(Enemy));
@@ -636,7 +636,7 @@ describe("Query", () => {
 
     it("should handle without() clause correctly for removed()", () => {
       const world = new World([Position, Velocity, Enemy]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Query for Position WITHOUT Enemy
       const nonEnemyQuery = useQuery((q) => q.with(Position).without(Enemy));
@@ -670,7 +670,7 @@ describe("Query", () => {
 
     it("should handle multiple entities being added and removed", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
 
@@ -719,7 +719,7 @@ describe("Query", () => {
 
     it("should only return entity once even if multiple relevant components change", () => {
       const world = new World([Position, Velocity, Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const query = useQuery((q) => q.with(Position, Velocity, Health));
 
@@ -746,7 +746,7 @@ describe("Query", () => {
 
     it("should return consistent results within the same frame", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const movingQuery = useQuery((q) => q.with(Position, Velocity));
 
@@ -789,7 +789,7 @@ describe("Query", () => {
   describe("Query - Partitioning", () => {
     it("should partition added() entities for a specific thread", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Set up multi-threaded context before querying
       ctx.threadCount = 2;
@@ -822,7 +822,7 @@ describe("Query", () => {
 
     it("should partition added() entities for thread 1", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Set up multi-threaded context before querying - thread 1
       ctx.threadCount = 2;
@@ -855,7 +855,7 @@ describe("Query", () => {
 
     it("should partition removed() entities across threads", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Set up multi-threaded context
       ctx.threadCount = 2;
@@ -902,7 +902,7 @@ describe("Query", () => {
       });
 
       const world = new World([TrackedPosition]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Set up multi-threaded context
       ctx.threadCount = 2;
@@ -946,7 +946,7 @@ describe("Query", () => {
 
     it("should not partition when threadCount is 1", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Single-threaded (default)
       ctx.threadCount = 1;
@@ -978,7 +978,7 @@ describe("Query", () => {
 
     it("should partition current() entities across threads", () => {
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Set up 3 threads, thread 0
       ctx.threadCount = 3;
@@ -1010,7 +1010,7 @@ describe("Query", () => {
     it("should ensure all partitions together cover all entities", () => {
       // Test thread 0
       const world0 = new World([Position, Velocity]);
-      const ctx0 = world0.getContext();
+      const ctx0 = world0._getContext();
       ctx0.threadCount = 3;
       ctx0.threadIndex = 0;
       const query0 = useQuery((q) => q.with(Position, Velocity));
@@ -1018,7 +1018,7 @@ describe("Query", () => {
 
       // Test thread 1
       const world1 = new World([Position, Velocity]);
-      const ctx1 = world1.getContext();
+      const ctx1 = world1._getContext();
       ctx1.threadCount = 3;
       ctx1.threadIndex = 1;
       const query1 = useQuery((q) => q.with(Position, Velocity));
@@ -1026,7 +1026,7 @@ describe("Query", () => {
 
       // Test thread 2
       const world2 = new World([Position, Velocity]);
-      const ctx2 = world2.getContext();
+      const ctx2 = world2._getContext();
       ctx2.threadCount = 3;
       ctx2.threadIndex = 2;
       const query2 = useQuery((q) => q.with(Position, Velocity));

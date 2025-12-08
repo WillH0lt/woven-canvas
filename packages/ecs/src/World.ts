@@ -3,7 +3,6 @@ import { Component, type ComponentDef } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer, EventType } from "./EventBuffer";
 import { Pool } from "./Pool";
-import { CommandBuffer, CommandType } from "./CommandBuffer";
 import { removeEntity, addComponent, removeComponent } from "./Context";
 import { type QueryDef, processQueryEvents } from "./Query";
 import type { System, Context, EntityId, QueryMasks } from "./types";
@@ -23,7 +22,10 @@ export interface WorldSyncResult {
 /**
  * Callback type for world event subscribers
  */
-export type WorldSubscribeCallback = (result: WorldSyncResult) => void;
+export type WorldSubscribeCallback = (
+  ctx: Context,
+  result: WorldSyncResult
+) => void;
 
 /**
  * Internal subscriber state
@@ -36,6 +38,11 @@ interface Subscriber {
   /** Set of entity IDs that matched the query (for tracking removed entities) */
   matchedEntities: Set<EntityId>;
 }
+
+/**
+ * Callback type for nextSync
+ */
+export type NextSyncCallback = (ctx: Context) => void;
 
 export interface WorldOptions {
   /**
@@ -68,6 +75,8 @@ export class World {
   private subscribers: Subscriber[] = [];
   /** Map of component IDs to component definitions for event lookup */
   private componentIdToDef: Map<number, ComponentDef<any>> = new Map();
+  /** Queue of callbacks to execute on next sync */
+  private nextSyncCallbacks: NextSyncCallback[] = [];
 
   /**
    * Create a new world instance
@@ -123,20 +132,22 @@ export class World {
       maxEvents,
       componentCount,
       pool: Pool.create(maxEntities),
-      commandBuffer: new CommandBuffer(),
       tick: 0,
-      worldContext: true,
-      isExecuting: true, // Start as true so initial setup works
       threadIndex: 0,
       threadCount: 1,
     };
   }
 
   /**
-   * Get the context object for system execution
-   * @returns Context object containing the entity buffer
+   * Get the world context (for advanced usage only)
+   * @returns The world context
+   * @example
+   * ```typescript
+   * const ctx = world._getContext();
+   * const entityId = createEntity(ctx);
+   * ```
    */
-  getContext(): Context {
+  _getContext(): Context {
     return this.context;
   }
 
@@ -235,7 +246,7 @@ export class World {
    * @example
    * ```typescript
    * const query = useQuery((q) => q.with(Position).tracking(Velocity));
-   * const unsubscribe = world.subscribe(query, ({ added, removed, changed }) => {
+   * const unsubscribe = world.subscribe(query, (ctx, { added, removed, changed }) => {
    *   for (const entityId of added) {
    *     console.log(`Entity ${entityId} entered the query`);
    *   }
@@ -274,7 +285,7 @@ export class World {
 
     // Fire initial callback with all existing matched entities as "added"
     if (matchedEntities.size > 0) {
-      callback({
+      callback(ctx, {
         added: Array.from(matchedEntities),
         removed: [],
         changed: [],
@@ -291,20 +302,26 @@ export class World {
 
   /**
    * Sync events to all subscribers. Call this in your game loop after execute().
-   * First flushes any deferred commands from the command buffer, then
+   * First executes any callbacks registered via nextSync(), then
    * reads all events since the last sync for each subscriber and calls their callbacks.
    * @example
    * ```typescript
    * // In your game loop:
-   * world.sync(); // Flush deferred commands and notify subscribers
+   * world.sync(); // Execute deferred callbacks and notify subscribers
    * await world.execute(movementSystem, renderSystem);
    * ```
    */
   sync(): void {
     const ctx = this.context;
 
-    // Flush deferred commands from the command buffer
-    this.flushCommandBuffer();
+    // Execute all nextSync callbacks first
+    if (this.nextSyncCallbacks.length > 0) {
+      const callbacks = this.nextSyncCallbacks;
+      this.nextSyncCallbacks = [];
+      for (const callback of callbacks) {
+        callback(ctx);
+      }
+    }
 
     if (this.subscribers.length === 0) {
       return;
@@ -339,47 +356,33 @@ export class World {
         changed: result.changed,
       };
 
-      subscriber.callback(syncResult);
+      subscriber.callback(ctx, syncResult);
     }
   }
 
   /**
-   * Flush all deferred commands from the command buffer.
-   * Commands are executed in the order they were queued.
-   * @internal
+   * Schedule a callback to run at the next sync() call.
+   * Use this to safely modify entities and components from outside the ECS execution context
+   * (e.g., from UI event handlers, network callbacks, etc.).
+   *
+   * @param callback - Function to execute at the next sync, receives the context
+   * @example
+   * ```typescript
+   * // From a click handler in your UI:
+   * function onClick(entityId: number) {
+   *   world.nextSync((ctx) => {
+   *     const color = Color.write(ctx, entityId);
+   *     color.red = 255;
+   *   });
+   * }
+   *
+   * // In your game loop:
+   * world.sync();  // Executes the callback
+   * await world.execute(renderSystem);
+   * ```
    */
-  private flushCommandBuffer(): void {
-    const ctx = this.context;
-    const commands = ctx.commandBuffer!.flush();
-
-    if (commands.length === 0) {
-      return;
-    }
-
-    // Set isExecuting to true to execute commands immediately
-    ctx.isExecuting = true;
-    try {
-      for (const command of commands) {
-        switch (command.type) {
-          case CommandType.REMOVE_ENTITY:
-            removeEntity(ctx, command.entityId);
-            break;
-          case CommandType.ADD_COMPONENT:
-            addComponent(
-              ctx,
-              command.entityId,
-              command.componentDef,
-              command.data
-            );
-            break;
-          case CommandType.REMOVE_COMPONENT:
-            removeComponent(ctx, command.entityId, command.componentDef);
-            break;
-        }
-      }
-    } finally {
-      ctx.isExecuting = false;
-    }
+  nextSync(callback: NextSyncCallback): void {
+    this.nextSyncCallbacks.push(callback);
   }
 
   /**

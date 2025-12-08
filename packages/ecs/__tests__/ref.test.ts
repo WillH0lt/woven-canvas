@@ -18,7 +18,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
       const childId = createEntity(ctx);
@@ -34,7 +34,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const childId = createEntity(ctx);
       addComponent(ctx, childId, Child, {});
@@ -48,7 +48,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
       const childId = createEntity(ctx);
@@ -65,7 +65,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parent1 = createEntity(ctx);
       const parent2 = createEntity(ctx);
@@ -84,7 +84,7 @@ describe("Ref Field", () => {
         b: field.ref(),
       });
       const world = new World([Friendship]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const person1 = createEntity(ctx);
       const person2 = createEntity(ctx);
@@ -107,7 +107,7 @@ describe("Ref Field", () => {
         name: field.string().max(50),
       });
       const world = new World([Child, Parent]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
       addComponent(ctx, parentId, Parent, { name: "Parent" });
@@ -129,7 +129,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
       const child1 = createEntity(ctx);
@@ -153,7 +153,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
       const childId = createEntity(ctx);
@@ -173,7 +173,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
       const newParentId = createEntity(ctx);
@@ -197,7 +197,7 @@ describe("Ref Field", () => {
         next: field.ref(),
       });
       const world = new World([Node]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const nodeId = createEntity(ctx);
       addComponent(ctx, nodeId, Node, { next: nodeId });
@@ -214,7 +214,7 @@ describe("Ref Field", () => {
         next: field.ref(),
       });
       const world = new World([Node]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const node1 = createEntity(ctx);
       const node2 = createEntity(ctx);
@@ -237,7 +237,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const loneEntity = createEntity(ctx);
       const childId = createEntity(ctx);
@@ -253,7 +253,7 @@ describe("Ref Field", () => {
         next: field.ref(),
       });
       const world = new World([Node]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const node1 = createEntity(ctx);
       const node2 = createEntity(ctx);
@@ -278,7 +278,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child], { maxEntities: 10 });
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create parent and child with ref
       const parentId = createEntity(ctx);
@@ -304,7 +304,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child], { maxEntities: 10 });
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create and delete an entity to recycle its ID
       const oldParentId = createEntity(ctx);
@@ -330,7 +330,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
 
@@ -343,7 +343,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
       const child1 = createEntity(ctx);
@@ -367,7 +367,7 @@ describe("Ref Field", () => {
         personB: field.ref(),
       });
       const world = new World([Friendship]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const alice = createEntity(ctx);
       const bob = createEntity(ctx);
@@ -406,7 +406,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parentId = createEntity(ctx);
       const child1 = createEntity(ctx);
@@ -429,7 +429,7 @@ describe("Ref Field", () => {
         parent: field.ref(),
       });
       const world = new World([Child]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const parent1 = createEntity(ctx);
       const parent2 = createEntity(ctx);
@@ -452,7 +452,7 @@ describe("Ref Field", () => {
         next: field.ref(),
       });
       const world = new World([Node]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const nodeId = createEntity(ctx);
       addComponent(ctx, nodeId, Node, { next: nodeId });

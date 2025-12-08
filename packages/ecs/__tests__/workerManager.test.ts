@@ -164,7 +164,7 @@ describe("WorkerManager", () => {
 
     // Create world and context
     world = new World([Position, Velocity], { threads: 4 });
-    ctx = world.getContext();
+    ctx = world._getContext();
   });
 
   afterEach(() => {

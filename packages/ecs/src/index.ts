@@ -9,6 +9,7 @@ export {
   World,
   type WorldSyncResult,
   type WorldSubscribeCallback,
+  type NextSyncCallback,
 } from "./World";
 export { setupWorker } from "./Worker";
 export {

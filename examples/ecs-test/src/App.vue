@@ -18,58 +18,83 @@
 
 <script setup lang="ts">
 import {
+  type Context,
   defineSystem,
   createEntity,
-  getBackrefs,
   addComponent,
-  removeEntity,
   World,
-  type Context,
   useQuery,
-  removeComponent,
-  hasComponent,
-  type WorldSyncResult,
+  field,
+  defineComponent,
 } from "@infinitecanvas/ecs";
 import { reactive } from "vue";
 
-import * as components from "./components";
+const Velocity = defineComponent("Velocity", {
+  x: field.float32(),
+  y: field.float32(),
+});
 
-const world = new World(Object.values(components), { threads: 4 });
-const ctx = world.getContext();
+const Position = defineComponent("Position", {
+  x: field.float32(),
+  y: field.float32(),
+});
 
-// Create some blocks before initializing Store
-for (let i = 0; i < 1; i++) {
-  const block1 = createEntity(ctx);
-  addComponent(ctx, block1, components.Velocity, {
-    x: Math.random() * 5,
-    y: Math.random() * 5,
+const Size = defineComponent("Size", {
+  width: field.float32().default(50),
+  height: field.float32().default(50),
+});
+
+const Color = defineComponent("Color", {
+  red: field.uint8().default(255),
+  green: field.uint8().default(0),
+  blue: field.uint8().default(0),
+});
+
+const world = new World([Velocity, Position, Size, Color], { threads: 4 });
+
+world.nextSync((ctx) => {
+  // Create some blocks
+  for (let i = 0; i < 15; i++) {
+    const block1 = createEntity(ctx);
+    addComponent(ctx, block1, Velocity, {
+      x: Math.random() * 2,
+      y: Math.random() * 2,
+    });
+    addComponent(ctx, block1, Position, {
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+    });
+    addComponent(ctx, block1, Size, {
+      width: Math.random() * 100 + 25,
+      height: Math.random() * 100 + 25,
+    });
+    addComponent(ctx, block1, Color, {
+      red: Math.random() * 255,
+      green: Math.random() * 255,
+      blue: Math.random() * 255,
+    });
+  }
+});
+
+async function changeColor(entityId: number) {
+  world.nextSync((ctx) => {
+    const color = Color.write(ctx, entityId);
+    color.red = Math.floor(Math.random() * 256);
+    color.green = Math.floor(Math.random() * 256);
+    color.blue = Math.floor(Math.random() * 256);
   });
-  addComponent(ctx, block1, components.Position, { x: 200, y: 200 });
-  addComponent(ctx, block1, components.Size, { width: 50, height: 50 });
-  addComponent(ctx, block1, components.Color, { red: 255, green: 0, blue: 0 });
 }
 
-// Change color via the store (demonstrates Store -> ECS sync)
-function changeColor(entityId: number) {
-  // need to defer writes to the start of the frame
-  const color = components.Color.write(ctx, entityId);
-}
+const blocks = useQuery((q) => q.tracking(Position, Size, Color));
 
-const query = useQuery((q) =>
-  q
-    .with(components.Position, components.Velocity, components.Size)
-    .tracking(components.Color)
-);
-
-// Define main thread systems
 const system1 = defineSystem((ctx: Context) => {
-  for (const eid of query.current(ctx)) {
-    const pos = components.Position.write(ctx, eid);
-    const vel = components.Velocity.write(ctx, eid);
-    const size = components.Size.read(ctx, eid);
+  for (const eid of blocks.current(ctx)) {
+    const pos = Position.write(ctx, eid);
+    const vel = Velocity.write(ctx, eid);
+    const size = Size.read(ctx, eid);
 
-    pos.x += vel.x * 0.1;
-    pos.y += vel.y * 0.1;
+    pos.x += vel.x;
+    pos.y += vel.y;
 
     if (pos.x <= 0 || pos.x + size.width >= window.innerWidth) {
       vel.x *= -1;
@@ -81,43 +106,15 @@ const system1 = defineSystem((ctx: Context) => {
       pos.y = Math.max(0, Math.min(pos.y, window.innerHeight - size.height));
     }
   }
-  // for (const eid of query.changed(ctx)) {
-  //   const color = components.Color.read(ctx, eid);
-  //   console.log(`color: ${color.red}, ${color.green}, ${color.blue}`);
-  // }
 });
 
-// // data in
-// // get all these methods to work when called with world context
-
-// // can work already
-// createEntity(ctx);
-
-// // needs to be defered to start of the frame
-// removeEntity(ctx, 1);
-// addComponent(ctx, 1, Position, { x: 200, y: 200 });
-// removeComponent(ctx, 1, Position);
-
-// // can work already
-// getBackrefs(ctx, 1, Position, "x");
-// hasComponent(ctx, 1, Position);
-
-// // can work
-// query.current(ctx);
-
 const state = reactive<Record<number, any>>({});
-
-const stateQuery = useQuery((q) =>
-  q.tracking(components.Position, components.Size, components.Color)
-);
-
-world.subscribe(stateQuery, ({ added, removed, changed }) => {
-  // preferred way to sync data from world -> application
+world.subscribe(blocks, (ctx, { added, removed, changed }) => {
   for (const entityId of added) {
     state[entityId] = {};
-    state[entityId].Position = components.Position.snapshot(ctx, entityId);
-    state[entityId].Size = components.Size.snapshot(ctx, entityId);
-    state[entityId].Color = components.Color.snapshot(ctx, entityId);
+    state[entityId].Position = Position.snapshot(ctx, entityId);
+    state[entityId].Size = Size.snapshot(ctx, entityId);
+    state[entityId].Color = Color.snapshot(ctx, entityId);
   }
 
   for (const entityId of removed) {
@@ -125,38 +122,20 @@ world.subscribe(stateQuery, ({ added, removed, changed }) => {
   }
 
   for (const entityId of changed) {
-    // Re-read all tracked components for changed entities
     if (state[entityId]) {
-      state[entityId].Position = components.Position.snapshot(ctx, entityId);
-      state[entityId].Size = components.Size.snapshot(ctx, entityId);
-      state[entityId].Color = components.Color.snapshot(ctx, entityId);
+      state[entityId].Position = Position.snapshot(ctx, entityId);
+      state[entityId].Size = Size.snapshot(ctx, entityId);
+      state[entityId].Color = Color.snapshot(ctx, entityId);
     }
   }
 });
 
-// // data out
-// world.subscribe(query, (event) => {
-//   for (const eid of event.added) {
-//     console.log(`Entity ${eid} added to query`);
-//   }
-//   for (const eid of event.removed) {
-//     console.log(`Entity ${eid} removed from query`);
-//   }
-//   for (const eid of event.changed) {
-//     console.log(`Entity ${eid} changed in query`);
-//   }
-// });
-
 async function loop() {
+  requestAnimationFrame(loop);
+
   world.sync();
 
   await world.execute(system1);
-
-  // await world.frame(async (execute) => {
-  //   await execute(system1);
-  // });
-
-  requestAnimationFrame(loop);
 }
 
 loop();

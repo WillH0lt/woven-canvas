@@ -28,7 +28,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity, Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       expect(Position.getComponentId(ctx)).toBe(0);
       expect(Velocity.getComponentId(ctx)).toBe(1);
       expect(Health.getComponentId(ctx)).toBe(2);
@@ -38,7 +38,7 @@ describe("World", () => {
   describe("Entity Management", () => {
     it("should create entities", () => {
       const world = new World([]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const eid = createEntity(ctx);
 
       expect(typeof eid).toBe("number");
@@ -46,7 +46,7 @@ describe("World", () => {
 
     it("should create multiple entities with sequential IDs", () => {
       const world = new World([]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const e1 = createEntity(ctx);
       const e2 = createEntity(ctx);
       const e3 = createEntity(ctx);
@@ -63,7 +63,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 10, y: 20 });
 
@@ -85,7 +85,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
 
       addComponent(ctx, entity, Position, { x: 10, y: 20 });
@@ -102,7 +102,7 @@ describe("World", () => {
       });
 
       const world = new World([Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
 
       addComponent(ctx, entity, Health, {});
@@ -123,7 +123,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
 
       addComponent(ctx, entity, Position, { x: 10, y: 20 });
@@ -149,7 +149,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
 
       expect(hasComponent(ctx, entity, Position)).toBe(false);
@@ -167,7 +167,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       expect(() => hasComponent(ctx, 999, Position)).toThrow(
         "Entity with ID 999 does not exist"
@@ -181,7 +181,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       expect(() => removeComponent(ctx, 999, Position)).toThrow(
         "Entity with ID 999 does not exist"
@@ -197,7 +197,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 100, y: 200 });
 
@@ -214,7 +214,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
 
@@ -241,7 +241,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity, Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
 
       addComponent(ctx, entity, Position, { x: 100, y: 200 });
@@ -271,7 +271,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
       const entity = createEntity(ctx);
 
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
@@ -308,7 +308,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity, Health]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position, { x: 10, y: 20 });
@@ -341,7 +341,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const e1 = createEntity(ctx);
       const e2 = createEntity(ctx);
@@ -364,7 +364,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 10, y: 20 });
@@ -387,10 +387,10 @@ describe("World", () => {
 
       // Create two separate worlds using the same component definitions
       const world1 = new World([Position, Velocity]);
-      const ctx1 = world1.getContext();
+      const ctx1 = world1._getContext();
 
       const world2 = new World([Position, Velocity]);
-      const ctx2 = world2.getContext();
+      const ctx2 = world2._getContext();
 
       // Create entities in world1
       const e1 = createEntity(ctx1);
@@ -436,10 +436,10 @@ describe("World", () => {
       });
 
       const world1 = new World([Position, Velocity]);
-      const ctx1 = world1.getContext();
+      const ctx1 = world1._getContext();
 
       const world2 = new World([Velocity, Position]); // Different order
-      const ctx2 = world2.getContext();
+      const ctx2 = world2._getContext();
 
       // Each world assigns componentIds based on its own registration order
       expect(Position.getComponentId(ctx1)).toBe(0);
@@ -456,10 +456,10 @@ describe("World", () => {
       });
 
       const world1 = new World([Position]);
-      const ctx1 = world1.getContext();
+      const ctx1 = world1._getContext();
 
       const world2 = new World([Position]);
-      const ctx2 = world2.getContext();
+      const ctx2 = world2._getContext();
 
       // Create multiple entities in each world
       const w1e1 = createEntity(ctx1);
@@ -497,10 +497,10 @@ describe("World", () => {
       });
 
       const world1 = new World([Position, Velocity]);
-      const ctx1 = world1.getContext();
+      const ctx1 = world1._getContext();
 
       const world2 = new World([Position, Velocity]);
-      const ctx2 = world2.getContext();
+      const ctx2 = world2._getContext();
 
       // Create different entity configurations in each world
       // World1: 3 entities with Position, 2 with Velocity
@@ -540,11 +540,11 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const query = useQuery((q) => q.with(Position));
       const receivedAdded: number[] = [];
-      world.subscribe(query, ({ added }) => {
+      world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
       });
 
@@ -568,12 +568,12 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Query only for entities with Velocity
       const query = useQuery((q) => q.with(Velocity));
       const receivedAdded: number[] = [];
-      world.subscribe(query, ({ added }) => {
+      world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
       });
 
@@ -599,7 +599,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
@@ -608,7 +608,7 @@ describe("World", () => {
       world.sync(); // Clear the initial events
 
       const receivedRemoved: number[] = [];
-      world.subscribe(query, ({ removed }) => {
+      world.subscribe(query, (_ctx, { removed }) => {
         receivedRemoved.push(...removed);
       });
 
@@ -630,7 +630,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
@@ -641,7 +641,7 @@ describe("World", () => {
       world.sync(); // Clear initial events
 
       const receivedRemoved: number[] = [];
-      world.subscribe(query, ({ removed }) => {
+      world.subscribe(query, (_ctx, { removed }) => {
         receivedRemoved.push(...removed);
       });
 
@@ -664,7 +664,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
@@ -674,7 +674,7 @@ describe("World", () => {
       world.sync(); // Clear initial events
 
       const receivedAdded: number[] = [];
-      world.subscribe(query, ({ added }) => {
+      world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
       });
 
@@ -693,7 +693,7 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
@@ -703,7 +703,7 @@ describe("World", () => {
       world.sync(); // Clear the initial events
 
       const receivedChanged: number[] = [];
-      world.subscribe(query, ({ changed }) => {
+      world.subscribe(query, (_ctx, { changed }) => {
         receivedChanged.push(...changed);
       });
 
@@ -727,7 +727,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
@@ -740,7 +740,7 @@ describe("World", () => {
       world.sync(); // Clear the initial events
 
       const receivedChanged: number[] = [];
-      world.subscribe(query, ({ changed }) => {
+      world.subscribe(query, (_ctx, { changed }) => {
         receivedChanged.push(...changed);
       });
 
@@ -771,7 +771,7 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const positionQuery = useQuery((q) => q.with(Position));
       const velocityQuery = useQuery((q) => q.with(Velocity));
@@ -779,10 +779,10 @@ describe("World", () => {
       const positionAdded: number[] = [];
       const velocityAdded: number[] = [];
 
-      world.subscribe(positionQuery, ({ added }) => {
+      world.subscribe(positionQuery, (_ctx, { added }) => {
         positionAdded.push(...added);
       });
-      world.subscribe(velocityQuery, ({ added }) => {
+      world.subscribe(velocityQuery, (_ctx, { added }) => {
         velocityAdded.push(...added);
       });
 
@@ -812,11 +812,11 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const query = useQuery((q) => q.with(Position));
       const receivedAdded: number[] = [];
-      const unsubscribe = world.subscribe(query, ({ added }) => {
+      const unsubscribe = world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
       });
 
@@ -845,12 +845,12 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Subscribe only to Velocity entities
       const query = useQuery((q) => q.with(Velocity));
       let callCount = 0;
-      world.subscribe(query, () => {
+      world.subscribe(query, (_ctx) => {
         callCount++;
       });
 
@@ -872,11 +872,11 @@ describe("World", () => {
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       const query = useQuery((q) => q.with(Position));
       const receivedBatches: number[][] = [];
-      world.subscribe(query, ({ added }) => {
+      world.subscribe(query, (_ctx, { added }) => {
         receivedBatches.push([...added]);
       });
 
@@ -906,12 +906,12 @@ describe("World", () => {
       });
 
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Query that matches when entity has Position
       const query = useQuery((q) => q.with(Position));
       const receivedAdded: number[] = [];
-      world.subscribe(query, ({ added }) => {
+      world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
       });
 
@@ -925,193 +925,154 @@ describe("World", () => {
     });
   });
 
-  describe("Deferred Command Buffer", () => {
-    it("should defer removeEntity when called outside of execute", () => {
+  describe("nextSync", () => {
+    it("should execute callback on next sync", () => {
       const Position = defineComponent("Position", {
         x: field.float32(),
         y: field.float32(),
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
-      const entity = createEntity(ctx);
-      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+      let callbackExecuted = false;
+      world.nextSync(() => {
+        callbackExecuted = true;
+      });
 
-      // Set isExecuting to false to simulate being outside execute()
-      ctx.isExecuting = false;
-
-      // This should be deferred, not executed immediately
-      removeEntity(ctx, entity);
-
-      // Entity should still exist
-      expect(ctx.entityBuffer.has(entity)).toBe(true);
-
-      // Flush the commands via sync()
+      expect(callbackExecuted).toBe(false);
       world.sync();
-
-      // Now entity should be removed
-      expect(ctx.entityBuffer.has(entity)).toBe(false);
+      expect(callbackExecuted).toBe(true);
     });
 
-    it("should defer addComponent when called outside of execute", () => {
-      const Position = defineComponent("Position", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-      const Velocity = defineComponent("Velocity", {
-        dx: field.float32(),
-        dy: field.float32(),
-      });
-
-      const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
-
-      const entity = createEntity(ctx);
-      addComponent(ctx, entity, Position, { x: 10, y: 20 });
-
-      // Set isExecuting to false to simulate being outside execute()
-      ctx.isExecuting = false;
-
-      // This should be deferred
-      addComponent(ctx, entity, Velocity, { dx: 1, dy: 2 });
-
-      // Entity should NOT have Velocity yet
-      expect(hasComponent(ctx, entity, Velocity)).toBe(false);
-
-      // Flush the commands via sync()
-      world.sync();
-
-      // Now entity should have Velocity
-      expect(hasComponent(ctx, entity, Velocity)).toBe(true);
-      expect(Velocity.read(ctx, entity).dx).toBeCloseTo(1);
-      expect(Velocity.read(ctx, entity).dy).toBeCloseTo(2);
-    });
-
-    it("should defer removeComponent when called outside of execute", () => {
-      const Position = defineComponent("Position", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-      const Velocity = defineComponent("Velocity", {
-        dx: field.float32(),
-        dy: field.float32(),
-      });
-
-      const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
-
-      const entity = createEntity(ctx);
-      addComponent(ctx, entity, Position, { x: 10, y: 20 });
-      addComponent(ctx, entity, Velocity, { dx: 1, dy: 2 });
-
-      // Set isExecuting to false to simulate being outside execute()
-      ctx.isExecuting = false;
-
-      // This should be deferred
-      removeComponent(ctx, entity, Velocity);
-
-      // Entity should still have Velocity
-      expect(hasComponent(ctx, entity, Velocity)).toBe(true);
-
-      // Flush the commands via sync()
-      world.sync();
-
-      // Now entity should NOT have Velocity
-      expect(hasComponent(ctx, entity, Velocity)).toBe(false);
-      // But should still have Position
-      expect(hasComponent(ctx, entity, Position)).toBe(true);
-    });
-
-    it("should execute commands immediately when isExecuting is true", () => {
+    it("should provide context to callback", () => {
       const Position = defineComponent("Position", {
         x: field.float32(),
         y: field.float32(),
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
-      const entity = createEntity(ctx);
-
-      // isExecuting starts as true, so this should execute immediately
-      addComponent(ctx, entity, Position, { x: 10, y: 20 });
-
-      // Component should be added immediately
-      expect(hasComponent(ctx, entity, Position)).toBe(true);
-      expect(Position.read(ctx, entity).x).toBeCloseTo(10);
-    });
-
-    it("should process multiple deferred commands in order", () => {
-      const Position = defineComponent("Position", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-      const Velocity = defineComponent("Velocity", {
-        dx: field.float32(),
-        dy: field.float32(),
+      let receivedCtx: any = null;
+      world.nextSync((syncCtx) => {
+        receivedCtx = syncCtx;
       });
 
-      const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
-
-      const entity = createEntity(ctx);
-      addComponent(ctx, entity, Position, { x: 10, y: 20 });
-
-      // Set isExecuting to false
-      ctx.isExecuting = false;
-
-      // Queue multiple commands
-      addComponent(ctx, entity, Velocity, { dx: 1, dy: 2 });
-      removeComponent(ctx, entity, Position);
-
-      // Neither should have happened yet
-      expect(hasComponent(ctx, entity, Velocity)).toBe(false);
-      expect(hasComponent(ctx, entity, Position)).toBe(true);
-
-      // Flush
       world.sync();
-
-      // Both should have happened
-      expect(hasComponent(ctx, entity, Velocity)).toBe(true);
-      expect(hasComponent(ctx, entity, Position)).toBe(false);
+      expect(receivedCtx).toBe(ctx);
     });
 
-    it("should trigger subscriber callbacks for deferred commands", () => {
+    it("should execute multiple callbacks in order", () => {
+      const world = new World([]);
+      const order: number[] = [];
+
+      world.nextSync(() => order.push(1));
+      world.nextSync(() => order.push(2));
+      world.nextSync(() => order.push(3));
+
+      world.sync();
+      expect(order).toEqual([1, 2, 3]);
+    });
+
+    it("should allow entity and component modifications in callback", () => {
       const Position = defineComponent("Position", {
         x: field.float32(),
         y: field.float32(),
       });
 
       const world = new World([Position]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
+      // Create entity outside callback
       const entity = createEntity(ctx);
-      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
 
-      const query = useQuery((q) => q.with(Position));
-      world.sync(); // Clear initial events
-
-      const removedEntities: number[] = [];
-      world.subscribe(query, ({ removed }) => {
-        removedEntities.push(...removed);
+      // Schedule modification for next sync
+      world.nextSync((syncCtx) => {
+        const pos = Position.write(syncCtx, entity);
+        pos.x = 100;
+        pos.y = 200;
       });
 
-      // Set isExecuting to false
-      ctx.isExecuting = false;
+      // Values unchanged before sync
+      expect(Position.read(ctx, entity).x).toBe(0);
+      expect(Position.read(ctx, entity).y).toBe(0);
 
-      // Defer removal
-      removeEntity(ctx, entity);
-
-      // Callback should not have been called yet
-      expect(removedEntities).toHaveLength(0);
-
-      // Flush
       world.sync();
 
-      // Now callback should have been called
-      expect(removedEntities).toHaveLength(1);
-      expect(removedEntities[0]).toBe(entity);
+      // Values updated after sync
+      expect(Position.read(ctx, entity).x).toBe(100);
+      expect(Position.read(ctx, entity).y).toBe(200);
+    });
+
+    it("should clear callbacks after execution", () => {
+      const world = new World([]);
+      let callCount = 0;
+
+      world.nextSync(() => {
+        callCount++;
+      });
+
+      world.sync();
+      expect(callCount).toBe(1);
+
+      // Second sync should not re-execute the callback
+      world.sync();
+      expect(callCount).toBe(1);
+    });
+
+    it("should allow scheduling new callbacks from within a callback", () => {
+      const world = new World([]);
+      const executions: string[] = [];
+
+      world.nextSync(() => {
+        executions.push("first");
+        world.nextSync(() => {
+          executions.push("nested");
+        });
+      });
+
+      world.sync();
+      expect(executions).toEqual(["first"]);
+
+      // Nested callback should execute on next sync
+      world.sync();
+      expect(executions).toEqual(["first", "nested"]);
+    });
+
+    it("should execute callbacks before subscriber notifications", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+
+      const query = useQuery((q) => q.tracking(Position));
+      let xValueInSubscriber = 0;
+
+      // Initial sync to register entity
+      world.subscribe(query, (_ctx, { changed }) => {
+        if (changed.includes(entity)) {
+          xValueInSubscriber = Position.read(ctx, entity).x;
+        }
+      });
+
+      // Schedule a write for next sync
+      world.nextSync((syncCtx) => {
+        const pos = Position.write(syncCtx, entity);
+        pos.x = 999;
+      });
+
+      world.sync();
+
+      // Subscriber should see the value written by nextSync callback
+      expect(xValueInSubscriber).toBe(999);
     });
   });
 });

@@ -39,7 +39,7 @@ const library: BenchmarkLibrary = {
       maxEntities: 20_001, // Velocity suite creates 10000 entities without destroying
     });
 
-    this.ctx = this.world.getContext();
+    this.ctx = this.world._getContext();
 
     const Position = this.Position;
     const Velocity = this.Velocity;

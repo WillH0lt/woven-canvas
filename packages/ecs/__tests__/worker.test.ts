@@ -88,7 +88,7 @@ describe("Worker", () => {
 
       // Create world to get properly initialized components
       const world = new World([Position, Velocity]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
@@ -143,7 +143,7 @@ describe("Worker", () => {
 
       // Create world to get properly initialized components
       const world = new World([TestPosition]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
@@ -245,7 +245,7 @@ describe("Worker", () => {
       });
 
       const world = new World([TestComp]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
@@ -314,7 +314,7 @@ describe("Worker", () => {
       });
 
       const world = new World([TestPosition]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
@@ -378,7 +378,7 @@ describe("Worker", () => {
       });
 
       const world = new World([TestPosition]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create an entity and add component with data on main thread
       const eid = createEntity(ctx);
@@ -448,7 +448,7 @@ describe("Worker", () => {
       });
 
       const world = new World([TestComp]);
-      const ctx = world.getContext();
+      const ctx = world._getContext();
 
       // Create component transfer data
       const componentTransferMap: ComponentTransferMap = {};
