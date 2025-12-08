@@ -1,6 +1,7 @@
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer } from "./EventBuffer";
 import { Pool } from "./Pool";
+import { CommandBuffer } from "./CommandBuffer";
 import type { Component } from "./Component";
 import type { Query } from "./Query";
 import type { ComponentBuffer, FieldDef } from "./Component/types";
@@ -17,6 +18,8 @@ export interface Context {
   eventBuffer: EventBuffer;
   // Entity id pool for allocating and freeing entity IDs.
   pool: Pool;
+  // Command buffer for deferred operations (main thread only, undefined in workers).
+  commandBuffer?: CommandBuffer;
   // Registered components in the world, keyed by component name.
   components: Record<string, Component<any>>;
   // Registered queries in the world, keyed by query name.
@@ -29,6 +32,18 @@ export interface Context {
   componentCount: number;
   // Tick incremented each time execute is called.
   tick: number;
+  /**
+   * Whether this context is from the main World (true) or a worker (false/undefined).
+   * When true, entity/component operations are deferred to the command buffer.
+   * When false/undefined, operations execute immediately.
+   */
+  worldContext?: boolean;
+  /**
+   * Whether we are currently inside system execution or command buffer flushing.
+   * When true with worldContext, operations execute immediately.
+   * When false with worldContext, operations are deferred.
+   */
+  isExecuting?: boolean;
   /**
    * Index of the current worker thread (0-based).
    * On the main thread, this is always 0.

@@ -114,6 +114,12 @@ export function getBackrefs<T extends ComponentSchema>(
  * }
  */
 export function removeEntity(ctx: Context, entityId: EntityId): void {
+  // If this is a world context and not currently executing, defer the command
+  if (ctx.worldContext && !ctx.isExecuting && ctx.commandBuffer) {
+    ctx.commandBuffer.removeEntity(entityId);
+    return;
+  }
+
   // Skip if already dead
   if (!ctx.entityBuffer.has(entityId)) {
     return;
@@ -150,6 +156,12 @@ export function addComponent<T extends ComponentSchema>(
   componentDef: ComponentDef<T>,
   data: Partial<InferComponentType<T>> = {} as any
 ): void {
+  // If this is a world context and not currently executing, defer the command
+  if (ctx.worldContext && !ctx.isExecuting && ctx.commandBuffer) {
+    ctx.commandBuffer.addComponent(entityId, componentDef, data);
+    return;
+  }
+
   const component = componentDef._getInstance(ctx);
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
   component.copy(entityId, data as any);
@@ -178,6 +190,12 @@ export function removeComponent<T extends ComponentSchema>(
   entityId: EntityId,
   componentDef: ComponentDef<T>
 ): void {
+  // If this is a world context and not currently executing, defer the command
+  if (ctx.worldContext && !ctx.isExecuting && ctx.commandBuffer) {
+    ctx.commandBuffer.removeComponent(entityId, componentDef);
+    return;
+  }
+
   if (!ctx.entityBuffer.has(entityId)) {
     throw new Error(`Entity with ID ${entityId} does not exist.`);
   }

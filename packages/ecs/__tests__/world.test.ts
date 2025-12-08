@@ -924,4 +924,194 @@ describe("World", () => {
       expect(receivedAdded).toHaveLength(1);
     });
   });
+
+  describe("Deferred Command Buffer", () => {
+    it("should defer removeEntity when called outside of execute", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+
+      // Set isExecuting to false to simulate being outside execute()
+      ctx.isExecuting = false;
+
+      // This should be deferred, not executed immediately
+      removeEntity(ctx, entity);
+
+      // Entity should still exist
+      expect(ctx.entityBuffer.has(entity)).toBe(true);
+
+      // Flush the commands via sync()
+      world.sync();
+
+      // Now entity should be removed
+      expect(ctx.entityBuffer.has(entity)).toBe(false);
+    });
+
+    it("should defer addComponent when called outside of execute", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+
+      // Set isExecuting to false to simulate being outside execute()
+      ctx.isExecuting = false;
+
+      // This should be deferred
+      addComponent(ctx, entity, Velocity, { dx: 1, dy: 2 });
+
+      // Entity should NOT have Velocity yet
+      expect(hasComponent(ctx, entity, Velocity)).toBe(false);
+
+      // Flush the commands via sync()
+      world.sync();
+
+      // Now entity should have Velocity
+      expect(hasComponent(ctx, entity, Velocity)).toBe(true);
+      expect(Velocity.read(ctx, entity).dx).toBeCloseTo(1);
+      expect(Velocity.read(ctx, entity).dy).toBeCloseTo(2);
+    });
+
+    it("should defer removeComponent when called outside of execute", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+      addComponent(ctx, entity, Velocity, { dx: 1, dy: 2 });
+
+      // Set isExecuting to false to simulate being outside execute()
+      ctx.isExecuting = false;
+
+      // This should be deferred
+      removeComponent(ctx, entity, Velocity);
+
+      // Entity should still have Velocity
+      expect(hasComponent(ctx, entity, Velocity)).toBe(true);
+
+      // Flush the commands via sync()
+      world.sync();
+
+      // Now entity should NOT have Velocity
+      expect(hasComponent(ctx, entity, Velocity)).toBe(false);
+      // But should still have Position
+      expect(hasComponent(ctx, entity, Position)).toBe(true);
+    });
+
+    it("should execute commands immediately when isExecuting is true", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+
+      // isExecuting starts as true, so this should execute immediately
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+
+      // Component should be added immediately
+      expect(hasComponent(ctx, entity, Position)).toBe(true);
+      expect(Position.read(ctx, entity).x).toBeCloseTo(10);
+    });
+
+    it("should process multiple deferred commands in order", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent("Velocity", {
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+
+      // Set isExecuting to false
+      ctx.isExecuting = false;
+
+      // Queue multiple commands
+      addComponent(ctx, entity, Velocity, { dx: 1, dy: 2 });
+      removeComponent(ctx, entity, Position);
+
+      // Neither should have happened yet
+      expect(hasComponent(ctx, entity, Velocity)).toBe(false);
+      expect(hasComponent(ctx, entity, Position)).toBe(true);
+
+      // Flush
+      world.sync();
+
+      // Both should have happened
+      expect(hasComponent(ctx, entity, Velocity)).toBe(true);
+      expect(hasComponent(ctx, entity, Position)).toBe(false);
+    });
+
+    it("should trigger subscriber callbacks for deferred commands", () => {
+      const Position = defineComponent("Position", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world.getContext();
+
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+
+      const query = useQuery((q) => q.with(Position));
+      world.sync(); // Clear initial events
+
+      const removedEntities: number[] = [];
+      world.subscribe(query, ({ removed }) => {
+        removedEntities.push(...removed);
+      });
+
+      // Set isExecuting to false
+      ctx.isExecuting = false;
+
+      // Defer removal
+      removeEntity(ctx, entity);
+
+      // Callback should not have been called yet
+      expect(removedEntities).toHaveLength(0);
+
+      // Flush
+      world.sync();
+
+      // Now callback should have been called
+      expect(removedEntities).toHaveLength(1);
+      expect(removedEntities[0]).toBe(entity);
+    });
+  });
 });

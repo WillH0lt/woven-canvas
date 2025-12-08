@@ -3,6 +3,8 @@ import { Component, type ComponentDef } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer, EventType } from "./EventBuffer";
 import { Pool } from "./Pool";
+import { CommandBuffer, CommandType } from "./CommandBuffer";
+import { removeEntity, addComponent, removeComponent } from "./Context";
 import { type QueryDef, processQueryEvents } from "./Query";
 import type { System, Context, EntityId, QueryMasks } from "./types";
 
@@ -121,7 +123,10 @@ export class World {
       maxEvents,
       componentCount,
       pool: Pool.create(maxEntities),
+      commandBuffer: new CommandBuffer(),
       tick: 0,
+      worldContext: true,
+      isExecuting: true, // Start as true so initial setup works
       threadIndex: 0,
       threadCount: 1,
     };
@@ -286,20 +291,24 @@ export class World {
 
   /**
    * Sync events to all subscribers. Call this in your game loop after execute().
-   * Reads all events since the last sync for each subscriber and calls their callbacks.
+   * First flushes any deferred commands from the command buffer, then
+   * reads all events since the last sync for each subscriber and calls their callbacks.
    * @example
    * ```typescript
    * // In your game loop:
+   * world.sync(); // Flush deferred commands and notify subscribers
    * await world.execute(movementSystem, renderSystem);
-   * world.sync(); // Notify subscribers of all changes
    * ```
    */
   sync(): void {
+    const ctx = this.context;
+
+    // Flush deferred commands from the command buffer
+    this.flushCommandBuffer();
+
     if (this.subscribers.length === 0) {
       return;
     }
-
-    const ctx = this.context;
 
     for (const subscriber of this.subscribers) {
       const { events: rawEvents, newIndex } = ctx.eventBuffer.readEvents(
@@ -331,6 +340,45 @@ export class World {
       };
 
       subscriber.callback(syncResult);
+    }
+  }
+
+  /**
+   * Flush all deferred commands from the command buffer.
+   * Commands are executed in the order they were queued.
+   * @internal
+   */
+  private flushCommandBuffer(): void {
+    const ctx = this.context;
+    const commands = ctx.commandBuffer!.flush();
+
+    if (commands.length === 0) {
+      return;
+    }
+
+    // Set isExecuting to true to execute commands immediately
+    ctx.isExecuting = true;
+    try {
+      for (const command of commands) {
+        switch (command.type) {
+          case CommandType.REMOVE_ENTITY:
+            removeEntity(ctx, command.entityId);
+            break;
+          case CommandType.ADD_COMPONENT:
+            addComponent(
+              ctx,
+              command.entityId,
+              command.componentDef,
+              command.data
+            );
+            break;
+          case CommandType.REMOVE_COMPONENT:
+            removeComponent(ctx, command.entityId, command.componentDef);
+            break;
+        }
+      }
+    } finally {
+      ctx.isExecuting = false;
     }
   }
 
