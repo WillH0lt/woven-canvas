@@ -22,23 +22,6 @@ export class QueryInstance {
 
     this.cache = new QueryCache(ctx.maxEntities);
     this.reader = new QueryReader(0);
-
-    // this.cache = new QueryCache(ctx.maxEntities);
-
-    // // Populate cache with existing matching entities
-    // const { entities } = ctx.eventBuffer.collectEntitiesInRange(
-    //   0,
-    //   EventTypeMask.QUERY_ADDED
-    // );
-
-    // for (const entityId of entities) {
-    //   if (ctx.entityBuffer.matches(entityId, masks)) {
-    //     this.cache.add(entityId);
-    //   }
-    // }
-
-    // // Start reading from current position
-    // this.reader = new QueryReader(ctx.eventBuffer.getWriteIndex());
   }
 
   /**
@@ -64,7 +47,7 @@ export class QueryInstance {
    */
   added(ctx: Context): number[] {
     this.reader.updateCache(ctx, this.cache, this.masks);
-    const result = this.reader.getAdded(ctx, this.cache, this.masks);
+    const result = this.reader.added;
 
     if (ctx.threadCount > 1 && result !== EMPTY_NUMBER_ARRAY) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);
@@ -77,7 +60,7 @@ export class QueryInstance {
    */
   removed(ctx: Context): number[] {
     this.reader.updateCache(ctx, this.cache, this.masks);
-    const result = this.reader.getRemoved(ctx, this.cache, this.masks);
+    const result = this.reader.removed;
 
     if (ctx.threadCount > 1 && result !== EMPTY_NUMBER_ARRAY) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);
@@ -90,7 +73,7 @@ export class QueryInstance {
    */
   changed(ctx: Context): number[] {
     this.reader.updateCache(ctx, this.cache, this.masks);
-    const result = this.reader.getChanged(ctx, this.cache, this.masks);
+    const result = this.reader.changed;
 
     if (ctx.threadCount > 1 && result !== EMPTY_NUMBER_ARRAY) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);

@@ -2,8 +2,6 @@ import type { Context, QueryMasks } from "../types";
 import { QueryCache } from "./Cache";
 import { EventType } from "../EventBuffer";
 
-const EMPTY_NUMBER_ARRAY: number[] = [];
-
 /**
  * Reads events from EventBuffer and processes them for a query.
  * Maintains state for incremental reading and computes added/removed/changed lazily.
@@ -16,10 +14,10 @@ export class QueryReader {
   private fromIndex: number = 0;
   private toIndex: number = 0;
 
-  // Lazily computed results
-  private _added: number[] = EMPTY_NUMBER_ARRAY;
-  private _removed: number[] = EMPTY_NUMBER_ARRAY;
-  private _changed: number[] = EMPTY_NUMBER_ARRAY;
+  // results computed from last processed events
+  added: number[] = [];
+  removed: number[] = [];
+  changed: number[] = [];
 
   constructor(startIndex: number) {
     this.lastIndex = startIndex;
@@ -34,9 +32,9 @@ export class QueryReader {
     }
 
     // Reset for new tick
-    this._added = EMPTY_NUMBER_ARRAY;
-    this._removed = EMPTY_NUMBER_ARRAY;
-    this._changed = EMPTY_NUMBER_ARRAY;
+    this.added = [];
+    this.removed = [];
+    this.changed = [];
     this.lastTick = ctx.tick;
 
     const currentIndex = ctx.eventBuffer.getWriteIndex();
@@ -53,27 +51,6 @@ export class QueryReader {
     // Process events to update cache and compute results in one pass
     this.processEventsAndComputeResults(ctx, cache, masks);
     return true;
-  }
-
-  /**
-   * Get added entities (lazily computed on first access per tick)
-   */
-  getAdded(ctx: Context, cache: QueryCache, masks: QueryMasks): number[] {
-    return this._added;
-  }
-
-  /**
-   * Get removed entities (lazily computed on first access per tick)
-   */
-  getRemoved(ctx: Context, cache: QueryCache, masks: QueryMasks): number[] {
-    return this._removed;
-  }
-
-  /**
-   * Get changed entities (lazily computed on first access per tick)
-   */
-  getChanged(ctx: Context, cache: QueryCache, masks: QueryMasks): number[] {
-    return this._changed;
   }
 
   /**
@@ -108,9 +85,14 @@ export class QueryReader {
     if (eventsToScan > maxEvents) eventsToScan = maxEvents;
 
     // Track entity states for result computation
-    const added: number[] = [];
-    const removed: number[] = [];
-    const changed: number[] = [];
+    const added = this.added;
+    const removed = this.removed;
+    const changed = this.changed;
+
+    added.length = 0;
+    removed.length = 0;
+    changed.length = 0;
+
     const seen: { [key: number]: number } = {};
 
     const STATE_ADDED = 1;
@@ -206,9 +188,5 @@ export class QueryReader {
         }
       }
     }
-
-    this._added = added.length > 0 ? added : EMPTY_NUMBER_ARRAY;
-    this._removed = removed.length > 0 ? removed : EMPTY_NUMBER_ARRAY;
-    this._changed = changed.length > 0 ? changed : EMPTY_NUMBER_ARRAY;
   }
 }
