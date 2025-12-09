@@ -350,8 +350,15 @@ export class World {
 
   /**
    * Clean up world resources
+   * Terminates all workers, clears subscribers, and resets internal state
    */
   dispose(): void {
     this.workerManager.dispose();
+    this.subscribers = [];
+    this.nextSyncCallbacks = [];
+    this.componentIdToDef.clear();
+
+    // Note: SharedArrayBuffers (Pool, EntityBuffer, EventBuffer) are managed by garbage collection
+    // and will be freed when no references remain
   }
 }
