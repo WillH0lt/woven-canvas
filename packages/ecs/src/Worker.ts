@@ -91,18 +91,17 @@ function handleMessage(
         e.data.componentCount
       );
 
-      const components: Record<string, Component<any>> = {};
-      for (const [name, transferData] of Object.entries(
+      const components: Record<number, Component<any>> = {};
+      for (const [defId, transferData] of Object.entries(
         internalContext.ComponentTransferMap
       )) {
         const component = Component.fromTransfer(
-          name,
           e.data.maxEntities,
           transferData,
           eventBuffer,
           entityBuffer
         );
-        components[name] = component;
+        components[Number(defId)] = component;
       }
 
       internalContext.context = {

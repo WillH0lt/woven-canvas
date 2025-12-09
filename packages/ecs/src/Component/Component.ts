@@ -45,15 +45,18 @@ export const SINGLETON_ENTITY_ID = 0xffffffff;
 const SINGLETON_INDEX = 0;
 
 /**
+ * Shared counter for component and singleton definition IDs.
+ * This ensures no ID collisions between ComponentDef and SingletonDef.
+ */
+let sharedDefIdCounter = 0;
+
+/**
  * Runtime component storage using TypedArrays.
  * Supports both entity components and singletons.
  */
 export class Component<T extends ComponentSchema> {
   /** Unique component ID (0-based index) */
   componentId: number = -1;
-
-  /** Component name */
-  name: string;
 
   readonly isSingleton: boolean;
 
@@ -89,7 +92,7 @@ export class Component<T extends ComponentSchema> {
   static fromDef<T extends ComponentSchema>(
     def: ComponentDef<T> | SingletonDef<T>
   ): Component<T> {
-    return new Component<T>(def.name, def.schema, def.isSingleton);
+    return new Component<T>(def.schema, def.isSingleton);
   }
 
   /**
@@ -97,14 +100,12 @@ export class Component<T extends ComponentSchema> {
    * @internal
    */
   static fromTransfer<T extends ComponentSchema>(
-    name: string,
     maxEntities: number,
     transferData: ComponentTransferData,
     eventBuffer: EventBuffer,
     entityBuffer: EntityBuffer
   ): Component<T> {
     const component = new Component<T>(
-      name,
       transferData.schema as any,
       transferData.isSingleton
     );
@@ -120,16 +121,10 @@ export class Component<T extends ComponentSchema> {
 
   /**
    * Create a new component
-   * @param name - Component name
    * @param schema - Field definitions or field builders
    * @param isSingleton - Whether this is a singleton (default: false)
    */
-  constructor(
-    name: string,
-    schema: T | Record<string, FieldDef>,
-    isSingleton: boolean = false
-  ) {
-    this.name = name;
+  constructor(schema: T | Record<string, FieldDef>, isSingleton: boolean = false) {
     this.isSingleton = isSingleton;
 
     this.schema = {};
@@ -345,12 +340,12 @@ export class Component<T extends ComponentSchema> {
  * Created by defineComponent() and used to read/write component data via context lookup.
  */
 export class ComponentDef<T extends ComponentSchema> {
-  readonly name: string;
+  readonly _defId: number;
   readonly schema: T;
   readonly isSingleton: boolean;
 
-  constructor(name: string, schema: T, isSingleton: boolean = false) {
-    this.name = name;
+  constructor(schema: T, isSingleton: boolean = false) {
+    this._defId = sharedDefIdCounter++;
     this.schema = schema;
     this.isSingleton = isSingleton;
   }
@@ -360,10 +355,10 @@ export class ComponentDef<T extends ComponentSchema> {
    * @internal
    */
   _getInstance(ctx: Context): Component<T> {
-    const instance = ctx.components[this.name] as Component<T> | undefined;
+    const instance = ctx.components[this._defId] as Component<T> | undefined;
     if (!instance) {
       throw new Error(
-        `Component "${this.name}" is not registered with this World.`
+        `Component with ID "${this._defId}" is not registered with this World.`
       );
     }
     return instance;
@@ -478,7 +473,6 @@ export class ComponentDef<T extends ComponentSchema> {
  * Define a new component.
  *
  * @template T - The component schema type
- * @param name - The name of the component (e.g., "Position", "Velocity")
  * @param schema - The component schema built using field builders
  * @returns A ComponentDef descriptor
  *
@@ -486,17 +480,16 @@ export class ComponentDef<T extends ComponentSchema> {
  * ```typescript
  * import { field, defineComponent } from "@infinitecanvas/ecs";
  *
- * export const Position = defineComponent("Position", {
+ * export const Position = defineComponent({
  *   x: field.float32(),
  *   y: field.float32(),
  * });
  * ```
  */
 export function defineComponent<T extends ComponentSchema>(
-  name: string,
   schema: T
 ): ComponentDef<T> {
-  return new ComponentDef(name, schema, false);
+  return new ComponentDef(schema, false);
 }
 
 /**
@@ -504,12 +497,12 @@ export function defineComponent<T extends ComponentSchema>(
  * Created via defineSingleton().
  */
 export class SingletonDef<T extends ComponentSchema> {
-  readonly name: string;
+  readonly _defId: number;
   readonly schema: T;
   readonly isSingleton: true = true;
 
-  constructor(name: string, schema: T) {
-    this.name = name;
+  constructor(schema: T) {
+    this._defId = sharedDefIdCounter++;
     this.schema = schema;
   }
 
@@ -518,15 +511,15 @@ export class SingletonDef<T extends ComponentSchema> {
    * @internal
    */
   _getInstance(ctx: Context): Component<T> {
-    const instance = ctx.components[this.name] as Component<T> | undefined;
+    const instance = ctx.components[this._defId] as Component<T> | undefined;
     if (!instance) {
       throw new Error(
-        `Singleton "${this.name}" is not registered with this World.`
+        `Singleton with ID "${this._defId}" is not registered with this World.`
       );
     }
     if (!instance.isSingleton) {
       throw new Error(
-        `"${this.name}" is not a singleton. Use defineSingleton() to create singletons.`
+        `Component with ID "${this._defId}" is not a singleton. Use defineSingleton() to create singletons.`
       );
     }
     return instance;
@@ -633,7 +626,6 @@ export class SingletonDef<T extends ComponentSchema> {
  * A singleton is a component with exactly one instance per world.
  *
  * @template T - The singleton schema type
- * @param name - The name of the singleton (e.g., "Mouse", "Time")
  * @param schema - The singleton schema built using field builders
  * @returns A SingletonDef descriptor for direct read/write/copy access
  *
@@ -641,7 +633,7 @@ export class SingletonDef<T extends ComponentSchema> {
  * ```typescript
  * import { field, defineSingleton } from "@infinitecanvas/ecs";
  *
- * export const Mouse = defineSingleton("Mouse", {
+ * export const Mouse = defineSingleton({
  *   x: field.float32().default(0),
  *   y: field.float32().default(0),
  *   pressed: field.boolean().default(false),
@@ -653,8 +645,7 @@ export class SingletonDef<T extends ComponentSchema> {
  * ```
  */
 export function defineSingleton<T extends ComponentSchema>(
-  name: string,
   schema: T
 ): SingletonDef<T> {
-  return new SingletonDef(name, schema);
+  return new SingletonDef(schema);
 }

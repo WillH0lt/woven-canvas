@@ -100,7 +100,7 @@ export class World {
     const entityBuffer = new EntityBuffer(maxEntities, componentCount);
 
     // Create Component instances from defs and initialize them
-    const componentMap: Record<string, Component<any>> = {};
+    const componentMap: Record<number, Component<any>> = {};
     for (const def of componentDefs) {
       const component = Component.fromDef(def);
       component.initialize(
@@ -109,7 +109,7 @@ export class World {
         eventBuffer,
         entityBuffer
       );
-      componentMap[component.name] = component;
+      componentMap[def._defId] = component;
       this.componentIdToDef.set(this.componentIndex - 1, def);
     }
 

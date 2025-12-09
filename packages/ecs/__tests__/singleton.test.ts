@@ -4,7 +4,7 @@ import { field, defineSingleton, World, defineSystem, useQuery } from "../src";
 describe("Singleton", () => {
   describe("SingletonDef API", () => {
     it("should support Mouse.read(ctx) syntax", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32().default(100),
         y: field.float32().default(200),
       });
@@ -19,7 +19,7 @@ describe("Singleton", () => {
     });
 
     it("should support Mouse.write(ctx) syntax", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
@@ -39,7 +39,7 @@ describe("Singleton", () => {
     });
 
     it("should support Mouse.copy(ctx, data) syntax", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
@@ -57,7 +57,7 @@ describe("Singleton", () => {
     });
 
     it("should support Mouse.snapshot(ctx) syntax", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32().default(42),
         y: field.float32().default(24),
       });
@@ -76,12 +76,12 @@ describe("Singleton", () => {
     });
 
     it("should work alongside ComponentDef", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
 
-      const Time = defineSingleton("Time", {
+      const Time = defineSingleton({
         delta: field.float32().default(0.016),
         elapsed: field.float32().default(0),
       });
@@ -104,12 +104,12 @@ describe("Singleton", () => {
     });
 
     it("should support getComponentId", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
 
-      const Time = defineSingleton("Time", {
+      const Time = defineSingleton({
         delta: field.float32(),
       });
 
@@ -121,12 +121,12 @@ describe("Singleton", () => {
     });
 
     it("should throw when accessing unregistered singleton", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
 
-      const Other = defineSingleton("Other", {
+      const Other = defineSingleton({
         value: field.float32(),
       });
 
@@ -140,7 +140,7 @@ describe("Singleton", () => {
     });
 
     it("should handle partial copy", () => {
-      const GameState = defineSingleton("GameState", {
+      const GameState = defineSingleton({
         level: field.uint8().default(1),
         score: field.uint32().default(0),
         playerName: field.string().max(50).default("Player"),
@@ -159,7 +159,7 @@ describe("Singleton", () => {
     });
 
     it("should trigger change events on write", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
@@ -187,7 +187,7 @@ describe("Singleton", () => {
     });
 
     it("should trigger change events on copy", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
@@ -214,7 +214,7 @@ describe("Singleton", () => {
 
   describe("Basic Query Support", () => {
     it("should support tracking a singleton with useQuery", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32().default(0),
         y: field.float32().default(0),
       });
@@ -241,7 +241,7 @@ describe("Singleton", () => {
     });
 
     it("should detect when singleton changes", () => {
-      const Time = defineSingleton("Time", {
+      const Time = defineSingleton({
         delta: field.float32().default(0.016),
         elapsed: field.float32().default(0),
       });
@@ -268,7 +268,7 @@ describe("Singleton", () => {
     });
 
     it("should return SINGLETON_ENTITY_ID in current()", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
@@ -286,12 +286,12 @@ describe("Singleton", () => {
 
   describe("Multiple Singletons", () => {
     it("should track changes to multiple singletons independently", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
 
-      const Time = defineSingleton("Time", {
+      const Time = defineSingleton({
         delta: field.float32(),
         elapsed: field.float32(),
       });
@@ -324,12 +324,12 @@ describe("Singleton", () => {
     });
 
     it("should support querying multiple singletons together", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
 
-      const Keyboard = defineSingleton("Keyboard", {
+      const Keyboard = defineSingleton({
         pressed: field.boolean(),
       });
 
@@ -359,7 +359,7 @@ describe("Singleton", () => {
 
   describe("Integration with Systems", () => {
     it("should work in a system using defineSystem", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32().default(0),
         y: field.float32().default(0),
       });
@@ -403,7 +403,7 @@ describe("Singleton", () => {
     });
 
     it("should work with world.subscribe", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
@@ -440,7 +440,7 @@ describe("Singleton", () => {
 
   describe("Copy Support", () => {
     it("should detect changes when using Mouse.copy()", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
@@ -464,7 +464,7 @@ describe("Singleton", () => {
 
   describe("Edge Cases", () => {
     it("should handle no changes correctly", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });
@@ -483,7 +483,7 @@ describe("Singleton", () => {
     });
 
     it("should reset changed state after each check", () => {
-      const Mouse = defineSingleton("Mouse", {
+      const Mouse = defineSingleton({
         x: field.float32(),
         y: field.float32(),
       });

@@ -22,26 +22,26 @@ describe("Query", () => {
 
   beforeEach(() => {
     // Define test components
-    Position = defineComponent("Position", {
+    Position = defineComponent({
       x: field.float32().default(0),
       y: field.float32().default(0),
     });
 
-    Velocity = defineComponent("Velocity", {
+    Velocity = defineComponent({
       dx: field.float32().default(0),
       dy: field.float32().default(0),
     });
 
-    Health = defineComponent("Health", {
+    Health = defineComponent({
       current: field.uint16().default(100),
       max: field.uint16().default(100),
     });
 
-    Enemy = defineComponent("Enemy", {
+    Enemy = defineComponent({
       damage: field.uint8().default(10),
     });
 
-    Player = defineComponent("Player", {
+    Player = defineComponent({
       score: field.uint32().default(0),
     });
   });
@@ -897,7 +897,7 @@ describe("Query", () => {
     });
 
     it("should partition changed() entities across threads", () => {
-      const TrackedPosition = defineComponent("TrackedPosition", {
+      const TrackedPosition = defineComponent({
         x: field.float32().default(0),
         y: field.float32().default(0),
       });

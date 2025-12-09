@@ -152,12 +152,12 @@ describe("WorkerManager", () => {
     (globalThis as any).Worker = MockWorker;
 
     // Define test components
-    Position = defineComponent("Position", {
+    Position = defineComponent({
       x: field.float32().default(0),
       y: field.float32().default(0),
     });
 
-    Velocity = defineComponent("Velocity", {
+    Velocity = defineComponent({
       dx: field.float32().default(0),
       dy: field.float32().default(0),
     });
@@ -508,13 +508,9 @@ describe("WorkerManager", () => {
       expect(capturedInitMessage!.threadIndex).toBe(0);
       expect(capturedInitMessage!.threadCount).toBe(1);
 
-      // Check component transfer map has our components
-      expect(Object.keys(capturedInitMessage!.componentTransferMap)).toContain(
-        "Position"
-      );
-      expect(Object.keys(capturedInitMessage!.componentTransferMap)).toContain(
-        "Velocity"
-      );
+      // Check component transfer map has our components (uses numeric defId keys)
+      expect(capturedInitMessage!.componentTransferMap[Position._defId]).toBeDefined();
+      expect(capturedInitMessage!.componentTransferMap[Velocity._defId]).toBeDefined();
     });
 
     it("should only initialize worker once even if reused", async () => {

@@ -14,7 +14,7 @@ import {
 describe("Ref Field", () => {
   describe("Basic Ref Operations", () => {
     it("should create a component with a ref field", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -30,7 +30,7 @@ describe("Ref Field", () => {
     });
 
     it("should default to null", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -44,7 +44,7 @@ describe("Ref Field", () => {
     });
 
     it("should allow setting ref to null", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -61,7 +61,7 @@ describe("Ref Field", () => {
     });
 
     it("should allow changing ref to another entity", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -79,7 +79,7 @@ describe("Ref Field", () => {
     });
 
     it("should support multiple ref fields", () => {
-      const Friendship = defineComponent("Friendship", {
+      const Friendship = defineComponent({
         a: field.ref(),
         b: field.ref(),
       });
@@ -100,10 +100,10 @@ describe("Ref Field", () => {
 
   describe("Lazy Validation (nullify on read)", () => {
     it("should return null when referenced entity is deleted", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
-      const Parent = defineComponent("Parent", {
+      const Parent = defineComponent({
         name: field.string().max(50),
       });
       const world = new World([Child, Parent]);
@@ -125,7 +125,7 @@ describe("Ref Field", () => {
     });
 
     it("should nullify multiple refs to the same deleted entity on read", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -149,7 +149,7 @@ describe("Ref Field", () => {
     });
 
     it("should persist the nullification after first read", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -169,7 +169,7 @@ describe("Ref Field", () => {
     });
 
     it("should handle writable access with dead refs", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -193,7 +193,7 @@ describe("Ref Field", () => {
 
   describe("Edge Cases", () => {
     it("should handle self-referencing entity", () => {
-      const Node = defineComponent("Node", {
+      const Node = defineComponent({
         next: field.ref(),
       });
       const world = new World([Node]);
@@ -210,7 +210,7 @@ describe("Ref Field", () => {
     });
 
     it("should handle circular refs", () => {
-      const Node = defineComponent("Node", {
+      const Node = defineComponent({
         next: field.ref(),
       });
       const world = new World([Node]);
@@ -233,7 +233,7 @@ describe("Ref Field", () => {
     });
 
     it("should handle deletion of entity without any refs to it", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -249,7 +249,7 @@ describe("Ref Field", () => {
     });
 
     it("should handle chain of refs where middle entity is deleted", () => {
-      const Node = defineComponent("Node", {
+      const Node = defineComponent({
         next: field.ref(),
       });
       const world = new World([Node]);
@@ -274,7 +274,7 @@ describe("Ref Field", () => {
     });
 
     it("should detect stale refs after entity ID recycling", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child], { maxEntities: 10 });
@@ -300,7 +300,7 @@ describe("Ref Field", () => {
     });
 
     it("should correctly reference new entity after ID recycling", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child], { maxEntities: 10 });
@@ -326,7 +326,7 @@ describe("Ref Field", () => {
 
   describe("getBackrefs", () => {
     it("should return empty array when no refs point to entity", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -339,7 +339,7 @@ describe("Ref Field", () => {
     });
 
     it("should return entities that reference the target", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -362,7 +362,7 @@ describe("Ref Field", () => {
     });
 
     it("should work with multiple ref fields", () => {
-      const Friendship = defineComponent("Friendship", {
+      const Friendship = defineComponent({
         personA: field.ref(),
         personB: field.ref(),
       });
@@ -402,7 +402,7 @@ describe("Ref Field", () => {
     });
 
     it("should not include deleted entities", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -425,7 +425,7 @@ describe("Ref Field", () => {
     });
 
     it("should update when refs change", () => {
-      const Child = defineComponent("Child", {
+      const Child = defineComponent({
         parent: field.ref(),
       });
       const world = new World([Child]);
@@ -448,7 +448,7 @@ describe("Ref Field", () => {
     });
 
     it("should handle self-referencing entity", () => {
-      const Node = defineComponent("Node", {
+      const Node = defineComponent({
         next: field.ref(),
       });
       const world = new World([Node]);

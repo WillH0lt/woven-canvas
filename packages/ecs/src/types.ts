@@ -17,8 +17,8 @@ export interface Context {
   eventBuffer: EventBuffer;
   /** Entity ID pool */
   pool: Pool;
-  /** Registered components by name */
-  components: Record<string, Component<any>>;
+  /** Registered components by definition ID */
+  components: Record<number, Component<any>>;
   /** Maximum entity count */
   maxEntities: number;
   /** Event ring buffer capacity */
@@ -84,14 +84,13 @@ export type WorkerSystem = WorkerSystemClass;
 export type System = MainThreadSystem | WorkerSystem;
 
 export type ComponentTransferData = {
-  name: string;
   componentId: number;
   buffer: ComponentBuffer<any>;
   schema: Record<string, FieldDef>;
   isSingleton: boolean;
 };
 
-export type ComponentTransferMap = Record<string, ComponentTransferData>;
+export type ComponentTransferMap = Record<number, ComponentTransferData>;
 
 /** Worker initialization message from main thread */
 export interface InitMessage {

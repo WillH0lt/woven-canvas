@@ -14,15 +14,15 @@ import {
 describe("World", () => {
   describe("World Creation", () => {
     it("should initialize components with unique componentIds", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
-      const Health = defineComponent("Health", {
+      const Health = defineComponent({
         current: field.uint16().default(100),
         max: field.uint16().default(100),
       });
@@ -57,7 +57,7 @@ describe("World", () => {
     });
 
     it("should remove entities", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -75,11 +75,11 @@ describe("World", () => {
 
   describe("Component Operations", () => {
     it("should add components to entities", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -96,7 +96,7 @@ describe("World", () => {
     });
 
     it("should add components with default values", () => {
-      const Health = defineComponent("Health", {
+      const Health = defineComponent({
         current: field.uint16().default(100),
         max: field.uint16().default(100),
       });
@@ -113,11 +113,11 @@ describe("World", () => {
     });
 
     it("should remove components from entities", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -139,11 +139,11 @@ describe("World", () => {
     });
 
     it("should check for component existence", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -161,7 +161,7 @@ describe("World", () => {
     });
 
     it("should throw when checking component on non-existent entity", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -175,7 +175,7 @@ describe("World", () => {
     });
 
     it("should throw when removing component from non-existent entity", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -191,7 +191,7 @@ describe("World", () => {
 
   describe("Component Data Access", () => {
     it("should read component data", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -208,7 +208,7 @@ describe("World", () => {
     });
 
     it("should write component data", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -227,15 +227,15 @@ describe("World", () => {
     });
 
     it("should handle multiple components per entity", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
-      const Health = defineComponent("Health", {
+      const Health = defineComponent({
         current: field.uint16(),
         max: field.uint16(),
       });
@@ -261,11 +261,11 @@ describe("World", () => {
     });
 
     it("should update component values independently", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -294,15 +294,15 @@ describe("World", () => {
 
   describe("Multiple Entities", () => {
     it("should handle multiple entities with different component combinations", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
-      const Health = defineComponent("Health", {
+      const Health = defineComponent({
         current: field.uint16(),
         max: field.uint16(),
       });
@@ -335,7 +335,7 @@ describe("World", () => {
     });
 
     it("should keep entity data isolated", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -358,7 +358,7 @@ describe("World", () => {
 
   describe("World Disposal", () => {
     it("should dispose of world resources", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -376,11 +376,11 @@ describe("World", () => {
   describe("Multiple Worlds", () => {
     it("should allow multiple worlds to use the same ComponentDefs without interference", () => {
       // Define components once
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -426,11 +426,11 @@ describe("World", () => {
     });
 
     it("should assign independent componentIds per world", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -450,7 +450,7 @@ describe("World", () => {
     });
 
     it("should allow entity creation in both worlds independently", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -487,11 +487,11 @@ describe("World", () => {
     });
 
     it("should support queries on multiple worlds independently", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -534,7 +534,7 @@ describe("World", () => {
 
   describe("Subscribe and Sync", () => {
     it("should emit 'added' when entity enters the query", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -558,11 +558,11 @@ describe("World", () => {
     });
 
     it("should not fire events for entities that do not match the query", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -593,7 +593,7 @@ describe("World", () => {
     });
 
     it("should emit 'removed' when entity leaves the query (entity deleted)", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -623,11 +623,11 @@ describe("World", () => {
     });
 
     it("should emit 'removed' when entity leaves the query (component removed)", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -658,11 +658,11 @@ describe("World", () => {
     });
 
     it("should emit 'added' when entity enters the query (component added)", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -691,7 +691,7 @@ describe("World", () => {
     });
 
     it("should emit 'changed' when tracked component changes", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -724,11 +724,11 @@ describe("World", () => {
     });
 
     it("should not emit 'changed' for non-tracked components", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -768,11 +768,11 @@ describe("World", () => {
     });
 
     it("should support multiple subscribers with different queries", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -813,7 +813,7 @@ describe("World", () => {
     });
 
     it("should support unsubscribing", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -842,11 +842,11 @@ describe("World", () => {
     });
 
     it("should not call subscribers if no matching events occurred", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -873,7 +873,7 @@ describe("World", () => {
     });
 
     it("should batch multiple 'added' events in a single sync call", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -903,11 +903,11 @@ describe("World", () => {
     });
 
     it("should only emit 'added' once per entity even with multiple component adds", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -934,7 +934,7 @@ describe("World", () => {
 
   describe("nextSync", () => {
     it("should execute callback on next sync", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -953,7 +953,7 @@ describe("World", () => {
     });
 
     it("should provide context to callback", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -983,7 +983,7 @@ describe("World", () => {
     });
 
     it("should allow entity and component modifications in callback", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -1049,7 +1049,7 @@ describe("World", () => {
     });
 
     it("should execute callbacks before subscriber notifications", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });

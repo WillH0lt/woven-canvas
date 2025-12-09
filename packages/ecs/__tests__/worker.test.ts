@@ -45,12 +45,12 @@ describe("Worker", () => {
     (globalThis as any).self = mockSelf;
 
     // Define test components
-    Position = defineComponent("Position", {
+    Position = defineComponent({
       x: field.float32().default(0),
       y: field.float32().default(0),
     });
 
-    Velocity = defineComponent("Velocity", {
+    Velocity = defineComponent({
       dx: field.float32().default(0),
       dy: field.float32().default(0),
     });
@@ -92,9 +92,8 @@ describe("Worker", () => {
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
-      for (const [name, component] of Object.entries(ctx.components)) {
-        componentTransferMap[name] = {
-          name,
+      for (const [defId, component] of Object.entries(ctx.components)) {
+        componentTransferMap[Number(defId)] = {
           componentId: component.componentId,
           buffer: component.buffer,
           schema: component.schema,
@@ -136,7 +135,7 @@ describe("Worker", () => {
       setupWorker(execute);
 
       // Need fresh components for this test
-      const TestPosition = defineComponent("TestPosition", {
+      const TestPosition = defineComponent({
         x: field.float32().default(0),
         y: field.float32().default(0),
       });
@@ -147,9 +146,8 @@ describe("Worker", () => {
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
-      for (const [name, component] of Object.entries(ctx.components)) {
-        componentTransferMap[name] = {
-          name,
+      for (const [defId, component] of Object.entries(ctx.components)) {
+        componentTransferMap[Number(defId)] = {
           componentId: component.componentId,
           buffer: component.buffer,
           schema: component.schema,
@@ -240,7 +238,7 @@ describe("Worker", () => {
       setupWorker(execute);
 
       // Create world
-      const TestComp = defineComponent("TestComp", {
+      const TestComp = defineComponent({
         x: field.float32(),
       });
 
@@ -249,9 +247,8 @@ describe("Worker", () => {
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
-      for (const [name, component] of Object.entries(ctx.components)) {
-        componentTransferMap[name] = {
-          name,
+      for (const [defId, component] of Object.entries(ctx.components)) {
+        componentTransferMap[Number(defId)] = {
           componentId: component.componentId,
           buffer: component.buffer,
           schema: component.schema,
@@ -308,7 +305,7 @@ describe("Worker", () => {
       setupWorker(execute);
 
       // Create world
-      const TestPosition = defineComponent("TestPosition", {
+      const TestPosition = defineComponent({
         x: field.float32().default(100),
         y: field.float32().default(200),
       });
@@ -318,9 +315,8 @@ describe("Worker", () => {
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
-      for (const [name, component] of Object.entries(ctx.components)) {
-        componentTransferMap[name] = {
-          name,
+      for (const [defId, component] of Object.entries(ctx.components)) {
+        componentTransferMap[Number(defId)] = {
           componentId: component.componentId,
           buffer: component.buffer,
           schema: component.schema,
@@ -359,8 +355,8 @@ describe("Worker", () => {
       // Check that the worker context has the component
       expect(capturedCtx).not.toBeNull();
       expect(capturedCtx!.components).toBeDefined();
-      expect(capturedCtx!.components["TestPosition"]).toBeDefined();
-      expect(capturedCtx!.components["TestPosition"].componentId).toBe(0);
+      expect(capturedCtx!.components[TestPosition._defId]).toBeDefined();
+      expect(capturedCtx!.components[TestPosition._defId].componentId).toBe(0);
     });
 
     it("should share component buffers between main and worker contexts", () => {
@@ -372,7 +368,7 @@ describe("Worker", () => {
       setupWorker(execute);
 
       // Create world
-      const TestPosition = defineComponent("TestPosition", {
+      const TestPosition = defineComponent({
         x: field.float32().default(0),
         y: field.float32().default(0),
       });
@@ -386,9 +382,8 @@ describe("Worker", () => {
 
       // Create component transfer data from the context
       const componentTransferMap: ComponentTransferMap = {};
-      for (const [name, component] of Object.entries(ctx.components)) {
-        componentTransferMap[name] = {
-          name,
+      for (const [defId, component] of Object.entries(ctx.components)) {
+        componentTransferMap[Number(defId)] = {
           componentId: component.componentId,
           buffer: component.buffer,
           schema: component.schema,
@@ -426,7 +421,7 @@ describe("Worker", () => {
 
       // Check that the worker can read the same data
       expect(capturedCtx).not.toBeNull();
-      const workerComponent = capturedCtx!.components["TestPosition"];
+      const workerComponent = capturedCtx!.components[TestPosition._defId];
       const readData = workerComponent.read(eid);
       expect(readData.x).toBeCloseTo(42);
       expect(readData.y).toBeCloseTo(24);
@@ -443,7 +438,7 @@ describe("Worker", () => {
       setupWorker(execute);
 
       // Create world
-      const TestComp = defineComponent("TestComp", {
+      const TestComp = defineComponent({
         x: field.float32(),
       });
 

@@ -41,10 +41,10 @@ export class QueryBuilder {
   private _getComponentId(
     componentDef: ComponentDef<ComponentSchema> | SingletonDef<ComponentSchema>
   ): number {
-    const component = this.ctx.components[componentDef.name];
+    const component = this.ctx.components[componentDef._defId];
     if (!component) {
       throw new Error(
-        `Component "${componentDef.name}" is not registered with this World.`
+        `Component with ID "${componentDef._defId}" is not registered with this World.`
       );
     }
     return component.componentId;

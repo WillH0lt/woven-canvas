@@ -88,9 +88,8 @@ export class WorkerManager {
 
       // Serialize component metadata and buffers for reconstruction in worker
       const componentTransferMap: ComponentTransferMap = {};
-      for (const [name, component] of Object.entries(ctx.components)) {
-        componentTransferMap[name] = {
-          name,
+      for (const [defId, component] of Object.entries(ctx.components)) {
+        componentTransferMap[Number(defId)] = {
           componentId: component.componentId,
           buffer: component.buffer, // Transfer the SharedArrayBuffer-backed typed arrays
           schema: component.schema,

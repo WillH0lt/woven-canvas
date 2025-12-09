@@ -10,7 +10,7 @@ import {
 describe("Component", () => {
   describe("Component Lifecycle", () => {
     it("should allow the same ComponentDef to be used with multiple worlds", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -27,11 +27,11 @@ describe("Component", () => {
     });
 
     it("should assign unique componentIds to components", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -45,7 +45,7 @@ describe("Component", () => {
 
   describe("Component Definition", () => {
     it("should create a component with string fields", () => {
-      const User = defineComponent("User", {
+      const User = defineComponent({
         name: field.string().max(50),
         email: field.string().max(100),
       });
@@ -64,7 +64,7 @@ describe("Component", () => {
     });
 
     it("should create a component with numeric fields", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
         z: field.float32(),
@@ -82,7 +82,7 @@ describe("Component", () => {
     });
 
     it("should create a component with mixed field types", () => {
-      const Player = defineComponent("Player", {
+      const Player = defineComponent({
         name: field.string().max(30),
         health: field.uint8(),
         score: field.uint32(),
@@ -107,7 +107,7 @@ describe("Component", () => {
     });
 
     it("should support default values", () => {
-      const Config = defineComponent("Config", {
+      const Config = defineComponent({
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
         label: field.string().max(20).default("default"),
@@ -125,7 +125,7 @@ describe("Component", () => {
     });
 
     it("should override default values when provided", () => {
-      const Config = defineComponent("Config", {
+      const Config = defineComponent({
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
       });
@@ -143,7 +143,7 @@ describe("Component", () => {
 
   describe("Read and Write Operations", () => {
     it("should allow reading and writing component values", () => {
-      const Counter = defineComponent("Counter", {
+      const Counter = defineComponent({
         count: field.uint32(),
       });
       const world = new World([Counter]);
@@ -159,7 +159,7 @@ describe("Component", () => {
     });
 
     it("should handle updates without affecting other entities", () => {
-      const Counter = defineComponent("Counter", {
+      const Counter = defineComponent({
         value: field.uint32(),
       });
       const world = new World([Counter]);
@@ -177,7 +177,7 @@ describe("Component", () => {
     });
 
     it("should create a plain object snapshot that is independent of entity binding", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         x: field.float32(),
         y: field.float32(),
       });
@@ -210,7 +210,7 @@ describe("Component", () => {
     });
 
     it("should allow spreading snapshot without the getter footgun", () => {
-      const Velocity = defineComponent("Velocity", {
+      const Velocity = defineComponent({
         dx: field.float32(),
         dy: field.float32(),
       });
@@ -242,7 +242,7 @@ describe("Component", () => {
 
   describe("Numeric Field Types", () => {
     it("should support all numeric types with correct ranges", () => {
-      const AllTypes = defineComponent("AllTypes", {
+      const AllTypes = defineComponent({
         u8: field.uint8(),
         u16: field.uint16(),
         u32: field.uint32(),
@@ -279,7 +279,7 @@ describe("Component", () => {
     });
 
     it("should default numeric fields to 0 when not provided", () => {
-      const AllTypes = defineComponent("AllTypes", {
+      const AllTypes = defineComponent({
         u8: field.uint8(),
         u16: field.uint16(),
         u32: field.uint32(),
@@ -309,7 +309,7 @@ describe("Component", () => {
 
   describe("Boolean Field Handling", () => {
     it("should store and retrieve boolean values", () => {
-      const Flags = defineComponent("Flags", {
+      const Flags = defineComponent({
         isActive: field.boolean(),
         isVisible: field.boolean(),
         isEnabled: field.boolean(),
@@ -331,7 +331,7 @@ describe("Component", () => {
     });
 
     it("should default boolean fields to false when not provided", () => {
-      const Flags = defineComponent("Flags", {
+      const Flags = defineComponent({
         flag: field.boolean(),
       });
       const world = new World([Flags]);
@@ -345,7 +345,7 @@ describe("Component", () => {
     });
 
     it("should allow updating boolean values", () => {
-      const Flags = defineComponent("Flags", {
+      const Flags = defineComponent({
         isActive: field.boolean(),
       });
       const world = new World([Flags]);
@@ -362,7 +362,7 @@ describe("Component", () => {
 
   describe("TypeScript Type Inference", () => {
     it("should provide correct types for component properties", () => {
-      const TestComponent = defineComponent("TestComponent", {
+      const TestComponent = defineComponent({
         name: field.string().max(20),
         count: field.uint32(),
         ratio: field.float32(),
@@ -394,7 +394,7 @@ describe("Component", () => {
 
   describe("String Field Handling", () => {
     it("should default to empty string when not provided", () => {
-      const User = defineComponent("User", {
+      const User = defineComponent({
         name: field.string().max(50),
       });
       const world = new World([User]);
@@ -408,7 +408,7 @@ describe("Component", () => {
     });
 
     it("should handle special characters and unicode", () => {
-      const Data = defineComponent("Data", {
+      const Data = defineComponent({
         text: field.string().max(100),
       });
       const world = new World([Data]);
@@ -423,7 +423,7 @@ describe("Component", () => {
     });
 
     it("should handle multiple entities with different strings", () => {
-      const User = defineComponent("User", {
+      const User = defineComponent({
         name: field.string().max(50),
       });
       const world = new World([User]);
@@ -443,7 +443,7 @@ describe("Component", () => {
     });
 
     it("should truncate strings that exceed maxLength", () => {
-      const Data = defineComponent("Data", {
+      const Data = defineComponent({
         shortText: field.string().max(10),
       });
       const world = new World([Data]);
@@ -459,7 +459,7 @@ describe("Component", () => {
     });
 
     it("should encode string length in buffer for stateless operation", () => {
-      const User = defineComponent("User", {
+      const User = defineComponent({
         name: field.string().max(50),
       });
       const world = new World([User]);
@@ -483,7 +483,7 @@ describe("Component", () => {
   });
   describe("Default Value Handling", () => {
     it("should use defaults for missing fields when defined", () => {
-      const Config = defineComponent("Config", {
+      const Config = defineComponent({
         enabled: field.boolean().default(true),
         maxCount: field.uint16().default(100),
         label: field.string().max(20).default("default"),
@@ -501,7 +501,7 @@ describe("Component", () => {
     });
 
     it("should use type-based fallbacks when no defaults defined", () => {
-      const Entity = defineComponent("Entity", {
+      const Entity = defineComponent({
         name: field.string().max(20),
         count: field.uint32(),
         active: field.boolean(),
@@ -519,7 +519,7 @@ describe("Component", () => {
     });
 
     it("should prefer provided values over defaults", () => {
-      const Config = defineComponent("Config", {
+      const Config = defineComponent({
         enabled: field.boolean().default(true),
         count: field.uint32().default(10),
       });
@@ -540,7 +540,7 @@ describe("Component", () => {
 
   describe("Binary Field Handling", () => {
     it("should store and retrieve binary data", () => {
-      const BinaryData = defineComponent("BinaryData", {
+      const BinaryData = defineComponent({
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
@@ -557,7 +557,7 @@ describe("Component", () => {
     });
 
     it("should default to empty Uint8Array when not provided", () => {
-      const BinaryData = defineComponent("BinaryData", {
+      const BinaryData = defineComponent({
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
@@ -573,7 +573,7 @@ describe("Component", () => {
 
     it("should use default binary value when provided", () => {
       const defaultData = new Uint8Array([0xff, 0xfe, 0xfd]);
-      const BinaryData = defineComponent("BinaryData", {
+      const BinaryData = defineComponent({
         data: field.binary().max(128).default(defaultData),
       });
       const world = new World([BinaryData]);
@@ -587,7 +587,7 @@ describe("Component", () => {
     });
 
     it("should allow updating binary data", () => {
-      const BinaryData = defineComponent("BinaryData", {
+      const BinaryData = defineComponent({
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
@@ -605,7 +605,7 @@ describe("Component", () => {
     });
 
     it("should return copies to prevent mutations", () => {
-      const BinaryData = defineComponent("BinaryData", {
+      const BinaryData = defineComponent({
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
@@ -628,7 +628,7 @@ describe("Component", () => {
     });
 
     it("should handle multiple entities with different binary data", () => {
-      const BinaryData = defineComponent("BinaryData", {
+      const BinaryData = defineComponent({
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
@@ -651,7 +651,7 @@ describe("Component", () => {
     });
 
     it("should truncate binary data that exceeds maxLength", () => {
-      const BinaryData = defineComponent("BinaryData", {
+      const BinaryData = defineComponent({
         data: field.binary().max(20),
       });
       const world = new World([BinaryData]);
@@ -667,7 +667,7 @@ describe("Component", () => {
     });
 
     it("should handle binary data in mixed components", () => {
-      const NetworkPacket = defineComponent("NetworkPacket", {
+      const NetworkPacket = defineComponent({
         packetId: field.uint32(),
         payload: field.binary().max(512),
         timestamp: field.float64(),
@@ -697,7 +697,7 @@ describe("Component", () => {
     });
 
     it("should encode binary length in buffer for stateless operation", () => {
-      const BinaryData = defineComponent("BinaryData", {
+      const BinaryData = defineComponent({
         data: field.binary().max(128),
       });
       const world = new World([BinaryData]);
@@ -755,7 +755,7 @@ describe("Component", () => {
     });
 
     it("should store and retrieve array data", () => {
-      const Polygon = defineComponent("Polygon", {
+      const Polygon = defineComponent({
         pts: field.array(field.float32(), 1024),
       });
       const world = new World([Polygon]);
@@ -770,7 +770,7 @@ describe("Component", () => {
     });
 
     it("should default to empty array when not provided", () => {
-      const Polygon = defineComponent("Polygon", {
+      const Polygon = defineComponent({
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
@@ -784,7 +784,7 @@ describe("Component", () => {
     });
 
     it("should use default array value when provided", () => {
-      const Polygon = defineComponent("Polygon", {
+      const Polygon = defineComponent({
         pts: field.array(field.float32(), 100).default([1.0, 2.0, 3.0]),
       });
       const world = new World([Polygon]);
@@ -798,7 +798,7 @@ describe("Component", () => {
     });
 
     it("should allow updating array data", () => {
-      const Polygon = defineComponent("Polygon", {
+      const Polygon = defineComponent({
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
@@ -815,7 +815,7 @@ describe("Component", () => {
     });
 
     it("should handle multiple entities with different arrays", () => {
-      const Polygon = defineComponent("Polygon", {
+      const Polygon = defineComponent({
         pts: field.array(field.float32(), 100),
       });
       const world = new World([Polygon]);
@@ -832,7 +832,7 @@ describe("Component", () => {
     });
 
     it("should truncate arrays that exceed maxLength", () => {
-      const Polygon = defineComponent("Polygon", {
+      const Polygon = defineComponent({
         pts: field.array(field.float32(), 5),
       });
       const world = new World([Polygon]);
@@ -848,7 +848,7 @@ describe("Component", () => {
     });
 
     it("should support different numeric array types", () => {
-      const MixedArrays = defineComponent("MixedArrays", {
+      const MixedArrays = defineComponent({
         floats: field.array(field.float32(), 10),
         ints: field.array(field.int32(), 10),
         bytes: field.array(field.uint8(), 10),
@@ -870,7 +870,7 @@ describe("Component", () => {
     });
 
     it("should handle arrays in mixed components", () => {
-      const Shape = defineComponent("Shape", {
+      const Shape = defineComponent({
         id: field.uint32(),
         name: field.string().max(50),
         pts: field.array(field.float32(), 100),
@@ -895,7 +895,7 @@ describe("Component", () => {
     });
 
     it("should store and retrieve string arrays", () => {
-      const Tags = defineComponent("Tags", {
+      const Tags = defineComponent({
         names: field.array(field.string().max(50), 10),
       });
       const world = new World([Tags]);
@@ -911,7 +911,7 @@ describe("Component", () => {
     });
 
     it("should store and retrieve boolean arrays", () => {
-      const Flags = defineComponent("Flags", {
+      const Flags = defineComponent({
         bits: field.array(field.boolean(), 8),
       });
       const world = new World([Flags]);
@@ -927,7 +927,7 @@ describe("Component", () => {
     });
 
     it("should store and retrieve binary arrays", () => {
-      const Chunks = defineComponent("Chunks", {
+      const Chunks = defineComponent({
         data: field.array(field.binary().max(32), 5),
       });
       const world = new World([Chunks]);
@@ -947,7 +947,7 @@ describe("Component", () => {
     });
 
     it("should handle empty strings in string arrays", () => {
-      const Tags = defineComponent("Tags", {
+      const Tags = defineComponent({
         names: field.array(field.string().max(50), 5),
       });
       const world = new World([Tags]);
@@ -963,7 +963,7 @@ describe("Component", () => {
     });
 
     it("should handle mixed element type arrays in same component", () => {
-      const MixedComponent = defineComponent("MixedComponent", {
+      const MixedComponent = defineComponent({
         numbers: field.array(field.float32(), 10),
         strings: field.array(field.string().max(20), 5),
         flags: field.array(field.boolean(), 8),
@@ -985,7 +985,7 @@ describe("Component", () => {
     });
 
     it("should use array default when provided for all element types", () => {
-      const Defaults = defineComponent("Defaults", {
+      const Defaults = defineComponent({
         nums: field.array(field.float32(), 10).default([1.0, 2.0, 3.0]),
         strs: field.array(field.string().max(20), 5).default(["a", "b"]),
         flags: field.array(field.boolean(), 8).default([true, false, true]),
@@ -1009,7 +1009,7 @@ describe("Component", () => {
     });
 
     it("should prefer array default over element type default", () => {
-      const Combo = defineComponent("Combo", {
+      const Combo = defineComponent({
         nums: field.array(field.float32().default(999), 10).default([1.0, 2.0]),
         strs: field
           .array(field.string().max(20).default("ignored"), 5)
@@ -1046,7 +1046,7 @@ describe("Component", () => {
     type Status = (typeof Status)[keyof typeof Status];
 
     it("should store and retrieve enum values", () => {
-      const Document = defineComponent("Document", {
+      const Document = defineComponent({
         shareMode: field.enum(ShareMode),
       });
       const world = new World([Document]);
@@ -1060,7 +1060,7 @@ describe("Component", () => {
     });
 
     it("should use first enum value as default when no default specified", () => {
-      const Document = defineComponent("Document", {
+      const Document = defineComponent({
         shareMode: field.enum(ShareMode),
       });
       const world = new World([Document]);
@@ -1074,7 +1074,7 @@ describe("Component", () => {
     });
 
     it("should use explicit default when provided", () => {
-      const Document = defineComponent("Document", {
+      const Document = defineComponent({
         shareMode: field.enum(ShareMode).default(ShareMode.ReadWrite),
       });
       const world = new World([Document]);
@@ -1088,7 +1088,7 @@ describe("Component", () => {
     });
 
     it("should allow updating enum values", () => {
-      const Task = defineComponent("Task", {
+      const Task = defineComponent({
         status: field.enum(Status).default(Status.Pending),
       });
       const world = new World([Task]);
@@ -1113,7 +1113,7 @@ describe("Component", () => {
         High: "High",
       } as const;
 
-      const Item = defineComponent("Item", {
+      const Item = defineComponent({
         shareMode: field.enum(ShareMode).default(ShareMode.None),
         status: field.enum(Status).default(Status.Pending),
         priority: field.enum(Priority).default(Priority.Medium),
@@ -1135,7 +1135,7 @@ describe("Component", () => {
     });
 
     it("should work with mixed field types including enum", () => {
-      const Entity = defineComponent("Entity", {
+      const Entity = defineComponent({
         name: field.string().max(50),
         shareMode: field.enum(ShareMode),
         count: field.uint32(),
@@ -1166,7 +1166,7 @@ describe("Component", () => {
         ShortValue: "ShortValue",
       } as const;
 
-      const Config = defineComponent("Config", {
+      const Config = defineComponent({
         setting: field.enum(LongEnum),
       });
       const world = new World([Config]);
@@ -1183,7 +1183,7 @@ describe("Component", () => {
     });
 
     it("should isolate enum values between entities", () => {
-      const Task = defineComponent("Task", {
+      const Task = defineComponent({
         status: field.enum(Status).default(Status.Pending),
       });
       const world = new World([Task]);
@@ -1206,7 +1206,7 @@ describe("Component", () => {
     it("should use alphabetically first value as default (sorted storage)", () => {
       // Values are stored sorted: Active, Cancelled, Completed, Pending
       // So default (index 0) should be "Active"
-      const Task = defineComponent("Task", {
+      const Task = defineComponent({
         status: field.enum(Status), // No explicit default
       });
       const world = new World([Task]);
@@ -1220,7 +1220,7 @@ describe("Component", () => {
     });
 
     it("should have correct TypeScript types for enum values", () => {
-      const Document = defineComponent("Document", {
+      const Document = defineComponent({
         shareMode: field.enum(ShareMode).default(ShareMode.None),
       });
       const world = new World([Document]);
@@ -1273,7 +1273,7 @@ describe("Component", () => {
     });
 
     it("should store and retrieve tuple data", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         coords: field.tuple(field.float32(), 2),
       });
       const world = new World([Position]);
@@ -1287,7 +1287,7 @@ describe("Component", () => {
     });
 
     it("should default to zeros when not provided", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         coords: field.tuple(field.float32(), 3),
       });
       const world = new World([Position]);
@@ -1301,7 +1301,7 @@ describe("Component", () => {
     });
 
     it("should use default tuple value when provided", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         coords: field.tuple(field.float32(), 2).default([10, 20]),
       });
       const world = new World([Position]);
@@ -1315,7 +1315,7 @@ describe("Component", () => {
     });
 
     it("should allow updating tuple data", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         coords: field.tuple(field.float32(), 2),
       });
       const world = new World([Position]);
@@ -1332,7 +1332,7 @@ describe("Component", () => {
     });
 
     it("should handle multiple entities with different tuples", () => {
-      const Position = defineComponent("Position", {
+      const Position = defineComponent({
         coords: field.tuple(field.float32(), 2),
       });
       const world = new World([Position]);
@@ -1349,7 +1349,7 @@ describe("Component", () => {
     });
 
     it("should support different numeric tuple types", () => {
-      const MixedTuples = defineComponent("MixedTuples", {
+      const MixedTuples = defineComponent({
         floatPair: field.tuple(field.float32(), 2),
         intTriple: field.tuple(field.int32(), 3),
         byteQuad: field.tuple(field.uint8(), 4),
@@ -1371,7 +1371,7 @@ describe("Component", () => {
     });
 
     it("should handle tuples in mixed components", () => {
-      const Transform = defineComponent("Transform", {
+      const Transform = defineComponent({
         id: field.uint32(),
         position: field.tuple(field.float32(), 3),
         rotation: field.tuple(field.float32(), 4),
@@ -1396,7 +1396,7 @@ describe("Component", () => {
     });
 
     it("should store and retrieve string tuples", () => {
-      const NamePair = defineComponent("NamePair", {
+      const NamePair = defineComponent({
         names: field.tuple(field.string().max(50), 2),
       });
       const world = new World([NamePair]);
@@ -1412,7 +1412,7 @@ describe("Component", () => {
     });
 
     it("should store and retrieve boolean tuples", () => {
-      const Flags = defineComponent("Flags", {
+      const Flags = defineComponent({
         bits: field.tuple(field.boolean(), 4),
       });
       const world = new World([Flags]);
@@ -1428,7 +1428,7 @@ describe("Component", () => {
     });
 
     it("should store and retrieve binary tuples", () => {
-      const DataPair = defineComponent("DataPair", {
+      const DataPair = defineComponent({
         chunks: field.tuple(field.binary().max(32), 2),
       });
       const world = new World([DataPair]);
@@ -1448,7 +1448,7 @@ describe("Component", () => {
     });
 
     it("should default string tuples to empty strings", () => {
-      const NamePair = defineComponent("NamePair", {
+      const NamePair = defineComponent({
         names: field.tuple(field.string().max(50), 2),
       });
       const world = new World([NamePair]);
@@ -1462,7 +1462,7 @@ describe("Component", () => {
     });
 
     it("should default boolean tuples to false", () => {
-      const Flags = defineComponent("Flags", {
+      const Flags = defineComponent({
         bits: field.tuple(field.boolean(), 3),
       });
       const world = new World([Flags]);
