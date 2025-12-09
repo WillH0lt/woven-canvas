@@ -1,10 +1,9 @@
 import { WorkerManager } from "./WorkerManager";
-import { Component, ComponentDef, type ComponentSchema } from "./Component";
+import { Component, ComponentDef, SingletonDef } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer, EventType } from "./EventBuffer";
 import { Pool } from "./Pool";
 import { type QueryDef } from "./Query";
-import { Singleton } from "./Singleton";
 import type { System, Context } from "./types";
 
 /**
@@ -28,9 +27,7 @@ export type SingletonSubscribeCallback = (ctx: Context) => void;
  * Internal subscriber state
  */
 interface Subscriber {
-  type: "query" | "singleton";
-  queryDef?: QueryDef;
-  singleton?: Singleton<any>;
+  queryDef: QueryDef;
   callback: QuerySubscribeCallback | SingletonSubscribeCallback;
   readerId: string;
 }
@@ -77,24 +74,29 @@ export class World {
   /** Subscribers to world events */
   private subscribers: Subscriber[] = [];
   /** Map of component IDs to component definitions for event lookup */
-  private componentIdToDef: Map<number, ComponentDef<any>> = new Map();
+  private componentIdToDef: Map<number, ComponentDef<any> | SingletonDef<any>> =
+    new Map();
   /** Queue of callbacks to execute on next sync */
   private nextSyncCallbacks: NextSyncCallback[] = [];
 
   /**
    * Create a new world instance
-   * @param componentDefs - Array of component definitions to register
+   * @param componentDefs - Array of component and singleton definitions to register
    * @param options - Configuration options for the world
    * @example
    * ```typescript
    * import { Position, Velocity } from "./components";
-   * const world = new World([Position, Velocity], {
+   * import { Mouse, Time } from "./singletons";
+   * const world = new World([Position, Velocity, Mouse, Time], {
    *   threads: 4,
    *   maxEntities: 50_000
    * });
    * ```
    */
-  constructor(componentDefs: ComponentDef<any>[], options: WorldOptions = {}) {
+  constructor(
+    componentDefs: (ComponentDef<any> | SingletonDef<any>)[],
+    options: WorldOptions = {}
+  ) {
     const threads =
       options.threads ??
       (typeof navigator !== "undefined"
@@ -272,41 +274,7 @@ export class World {
    * unsubscribe();
    * ```
    */
-  subscribe(queryDef: QueryDef, callback: QuerySubscribeCallback): () => void;
-
-  /**
-   * Subscribe to singleton change events.
-   * Callbacks are invoked when sync() is called if the singleton has changed.
-   * @param singletonDef - The singleton component definition
-   * @param callback - Function called with { changed: boolean }
-   * @returns Unsubscribe function
-   * @example
-   * ```typescript
-   * const MouseSingleton = defineSingleton("Mouse", {
-   *   x: field.float32().default(0),
-   *   y: field.float32().default(0),
-   * });
-   *
-   * const unsubscribe = world.subscribe(MouseSingleton, (ctx, { changed }) => {
-   *   if (changed) {
-   *     const mouse = MouseSingleton.readSingleton(ctx);
-   *     console.log("Mouse moved:", mouse.x, mouse.y);
-   *   }
-   * });
-   *
-   * // Later, to stop receiving events:
-   * unsubscribe();
-   * ```
-   */
-  subscribe(
-    singletonDef: ComponentDef<any>,
-    callback: SingletonSubscribeCallback
-  ): () => void;
-
-  subscribe(
-    defOrQuery: QueryDef | ComponentDef<any>,
-    callback: QuerySubscribeCallback | SingletonSubscribeCallback
-  ): () => void {
+  subscribe(queryDef: QueryDef, callback: QuerySubscribeCallback): () => void {
     const ctx = this.context;
 
     // Generate unique reader ID for this subscriber
@@ -315,35 +283,18 @@ export class World {
 
     let subscriber: Subscriber;
 
-    // Check if this is a singleton subscription
-    if (defOrQuery instanceof ComponentDef && defOrQuery.isSingleton) {
-      // Create a Singleton instance for efficient tracking
-      const singleton = new Singleton(defOrQuery);
+    // Eagerly initialize the QueryInstance so the reader starts from current write index.
+    // This ensures events written after subscription are detected in sync().
+    queryDef._getInstance({
+      ...ctx,
+      readerId,
+    });
 
-      subscriber = {
-        type: "singleton",
-        singleton,
-        callback: callback as SingletonSubscribeCallback,
-        readerId,
-      };
-    } else {
-      // Regular query subscription
-      const queryDef = defOrQuery as QueryDef;
-
-      // Eagerly initialize the QueryInstance so the reader starts from current write index.
-      // This ensures events written after subscription are detected in sync().
-      queryDef._getInstance({
-        ...ctx,
-        readerId,
-      });
-
-      subscriber = {
-        type: "query",
-        queryDef,
-        callback: callback as QuerySubscribeCallback,
-        readerId,
-      };
-    }
+    subscriber = {
+      queryDef,
+      callback: callback as QuerySubscribeCallback,
+      readerId,
+    };
 
     this.subscribers.push(subscriber);
 
@@ -389,36 +340,25 @@ export class World {
         readerId: subscriber.readerId,
       };
 
-      if (subscriber.type === "singleton") {
-        // Handle singleton subscription
-        const singleton = subscriber.singleton!;
-        const changed = singleton.hasChanged(ctx);
+      // Handle query subscription
+      const queryDef = subscriber.queryDef!;
 
-        // Only call callback if singleton changed
-        if (changed) {
-          (subscriber.callback as SingletonSubscribeCallback)(ctx);
-        }
-      } else {
-        // Handle query subscription
-        const queryDef = subscriber.queryDef!;
+      const results = {
+        added: queryDef.added(ctx),
+        removed: queryDef.removed(ctx),
+        changed: queryDef.changed(ctx),
+      };
 
-        const results = {
-          added: queryDef.added(ctx),
-          removed: queryDef.removed(ctx),
-          changed: queryDef.changed(ctx),
-        };
-
-        // Check if there are any events to report
-        if (
-          results.added.length === 0 &&
-          results.removed.length === 0 &&
-          results.changed.length === 0
-        ) {
-          continue;
-        }
-
-        (subscriber.callback as QuerySubscribeCallback)(ctx, results);
+      // Check if there are any events to report
+      if (
+        results.added.length === 0 &&
+        results.removed.length === 0 &&
+        results.changed.length === 0
+      ) {
+        continue;
       }
+
+      subscriber.callback(ctx, results);
     }
   }
 

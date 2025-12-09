@@ -24,7 +24,6 @@ import {
   addComponent,
   World,
   useQuery,
-  useSingleton,
   field,
   defineComponent,
   defineSingleton,
@@ -52,12 +51,12 @@ const Color = defineComponent("Color", {
   blue: field.uint8().default(0),
 });
 
-const MouseSingleton = defineSingleton("Mouse", {
+const Mouse = defineSingleton("Mouse", {
   x: field.float32().default(0),
   y: field.float32().default(0),
 });
 
-const world = new World([Velocity, Position, Size, Color, MouseSingleton], {
+const world = new World([Velocity, Position, Size, Color, Mouse], {
   threads: 4,
 });
 
@@ -85,11 +84,9 @@ world.nextSync((ctx) => {
   }
 });
 
-const Mouse = useSingleton(MouseSingleton);
-// const mouseQuery = useQuery((q) => q.singleton(MouseSingleton));
-
 window.addEventListener("mousemove", (event) => {
   world.nextSync((ctx) => {
+    // Use Mouse.write(ctx) directly - no need for useSingleton!
     const mouse = Mouse.write(ctx);
     mouse.x = event.clientX;
     mouse.y = event.clientY;
@@ -100,6 +97,10 @@ async function changeColor(entityId: number) {
   world.nextSync((ctx) => {
     const color = Color.write(ctx, entityId);
 
+    // Use Mouse.read(ctx) directly - clean singleton API!
+    const mousePos = Mouse.read(ctx);
+    console.log("Clicked at mouse position:", mousePos.x, mousePos.y);
+
     color.red = Math.floor(Math.random() * 256);
     color.green = Math.floor(Math.random() * 256);
     color.blue = Math.floor(Math.random() * 256);
@@ -107,8 +108,18 @@ async function changeColor(entityId: number) {
 }
 
 const blocks = useQuery((q) => q.tracking(Position, Size, Color));
+// Track mouse changes using a query - demonstrates singleton query support!
+const mouseQuery = useQuery((q) => q.tracking(Mouse));
 
 const system1 = defineSystem((ctx: Context) => {
+  // Check if mouse changed this frame using the query
+  const hasMouseChanged = mouseQuery.changed(ctx).length > 0;
+  if (hasMouseChanged) {
+    const mouse = Mouse.read(ctx);
+    // Mouse moved! Could use this to highlight blocks under cursor, etc.
+    // console.log(`Mouse position: ${mouse.x}, ${mouse.y}`);
+  }
+
   for (const eid of blocks.current(ctx)) {
     const pos = Position.write(ctx, eid);
     const vel = Velocity.write(ctx, eid);
@@ -151,8 +162,10 @@ world.subscribe(blocks, (ctx, { added, removed, changed }) => {
   }
 });
 
-world.subscribe(mouseQuery, (ctx) => {
-  const mouse = MouseSingleton.readSingleton(ctx);
+// Subscribe to mouse changes using the new SingletonDef API
+const query = useQuery((q) => q.tracking(Mouse));
+world.subscribe(query, (ctx) => {
+  const mouse = Mouse.read(ctx);
   console.log("Mouse moved:", mouse.x, mouse.y);
 });
 

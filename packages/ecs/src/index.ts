@@ -2,6 +2,7 @@ export {
   field,
   type Component,
   type ComponentDef,
+  type SingletonDef,
   defineComponent,
   defineSingleton,
 } from "./Component";
@@ -20,7 +21,6 @@ export {
   hasComponent,
   getBackrefs,
 } from "./Context";
-export { useSingleton, type Singleton } from "./Singleton";
 export {
   defineSystem,
   defineWorkerSystem,

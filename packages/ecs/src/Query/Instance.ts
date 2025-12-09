@@ -2,6 +2,7 @@ import type { Context, QueryMasks } from "../types";
 import { QueryCache } from "./Cache";
 import { EventTypeMask } from "../EventBuffer";
 import { QueryReader } from "./Reader";
+import { SINGLETON_ENTITY_ID } from "../Component";
 
 const EMPTY_NUMBER_ARRAY: number[] = [];
 
@@ -10,9 +11,10 @@ const EMPTY_NUMBER_ARRAY: number[] = [];
  * Created from a QueryDef when first used with a specific context.
  */
 export class QueryInstance {
-  readonly cache: QueryCache;
   readonly masks: QueryMasks;
+  readonly cache: QueryCache | null = null;
   private reader: QueryReader;
+  private readonly isSingletonQuery: boolean;
 
   /**
    * @internal - Use QueryDef._getInstance(ctx) instead
@@ -20,16 +22,26 @@ export class QueryInstance {
   constructor(ctx: Context, masks: QueryMasks) {
     this.masks = masks;
 
-    this.cache = new QueryCache(ctx.maxEntities);
+    this.isSingletonQuery = masks.usesSingleton(ctx);
+
+    if (!this.isSingletonQuery) {
+      this.cache = new QueryCache(ctx.maxEntities);
+    }
+
     this.reader = new QueryReader(0);
   }
 
   /**
    * Get the current matching entities.
+   * For singleton-only queries, returns [SINGLETON_ENTITY_ID] without checking the cache.
    */
   current(ctx: Context): Uint32Array | number[] {
-    this.reader.updateCache(ctx, this.cache, this.masks);
-    const allEntities = this.cache.getDenseView();
+    if (this.isSingletonQuery) {
+      return [SINGLETON_ENTITY_ID];
+    }
+
+    this.reader.updateCache(ctx, this.cache!, this.masks);
+    const allEntities = this.cache!.getDenseView();
 
     if (ctx.threadCount <= 1) {
       return allEntities;
@@ -46,10 +58,14 @@ export class QueryInstance {
    * Get entities that were added since the last check.
    */
   added(ctx: Context): number[] {
-    this.reader.updateCache(ctx, this.cache, this.masks);
+    if (this.isSingletonQuery) {
+      return EMPTY_NUMBER_ARRAY;
+    }
+
+    this.reader.updateCache(ctx, this.cache!, this.masks);
     const result = this.reader.added;
 
-    if (ctx.threadCount > 1 && result !== EMPTY_NUMBER_ARRAY) {
+    if (ctx.threadCount > 1 && result.length > 0) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);
     }
     return result;
@@ -59,10 +75,14 @@ export class QueryInstance {
    * Get entities that were removed since the last check.
    */
   removed(ctx: Context): number[] {
-    this.reader.updateCache(ctx, this.cache, this.masks);
+    if (this.isSingletonQuery) {
+      return EMPTY_NUMBER_ARRAY;
+    }
+
+    this.reader.updateCache(ctx, this.cache!, this.masks);
     const result = this.reader.removed;
 
-    if (ctx.threadCount > 1 && result !== EMPTY_NUMBER_ARRAY) {
+    if (ctx.threadCount > 1 && result.length > 0) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);
     }
     return result;
@@ -72,10 +92,15 @@ export class QueryInstance {
    * Get entities whose tracked components have changed since the last check.
    */
   changed(ctx: Context): number[] {
-    this.reader.updateCache(ctx, this.cache, this.masks);
+    if (this.isSingletonQuery) {
+      this.reader.updateSingletonChanged(ctx, this.masks);
+      return this.reader.changed;
+    }
+
+    this.reader.updateCache(ctx, this.cache!, this.masks);
     const result = this.reader.changed;
 
-    if (ctx.threadCount > 1 && result !== EMPTY_NUMBER_ARRAY) {
+    if (ctx.threadCount > 1 && result.length > 0) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);
     }
     return result;

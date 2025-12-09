@@ -1,5 +1,6 @@
-import type { ComponentDef } from "../Component";
-import type { Context, QueryMasks } from "../types";
+import type { ComponentDef, SingletonDef } from "../Component";
+import type { Context } from "../types";
+import { QueryMasks } from "../types";
 import type { ComponentSchema } from "../Component/types";
 
 /**
@@ -44,9 +45,11 @@ export class QueryBuilder {
   }
 
   /**
-   * Get the component ID from the context for a given ComponentDef
+   * Get the component ID from the context for a given ComponentDef or SingletonDef
    */
-  private getComponentId(componentDef: ComponentDef<ComponentSchema>): number {
+  private getComponentId(
+    componentDef: ComponentDef<ComponentSchema> | SingletonDef<ComponentSchema>
+  ): number {
     const component = this.ctx.components[componentDef.name];
     if (!component) {
       throw new Error(
@@ -58,7 +61,7 @@ export class QueryBuilder {
 
   /**
    * Require entities to have all of the specified components
-   * @param componentDefs - Components that must be present
+   * @param componentDefs - Components or singletons that must be present
    * @returns This query builder for chaining
    */
   with(...componentDefs: ComponentDef<any>[]): this {
@@ -70,7 +73,7 @@ export class QueryBuilder {
 
   /**
    * Require entities to NOT have any of the specified components
-   * @param componentDefs - Components that must NOT be present
+   * @param componentDefs - Components or singletons that must NOT be present
    * @returns This query builder for chaining
    */
   without(...componentDefs: ComponentDef<any>[]): this {
@@ -82,7 +85,7 @@ export class QueryBuilder {
 
   /**
    * Require entities to have at least one of the specified components
-   * @param componentDefs - Components where at least one must be present
+   * @param componentDefs - Components or singletons where at least one must be present
    * @returns This query builder for chaining
    */
   any(...componentDefs: ComponentDef<any>[]): this {
@@ -96,10 +99,10 @@ export class QueryBuilder {
    * Require entities to have all of the specified components AND track changes to them
    * When a tracked component's value changes, the entity will appear in query.changed
    * This combines the functionality of with() and tracking()
-   * @param componentDefs - Components that must be present and should be tracked for changes
+   * @param componentDefs - Components or singletons that must be present and should be tracked for changes
    * @returns This query builder for chaining
    */
-  tracking(...componentDefs: ComponentDef<any>[]): this {
+  tracking(...componentDefs: (ComponentDef<any> | SingletonDef<any>)[]): this {
     for (const componentDef of componentDefs) {
       const componentId = this.getComponentId(componentDef);
       setComponentBit(this.withMask, componentId);
@@ -120,15 +123,15 @@ export class QueryBuilder {
     const hasWithout = !this.withoutMask.every((byte) => byte === 0);
     const hasAny = !this.anyMask.every((byte) => byte === 0);
 
-    return {
-      tracking: this.trackingMask,
-      with: this.withMask,
-      without: this.withoutMask,
-      any: this.anyMask,
+    return new QueryMasks(
+      this.trackingMask,
+      this.withMask,
+      this.withoutMask,
+      this.anyMask,
       hasTracking,
       hasWith,
       hasWithout,
-      hasAny,
-    };
+      hasAny
+    );
   }
 }

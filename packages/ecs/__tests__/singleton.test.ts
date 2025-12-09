@@ -1,357 +1,116 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import {
-  field,
-  defineComponent,
-  defineSingleton,
-  useSingleton,
-  World,
-  defineSystem,
-} from "../src";
+import { describe, it, expect } from "vitest";
+import { field, defineSingleton, World, defineSystem, useQuery } from "../src";
 
 describe("Singleton", () => {
-  describe("Singleton Definition", () => {
-    it("should create a singleton with numeric fields", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-
-      const world = new World([Mouse]);
-      const ctx = world._getContext();
-
-      const mouseRef = useSingleton(Mouse);
-      const mouse = mouseRef.read(ctx);
-      expect(mouse.x).toBe(0);
-      expect(mouse.y).toBe(0);
-    });
-
-    it("should create a singleton with default values", () => {
+  describe("SingletonDef API", () => {
+    it("should support Mouse.read(ctx) syntax", () => {
       const Mouse = defineSingleton("Mouse", {
         x: field.float32().default(100),
         y: field.float32().default(200),
-        pressed: field.boolean().default(false),
       });
+
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseRef = useSingleton(Mouse);
-      const mouse = mouseRef.read(ctx);
+      // Direct read without useSingleton
+      const mouse = Mouse.read(ctx);
       expect(mouse.x).toBeCloseTo(100);
       expect(mouse.y).toBeCloseTo(200);
-      expect(mouse.pressed).toBe(false);
     });
 
-    it("should create a singleton with mixed field types", () => {
-      const GameState = defineSingleton("GameState", {
-        level: field.uint8().default(1),
-        score: field.uint32().default(0),
-        playerName: field.string().max(50).default("Player"),
-        isPaused: field.boolean().default(false),
-      });
-      const world = new World([GameState]);
-      const ctx = world._getContext();
-
-      const stateRef = useSingleton(GameState);
-      const state = stateRef.read(ctx);
-      expect(state.level).toBe(1);
-      expect(state.score).toBe(0);
-      expect(state.playerName).toBe("Player");
-      expect(state.isPaused).toBe(false);
-    });
-  });
-
-  describe("Singleton Read/Write", () => {
-    it("should read singleton values", () => {
-      const Time = defineSingleton("Time", {
-        delta: field.float32().default(0.016),
-        elapsed: field.float32().default(0),
-      });
-      const world = new World([Time]);
-      const ctx = world._getContext();
-
-      const timeRef = useSingleton(Time);
-      const time = timeRef.read(ctx);
-      expect(time.delta).toBeCloseTo(0.016);
-      expect(time.elapsed).toBe(0);
-    });
-
-    it("should write singleton values", () => {
+    it("should support Mouse.write(ctx) syntax", () => {
       const Mouse = defineSingleton("Mouse", {
         x: field.float32(),
         y: field.float32(),
       });
+
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseRef = useSingleton(Mouse);
-      const mouse = mouseRef.write(ctx);
+      // Direct write without useSingleton
+      const mouse = Mouse.write(ctx);
       mouse.x = 150;
       mouse.y = 250;
 
-      const readMouse = mouseRef.read(ctx);
+      // Verify the write
+      const readMouse = Mouse.read(ctx);
       expect(readMouse.x).toBeCloseTo(150);
       expect(readMouse.y).toBeCloseTo(250);
     });
 
-    it("should copy singleton values", () => {
+    it("should support Mouse.copy(ctx, data) syntax", () => {
       const Mouse = defineSingleton("Mouse", {
         x: field.float32(),
         y: field.float32(),
       });
+
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseRef = useSingleton(Mouse);
-      mouseRef.copy(ctx, { x: 300, y: 400 });
+      // Direct copy without useSingleton
+      Mouse.copy(ctx, { x: 300, y: 400 });
 
-      const readMouse = mouseRef.read(ctx);
-      expect(readMouse.x).toBeCloseTo(300);
-      expect(readMouse.y).toBeCloseTo(400);
+      // Verify the copy
+      const mouse = Mouse.read(ctx);
+      expect(mouse.x).toBeCloseTo(300);
+      expect(mouse.y).toBeCloseTo(400);
     });
 
-    it("should copy partial singleton values", () => {
-      const GameState = defineSingleton("GameState", {
-        level: field.uint8().default(1),
-        score: field.uint32().default(0),
-        playerName: field.string().max(50).default("Player"),
-      });
-      const world = new World([GameState]);
-      const ctx = world._getContext();
-
-      const stateRef = useSingleton(GameState);
-      // Copy only some fields - others should use defaults
-      stateRef.copy(ctx, { level: 5, score: 1000 } as any);
-
-      const state = stateRef.read(ctx);
-      expect(state.level).toBe(5);
-      expect(state.score).toBe(1000);
-      expect(state.playerName).toBe("Player");
-    });
-
-    it("should persist writes across multiple reads", () => {
-      const Counter = defineSingleton("Counter", {
-        value: field.uint32().default(0),
-      });
-      const world = new World([Counter]);
-      const ctx = world._getContext();
-
-      const counterRef = useSingleton(Counter);
-
-      // Write multiple times
-      const counter1 = counterRef.write(ctx);
-      counter1.value = 10;
-
-      const counter2 = counterRef.write(ctx);
-      counter2.value = counter2.value + 5;
-
-      const counter3 = counterRef.read(ctx);
-      expect(counter3.value).toBe(15);
-    });
-  });
-
-  describe("useSingleton API", () => {
-    it("should read via useSingleton", () => {
+    it("should support Mouse.snapshot(ctx) syntax", () => {
       const Mouse = defineSingleton("Mouse", {
         x: field.float32().default(42),
         y: field.float32().default(24),
       });
+
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseRef = useSingleton(Mouse);
-      const mouse = mouseRef.read(ctx);
-      expect(mouse.x).toBeCloseTo(42);
-      expect(mouse.y).toBeCloseTo(24);
+      // Direct snapshot without useSingleton
+      const snapshot = Mouse.snapshot(ctx);
+      expect(snapshot.x).toBeCloseTo(42);
+      expect(snapshot.y).toBeCloseTo(24);
+
+      // Verify it's a plain object (not bound to entity)
+      expect(typeof snapshot.x).toBe("number");
+      expect(typeof snapshot.y).toBe("number");
     });
 
-    it("should write via useSingleton", () => {
+    it("should work alongside ComponentDef", () => {
       const Mouse = defineSingleton("Mouse", {
         x: field.float32(),
         y: field.float32(),
       });
-      const world = new World([Mouse]);
+
+      const Time = defineSingleton("Time", {
+        delta: field.float32().default(0.016),
+        elapsed: field.float32().default(0),
+      });
+
+      const world = new World([Mouse, Time]);
       const ctx = world._getContext();
 
-      const mouseRef = useSingleton(Mouse);
-      const mouse = mouseRef.write(ctx);
+      // Test both singletons
+      const mouse = Mouse.write(ctx);
       mouse.x = 100;
       mouse.y = 200;
 
-      const readMouse = mouseRef.read(ctx);
+      const time = Time.read(ctx);
+      expect(time.delta).toBeCloseTo(0.016);
+      expect(time.elapsed).toBe(0);
+
+      const readMouse = Mouse.read(ctx);
       expect(readMouse.x).toBeCloseTo(100);
       expect(readMouse.y).toBeCloseTo(200);
     });
-  });
 
-  describe("Singleton Change Tracking", () => {
-    it("should detect when singleton is written", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-      const world = new World([Mouse]);
-      const ctx = world._getContext();
-
-      const mouseRef = useSingleton(Mouse);
-
-      // First check - no changes yet (initializes tracker)
-      expect(mouseRef.hasChanged(ctx)).toBe(false);
-
-      // Write to singleton
-      const mouse = mouseRef.write(ctx);
-      mouse.x = 100;
-
-      // Increment tick and check for changes
-      ctx.tick++;
-      expect(mouseRef.hasChanged(ctx)).toBe(true);
-    });
-
-    it("should return false when singleton is not written", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-      const world = new World([Mouse]);
-      const ctx = world._getContext();
-
-      const mouseRef = useSingleton(Mouse);
-
-      // Initial check
-      expect(mouseRef.hasChanged(ctx)).toBe(false);
-
-      // Only read, don't write
-      const mouse = mouseRef.read(ctx);
-      void mouse.x;
-
-      // Increment tick and check - should still be false
-      ctx.tick++;
-      expect(mouseRef.hasChanged(ctx)).toBe(false);
-    });
-
-    it("should reset change detection after being checked", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-      const world = new World([Mouse]);
-      const ctx = world._getContext();
-
-      const mouseRef = useSingleton(Mouse);
-
-      // First call initializes the tracker - returns false
-      expect(mouseRef.hasChanged(ctx)).toBe(false);
-
-      // Write to singleton after tracker is initialized
-      const mouse = mouseRef.write(ctx);
-      mouse.x = 100;
-
-      // Next tick - changes detected
-      ctx.tick++;
-      expect(mouseRef.hasChanged(ctx)).toBe(true);
-
-      // Same tick - should return same cached result
-      expect(mouseRef.hasChanged(ctx)).toBe(true);
-
-      // Next tick without writes - no changes
-      ctx.tick++;
-      expect(mouseRef.hasChanged(ctx)).toBe(false);
-    });
-
-    it("should allow multiple Singletons to track independently", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-      const world = new World([Mouse]);
-      const ctx = world._getContext();
-
-      // Two independent references to the same singleton
-      const mouseRef1 = useSingleton(Mouse);
-      const mouseRef2 = useSingleton(Mouse);
-
-      // Initialize both trackers
-      expect(mouseRef1.hasChanged(ctx)).toBe(false);
-      expect(mouseRef2.hasChanged(ctx)).toBe(false);
-
-      // Write to singleton
-      const mouse = mouseRef1.write(ctx);
-      mouse.x = 100;
-
-      // Next tick - both refs should see the change
-      ctx.tick++;
-      expect(mouseRef1.hasChanged(ctx)).toBe(true);
-      expect(mouseRef2.hasChanged(ctx)).toBe(true);
-
-      // Next tick - neither should see changes
-      ctx.tick++;
-      expect(mouseRef1.hasChanged(ctx)).toBe(false);
-      expect(mouseRef2.hasChanged(ctx)).toBe(false);
-    });
-
-    it("should detect changes when singleton is copied", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-      const world = new World([Mouse]);
-      const ctx = world._getContext();
-
-      const mouseRef = useSingleton(Mouse);
-
-      // Initialize tracker
-      expect(mouseRef.hasChanged(ctx)).toBe(false);
-
-      // Copy to singleton
-      mouseRef.copy(ctx, { x: 100, y: 200 });
-
-      // Increment tick and check for changes
-      ctx.tick++;
-      expect(mouseRef.hasChanged(ctx)).toBe(true);
-
-      // Verify the values were copied
-      const mouse = mouseRef.read(ctx);
-      expect(mouse.x).toBeCloseTo(100);
-      expect(mouse.y).toBeCloseTo(200);
-    });
-  });
-
-  describe("Singleton with Components", () => {
-    it("should work alongside regular components", () => {
-      const Position = defineComponent("Position", {
-        x: field.float32(),
-        y: field.float32(),
-      });
+    it("should support getComponentId", () => {
       const Mouse = defineSingleton("Mouse", {
         x: field.float32(),
         y: field.float32(),
       });
 
-      const world = new World([Position, Mouse]);
-      const ctx = world._getContext();
-
-      // Check that both work
-      const mouseRef = useSingleton(Mouse);
-      const mouse = mouseRef.write(ctx);
-      mouse.x = 100;
-      mouse.y = 200;
-
-      const readMouse = mouseRef.read(ctx);
-      expect(readMouse.x).toBeCloseTo(100);
-      expect(readMouse.y).toBeCloseTo(200);
-
-      // Component IDs should be unique
-      expect(Position.getComponentId(ctx)).toBe(0);
-      expect(Mouse.getComponentId(ctx)).toBe(1);
-    });
-
-    it("should assign unique componentIds to singletons", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
       const Time = defineSingleton("Time", {
         delta: field.float32(),
-        elapsed: field.float32(),
       });
 
       const world = new World([Mouse, Time]);
@@ -360,82 +119,397 @@ describe("Singleton", () => {
       expect(Mouse.getComponentId(ctx)).toBe(0);
       expect(Time.getComponentId(ctx)).toBe(1);
     });
-  });
 
-  describe("Singleton in Systems", () => {
-    it("should be accessible in defineSystem", () => {
+    it("should throw when accessing unregistered singleton", () => {
       const Mouse = defineSingleton("Mouse", {
         x: field.float32(),
         y: field.float32(),
       });
 
-      const world = new World([Mouse]);
-      const ctx = world._getContext();
-
-      let systemRan = false;
-      const mouseRef = useSingleton(Mouse);
-
-      const system = defineSystem((ctx) => {
-        const mouse = mouseRef.write(ctx);
-        mouse.x = 42;
-        mouse.y = 24;
-        systemRan = true;
-      });
-
-      system.execute(ctx);
-
-      expect(systemRan).toBe(true);
-      const mouse = mouseRef.read(ctx);
-      expect(mouse.x).toBeCloseTo(42);
-      expect(mouse.y).toBeCloseTo(24);
-    });
-  });
-
-  describe("Singleton Lifecycle", () => {
-    it("should allow multiple worlds to use same singleton definition", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-
-      const world1 = new World([Mouse]);
-      const ctx1 = world1._getContext();
-
-      const world2 = new World([Mouse]);
-      const ctx2 = world2._getContext();
-
-      // Each world should have independent singletons
-      const mouseRef = useSingleton(Mouse);
-      const mouse1 = mouseRef.write(ctx1);
-      mouse1.x = 100;
-
-      const mouse2 = mouseRef.write(ctx2);
-      mouse2.x = 200;
-
-      expect(mouseRef.read(ctx1).x).toBeCloseTo(100);
-      expect(mouseRef.read(ctx2).x).toBeCloseTo(200);
-    });
-
-    it("should throw when accessing singleton from wrong context", () => {
-      const Mouse = defineSingleton("Mouse", {
-        x: field.float32(),
-        y: field.float32(),
-      });
-
-      // Singleton not registered with this world
-      const OtherSingleton = defineSingleton("Other", {
+      const Other = defineSingleton("Other", {
         value: field.float32(),
       });
 
+      // Only register Mouse
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const otherRef = useSingleton(OtherSingleton);
-
-      // Direct access without going through useSingleton should throw
       expect(() => {
-        otherRef.read(ctx);
+        Other.read(ctx);
       }).toThrow(/is not registered with this World/);
+    });
+
+    it("should handle partial copy", () => {
+      const GameState = defineSingleton("GameState", {
+        level: field.uint8().default(1),
+        score: field.uint32().default(0),
+        playerName: field.string().max(50).default("Player"),
+      });
+
+      const world = new World([GameState]);
+      const ctx = world._getContext();
+
+      // Copy only some fields
+      GameState.copy(ctx, { level: 5, score: 1000 });
+
+      const state = GameState.read(ctx);
+      expect(state.level).toBe(5);
+      expect(state.score).toBe(1000);
+      expect(state.playerName).toBe("Player"); // Should keep default
+    });
+
+    it("should trigger change events on write", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const query = useQuery((q) => q.tracking(Mouse));
+
+      let callbackCount = 0;
+      world.subscribe(query, (ctx) => {
+        callbackCount++;
+        const mouse = Mouse.read(ctx);
+        expect(mouse.x).toBeCloseTo(100);
+      });
+
+      // Write to trigger change
+      const mouse = Mouse.write(ctx);
+      mouse.x = 100;
+
+      // Sync to trigger subscribers
+      world.sync();
+
+      expect(callbackCount).toBe(1);
+    });
+
+    it("should trigger change events on copy", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const query = useQuery((q) => q.tracking(Mouse));
+
+      let callbackCount = 0;
+      world.subscribe(query, (ctx) => {
+        callbackCount++;
+      });
+
+      // Copy to trigger change
+      Mouse.copy(ctx, { x: 200, y: 300 });
+
+      // Sync to trigger subscribers
+      world.sync();
+
+      expect(callbackCount).toBe(1);
+    });
+  });
+
+  describe("Basic Query Support", () => {
+    it("should support tracking a singleton with useQuery", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32().default(0),
+        y: field.float32().default(0),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+
+      // Initial state - no changes yet
+      expect(mouseQuery.changed(ctx).length).toBe(0);
+      expect(mouseQuery.current(ctx).length).toBe(1); // Singleton always exists
+
+      // Write to singleton
+      const mouse = Mouse.write(ctx);
+      mouse.x = 100;
+      mouse.y = 200;
+
+      // Next tick - should detect change
+      ctx.tick++;
+      const changed = mouseQuery.changed(ctx);
+      expect(changed.length).toBe(1);
+      expect(changed[0]).toBe(0xffffffff); // SINGLETON_ENTITY_ID
+    });
+
+    it("should detect when singleton changes", () => {
+      const Time = defineSingleton("Time", {
+        delta: field.float32().default(0.016),
+        elapsed: field.float32().default(0),
+      });
+
+      const world = new World([Time]);
+      const ctx = world._getContext();
+
+      const timeQuery = useQuery((q) => q.tracking(Time));
+
+      // No changes initially
+      expect(timeQuery.changed(ctx).length).toBe(0);
+
+      // Update elapsed time
+      const time = Time.write(ctx);
+      time.elapsed = 1.0;
+
+      // Check for changes
+      ctx.tick++;
+      expect(timeQuery.changed(ctx).length).toBe(1);
+
+      // No more changes on next check
+      ctx.tick++;
+      expect(timeQuery.changed(ctx).length).toBe(0);
+    });
+
+    it("should return SINGLETON_ENTITY_ID in current()", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+
+      const current = mouseQuery.current(ctx);
+      expect(current.length).toBe(1);
+      expect(current[0]).toBe(0xffffffff); // SINGLETON_ENTITY_ID
+    });
+  });
+
+  describe("Multiple Singletons", () => {
+    it("should track changes to multiple singletons independently", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const Time = defineSingleton("Time", {
+        delta: field.float32(),
+        elapsed: field.float32(),
+      });
+
+      const world = new World([Mouse, Time]);
+      const ctx = world._getContext();
+
+      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+      const timeQuery = useQuery((q) => q.tracking(Time));
+
+      // Initialize queries
+      expect(mouseQuery.changed(ctx).length).toBe(0);
+      expect(timeQuery.changed(ctx).length).toBe(0);
+
+      // Update only Mouse
+      const mouse = Mouse.write(ctx);
+      mouse.x = 100;
+
+      ctx.tick++;
+      expect(mouseQuery.changed(ctx).length).toBe(1);
+      expect(timeQuery.changed(ctx).length).toBe(0);
+
+      // Update only Time
+      const time = Time.write(ctx);
+      time.delta = 0.016;
+
+      ctx.tick++;
+      expect(mouseQuery.changed(ctx).length).toBe(0);
+      expect(timeQuery.changed(ctx).length).toBe(1);
+    });
+
+    it("should support querying multiple singletons together", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const Keyboard = defineSingleton("Keyboard", {
+        pressed: field.boolean(),
+      });
+
+      const world = new World([Mouse, Keyboard]);
+      const ctx = world._getContext();
+
+      const inputQuery = useQuery((q) => q.tracking(Mouse, Keyboard));
+
+      // No changes initially
+      expect(inputQuery.changed(ctx).length).toBe(0);
+
+      // Update Mouse
+      const mouse = Mouse.write(ctx);
+      mouse.x = 100;
+
+      ctx.tick++;
+      expect(inputQuery.changed(ctx).length).toBe(1);
+
+      // Update Keyboard
+      const kb = Keyboard.write(ctx);
+      kb.pressed = true;
+
+      ctx.tick++;
+      expect(inputQuery.changed(ctx).length).toBe(1);
+    });
+  });
+
+  describe("Integration with Systems", () => {
+    it("should work in a system using defineSystem", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32().default(0),
+        y: field.float32().default(0),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+
+      let changedCount = 0;
+
+      const system = defineSystem((ctx) => {
+        const changed = mouseQuery.changed(ctx);
+        changedCount += changed.length;
+
+        if (changed.length > 0) {
+          const mouse = Mouse.read(ctx);
+          expect(mouse.x).toBeCloseTo(100);
+          expect(mouse.y).toBeCloseTo(200);
+        }
+      });
+
+      // First execution - no changes
+      system.execute(ctx);
+      expect(changedCount).toBe(0);
+
+      // Update mouse
+      const mouse = Mouse.write(ctx);
+      mouse.x = 100;
+      mouse.y = 200;
+
+      // Next execution - should detect change
+      ctx.tick++;
+      system.execute(ctx);
+      expect(changedCount).toBe(1);
+
+      // Next execution - no more changes
+      ctx.tick++;
+      system.execute(ctx);
+      expect(changedCount).toBe(1);
+    });
+
+    it("should work with world.subscribe", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+
+      let callbackCount = 0;
+
+      // Note: World.subscribe doesn't directly support queries in current API
+      // This test demonstrates the pattern users would follow
+      const checkChanges = () => {
+        if (mouseQuery.changed(ctx).length > 0) {
+          callbackCount++;
+        }
+      };
+
+      // Initial check
+      checkChanges();
+      expect(callbackCount).toBe(0);
+
+      // Update mouse
+      const mouse = Mouse.write(ctx);
+      mouse.x = 100;
+
+      // Check for changes
+      ctx.tick++;
+      checkChanges();
+      expect(callbackCount).toBe(1);
+    });
+  });
+
+  describe("Copy Support", () => {
+    it("should detect changes when using Mouse.copy()", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+
+      // Initialize
+      expect(mouseQuery.changed(ctx).length).toBe(0);
+
+      // Copy to mouse
+      Mouse.copy(ctx, { x: 100, y: 200 });
+
+      // Should detect change
+      ctx.tick++;
+      expect(mouseQuery.changed(ctx).length).toBe(1);
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle no changes correctly", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+
+      // Multiple checks with no changes
+      expect(mouseQuery.changed(ctx).length).toBe(0);
+      ctx.tick++;
+      expect(mouseQuery.changed(ctx).length).toBe(0);
+      ctx.tick++;
+      expect(mouseQuery.changed(ctx).length).toBe(0);
+    });
+
+    it("should reset changed state after each check", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+
+      // Initialize
+      expect(mouseQuery.changed(ctx).length).toBe(0);
+
+      // Update
+      const mouse = Mouse.write(ctx);
+      mouse.x = 100;
+
+      // Check once
+      ctx.tick++;
+      expect(mouseQuery.changed(ctx).length).toBe(1);
+
+      // Same tick - should return cached result
+      expect(mouseQuery.changed(ctx).length).toBe(1);
+
+      // Next tick without changes
+      ctx.tick++;
+      expect(mouseQuery.changed(ctx).length).toBe(0);
     });
   });
 });

@@ -1,6 +1,7 @@
 import type { Context, QueryMasks } from "../types";
 import { QueryCache } from "./Cache";
 import { EventType } from "../EventBuffer";
+import { SINGLETON_ENTITY_ID } from "../Component";
 
 /**
  * Reads events from EventBuffer and processes them for a query.
@@ -51,6 +52,39 @@ export class QueryReader {
     // Process events to update cache and compute results in one pass
     this.processEventsAndComputeResults(ctx, cache, masks);
     return true;
+  }
+
+  /**
+   * Special update method for singleton queries that only tracks changes.
+   * Singleton queries don't use the cache, so we only process CHANGED events.
+   */
+  updateSingletonChanged(ctx: Context, masks: QueryMasks): void {
+    if (ctx.tick === this.lastTick) {
+      return; // Already processed this tick
+    }
+
+    // Reset for new tick
+    this.changed = [];
+    this.lastTick = ctx.tick;
+
+    const currentIndex = ctx.eventBuffer.getWriteIndex();
+    if (currentIndex === this.lastIndex) {
+      return;
+    }
+
+    this.fromIndex = this.lastIndex;
+    this.toIndex = currentIndex;
+    this.lastIndex = currentIndex;
+
+    const result = ctx.eventBuffer.collectEntitiesInRange(
+      this.fromIndex,
+      EventType.CHANGED,
+      masks.tracking
+    );
+
+    if (result.entities.size > 0) {
+      this.changed.push(SINGLETON_ENTITY_ID);
+    }
   }
 
   /**

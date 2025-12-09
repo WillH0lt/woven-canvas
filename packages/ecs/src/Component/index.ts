@@ -4,6 +4,7 @@ export {
   defineSingleton,
   SINGLETON_ENTITY_ID,
   ComponentDef,
+  SingletonDef,
 } from "./Component";
 export { field } from "./fieldBuilders";
 export type {

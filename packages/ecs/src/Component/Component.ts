@@ -101,7 +101,7 @@ export class Component<T extends ComponentSchema> {
    * @returns A new Component instance
    */
   static fromDef<T extends ComponentSchema>(
-    def: ComponentDef<T>
+    def: ComponentDef<T> | SingletonDef<T>
   ): Component<T> {
     return new Component<T>(def.name, def.schema, def.isSingleton);
   }
@@ -496,6 +496,90 @@ export function defineComponent<T extends ComponentSchema>(
 }
 
 /**
+ * Singleton definition class that serves as a descriptor and provides
+ * read/write/copy access to singleton data via context lookup.
+ * Singletons don't require an entity ID since there's only one instance.
+ */
+export class SingletonDef<T extends ComponentSchema> {
+  readonly name: string;
+  readonly schema: T;
+  readonly isSingleton: true = true;
+
+  constructor(name: string, schema: T) {
+    this.name = name;
+    this.schema = schema;
+  }
+
+  /**
+   * Get the Component instance from the context.
+   * @internal
+   */
+  _getInstance(ctx: Context): Component<T> {
+    const instance = ctx.components[this.name] as Component<T> | undefined;
+    if (!instance) {
+      throw new Error(
+        `Singleton "${this.name}" is not registered with this World.`
+      );
+    }
+    if (!instance.isSingleton) {
+      throw new Error(
+        `"${this.name}" is not a singleton. Use defineSingleton() to create singletons.`
+      );
+    }
+    return instance;
+  }
+
+  /**
+   * Get the component ID for this singleton in the given context.
+   */
+  getComponentId(ctx: Context): number {
+    return this._getInstance(ctx).componentId;
+  }
+
+  /**
+   * Read the singleton's data (readonly access).
+   * @param ctx - The context containing the singleton instance
+   * @returns The readonly singleton data
+   */
+  read(ctx: Context): Readonly<InferComponentType<T>> {
+    return this._getInstance(ctx).read(SINGLETON_INDEX);
+  }
+
+  /**
+   * Write to the singleton's data.
+   * Automatically triggers a change event for tracking.
+   * @param ctx - The context containing the singleton instance
+   * @returns The writable singleton data
+   */
+  write(ctx: Context): InferComponentType<T> {
+    return this._getInstance(ctx).write(SINGLETON_INDEX);
+  }
+
+  /**
+   * Copy data into the singleton.
+   * Useful for batch initialization of multiple fields at once.
+   * Automatically triggers a change event for tracking.
+   * @param ctx - The context containing the singleton instance
+   * @param data - The data to copy into the singleton
+   */
+  copy(ctx: Context, data: Partial<InferComponentType<T>>): void {
+    this._getInstance(ctx).copy(SINGLETON_INDEX, data);
+  }
+
+  /**
+   * Create a plain object snapshot of the singleton's data.
+   * Unlike read(), this returns a regular object that can be safely spread,
+   * stored, or passed around without the getter/setter binding behavior.
+   *
+   * @param ctx - The context containing the singleton instance
+   * @returns A plain object copy of the singleton's field values
+   */
+  snapshot(ctx: Context): InferComponentType<T> {
+    return this._getInstance(ctx).snapshot(SINGLETON_INDEX);
+  }
+}
+
+/**
  * Define a singleton with a name and schema.
  * A singleton is a component with exactly one instance per world.
  * No entity ID is needed to access it.
@@ -503,7 +587,7 @@ export function defineComponent<T extends ComponentSchema>(
  * @template T - The singleton schema type
  * @param name - The name of the singleton (e.g., "Mouse", "Time")
  * @param schema - The singleton schema built using field builders
- * @returns A ComponentDef descriptor configured as a singleton
+ * @returns A SingletonDef descriptor for direct read/write/copy access
  *
  * @example
  * ```typescript
@@ -514,11 +598,16 @@ export function defineComponent<T extends ComponentSchema>(
  *   y: field.float32().default(0),
  *   pressed: field.boolean().default(false),
  * });
+ *
+ * // Use directly without useSingleton:
+ * const mouse = Mouse.read(ctx);
+ * const writableMouse = Mouse.write(ctx);
+ * Mouse.copy(ctx, { x: 100, y: 200 });
  * ```
  */
 export function defineSingleton<T extends ComponentSchema>(
   name: string,
   schema: T
-): ComponentDef<T> {
-  return new ComponentDef(name, schema, true);
+): SingletonDef<T> {
+  return new SingletonDef(name, schema);
 }
