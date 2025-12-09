@@ -120,6 +120,27 @@ export class Singleton<T extends ComponentSchema> {
   }
 
   /**
+   * Copy data into the singleton.
+   * Useful for batch initialization of multiple fields at once.
+   * Automatically triggers a change event for tracking.
+   *
+   * @param ctx - The context object
+   * @param data - The data to copy into the singleton
+   *
+   * @example
+   * ```typescript
+   * const mouse = useSingleton(Mouse);
+   *
+   * function execute(ctx: Context) {
+   *   mouse.copy(ctx, { x: 100, y: 200 });
+   * }
+   * ```
+   */
+  copy(ctx: Context, data: T): void {
+    this._getInstance(ctx).copySingleton(data);
+  }
+
+  /**
    * Check if the singleton has changed since the last time this
    * Singleton checked. Each Singleton tracks independently,
    * so multiple systems can each see the change once.

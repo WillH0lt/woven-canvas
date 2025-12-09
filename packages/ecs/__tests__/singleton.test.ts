@@ -93,6 +93,41 @@ describe("Singleton", () => {
       expect(readMouse.y).toBeCloseTo(250);
     });
 
+    it("should copy singleton values", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseRef = useSingleton(Mouse);
+      mouseRef.copy(ctx, { x: 300, y: 400 });
+
+      const readMouse = mouseRef.read(ctx);
+      expect(readMouse.x).toBeCloseTo(300);
+      expect(readMouse.y).toBeCloseTo(400);
+    });
+
+    it("should copy partial singleton values", () => {
+      const GameState = defineSingleton("GameState", {
+        level: field.uint8().default(1),
+        score: field.uint32().default(0),
+        playerName: field.string().max(50).default("Player"),
+      });
+      const world = new World([GameState]);
+      const ctx = world._getContext();
+
+      const stateRef = useSingleton(GameState);
+      // Copy only some fields - others should use defaults
+      stateRef.copy(ctx, { level: 5, score: 1000 } as any);
+
+      const state = stateRef.read(ctx);
+      expect(state.level).toBe(5);
+      expect(state.score).toBe(1000);
+      expect(state.playerName).toBe("Player");
+    });
+
     it("should persist writes across multiple reads", () => {
       const Counter = defineSingleton("Counter", {
         value: field.uint32().default(0),
@@ -251,6 +286,32 @@ describe("Singleton", () => {
       ctx.tick++;
       expect(mouseRef1.changed(ctx)).toBe(false);
       expect(mouseRef2.changed(ctx)).toBe(false);
+    });
+
+    it("should detect changes when singleton is copied", () => {
+      const Mouse = defineSingleton("Mouse", {
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const world = new World([Mouse]);
+      const ctx = world._getContext();
+
+      const mouseRef = useSingleton(Mouse);
+
+      // Initialize tracker
+      expect(mouseRef.changed(ctx)).toBe(false);
+
+      // Copy to singleton
+      mouseRef.copy(ctx, { x: 100, y: 200 });
+
+      // Increment tick and check for changes
+      ctx.tick++;
+      expect(mouseRef.changed(ctx)).toBe(true);
+
+      // Verify the values were copied
+      const mouse = mouseRef.read(ctx);
+      expect(mouse.x).toBeCloseTo(100);
+      expect(mouse.y).toBeCloseTo(200);
     });
   });
 
