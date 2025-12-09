@@ -12,15 +12,7 @@ const ENTITY_ID_MASK = 0x01ffffff;
  * @throws Error if entity pool exhausted
  * @example
  * ```typescript
- * import { setupWorker, createEntity, type Context } from '@infinitecanvas/ecs';
- * import { Position } from './components';
- *
- * setupWorker(execute);
- *
- * function execute(ctx: Context) {
- *   const entityId = createEntity(ctx);
- *   Position.write(ctx, entityId, { x: 0, y: 0 });
- * }
+ * const entityId = createEntity(ctx);
  * ```
  */
 export function createEntity(ctx: Context): EntityId {
@@ -89,13 +81,7 @@ export function getBackrefs<T extends ComponentSchema>(
  * @param entityId - Entity ID to remove
  * @example
  * ```typescript
- * import { setupWorker, removeEntity, type Context } from '@infinitecanvas/ecs';
- *
- * setupWorker(execute);
- *
- * function execute(ctx: Context) {
- *   removeEntity(ctx, someEntityId);
- * }
+ * removeEntity(ctx, entityId);
  * ```
  */
 export function removeEntity(ctx: Context, entityId: EntityId): void {
@@ -118,12 +104,7 @@ export function removeEntity(ctx: Context, entityId: EntityId): void {
  * @param data - Optional initial component data
  * @example
  * ```typescript
- * import { addComponent, type Context } from '@infinitecanvas/ecs';
- * import { Position } from './components';
- *
- * function execute(ctx: Context) {
  *   addComponent(ctx, entityId, Position, { x: 0, y: 0 });
- * }
  * ```
  */
 export function addComponent<T extends ComponentSchema>(
@@ -146,12 +127,7 @@ export function addComponent<T extends ComponentSchema>(
  * @throws Error if entity doesn't exist
  * @example
  * ```typescript
- * import { removeComponent, type Context } from '@infinitecanvas/ecs';
- * import { Position } from './components';
- *
- * function execute(ctx: Context) {
- *   removeComponent(ctx, entityId, Position);
- * }
+ * removeComponent(ctx, entityId, Position);
  * ```
  */
 export function removeComponent<T extends ComponentSchema>(
@@ -177,9 +153,6 @@ export function removeComponent<T extends ComponentSchema>(
  * @throws Error if entity doesn't exist
  * @example
  * ```typescript
- * import { hasComponent, type Context } from '@infinitecanvas/ecs';
- * import { Position } from './components';
- *
  * if (hasComponent(ctx, entityId, Position)) {
  *   // Entity has Position
  * }

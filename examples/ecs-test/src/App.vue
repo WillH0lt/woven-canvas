@@ -30,28 +30,28 @@ import {
 } from "@infinitecanvas/ecs";
 import { reactive } from "vue";
 
-const Velocity = defineComponent("Velocity", {
+const Velocity = defineComponent({
   x: field.float32(),
   y: field.float32(),
 });
 
-const Position = defineComponent("Position", {
+const Position = defineComponent({
   x: field.float32(),
   y: field.float32(),
 });
 
-const Size = defineComponent("Size", {
+const Size = defineComponent({
   width: field.float32().default(50),
   height: field.float32().default(50),
 });
 
-const Color = defineComponent("Color", {
+const Color = defineComponent({
   red: field.uint8().default(255),
   green: field.uint8().default(0),
   blue: field.uint8().default(0),
 });
 
-const Mouse = defineSingleton("Mouse", {
+const Mouse = defineSingleton({
   x: field.float32().default(0),
   y: field.float32().default(0),
 });
@@ -64,6 +64,7 @@ world.nextSync((ctx) => {
   // Create some blocks
   for (let i = 0; i < 15; i++) {
     const block1 = createEntity(ctx);
+
     addComponent(ctx, block1, Velocity, {
       x: Math.random() * 2,
       y: Math.random() * 2,

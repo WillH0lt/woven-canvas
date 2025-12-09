@@ -133,11 +133,6 @@ export class World {
   /**
    * Get the world context (for advanced usage only)
    * @returns The world context
-   * @example
-   * ```typescript
-   * const ctx = world._getContext();
-   * const entityId = createEntity(ctx);
-   * ```
    */
   _getContext(): Context {
     return this.context;
@@ -278,9 +273,11 @@ export class World {
 
   /**
    * Execute deferred callbacks and notify subscribers of entity changes.
-   * Call this in your game loop to signal that all deferred operations should be processed.
+   * Executes world.subscribe() callbacks and world.nextSync() callbacks.
+   * Usually called once per frame in the main loop.
    * @example
    * ```typescript
+   * // in your game loop:
    * world.sync();
    * await world.execute(movementSystem, renderSystem);
    * ```
