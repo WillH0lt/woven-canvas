@@ -19,23 +19,26 @@ export class QueryInstance {
    */
   constructor(ctx: Context, masks: QueryMasks) {
     this.masks = masks;
+
     this.cache = new QueryCache(ctx.maxEntities);
+    this.reader = new QueryReader(0);
 
-    // Populate cache with existing matching entities
-    const { entities } = ctx.eventBuffer.collectEntitiesInRange(
-      0,
-      EventTypeMask.QUERY_ADDED,
-      undefined
-    );
+    // this.cache = new QueryCache(ctx.maxEntities);
 
-    for (const entityId of entities) {
-      if (ctx.entityBuffer.matches(entityId, masks)) {
-        this.cache.add(entityId);
-      }
-    }
+    // // Populate cache with existing matching entities
+    // const { entities } = ctx.eventBuffer.collectEntitiesInRange(
+    //   0,
+    //   EventTypeMask.QUERY_ADDED
+    // );
 
-    // Start reading from current position
-    this.reader = new QueryReader(ctx.eventBuffer.getWriteIndex());
+    // for (const entityId of entities) {
+    //   if (ctx.entityBuffer.matches(entityId, masks)) {
+    //     this.cache.add(entityId);
+    //   }
+    // }
+
+    // // Start reading from current position
+    // this.reader = new QueryReader(ctx.eventBuffer.getWriteIndex());
   }
 
   /**

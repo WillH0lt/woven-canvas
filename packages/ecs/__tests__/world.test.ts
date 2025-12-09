@@ -605,12 +605,15 @@ describe("World", () => {
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
 
       const query = useQuery((q) => q.with(Position));
-      world.sync(); // Clear the initial events
 
       const receivedRemoved: number[] = [];
       world.subscribe(query, (_ctx, { removed }) => {
+        console.log("removed callback", removed);
         receivedRemoved.push(...removed);
       });
+
+      // advance tick
+      world.sync();
 
       removeEntity(ctx, entity);
       world.sync();
@@ -638,12 +641,13 @@ describe("World", () => {
 
       // Query for entities with both Position AND Velocity
       const query = useQuery((q) => q.with(Position, Velocity));
-      world.sync(); // Clear initial events
 
       const receivedRemoved: number[] = [];
       world.subscribe(query, (_ctx, { removed }) => {
         receivedRemoved.push(...removed);
       });
+
+      world.sync(); // Advnance tick
 
       // Remove Velocity - entity should leave the query
       removeComponent(ctx, entity, Velocity);
@@ -699,17 +703,20 @@ describe("World", () => {
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
 
       // Use tracking() to track Position changes
-      const query = useQuery((q) => q.with(Position).tracking(Position));
-      world.sync(); // Clear the initial events
+      const query = useQuery((q) => q.tracking(Position));
 
       const receivedChanged: number[] = [];
       world.subscribe(query, (_ctx, { changed }) => {
         receivedChanged.push(...changed);
       });
 
+      // Initial sync to advnace tick
+      world.sync();
+
       // Modify the component
       const pos = Position.write(ctx, entity);
       pos.x = 100;
+
       world.sync();
 
       expect(receivedChanged).toHaveLength(1);
@@ -1057,8 +1064,8 @@ describe("World", () => {
       let xValueInSubscriber = 0;
 
       // Initial sync to register entity
-      world.subscribe(query, (_ctx, { changed }) => {
-        if (changed.includes(entity)) {
+      world.subscribe(query, (_ctx, { added }) => {
+        if (added.includes(entity)) {
           xValueInSubscriber = Position.read(ctx, entity).x;
         }
       });
@@ -1071,6 +1078,7 @@ describe("World", () => {
 
       world.sync();
 
+      console.log("after sync");
       // Subscriber should see the value written by nextSync callback
       expect(xValueInSubscriber).toBe(999);
     });
