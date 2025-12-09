@@ -116,8 +116,9 @@ function handleMessage(
       for (const [name, transferData] of Object.entries(
         internalContext.ComponentTransferMap
       )) {
-        const component = Component.fromTransferData(
+        const component = Component.fromTransfer(
           name,
+          e.data.maxEntities,
           transferData,
           eventBuffer,
           entityBuffer

@@ -115,8 +115,9 @@ export class Component<T extends ComponentSchema> {
    * @returns A new initialized Component instance
    * @internal
    */
-  static fromTransferData<T extends ComponentSchema>(
+  static fromTransfer<T extends ComponentSchema>(
     name: string,
+    maxEntities: number,
     transferData: ComponentTransferData,
     eventBuffer: EventBuffer,
     entityBuffer: EntityBuffer
@@ -124,14 +125,14 @@ export class Component<T extends ComponentSchema> {
     const component = new Component<T>(
       name,
       transferData.schema as any,
-      transferData.isSingleton,
-      true // isPrebuiltSchema
+      transferData.isSingleton
     );
-    component.fromTransfer(
+    component.initialize(
       transferData.componentId,
-      transferData.buffer,
+      maxEntities,
       eventBuffer,
-      entityBuffer
+      entityBuffer,
+      transferData.buffer
     );
     return component;
   }
@@ -146,8 +147,7 @@ export class Component<T extends ComponentSchema> {
   constructor(
     name: string,
     schema: T | Record<string, FieldDef>,
-    isSingleton: boolean = false,
-    isPrebuiltSchema: boolean = false
+    isSingleton: boolean = false
   ) {
     this.name = name;
     this.isSingleton = isSingleton;
@@ -155,7 +155,12 @@ export class Component<T extends ComponentSchema> {
     this.schema = {};
     this.fieldNames = [];
 
-    this.parseSchema(schema, isPrebuiltSchema);
+    for (const [fieldName, fieldOrBuilder] of Object.entries(schema)) {
+      // Handle both builder format ({def: FieldDef}) and direct FieldDef format
+      const fieldDef = (fieldOrBuilder as any).def || fieldOrBuilder;
+      this.schema[fieldName] = fieldDef;
+      this.fieldNames.push(fieldName);
+    }
 
     // Create master instances with property descriptors for direct buffer access
     this.readonlyMaster = {} as InferComponentType<T>;
@@ -166,7 +171,8 @@ export class Component<T extends ComponentSchema> {
     id: number,
     maxEntities: number,
     eventBuffer: EventBuffer,
-    entityBuffer: EntityBuffer
+    entityBuffer: EntityBuffer,
+    buffer?: ComponentBuffer<T>
   ): void {
     this.ensureNotInitialized();
     this.initialized = true;
@@ -176,63 +182,31 @@ export class Component<T extends ComponentSchema> {
     this.entityBuffer = entityBuffer;
 
     const bufferSize = this.isSingleton ? 1 : maxEntities;
-    this._buffer = this.createFieldBuffers(bufferSize);
 
-    this.initializeMasters();
-
-    if (this.isSingleton) {
-      this.initializeSingletonDefaults();
-    }
-  }
-
-  /**
-   * Initialize component in a worker context with transferred buffers
-   * @param componentId - The component ID
-   * @param buffer - The transferred buffer object containing typed arrays
-   * @param eventBuffer - The event buffer for recording changes
-   * @param entityBuffer - The entity buffer for checking entity liveness
-   * @internal
-   */
-  fromTransfer(
-    componentId: number,
-    buffer: ComponentBuffer<T>,
-    eventBuffer: EventBuffer,
-    entityBuffer: EntityBuffer
-  ): void {
-    this.ensureNotInitialized();
-    this.initialized = true;
-    this.componentId = componentId;
-    this._buffer = buffer;
-    this.eventBuffer = eventBuffer;
-    this.entityBuffer = entityBuffer;
-
-    // Create field instances for transferred component
+    // Initialize field instances for each field in the schema
     for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
       this.fields[fieldName] = this.createFieldInstance(fieldDef);
     }
 
+    if (buffer) {
+      // Use provided buffer for field storage
+      this._buffer = buffer;
+    } else {
+      // Create new buffer storage for each field
+      const newBuffer: any = {};
+      for (const fieldName of this.fieldNames) {
+        const field = this.fields[fieldName];
+        const { view } = field.initializeStorage(bufferSize, BufferConstructor);
+        newBuffer[fieldName] = view;
+      }
+      this._buffer = newBuffer as ComponentBuffer<T>;
+    }
+
+    // Initialize master objects for direct buffer access
     this.initializeMasters();
 
     if (this.isSingleton) {
       this.initializeSingletonDefaults();
-    }
-  }
-
-  /**
-   * Parse the schema and populate fieldNames and schema properties.
-   * @param schema - The schema (either pre-built FieldDef or field builders)
-   * @param isPrebuiltSchema - Whether the schema is already in FieldDef form
-   */
-  private parseSchema(
-    schema: T | Record<string, FieldDef>,
-    isPrebuiltSchema: boolean
-  ): void {
-    for (const [fieldName, fieldOrBuilder] of Object.entries(schema)) {
-      const fieldDef = isPrebuiltSchema
-        ? (fieldOrBuilder as FieldDef)
-        : (fieldOrBuilder as any).def;
-      this.schema[fieldName] = fieldDef;
-      this.fieldNames.push(fieldName);
     }
   }
 
@@ -248,25 +222,6 @@ export class Component<T extends ComponentSchema> {
           `If you need multiple worlds, define separate component instances for each.`
       );
     }
-  }
-
-  /**
-   * Create buffer storage for all fields.
-   * Also creates field handler instances for each field.
-   * @param bufferSize - The number of entities to allocate space for
-   * @returns The component buffer proxy
-   */
-  private createFieldBuffers(bufferSize: number): ComponentBuffer<T> {
-    const bufferProxy: any = {};
-
-    for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
-      const field = this.createFieldInstance(fieldDef);
-      this.fields[fieldName] = field;
-      const { view } = field.initializeStorage(bufferSize, BufferConstructor);
-      bufferProxy[fieldName] = view;
-    }
-
-    return bufferProxy as ComponentBuffer<T>;
   }
 
   /**
