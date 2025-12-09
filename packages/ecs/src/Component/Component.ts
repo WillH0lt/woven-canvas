@@ -310,7 +310,9 @@ export class Component<T extends ComponentSchema> {
       field.setValue(array, entityId, value);
     }
 
-    this.eventBuffer?.pushChanged(entityId, this.componentId);
+    // For singletons, use SINGLETON_ENTITY_ID for change tracking
+    const eventEntityId = this.isSingleton ? SINGLETON_ENTITY_ID : entityId;
+    this.eventBuffer?.pushChanged(eventEntityId, this.componentId);
   }
 
   /**
@@ -336,48 +338,11 @@ export class Component<T extends ComponentSchema> {
   write(entityId: EntityId): InferComponentType<T> {
     this.writableEntityId = entityId;
 
-    this.eventBuffer?.pushChanged(entityId, this.componentId);
+    // For singletons, use SINGLETON_ENTITY_ID for change tracking
+    const eventEntityId = this.isSingleton ? SINGLETON_ENTITY_ID : entityId;
+    this.eventBuffer?.pushChanged(eventEntityId, this.componentId);
 
     return this.writableMaster;
-  }
-
-  /**
-   * Read a singleton's data (no entity ID needed).
-   * Only valid for singleton components.
-   * @returns The readonly singleton data
-   * @internal - Use readSingleton(Component) for proper initialization handling
-   */
-  readSingleton(): Readonly<InferComponentType<T>> {
-    this.readonlyEntityId = SINGLETON_INDEX;
-    return this.readonlyMaster;
-  }
-
-  /**
-   * Write to a singleton's data (no entity ID needed).
-   * Only valid for singleton components.
-   * Automatically pushes a CHANGED event using SINGLETON_ENTITY_ID.
-   * @returns The writable singleton data
-   * @internal - Use writeSingleton(Component) for proper initialization handling
-   */
-  writeSingleton(): InferComponentType<T> {
-    this.writableEntityId = SINGLETON_INDEX;
-
-    // Push change event using sentinel entity ID
-    this.eventBuffer?.pushChanged(SINGLETON_ENTITY_ID, this.componentId);
-
-    return this.writableMaster;
-  }
-
-  /**
-   * Copy data into a singleton.
-   * @param data - The raw data to create the singleton instance from
-   * @internal
-   */
-  copySingleton(data: any): void {
-    this.copy(SINGLETON_INDEX, data);
-
-    // Push change event using sentinel entity ID
-    this.eventBuffer?.pushChanged(SINGLETON_ENTITY_ID, this.componentId);
   }
 
   /**
@@ -403,16 +368,6 @@ export class Component<T extends ComponentSchema> {
         : array[entityId];
     }
     return result;
-  }
-
-  /**
-   * Create a plain object snapshot of singleton's data.
-   * Unlike readSingleton(), this returns a regular object that can be safely spread.
-   *
-   * @returns A plain object copy of the singleton's field values
-   */
-  snapshotSingleton(): InferComponentType<T> {
-    return this.snapshot(SINGLETON_INDEX);
   }
 }
 
@@ -478,7 +433,11 @@ export class ComponentDef<T extends ComponentSchema> {
    * @param entityId - The entity ID to populate
    * @param data - The raw data to create the component instance from
    */
-  copy(ctx: Context, entityId: EntityId, data: Partial<InferComponentType<T>>): void {
+  copy(
+    ctx: Context,
+    entityId: EntityId,
+    data: Partial<InferComponentType<T>>
+  ): void {
     this._getInstance(ctx).copy(entityId, data);
   }
 
@@ -507,44 +466,6 @@ export class ComponentDef<T extends ComponentSchema> {
    */
   snapshot(ctx: Context, entityId: EntityId): InferComponentType<T> {
     return this._getInstance(ctx).snapshot(entityId);
-  }
-
-  /**
-   * Read a singleton's data (no entity ID needed).
-   * @param ctx - The context containing the singleton instance
-   * @returns The readonly singleton data
-   */
-  readSingleton(ctx: Context): Readonly<InferComponentType<T>> {
-    return this._getInstance(ctx).readSingleton();
-  }
-
-  /**
-   * Write to a singleton's data (no entity ID needed).
-   * @param ctx - The context containing the singleton instance
-   * @returns The writable singleton data
-   */
-  writeSingleton(ctx: Context): InferComponentType<T> {
-    return this._getInstance(ctx).writeSingleton();
-  }
-
-  /**
-   * Copy data into a singleton.
-   * @param ctx - The context containing the singleton instance
-   * @param data - The raw data to create the singleton instance from
-   */
-  copySingleton(ctx: Context, data: Partial<InferComponentType<T>>): void {
-    this._getInstance(ctx).copy(SINGLETON_INDEX, data);
-  }
-
-  /**
-   * Create a plain object snapshot of singleton's data.
-   * Unlike readSingleton(), this returns a regular object that can be safely spread.
-   *
-   * @param ctx - The context containing the singleton instance
-   * @returns A plain object copy of the singleton's field values
-   */
-  snapshotSingleton(ctx: Context): InferComponentType<T> {
-    return this._getInstance(ctx).snapshotSingleton();
   }
 }
 

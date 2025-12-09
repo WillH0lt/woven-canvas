@@ -5,6 +5,11 @@ import { EventType } from "./EventBuffer";
 import { SINGLETON_ENTITY_ID } from "./Component";
 
 /**
+ * Index used to access singleton data in the buffer (always 0 since there's only one instance)
+ */
+const SINGLETON_INDEX = 0;
+
+/**
  * A reference to a singleton with its own change tracking state.
  * Created via useSingleton() and works similarly to Query.
  * Each Singleton instance tracks changes independently, so multiple
@@ -94,7 +99,7 @@ export class Singleton<T extends ComponentSchema> {
    * ```
    */
   read(ctx: Context): Readonly<InferComponentType<T>> {
-    return this._getInstance(ctx).readSingleton();
+    return this._getInstance(ctx).read(SINGLETON_INDEX);
   }
 
   /**
@@ -116,7 +121,7 @@ export class Singleton<T extends ComponentSchema> {
    * ```
    */
   write(ctx: Context): InferComponentType<T> {
-    return this._getInstance(ctx).writeSingleton();
+    return this._getInstance(ctx).write(SINGLETON_INDEX);
   }
 
   /**
@@ -137,7 +142,7 @@ export class Singleton<T extends ComponentSchema> {
    * ```
    */
   copy(ctx: Context, data: Partial<InferComponentType<T>>): void {
-    this._getInstance(ctx).copySingleton(data);
+    this._getInstance(ctx).copy(SINGLETON_INDEX, data);
   }
 
   /**

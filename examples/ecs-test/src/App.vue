@@ -86,6 +86,7 @@ world.nextSync((ctx) => {
 });
 
 const Mouse = useSingleton(MouseSingleton);
+// const mouseQuery = useQuery((q) => q.singleton(MouseSingleton));
 
 window.addEventListener("mousemove", (event) => {
   world.nextSync((ctx) => {
@@ -98,6 +99,7 @@ window.addEventListener("mousemove", (event) => {
 async function changeColor(entityId: number) {
   world.nextSync((ctx) => {
     const color = Color.write(ctx, entityId);
+
     color.red = Math.floor(Math.random() * 256);
     color.green = Math.floor(Math.random() * 256);
     color.blue = Math.floor(Math.random() * 256);
@@ -149,7 +151,7 @@ world.subscribe(blocks, (ctx, { added, removed, changed }) => {
   }
 });
 
-world.subscribe(MouseSingleton, (ctx) => {
+world.subscribe(mouseQuery, (ctx) => {
   const mouse = MouseSingleton.readSingleton(ctx);
   console.log("Mouse moved:", mouse.x, mouse.y);
 });
