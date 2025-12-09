@@ -195,7 +195,7 @@ describe("Singleton", () => {
       const mouseRef = useSingleton(Mouse);
 
       // First check - no changes yet (initializes tracker)
-      expect(mouseRef.changed(ctx)).toBe(false);
+      expect(mouseRef.hasChanged(ctx)).toBe(false);
 
       // Write to singleton
       const mouse = mouseRef.write(ctx);
@@ -203,7 +203,7 @@ describe("Singleton", () => {
 
       // Increment tick and check for changes
       ctx.tick++;
-      expect(mouseRef.changed(ctx)).toBe(true);
+      expect(mouseRef.hasChanged(ctx)).toBe(true);
     });
 
     it("should return false when singleton is not written", () => {
@@ -217,7 +217,7 @@ describe("Singleton", () => {
       const mouseRef = useSingleton(Mouse);
 
       // Initial check
-      expect(mouseRef.changed(ctx)).toBe(false);
+      expect(mouseRef.hasChanged(ctx)).toBe(false);
 
       // Only read, don't write
       const mouse = mouseRef.read(ctx);
@@ -225,7 +225,7 @@ describe("Singleton", () => {
 
       // Increment tick and check - should still be false
       ctx.tick++;
-      expect(mouseRef.changed(ctx)).toBe(false);
+      expect(mouseRef.hasChanged(ctx)).toBe(false);
     });
 
     it("should reset change detection after being checked", () => {
@@ -239,7 +239,7 @@ describe("Singleton", () => {
       const mouseRef = useSingleton(Mouse);
 
       // First call initializes the tracker - returns false
-      expect(mouseRef.changed(ctx)).toBe(false);
+      expect(mouseRef.hasChanged(ctx)).toBe(false);
 
       // Write to singleton after tracker is initialized
       const mouse = mouseRef.write(ctx);
@@ -247,14 +247,14 @@ describe("Singleton", () => {
 
       // Next tick - changes detected
       ctx.tick++;
-      expect(mouseRef.changed(ctx)).toBe(true);
+      expect(mouseRef.hasChanged(ctx)).toBe(true);
 
       // Same tick - should return same cached result
-      expect(mouseRef.changed(ctx)).toBe(true);
+      expect(mouseRef.hasChanged(ctx)).toBe(true);
 
       // Next tick without writes - no changes
       ctx.tick++;
-      expect(mouseRef.changed(ctx)).toBe(false);
+      expect(mouseRef.hasChanged(ctx)).toBe(false);
     });
 
     it("should allow multiple Singletons to track independently", () => {
@@ -270,8 +270,8 @@ describe("Singleton", () => {
       const mouseRef2 = useSingleton(Mouse);
 
       // Initialize both trackers
-      expect(mouseRef1.changed(ctx)).toBe(false);
-      expect(mouseRef2.changed(ctx)).toBe(false);
+      expect(mouseRef1.hasChanged(ctx)).toBe(false);
+      expect(mouseRef2.hasChanged(ctx)).toBe(false);
 
       // Write to singleton
       const mouse = mouseRef1.write(ctx);
@@ -279,13 +279,13 @@ describe("Singleton", () => {
 
       // Next tick - both refs should see the change
       ctx.tick++;
-      expect(mouseRef1.changed(ctx)).toBe(true);
-      expect(mouseRef2.changed(ctx)).toBe(true);
+      expect(mouseRef1.hasChanged(ctx)).toBe(true);
+      expect(mouseRef2.hasChanged(ctx)).toBe(true);
 
       // Next tick - neither should see changes
       ctx.tick++;
-      expect(mouseRef1.changed(ctx)).toBe(false);
-      expect(mouseRef2.changed(ctx)).toBe(false);
+      expect(mouseRef1.hasChanged(ctx)).toBe(false);
+      expect(mouseRef2.hasChanged(ctx)).toBe(false);
     });
 
     it("should detect changes when singleton is copied", () => {
@@ -299,14 +299,14 @@ describe("Singleton", () => {
       const mouseRef = useSingleton(Mouse);
 
       // Initialize tracker
-      expect(mouseRef.changed(ctx)).toBe(false);
+      expect(mouseRef.hasChanged(ctx)).toBe(false);
 
       // Copy to singleton
       mouseRef.copy(ctx, { x: 100, y: 200 });
 
       // Increment tick and check for changes
       ctx.tick++;
-      expect(mouseRef.changed(ctx)).toBe(true);
+      expect(mouseRef.hasChanged(ctx)).toBe(true);
 
       // Verify the values were copied
       const mouse = mouseRef.read(ctx);

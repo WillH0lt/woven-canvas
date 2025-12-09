@@ -298,7 +298,7 @@ export class Component<T extends ComponentSchema> {
    * @param data - The raw data to create the component instance from
    * @internal
    */
-  copy(entityId: number, data: T): void {
+  copy(entityId: number, data: any): void {
     for (let i = 0; i < this.fieldNames.length; i++) {
       const fieldName = this.fieldNames[i];
       const array = (this.buffer as any)[fieldName];
@@ -373,7 +373,7 @@ export class Component<T extends ComponentSchema> {
    * @param data - The raw data to create the singleton instance from
    * @internal
    */
-  copySingleton(data: T): void {
+  copySingleton(data: any): void {
     this.copy(SINGLETON_INDEX, data);
 
     // Push change event using sentinel entity ID
@@ -478,7 +478,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * @param entityId - The entity ID to populate
    * @param data - The raw data to create the component instance from
    */
-  copy(ctx: Context, entityId: EntityId, data: T): void {
+  copy(ctx: Context, entityId: EntityId, data: Partial<InferComponentType<T>>): void {
     this._getInstance(ctx).copy(entityId, data);
   }
 
@@ -532,7 +532,7 @@ export class ComponentDef<T extends ComponentSchema> {
    * @param ctx - The context containing the singleton instance
    * @param data - The raw data to create the singleton instance from
    */
-  copySingleton(ctx: Context, data: T): void {
+  copySingleton(ctx: Context, data: Partial<InferComponentType<T>>): void {
     this._getInstance(ctx).copy(SINGLETON_INDEX, data);
   }
 

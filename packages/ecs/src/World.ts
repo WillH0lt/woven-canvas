@@ -392,7 +392,7 @@ export class World {
       if (subscriber.type === "singleton") {
         // Handle singleton subscription
         const singleton = subscriber.singleton!;
-        const changed = singleton.changed(ctx);
+        const changed = singleton.hasChanged(ctx);
 
         // Only call callback if singleton changed
         if (changed) {

@@ -136,7 +136,7 @@ export class Singleton<T extends ComponentSchema> {
    * }
    * ```
    */
-  copy(ctx: Context, data: T): void {
+  copy(ctx: Context, data: Partial<InferComponentType<T>>): void {
     this._getInstance(ctx).copySingleton(data);
   }
 
@@ -160,7 +160,7 @@ export class Singleton<T extends ComponentSchema> {
    * }
    * ```
    */
-  changed(ctx: Context): boolean {
+  hasChanged(ctx: Context): boolean {
     const component = this._getInstance(ctx);
 
     // Initialize on first use - set lastScannedIndex to current position
