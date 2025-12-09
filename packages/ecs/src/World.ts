@@ -6,9 +6,7 @@ import { Pool } from "./Pool";
 import { type QueryDef } from "./Query";
 import type { System, Context } from "./types";
 
-/**
- * Callback type for world event subscribers
- */
+/** Query subscription callback */
 export type QuerySubscribeCallback = (
   ctx: Context,
   result: {
@@ -18,23 +16,14 @@ export type QuerySubscribeCallback = (
   }
 ) => void;
 
-/**
- * Callback type for singleton event subscribers
- */
-export type SingletonSubscribeCallback = (ctx: Context) => void;
-
-/**
- * Internal subscriber state
- */
+/** Internal subscriber state */
 interface Subscriber {
   queryDef: QueryDef;
-  callback: QuerySubscribeCallback | SingletonSubscribeCallback;
+  callback: QuerySubscribeCallback;
   readerId: string;
 }
 
-/**
- * Callback type for nextSync
- */
+/** Callback for deferred execution */
 export type NextSyncCallback = (ctx: Context) => void;
 
 export interface WorldOptions {
@@ -57,7 +46,8 @@ export interface WorldOptions {
 }
 
 /**
- * World class - central manager for entities, components, and systems in the ECS framework.
+ * World manages entities, components, and systems.
+ * Create one per independent simulation/game world.
  */
 export class World {
   private static worldCounter = 0;
@@ -66,17 +56,12 @@ export class World {
   private workerManager: WorkerManager;
   private context: Context;
 
-  /** Unique identifier for this world instance */
   private readonly worldId: number;
-  /** Counter for generating unique subscriber IDs */
   private subscriberCounter = 0;
 
-  /** Subscribers to world events */
   private subscribers: Subscriber[] = [];
-  /** Map of component IDs to component definitions for event lookup */
   private componentIdToDef: Map<number, ComponentDef<any> | SingletonDef<any>> =
     new Map();
-  /** Queue of callbacks to execute on next sync */
   private nextSyncCallbacks: NextSyncCallback[] = [];
 
   /**
@@ -160,14 +145,11 @@ export class World {
 
   /**
    * Execute one or more systems in sequence.
-   * Main thread systems run synchronously in order.
-   * Worker systems run in parallel and complete before the next system runs.
+   * Main thread systems run synchronously. Worker systems run in parallel.
    * @param systems - Systems to execute
    * @example
    * ```typescript
-   * const system1 = defineSystem((ctx) => { ... }, components);
-   * const system2 = defineWorkerSystem('./worker.ts');
-   * await world.execute(system1, system2);
+   * await world.execute(movementSystem, renderSystem);
    * ```
    */
   async execute(...systems: System[]): Promise<void> {
@@ -176,7 +158,6 @@ export class World {
 
     const currentEventIndex = ctx.eventBuffer.getWriteIndex();
 
-    // Shift indices: current becomes previous, record new current
     for (let i = 0; i < systems.length; i++) {
       const system = systems[i];
       const prevIndex = system.currEventIndex;
@@ -189,8 +170,7 @@ export class World {
       (system) => system.type === "main"
     );
 
-    // Sort worker systems by priority (high -> normal -> low)
-    const priorityOrder = { high: 2, normal: 1, low: 0 };
+    const priorityOrder = { high: 2, medium: 1, low: 0 };
     const sortedWorkerSystems = [...workerSystems].sort(
       (a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]
     );
@@ -211,39 +191,30 @@ export class World {
     // Wait for all worker systems to complete
     await Promise.all(promises);
 
-    // Reclaim entities from events that all systems have now processed.
-    // Find the bounds across all systems and reclaim once.
-    // This happens after all systems complete so removed entity data is still readable.
+    // Reclaim entity IDs from REMOVED events that all systems have processed
     const minPrevIndex = Math.min(...systems.map((s) => s.prevEventIndex));
     const maxCurrIndex = Math.max(...systems.map((s) => s.currEventIndex));
     this.reclaimRemovedEntityIds(minPrevIndex, maxCurrIndex);
   }
 
   /**
-   * Reclaim entity IDs from entities that this system has already seen.
-   * Scans REMOVED events between the system's prevEventIndex and currEventIndex.
-   * @param system - The system to reclaim entities for
+   * Reclaim entity IDs from REMOVED events between fromIndex and toIndex
    */
   private reclaimRemovedEntityIds(fromIndex: number, toIndex: number): void {
-    // Nothing to reclaim on first run or if no new events
     if (fromIndex === toIndex) {
       return;
     }
 
     const ctx = this.context;
 
-    // Collect all entities with REMOVED events
     const { entities } = ctx.eventBuffer.collectEntitiesInRange(
       fromIndex,
       EventType.REMOVED
     );
 
-    // Reclaim entity IDs for entities that are still dead (not recreated)
     for (const entityId of entities) {
       if (!ctx.entityBuffer.has(entityId)) {
-        // Free the entity ID back to the pool
         ctx.pool.free(entityId);
-        // Clear the entity data now that we're done with it
         ctx.entityBuffer.delete(entityId);
       }
     }
@@ -283,8 +254,7 @@ export class World {
 
     let subscriber: Subscriber;
 
-    // Eagerly initialize the QueryInstance so the reader starts from current write index.
-    // This ensures events written after subscription are detected in sync().
+    // Eagerly initialize QueryInstance to start tracking from current write index
     queryDef._getInstance({
       ...ctx,
       readerId,
@@ -307,20 +277,17 @@ export class World {
   }
 
   /**
-   * Sync events to all subscribers. Call this in your game loop after execute().
-   * First executes any callbacks registered via nextSync(), then
-   * reads all events since the last sync for each subscriber and calls their callbacks.
+   * Execute deferred callbacks and notify subscribers of entity changes.
+   * Call this in your game loop to signal that all deferred operations should be processed.
    * @example
    * ```typescript
-   * // In your game loop:
-   * world.sync(); // Execute deferred callbacks and notify subscribers
+   * world.sync();
    * await world.execute(movementSystem, renderSystem);
    * ```
    */
   sync(): void {
     this.context.tick++;
 
-    // Execute all nextSync callbacks first
     if (this.nextSyncCallbacks.length > 0) {
       const callbacks = this.nextSyncCallbacks;
       this.nextSyncCallbacks = [];
@@ -334,13 +301,11 @@ export class World {
     }
 
     for (const subscriber of this.subscribers) {
-      // Set readerId so query uses this subscriber's instance
       const ctx = {
         ...this.context,
         readerId: subscriber.readerId,
       };
 
-      // Handle query subscription
       const queryDef = subscriber.queryDef!;
 
       const results = {
@@ -349,7 +314,6 @@ export class World {
         changed: queryDef.changed(ctx),
       };
 
-      // Check if there are any events to report
       if (
         results.added.length === 0 &&
         results.removed.length === 0 &&
@@ -388,7 +352,7 @@ export class World {
   }
 
   /**
-   * Dispose of the world and free all resources
+   * Clean up world resources
    */
   dispose(): void {
     this.workerManager.dispose();

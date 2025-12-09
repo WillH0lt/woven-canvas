@@ -1,10 +1,3 @@
-// TODO
-// each component needs to have an unique ID for structurae schema registration
-// add migration logic
-// add array type
-// add object type
-// add ComponentInstance.fromJson method
-
 import type { EntityId, Context, ComponentTransferData } from "../types";
 import type { EventBuffer } from "../EventBuffer";
 import type { EntityBuffer } from "../EntityBuffer";
@@ -30,9 +23,7 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
 /**
- * Registry mapping field type names to their field class constructors.
- * Used to instantiate the appropriate field handler for each field type.
- * Note: RefField is handled separately since it needs EntityBuffer.
+ * Field type registry. RefField requires EntityBuffer so it's instantiated separately.
  */
 const FIELD_REGISTRY: Record<string, new (fieldDef: any) => Field> = {
   string: StringField,
@@ -45,28 +36,23 @@ const FIELD_REGISTRY: Record<string, new (fieldDef: any) => Field> = {
 };
 
 /**
- * Sentinel entity ID used for singleton change events.
- * Uses max u32 value which will never be used by real entities.
+ * Sentinel entity ID for singleton change events.
+ * Uses max u32 value to avoid collision with real entity IDs.
  */
 export const SINGLETON_ENTITY_ID = 0xffffffff;
 
-/**
- * Index used to access singleton data in the buffer (always 0 since there's only one instance)
- */
+/** Singleton data is always at index 0 */
 const SINGLETON_INDEX = 0;
 
 /**
- * Component class that uses TypedArrays for efficient memory layout
- * Each component has a unique ID for fast query matching
- *
- * Can also be used as a singleton (single instance, no entity ID needed)
- * by setting isSingleton = true during construction.
+ * Runtime component storage using TypedArrays.
+ * Supports both entity components and singletons.
  */
 export class Component<T extends ComponentSchema> {
-  /** The unique component ID (0-based index) assigned during initialization */
+  /** Unique component ID (0-based index) */
   componentId: number = -1;
 
-  /** The component name defined by the user */
+  /** Component name */
   name: string;
 
   readonly isSingleton: boolean;
@@ -77,21 +63,21 @@ export class Component<T extends ComponentSchema> {
 
   private entityBuffer: EntityBuffer | null = null;
 
-  /** The component schema (field definitions) */
+  /** Field definitions */
   readonly schema: Record<string, FieldDef>;
   private fieldNames: string[];
 
-  /** Field handler instances for each field */
+  /** Field handler instances */
   private fields: Record<string, Field> = {};
 
-  // Typed buffer accessor for field access (e.g., Position.buffer.x[eid])
+  /** Typed buffer accessor (e.g., Position.buffer.x[eid]) */
   private _buffer: ComponentBuffer<T> | null = null;
 
-  // Binding instances - master objects with getters/setters
+  /** Master objects with getters/setters bound to current entity */
   private readonly readonlyMaster: InferComponentType<T>;
   private readonly writableMaster: InferComponentType<T>;
 
-  // Current bound entity state
+  /** Currently bound entity IDs for read/write operations */
   private readonlyEntityId: EntityId = 0;
   private writableEntityId: EntityId = 0;
 
@@ -107,12 +93,7 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Create a Component instance from transfer data (for worker threads).
-   * @param name - The component name
-   * @param transferData - The transfer data containing buffer, componentId, schema, etc.
-   * @param eventBuffer - The event buffer for recording changes
-   * @param entityBuffer - The entity buffer for checking entity liveness
-   * @returns A new initialized Component instance
+   * Reconstruct a Component from transfer data (for worker threads)
    * @internal
    */
   static fromTransfer<T extends ComponentSchema>(
@@ -138,11 +119,10 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Create a new component definition
-   * @param name - The component name
-   * @param schema - The component schema built using field builders OR a pre-built schema (FieldDef)
+   * Create a new component
+   * @param name - Component name
+   * @param schema - Field definitions or field builders
    * @param isSingleton - Whether this is a singleton (default: false)
-   * @param isPrebuiltSchema - If true, schema is already in FieldDef form (internal use for transfers)
    */
   constructor(
     name: string,
@@ -156,13 +136,11 @@ export class Component<T extends ComponentSchema> {
     this.fieldNames = [];
 
     for (const [fieldName, fieldOrBuilder] of Object.entries(schema)) {
-      // Handle both builder format ({def: FieldDef}) and direct FieldDef format
       const fieldDef = (fieldOrBuilder as any).def || fieldOrBuilder;
       this.schema[fieldName] = fieldDef;
       this.fieldNames.push(fieldName);
     }
 
-    // Create master instances with property descriptors for direct buffer access
     this.readonlyMaster = {} as InferComponentType<T>;
     this.writableMaster = {} as InferComponentType<T>;
   }
@@ -183,16 +161,13 @@ export class Component<T extends ComponentSchema> {
 
     const bufferSize = this.isSingleton ? 1 : maxEntities;
 
-    // Initialize field instances for each field in the schema
     for (const [fieldName, fieldDef] of Object.entries(this.schema)) {
       this.fields[fieldName] = this.createFieldInstance(fieldDef);
     }
 
     if (buffer) {
-      // Use provided buffer for field storage
       this._buffer = buffer;
     } else {
-      // Create new buffer storage for each field
       const newBuffer: any = {};
       for (const fieldName of this.fieldNames) {
         const field = this.fields[fieldName];
@@ -211,7 +186,7 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Ensure the component has not been initialized yet.
+   * Ensure the component hasn't been initialized yet
    * @throws Error if already initialized
    */
   private ensureNotInitialized(): void {
@@ -292,10 +267,7 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Copy data into a component instance.
-   * Pushes a CHANGED event for the entity
-   * @param entityId - The entity ID to populate
-   * @param data - The raw data to create the component instance from
+   * Copy data into a component instance and push a CHANGED event
    * @internal
    */
   copy(entityId: number, data: any): void {
@@ -316,11 +288,10 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Read entity's component data
-   * Returns the readonly master instance bound to the entity
-   * Property access goes directly through getters to the underlying buffers
-   * @param entityId - The entity ID to read from
-   * @returns The readonly master object with the component's field values
+   * Read component data from an entity (readonly)
+   * Returns a bound master object with getters for each field
+   * @param entityId - Entity ID to read from
+   * @returns Readonly master object with component field values
    */
   read(entityId: EntityId): Readonly<InferComponentType<T>> {
     this.readonlyEntityId = entityId;
@@ -328,17 +299,15 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Write to entity's component data
-   * Returns the writable master instance bound to the entity
-   * Property access goes directly through getters/setters to the underlying buffers
-   * Pushes a CHANGED event to the event buffer for reactive queries
-   * @param entityId - The entity ID to write to
-   * @returns The writable master object for reading and writing component fields
+   * Write component data to an entity
+   * Returns a bound master object with getters/setters for each field
+   * Automatically pushes a CHANGED event for reactive queries
+   * @param entityId - Entity ID to write to
+   * @returns Writable master object for reading/writing component fields
    */
   write(entityId: EntityId): InferComponentType<T> {
     this.writableEntityId = entityId;
 
-    // For singletons, use SINGLETON_ENTITY_ID for change tracking
     const eventEntityId = this.isSingleton ? SINGLETON_ENTITY_ID : entityId;
     this.eventBuffer?.pushChanged(eventEntityId, this.componentId);
 
@@ -372,8 +341,8 @@ export class Component<T extends ComponentSchema> {
 }
 
 /**
- * Component definition class that serves as a descriptor and provides
- * read/write access to component data via context lookup.
+ * Component descriptor that provides context-aware access to component data.
+ * Created by defineComponent() and used to read/write component data via context lookup.
  */
 export class ComponentDef<T extends ComponentSchema> {
   readonly name: string;
@@ -401,37 +370,77 @@ export class ComponentDef<T extends ComponentSchema> {
   }
 
   /**
-   * Get the component ID for this component in the given context.
+   * Get the component ID in a given context
    */
   getComponentId(ctx: Context): number {
     return this._getInstance(ctx).componentId;
   }
 
   /**
-   * Read entity's component data
+   * Read component data from an entity (readonly).
+   * Returns a bound object with read-only getters that access the underlying buffers.
+   *
    * @param ctx - The context containing the component instance
    * @param entityId - The entity ID to read from
-   * @returns The readonly component data
+   * @returns Readonly object with component field values
+   *
+   * @example
+   * ```typescript
+   * import { Position } from './components';
+   *
+   * function renderSystem(ctx: Context) {
+   *   const pos = Position.read(ctx, entityId);
+   *   console.log(pos.x, pos.y); // Access current values
+   * }
+   * ```
    */
   read(ctx: Context, entityId: EntityId): Readonly<InferComponentType<T>> {
     return this._getInstance(ctx).read(entityId);
   }
 
   /**
-   * Write to entity's component data.
+   * Write component data to an entity.
+   * Returns a bound object with getters/setters that access the underlying buffers.
+   *
    * @param ctx - The context containing the component instance
    * @param entityId - The entity ID to write to
-   * @returns The writable component data
+   * @returns Writable object with component field getters/setters
+   *
+   * @example
+   * ```typescript
+   * import { Position, Velocity } from './components';
+   *
+   * function movementSystem(ctx: Context) {
+   *   const pos = Position.write(ctx, entityId);
+   *   const vel = Velocity.read(ctx, entityId);
+   *   pos.x += vel.x; // Modify fields directly
+   *   pos.y += vel.y;
+   * }
+   * ```
    */
   write(ctx: Context, entityId: EntityId): InferComponentType<T> {
     return this._getInstance(ctx).write(entityId);
   }
 
   /**
-   * Copy data into a component.
+   * Copy data into a component. Batch-set multiple fields at once.
+   * Fields not specified in the data object retain their current values.
+   *
    * @param ctx - The context containing the component instance
-   * @param entityId - The entity ID to populate
-   * @param data - The raw data to create the component instance from
+   * @param entityId - The entity ID to write to
+   * @param data - Partial component data to copy (unspecified fields keep current values)
+   *
+   * @example
+   * ```typescript
+   * import { Position } from './components';
+   *
+   * // Set multiple fields at once
+   * Position.copy(ctx, entityId, { x: 100, y: 200 });
+   *
+   * // Useful for initialization
+   * const newEntity = createEntity(ctx);
+   * Position.copy(ctx, newEntity, { x: 0, y: 0 });
+   * ```
    */
   copy(
     ctx: Context,
@@ -457,10 +466,6 @@ export class ComponentDef<T extends ComponentSchema> {
    *
    * @example
    * ```typescript
-   * // WRONG - captures getter reference, not value
-   * state[entityId].Position = Position.read(ctx, entityId);
-   *
-   * // RIGHT - creates a plain object copy
    * state[entityId].Position = Position.snapshot(ctx, entityId);
    * ```
    */
@@ -496,9 +501,8 @@ export function defineComponent<T extends ComponentSchema>(
 }
 
 /**
- * Singleton definition class that serves as a descriptor and provides
- * read/write/copy access to singleton data via context lookup.
- * Singletons don't require an entity ID since there's only one instance.
+ * Singleton descriptor that provides context-aware access to singleton data.
+ * Created via defineSingleton().
  */
 export class SingletonDef<T extends ComponentSchema> {
   readonly name: string;
@@ -530,26 +534,52 @@ export class SingletonDef<T extends ComponentSchema> {
   }
 
   /**
-   * Get the component ID for this singleton in the given context.
+   * Get the component ID in a given context
    */
   getComponentId(ctx: Context): number {
     return this._getInstance(ctx).componentId;
   }
 
   /**
-   * Read the singleton's data (readonly access).
+   * Read singleton data (readonly).
+   * Returns a bound object with getters that access the underlying buffers.
+   * Properties are read-only and reflect the current state.
+   *
    * @param ctx - The context containing the singleton instance
-   * @returns The readonly singleton data
+   * @returns Readonly object with singleton field values
+   *
+   * @example
+   * ```typescript
+   * import { Mouse } from './singletons';
+   *
+   * function renderSystem(ctx: Context) {
+   *   const mouse = Mouse.read(ctx);
+   *   console.log(mouse.x, mouse.y); // Access current mouse position
+   * }
+   * ```
    */
   read(ctx: Context): Readonly<InferComponentType<T>> {
     return this._getInstance(ctx).read(SINGLETON_INDEX);
   }
 
   /**
-   * Write to the singleton's data.
-   * Automatically triggers a change event for tracking.
+   * Write singleton data.
+   * Returns a bound object with getters/setters that access the underlying buffers.
+   * Automatically triggers a CHANGED event for reactive queries.
+   *
    * @param ctx - The context containing the singleton instance
-   * @returns The writable singleton data
+   * @returns Writable object with singleton field getters/setters
+   *
+   * @example
+   * ```typescript
+   * import { Time } from './singletons';
+   *
+   * function timeSystem(ctx: Context) {
+   *   const time = Time.write(ctx);
+   *   time.delta = performance.now() - time.lastFrame;
+   *   time.lastFrame = performance.now();
+   * }
+   * ```
    */
   write(ctx: Context): InferComponentType<T> {
     return this._getInstance(ctx).write(SINGLETON_INDEX);
@@ -557,10 +587,22 @@ export class SingletonDef<T extends ComponentSchema> {
 
   /**
    * Copy data into the singleton.
-   * Useful for batch initialization of multiple fields at once.
-   * Automatically triggers a change event for tracking.
+   * Batch-set multiple fields at once and triggers a CHANGED event.
+   * Fields not specified in the data object retain their current values.
+   *
    * @param ctx - The context containing the singleton instance
-   * @param data - The data to copy into the singleton
+   * @param data - Partial singleton data to copy (unspecified fields keep current values)
+   *
+   * @example
+   * ```typescript
+   * import { Mouse } from './singletons';
+   *
+   * // Set multiple fields at once
+   * Mouse.copy(ctx, { x: 100, y: 200, pressed: true });
+   *
+   * // Useful for initialization
+   * Mouse.copy(ctx, { x: 0, y: 0, pressed: false });
+   * ```
    */
   copy(ctx: Context, data: Partial<InferComponentType<T>>): void {
     this._getInstance(ctx).copy(SINGLETON_INDEX, data);
@@ -572,7 +614,14 @@ export class SingletonDef<T extends ComponentSchema> {
    * stored, or passed around without the getter/setter binding behavior.
    *
    * @param ctx - The context containing the singleton instance
-   * @returns A plain object copy of the singleton's field values
+   * @returns Plain object copy of the singleton's field values
+   *
+   * @example
+   * ```typescript
+   * import { Mouse } from './singletons';
+   *
+   * const savedMouse = Mouse.snapshot(ctx);
+   * ```
    */
   snapshot(ctx: Context): InferComponentType<T> {
     return this._getInstance(ctx).snapshot(SINGLETON_INDEX);

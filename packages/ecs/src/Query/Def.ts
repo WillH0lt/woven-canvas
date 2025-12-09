@@ -1,13 +1,11 @@
-import type { Context, QueryMasks } from "../types";
+import type { Context } from "../types";
+import type { QueryMasks } from "./Masks";
 import { QueryBuilder } from "./Builder";
 import { QueryInstance } from "./Instance";
 
 /**
- * A query definition that can be used across multiple Worlds.
- * Created via useQuery() and creates per-context Query instances on first use.
- *
- * This is a descriptor - it holds the query configuration but no runtime state.
- * Each World gets its own Query instance with isolated state.
+ * Query descriptor that can be reused across multiple Worlds.
+ * Created via useQuery(). Lazily creates per-context Query instances.
  */
 export class QueryDef {
   private readonly builder: (q: QueryBuilder) => QueryBuilder;
@@ -26,19 +24,13 @@ export class QueryDef {
     this.id = `query_${QueryDef.queryCounter++}`;
   }
 
-  private _getName(ctx: Context): string {
+  private getName(ctx: Context): string {
     return `${this.id}_${ctx.readerId}`;
   }
 
-  /**
-   * Get or create the Query instance for a specific context.
-   * The Query is cached in ctx.queries for subsequent calls.
-   *
-   * @param ctx - The context (World) to get the query for
-   * @returns The Query instance for this context
-   */
+  /** Get or create the Query instance for a context (internal) */
   _getInstance(ctx: Context): QueryInstance {
-    const name = this._getName(ctx);
+    const name = this.getName(ctx);
 
     // Check if already created for this context
     let query = this.instances[name];
@@ -58,13 +50,7 @@ export class QueryDef {
     return query;
   }
 
-  /**
-   * Get the query masks for a specific context without creating a full Query instance.
-   * Useful for lightweight filtering operations that don't need caching.
-   *
-   * @param ctx - The context (World) to get masks for
-   * @returns The query masks for entity matching
-   */
+  /** Get query masks without creating a Query instance (internal) */
   _getMasks(ctx: Context): QueryMasks {
     const queryBuilder = new QueryBuilder(ctx.componentCount, ctx);
     const configuredBuilder = this.builder(queryBuilder);
@@ -73,7 +59,6 @@ export class QueryDef {
 
   /**
    * Get the current matching entities.
-   * Convenience method that gets the Query instance and calls current().
    *
    * @param ctx - The context object
    * @returns An array of entity IDs matching the query criteria
@@ -84,7 +69,6 @@ export class QueryDef {
 
   /**
    * Get entities that were added since the last check.
-   * Convenience method that gets the Query instance and calls added().
    *
    * @param ctx - The context object
    * @returns An array of entity IDs that were added
@@ -95,7 +79,6 @@ export class QueryDef {
 
   /**
    * Get entities that were removed since the last check.
-   * Convenience method that gets the Query instance and calls removed().
    *
    * @param ctx - The context object
    * @returns An array of entity IDs that were removed
@@ -106,7 +89,6 @@ export class QueryDef {
 
   /**
    * Get entities whose tracked components have changed.
-   * Convenience method that gets the Query instance and calls changed().
    *
    * @param ctx - The context object
    * @returns An array of entity IDs with changed tracked components

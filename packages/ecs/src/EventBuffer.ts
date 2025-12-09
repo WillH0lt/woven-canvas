@@ -4,29 +4,34 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
 /**
- * Event types for the ring buffer (bitmask values for fast filtering)
+ * Bitmask flags for entity lifecycle and component change events.
+ * Used to filter events when reading from the event buffer.
+ * ```
  */
 export const EventType = {
-  ADDED: 1 << 0, // 1 - Entity added to world
-  REMOVED: 1 << 1, // 2 - Entity removed from world
-  CHANGED: 1 << 2, // 4 - Component data changed
-  COMPONENT_ADDED: 1 << 3, // 8 - Component added to existing entity
-  COMPONENT_REMOVED: 1 << 4, // 16 - Component removed from existing entity
+  /** Entity created */
+  ADDED: 1 << 0,
+  /** Entity removed from world */
+  REMOVED: 1 << 1,
+  /** Component data modified */
+  CHANGED: 1 << 2,
+  /** Component added to existing entity */
+  COMPONENT_ADDED: 1 << 3,
+  /** Component removed from existing entity */
+  COMPONENT_REMOVED: 1 << 4,
 } as const;
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
 
 /**
- * Pre-computed bitmasks for common query operations
+ * Common event type combinations for query operations.
+ * @internal
  */
 export const EventTypeMask = {
-  /** Events that can cause an entity to be added to a query result (entity added, or component added/removed changing match) */
   QUERY_ADDED:
     EventType.ADDED | EventType.COMPONENT_ADDED | EventType.COMPONENT_REMOVED,
-  /** Events that can cause an entity to be removed from a query result (entity removed, or component added/removed changing match) */
   QUERY_REMOVED:
     EventType.REMOVED | EventType.COMPONENT_ADDED | EventType.COMPONENT_REMOVED,
-  /** All event types */
   ALL:
     EventType.ADDED |
     EventType.REMOVED |
@@ -39,29 +44,24 @@ export type EventTypeMaskValue =
   (typeof EventTypeMask)[keyof typeof EventTypeMask];
 
 /**
- * Event structure (8 bytes per event):
- *   [0..3]  entityId (u32) - which entity
- *   [4]     eventType (u8) - ADDED, REMOVED, or CHANGED
- *   [5]     padding (u8) - alignment padding
- *   [6..7]  componentId (u16) - which component (for CHANGED events)
+ * EventBuffer layout (8 bytes per event):
+ *   [0-3]  entityId (u32)
+ *   [4]    eventType (u8)
+ *   [5]    padding (u8)
+ *   [6-7]  componentId (u16) - populated for CHANGED/COMPONENT_ADDED/COMPONENT_REMOVED
  */
 const BYTES_PER_EVENT = 8;
 
 /**
- * Header layout:
- *   [0..3]  writeIndex (u32, atomic) - next write position (wraps around)
+ * Header layout (4 bytes):
+ *   [0-3]  writeIndex (u32, atomic) - ring buffer write position
  */
 const HEADER_SIZE = 4;
 const WRITE_INDEX_OFFSET = 0;
 
 /**
- * EventBuffer implements a lock-free ring buffer for entity events.
- * Events are written atomically and can be read from any thread.
- *
- * Used for tracking:
- * - Entity creation (ADDED)
- * - Entity deletion (REMOVED)
- * - Component changes (CHANGED)
+ * Lock-free ring buffer for tracking entity and component events across threads.
+ * Uses atomic operations on SharedArrayBuffer for thread-safe event publishing.
  */
 export class EventBuffer {
   private buffer: ArrayBufferLike;
@@ -72,7 +72,7 @@ export class EventBuffer {
 
   /**
    * Create a new EventBuffer
-   * @param maxEvents - Maximum number of events to store (ring buffer wraps)
+   * @param maxEvents - Ring buffer capacity (wraps when full)
    */
   constructor(maxEvents: number) {
     this.maxEvents = maxEvents;
@@ -87,10 +87,10 @@ export class EventBuffer {
   }
 
   /**
-   * Create an EventBuffer from a shared buffer (for workers)
+   * Reconstruct EventBuffer from a SharedArrayBuffer (for worker threads)
    * @param buffer - The SharedArrayBuffer from the main thread
-   * @param maxEvents - Maximum number of events (must match the original buffer)
-   * @returns A new EventBuffer wrapping the shared buffer
+   * @param maxEvents - Ring buffer capacity (must match original)
+   * @returns EventBuffer wrapping the shared buffer
    */
   static fromTransfer(buffer: ArrayBufferLike, maxEvents: number): EventBuffer {
     const instance = Object.create(EventBuffer.prototype);
@@ -110,7 +110,7 @@ export class EventBuffer {
   }
 
   /**
-   * Get the data view for direct event access (used for optimized event processing)
+   * Get the data view for direct event access
    * @internal
    */
   getDataView(): Uint32Array {
@@ -118,10 +118,10 @@ export class EventBuffer {
   }
 
   /**
-   * Push an event to the ring buffer (thread-safe)
-   * @param entityId - The entity ID
-   * @param eventType - The type of event (ADDED, REMOVED, CHANGED)
-   * @param componentId - The component ID (for CHANGED events, 0 otherwise)
+   * Write an event to the ring buffer
+   * @param entityId - Entity ID
+   * @param eventType - Event type (ADDED, REMOVED, CHANGED, etc.)
+   * @param componentId - Component ID (for CHANGED/COMPONENT_ADDED/COMPONENT_REMOVED, 0 otherwise)
    */
   push(
     entityId: EntityId,
@@ -132,15 +132,8 @@ export class EventBuffer {
     const index =
       Atomics.add(this.headerView, WRITE_INDEX_OFFSET, 1) % this.maxEvents;
 
-    // Each event is 2 Uint32 elements in the dataView array
-    // Event layout in Uint32 terms:
-    //   [index*2]   = entityId (u32)
-    //   [index*2+1] = eventType (u8) | padding (u8) | componentId (u16) packed as u32
+    // Pack eventType and componentId into second u32
     const dataIndex = index * 2;
-
-    // Write event data atomically
-    // Pack eventType and componentId into second u32 (little-endian layout)
-    // Bytes: [eventType, padding, componentId low, componentId high]
     const packedData = eventType | (componentId << 16);
 
     Atomics.store(this.dataView, dataIndex, entityId);
@@ -148,35 +141,35 @@ export class EventBuffer {
   }
 
   /**
-   * Push an ADDED event
+   * Write an ADDED event
    */
   pushAdded(entityId: EntityId): void {
     this.push(entityId, EventType.ADDED, 0);
   }
 
   /**
-   * Push a REMOVED event
+   * Write a REMOVED event
    */
   pushRemoved(entityId: EntityId): void {
     this.push(entityId, EventType.REMOVED, 0);
   }
 
   /**
-   * Push a CHANGED event for a specific component
+   * Write a CHANGED event for a specific component
    */
   pushChanged(entityId: EntityId, componentId: number): void {
     this.push(entityId, EventType.CHANGED, componentId);
   }
 
   /**
-   * Push a COMPONENT_ADDED event when a component is added to an existing entity
+   * Write a COMPONENT_ADDED event
    */
   pushComponentAdded(entityId: EntityId, componentId: number): void {
     this.push(entityId, EventType.COMPONENT_ADDED, componentId);
   }
 
   /**
-   * Push a COMPONENT_REMOVED event when a component is removed from an existing entity
+   * Write a COMPONENT_REMOVED event
    */
   pushComponentRemoved(entityId: EntityId, componentId: number): void {
     this.push(entityId, EventType.COMPONENT_REMOVED, componentId);
@@ -184,8 +177,8 @@ export class EventBuffer {
 
   /**
    * Read an event at a specific index
-   * @param index - The index in the ring buffer (0 to maxEvents-1)
-   * @returns The event data
+   * @param index - Ring buffer index (0 to maxEvents-1)
+   * @returns Event data
    */
   readEvent(index: number): {
     entityId: number;
@@ -205,20 +198,20 @@ export class EventBuffer {
   }
 
   /**
-   * Get the current write index (for debugging/testing)
+   * Get current write index
    */
   getWriteIndex(): number {
     return Atomics.load(this.headerView, WRITE_INDEX_OFFSET);
   }
 
   /**
-   * Collect entity IDs from events in a range directly into a Set.
-   * Optimized version that avoids the generator overhead.
+   * Collect entity IDs from events since lastIndex, filtered by event type and component mask.
+   * Optimized for queries - avoids generator overhead and reuses a Set instance.
    *
-   * @param lastIndex - The last index this caller scanned (will be updated)
-   * @param eventTypes - Bitmask of event types to include (e.g., EventType.ADDED | EventType.REMOVED)
-   * @param componentMask - Optional: for CHANGED events, filter by component mask
-   * @returns Object with entities Set and new lastIndex
+   * @param lastIndex - Previous read position
+   * @param eventTypes - Bitmask of event types to include
+   * @param componentMask - Optional component bitmask for CHANGED event filtering
+   * @returns Object with entities Set and updated read position
    */
   collectEntitiesInRange(
     lastIndex: number,
@@ -227,10 +220,8 @@ export class EventBuffer {
   ): { entities: Set<number>; newIndex: number } {
     const currentWriteIndex = this.getWriteIndex();
 
-    // Handle case where buffer has wrapped and we're too far behind
-    // If more than maxEvents have been written since lastIndex, we've lost events
+    // Handle buffer overflow - if we're too far behind, skip to oldest available event
     if (currentWriteIndex - lastIndex > this.maxEvents) {
-      // Start from the oldest available event
       lastIndex = currentWriteIndex - this.maxEvents;
       console.warn(
         "EventBuffer: Missed events due to buffer overflow, adjusting read index. Increase the maxEvents size to prevent this from happening."
@@ -248,21 +239,18 @@ export class EventBuffer {
       return { entities: seen, newIndex: currentWriteIndex };
     }
 
-    // Calculate how many events to scan
+    // Calculate event count, handling ring buffer wrap
     let eventsToScan: number;
     if (toIndex >= fromIndex) {
       eventsToScan = toIndex - fromIndex;
     } else {
-      // Wrapped around
       eventsToScan = this.maxEvents - fromIndex + toIndex;
     }
 
-    // Cap at maxEvents to prevent infinite loops if indices get corrupted
     if (eventsToScan > this.maxEvents) {
       eventsToScan = this.maxEvents;
     }
 
-    // Direct inline scanning without generator overhead
     const dataView = this.dataView;
     const maxEvents = this.maxEvents;
 
@@ -270,18 +258,16 @@ export class EventBuffer {
       const index = (fromIndex + i) % maxEvents;
       const dataIndex = index * 2;
 
-      // Read packed data atomically
       const packedData = Atomics.load(dataView, dataIndex + 1);
       const eventType = (packedData & 0xff) as EventTypeValue;
 
-      // Filter by event type bitmask
       if ((eventType & eventTypes) === 0) continue;
 
-      // Filter by component mask for CHANGED events
+      // Filter CHANGED events by component mask if provided
       if (componentMask !== undefined && eventType === EventType.CHANGED) {
         const componentId = (packedData >> 16) & 0xffff;
-        const byteIndex = componentId >> 3; // Math.floor(componentId / 8)
-        const bitIndex = componentId & 7; // componentId % 8
+        const byteIndex = componentId >> 3;
+        const bitIndex = componentId & 7;
         if (
           byteIndex >= componentMask.length ||
           (componentMask[byteIndex] & (1 << bitIndex)) === 0
@@ -301,9 +287,9 @@ export class EventBuffer {
   }
 
   /**
-   * Read events since the last index.
-   * @param lastIndex - The last index read.
-   * @returns Object with events array and the new write index.
+   * Read all events since lastIndex
+   * @param lastIndex - Previous read position
+   * @returns Object with events array and updated read position
    */
   readEvents(lastIndex: number): {
     events: Array<{
@@ -320,7 +306,7 @@ export class EventBuffer {
       componentId: number;
     }> = [];
 
-    // Handle case where buffer has wrapped and we're too far behind
+    // Handle buffer overflow
     if (currentWriteIndex - lastIndex > this.maxEvents) {
       lastIndex = currentWriteIndex - this.maxEvents;
     }

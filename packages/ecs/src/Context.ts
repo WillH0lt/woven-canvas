@@ -3,20 +3,15 @@ import type { Component, ComponentDef } from "./Component";
 import type { ComponentSchema, InferComponentType } from "./Component/types";
 import { NULL_REF } from "./Component/fields/ref";
 
-/**
- * Ref packing constants (must match ref.ts)
- */
-const ENTITY_ID_MASK = 0x01ffffff; // 25 bits
+const ENTITY_ID_MASK = 0x01ffffff;
 
 /**
- * Create a new entity in a worker thread.
- * Uses atomic operations to safely allocate an entity ID across threads.
- *
+ * Create a new entity
  * @param ctx - The context
- * @returns The newly created entity ID
- * @throws Error if the entity pool is exhausted
- *
+ * @returns Newly created entity ID
+ * @throws Error if entity pool exhausted
  * @example
+ * ```typescript
  * import { setupWorker, createEntity, type Context } from '@infinitecanvas/ecs';
  * import { Position } from './components';
  *
@@ -24,8 +19,9 @@ const ENTITY_ID_MASK = 0x01ffffff; // 25 bits
  *
  * function execute(ctx: Context) {
  *   const entityId = createEntity(ctx);
- *   Position.write(entityId, { x: 0, y: 0 });
+ *   Position.write(ctx, entityId, { x: 0, y: 0 });
  * }
+ * ```
  */
 export function createEntity(ctx: Context): EntityId {
   const entityId = ctx.pool.get();
@@ -37,26 +33,20 @@ export function createEntity(ctx: Context): EntityId {
 }
 
 /**
- * Get all entities that reference a target entity via a specific ref field.
- * This is useful for finding "children" or related entities.
- *
+ * Get entities that reference a target entity via a ref field.
+ * Useful for finding "children" or related entities.
  * @param ctx - The context
- * @param targetEntity - The entity being referenced
- * @param componentDef - The component containing the ref field
- * @param fieldName - The name of the ref field
+ * @param targetEntity - Entity being referenced
+ * @param componentDef - Component containing the ref field
+ * @param fieldName - Name of the ref field
  * @returns Array of entity IDs that reference the target
- *
  * @example
  * ```typescript
- * import { getBackrefs, type Context } from '@infinitecanvas/ecs';
- *
  * const Child = defineComponent("Child", {
  *   parent: field.ref(),
  * });
  *
- * function getChildren(ctx: Context, parentId: EntityId): EntityId[] {
- *   return getBackrefs(ctx, parentId, Child, "parent");
- * }
+ * const childrenIds = getBackrefs(ctx, parentId, Child, "parent");
  * ```
  */
 export function getBackrefs<T extends ComponentSchema>(
@@ -92,19 +82,13 @@ export function getBackrefs<T extends ComponentSchema>(
 
 /**
  * Remove an entity.
- * The entity is marked as dead but its component data is preserved until
- * the ID is reclaimed and reused. This allows .removed() queries to still
- * read component data from recently removed entities.
- *
- * Ref fields use lazy validation: refs pointing to deleted entities are
- * automatically nullified when read, avoiding expensive scans on delete.
- *
- * ID reclamation happens automatically when the pool is exhausted.
- *
+ * The entity is marked as dead but component data is preserved until ID reclamation.
+ * This allows .removed() queries to read component data from recently deleted entities.
+ * Refs use lazy validation - refs to deleted entities are nullified on read.
  * @param ctx - The context
- * @param entityId - The entity ID to remove
- *
+ * @param entityId - Entity ID to remove
  * @example
+ * ```typescript
  * import { setupWorker, removeEntity, type Context } from '@infinitecanvas/ecs';
  *
  * setupWorker(execute);
@@ -112,14 +96,13 @@ export function getBackrefs<T extends ComponentSchema>(
  * function execute(ctx: Context) {
  *   removeEntity(ctx, someEntityId);
  * }
+ * ```
  */
 export function removeEntity(ctx: Context, entityId: EntityId): void {
-  // Skip if already dead
   if (!ctx.entityBuffer.has(entityId)) {
     return;
   }
 
-  // Emit the REMOVED event so queries can track this removal
   ctx.eventBuffer.pushRemoved(entityId);
 
   // Mark entity as dead but preserve component data
@@ -128,21 +111,20 @@ export function removeEntity(ctx: Context, entityId: EntityId): void {
 }
 
 /**
- * Add a component to an entity.
- * Works on both main thread and worker threads.
- *
+ * Add a component to an entity
  * @param ctx - The context
- * @param entityId - The entity ID to add the component to
- * @param component - The component to add
- * @param data - Optional initial data for the component
- *
+ * @param entityId - Entity ID
+ * @param component - Component to add
+ * @param data - Optional initial component data
  * @example
+ * ```typescript
  * import { addComponent, type Context } from '@infinitecanvas/ecs';
  * import { Position } from './components';
  *
  * function execute(ctx: Context) {
  *   addComponent(ctx, entityId, Position, { x: 0, y: 0 });
  * }
+ * ```
  */
 export function addComponent<T extends ComponentSchema>(
   ctx: Context,
@@ -157,21 +139,20 @@ export function addComponent<T extends ComponentSchema>(
 }
 
 /**
- * Remove a component from an entity.
- * Works on both main thread and worker threads.
- *
+ * Remove a component from an entity
  * @param ctx - The context
- * @param entityId - The entity ID to remove the component from
- * @param component - The component to remove
- * @throws Error if the entity does not exist
- *
+ * @param entityId - Entity ID
+ * @param component - Component to remove
+ * @throws Error if entity doesn't exist
  * @example
+ * ```typescript
  * import { removeComponent, type Context } from '@infinitecanvas/ecs';
  * import { Position } from './components';
  *
  * function execute(ctx: Context) {
  *   removeComponent(ctx, entityId, Position);
  * }
+ * ```
  */
 export function removeComponent<T extends ComponentSchema>(
   ctx: Context,
@@ -188,24 +169,21 @@ export function removeComponent<T extends ComponentSchema>(
 }
 
 /**
- * Check if an entity has a component.
- * Works on both main thread and worker threads.
- *
+ * Check if an entity has a component
  * @param ctx - The context
- * @param entityId - The entity ID to check
- * @param component - The component to check for
- * @returns True if the entity has the component, false otherwise
- * @throws Error if the entity does not exist
- *
+ * @param entityId - Entity ID to check
+ * @param component - Component to check for
+ * @returns True if entity has the component
+ * @throws Error if entity doesn't exist
  * @example
+ * ```typescript
  * import { hasComponent, type Context } from '@infinitecanvas/ecs';
  * import { Position } from './components';
  *
- * function execute(ctx: Context) {
- *   if (hasComponent(ctx, entityId, Position)) {
- *     // Entity has Position component
- *   }
+ * if (hasComponent(ctx, entityId, Position)) {
+ *   // Entity has Position
  * }
+ * ```
  */
 export function hasComponent<T extends ComponentSchema>(
   ctx: Context,

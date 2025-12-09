@@ -1,37 +1,32 @@
 import type { EntityId } from "./types";
-import type { QueryMasks } from "./types";
+import type { QueryMasks } from "./Query";
 
 const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
 /**
- * EntityBuffer manages entity states and their associated components
- * using a compact SharedArrayBuffer layout for efficient cross-thread access.
- *   Entity layout:
- *     [0] = metadata byte (bit 0 = alive, bits 1-7 reserved for future use)
- *     [1...] = component bytes (8 components per byte)
+ * EntityBuffer manages entity lifecycle and component composition using a compact
+ * SharedArrayBuffer layout for thread-safe cross-thread access.
  *
- * Also maintains a separate generation counter array for detecting stale entity refs.
+ * Entity layout per entity:
+ *   [0] = metadata (bit 0: alive flag, bits 1-7: generation counter)
+ *   [1...] = component bits (8 components per byte)
  */
 export class EntityBuffer {
   private buffer: ArrayBufferLike;
   private view: Uint8Array;
   private readonly bytesPerEntity: number;
 
-  // Metadata byte layout:
-  // - Bit 0: alive flag
-  // - Bits 1-7: generation counter (0-127, wraps around)
   private static readonly ALIVE_FLAG = 0x01;
-  private static readonly GENERATION_MASK = 0xfe; // Bits 1-7
+  private static readonly GENERATION_MASK = 0xfe;
   private static readonly GENERATION_SHIFT = 1;
 
   /**
    * Create a new EntityBuffer
-   * @param maxEntities - Maximum number of entities
-   * @param componentCount - Number of components (determines bytes needed per entity)
+   * @param maxEntities - Maximum entity count
+   * @param componentCount - Number of components (determines storage size)
    */
   constructor(maxEntities: number, componentCount: number) {
-    // 1 byte for metadata + ceil(componentCount / 8) bytes for component bits
     const componentBytes = Math.ceil(componentCount / 8);
     this.bytesPerEntity = 1 + componentBytes;
 
@@ -41,10 +36,10 @@ export class EntityBuffer {
   }
 
   /**
-   * Create an EntityBuffer from a shared buffer (for workers)
-   * @param buffer - The SharedArrayBuffer for entity data from the main thread
-   * @param componentCount - Number of components (must match the original buffer)
-   * @returns A new EntityBuffer wrapping the shared buffer
+   * Reconstruct EntityBuffer from SharedArrayBuffer (for workers)
+   * @param buffer - SharedArrayBuffer from main thread
+   * @param componentCount - Number of components (must match original)
+   * @returns EntityBuffer wrapping the shared buffer
    */
   static fromTransfer(
     buffer: ArrayBufferLike,
@@ -58,18 +53,14 @@ export class EntityBuffer {
     return instance;
   }
 
-  /**
-   * Get the underlying shared buffer for workers
-   * @returns The SharedArrayBuffer that can be shared across threads
-   */
+  /** Get underlying SharedArrayBuffer for transfer to workers */
   getBuffer(): ArrayBufferLike {
     return this.buffer;
   }
 
   /**
-   * Create a new entity (mark as alive with no components)
-   * Increments the generation counter to invalidate any stale refs.
-   * @param entityId - The entity ID (index in buffer, must be >= 0)
+   * Create entity (mark as alive, clear components, increment generation)
+   * @param entityId - Entity ID
    */
   create(entityId: EntityId): void {
     const offset = entityId * this.bytesPerEntity;
@@ -97,12 +88,8 @@ export class EntityBuffer {
 
   /**
    * Add a component to an entity
-   * @param entityId - The entity ID
-   * @param componentId - The component ID (0 to componentCount-1)
    */
   addComponentToEntity(entityId: EntityId, componentId: number): void {
-    // Component bits start at byte 1 (byte 0 is metadata)
-    // componentId 0-7 -> byte 1, componentId 8-15 -> byte 2, etc.
     const byteIndex = 1 + (componentId >> 3);
     const bitIndex = componentId & 7;
     const offset = entityId * this.bytesPerEntity;
@@ -111,8 +98,6 @@ export class EntityBuffer {
 
   /**
    * Remove a component from an entity
-   * @param entityId - The entity ID
-   * @param componentId - The component ID (0 to componentCount-1)
    */
   removeComponentFromEntity(entityId: EntityId, componentId: number): void {
     const byteIndex = 1 + (componentId >> 3);
@@ -122,10 +107,7 @@ export class EntityBuffer {
   }
 
   /**
-   * Check if an entity has a specific component
-   * @param entityId - The entity ID
-   * @param componentId - The component ID (0 to componentCount-1)
-   * @returns True if the entity has the component
+   * Check if an entity has a component
    */
   hasComponent(entityId: EntityId, componentId: number): boolean {
     const byteIndex = 1 + (componentId >> 3);
@@ -137,25 +119,23 @@ export class EntityBuffer {
   }
 
   /**
-   * Check if an entity matches a component mask (used by queries)
-   * @param entityId - The entity ID
-   * @param masks - The query masks containing the component criteria
-   * @returns True if the entity matches the criteria
+   * Check if an entity matches query criteria (used by queries)
+   * @param entityId - Entity ID
+   * @param masks - Query masks with component criteria
+   * @returns True if entity matches
    */
   matches(entityId: EntityId, masks: QueryMasks): boolean {
     const bytesPerEntity = this.bytesPerEntity;
     const offset = entityId * bytesPerEntity;
     const view = this.view;
 
-    // Check if alive (bit 0 of metadata byte)
     if ((Atomics.load(view, offset) & EntityBuffer.ALIVE_FLAG) === 0) {
       return false;
     }
 
-    // Component bytes start at offset + 1
     const componentOffset = offset + 1;
 
-    // Check 'with' criteria - entity must have ALL specified components
+    // Entity must have ALL 'with' components
     if (masks.hasWith) {
       const withMask = masks.with;
       const maskLength = withMask.length;
@@ -170,7 +150,7 @@ export class EntityBuffer {
       }
     }
 
-    // Check 'without' criteria - entity must have NONE of the specified components
+    // Entity must have NONE of the 'without' components
     if (masks.hasWithout) {
       const withoutMask = masks.without;
       const maskLength = withoutMask.length;
@@ -185,7 +165,7 @@ export class EntityBuffer {
       }
     }
 
-    // Check 'any' criteria - entity must have AT LEAST ONE of the specified components
+    // Entity must have AT LEAST ONE 'any' component
     if (masks.hasAny) {
       const anyMask = masks.any;
       const maskLength = anyMask.length;
@@ -209,8 +189,7 @@ export class EntityBuffer {
   }
 
   /**
-   * Mark an entity as dead (clears all data including component bits)
-   * @param entityId - The entity ID to remove
+   * Clear all entity data including component bits
    */
   delete(entityId: EntityId): void {
     const offset = entityId * this.bytesPerEntity;
@@ -222,21 +201,16 @@ export class EntityBuffer {
   }
 
   /**
-   * Mark an entity as dead but preserve component data.
-   * This allows .removed() queries to still read component values.
-   * The entity will no longer match any queries (alive check fails).
-   * @param entityId - The entity ID to mark as dead
+   * Mark entity as dead but preserve component data.
+   * Allows .removed() queries to still read component values.
    */
   markDead(entityId: EntityId): void {
     const offset = entityId * this.bytesPerEntity;
-    // Clear only the alive flag, preserve component bits
     Atomics.and(this.view, offset, ~EntityBuffer.ALIVE_FLAG);
   }
 
   /**
    * Check if an entity exists and is alive
-   * @param entityId - The entity ID to check
-   * @returns True if the entity exists and is alive
    */
   has(entityId: EntityId): boolean {
     const offset = entityId * this.bytesPerEntity;
@@ -244,10 +218,8 @@ export class EntityBuffer {
   }
 
   /**
-   * Get the generation counter for an entity slot.
-   * Used by ref fields to detect stale references after entity recycling.
-   * @param entityId - The entity ID
-   * @returns The generation counter (0-127)
+   * Get entity generation counter (used by refs to detect stale references)
+   * @returns Generation counter (0-127)
    */
   getGeneration(entityId: EntityId): number {
     const offset = entityId * this.bytesPerEntity;

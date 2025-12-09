@@ -4,28 +4,20 @@ import type {
   WorkerPriority,
 } from "./types";
 
-/**
- * Base class for all systems. Provides a unique ID for each system instance.
- */
+/** Base class for all systems */
 export abstract class BaseSystemClass {
   private static systemCounter = 0;
 
-  /** Unique identifier for this system instance */
+  /** Unique system ID */
   readonly id: number;
 
   /** System type discriminator */
   abstract readonly type: "main" | "worker";
 
-  /**
-   * Event buffer index from the previous execution.
-   * Used for deferred entity ID reclamation.
-   */
+  /** Event buffer index from previous execution (for deferred ID reclamation) */
   prevEventIndex: number = 0;
 
-  /**
-   * Event buffer index at the start of the current execution.
-   * Updated before each execution, then moved to prevEventIndex after.
-   */
+  /** Event buffer index at start of current execution */
   currEventIndex: number = 0;
 
   constructor() {
@@ -33,10 +25,7 @@ export abstract class BaseSystemClass {
   }
 }
 
-/**
- * Main thread system class.
- * Created via defineSystem().
- */
+/** Main thread system (created via defineSystem) */
 export class MainThreadSystemClass extends BaseSystemClass {
   readonly type = "main" as const;
   readonly execute: SystemFunction;
@@ -47,10 +36,7 @@ export class MainThreadSystemClass extends BaseSystemClass {
   }
 }
 
-/**
- * Worker system class.
- * Created via defineWorkerSystem().
- */
+/** Worker system (created via defineWorkerSystem) */
 export class WorkerSystemClass extends BaseSystemClass {
   readonly type = "worker" as const;
   readonly path: string;
@@ -61,25 +47,24 @@ export class WorkerSystemClass extends BaseSystemClass {
     super();
     this.path = path;
     this.threads = options.threads ?? 1;
-    this.priority = options.priority ?? "normal";
+    this.priority = options.priority ?? "medium";
   }
 }
 
 /**
- * Define a system that runs on the main thread.
- * @param execute - Function to execute when the system runs
- * @returns A MainThreadSystemClass object
+ * Define a system that runs on the main thread
+ * @param execute - System execution function
+ * @returns MainThreadSystemClass instance
  * @example
  * ```typescript
  * const movementSystem = defineSystem((ctx) => {
- *   const entities = query(ctx, (q) => q.with(Position, Velocity));
- *   for (const entityId of entities) {
- *     const pos = Position.write(entityId);
- *     const vel = Velocity.read(entityId);
+ *   for (const eid of query(ctx, (q) => q.with(Position, Velocity))) {
+ *     const pos = Position.write(ctx, eid);
+ *     const vel = Velocity.read(ctx, eid);
  *     pos.x += vel.x;
  *     pos.y += vel.y;
  *   }
- * }, { Position, Velocity });
+ * });
  * ```
  */
 export function defineSystem(execute: SystemFunction): MainThreadSystemClass {
@@ -87,19 +72,13 @@ export function defineSystem(execute: SystemFunction): MainThreadSystemClass {
 }
 
 /**
- * Define a system that runs in a web worker.
- * The worker file must use setupWorker() to define its execution logic.
- * @param workerPath - Path to the worker file (use new URL('./worker.ts', import.meta.url).href)
- * @param options - Optional configuration for worker behavior
- * @returns A WorkerSystemClass object
+ * Define a system that runs in web workers.
+ * Worker file must use setupWorker() to define its execution logic.
+ * @param workerPath - Path to worker file (use new URL('./worker.ts', import.meta.url).href)
+ * @param options - Worker configuration
+ * @returns WorkerSystemClass instance
  * @example
  * ```typescript
- * // Basic usage
- * const parallelSystem = defineWorkerSystem(
- *   new URL('./physicsWorker.ts', import.meta.url).href
- * );
- *
- * // With options
  * const physicsSystem = defineWorkerSystem(
  *   new URL('./physicsWorker.ts', import.meta.url).href,
  *   { threads: 4, priority: 'high' }

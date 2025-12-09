@@ -1,15 +1,12 @@
-import type { Context, QueryMasks } from "../types";
+import type { Context } from "../types";
 import { QueryCache } from "./Cache";
-import { EventTypeMask } from "../EventBuffer";
+import type { QueryMasks } from "./Masks";
 import { QueryReader } from "./Reader";
 import { SINGLETON_ENTITY_ID } from "../Component";
 
 const EMPTY_NUMBER_ARRAY: number[] = [];
 
-/**
- * A per-context query instance that caches matching entities.
- * Created from a QueryDef when first used with a specific context.
- */
+/** Per-context query instance with cached matching entities */
 export class QueryInstance {
   readonly masks: QueryMasks;
   readonly cache: QueryCache | null = null;
@@ -31,10 +28,7 @@ export class QueryInstance {
     this.reader = new QueryReader(0);
   }
 
-  /**
-   * Get the current matching entities.
-   * For singleton-only queries, returns [SINGLETON_ENTITY_ID] without checking the cache.
-   */
+  /** Get all matching entities (automatically partitioned for workers) */
   current(ctx: Context): Uint32Array | number[] {
     if (this.isSingletonQuery) {
       return [SINGLETON_ENTITY_ID];
@@ -54,9 +48,7 @@ export class QueryInstance {
     );
   }
 
-  /**
-   * Get entities that were added since the last check.
-   */
+  /** Get entities added since last check (automatically partitioned for workers) */
   added(ctx: Context): number[] {
     if (this.isSingletonQuery) {
       return EMPTY_NUMBER_ARRAY;
@@ -71,9 +63,7 @@ export class QueryInstance {
     return result;
   }
 
-  /**
-   * Get entities that were removed since the last check.
-   */
+  /** Get entities removed since last check (automatically partitioned for workers) */
   removed(ctx: Context): number[] {
     if (this.isSingletonQuery) {
       return EMPTY_NUMBER_ARRAY;
@@ -88,9 +78,7 @@ export class QueryInstance {
     return result;
   }
 
-  /**
-   * Get entities whose tracked components have changed since the last check.
-   */
+  /** Get entities with tracked component changes since last check (automatically partitioned for workers) */
   changed(ctx: Context): number[] {
     if (this.isSingletonQuery) {
       this.reader.updateSingletonChanged(ctx, this.masks);

@@ -12,21 +12,26 @@ import type {
 } from "./types";
 
 /**
- * Composable API for parallel systems that run in web workers.
- *
+ * Register a parallel system to run in a web worker.
+ * Call this in your worker file to set up the execution handler.
+ * Components are automatically initialized when first accessed.
+ * @param execute - System execution function
  * @example
- * // In your worker file (e.g., myWorker.ts):
- * import { setupWorker, query, type Context } from '@infinitecanvas/ecs';
+ * ```typescript
+ * import { setupWorker, useQuery, type Context } from '@infinitecanvas/ecs';
  * import { Position, Velocity } from './components';
  *
  * setupWorker(execute);
  *
+ * const movingEntities = useQuery((q) => q.with(Position, Velocity));
+ *
  * function execute(ctx: Context) {
- *   for (const eid of query(ctx, (q) => q.with(Position, Velocity))) {
- *     const pos = Position.read(eid);
- *     console.log(`Entity ${eid} Position: (${pos.x}, ${pos.y})`);
+ *   for (const eid of movingEntities.current(ctx)) {
+ *     const pos = Position.read(ctx, eid);
+ *     console.log(`Entity ${eid}: (${pos.x}, ${pos.y})`);
  *   }
  * }
+ * ```
  */
 
 interface InternalContext {
@@ -37,45 +42,21 @@ interface InternalContext {
 
 let internalContext: InternalContext | null = null;
 
-/**
- * Register a parallel system to run in a web worker.
- * Call this function in your worker file to set up the execution handler.
- * Components are automatically initialized when first accessed via queries.
- *
- * @param execute - Function to execute when the worker receives a task. Receives a Context object with entityBuffer.
- *
- * @example
- * import { setupWorker, query, type Context } from '@infinitecanvas/ecs';
- * import { Position, Velocity } from './components';
- *
- * setupWorker(execute);
- *
- * function execute(ctx: Context) {
- *   for (const eid of query(ctx, (q) => q.with(Position, Velocity))) {
- *     const pos = Position.read(eid);
- *     console.log(`Entity ${eid} Position: (${pos.x}, ${pos.y})`);
- *   }
- * }
- */
 export function setupWorker(
   execute: (ctx: Context) => void | Promise<void>
 ): void {
-  // Initialize internal context
   internalContext = {
     context: null,
     execute,
     ComponentTransferMap: null,
   };
 
-  // Set up message handler for communication with main thread
   self.onmessage = async (e: MessageEvent<WorkerIncomingMessage>) => {
     handleMessage(e, self);
   };
 }
 
-/**
- * Handle incoming messages from the main thread
- */
+/** Handle messages from main thread */
 function handleMessage(
   e: MessageEvent<WorkerIncomingMessage>,
   self: any
@@ -94,7 +75,6 @@ function handleMessage(
 
   try {
     if (type === "init") {
-      // Store component transfer data for lazy initialization
       internalContext.ComponentTransferMap = e.data.componentTransferMap;
 
       const eventBuffer = EventBuffer.fromTransfer(
@@ -111,7 +91,6 @@ function handleMessage(
         e.data.componentCount
       );
 
-      // Create Component instances from transfer data
       const components: Record<string, Component<any>> = {};
       for (const [name, transferData] of Object.entries(
         internalContext.ComponentTransferMap
@@ -142,11 +121,9 @@ function handleMessage(
 
       sendResult(self, threadIndex);
     } else if (type === "execute") {
-      // Execute the system
       if (!internalContext.context) {
         throw new Error("Entity buffer not initialized");
       }
-      // Increment frame number so queries know to update their caches
       internalContext.context.tick++;
       internalContext.context.threadIndex = threadIndex;
       internalContext.execute(internalContext.context);
@@ -157,26 +134,19 @@ function handleMessage(
   }
 }
 
-/**
- * Send a successful result back to the main thread
- */
+/** Send success response to main thread */
 function sendResult(self: any, threadIndex: number): void {
   const message: WorkerSuccessResponse = { threadIndex, result: true };
   self.postMessage(message);
 }
 
-/**
- * Send an error back to the main thread
- */
+/** Send error response to main thread */
 function sendError(self: any, threadIndex: number, error: string): void {
   const message: WorkerErrorResponse = { threadIndex, error };
   self.postMessage(message);
 }
 
-/**
- * Reset the internal worker state. Only used for testing.
- * @internal
- */
+/** Reset worker state (testing only) */
 export function __resetWorkerState(): void {
   internalContext = null;
 }

@@ -1,19 +1,13 @@
 import type { ComponentDef, SingletonDef } from "../Component";
 import type { Context } from "../types";
-import { QueryMasks } from "../types";
+import { QueryMasks } from "./Masks";
 import type { ComponentSchema } from "../Component/types";
 
-/**
- * Helper to create an empty mask array
- */
 function createEmptyMask(bytes: number): Uint8Array {
   return new Uint8Array(bytes);
 }
 
-/**
- * Helper to set a component bit in a mask array
- * Component bits are packed 8 per byte
- */
+/** Set a component bit in a bitmask (8 components per byte) */
 function setComponentBit(mask: Uint8Array, componentId: number): void {
   const byteIndex = Math.floor(componentId / 8);
   const bitIndex = componentId % 8;
@@ -23,10 +17,7 @@ function setComponentBit(mask: Uint8Array, componentId: number): void {
   }
 }
 
-/**
- * Query builder for filtering entities based on component composition
- * Uses Uint8Array bitmask operations for efficient matching (8 components per byte)
- */
+/** Query builder for constructing component filters using bitmask operations */
 export class QueryBuilder {
   private withMask: Uint8Array;
   private withoutMask: Uint8Array;
@@ -60,9 +51,20 @@ export class QueryBuilder {
   }
 
   /**
-   * Require entities to have all of the specified components
-   * @param componentDefs - Components or singletons that must be present
-   * @returns This query builder for chaining
+   * Require entities to have ALL specified components.
+   * Entities must have every component in the list to match the query.
+   *
+   * @param componentDefs - Component definitions that must all be present
+   * @returns This builder for method chaining
+   *
+   * @example
+   * ```typescript
+   * import { useQuery } from '@infinitecanvas/ecs';
+   * import { Position, Velocity } from './components';
+   *
+   * // Match entities that have both Position AND Velocity
+   * const movingEntities = useQuery((q) => q.with(Position, Velocity));
+   * ```
    */
   with(...componentDefs: ComponentDef<any>[]): this {
     for (const componentDef of componentDefs) {
@@ -72,9 +74,20 @@ export class QueryBuilder {
   }
 
   /**
-   * Require entities to NOT have any of the specified components
-   * @param componentDefs - Components or singletons that must NOT be present
-   * @returns This query builder for chaining
+   * Require entities to NOT have any specified components.
+   * Entities must have NONE of the listed components to match the query.
+   *
+   * @param componentDefs - Component definitions that must not be present
+   * @returns This builder for method chaining
+   *
+   * @example
+   * ```typescript
+   * import { useQuery } from '@infinitecanvas/ecs';
+   * import { Position, Dead } from './components';
+   *
+   * // Match entities that have Position but NOT Dead
+   * const aliveEntities = useQuery((q) => q.with(Position).without(Dead));
+   * ```
    */
   without(...componentDefs: ComponentDef<any>[]): this {
     for (const componentDef of componentDefs) {
@@ -84,9 +97,20 @@ export class QueryBuilder {
   }
 
   /**
-   * Require entities to have at least one of the specified components
-   * @param componentDefs - Components or singletons where at least one must be present
-   * @returns This query builder for chaining
+   * Require entities to have AT LEAST ONE specified component.
+   * Entities must have one or more of the listed components to match the query.
+   *
+   * @param componentDefs - Component definitions where at least one must be present
+   * @returns This builder for method chaining
+   *
+   * @example
+   * ```typescript
+   * import { useQuery } from '@infinitecanvas/ecs';
+   * import { Player, Enemy, NPC } from './components';
+   *
+   * // Match entities that are Player OR Enemy OR NPC
+   * const characters = useQuery((q) => q.any(Player, Enemy, NPC));
+   * ```
    */
   any(...componentDefs: ComponentDef<any>[]): this {
     for (const componentDef of componentDefs) {
@@ -96,11 +120,28 @@ export class QueryBuilder {
   }
 
   /**
-   * Require entities to have all of the specified components AND track changes to them
-   * When a tracked component's value changes, the entity will appear in query.changed
-   * This combines the functionality of with() and tracking()
-   * @param componentDefs - Components or singletons that must be present and should be tracked for changes
-   * @returns This query builder for chaining
+   * Require entities to have specified components AND track changes to them.
+   * Combines the functionality of with() and change tracking.
+   * When a tracked component is modified, the entity appears in query.changed().
+   *
+   * @param componentDefs - Component/singleton definitions to require and track
+   * @returns This builder for method chaining
+   *
+   * @example
+   * ```typescript
+   * import { useQuery } from '@infinitecanvas/ecs';
+   * import { Position, Velocity } from './components';
+   *
+   * // Match entities with Position (required) and track Velocity changes
+   * const query = useQuery((q) => q.with(Position).tracking(Velocity));
+   *
+   * function mySystem(ctx: Context) {
+   *   // Entities with changed Velocity component
+   *   for (const eid of query.changed(ctx)) {
+   *     console.log('Velocity changed for entity', eid);
+   *   }
+   * }
+   * ```
    */
   tracking(...componentDefs: (ComponentDef<any> | SingletonDef<any>)[]): this {
     for (const componentDef of componentDefs) {
@@ -111,13 +152,9 @@ export class QueryBuilder {
     return this;
   }
 
-  /**
-   * Build the query matcher
-   * @internal
-   */
+  /** Build query masks (internal) */
   _build(): QueryMasks {
-    // Pre-compute whether each mask has any non-zero values
-    // This allows fast-path skipping in EntityBuffer.matches()
+    // Pre-compute whether masks have non-zero values for fast-path skipping
     const hasTracking = !this.trackingMask.every((byte) => byte === 0);
     const hasWith = !this.withMask.every((byte) => byte === 0);
     const hasWithout = !this.withoutMask.every((byte) => byte === 0);

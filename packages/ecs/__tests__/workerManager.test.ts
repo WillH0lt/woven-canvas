@@ -193,7 +193,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 1,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -212,7 +212,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 3,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -243,7 +243,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 3,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -270,7 +270,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 2,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -291,7 +291,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker1.js",
         threads: 1,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -300,7 +300,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker2.js",
         threads: 1,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -323,7 +323,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 2, // Request exactly maxWorkers
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -342,7 +342,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 4, // Request more than maxWorkers
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -360,7 +360,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 2,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -382,7 +382,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 2,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -409,7 +409,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 2,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -438,7 +438,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 1,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -455,7 +455,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 1,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -486,7 +486,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 1,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -536,7 +536,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 1,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
@@ -562,7 +562,7 @@ describe("WorkerManager", () => {
         type: "worker",
         path: "/test/worker.js",
         threads: 1,
-        priority: "normal",
+        priority: "medium",
         prevEventIndex: 0,
         currEventIndex: 0,
       };
