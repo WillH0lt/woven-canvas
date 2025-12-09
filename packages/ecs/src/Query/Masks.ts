@@ -38,22 +38,17 @@ export class QueryMasks {
   usesSingleton(ctx: Context): boolean {
     const { components } = ctx;
 
-    if (!this.hasTracking && !this.hasWith) {
+    if (!this.hasTracking) {
       return false;
     }
 
-    const maxLength = Math.max(this.tracking.length, this.with.length);
+    for (let byteIndex = 0; byteIndex < this.tracking.length; byteIndex++) {
+      const trackingByte = this.tracking[byteIndex];
 
-    for (let byteIndex = 0; byteIndex < maxLength; byteIndex++) {
-      const trackingByte =
-        byteIndex < this.tracking.length ? this.tracking[byteIndex] : 0;
-      const withByte = byteIndex < this.with.length ? this.with[byteIndex] : 0;
-      const combinedByte = trackingByte | withByte;
-
-      if (combinedByte === 0) continue;
+      if (trackingByte === 0) continue;
 
       for (let bitIndex = 0; bitIndex < 8; bitIndex++) {
-        if ((combinedByte & (1 << bitIndex)) !== 0) {
+        if ((trackingByte & (1 << bitIndex)) !== 0) {
           const componentId = byteIndex * 8 + bitIndex;
 
           // Find component with this ID

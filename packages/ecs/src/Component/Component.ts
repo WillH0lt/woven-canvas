@@ -372,7 +372,7 @@ export class ComponentDef<T extends ComponentSchema> {
   /**
    * Get the component ID in a given context
    */
-  getComponentId(ctx: Context): number {
+  _getComponentId(ctx: Context): number {
     return this._getInstance(ctx).componentId;
   }
 
@@ -475,8 +475,7 @@ export class ComponentDef<T extends ComponentSchema> {
 }
 
 /**
- * Define a component with a name and schema.
- * Returns a ComponentDef that can be used to create per-world Component instances.
+ * Define a new component.
  *
  * @template T - The component schema type
  * @param name - The name of the component (e.g., "Position", "Velocity")
@@ -534,9 +533,10 @@ export class SingletonDef<T extends ComponentSchema> {
   }
 
   /**
-   * Get the component ID in a given context
+   * Get the component ID in a given Context
+   * @internal
    */
-  getComponentId(ctx: Context): number {
+  _getComponentId(ctx: Context): number {
     return this._getInstance(ctx).componentId;
   }
 
@@ -629,9 +629,8 @@ export class SingletonDef<T extends ComponentSchema> {
 }
 
 /**
- * Define a singleton with a name and schema.
+ * Define a new singleton.
  * A singleton is a component with exactly one instance per world.
- * No entity ID is needed to access it.
  *
  * @template T - The singleton schema type
  * @param name - The name of the singleton (e.g., "Mouse", "Time")
@@ -648,7 +647,6 @@ export class SingletonDef<T extends ComponentSchema> {
  *   pressed: field.boolean().default(false),
  * });
  *
- * // Use directly without useSingleton:
  * const mouse = Mouse.read(ctx);
  * const writableMouse = Mouse.write(ctx);
  * Mouse.copy(ctx, { x: 100, y: 200 });

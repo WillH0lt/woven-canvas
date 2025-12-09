@@ -22,8 +22,8 @@ describe("Component", () => {
       const ctx2 = world2._getContext();
 
       // Both worlds should have the component
-      expect(Position.getComponentId(ctx1)).toBe(0);
-      expect(Position.getComponentId(ctx2)).toBe(0);
+      expect(Position._getComponentId(ctx1)).toBe(0);
+      expect(Position._getComponentId(ctx2)).toBe(0);
     });
 
     it("should assign unique componentIds to components", () => {
@@ -38,8 +38,8 @@ describe("Component", () => {
       const world = new World([Position, Velocity]);
       const ctx = world._getContext();
 
-      expect(Position.getComponentId(ctx)).toBe(0);
-      expect(Velocity.getComponentId(ctx)).toBe(1);
+      expect(Position._getComponentId(ctx)).toBe(0);
+      expect(Velocity._getComponentId(ctx)).toBe(1);
     });
   });
 

@@ -116,8 +116,8 @@ describe("Singleton", () => {
       const world = new World([Mouse, Time]);
       const ctx = world._getContext();
 
-      expect(Mouse.getComponentId(ctx)).toBe(0);
-      expect(Time.getComponentId(ctx)).toBe(1);
+      expect(Mouse._getComponentId(ctx)).toBe(0);
+      expect(Time._getComponentId(ctx)).toBe(1);
     });
 
     it("should throw when accessing unregistered singleton", () => {

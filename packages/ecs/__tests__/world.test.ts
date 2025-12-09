@@ -29,9 +29,9 @@ describe("World", () => {
 
       const world = new World([Position, Velocity, Health]);
       const ctx = world._getContext();
-      expect(Position.getComponentId(ctx)).toBe(0);
-      expect(Velocity.getComponentId(ctx)).toBe(1);
-      expect(Health.getComponentId(ctx)).toBe(2);
+      expect(Position._getComponentId(ctx)).toBe(0);
+      expect(Velocity._getComponentId(ctx)).toBe(1);
+      expect(Health._getComponentId(ctx)).toBe(2);
     });
   });
 
@@ -442,11 +442,11 @@ describe("World", () => {
       const ctx2 = world2._getContext();
 
       // Each world assigns componentIds based on its own registration order
-      expect(Position.getComponentId(ctx1)).toBe(0);
-      expect(Velocity.getComponentId(ctx1)).toBe(1);
+      expect(Position._getComponentId(ctx1)).toBe(0);
+      expect(Velocity._getComponentId(ctx1)).toBe(1);
 
-      expect(Velocity.getComponentId(ctx2)).toBe(0);
-      expect(Position.getComponentId(ctx2)).toBe(1);
+      expect(Velocity._getComponentId(ctx2)).toBe(0);
+      expect(Position._getComponentId(ctx2)).toBe(1);
     });
 
     it("should allow entity creation in both worlds independently", () => {

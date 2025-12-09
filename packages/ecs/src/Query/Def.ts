@@ -28,7 +28,10 @@ export class QueryDef {
     return `${this.id}_${ctx.readerId}`;
   }
 
-  /** Get or create the Query instance for a context (internal) */
+  /**
+   * Get or create the Query instance for a context
+   * @internal
+   */
   _getInstance(ctx: Context): QueryInstance {
     const name = this.getName(ctx);
 
@@ -50,7 +53,10 @@ export class QueryDef {
     return query;
   }
 
-  /** Get query masks without creating a Query instance (internal) */
+  /**
+   * Get query masks without creating a Query instance
+   * @internal
+   */
   _getMasks(ctx: Context): QueryMasks {
     const queryBuilder = new QueryBuilder(ctx.componentCount, ctx);
     const configuredBuilder = this.builder(queryBuilder);

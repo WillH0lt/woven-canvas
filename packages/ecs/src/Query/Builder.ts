@@ -38,7 +38,7 @@ export class QueryBuilder {
   /**
    * Get the component ID from the context for a given ComponentDef or SingletonDef
    */
-  private getComponentId(
+  private _getComponentId(
     componentDef: ComponentDef<ComponentSchema> | SingletonDef<ComponentSchema>
   ): number {
     const component = this.ctx.components[componentDef.name];
@@ -68,7 +68,7 @@ export class QueryBuilder {
    */
   with(...componentDefs: ComponentDef<any>[]): this {
     for (const componentDef of componentDefs) {
-      setComponentBit(this.withMask, this.getComponentId(componentDef));
+      setComponentBit(this.withMask, this._getComponentId(componentDef));
     }
     return this;
   }
@@ -91,7 +91,7 @@ export class QueryBuilder {
    */
   without(...componentDefs: ComponentDef<any>[]): this {
     for (const componentDef of componentDefs) {
-      setComponentBit(this.withoutMask, this.getComponentId(componentDef));
+      setComponentBit(this.withoutMask, this._getComponentId(componentDef));
     }
     return this;
   }
@@ -114,7 +114,7 @@ export class QueryBuilder {
    */
   any(...componentDefs: ComponentDef<any>[]): this {
     for (const componentDef of componentDefs) {
-      setComponentBit(this.anyMask, this.getComponentId(componentDef));
+      setComponentBit(this.anyMask, this._getComponentId(componentDef));
     }
     return this;
   }
@@ -145,14 +145,17 @@ export class QueryBuilder {
    */
   tracking(...componentDefs: (ComponentDef<any> | SingletonDef<any>)[]): this {
     for (const componentDef of componentDefs) {
-      const componentId = this.getComponentId(componentDef);
+      const componentId = this._getComponentId(componentDef);
       setComponentBit(this.withMask, componentId);
       setComponentBit(this.trackingMask, componentId);
     }
     return this;
   }
 
-  /** Build query masks (internal) */
+  /**
+   * Build query masks
+   * @internal
+   */
   _build(): QueryMasks {
     // Pre-compute whether masks have non-zero values for fast-path skipping
     const hasTracking = !this.trackingMask.every((byte) => byte === 0);
