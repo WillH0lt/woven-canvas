@@ -7,7 +7,8 @@ export {
 } from "./Component";
 export {
   World,
-  type WorldSubscribeCallback,
+  type QuerySubscribeCallback,
+  type SingletonSubscribeCallback,
   type NextSyncCallback,
 } from "./World";
 export { setupWorker } from "./Worker";

@@ -24,8 +24,10 @@ import {
   addComponent,
   World,
   useQuery,
+  useSingleton,
   field,
   defineComponent,
+  defineSingleton,
 } from "@infinitecanvas/ecs";
 import { reactive } from "vue";
 
@@ -50,7 +52,14 @@ const Color = defineComponent("Color", {
   blue: field.uint8().default(0),
 });
 
-const world = new World([Velocity, Position, Size, Color], { threads: 4 });
+const MouseSingleton = defineSingleton("Mouse", {
+  x: field.float32().default(0),
+  y: field.float32().default(0),
+});
+
+const world = new World([Velocity, Position, Size, Color, MouseSingleton], {
+  threads: 4,
+});
 
 world.nextSync((ctx) => {
   // Create some blocks
@@ -76,6 +85,16 @@ world.nextSync((ctx) => {
   }
 });
 
+const Mouse = useSingleton(MouseSingleton);
+
+window.addEventListener("mousemove", (event) => {
+  world.nextSync((ctx) => {
+    const mouse = Mouse.write(ctx);
+    mouse.x = event.clientX;
+    mouse.y = event.clientY;
+  });
+});
+
 async function changeColor(entityId: number) {
   world.nextSync((ctx) => {
     const color = Color.write(ctx, entityId);
@@ -88,12 +107,6 @@ async function changeColor(entityId: number) {
 const blocks = useQuery((q) => q.tracking(Position, Size, Color));
 
 const system1 = defineSystem((ctx: Context) => {
-  const added = blocks.added(ctx);
-
-  if (added.length > 0) {
-    console.log("Blocks added this frame:", added);
-  }
-
   for (const eid of blocks.current(ctx)) {
     const pos = Position.write(ctx, eid);
     const vel = Velocity.write(ctx, eid);
@@ -116,10 +129,6 @@ const system1 = defineSystem((ctx: Context) => {
 
 const state = reactive<Record<number, any>>({});
 world.subscribe(blocks, (ctx, { added, removed, changed }) => {
-  if (added.length > 0) {
-    console.log("Blocks added (from subscribe):", added);
-  }
-
   for (const entityId of added) {
     state[entityId] = {};
     state[entityId].Position = Position.snapshot(ctx, entityId);
@@ -138,6 +147,11 @@ world.subscribe(blocks, (ctx, { added, removed, changed }) => {
       state[entityId].Color = Color.snapshot(ctx, entityId);
     }
   }
+});
+
+world.subscribe(MouseSingleton, (ctx) => {
+  const mouse = MouseSingleton.readSingleton(ctx);
+  console.log("Mouse moved:", mouse.x, mouse.y);
 });
 
 async function loop() {

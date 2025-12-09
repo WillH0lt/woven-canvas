@@ -1,15 +1,16 @@
 import { WorkerManager } from "./WorkerManager";
-import { Component, type ComponentDef } from "./Component";
+import { Component, ComponentDef, type ComponentSchema } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer, EventType } from "./EventBuffer";
 import { Pool } from "./Pool";
 import { type QueryDef } from "./Query";
-import type { System, Context, EntityId, QueryMasks } from "./types";
+import { Singleton } from "./Singleton";
+import type { System, Context } from "./types";
 
 /**
  * Callback type for world event subscribers
  */
-export type WorldSubscribeCallback = (
+export type QuerySubscribeCallback = (
   ctx: Context,
   result: {
     added: number[];
@@ -19,11 +20,18 @@ export type WorldSubscribeCallback = (
 ) => void;
 
 /**
+ * Callback type for singleton event subscribers
+ */
+export type SingletonSubscribeCallback = (ctx: Context) => void;
+
+/**
  * Internal subscriber state
  */
 interface Subscriber {
-  queryDef: QueryDef;
-  callback: WorldSubscribeCallback;
+  type: "query" | "singleton";
+  queryDef?: QueryDef;
+  singleton?: Singleton<any>;
+  callback: QuerySubscribeCallback | SingletonSubscribeCallback;
   readerId: string;
 }
 
@@ -264,25 +272,79 @@ export class World {
    * unsubscribe();
    * ```
    */
-  subscribe(queryDef: QueryDef, callback: WorldSubscribeCallback): () => void {
+  subscribe(queryDef: QueryDef, callback: QuerySubscribeCallback): () => void;
+
+  /**
+   * Subscribe to singleton change events.
+   * Callbacks are invoked when sync() is called if the singleton has changed.
+   * @param singletonDef - The singleton component definition
+   * @param callback - Function called with { changed: boolean }
+   * @returns Unsubscribe function
+   * @example
+   * ```typescript
+   * const MouseSingleton = defineSingleton("Mouse", {
+   *   x: field.float32().default(0),
+   *   y: field.float32().default(0),
+   * });
+   *
+   * const unsubscribe = world.subscribe(MouseSingleton, (ctx, { changed }) => {
+   *   if (changed) {
+   *     const mouse = MouseSingleton.readSingleton(ctx);
+   *     console.log("Mouse moved:", mouse.x, mouse.y);
+   *   }
+   * });
+   *
+   * // Later, to stop receiving events:
+   * unsubscribe();
+   * ```
+   */
+  subscribe(
+    singletonDef: ComponentDef<any>,
+    callback: SingletonSubscribeCallback
+  ): () => void;
+
+  subscribe(
+    defOrQuery: QueryDef | ComponentDef<any>,
+    callback: QuerySubscribeCallback | SingletonSubscribeCallback
+  ): () => void {
     const ctx = this.context;
 
     // Generate unique reader ID for this subscriber
     const subscriberId = this.subscriberCounter++;
     const readerId = `world_${this.worldId}_subscriber_${subscriberId}`;
 
-    // Eagerly initialize the QueryInstance so the reader starts from current write index.
-    // This ensures events written after subscription are detected in sync().
-    queryDef._getInstance({
-      ...ctx,
-      readerId,
-    });
+    let subscriber: Subscriber;
 
-    const subscriber: Subscriber = {
-      queryDef,
-      callback,
-      readerId,
-    };
+    // Check if this is a singleton subscription
+    if (defOrQuery instanceof ComponentDef && defOrQuery.isSingleton) {
+      // Create a Singleton instance for efficient tracking
+      const singleton = new Singleton(defOrQuery);
+
+      subscriber = {
+        type: "singleton",
+        singleton,
+        callback: callback as SingletonSubscribeCallback,
+        readerId,
+      };
+    } else {
+      // Regular query subscription
+      const queryDef = defOrQuery as QueryDef;
+
+      // Eagerly initialize the QueryInstance so the reader starts from current write index.
+      // This ensures events written after subscription are detected in sync().
+      queryDef._getInstance({
+        ...ctx,
+        readerId,
+      });
+
+      subscriber = {
+        type: "query",
+        queryDef,
+        callback: callback as QuerySubscribeCallback,
+        readerId,
+      };
+    }
+
     this.subscribers.push(subscriber);
 
     return () => {
@@ -327,24 +389,36 @@ export class World {
         readerId: subscriber.readerId,
       };
 
-      const queryDef = subscriber.queryDef;
+      if (subscriber.type === "singleton") {
+        // Handle singleton subscription
+        const singleton = subscriber.singleton!;
+        const changed = singleton.changed(ctx);
 
-      const results = {
-        added: queryDef.added(ctx),
-        removed: queryDef.removed(ctx),
-        changed: queryDef.changed(ctx),
-      };
+        // Only call callback if singleton changed
+        if (changed) {
+          (subscriber.callback as SingletonSubscribeCallback)(ctx);
+        }
+      } else {
+        // Handle query subscription
+        const queryDef = subscriber.queryDef!;
 
-      // Check if there are any events to report
-      if (
-        results.added.length === 0 &&
-        results.removed.length === 0 &&
-        results.changed.length === 0
-      ) {
-        continue;
+        const results = {
+          added: queryDef.added(ctx),
+          removed: queryDef.removed(ctx),
+          changed: queryDef.changed(ctx),
+        };
+
+        // Check if there are any events to report
+        if (
+          results.added.length === 0 &&
+          results.removed.length === 0 &&
+          results.changed.length === 0
+        ) {
+          continue;
+        }
+
+        (subscriber.callback as QuerySubscribeCallback)(ctx, results);
       }
-
-      subscriber.callback(ctx, results);
     }
   }
 

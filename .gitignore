@@ -259,6 +259,8 @@ dist
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
+.claude
+
 # Local History for Visual Studio Code
 .history/
 
