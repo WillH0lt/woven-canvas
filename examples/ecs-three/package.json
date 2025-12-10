@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@tweakpane/core": "^2.0.5",
     "@types/three": "^0.181.0",
     "typescript": "~5.9.3",
     "vite": "^7.2.4"
@@ -16,6 +17,7 @@
   "dependencies": {
     "@infinitecanvas/ecs": "workspace:*",
     "stats.js": "^0.17.0",
-    "three": "^0.181.2"
+    "three": "^0.181.2",
+    "tweakpane": "^4.0.5"
   }
 }

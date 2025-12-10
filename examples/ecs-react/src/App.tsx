@@ -36,7 +36,6 @@ const Color = defineComponent({
 const world = new World([Velocity, Position, Size, Color]);
 
 // Query for entities with Position, Size, and Color (tracking changes)
-// eslint-disable-next-line react-hooks/rules-of-hooks
 const blocks = defineQuery((q) => q.tracking(Position, Size, Color));
 
 // Movement system - handles physics and boundary collision

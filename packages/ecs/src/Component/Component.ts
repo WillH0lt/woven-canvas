@@ -170,14 +170,16 @@ export class Component<T extends ComponentSchema> {
         newBuffer[fieldName] = view;
       }
       this._buffer = newBuffer as ComponentBuffer<T>;
+
+      // Only initialize singleton defaults when creating a new buffer.
+      // When reconstructing from transfer, the buffer already contains valid data.
+      if (this.isSingleton) {
+        this.initializeSingletonDefaults();
+      }
     }
 
     // Initialize master objects for direct buffer access
     this.initializeMasters();
-
-    if (this.isSingleton) {
-      this.initializeSingletonDefaults();
-    }
   }
 
   /**

@@ -1,19 +1,21 @@
 import "./style.css";
 import * as THREE from "three";
 import Stats from "stats.js";
+import { Pane, type TpChangeEvent } from "tweakpane";
 import { World, addComponent, createEntity } from "@infinitecanvas/ecs";
 import * as comps from "./components";
 import {
   physicsSystem,
   renderSystem,
-  lifetimeSystem,
+  reaperSystem,
   attractorSystem,
   spawnerSystem,
 } from "./systems";
 
-// Configuration
-const MAX_PARTICLES = 20_000;
-const SPAWN_RATE = 1000; // particles per second
+const maxParticles = 100_000;
+const particlesPerSecond = 1000;
+const particleLifetimeSeconds = 5;
+const particleSize = 0.01;
 
 // Setup Three.js scene
 const scene = new THREE.Scene();
@@ -37,15 +39,11 @@ document.body.appendChild(renderer.domElement);
 // Create instanced mesh for efficient particle rendering
 const geometry = new THREE.SphereGeometry(1, 8, 8);
 const material = new THREE.MeshBasicMaterial();
-const instancedMesh = new THREE.InstancedMesh(
-  geometry,
-  material,
-  MAX_PARTICLES
-);
+const instancedMesh = new THREE.InstancedMesh(geometry, material, maxParticles);
 
 // Initialize instance colors array
 instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(
-  new Float32Array(MAX_PARTICLES * 3),
+  new Float32Array(maxParticles * 3),
   3
 );
 
@@ -53,12 +51,11 @@ scene.add(instancedMesh);
 
 // Create the ECS world with all components and resources
 const world = new World(Array.from(Object.values(comps)), {
-  maxEntities: MAX_PARTICLES + 1, // +1 for attractor entity
+  maxEntities: maxParticles + 1, // +1 for attractor entity
   resources: {
     instancedMesh,
     camera,
-    maxParticles: MAX_PARTICLES,
-    spawnRate: SPAWN_RATE,
+    maxParticles: maxParticles,
   },
 });
 
@@ -79,6 +76,14 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// Initialize config singleton
+world.nextSync((ctx) => {
+  const config = comps.Config.write(ctx);
+  config.particlesPerSecond = particlesPerSecond;
+  config.particleLifetimeSeconds = particleLifetimeSeconds;
+  config.particleSize = particleSize;
+});
+
 // Initialize attractors
 world.nextSync((ctx) => {
   const eid = createEntity(ctx);
@@ -90,6 +95,55 @@ world.nextSync((ctx) => {
   attraction.targetY = 0;
   attraction.targetZ = 0;
 });
+
+// Tweakpane UI
+const pane = new Pane();
+const params = {
+  particlesPerSecond,
+  particleLifetimeSeconds,
+  particleSize,
+};
+pane
+  .addBinding(params, "particlesPerSecond", {
+    min: 0,
+    max: 3000,
+    step: 100,
+    label: "Spawn Rate (particles/s)",
+  })
+  .on("change", (ev: TpChangeEvent<number>) => {
+    world.nextSync((ctx) => {
+      const config = comps.Config.write(ctx);
+      config.particlesPerSecond = ev.value;
+    });
+  });
+
+pane
+  .addBinding(params, "particleLifetimeSeconds", {
+    min: 1,
+    max: 10,
+    step: 1,
+    label: "Particle Lifetime (s)",
+  })
+  .on("change", (ev: TpChangeEvent<number>) => {
+    world.nextSync((ctx) => {
+      const config = comps.Config.write(ctx);
+      config.particleLifetimeSeconds = ev.value;
+    });
+  });
+
+pane
+  .addBinding(params, "particleSize", {
+    min: 0.01,
+    max: 1,
+    step: 0.01,
+    label: "Particle Size",
+  })
+  .on("change", (ev: TpChangeEvent<number>) => {
+    world.nextSync((ctx) => {
+      const config = comps.Config.write(ctx);
+      config.particleSize = ev.value;
+    });
+  });
 
 // Main loop
 let lastTime = performance.now();
@@ -122,12 +176,13 @@ async function animate() {
   world.nextSync((ctx) => {
     const time = comps.Time.write(ctx);
     time.delta = deltaTime;
+    time.current = currentTime / 1000;
   });
 
   world.sync();
   await world.execute(
     spawnerSystem,
-    lifetimeSystem,
+    reaperSystem,
     renderSystem,
     physicsSystem,
     attractorSystem

@@ -4,13 +4,12 @@ import {
   Velocity,
   Acceleration,
   Attractor,
-  Lifetime,
   Time,
 } from "./components";
 
 // Define queries
 const particlesQuery = defineQuery((q) =>
-  q.with(Position, Velocity, Acceleration, Lifetime)
+  q.with(Position, Velocity, Acceleration)
 );
 const attractorsQuery = defineQuery((q) => q.with(Attractor));
 
@@ -63,9 +62,5 @@ setupWorker((ctx) => {
     pos.x += vel.x * time.delta;
     pos.y += vel.y * time.delta;
     pos.z += vel.z * time.delta;
-
-    // Update lifetimes
-    const lifetime = Lifetime.write(ctx, eid);
-    lifetime.current += time.delta;
   }
 });

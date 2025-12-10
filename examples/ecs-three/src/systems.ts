@@ -14,17 +14,17 @@ import {
   Acceleration,
   Color,
   Size,
-  Lifetime,
+  DeathTime,
   Mouse,
   Attractor,
   Time,
+  Config,
 } from "./components";
 
 export interface Resources {
   instancedMesh: THREE.InstancedMesh;
   camera: THREE.Camera;
   maxParticles: number;
-  spawnRate: number;
 }
 
 // Create the worker system for physics
@@ -80,14 +80,13 @@ export const renderSystem = defineSystem((ctx) => {
   }
 });
 
-// Lifetime management system
-const lifetimeQuery = defineQuery((q) => q.with(Lifetime));
+const deathTimeQuery = defineQuery((q) => q.with(DeathTime));
+export const reaperSystem = defineSystem((ctx) => {
+  const time = Time.read(ctx);
 
-export const lifetimeSystem = defineSystem((ctx) => {
-  for (const eid of lifetimeQuery.current(ctx)) {
-    const lifetime = Lifetime.read(ctx, eid);
-
-    if (lifetime.current >= lifetime.max) {
+  for (const eid of deathTimeQuery.current(ctx)) {
+    const deathTime = DeathTime.read(ctx, eid);
+    if (time.current >= deathTime.value) {
       removeEntity(ctx, eid);
     }
   }
@@ -119,9 +118,9 @@ export const attractorSystem = defineSystem((ctx) => {
 
 // Particle spawner system
 export const spawnerSystem = defineSystem((ctx) => {
-  const { spawnRate } = getResources<Resources>(ctx);
   const time = Time.read(ctx);
-  const particlesToSpawn = Math.floor(time.delta * spawnRate);
+  const config = Config.read(ctx);
+  const particlesToSpawn = Math.ceil(time.delta * config.particlesPerSecond);
 
   for (let i = 0; i < particlesToSpawn; i++) {
     const eid = createEntity(ctx);
@@ -160,11 +159,10 @@ export const spawnerSystem = defineSystem((ctx) => {
 
     addComponent(ctx, eid, Size);
     const size = Size.write(ctx, eid);
-    size.value = 0.1 + Math.random() * 0.15;
+    size.value = config.particleSize + Math.random() * 0.15;
 
-    addComponent(ctx, eid, Lifetime);
-    const lifetime = Lifetime.write(ctx, eid);
-    lifetime.current = 0;
-    lifetime.max = 3 + Math.random() * 4;
+    addComponent(ctx, eid, DeathTime);
+    const deathTime = DeathTime.write(ctx, eid);
+    deathTime.value = time.current + config.particleLifetimeSeconds;
   }
 });

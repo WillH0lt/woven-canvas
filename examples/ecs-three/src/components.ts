@@ -24,9 +24,8 @@ export const Color = defineComponent({
   b: field.float32().default(1),
 });
 
-export const Lifetime = defineComponent({
-  current: field.float32(),
-  max: field.float32().default(5),
+export const DeathTime = defineComponent({
+  value: field.float32(),
 });
 
 export const Size = defineComponent({
@@ -47,4 +46,11 @@ export const Mouse = defineSingleton({
 
 export const Time = defineSingleton({
   delta: field.float32(),
+  current: field.float32(),
+});
+
+export const Config = defineSingleton({
+  particlesPerSecond: field.float32(),
+  particleLifetimeSeconds: field.float32(),
+  particleSize: field.float32(),
 });
