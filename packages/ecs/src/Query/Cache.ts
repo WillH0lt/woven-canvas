@@ -114,6 +114,20 @@ export class QueryCache {
   }
 
   /**
+   * Clear all entities from the cache - O(n)
+   */
+  clear(): void {
+    const count = this.dense[DENSE_COUNT_INDEX];
+    // Reset sparse entries for all cached entities
+    for (let i = 0; i < count; i++) {
+      const entityId = this.dense[DENSE_DATA_START + i];
+      this.sparse[entityId] = SPARSE_NOT_PRESENT;
+    }
+    // Reset count
+    this.dense[DENSE_COUNT_INDEX] = 0;
+  }
+
+  /**
    * Get cached entities as an array (for compatibility)
    * Note: Creates a new array - prefer using the iterator for better performance
    */

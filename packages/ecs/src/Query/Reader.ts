@@ -12,8 +12,12 @@ export class QueryReader {
   private lastIndex: number;
   private lastTick: number = -1;
 
-  // Pending event range (set when cache is updated, read when results are computed)
-  private fromIndex: number = 0;
+  // Event range for cache updates (all events since last read)
+  private prevExecutionIndex: number = 0;
+
+  // Event range for results (only events since prevEventIndex - last frame)
+  private prevFrameIndex: number = 0;
+
   private toIndex: number = 0;
 
   // results computed from last processed events
@@ -26,11 +30,11 @@ export class QueryReader {
   }
 
   /**
-   * Check for new events and update the cache. Returns true if there were new events.
+   * Check for new events and update the cache.
    */
-  updateCache(ctx: Context, cache: QueryCache, masks: QueryMasks): boolean {
+  updateCache(ctx: Context, cache: QueryCache, masks: QueryMasks): void {
     if (ctx.tick === this.lastTick) {
-      return this.fromIndex !== this.toIndex;
+      return;
     }
 
     // Reset for new tick
@@ -40,19 +44,15 @@ export class QueryReader {
     this.lastTick = ctx.tick;
 
     const currentIndex = ctx.eventBuffer.getWriteIndex();
-    if (currentIndex === this.lastIndex) {
-      this.fromIndex = this.toIndex = 0;
-      return false;
-    }
 
-    // Store range for lazy result computation
-    this.fromIndex = this.lastIndex;
+    this.prevExecutionIndex = this.lastIndex;
+    this.prevFrameIndex = ctx.prevEventIndex;
+
     this.toIndex = currentIndex;
     this.lastIndex = currentIndex;
 
     // Process events to update cache and compute results in one pass
     this.processEventsAndComputeResults(ctx, cache, masks);
-    return true;
   }
 
   /**
@@ -69,16 +69,14 @@ export class QueryReader {
     this.lastTick = ctx.tick;
 
     const currentIndex = ctx.eventBuffer.getWriteIndex();
-    if (currentIndex === this.lastIndex) {
-      return;
-    }
 
-    this.fromIndex = this.lastIndex;
+    // Results range: only events since prevEventIndex (last frame's events)
+    this.prevFrameIndex = ctx.prevEventIndex;
     this.toIndex = currentIndex;
     this.lastIndex = currentIndex;
 
     const result = ctx.eventBuffer.collectEntitiesInRange(
-      this.fromIndex,
+      this.prevFrameIndex,
       EventType.CHANGED,
       masks.tracking
     );
@@ -89,8 +87,31 @@ export class QueryReader {
   }
 
   /**
+   * Rebuild the cache by scanning all entities in the entity buffer.
+   * Used when event buffer overflow prevents incremental updates.
+   */
+  private rebuildCacheFromEntityBuffer(
+    ctx: Context,
+    cache: QueryCache,
+    masks: QueryMasks
+  ): void {
+    const entityBuffer = ctx.entityBuffer;
+    const maxEntities = ctx.maxEntities;
+
+    // Clear the cache and rebuild from scratch
+    cache.clear();
+
+    for (let entityId = 0; entityId < maxEntities; entityId++) {
+      if (entityBuffer.has(entityId) && entityBuffer.matches(entityId, masks)) {
+        cache.add(entityId);
+      }
+    }
+  }
+
+  /**
    * Process events from the buffer, updating cache and computing results in a single pass.
-   * This ensures we have access to wasInCache state when determining added/removed.
+   * Cache is updated for ALL events since lastIndex, but results only include events
+   * since prevEventIndex (last frame).
    */
   private processEventsAndComputeResults(
     ctx: Context,
@@ -101,22 +122,41 @@ export class QueryReader {
     const entityBuffer = ctx.entityBuffer;
     const dataView = ctx.eventBuffer.getDataView();
 
-    let fromIndex = this.fromIndex;
+    const prevExecutionIndex = this.prevExecutionIndex;
     const toIndex = this.toIndex;
+    let prevFrameIndex = this.prevFrameIndex;
 
-    // Handle buffer overflow
-    if (toIndex - fromIndex > maxEvents) {
-      fromIndex = toIndex - maxEvents;
+    // Handle buffer overflow for cache range - rebuild cache from entity buffer
+    const cacheOverflow = toIndex - prevExecutionIndex > maxEvents;
+    if (cacheOverflow) {
+      this.rebuildCacheFromEntityBuffer(ctx, cache, masks);
     }
 
-    const fromSlot = fromIndex % maxEvents;
+    // Handle buffer overflow for results range - warn user and clamp
+    const resultsOverflow = toIndex - prevFrameIndex > maxEvents;
+    if (resultsOverflow) {
+      console.warn(
+        `[ECS] Event buffer overflow: ${
+          toIndex - prevFrameIndex
+        } events since last frame, ` +
+          `but maxEvents is ${maxEvents}. Some added/removed/changed events may be missed. ` +
+          `Consider increasing maxEvents in World constructor.`
+      );
+      prevFrameIndex = toIndex - maxEvents;
+    }
+
+    // Determine event scan range:
+    // - If cache overflowed: only scan from prevFrameIndex (for results only, cache already rebuilt)
+    // - Otherwise: scan from prevExecutionIndex (for both cache updates and results)
+    const scanFromIndex = cacheOverflow ? prevFrameIndex : prevExecutionIndex;
+
+    const scanFromSlot = scanFromIndex % maxEvents;
     const toSlot = toIndex % maxEvents;
-    if (fromSlot === toSlot) {
-      return;
-    }
 
     let eventsToScan =
-      toSlot >= fromSlot ? toSlot - fromSlot : maxEvents - fromSlot + toSlot;
+      toSlot >= scanFromSlot
+        ? toSlot - scanFromSlot
+        : maxEvents - scanFromSlot + toSlot;
     if (eventsToScan > maxEvents) eventsToScan = maxEvents;
 
     // Track entity states for result computation
@@ -138,8 +178,12 @@ export class QueryReader {
     const trackingMask = masks.tracking;
 
     for (let i = 0; i < eventsToScan; i++) {
-      const slot = (fromSlot + i) % maxEvents;
+      const slot = (scanFromSlot + i) % maxEvents;
       const dataIndex = slot * 2;
+      const eventIndex = scanFromIndex + i;
+
+      // Check if this event is within the results range (last frame only)
+      const inResultsRange = eventIndex >= prevFrameIndex;
 
       const entityId = Atomics.load(dataView, dataIndex);
       const packedData = Atomics.load(dataView, dataIndex + 1);
@@ -150,32 +194,36 @@ export class QueryReader {
       const existingState = seen[entityId];
 
       if (eventType === EventType.REMOVED) {
-        // Update cache
-        if (wasInCache) cache.remove(entityId);
+        // Update cache (skip if cache was rebuilt - it's already correct)
+        if (!cacheOverflow && wasInCache) {
+          cache.remove(entityId);
+        }
 
-        // Compute results
-        if (existingState === STATE_ADDED) {
-          // Added then removed - cancel out
-          const idx = added.indexOf(entityId);
-          if (idx !== -1) {
-            added[idx] = added[added.length - 1];
-            added.length--;
+        // Compute results (only for events in results range)
+        if (inResultsRange) {
+          if (existingState === STATE_ADDED) {
+            // Added then removed - cancel out
+            const idx = added.indexOf(entityId);
+            if (idx !== -1) {
+              added[idx] = added[added.length - 1];
+              added.length--;
+            }
+            seen[entityId] = STATE_REMOVED;
+          } else if (!existingState && wasInCache) {
+            // Entity was in cache, now removed
+            seen[entityId] = STATE_REMOVED;
+            removed.push(entityId);
           }
-          seen[entityId] = STATE_REMOVED;
-        } else if (!existingState && wasInCache) {
-          // Entity was in cache, now removed
-          seen[entityId] = STATE_REMOVED;
-          removed.push(entityId);
         }
       } else if (eventType === EventType.ADDED) {
-        // Update cache
+        // Update cache (skip if cache was rebuilt - it's already correct)
         const matchesNow = entityBuffer.matches(entityId, masks);
-        if (!wasInCache && matchesNow) {
+        if (!cacheOverflow && !wasInCache && matchesNow) {
           cache.add(entityId);
         }
 
-        // Compute results - entity added to cache
-        if (!existingState && !wasInCache && matchesNow) {
+        // Compute results (only for events in results range)
+        if (inResultsRange && !existingState && !wasInCache && matchesNow) {
           seen[entityId] = STATE_ADDED;
           added.push(entityId);
         }
@@ -183,17 +231,19 @@ export class QueryReader {
         eventType === EventType.COMPONENT_ADDED ||
         eventType === EventType.COMPONENT_REMOVED
       ) {
-        // Update cache
+        // Update cache (skip if cache was rebuilt - it's already correct)
         const stillExists = entityBuffer.has(entityId);
         const matchesNow = stillExists && entityBuffer.matches(entityId, masks);
-        if (matchesNow && !wasInCache) {
-          cache.add(entityId);
-        } else if (!matchesNow && wasInCache) {
-          cache.remove(entityId);
+        if (!cacheOverflow) {
+          if (matchesNow && !wasInCache) {
+            cache.add(entityId);
+          } else if (!matchesNow && wasInCache) {
+            cache.remove(entityId);
+          }
         }
 
-        // Compute results
-        if (!existingState) {
+        // Compute results (only for events in results range)
+        if (inResultsRange && !existingState) {
           if (!wasInCache && matchesNow) {
             // Entity entered the query
             seen[entityId] = STATE_ADDED;
@@ -207,8 +257,8 @@ export class QueryReader {
       } else if (eventType === EventType.CHANGED && hasTracking) {
         // No cache update needed for CHANGED events
 
-        // Compute results - only for entities currently in cache
-        if (!existingState && wasInCache) {
+        // Compute results (only for events in results range)
+        if (inResultsRange && !existingState && wasInCache) {
           const componentId = (packedData >> 16) & 0xffff;
           const byteIndex = componentId >> 3;
           const bitIndex = componentId & 7;

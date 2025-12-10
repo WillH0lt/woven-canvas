@@ -116,6 +116,7 @@ function handleMessage(
         threadIndex: e.data.threadIndex,
         threadCount: e.data.threadCount,
         readerId: "worker",
+        prevEventIndex: 0,
       };
 
       sendResult(self, threadIndex);
@@ -123,9 +124,14 @@ function handleMessage(
       if (!internalContext.context) {
         throw new Error("Entity buffer not initialized");
       }
-      internalContext.context.tick++;
-      internalContext.context.threadIndex = threadIndex;
-      internalContext.execute(internalContext.context);
+      const ctx = internalContext.context;
+      const currentEventIndex = ctx.eventBuffer.getWriteIndex();
+      // prevEventIndex stays as-is (from last execution), will be updated after execute
+      ctx.tick++;
+      ctx.threadIndex = threadIndex;
+      internalContext.execute(ctx);
+      // Update prevEventIndex for next execution
+      ctx.prevEventIndex = currentEventIndex;
       sendResult(self, threadIndex);
     }
   } catch (error: any) {

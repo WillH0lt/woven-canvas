@@ -25,12 +25,12 @@ const library: BenchmarkLibrary = {
   Velocity: null as ComponentDef<any> | null,
   moveSystem: null,
   setup() {
-    this.Position = defineComponent("Position", {
+    this.Position = defineComponent({
       x: field.float32(),
       y: field.float32(),
     });
 
-    this.Velocity = defineComponent("Velocity", {
+    this.Velocity = defineComponent({
       x: field.float32(),
       y: field.float32(),
     });

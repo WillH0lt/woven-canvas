@@ -41,6 +41,11 @@ export interface Context {
    * Unique reader identifier. Used internally for query caching.
    */
   readerId: string;
+  /**
+   * Event buffer index at start of last frame. Used by queries to compute
+   * added/removed/changed based on the previous frame, not all time since last run.
+   */
+  prevEventIndex: number;
 }
 
 /** Entity identifier */

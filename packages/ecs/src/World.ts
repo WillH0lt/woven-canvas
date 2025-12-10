@@ -127,6 +127,7 @@ export class World {
       threadIndex: 0,
       threadCount: 1,
       readerId: `world_${this.worldId}`,
+      prevEventIndex: 0,
     };
   }
 
@@ -177,9 +178,11 @@ export class World {
     for (const system of mainThreadSystems) {
       // Set readerId for this system's query instances
       const readerId = `world_${this.worldId}_system_${system.id}`;
+      const prevEventIndex = system.prevEventIndex;
       system.execute({
         ...ctx,
         readerId,
+        prevEventIndex,
       });
     }
 

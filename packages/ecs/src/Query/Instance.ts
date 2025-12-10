@@ -102,6 +102,10 @@ export class QueryInstance {
     threadIndex: number,
     threadCount: number
   ): number[] {
+    if (entities.length === 0 || threadCount <= 1) {
+      return entities as number[];
+    }
+
     const result: number[] = [];
     for (let i = 0; i < entities.length; i++) {
       if (entities[i] % threadCount === threadIndex) {
