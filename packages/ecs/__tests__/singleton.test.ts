@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { field, defineSingleton, World, defineSystem, useQuery } from "../src";
+import {
+  field,
+  defineSingleton,
+  World,
+  defineSystem,
+  defineQuery,
+} from "../src";
 
 describe("Singleton", () => {
   describe("SingletonDef API", () => {
@@ -167,7 +173,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const query = useQuery((q) => q.tracking(Mouse));
+      const query = defineQuery((q) => q.tracking(Mouse));
 
       let callbackCount = 0;
       world.subscribe(query, (ctx) => {
@@ -195,7 +201,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const query = useQuery((q) => q.tracking(Mouse));
+      const query = defineQuery((q) => q.tracking(Mouse));
 
       let callbackCount = 0;
       world.subscribe(query, (ctx) => {
@@ -213,7 +219,7 @@ describe("Singleton", () => {
   });
 
   describe("Basic Query Support", () => {
-    it("should support tracking a singleton with useQuery", () => {
+    it("should support tracking a singleton with defineQuery", () => {
       const Mouse = defineSingleton({
         x: field.float32().default(0),
         y: field.float32().default(0),
@@ -222,7 +228,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+      const mouseQuery = defineQuery((q) => q.tracking(Mouse));
 
       // Initial state - no changes yet
       expect(mouseQuery.changed(ctx).length).toBe(0);
@@ -249,7 +255,7 @@ describe("Singleton", () => {
       const world = new World([Time]);
       const ctx = world._getContext();
 
-      const timeQuery = useQuery((q) => q.tracking(Time));
+      const timeQuery = defineQuery((q) => q.tracking(Time));
 
       // No changes initially
       expect(timeQuery.changed(ctx).length).toBe(0);
@@ -282,7 +288,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+      const mouseQuery = defineQuery((q) => q.tracking(Mouse));
 
       const current = mouseQuery.current(ctx);
       expect(current.length).toBe(1);
@@ -305,8 +311,8 @@ describe("Singleton", () => {
       const world = new World([Mouse, Time]);
       const ctx = world._getContext();
 
-      const mouseQuery = useQuery((q) => q.tracking(Mouse));
-      const timeQuery = useQuery((q) => q.tracking(Time));
+      const mouseQuery = defineQuery((q) => q.tracking(Mouse));
+      const timeQuery = defineQuery((q) => q.tracking(Time));
 
       // Initialize queries
       expect(mouseQuery.changed(ctx).length).toBe(0);
@@ -348,7 +354,7 @@ describe("Singleton", () => {
       const world = new World([Mouse, Keyboard]);
       const ctx = world._getContext();
 
-      const inputQuery = useQuery((q) => q.tracking(Mouse, Keyboard));
+      const inputQuery = defineQuery((q) => q.tracking(Mouse, Keyboard));
 
       // No changes initially
       expect(inputQuery.changed(ctx).length).toBe(0);
@@ -379,7 +385,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+      const mouseQuery = defineQuery((q) => q.tracking(Mouse));
 
       let changedCount = 0;
 
@@ -429,7 +435,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+      const mouseQuery = defineQuery((q) => q.tracking(Mouse));
 
       let callbackCount = 0;
 
@@ -466,7 +472,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+      const mouseQuery = defineQuery((q) => q.tracking(Mouse));
 
       // Initialize
       expect(mouseQuery.changed(ctx).length).toBe(0);
@@ -490,7 +496,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+      const mouseQuery = defineQuery((q) => q.tracking(Mouse));
 
       // Multiple checks with no changes
       expect(mouseQuery.changed(ctx).length).toBe(0);
@@ -509,7 +515,7 @@ describe("Singleton", () => {
       const world = new World([Mouse]);
       const ctx = world._getContext();
 
-      const mouseQuery = useQuery((q) => q.tracking(Mouse));
+      const mouseQuery = defineQuery((q) => q.tracking(Mouse));
 
       // Initialize
       expect(mouseQuery.changed(ctx).length).toBe(0);

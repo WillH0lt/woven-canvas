@@ -59,11 +59,11 @@ export class QueryBuilder {
    *
    * @example
    * ```typescript
-   * import { useQuery } from '@infinitecanvas/ecs';
+   * import { defineQuery } from '@infinitecanvas/ecs';
    * import { Position, Velocity } from './components';
    *
    * // Match entities that have both Position AND Velocity
-   * const movingEntities = useQuery((q) => q.with(Position, Velocity));
+   * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
    * ```
    */
   with(...componentDefs: ComponentDef<any>[]): this {
@@ -82,11 +82,11 @@ export class QueryBuilder {
    *
    * @example
    * ```typescript
-   * import { useQuery } from '@infinitecanvas/ecs';
+   * import { defineQuery } from '@infinitecanvas/ecs';
    * import { Position, Dead } from './components';
    *
    * // Match entities that have Position but NOT Dead
-   * const aliveEntities = useQuery((q) => q.with(Position).without(Dead));
+   * const aliveEntities = defineQuery((q) => q.with(Position).without(Dead));
    * ```
    */
   without(...componentDefs: ComponentDef<any>[]): this {
@@ -105,11 +105,11 @@ export class QueryBuilder {
    *
    * @example
    * ```typescript
-   * import { useQuery } from '@infinitecanvas/ecs';
+   * import { defineQuery } from '@infinitecanvas/ecs';
    * import { Player, Enemy, NPC } from './components';
    *
    * // Match entities that are Player OR Enemy OR NPC
-   * const characters = useQuery((q) => q.any(Player, Enemy, NPC));
+   * const characters = defineQuery((q) => q.any(Player, Enemy, NPC));
    * ```
    */
   any(...componentDefs: ComponentDef<any>[]): this {
@@ -129,11 +129,11 @@ export class QueryBuilder {
    *
    * @example
    * ```typescript
-   * import { useQuery } from '@infinitecanvas/ecs';
+   * import { defineQuery } from '@infinitecanvas/ecs';
    * import { Position, Velocity } from './components';
    *
    * // Match entities with Position (required) and track Velocity changes
-   * const query = useQuery((q) => q.with(Position).tracking(Velocity));
+   * const query = defineQuery((q) => q.with(Position).tracking(Velocity));
    *
    * function mySystem(ctx: Context) {
    *   // Entities with changed Velocity component

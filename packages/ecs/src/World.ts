@@ -246,7 +246,7 @@ export class World {
    * @returns Unsubscribe function
    * @example
    * ```typescript
-   * const query = useQuery((q) => q.with(Position).tracking(Velocity));
+   * const query = defineQuery((q) => q.with(Position).tracking(Velocity));
    * const unsubscribe = world.subscribe(query, (ctx, { added, removed, changed }) => {
    *   for (const entityId of added) {
    *     console.log(`Entity ${entityId} entered the query`);

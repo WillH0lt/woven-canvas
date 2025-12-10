@@ -8,7 +8,7 @@ import {
   addComponent,
   removeComponent,
   hasComponent,
-  useQuery,
+  defineQuery,
 } from "../src/index";
 
 describe("World", () => {
@@ -521,7 +521,7 @@ describe("World", () => {
 
       // Single query definition works across multiple worlds
       // Each world gets its own Query instance stored in ctx.queries
-      const movingQuery = useQuery((q) => q.with(Position, Velocity));
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
 
       // Query results are per-context
       const world1Results = movingQuery.current(ctx1);
@@ -542,7 +542,7 @@ describe("World", () => {
       const world = new World([Position]);
       const ctx = world._getContext();
 
-      const query = useQuery((q) => q.with(Position));
+      const query = defineQuery((q) => q.with(Position));
       const receivedAdded: number[] = [];
       world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
@@ -571,7 +571,7 @@ describe("World", () => {
       const ctx = world._getContext();
 
       // Query only for entities with Velocity
-      const query = useQuery((q) => q.with(Velocity));
+      const query = defineQuery((q) => q.with(Velocity));
       const receivedAdded: number[] = [];
       world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
@@ -604,7 +604,7 @@ describe("World", () => {
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
 
-      const query = useQuery((q) => q.with(Position));
+      const query = defineQuery((q) => q.with(Position));
 
       const receivedRemoved: number[] = [];
       world.subscribe(query, (_ctx, { removed }) => {
@@ -640,7 +640,7 @@ describe("World", () => {
       addComponent(ctx, entity, Velocity, { dx: 1, dy: 1 });
 
       // Query for entities with both Position AND Velocity
-      const query = useQuery((q) => q.with(Position, Velocity));
+      const query = defineQuery((q) => q.with(Position, Velocity));
 
       const receivedRemoved: number[] = [];
       world.subscribe(query, (_ctx, { removed }) => {
@@ -674,7 +674,7 @@ describe("World", () => {
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
 
       // Query for entities with both Position AND Velocity
-      const query = useQuery((q) => q.with(Position, Velocity));
+      const query = defineQuery((q) => q.with(Position, Velocity));
       world.sync(); // Clear initial events
 
       const receivedAdded: number[] = [];
@@ -703,7 +703,7 @@ describe("World", () => {
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
 
       // Use tracking() to track Position changes
-      const query = useQuery((q) => q.tracking(Position));
+      const query = defineQuery((q) => q.tracking(Position));
 
       const receivedChanged: number[] = [];
       world.subscribe(query, (_ctx, { changed }) => {
@@ -741,7 +741,7 @@ describe("World", () => {
       addComponent(ctx, entity, Velocity, { dx: 1, dy: 1 });
 
       // Query with Position but only track Velocity
-      const query = useQuery((q) =>
+      const query = defineQuery((q) =>
         q.with(Position, Velocity).tracking(Velocity)
       );
       world.sync(); // Clear the initial events
@@ -780,8 +780,8 @@ describe("World", () => {
       const world = new World([Position, Velocity]);
       const ctx = world._getContext();
 
-      const positionQuery = useQuery((q) => q.with(Position));
-      const velocityQuery = useQuery((q) => q.with(Velocity));
+      const positionQuery = defineQuery((q) => q.with(Position));
+      const velocityQuery = defineQuery((q) => q.with(Velocity));
 
       const positionAdded: number[] = [];
       const velocityAdded: number[] = [];
@@ -821,7 +821,7 @@ describe("World", () => {
       const world = new World([Position]);
       const ctx = world._getContext();
 
-      const query = useQuery((q) => q.with(Position));
+      const query = defineQuery((q) => q.with(Position));
       const receivedAdded: number[] = [];
       const unsubscribe = world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
@@ -855,7 +855,7 @@ describe("World", () => {
       const ctx = world._getContext();
 
       // Subscribe only to Velocity entities
-      const query = useQuery((q) => q.with(Velocity));
+      const query = defineQuery((q) => q.with(Velocity));
       let callCount = 0;
       world.subscribe(query, (_ctx) => {
         callCount++;
@@ -881,7 +881,7 @@ describe("World", () => {
       const world = new World([Position]);
       const ctx = world._getContext();
 
-      const query = useQuery((q) => q.with(Position));
+      const query = defineQuery((q) => q.with(Position));
       const receivedBatches: number[][] = [];
       world.subscribe(query, (_ctx, { added }) => {
         receivedBatches.push([...added]);
@@ -916,7 +916,7 @@ describe("World", () => {
       const ctx = world._getContext();
 
       // Query that matches when entity has Position
-      const query = useQuery((q) => q.with(Position));
+      const query = defineQuery((q) => q.with(Position));
       const receivedAdded: number[] = [];
       world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
@@ -1060,7 +1060,7 @@ describe("World", () => {
       const entity = createEntity(ctx);
       addComponent(ctx, entity, Position, { x: 0, y: 0 });
 
-      const query = useQuery((q) => q.tracking(Position));
+      const query = defineQuery((q) => q.tracking(Position));
       let xValueInSubscriber = 0;
 
       // Initial sync to register entity

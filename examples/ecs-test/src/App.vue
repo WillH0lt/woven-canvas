@@ -23,7 +23,7 @@ import {
   createEntity,
   addComponent,
   World,
-  useQuery,
+  defineQuery,
   field,
   defineComponent,
   defineSingleton,
@@ -108,9 +108,9 @@ async function changeColor(entityId: number) {
   });
 }
 
-const blocks = useQuery((q) => q.tracking(Position, Size, Color));
+const blocks = defineQuery((q) => q.tracking(Position, Size, Color));
 // Track mouse changes using a query - demonstrates singleton query support!
-const mouseQuery = useQuery((q) => q.tracking(Mouse));
+const mouseQuery = defineQuery((q) => q.tracking(Mouse));
 
 const system1 = defineSystem((ctx: Context) => {
   // Check if mouse changed this frame using the query
@@ -164,7 +164,7 @@ world.subscribe(blocks, (ctx, { added, removed, changed }) => {
 });
 
 // Subscribe to mouse changes using the new SingletonDef API
-const query = useQuery((q) => q.tracking(Mouse));
+const query = defineQuery((q) => q.tracking(Mouse));
 world.subscribe(query, (ctx) => {
   const mouse = Mouse.read(ctx);
   console.log("Mouse moved:", mouse.x, mouse.y);

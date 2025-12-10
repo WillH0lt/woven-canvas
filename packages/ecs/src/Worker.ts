@@ -18,12 +18,12 @@ import type {
  * @param execute - System execution function
  * @example
  * ```typescript
- * import { setupWorker, useQuery, type Context } from '@infinitecanvas/ecs';
+ * import { setupWorker, defineQuery, type Context } from '@infinitecanvas/ecs';
  * import { Position, Velocity } from './components';
  *
  * setupWorker(execute);
  *
- * const movingEntities = useQuery((q) => q.with(Position, Velocity));
+ * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
  *
  * function execute(ctx: Context) {
  *   for (const eid of movingEntities.current(ctx)) {

@@ -6,7 +6,7 @@ import type { QueryOptions } from "./types";
 
 /**
  * Query descriptor that can be reused across multiple Worlds.
- * Created via useQuery(). Lazily creates per-context Query instances.
+ * Created via defineQuery(). Lazily creates per-context Query instances.
  */
 export class QueryDef {
   private readonly builder: (q: QueryBuilder) => QueryBuilder;
@@ -118,16 +118,16 @@ export class QueryDef {
  * @returns A QueryDef object with current(ctx), added(ctx), removed(ctx), changed(ctx) methods
  *
  * @example
- * import { setupWorker, useQuery, type Context } from "@infinitecanvas/ecs";
+ * import { setupWorker, defineQuery, type Context } from "@infinitecanvas/ecs";
  * import { Position, Velocity } from "./components";
  *
  * setupWorker(execute);
  *
  * // Define query at module scope
- * const movingEntities = useQuery((q) => q.with(Position, Velocity));
+ * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
  *
  * // Define query with default partitioning disabled
- * const singletonQuery = useQuery((q) => q.with(Singleton), { partition: false });
+ * const singletonQuery = defineQuery((q) => q.with(Singleton), { partition: false });
  *
  * function execute(ctx: Context) {
  *   // Query lazily initializes on first call to current()
@@ -137,6 +137,8 @@ export class QueryDef {
  *   }
  * }
  */
-export function useQuery(builder: (q: QueryBuilder) => QueryBuilder): QueryDef {
+export function defineQuery(
+  builder: (q: QueryBuilder) => QueryBuilder
+): QueryDef {
   return new QueryDef(builder);
 }

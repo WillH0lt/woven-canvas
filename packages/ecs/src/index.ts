@@ -23,4 +23,4 @@ export {
   type WorkerSystemClass,
 } from "./System";
 export type { Context, EntityId } from "./types";
-export { useQuery, type QueryDef, type QueryOptions } from "./Query";
+export { defineQuery, type QueryDef, type QueryOptions } from "./Query";

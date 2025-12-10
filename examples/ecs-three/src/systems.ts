@@ -1,7 +1,7 @@
 import {
   defineSystem,
   defineWorkerSystem,
-  useQuery,
+  defineQuery,
   removeEntity,
   createEntity,
   addComponent,
@@ -37,7 +37,7 @@ export const physicsSystem = defineWorkerSystem(
 );
 
 // Query for renderable entities
-const renderQuery = useQuery((q) => q.with(Position, Color, Size));
+const renderQuery = defineQuery((q) => q.with(Position, Color, Size));
 
 // reusable objects
 const tempMatrix = new THREE.Matrix4();
@@ -81,7 +81,7 @@ export const renderSystem = defineSystem((ctx) => {
 });
 
 // Lifetime management system
-const lifetimeQuery = useQuery((q) => q.with(Lifetime));
+const lifetimeQuery = defineQuery((q) => q.with(Lifetime));
 
 export const lifetimeSystem = defineSystem((ctx) => {
   for (const eid of lifetimeQuery.current(ctx)) {
@@ -94,8 +94,8 @@ export const lifetimeSystem = defineSystem((ctx) => {
 });
 
 // Attractor system queries and temps
-const mouseQuery = useQuery((q) => q.tracking(Mouse));
-const attractors = useQuery((q) => q.with(Attractor));
+const mouseQuery = defineQuery((q) => q.tracking(Mouse));
+const attractors = defineQuery((q) => q.with(Attractor));
 const raycaster = new THREE.Raycaster();
 const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 const intersection = new THREE.Vector3();

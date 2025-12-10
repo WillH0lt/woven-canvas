@@ -1,0 +1,23 @@
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.block {
+  position: absolute;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.block:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.block:active {
+  transform: scale(0.95);
+}

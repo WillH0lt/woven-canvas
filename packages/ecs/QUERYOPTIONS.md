@@ -4,26 +4,26 @@ The ECS framework now supports flexible partitioning control through QueryOption
 
 ## Overview
 
-- **Query Creation Options**: Configure default behavior when creating a query with `useQuery()`
+- **Query Creation Options**: Configure default behavior when creating a query with `defineQuery()`
 - **Runtime Query Options**: Override behavior when calling query methods like `current()`, `added()`, etc.
 
 ## Query Creation Options
 
-When defining a query with `useQuery()`, you can specify default partitioning behavior:
+When defining a query with `defineQuery()`, you can specify default partitioning behavior:
 
 ```typescript
-import { useQuery, type QueryCreationOptions } from "@infinitecanvas/ecs";
+import { defineQuery, type QueryCreationOptions } from "@infinitecanvas/ecs";
 
 // Default behavior - partitioning enabled by default
-const defaultQuery = useQuery((q) => q.with(Position, Velocity));
+const defaultQuery = defineQuery((q) => q.with(Position, Velocity));
 
 // Explicitly enable partitioning by default
-const partitionedQuery = useQuery((q) => q.with(Position, Velocity), {
+const partitionedQuery = defineQuery((q) => q.with(Position, Velocity), {
   partition: true,
 });
 
 // Disable partitioning by default
-const unpartitionedQuery = useQuery((q) => q.with(SingletonComponent), {
+const unpartitionedQuery = defineQuery((q) => q.with(SingletonComponent), {
   partition: false,
 });
 ```
@@ -79,7 +79,7 @@ interface QueryOptions {
 The partitioning decision follows this priority:
 
 1. **Runtime Override**: If `options.partitioned` is specified, use that value
-2. **Default Behavior**: Use the query's default partition setting (from `useQuery`)
+2. **Default Behavior**: Use the query's default partition setting (from `defineQuery`)
 3. **Framework Default**: If no default was set, partition when `ctx.threadCount > 1`
 
 Partitioning only occurs when:
@@ -93,7 +93,7 @@ Partitioning only occurs when:
 
 ```typescript
 // Each worker processes only its assigned entities
-const particles = useQuery((q) => q.with(Position, Velocity), {
+const particles = defineQuery((q) => q.with(Position, Velocity), {
   partition: true,
 });
 
@@ -109,7 +109,7 @@ function physics(ctx: Context) {
 
 ```typescript
 // All workers need to see all entities for coordination
-const attractors = useQuery((q) => q.with(Attractor), { partition: false });
+const attractors = defineQuery((q) => q.with(Attractor), { partition: false });
 
 function applyForces(ctx: Context) {
   // All workers see all attractors: [1,2,3]
@@ -142,10 +142,10 @@ Existing code continues to work without changes:
 
 ```typescript
 // Old code - still works, uses default partitioning
-const query = useQuery((q) => q.with(Position));
+const query = defineQuery((q) => q.with(Position));
 const entities = query.current(ctx); // Partitioned by default
 
 // New options are additive
-const newQuery = useQuery((q) => q.with(Position), { partition: false });
+const newQuery = defineQuery((q) => q.with(Position), { partition: false });
 const entities2 = newQuery.current(ctx, { partitioned: true }); // Override at runtime
 ```

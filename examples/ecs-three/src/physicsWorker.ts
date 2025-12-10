@@ -1,4 +1,4 @@
-import { setupWorker, useQuery } from "@infinitecanvas/ecs";
+import { setupWorker, defineQuery } from "@infinitecanvas/ecs";
 import {
   Position,
   Velocity,
@@ -9,10 +9,10 @@ import {
 } from "./components";
 
 // Define queries
-const particlesQuery = useQuery((q) =>
+const particlesQuery = defineQuery((q) =>
   q.with(Position, Velocity, Acceleration, Lifetime)
 );
-const attractorsQuery = useQuery((q) => q.with(Attractor));
+const attractorsQuery = defineQuery((q) => q.with(Attractor));
 
 // Setup the worker with physics simulation logic
 setupWorker((ctx) => {
