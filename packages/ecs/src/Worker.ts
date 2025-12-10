@@ -117,6 +117,7 @@ function handleMessage(
         threadCount: e.data.threadCount,
         readerId: "worker",
         prevEventIndex: 0,
+        resources: undefined,
       };
 
       sendResult(self, threadIndex);

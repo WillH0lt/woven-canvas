@@ -1,21 +1,21 @@
 import { defineComponent, defineSingleton, field } from "@infinitecanvas/ecs";
 
 export const Position = defineComponent({
-  x: field.float32().default(0),
-  y: field.float32().default(0),
-  z: field.float32().default(0),
+  x: field.float32(),
+  y: field.float32(),
+  z: field.float32(),
 });
 
 export const Velocity = defineComponent({
-  x: field.float32().default(0),
-  y: field.float32().default(0),
-  z: field.float32().default(0),
+  x: field.float32(),
+  y: field.float32(),
+  z: field.float32(),
 });
 
 export const Acceleration = defineComponent({
-  x: field.float32().default(0),
-  y: field.float32().default(0),
-  z: field.float32().default(0),
+  x: field.float32(),
+  y: field.float32(),
+  z: field.float32(),
 });
 
 export const Color = defineComponent({
@@ -25,7 +25,7 @@ export const Color = defineComponent({
 });
 
 export const Lifetime = defineComponent({
-  current: field.float32().default(0),
+  current: field.float32(),
   max: field.float32().default(5),
 });
 
@@ -35,12 +35,16 @@ export const Size = defineComponent({
 
 export const Attractor = defineComponent({
   strength: field.float32().default(2),
-  targetX: field.float32().default(0),
-  targetY: field.float32().default(0),
-  targetZ: field.float32().default(0),
+  targetX: field.float32(),
+  targetY: field.float32(),
+  targetZ: field.float32(),
 });
 
 export const Mouse = defineSingleton({
-  x: field.float32().default(0),
-  y: field.float32().default(0),
+  x: field.float32(),
+  y: field.float32(),
+});
+
+export const Time = defineSingleton({
+  delta: field.float32(),
 });

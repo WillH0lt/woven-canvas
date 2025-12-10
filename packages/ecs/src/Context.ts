@@ -170,3 +170,30 @@ export function hasComponent<T extends ComponentSchema>(
   const component = componentDef._getInstance(ctx);
   return ctx.entityBuffer.hasComponent(entityId, component.componentId);
 }
+
+/**
+ * Get typed resources from the context.
+ * Resources are user-defined data passed to the World constructor.
+ * @typeParam R - The expected resources type
+ * @param ctx - The context
+ * @returns The resources cast to type R
+ * @example
+ * ```typescript
+ * interface Resources {
+ *   maxParticles: number;
+ *   debugMode: boolean;
+ * }
+ *
+ * const world = new World([Position], {
+ *   resources: { maxParticles: 1000, debugMode: true }
+ * });
+ *
+ * const mySystem = defineSystem((ctx) => {
+ *   const resources = getResources<Resources>(ctx);
+ *   console.log(resources.maxParticles); // 1000
+ * });
+ * ```
+ */
+export function getResources<R>(ctx: Context): R {
+  return ctx.resources as R;
+}

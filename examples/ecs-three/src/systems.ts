@@ -3,69 +3,82 @@ import {
   defineWorkerSystem,
   useQuery,
   removeEntity,
+  createEntity,
+  addComponent,
+  getResources,
 } from "@infinitecanvas/ecs";
 import * as THREE from "three";
 import {
   Position,
+  Velocity,
+  Acceleration,
   Color,
   Size,
   Lifetime,
   Mouse,
   Attractor,
+  Time,
 } from "./components";
+
+export interface Resources {
+  instancedMesh: THREE.InstancedMesh;
+  camera: THREE.Camera;
+  maxParticles: number;
+  spawnRate: number;
+}
 
 // Create the worker system for physics
 export const physicsSystem = defineWorkerSystem(
   new URL("./physicsWorker.ts", import.meta.url).href,
-  { threads: 8, priority: "high" }
+  {
+    threads: Math.ceil(navigator.hardwareConcurrency / 4),
+    priority: "high",
+  }
 );
 
 // Query for renderable entities
 const renderQuery = useQuery((q) => q.with(Position, Color, Size));
 
-// Create the rendering system
-export function createRenderSystem(
-  instancedMesh: THREE.InstancedMesh,
-  maxParticles: number
-) {
-  const tempMatrix = new THREE.Matrix4();
-  const tempColor = new THREE.Color();
+// Render system temps (allocated once)
+const tempMatrix = new THREE.Matrix4();
+const tempColor = new THREE.Color();
 
-  return defineSystem((ctx) => {
-    let index = 0;
+// Rendering system
+export const renderSystem = defineSystem((ctx) => {
+  const { instancedMesh, maxParticles } = getResources<Resources>(ctx);
+  let index = 0;
 
-    for (const eid of renderQuery.current(ctx)) {
-      if (index >= maxParticles) break;
+  for (const eid of renderQuery.current(ctx)) {
+    if (index >= maxParticles) break;
 
-      const pos = Position.read(ctx, eid);
-      const color = Color.read(ctx, eid);
-      const size = Size.read(ctx, eid);
+    const pos = Position.read(ctx, eid);
+    const color = Color.read(ctx, eid);
+    const size = Size.read(ctx, eid);
 
-      // Update matrix for this instance
-      tempMatrix.makeScale(size.value, size.value, size.value);
-      tempMatrix.setPosition(pos.x, pos.y, pos.z);
-      instancedMesh.setMatrixAt(index, tempMatrix);
+    // Update matrix for this instance
+    tempMatrix.makeScale(size.value, size.value, size.value);
+    tempMatrix.setPosition(pos.x, pos.y, pos.z);
+    instancedMesh.setMatrixAt(index, tempMatrix);
 
-      // Update color for this instance
-      tempColor.setRGB(color.r, color.g, color.b);
-      instancedMesh.setColorAt(index, tempColor);
+    // Update color for this instance
+    tempColor.setRGB(color.r, color.g, color.b);
+    instancedMesh.setColorAt(index, tempColor);
 
-      index++;
-    }
+    index++;
+  }
 
-    // Hide unused instances by scaling them to 0
-    for (let i = index; i < maxParticles; i++) {
-      tempMatrix.makeScale(0, 0, 0);
-      instancedMesh.setMatrixAt(i, tempMatrix);
-    }
+  // Hide unused instances by scaling them to 0
+  for (let i = index; i < maxParticles; i++) {
+    tempMatrix.makeScale(0, 0, 0);
+    instancedMesh.setMatrixAt(i, tempMatrix);
+  }
 
-    // Mark for update
-    instancedMesh.instanceMatrix.needsUpdate = true;
-    if (instancedMesh.instanceColor) {
-      instancedMesh.instanceColor.needsUpdate = true;
-    }
-  });
-}
+  // Mark for update
+  instancedMesh.instanceMatrix.needsUpdate = true;
+  if (instancedMesh.instanceColor) {
+    instancedMesh.instanceColor.needsUpdate = true;
+  }
+});
 
 // Lifetime management system
 const lifetimeQuery = useQuery((q) => q.with(Lifetime));
@@ -80,27 +93,78 @@ export const lifetimeSystem = defineSystem((ctx) => {
   }
 });
 
-export function createAttractorSystem(camera: THREE.Camera) {
-  const mouseQuery = useQuery((q) => q.tracking(Mouse));
-  const attractors = useQuery((q) => q.with(Attractor));
-  const raycaster = new THREE.Raycaster();
-  const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-  const intersection = new THREE.Vector3();
+// Attractor system queries and temps
+const mouseQuery = useQuery((q) => q.tracking(Mouse));
+const attractors = useQuery((q) => q.with(Attractor));
+const raycaster = new THREE.Raycaster();
+const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+const intersection = new THREE.Vector3();
 
-  return defineSystem((ctx) => {
-    if (mouseQuery.changed(ctx).length > 0) {
-      const mouse = Mouse.read(ctx);
+export const attractorSystem = defineSystem((ctx) => {
+  if (mouseQuery.changed(ctx).length > 0) {
+    const { camera } = getResources<Resources>(ctx);
+    const mouse = Mouse.read(ctx);
 
-      raycaster.setFromCamera(new THREE.Vector2(mouse.x, mouse.y), camera);
-      raycaster.ray.intersectPlane(plane, intersection);
+    raycaster.setFromCamera(new THREE.Vector2(mouse.x, mouse.y), camera);
+    raycaster.ray.intersectPlane(plane, intersection);
 
-      console.log("FOUND ", attractors.current(ctx).length, " attractors");
-      for (const eid of attractors.current(ctx)) {
-        const attractor = Attractor.write(ctx, eid);
-        attractor.targetX = intersection.x;
-        attractor.targetY = intersection.y;
-        attractor.targetZ = 0;
-      }
+    for (const eid of attractors.current(ctx)) {
+      const attractor = Attractor.write(ctx, eid);
+      attractor.targetX = intersection.x;
+      attractor.targetY = intersection.y;
+      attractor.targetZ = 0;
     }
-  });
-}
+  }
+});
+
+// Particle spawner system
+export const spawnerSystem = defineSystem((ctx) => {
+  const { spawnRate } = getResources<Resources>(ctx);
+  const time = Time.read(ctx);
+  const particlesToSpawn = Math.floor(time.delta * spawnRate);
+
+  for (let i = 0; i < particlesToSpawn; i++) {
+    const eid = createEntity(ctx);
+
+    // Random spawn position in a sphere
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = 2 + Math.random() * 2;
+
+    addComponent(ctx, eid, Position);
+    const pos = Position.write(ctx, eid);
+    pos.x = r * Math.sin(phi) * Math.cos(theta);
+    pos.y = r * Math.sin(phi) * Math.sin(theta);
+    pos.z = r * Math.cos(phi);
+
+    addComponent(ctx, eid, Velocity);
+    const vel = Velocity.write(ctx, eid);
+    vel.x = (Math.random() - 0.5) * 2;
+    vel.y = (Math.random() - 0.5) * 2;
+    vel.z = (Math.random() - 0.5) * 2;
+
+    addComponent(ctx, eid, Acceleration);
+    const acc = Acceleration.write(ctx, eid);
+    acc.x = 0;
+    acc.y = -1; // Gravity
+    acc.z = 0;
+
+    // Random color with some bias toward blue/purple
+    addComponent(ctx, eid, Color);
+    const color = Color.write(ctx, eid);
+    const hue = Math.random() * 0.3 + 0.5; // 0.5-0.8 range (cyan to purple)
+    const c = new THREE.Color().setHSL(hue, 0.8, 0.6);
+    color.r = c.r;
+    color.g = c.g;
+    color.b = c.b;
+
+    addComponent(ctx, eid, Size);
+    const size = Size.write(ctx, eid);
+    size.value = 0.1 + Math.random() * 0.15;
+
+    addComponent(ctx, eid, Lifetime);
+    const lifetime = Lifetime.write(ctx, eid);
+    lifetime.current = 0;
+    lifetime.max = 3 + Math.random() * 4;
+  }
+});

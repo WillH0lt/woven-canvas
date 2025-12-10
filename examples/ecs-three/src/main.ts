@@ -1,41 +1,19 @@
 import "./style.css";
 import * as THREE from "three";
 import Stats from "stats.js";
-import {
-  World,
-  addComponent,
-  createEntity,
-  useQuery,
-  type Context,
-} from "@infinitecanvas/ecs";
-import {
-  Position,
-  Velocity,
-  Acceleration,
-  Color,
-  Size,
-  Mouse,
-  Lifetime,
-  Attractor,
-} from "./components";
+import { World, addComponent, createEntity } from "@infinitecanvas/ecs";
+import * as comps from "./components";
 import {
   physicsSystem,
-  createRenderSystem,
+  renderSystem,
   lifetimeSystem,
-  createAttractorSystem,
+  attractorSystem,
+  spawnerSystem,
 } from "./systems";
 
 // Configuration
 const MAX_PARTICLES = 20_000;
-const SPAWN_RATE = 2000; // particles per second
-
-// Create the ECS world with all components
-const world = new World(
-  [Position, Velocity, Acceleration, Color, Size, Lifetime, Attractor, Mouse],
-  {
-    maxEntities: MAX_PARTICLES,
-  }
-);
+const SPAWN_RATE = 1000; // particles per second
 
 // Setup Three.js scene
 const scene = new THREE.Scene();
@@ -73,14 +51,21 @@ instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(
 
 scene.add(instancedMesh);
 
-// Create the systems
-const renderSystem = createRenderSystem(instancedMesh, MAX_PARTICLES);
-const attractorSystem = createAttractorSystem(camera);
+// Create the ECS world with all components and resources
+const world = new World(Array.from(Object.values(comps)), {
+  maxEntities: MAX_PARTICLES,
+  resources: {
+    instancedMesh,
+    camera,
+    maxParticles: MAX_PARTICLES,
+    spawnRate: SPAWN_RATE,
+  },
+});
 
 // Mouse interaction
 document.addEventListener("mousemove", (e) => {
   world.nextSync((ctx) => {
-    const mouse = Mouse.write(ctx);
+    const mouse = comps.Mouse.write(ctx);
 
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -98,69 +83,13 @@ window.addEventListener("resize", () => {
 world.nextSync((ctx) => {
   const eid = createEntity(ctx);
 
-  addComponent(ctx, eid, Attractor);
-  const attraction = Attractor.write(ctx, eid);
+  addComponent(ctx, eid, comps.Attractor);
+  const attraction = comps.Attractor.write(ctx, eid);
   attraction.strength = 500;
   attraction.targetX = 0;
   attraction.targetY = 0;
   attraction.targetZ = 0;
-
-  console.log("ADDING ATTRACTOR", eid);
 });
-
-// Particle spawner
-let particleSpawnAccumulator = 0;
-
-function spawnParticles(ctx: Context, deltaTime: number) {
-  particleSpawnAccumulator += deltaTime;
-  const particlesToSpawn = Math.floor(particleSpawnAccumulator * SPAWN_RATE);
-  particleSpawnAccumulator -= particlesToSpawn / SPAWN_RATE;
-
-  for (let i = 0; i < particlesToSpawn; i++) {
-    const eid = createEntity(ctx);
-
-    // Random spawn position in a sphere
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    const r = 2 + Math.random() * 2;
-
-    addComponent(ctx, eid, Position);
-    const pos = Position.write(ctx, eid);
-    pos.x = r * Math.sin(phi) * Math.cos(theta);
-    pos.y = r * Math.sin(phi) * Math.sin(theta);
-    pos.z = r * Math.cos(phi);
-
-    addComponent(ctx, eid, Velocity);
-    const vel = Velocity.write(ctx, eid);
-    vel.x = (Math.random() - 0.5) * 2;
-    vel.y = (Math.random() - 0.5) * 2;
-    vel.z = (Math.random() - 0.5) * 2;
-
-    addComponent(ctx, eid, Acceleration);
-    const acc = Acceleration.write(ctx, eid);
-    acc.x = 0;
-    acc.y = -1; // Gravity
-    acc.z = 0;
-
-    // Random color with some bias toward blue/purple
-    addComponent(ctx, eid, Color);
-    const color = Color.write(ctx, eid);
-    const hue = Math.random() * 0.3 + 0.5; // 0.5-0.8 range (cyan to purple)
-    const c = new THREE.Color().setHSL(hue, 0.8, 0.6);
-    color.r = c.r;
-    color.g = c.g;
-    color.b = c.b;
-
-    addComponent(ctx, eid, Size);
-    const size = Size.write(ctx, eid);
-    size.value = 0.1 + Math.random() * 0.15;
-
-    addComponent(ctx, eid, Lifetime);
-    const lifetime = Lifetime.write(ctx, eid);
-    lifetime.current = 0;
-    lifetime.max = 3 + Math.random() * 4;
-  }
-}
 
 // Instructions
 const instructionsDiv = document.createElement("div");
@@ -185,32 +114,46 @@ let lastTime = performance.now();
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
+// Visibility change handling - pause when tab is hidden
+let isPaused = false;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    isPaused = true;
+  } else {
+    isPaused = false;
+    lastTime = performance.now();
+  }
+});
+
 async function animate() {
+  if (isPaused) {
+    requestAnimationFrame(animate);
+    return;
+  }
+
   stats.begin();
   const currentTime = performance.now();
   const deltaTime = (currentTime - lastTime) / 1000;
   lastTime = currentTime;
 
-  // Spawn new particles
   world.nextSync((ctx) => {
-    spawnParticles(ctx, deltaTime);
+    const time = comps.Time.write(ctx);
+    time.delta = deltaTime;
   });
 
-  // Sync and execute systems
   world.sync();
   await world.execute(
+    spawnerSystem,
     lifetimeSystem,
     renderSystem,
     physicsSystem,
     attractorSystem
   );
 
-  // Render the scene
   renderer.render(scene, camera);
 
   requestAnimationFrame(animate);
   stats.end();
 }
 
-// Start animation loop
 animate();

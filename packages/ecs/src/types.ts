@@ -46,6 +46,10 @@ export interface Context {
    * added/removed/changed based on the previous frame, not all time since last run.
    */
   prevEventIndex: number;
+  /**
+   * User-defined resources. Access via getResources<T>(ctx).
+   */
+  readonly resources: unknown;
 }
 
 /** Entity identifier */

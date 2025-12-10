@@ -5,45 +5,41 @@ import {
   Acceleration,
   Attractor,
   Lifetime,
+  Time,
 } from "./components";
 
 // Define queries
-const particles = useQuery((q) =>
+const particlesQuery = useQuery((q) =>
   q.with(Position, Velocity, Acceleration, Lifetime)
 );
 
-const attractorQuery = useQuery((q) => q.with(Attractor));
+const attractorsQuery = useQuery((q) => q.with(Attractor));
 
 // Setup the worker with physics simulation logic
-
-let prev = performance.now();
 setupWorker((ctx) => {
-  const dt = (performance.now() - prev) / 1000;
-  prev = performance.now();
+  const time = Time.read(ctx);
+
+  const particles = particlesQuery.current(ctx, { partitioned: true });
 
   // Apply acceleration to velocity
-  for (const eid of particles.current(ctx, { partitioned: true })) {
+  for (const eid of particles) {
+    const pos = Position.write(ctx, eid);
     const vel = Velocity.write(ctx, eid);
     const acc = Acceleration.read(ctx, eid);
 
-    vel.x += acc.x * dt;
-    vel.y += acc.y * dt;
-    vel.z += acc.z * dt;
+    vel.x += acc.x * time.delta;
+    vel.y += acc.y * time.delta;
+    vel.z += acc.z * time.delta;
 
     // Apply damping
     const damping = 0.98;
     vel.x *= damping;
     vel.y *= damping;
     vel.z *= damping;
-  }
 
-  // Apply attraction forces
-  for (const eid of attractorQuery.current(ctx)) {
-    const attractor = Attractor.read(ctx, eid);
-
-    for (const mid of particles.current(ctx, { partitioned: true })) {
-      const pos = Position.read(ctx, mid);
-      const vel = Velocity.write(ctx, mid);
+    // Apply attraction forces
+    for (const attractorId of attractorsQuery.current(ctx)) {
+      const attractor = Attractor.read(ctx, attractorId);
 
       // Calculate direction to target
       const dx = attractor.targetX - pos.x;
@@ -58,26 +54,19 @@ setupWorker((ctx) => {
       if (dist > 0.1) {
         // Normalize direction and apply force
         const force = attractor.strength / (distSq + 1);
-        vel.x += (dx / dist) * force * dt;
-        vel.y += (dy / dist) * force * dt;
-        vel.z += (dz / dist) * force * dt;
+        vel.x += (dx / dist) * force * time.delta;
+        vel.y += (dy / dist) * force * time.delta;
+        vel.z += (dz / dist) * force * time.delta;
       }
     }
-  }
 
-  // Apply velocity to position
-  for (const eid of particles.current(ctx, { partitioned: true })) {
-    const pos = Position.write(ctx, eid);
-    const vel = Velocity.read(ctx, eid);
+    // Apply velocity to position
+    pos.x += vel.x * time.delta;
+    pos.y += vel.y * time.delta;
+    pos.z += vel.z * time.delta;
 
-    pos.x += vel.x * dt;
-    pos.y += vel.y * dt;
-    pos.z += vel.z * dt;
-  }
-
-  // Update lifetimes
-  for (const eid of particles.current(ctx, { partitioned: true })) {
+    // Update lifetimes
     const lifetime = Lifetime.write(ctx, eid);
-    lifetime.current += dt;
+    lifetime.current += time.delta;
   }
 });

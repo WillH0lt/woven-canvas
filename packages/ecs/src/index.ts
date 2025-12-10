@@ -14,6 +14,7 @@ export {
   removeComponent,
   hasComponent,
   getBackrefs,
+  getResources,
 } from "./Context";
 export {
   defineSystem,

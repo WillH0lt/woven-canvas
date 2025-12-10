@@ -43,6 +43,25 @@ export interface WorldOptions {
    * @default 131_072
    */
   maxEvents?: number;
+  /**
+   * User-defined resources accessible from systems via getResources<T>(ctx).
+   * Use this to share application state, configuration, or services.
+   * @example
+   * ```typescript
+   * interface Resources {
+   *   maxParticles: number;
+   *   debugMode: boolean;
+   * }
+   * const world = new World([Position, Velocity], {
+   *   resources: { maxParticles: 1000, debugMode: true }
+   * });
+   *
+   * // In a system:
+   * const resources = getResources<Resources>(ctx);
+   * console.log(resources.maxParticles); // 1000
+   * ```
+   */
+  resources?: unknown;
 }
 
 /**
@@ -128,6 +147,7 @@ export class World {
       threadCount: 1,
       readerId: `world_${this.worldId}`,
       prevEventIndex: 0,
+      resources: options.resources,
     };
   }
 
