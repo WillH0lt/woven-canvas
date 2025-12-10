@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import {
   type Context,
   defineSystem,
@@ -87,69 +87,73 @@ world.nextSync((ctx) => {
   }
 });
 
-// Entity state type for React
 interface EntityState {
-  Position: { x: number; y: number };
-  Size: { width: number; height: number };
-  Color: { red: number; green: number; blue: number };
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  color: { red: number; green: number; blue: number };
 }
 
-function App() {
-  const [entities, setEntities] = useState<Record<number, EntityState>>({});
-
-  useEffect(() => {
-    // Subscribe to entity changes and sync to React state
-    world.subscribe(blocks, (ctx, { added, removed, changed }) => {
-      setEntities((prev) => {
-        const next = { ...prev };
-
-        // Add new entities
-        for (const eid of added) {
-          next[eid] = {
-            Position: Position.snapshot(ctx, eid),
-            Size: Size.snapshot(ctx, eid),
-            Color: Color.snapshot(ctx, eid),
-          };
-        }
-
-        // Remove deleted entities
-        for (const eid of removed) {
-          delete next[eid];
-        }
-
-        // Update changed entities
-        for (const eid of changed) {
-          if (next[eid]) {
-            next[eid] = {
-              Position: Position.snapshot(ctx, eid),
-              Size: Size.snapshot(ctx, eid),
-              Color: Color.snapshot(ctx, eid),
-            };
-          }
-        }
-
-        return next;
-      });
-    });
-
-    // Animation loop
-    let running = true;
-    async function loop() {
-      if (!running) return;
-      requestAnimationFrame(loop);
-
-      world.sync();
-      await world.execute(movementSystem);
-    }
-    loop();
-
-    // Cleanup
+// Define an external store
+let state: Record<number, EntityState> = {};
+let listeners: Array<() => void> = [];
+const store = {
+  subscribe(listener: () => void) {
+    listeners.push(listener);
     return () => {
-      running = false;
+      listeners = listeners.filter((l) => l !== listener);
     };
-  }, []);
+  },
+  getSnapshot() {
+    return state;
+  },
+  emit() {
+    for (const listener of listeners) {
+      listener();
+    }
+  },
+};
 
-  // Change color on click
+// Subscribe to ECS changes and update the store
+world.subscribe(blocks, (ctx, { added, removed, changed }) => {
+  for (const entityId of added) {
+    state[entityId] = {
+      position: Position.snapshot(ctx, entityId),
+      size: Size.snapshot(ctx, entityId),
+      color: Color.snapshot(ctx, entityId),
+    };
+  }
+
+  for (const entityId of removed) {
+    delete state[entityId];
+  }
+
+  for (const entityId of changed) {
+    if (state[entityId]) {
+      state[entityId] = {
+        position: Position.snapshot(ctx, entityId),
+        size: Size.snapshot(ctx, entityId),
+        color: Color.snapshot(ctx, entityId),
+      };
+    }
+  }
+
+  if (added.length > 0 || removed.length > 0 || changed.length > 0) {
+    state = { ...state }; // Trigger React re-render
+    store.emit();
+  }
+});
+
+// Animation loop
+function loop() {
+  requestAnimationFrame(loop);
+  world.sync();
+  world.execute(movementSystem);
+}
+loop();
+
+function App() {
+  const entities = useSyncExternalStore(store.subscribe, store.getSnapshot);
+
   const handleClick = (entityId: number) => {
     world.nextSync((ctx) => {
       const color = Color.write(ctx, entityId);
@@ -167,11 +171,11 @@ function App() {
           className="block"
           onClick={() => handleClick(Number(eid))}
           style={{
-            width: entity.Size.width,
-            height: entity.Size.height,
-            left: entity.Position.x,
-            top: entity.Position.y,
-            backgroundColor: `rgb(${entity.Color.red}, ${entity.Color.green}, ${entity.Color.blue})`,
+            width: entity.size.width,
+            height: entity.size.height,
+            left: entity.position.x,
+            top: entity.position.y,
+            backgroundColor: `rgb(${entity.color.red}, ${entity.color.green}, ${entity.color.blue})`,
           }}
         />
       ))}

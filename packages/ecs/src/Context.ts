@@ -50,7 +50,7 @@ export function getBackrefs<T extends ComponentSchema>(
   const component = componentDef._getInstance(ctx);
 
   const results: EntityId[] = [];
-  const buffer = (component.buffer as any)[fieldName] as Uint32Array;
+  const buffer = component.buffer[fieldName] as Uint32Array;
 
   // Scan all alive entities that have this component
   for (let eid = 0; eid < ctx.maxEntities; eid++) {

@@ -21,6 +21,7 @@ interface Subscriber {
   queryDef: QueryDef;
   callback: QuerySubscribeCallback;
   readerId: string;
+  prevEventIndex: number;
 }
 
 /** Callback for deferred execution */
@@ -282,6 +283,7 @@ export class World {
       queryDef,
       callback: callback as QuerySubscribeCallback,
       readerId,
+      prevEventIndex: ctx.eventBuffer.getWriteIndex(),
     };
 
     this.subscribers.push(subscriber);
@@ -320,11 +322,17 @@ export class World {
       return;
     }
 
+    const currentEventIndex = this.context.eventBuffer.getWriteIndex();
+
     for (const subscriber of this.subscribers) {
       const ctx = {
         ...this.context,
         readerId: subscriber.readerId,
+        prevEventIndex: subscriber.prevEventIndex,
       };
+
+      // Update subscriber's event index for next sync
+      subscriber.prevEventIndex = currentEventIndex;
 
       const queryDef = subscriber.queryDef!;
 
