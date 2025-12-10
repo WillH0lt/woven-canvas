@@ -53,7 +53,7 @@ scene.add(instancedMesh);
 
 // Create the ECS world with all components and resources
 const world = new World(Array.from(Object.values(comps)), {
-  maxEntities: MAX_PARTICLES,
+  maxEntities: MAX_PARTICLES + 1, // +1 for attractor entity
   resources: {
     instancedMesh,
     camera,
@@ -91,24 +91,6 @@ world.nextSync((ctx) => {
   attraction.targetZ = 0;
 });
 
-// Instructions
-const instructionsDiv = document.createElement("div");
-instructionsDiv.style.position = "absolute";
-instructionsDiv.style.bottom = "10px";
-instructionsDiv.style.left = "10px";
-instructionsDiv.style.color = "white";
-instructionsDiv.style.fontFamily = "monospace";
-instructionsDiv.style.fontSize = "14px";
-instructionsDiv.style.background = "rgba(0,0,0,0.5)";
-instructionsDiv.style.padding = "10px";
-instructionsDiv.style.borderRadius = "5px";
-instructionsDiv.style.userSelect = "none";
-instructionsDiv.innerHTML = `
-  <strong>ECS + Three.js + Workers Demo</strong><br>
-  <em>Click and hold</em> to attract particles to cursor<br>
-`;
-document.body.appendChild(instructionsDiv);
-
 // Main loop
 let lastTime = performance.now();
 const stats = new Stats();
@@ -125,6 +107,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+// loop
 async function animate() {
   if (isPaused) {
     requestAnimationFrame(animate);

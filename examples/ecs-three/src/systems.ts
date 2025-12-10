@@ -39,7 +39,7 @@ export const physicsSystem = defineWorkerSystem(
 // Query for renderable entities
 const renderQuery = useQuery((q) => q.with(Position, Color, Size));
 
-// Render system temps (allocated once)
+// reusable objects
 const tempMatrix = new THREE.Matrix4();
 const tempColor = new THREE.Color();
 

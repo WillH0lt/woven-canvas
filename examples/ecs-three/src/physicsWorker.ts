@@ -12,7 +12,6 @@ import {
 const particlesQuery = useQuery((q) =>
   q.with(Position, Velocity, Acceleration, Lifetime)
 );
-
 const attractorsQuery = useQuery((q) => q.with(Attractor));
 
 // Setup the worker with physics simulation logic
