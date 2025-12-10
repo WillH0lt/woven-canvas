@@ -2,6 +2,7 @@ import type { Context } from "../types";
 import type { QueryMasks } from "./Masks";
 import { QueryBuilder } from "./Builder";
 import { QueryInstance } from "./Instance";
+import type { QueryOptions } from "./types";
 
 /**
  * Query descriptor that can be reused across multiple Worlds.
@@ -67,40 +68,44 @@ export class QueryDef {
    * Get the current matching entities.
    *
    * @param ctx - The context object
+   * @param options - Optional query options to control behavior
    * @returns An array of entity IDs matching the query criteria
    */
-  current(ctx: Context): Uint32Array | number[] {
-    return this._getInstance(ctx).current(ctx);
+  current(ctx: Context, options?: QueryOptions): Uint32Array | number[] {
+    return this._getInstance(ctx).current(ctx, options);
   }
 
   /**
    * Get entities that were added since the last check.
    *
    * @param ctx - The context object
+   * @param options - Optional query options to control behavior
    * @returns An array of entity IDs that were added
    */
-  added(ctx: Context): number[] {
-    return this._getInstance(ctx).added(ctx);
+  added(ctx: Context, options?: QueryOptions): number[] {
+    return this._getInstance(ctx).added(ctx, options);
   }
 
   /**
    * Get entities that were removed since the last check.
    *
    * @param ctx - The context object
+   * @param options - Optional query options to control behavior
    * @returns An array of entity IDs that were removed
    */
-  removed(ctx: Context): number[] {
-    return this._getInstance(ctx).removed(ctx);
+  removed(ctx: Context, options?: QueryOptions): number[] {
+    return this._getInstance(ctx).removed(ctx, options);
   }
 
   /**
    * Get entities whose tracked components have changed.
    *
    * @param ctx - The context object
+   * @param options - Optional query options to control behavior
    * @returns An array of entity IDs with changed tracked components
    */
-  changed(ctx: Context): number[] {
-    return this._getInstance(ctx).changed(ctx);
+  changed(ctx: Context, options?: QueryOptions): number[] {
+    return this._getInstance(ctx).changed(ctx, options);
   }
 }
 
@@ -109,6 +114,7 @@ export class QueryDef {
  * This allows defining queries at module scope before the context is available.
  *
  * @param builder - Function that configures the query using with/without/any methods on QueryBuilder
+ * @param options - Optional configuration for default query behavior
  * @returns A QueryDef object with current(ctx), added(ctx), removed(ctx), changed(ctx) methods
  *
  * @example
@@ -119,6 +125,9 @@ export class QueryDef {
  *
  * // Define query at module scope
  * const movingEntities = useQuery((q) => q.with(Position, Velocity));
+ *
+ * // Define query with default partitioning disabled
+ * const singletonQuery = useQuery((q) => q.with(Singleton), { partition: false });
  *
  * function execute(ctx: Context) {
  *   // Query lazily initializes on first call to current()

@@ -3,6 +3,7 @@ import { QueryCache } from "./Cache";
 import type { QueryMasks } from "./Masks";
 import { QueryReader } from "./Reader";
 import { SINGLETON_ENTITY_ID } from "../Component";
+import type { QueryOptions } from "./types";
 
 const EMPTY_NUMBER_ARRAY: number[] = [];
 
@@ -28,8 +29,8 @@ export class QueryInstance {
     this.reader = new QueryReader(0);
   }
 
-  /** Get all matching entities (automatically partitioned for workers) */
-  current(ctx: Context): Uint32Array | number[] {
+  /** Get all matching entities (partitioned based on options or context) */
+  current(ctx: Context, options?: QueryOptions): Uint32Array | number[] {
     if (this.isSingletonQuery) {
       return [SINGLETON_ENTITY_ID];
     }
@@ -37,19 +38,19 @@ export class QueryInstance {
     this.reader.updateCache(ctx, this.cache!, this.masks);
     const allEntities = this.cache!.getDenseView();
 
-    if (ctx.threadCount <= 1) {
-      return allEntities;
+    if (options?.partitioned) {
+      return this.partitionEntities(
+        allEntities,
+        ctx.threadIndex,
+        ctx.threadCount
+      );
     }
 
-    return this.partitionEntities(
-      allEntities,
-      ctx.threadIndex,
-      ctx.threadCount
-    );
+    return allEntities;
   }
 
-  /** Get entities added since last check (automatically partitioned for workers) */
-  added(ctx: Context): number[] {
+  /** Get entities added since last check (partitioned based on options or context) */
+  added(ctx: Context, options?: QueryOptions): number[] {
     if (this.isSingletonQuery) {
       return EMPTY_NUMBER_ARRAY;
     }
@@ -57,14 +58,15 @@ export class QueryInstance {
     this.reader.updateCache(ctx, this.cache!, this.masks);
     const result = this.reader.added;
 
-    if (ctx.threadCount > 1 && result.length > 0) {
+    if (options?.partitioned) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);
     }
+
     return result;
   }
 
-  /** Get entities removed since last check (automatically partitioned for workers) */
-  removed(ctx: Context): number[] {
+  /** Get entities removed since last check */
+  removed(ctx: Context, options?: QueryOptions): number[] {
     if (this.isSingletonQuery) {
       return EMPTY_NUMBER_ARRAY;
     }
@@ -72,14 +74,14 @@ export class QueryInstance {
     this.reader.updateCache(ctx, this.cache!, this.masks);
     const result = this.reader.removed;
 
-    if (ctx.threadCount > 1 && result.length > 0) {
+    if (options?.partitioned) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);
     }
     return result;
   }
 
-  /** Get entities with tracked component changes since last check (automatically partitioned for workers) */
-  changed(ctx: Context): number[] {
+  /** Get entities with tracked component changes since last check */
+  changed(ctx: Context, options?: QueryOptions): number[] {
     if (this.isSingletonQuery) {
       this.reader.updateSingletonChanged(ctx, this.masks);
       return this.reader.changed;
@@ -88,9 +90,10 @@ export class QueryInstance {
     this.reader.updateCache(ctx, this.cache!, this.masks);
     const result = this.reader.changed;
 
-    if (ctx.threadCount > 1 && result.length > 0) {
+    if (options?.partitioned) {
       return this.partitionEntities(result, ctx.threadIndex, ctx.threadCount);
     }
+
     return result;
   }
 

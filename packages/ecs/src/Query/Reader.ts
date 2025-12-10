@@ -1,4 +1,5 @@
-import type { Context, QueryMasks } from "../types";
+import type { Context } from "../types";
+import type { QueryMasks } from "./Masks";
 import { QueryCache } from "./Cache";
 import { EventType } from "../EventBuffer";
 import { SINGLETON_ENTITY_ID } from "../Component";

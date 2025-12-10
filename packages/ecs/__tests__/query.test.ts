@@ -813,7 +813,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Thread 0 sees entities where entityId % 2 === 0
-      const added0 = movingQuery.added(ctx);
+      const added0 = movingQuery.added(ctx, { partitioned: true });
       const expected0 = entities.filter((e) => e % 2 === 0);
       expect(added0).toHaveLength(expected0.length);
       for (const e of expected0) {
@@ -846,7 +846,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Thread 1 sees entities where entityId % 2 === 1
-      const added1 = movingQuery.added(ctx);
+      const added1 = movingQuery.added(ctx, { partitioned: true });
       const expected1 = entities.filter((e) => e % 2 === 1);
       expect(added1).toHaveLength(expected1.length);
       for (const e of expected1) {
@@ -888,7 +888,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Thread 0 sees removed entities where entityId % 2 === 0
-      const removed0 = movingQuery.removed(ctx);
+      const removed0 = movingQuery.removed(ctx, { partitioned: true });
       const expected0 = entities.filter((e) => e % 2 === 0);
       expect(removed0).toHaveLength(expected0.length);
       for (const e of expected0) {
@@ -937,7 +937,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Thread 0 sees changed entities where entityId % 2 === 0
-      const changed0 = trackedQuery.changed(ctx);
+      const changed0 = trackedQuery.changed(ctx, { partitioned: true });
       const expected0 = entities.filter((e) => e % 2 === 0);
       expect(changed0).toHaveLength(expected0.length);
       for (const e of expected0) {
@@ -1000,7 +1000,7 @@ describe("Query", () => {
       ctx.tick++;
 
       // Thread 0 sees entities where entityId % 3 === 0
-      const current0 = movingQuery.current(ctx);
+      const current0 = movingQuery.current(ctx, { partitioned: true });
       const expected0 = entities.filter((e) => e % 3 === 0);
       expect(current0).toHaveLength(expected0.length);
       for (const e of expected0) {
@@ -1063,9 +1063,9 @@ describe("Query", () => {
       ctx1.tick++;
       ctx2.tick++;
 
-      const added0 = query0.added(ctx0);
-      const added1 = query1.added(ctx1);
-      const added2 = query2.added(ctx2);
+      const added0 = query0.added(ctx0, { partitioned: true });
+      const added1 = query1.added(ctx1, { partitioned: true });
+      const added2 = query2.added(ctx2, { partitioned: true });
 
       // Each partition should have 3 entities (9 / 3)
       expect(added0.length + added1.length + added2.length).toBe(9);
