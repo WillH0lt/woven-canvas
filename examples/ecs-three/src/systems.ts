@@ -130,39 +130,39 @@ export const spawnerSystem = defineSystem((ctx) => {
     const phi = Math.acos(2 * Math.random() - 1);
     const r = 2 + Math.random() * 2;
 
-    addComponent(ctx, eid, Position);
-    const pos = Position.write(ctx, eid);
-    pos.x = r * Math.sin(phi) * Math.cos(theta);
-    pos.y = r * Math.sin(phi) * Math.sin(theta);
-    pos.z = r * Math.cos(phi);
+    addComponent(ctx, eid, Position, {
+      x: r * Math.sin(phi) * Math.cos(theta),
+      y: r * Math.sin(phi) * Math.sin(theta),
+      z: r * Math.cos(phi),
+    });
 
-    addComponent(ctx, eid, Velocity);
-    const vel = Velocity.write(ctx, eid);
-    vel.x = (Math.random() - 0.5) * 2;
-    vel.y = (Math.random() - 0.5) * 2;
-    vel.z = (Math.random() - 0.5) * 2;
+    addComponent(ctx, eid, Velocity, {
+      x: (Math.random() - 0.5) * 2,
+      y: (Math.random() - 0.5) * 2,
+      z: (Math.random() - 0.5) * 2,
+    });
 
-    addComponent(ctx, eid, Acceleration);
-    const acc = Acceleration.write(ctx, eid);
-    acc.x = 0;
-    acc.y = -1; // Gravity
-    acc.z = 0;
+    addComponent(ctx, eid, Acceleration, {
+      x: 0,
+      y: -1, // Gravity
+      z: 0,
+    });
 
     // Random color with some bias toward blue/purple
-    addComponent(ctx, eid, Color);
-    const color = Color.write(ctx, eid);
     const hue = Math.random() * 0.3 + 0.5; // 0.5-0.8 range (cyan to purple)
     const c = new THREE.Color().setHSL(hue, 0.8, 0.6);
-    color.r = c.r;
-    color.g = c.g;
-    color.b = c.b;
+    addComponent(ctx, eid, Color, {
+      r: c.r,
+      g: c.g,
+      b: c.b,
+    });
 
-    addComponent(ctx, eid, Size);
-    const size = Size.write(ctx, eid);
-    size.value = config.particleSize + Math.random() * 0.15;
+    addComponent(ctx, eid, Size, {
+      value: config.particleSize + Math.random() * 0.15,
+    });
 
-    addComponent(ctx, eid, DeathTime);
-    const deathTime = DeathTime.write(ctx, eid);
-    deathTime.value = time.current + config.particleLifetimeSeconds;
+    addComponent(ctx, eid, DeathTime, {
+      value: time.current + config.particleLifetimeSeconds,
+    });
   }
 });
