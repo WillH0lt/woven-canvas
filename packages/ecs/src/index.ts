@@ -4,6 +4,7 @@ export {
   defineSingleton,
   type ComponentDef,
   type SingletonDef,
+  type ComponentSchema,
 } from "./Component";
 export { World } from "./World";
 export { setupWorker } from "./Worker";

@@ -1,13 +1,8 @@
 {
   "private": true,
-  "name": "@infinitecanvas/ecs",
+  "name": "@infinitecanvas/editor",
   "version": "0.1.0",
-  "description": "Demo library that contains common utility functions",
-  "repository": "https://github.com/jkomyno/pnpm-monorepo-example.git",
-  "author": {
-    "name": "Alberto Schiabel",
-    "email": "alberto.schiabel@gmail.com"
-  },
+  "description": "Framework-agnostic editor library built on ECS",
   "files": [
     "build"
   ],
@@ -17,14 +12,17 @@
   "__exports-comment": "// Define output files for Node.js export maps (https://nodejs.org/api/packages.html#exports)",
   "exports": {
     ".": {
-      "@infinitecanvas/source": "./src/index.ts",
       "import": {
-        "types": "./build/index.d.ts",
-        "default": "./build/index.js"
+        "@infinitecanvas/source": "./src/index.ts",
+        "types": "./build/index.d.mts",
+        "import": "./build/index.mjs",
+        "default": "./build/index.mjs"
       },
       "require": {
-        "types": "./build/index.d.cts",
-        "default": "./build/index.cjs"
+        "@infinitecanvas/source": "./src/index.ts",
+        "types": "./build/index.d.ts",
+        "import": "./build/index.js",
+        "default": "./build/index.js"
       }
     },
     "./package.json": "./package.json"
@@ -36,6 +34,9 @@
     "check:exports": "attw --pack .",
     "test": "vitest  --config ../../vitest.config.ts run",
     "test:watch": "vitest  --config ../../vitest.config.ts run --watch"
+  },
+  "dependencies": {
+    "@infinitecanvas/ecs": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^4.0.7",
