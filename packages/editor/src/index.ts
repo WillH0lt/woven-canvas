@@ -30,13 +30,6 @@ export {
   defineRenderSystem,
 } from "./phase";
 
-// Command architecture
-export {
-  type CommandHandler,
-  type CommandListener,
-  type CommandRegistry,
-} from "./command";
-
 // Store adapter
 export type {
   StoreAdapter,

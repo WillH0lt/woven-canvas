@@ -1,6 +1,5 @@
 import type { EditorComponentDef, EditorSingletonDef } from "./types";
 import type { PhaseSystem } from "./phase";
-import type { CommandHandler } from "./command";
 import type { Editor } from "./Editor";
 
 /**
@@ -81,11 +80,6 @@ export interface EditorPlugin {
   systems?: PhaseSystem[];
 
   /**
-   * Command handlers to register.
-   */
-  commands?: CommandHandler[];
-
-  /**
    * Called when the plugin is initialized.
    * Use this for one-time setup like adding event listeners.
    */
@@ -102,7 +96,9 @@ export interface EditorPlugin {
  * Sort plugins by dependencies (topological sort)
  * @internal
  */
-export function sortPluginsByDependencies(plugins: EditorPlugin[]): EditorPlugin[] {
+export function sortPluginsByDependencies(
+  plugins: EditorPlugin[]
+): EditorPlugin[] {
   const sorted: EditorPlugin[] = [];
   const visited = new Set<string>();
   const visiting = new Set<string>();

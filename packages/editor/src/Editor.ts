@@ -1,15 +1,13 @@
-import { World, type QueryDef } from "@infinitecanvas/ecs";
-import type { EditorComponentDef, EditorSingletonDef } from "./types";
+import { World, type QueryDef, type Context } from "@infinitecanvas/ecs";
+import type {
+  EditorComponentDef,
+  EditorSingletonDef,
+  EditorContext,
+} from "./types";
 import type { SystemPhase, PhaseSystem } from "./phase";
 import { PHASE_ORDER } from "./phase";
-import {
-  type CommandRegistry,
-  type CommandHandler,
-  createCommandRegistry,
-} from "./command";
 import type { StoreAdapter } from "./store";
 import { type EditorPlugin, sortPluginsByDependencies } from "./plugin";
-import { type EditorContext, createEditorContext } from "./context";
 
 /**
  * Editor configuration options
@@ -88,13 +86,17 @@ export type QueryCallback = (
 export class Editor {
   private world: World;
   private phases: Map<SystemPhase, PhaseSystem[]>;
-  private commands: CommandRegistry;
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
   private editorContext: EditorContext | null = null;
 
   constructor(options: EditorOptions = {}) {
-    const { plugins = [], store = null, maxEntities = 10_000, resources } = options;
+    const {
+      plugins = [],
+      store = null,
+      maxEntities = 10_000,
+      resources,
+    } = options;
 
     // Sort plugins by dependencies
     const sortedPlugins = sortPluginsByDependencies(plugins);
@@ -134,18 +136,6 @@ export class Editor {
       }
     }
 
-    // Initialize command registry (uses getter to allow context to be set later)
-    this.commands = createCommandRegistry(() => this.editorContext);
-
-    // Register commands from plugins
-    for (const plugin of sortedPlugins) {
-      if (plugin.commands) {
-        for (const handler of plugin.commands) {
-          this.commands.register(handler);
-        }
-      }
-    }
-
     // Store plugins
     this.plugins = new Map(sortedPlugins.map((p) => [p.name, p]));
 
@@ -158,8 +148,11 @@ export class Editor {
    * Call this after construction to run async setup.
    */
   async initialize(): Promise<void> {
-    // Create editor context
-    this.editorContext = createEditorContext(this.world._getContext(), this);
+    // Create editor context by extending the ECS context
+    const ecsContext = this.world._getContext();
+    this.editorContext = Object.assign(Object.create(ecsContext), {
+      editor: this,
+    }) as EditorContext;
 
     // Load initial state from store
     if (this.store?.load) {
@@ -208,21 +201,6 @@ export class Editor {
   }
 
   /**
-   * Emit a command to be executed.
-   *
-   * @param type - Command type identifier
-   * @param payload - Command payload
-   *
-   * @example
-   * ```typescript
-   * editor.emit('block:move', { entityIds: [1, 2], delta: { x: 10, y: 0 } });
-   * ```
-   */
-  emit<T>(type: string, payload: T): void {
-    this.commands.emit(type, payload);
-  }
-
-  /**
    * Schedule work for the next tick.
    * Use this from event handlers to safely modify ECS state.
    *
@@ -239,7 +217,7 @@ export class Editor {
    * ```
    */
   nextTick(callback: (ctx: EditorContext) => void): void {
-    this.world.nextSync((ctx) => {
+    this.world.nextSync(() => {
       if (this.editorContext) {
         callback(this.editorContext);
       }
@@ -269,51 +247,6 @@ export class Editor {
         callback(this.editorContext, result);
       }
     });
-  }
-
-  /**
-   * Get the raw ECS context for advanced usage.
-   */
-  getContext(): EditorContext {
-    if (!this.editorContext) {
-      throw new Error("Editor not initialized. Call initialize() first.");
-    }
-    return this.editorContext;
-  }
-
-  /**
-   * Get the underlying ECS World.
-   */
-  getWorld(): World {
-    return this.world;
-  }
-
-  /**
-   * Get the command registry.
-   */
-  getCommands(): CommandRegistry {
-    return this.commands;
-  }
-
-  /**
-   * Get the store adapter.
-   */
-  getStore(): StoreAdapter | null {
-    return this.store;
-  }
-
-  /**
-   * Check if a plugin is registered.
-   */
-  hasPlugin(name: string): boolean {
-    return this.plugins.has(name);
-  }
-
-  /**
-   * Get a registered plugin by name.
-   */
-  getPlugin(name: string): EditorPlugin | undefined {
-    return this.plugins.get(name);
   }
 
   /**
