@@ -1,13 +1,12 @@
-import { World, type QueryDef, type Context } from "@infinitecanvas/ecs";
-import type {
-  EditorComponentDef,
-  EditorSingletonDef,
-  EditorContext,
-} from "./types";
+import { World, type QueryDef } from "@infinitecanvas/ecs";
+import type { EditorContext } from "./types";
+import type { AnyEditorComponentDef as EditorComponentDef } from "./EditorComponentDef";
+import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
 import type { SystemPhase, PhaseSystem } from "./phase";
 import { PHASE_ORDER } from "./phase";
 import type { StoreAdapter } from "./store";
 import { type EditorPlugin, sortPluginsByDependencies } from "./plugin";
+import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 
 /**
  * Editor configuration options
@@ -102,7 +101,10 @@ export class Editor {
     const sortedPlugins = sortPluginsByDependencies(plugins);
 
     // Collect all components and singletons from plugins
-    const allDefs: (EditorComponentDef | EditorSingletonDef)[] = [];
+    // Always include CommandMarker for the command system
+    const allDefs: (EditorComponentDef | EditorSingletonDef)[] = [
+      CommandMarker as unknown as EditorComponentDef,
+    ];
     for (const plugin of sortedPlugins) {
       if (plugin.components) {
         allDefs.push(...plugin.components);
@@ -177,14 +179,22 @@ export class Editor {
    * 2. Capture - detect targets, compute intersections
    * 3. Update - modify document state, process commands
    * 4. Render - sync ECS state to output
+   *
+   * Commands spawned via `command()` are available during this frame
+   * and automatically cleaned up at the end.
    */
   tick(): void {
-    // Process scheduled callbacks
+    // Process scheduled callbacks (including command spawns)
     this.world.sync();
 
     // Execute phases in order
     for (const phase of PHASE_ORDER) {
       this.executePhase(phase);
+    }
+
+    // Clean up command entities at end of frame
+    if (this.editorContext) {
+      cleanupCommands(this.editorContext);
     }
   }
 
@@ -225,6 +235,28 @@ export class Editor {
   }
 
   /**
+   * Spawn a command to be processed this frame.
+   * Commands are ephemeral entities that systems can react to via `CommandDef.iter()`.
+   *
+   * @param def - The command definition created with `defineCommand()`
+   * @param payload - Command payload data
+   *
+   * @example
+   * ```typescript
+   * const SelectAll = defineCommand<{ filter?: string }>("select-all");
+   *
+   * // From UI event handler
+   * editor.command(SelectAll, { filter: "blocks" });
+   * ```
+   */
+  command<T>(def: CommandDef<T>, ...args: T extends void ? [] : [T]): void {
+    const payload = args[0] as T;
+    this.nextTick((ctx) => {
+      def.spawn(ctx, payload);
+    });
+  }
+
+  /**
    * Subscribe to query changes.
    *
    * @param query - Query definition
@@ -247,6 +279,37 @@ export class Editor {
         callback(this.editorContext, result);
       }
     });
+  }
+
+  /**
+   * Check if a plugin is registered.
+   * @param name - Plugin name
+   */
+  hasPlugin(name: string): boolean {
+    return this.plugins.has(name);
+  }
+
+  /**
+   * Get a plugin by name.
+   * @param name - Plugin name
+   */
+  getPlugin(name: string): EditorPlugin | undefined {
+    return this.plugins.get(name);
+  }
+
+  /**
+   * Get the store adapter.
+   */
+  getStore(): StoreAdapter | null {
+    return this.store;
+  }
+
+  /**
+   * Get the editor context.
+   * Returns null if not initialized.
+   */
+  getContext(): EditorContext | null {
+    return this.editorContext;
   }
 
   /**

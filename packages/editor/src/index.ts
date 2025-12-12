@@ -6,18 +6,32 @@ export type {
   SyncBehavior,
   DataCategory,
   EditorComponentMeta,
-  EditorComponentDef,
-  EditorSingletonDef,
   SystemFn,
   EditorContext,
   EditorInstance,
   EntityId,
 } from "./types";
 
-// Component definition helpers
-export { defineBlock, type BlockOptions } from "./defineBlock";
-export { defineMeta, type MetaOptions } from "./defineMeta";
-export { defineSingleton, type SingletonOptions } from "./defineSingleton";
+// Singleton base class and factory
+export {
+  EditorSingletonDef,
+  defineSingleton,
+  type EditorSingletonOptions,
+} from "./EditorSingletonDef";
+
+// Re-export Any* type aliases for backwards compatibility
+export type { AnyEditorSingletonDef } from "./EditorSingletonDef";
+
+// Component base classes and factories
+export {
+  EditorComponentDef,
+  BlockDef,
+  MetaDef,
+  defineBlock,
+  defineMeta,
+  type EditorComponentOptions,
+} from "./EditorComponentDef";
+export type { AnyEditorComponentDef, AnyBlockDef, AnyMetaDef } from "./EditorComponentDef";
 
 // System phases
 export {
@@ -42,6 +56,9 @@ export type {
 
 // Plugin system
 export { type EditorPlugin } from "./plugin";
+
+// Command system
+export { defineCommand, type CommandDef } from "./command";
 
 // Editor class
 export { Editor, type EditorOptions, type QueryCallback } from "./Editor";

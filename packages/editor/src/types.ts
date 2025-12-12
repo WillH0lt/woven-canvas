@@ -1,9 +1,4 @@
-import type {
-  Context,
-  EntityId,
-  ComponentDef,
-  SingletonDef,
-} from "@infinitecanvas/ecs";
+import type { Context, EntityId } from "@infinitecanvas/ecs";
 
 /**
  * Sync determines how component changes propagate
@@ -28,22 +23,6 @@ export interface EditorComponentMeta {
 }
 
 /**
- * A component definition with editor metadata.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type EditorComponentDef = ComponentDef<any> & {
-  __editor: EditorComponentMeta;
-};
-
-/**
- * A singleton definition with editor metadata.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type EditorSingletonDef = SingletonDef<any> & {
-  __editor: EditorComponentMeta;
-};
-
-/**
  * System function signature
  */
 export type SystemFn = (ctx: EditorContext) => void;
@@ -60,11 +39,10 @@ export interface EditorContext extends Context {
  * Minimal editor interface for context (avoids circular deps)
  */
 export interface EditorInstance {
-  emit<T>(type: string, payload: T): void;
   nextTick(callback: (ctx: EditorContext) => void): void;
 }
 
 /**
  * Re-export commonly used ECS types
  */
-export type { Context, EntityId, ComponentDef, SingletonDef };
+export type { Context, EntityId };

@@ -6,7 +6,18 @@ export {
   ComponentDef,
   SingletonDef,
 } from "./Component";
-export { field } from "./fieldBuilders";
+export {
+  field,
+  FieldBuilder,
+  StringFieldBuilder,
+  NumberFieldBuilder,
+  BooleanFieldBuilder,
+  BinaryFieldBuilder,
+  ArrayFieldBuilder,
+  TupleFieldBuilder,
+  EnumFieldBuilder,
+  RefFieldBuilder,
+} from "./fieldBuilders";
 export type {
   ComponentSchema,
   InferComponentType,

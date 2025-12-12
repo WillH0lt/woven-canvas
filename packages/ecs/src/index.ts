@@ -2,9 +2,18 @@ export {
   field,
   defineComponent,
   defineSingleton,
-  type ComponentDef,
-  type SingletonDef,
+  ComponentDef,
+  SingletonDef,
   type ComponentSchema,
+  type FieldBuilder,
+  type StringFieldBuilder,
+  type NumberFieldBuilder,
+  type BooleanFieldBuilder,
+  type BinaryFieldBuilder,
+  type ArrayFieldBuilder,
+  type TupleFieldBuilder,
+  type EnumFieldBuilder,
+  type RefFieldBuilder,
 } from "./Component";
 export { World } from "./World";
 export { setupWorker } from "./Worker";

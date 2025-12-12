@@ -1,4 +1,6 @@
-import type { EditorComponentDef, EditorSingletonDef, EntityId } from "./types";
+import type { EntityId } from "./types";
+import type { AnyEditorComponentDef as EditorComponentDef } from "./EditorComponentDef";
+import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
 
 /**
  * Represents a change to document data

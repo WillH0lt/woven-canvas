@@ -1,0 +1,434 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { Editor, defineQuery } from "@infinitecanvas/editor";
+import {
+  InputPlugin,
+  Pointer,
+  PointerButton,
+  PointerType,
+  Screen,
+  getPointerVelocity,
+  getPointerButton,
+  getPointerType,
+} from "../src";
+import type { InputResources } from "../src";
+
+// Query for pointer entities
+const pointerQuery = defineQuery((q) => q.with(Pointer));
+
+describe("Pointer", () => {
+  let editor: Editor;
+  let domElement: HTMLDivElement;
+
+  beforeEach(async () => {
+    domElement = document.createElement("div");
+
+    Object.defineProperty(domElement, "clientWidth", { value: 800 });
+    Object.defineProperty(domElement, "clientHeight", { value: 600 });
+    domElement.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        width: 800,
+        height: 600,
+        right: 800,
+        bottom: 600,
+        x: 0,
+        y: 0,
+        toJSON: () => {},
+      }) as DOMRect;
+
+    document.body.appendChild(domElement);
+
+    editor = new Editor({
+      plugins: [InputPlugin],
+      resources: { domElement } satisfies InputResources,
+    });
+    await editor.initialize();
+
+    // Initial tick to set up screen
+    editor.tick();
+  });
+
+  afterEach(async () => {
+    await editor.dispose();
+    document.body.removeChild(domElement);
+  });
+
+  describe("pointer entity lifecycle", () => {
+    it("should create pointer entity on pointerdown", () => {
+      const ctx = editor.getContext()!;
+
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 0,
+          pointerType: "mouse",
+          pressure: 0.5,
+          bubbles: true,
+        })
+      );
+
+      editor.tick();
+
+      const pointers = pointerQuery.current(ctx);
+      expect(pointers.length).toBe(1);
+    });
+
+    it("should remove pointer entity on pointerup", () => {
+      const ctx = editor.getContext()!;
+
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 0,
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      expect(pointerQuery.current(ctx).length).toBe(1);
+
+      window.dispatchEvent(
+        new PointerEvent("pointerup", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 0,
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      expect(pointerQuery.current(ctx).length).toBe(0);
+    });
+
+    it("should remove pointer entity on pointercancel", () => {
+      const ctx = editor.getContext()!;
+
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 0,
+          pointerType: "touch",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      expect(pointerQuery.current(ctx).length).toBe(1);
+
+      window.dispatchEvent(
+        new PointerEvent("pointercancel", {
+          pointerId: 1,
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      expect(pointerQuery.current(ctx).length).toBe(0);
+    });
+  });
+
+  describe("pointer data", () => {
+    it("should store pointer position relative to element", () => {
+      const ctx = editor.getContext()!;
+
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 150,
+          clientY: 200,
+          button: 0,
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      const pointers = pointerQuery.current(ctx);
+      const pointer = Pointer.read(ctx, pointers[0]);
+
+      expect(pointer.position[0]).toBe(150);
+      expect(pointer.position[1]).toBe(200);
+      expect(pointer.downPosition[0]).toBe(150);
+      expect(pointer.downPosition[1]).toBe(200);
+    });
+
+    it("should update position on pointermove", () => {
+      const ctx = editor.getContext()!;
+
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 0,
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      window.dispatchEvent(
+        new PointerEvent("pointermove", {
+          pointerId: 1,
+          clientX: 200,
+          clientY: 250,
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      const pointers = pointerQuery.current(ctx);
+      const pointer = Pointer.read(ctx, pointers[0]);
+
+      expect(pointer.position[0]).toBe(200);
+      expect(pointer.position[1]).toBe(250);
+      // downPosition should remain unchanged
+      expect(pointer.downPosition[0]).toBe(100);
+      expect(pointer.downPosition[1]).toBe(100);
+    });
+
+    it("should store pointer button", () => {
+      const ctx = editor.getContext()!;
+
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 2, // Right button
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      const pointers = pointerQuery.current(ctx);
+      const pointer = Pointer.read(ctx, pointers[0]);
+
+      expect(pointer.button).toBe(PointerButton.Right);
+    });
+
+    it("should store pointer type", () => {
+      const ctx = editor.getContext()!;
+
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 0,
+          pointerType: "pen",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      const pointers = pointerQuery.current(ctx);
+      const pointer = Pointer.read(ctx, pointers[0]);
+
+      expect(pointer.pointerType).toBe(PointerType.Pen);
+    });
+
+    it("should store pressure", () => {
+      const ctx = editor.getContext()!;
+
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 0,
+          pointerType: "pen",
+          pressure: 0.75,
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      const pointers = pointerQuery.current(ctx);
+      const pointer = Pointer.read(ctx, pointers[0]);
+
+      expect(pointer.pressure).toBe(0.75);
+    });
+  });
+
+  describe("multiple pointers (touch)", () => {
+    it("should support multiple simultaneous pointers", () => {
+      const ctx = editor.getContext()!;
+
+      // First touch
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          button: 0,
+          pointerType: "touch",
+          bubbles: true,
+        })
+      );
+
+      // Second touch
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 2,
+          clientX: 200,
+          clientY: 200,
+          button: 0,
+          pointerType: "touch",
+          bubbles: true,
+        })
+      );
+
+      editor.tick();
+
+      const pointers = pointerQuery.current(ctx);
+      expect(pointers.length).toBe(2);
+
+      // Verify they have different IDs
+      // Note: ECS read() returns a view object that gets updated on each call,
+      // so we must extract the id immediately before calling read() again
+      const id1 = Pointer.read(ctx, pointers[0]).id;
+      const id2 = Pointer.read(ctx, pointers[1]).id;
+      expect(id1).not.toBe(id2);
+    });
+
+    it("should remove correct pointer on individual release", () => {
+      const ctx = editor.getContext()!;
+
+      // Two touches down
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          pointerType: "touch",
+          bubbles: true,
+        })
+      );
+      domElement.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          pointerId: 2,
+          clientX: 200,
+          clientY: 200,
+          pointerType: "touch",
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      expect(pointerQuery.current(ctx).length).toBe(2);
+
+      // Release first touch
+      window.dispatchEvent(
+        new PointerEvent("pointerup", {
+          pointerId: 1,
+          bubbles: true,
+        })
+      );
+      editor.tick();
+
+      const pointers = pointerQuery.current(ctx);
+      expect(pointers.length).toBe(1);
+
+      // Remaining pointer should be pointer 2
+      const remaining = Pointer.read(ctx, pointers[0]);
+      expect(remaining.id).toBe(2);
+    });
+  });
+
+  describe("helper functions", () => {
+    it("getPointerButton should map button numbers correctly", () => {
+      expect(getPointerButton(0)).toBe(PointerButton.Left);
+      expect(getPointerButton(1)).toBe(PointerButton.Middle);
+      expect(getPointerButton(2)).toBe(PointerButton.Right);
+      expect(getPointerButton(3)).toBe(PointerButton.Back);
+      expect(getPointerButton(4)).toBe(PointerButton.Forward);
+      expect(getPointerButton(99)).toBe(PointerButton.None);
+    });
+
+    it("getPointerType should map pointer types correctly", () => {
+      expect(getPointerType("mouse")).toBe(PointerType.Mouse);
+      expect(getPointerType("pen")).toBe(PointerType.Pen);
+      expect(getPointerType("touch")).toBe(PointerType.Touch);
+      expect(getPointerType("unknown")).toBe(PointerType.Mouse); // Default
+    });
+  });
+});
+
+describe("Pointer - multiple instances", () => {
+  it("should isolate pointer entities between editor instances", async () => {
+    const domElement1 = document.createElement("div");
+    const domElement2 = document.createElement("div");
+
+    for (const el of [domElement1, domElement2]) {
+      Object.defineProperty(el, "clientWidth", { value: 800 });
+      Object.defineProperty(el, "clientHeight", { value: 600 });
+      el.getBoundingClientRect = () =>
+        ({
+          left: 0,
+          top: 0,
+          width: 800,
+          height: 600,
+          right: 800,
+          bottom: 600,
+          x: 0,
+          y: 0,
+          toJSON: () => {},
+        }) as DOMRect;
+      document.body.appendChild(el);
+    }
+
+    const editor1 = new Editor({
+      plugins: [InputPlugin],
+      resources: { domElement: domElement1 } satisfies InputResources,
+    });
+    const editor2 = new Editor({
+      plugins: [InputPlugin],
+      resources: { domElement: domElement2 } satisfies InputResources,
+    });
+
+    await editor1.initialize();
+    await editor2.initialize();
+
+    editor1.tick();
+    editor2.tick();
+
+    // Pointer down on element1 only
+    domElement1.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        pointerId: 1,
+        clientX: 100,
+        clientY: 100,
+        button: 0,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+
+    editor1.tick();
+    editor2.tick();
+
+    const ctx1 = editor1.getContext()!;
+    const ctx2 = editor2.getContext()!;
+
+    expect(pointerQuery.current(ctx1).length).toBe(1);
+    expect(pointerQuery.current(ctx2).length).toBe(0);
+
+    await editor1.dispose();
+    await editor2.dispose();
+    document.body.removeChild(domElement1);
+    document.body.removeChild(domElement2);
+  });
+});

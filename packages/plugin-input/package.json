@@ -1,0 +1,50 @@
+{
+  "private": true,
+  "name": "@infinitecanvas/plugin-input",
+  "version": "0.1.0",
+  "description": "Input handling plugin for the editor framework",
+  "files": [
+    "build"
+  ],
+  "main": "./build/index.js",
+  "module": "./build/index.mjs",
+  "types": "./build/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "@infinitecanvas/source": "./src/index.ts",
+        "types": "./build/index.d.mts",
+        "import": "./build/index.mjs",
+        "default": "./build/index.mjs"
+      },
+      "require": {
+        "@infinitecanvas/source": "./src/index.ts",
+        "types": "./build/index.d.ts",
+        "import": "./build/index.js",
+        "default": "./build/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "clean": "rimraf build .turbo",
+    "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
+    "build:watch": "pnpm build --watch",
+    "check:exports": "attw --pack .",
+    "test": "vitest run",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@infinitecanvas/ecs": "workspace:*",
+    "@infinitecanvas/editor": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "jsdom": "^27.3.0",
+    "vitest": "^4.0.7"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

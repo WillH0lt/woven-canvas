@@ -1,4 +1,5 @@
-import type { EditorComponentDef, EditorSingletonDef } from "./types";
+import type { AnyEditorComponentDef as EditorComponentDef } from "./EditorComponentDef";
+import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
 import type { PhaseSystem } from "./phase";
 import type { Editor } from "./Editor";
 
