@@ -322,6 +322,7 @@ export class World {
       return;
     }
 
+    this.context.tick++;
     const currentEventIndex = this.context.eventBuffer.getWriteIndex();
 
     for (const subscriber of this.subscribers) {
@@ -334,7 +335,7 @@ export class World {
       // Update subscriber's event index for next sync
       subscriber.prevEventIndex = currentEventIndex;
 
-      const queryDef = subscriber.queryDef!;
+      const queryDef = subscriber.queryDef;
 
       const results = {
         added: queryDef.added(ctx),

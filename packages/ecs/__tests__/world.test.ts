@@ -670,20 +670,22 @@ describe("World", () => {
       const world = new World([Position, Velocity]);
       const ctx = world._getContext();
 
-      const entity = createEntity(ctx);
-      addComponent(ctx, entity, Position, { x: 0, y: 0 });
-
-      // Query for entities with both Position AND Velocity
-      const query = defineQuery((q) => q.with(Position, Velocity));
-      world.sync(); // Clear initial events
-
       const receivedAdded: number[] = [];
+      const query = defineQuery((q) => q.with(Position, Velocity));
       world.subscribe(query, (_ctx, { added }) => {
         receivedAdded.push(...added);
       });
 
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+
+      world.sync(); // Advnance tick
+
+      expect(receivedAdded).toHaveLength(0);
+
       // Add Velocity - entity should enter the query
       addComponent(ctx, entity, Velocity, { dx: 1, dy: 1 });
+
       world.sync();
 
       expect(receivedAdded).toHaveLength(1);
@@ -1057,23 +1059,26 @@ describe("World", () => {
       const world = new World([Position]);
       const ctx = world._getContext();
 
-      const entity = createEntity(ctx);
-      addComponent(ctx, entity, Position, { x: 0, y: 0 });
-
       const query = defineQuery((q) => q.tracking(Position));
-      let xValueInSubscriber = 0;
 
       // Initial sync to register entity
       world.subscribe(query, (_ctx, { added }) => {
+        console.log("subscriber callback", added);
         if (added.includes(entity)) {
           xValueInSubscriber = Position.read(ctx, entity).x;
         }
       });
 
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 0, y: 0 });
+
+      let xValueInSubscriber = 0;
+
       // Schedule a write for next sync
       world.nextSync((syncCtx) => {
         const pos = Position.write(syncCtx, entity);
         pos.x = 999;
+        console.log("nextSync callback", pos.x);
       });
 
       world.sync();
