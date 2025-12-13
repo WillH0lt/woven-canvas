@@ -1,15 +1,17 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { field } from "@infinitecanvas/ecs";
 import {
   Editor,
-  defineEditorSystem,
-  getResources,
+  defineBlock,
+  defineMeta,
+  defineSingleton,
+  defineInputSystem,
+  defineCaptureSystem,
+  defineUpdateSystem,
+  defineRenderSystem,
   type EditorPlugin,
   type StoreAdapter,
-  type EditorResources,
 } from "../src";
-
-// Mock DOM element for tests
-const mockDomElement = document.createElement("div");
 
 describe("Editor", () => {
   let editor: Editor;
@@ -20,15 +22,44 @@ describe("Editor", () => {
     }
   });
 
+  describe("construction", () => {
+    it("should create an editor with no plugins", () => {
+      editor = new Editor();
+      expect(editor).toBeInstanceOf(Editor);
+    });
+
+    it("should create an editor with plugins", () => {
+      const TestBlock = defineBlock({
+        x: field.float32(),
+      });
+
+      const plugin: EditorPlugin = {
+        name: "test",
+        components: [TestBlock],
+      };
+
+      editor = new Editor({ plugins: [plugin] });
+      expect(editor.hasPlugin("test")).toBe(true);
+    });
+
+    it("should create an editor with a store adapter", () => {
+      const store: StoreAdapter = {
+        onDocumentChange: vi.fn(),
+      };
+
+      editor = new Editor({ store });
+      expect(editor.getStore()).toBe(store);
+    });
+  });
+
   describe("initialization", () => {
     it("should initialize and create context", async () => {
-      editor = new Editor(mockDomElement);
+      editor = new Editor();
       await editor.initialize();
 
-      const ctx = editor._getContext();
+      const ctx = editor.getContext();
       expect(ctx).toBeDefined();
-      const resources = getResources<EditorResources>(ctx);
-      expect(resources.editor).toBe(editor);
+      expect(ctx.editor).toBe(editor);
     });
 
     it("should call plugin setup on initialize", async () => {
@@ -38,10 +69,10 @@ describe("Editor", () => {
         setup,
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
-      expect(setup).toHaveBeenCalledWith(editor._getContext());
+      expect(setup).toHaveBeenCalledWith(editor);
     });
 
     it("should load from store on initialize", async () => {
@@ -52,7 +83,7 @@ describe("Editor", () => {
 
       const store: StoreAdapter = { load };
 
-      editor = new Editor(mockDomElement, { store });
+      editor = new Editor({ store });
       await editor.initialize();
 
       expect(load).toHaveBeenCalled();
@@ -63,31 +94,28 @@ describe("Editor", () => {
     it("should execute systems in phase order", async () => {
       const executionOrder: string[] = [];
 
+      const inputSystem = defineInputSystem("input", () => {
+        executionOrder.push("input");
+      });
+
+      const captureSystem = defineCaptureSystem("capture", () => {
+        executionOrder.push("capture");
+      });
+
+      const updateSystem = defineUpdateSystem("update", () => {
+        executionOrder.push("update");
+      });
+
+      const renderSystem = defineRenderSystem("render", () => {
+        executionOrder.push("render");
+      });
+
       const plugin: EditorPlugin = {
         name: "test",
-        inputSystems: [
-          defineEditorSystem(() => {
-            executionOrder.push("input");
-          }),
-        ],
-        captureSystems: [
-          defineEditorSystem(() => {
-            executionOrder.push("capture");
-          }),
-        ],
-        updateSystems: [
-          defineEditorSystem(() => {
-            executionOrder.push("update");
-          }),
-        ],
-        renderSystems: [
-          defineEditorSystem(() => {
-            executionOrder.push("render");
-          }),
-        ],
+        systems: [renderSystem, updateSystem, inputSystem, captureSystem], // Out of order
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       editor.tick();
@@ -98,16 +126,16 @@ describe("Editor", () => {
     it("should process nextTick callbacks before systems", async () => {
       const order: string[] = [];
 
+      const updateSystem = defineUpdateSystem("update", () => {
+        order.push("update");
+      });
+
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineEditorSystem(() => {
-            order.push("update");
-          }),
-        ],
+        systems: [updateSystem],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       editor.nextTick(() => {
@@ -142,7 +170,7 @@ describe("Editor", () => {
         },
       };
 
-      editor = new Editor(mockDomElement, { plugins: [pluginA, pluginB] });
+      editor = new Editor({ plugins: [pluginA, pluginB] });
       await editor.initialize();
 
       expect(setupOrder).toEqual(["b", "a"]);
@@ -154,7 +182,7 @@ describe("Editor", () => {
         dependencies: ["missing"],
       };
 
-      expect(() => new Editor(mockDomElement, { plugins: [plugin] })).toThrow(
+      expect(() => new Editor({ plugins: [plugin] })).toThrow(
         'Plugin "a" depends on "missing" which is not registered'
       );
     });
@@ -170,9 +198,19 @@ describe("Editor", () => {
         dependencies: ["a"],
       };
 
-      expect(
-        () => new Editor(mockDomElement, { plugins: [pluginA, pluginB] })
-      ).toThrow("Circular plugin dependency");
+      expect(() => new Editor({ plugins: [pluginA, pluginB] })).toThrow(
+        "Circular plugin dependency"
+      );
+    });
+
+    it("should get plugin by name", async () => {
+      const plugin: EditorPlugin = {
+        name: "test",
+      };
+
+      editor = new Editor({ plugins: [plugin] });
+      expect(editor.getPlugin("test")).toBe(plugin);
+      expect(editor.getPlugin("nonexistent")).toBeUndefined();
     });
   });
 
@@ -184,11 +222,11 @@ describe("Editor", () => {
         teardown,
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
       await editor.dispose();
 
-      expect(teardown).toHaveBeenCalledWith(editor._getContext());
+      expect(teardown).toHaveBeenCalledWith(editor);
     });
 
     it("should call teardown in reverse order", async () => {
@@ -208,7 +246,7 @@ describe("Editor", () => {
         },
       };
 
-      editor = new Editor(mockDomElement, { plugins: [pluginA, pluginB] });
+      editor = new Editor({ plugins: [pluginA, pluginB] });
       await editor.initialize();
       await editor.dispose();
 

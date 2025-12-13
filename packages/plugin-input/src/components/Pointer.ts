@@ -1,4 +1,8 @@
-import { defineMeta, field } from "@infinitecanvas/editor";
+import {
+  EditorComponentDef,
+  field,
+  type Context,
+} from "@infinitecanvas/editor";
 
 /**
  * Pointer button types
@@ -30,6 +34,34 @@ export type PointerType = (typeof PointerType)[keyof typeof PointerType];
  */
 const SAMPLE_COUNT = 6;
 
+const PointerSchema = {
+  /** Unique pointer ID (from PointerEvent.pointerId) */
+  id: field.uint16().default(0),
+  /** Current position relative to the editor element [x, y] */
+  position: field.tuple(field.float32(), 2).default([0, 0]),
+  /** Position where the pointer went down [x, y] */
+  downPosition: field.tuple(field.float32(), 2).default([0, 0]),
+  /** Frame number when the pointer went down (for click detection) */
+  downFrame: field.uint32().default(0),
+  /** Which button is pressed */
+  button: field.enum(PointerButton).default(PointerButton.None),
+  /** Type of pointer device */
+  pointerType: field.enum(PointerType).default(PointerType.Mouse),
+  /** Pressure from 0 to 1 (for pen/touch) */
+  pressure: field.float32().default(0),
+  /** Whether the pointer event target was not the editor element */
+  obscured: field.boolean().default(false),
+  // Velocity tracking (ring buffer for position samples)
+  /** Ring buffer of previous positions [x0, y0, x1, y1, ...] @internal */
+  _prevPositions: field.array(field.float32(), SAMPLE_COUNT * 2),
+  /** Ring buffer of timestamps for each position sample @internal */
+  _prevTimes: field.array(field.float32(), SAMPLE_COUNT),
+  /** Total number of samples added (used for ring buffer indexing) @internal */
+  _sampleCount: field.int32().default(0),
+  /** Computed velocity [vx, vy] in pixels per second @internal */
+  _velocity: field.tuple(field.float32(), 2).default([0, 0]),
+};
+
 /**
  * Pointer component - represents an active pointer (mouse, touch, or pen).
  *
@@ -40,83 +72,57 @@ const SAMPLE_COUNT = 6;
  * This component stores position history for smooth velocity calculation
  * using exponentially time-decayed weighted least-squares fitting.
  */
-export const Pointer = defineMeta({
-  /**
-   * Unique pointer ID (from PointerEvent.pointerId)
-   */
-  id: field.uint16().default(0),
+class PointerDef extends EditorComponentDef<typeof PointerSchema> {
+  constructor() {
+    super(PointerSchema, { sync: "none" });
+  }
+
+  /** Get the computed velocity of a pointer */
+  getVelocity(ctx: Context, entityId: number): [number, number] {
+    const p = this.read(ctx, entityId);
+    return [p._velocity[0], p._velocity[1]];
+  }
 
   /**
-   * Current position relative to the editor element [x, y]
+   * Get the pointer button from a PointerEvent button number.
+   * @param button - PointerEvent.button value
+   * @returns PointerButton enum value
    */
-  position: field.tuple(field.float32(), 2).default([0, 0]),
+  getButton(button: number): PointerButton {
+    switch (button) {
+      case 0:
+        return PointerButton.Left;
+      case 1:
+        return PointerButton.Middle;
+      case 2:
+        return PointerButton.Right;
+      case 3:
+        return PointerButton.Back;
+      case 4:
+        return PointerButton.Forward;
+      default:
+        return PointerButton.None;
+    }
+  }
 
   /**
-   * Position where the pointer went down [x, y]
+   * Get the pointer type from a PointerEvent pointerType string.
+   * @param pointerType - PointerEvent.pointerType value
+   * @returns PointerType enum value
    */
-  downPosition: field.tuple(field.float32(), 2).default([0, 0]),
-
-  /**
-   * Frame number when the pointer went down (for click detection)
-   */
-  downFrame: field.uint32().default(0),
-
-  /**
-   * Which button is pressed
-   */
-  button: field.enum(PointerButton).default(PointerButton.None),
-
-  /**
-   * Type of pointer device
-   */
-  pointerType: field.enum(PointerType).default(PointerType.Mouse),
-
-  /**
-   * Pressure from 0 to 1 (for pen/touch)
-   */
-  pressure: field.float32().default(0),
-
-  /**
-   * Whether the pointer event target was not the editor element
-   */
-  obscured: field.boolean().default(false),
-
-  // Velocity tracking (ring buffer for position samples)
-  /**
-   * Ring buffer of previous positions [x0, y0, x1, y1, ...]
-   * @internal
-   */
-  _prevPositions: field.array(field.float32(), SAMPLE_COUNT * 2),
-
-  /**
-   * Ring buffer of timestamps for each position sample
-   * @internal
-   */
-  _prevTimes: field.array(field.float32(), SAMPLE_COUNT),
-
-  /**
-   * Total number of samples added (used for ring buffer indexing)
-   * @internal
-   */
-  _sampleCount: field.int32().default(0),
-
-  /**
-   * Computed velocity [vx, vy] in pixels per second
-   * @internal
-   */
-  _velocity: field.tuple(field.float32(), 2).default([0, 0]),
-}, { sync: "none" });
-
-/**
- * Get the computed velocity of a pointer.
- * @param pointer - The pointer component data
- * @returns Velocity as [vx, vy] in pixels per second
- */
-export function getPointerVelocity(
-  pointer: ReturnType<typeof Pointer.read>
-): [number, number] {
-  return [pointer._velocity[0], pointer._velocity[1]];
+  getType(pointerType: string): PointerType {
+    switch (pointerType) {
+      case "pen":
+        return PointerType.Pen;
+      case "touch":
+        return PointerType.Touch;
+      default:
+        return PointerType.Mouse;
+    }
+  }
 }
+
+export const Pointer = new PointerDef();
 
 /**
  * Add a position sample and update velocity calculation.
@@ -215,42 +221,4 @@ export function addPointerSample(
   const vy = (W * WU_Y - WU * WY) / denom;
 
   pointer._velocity = [vx, vy];
-}
-
-/**
- * Get the pointer button from a PointerEvent button number.
- * @param button - PointerEvent.button value
- * @returns PointerButton enum value
- */
-export function getPointerButton(button: number): PointerButton {
-  switch (button) {
-    case 0:
-      return PointerButton.Left;
-    case 1:
-      return PointerButton.Middle;
-    case 2:
-      return PointerButton.Right;
-    case 3:
-      return PointerButton.Back;
-    case 4:
-      return PointerButton.Forward;
-    default:
-      return PointerButton.None;
-  }
-}
-
-/**
- * Get the pointer type from a PointerEvent pointerType string.
- * @param pointerType - PointerEvent.pointerType value
- * @returns PointerType enum value
- */
-export function getPointerType(pointerType: string): PointerType {
-  switch (pointerType) {
-    case "pen":
-      return PointerType.Pen;
-    case "touch":
-      return PointerType.Touch;
-    default:
-      return PointerType.Mouse;
-  }
 }

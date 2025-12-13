@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Editor, defineQuery } from "@infinitecanvas/editor";
 import { InputPlugin, Keyboard, Mouse, Screen, Pointer } from "../src";
-import type { InputResources } from "../src";
 
 // Query for pointer entities
 const pointerQuery = defineQuery((q) => q.with(Pointer));
@@ -12,29 +11,19 @@ describe("InputPlugin", () => {
       const domElement = document.createElement("div");
       document.body.appendChild(domElement);
 
-      const editor = new Editor({
+      const editor = new Editor(domElement, {
         plugins: [InputPlugin],
-        resources: { domElement } satisfies InputResources,
       });
+      await editor.initialize();
 
-      expect(editor.hasPlugin("input")).toBe(true);
-      expect(editor.getPlugin("input")).toBe(InputPlugin);
+      // Verify plugin is registered by checking its components work
+      const ctx = editor._getContext()!;
+      expect(() => Keyboard.read(ctx)).not.toThrow();
+      expect(() => Mouse.read(ctx)).not.toThrow();
+      expect(() => Screen.read(ctx)).not.toThrow();
 
       await editor.dispose();
       document.body.removeChild(domElement);
-    });
-
-    it("should throw if domElement is not provided", async () => {
-      const editor = new Editor({
-        plugins: [InputPlugin],
-        resources: {}, // Missing domElement
-      });
-
-      await expect(editor.initialize()).rejects.toThrow(
-        "domElement is required"
-      );
-
-      await editor.dispose();
     });
   });
 
@@ -43,13 +32,12 @@ describe("InputPlugin", () => {
       const domElement = document.createElement("div");
       document.body.appendChild(domElement);
 
-      const editor = new Editor({
+      const editor = new Editor(domElement, {
         plugins: [InputPlugin],
-        resources: { domElement } satisfies InputResources,
       });
       await editor.initialize();
 
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // Verify singletons are accessible
       expect(() => Keyboard.read(ctx)).not.toThrow();
@@ -77,19 +65,18 @@ describe("InputPlugin", () => {
           x: 0,
           y: 0,
           toJSON: () => {},
-        }) as DOMRect;
+        } as DOMRect);
       document.body.appendChild(domElement);
 
-      const editor = new Editor({
+      const editor = new Editor(domElement, {
         plugins: [InputPlugin],
-        resources: { domElement } satisfies InputResources,
       });
       await editor.initialize();
 
       // First tick should initialize screen dimensions
       editor.tick();
 
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
       const screen = Screen.read(ctx);
 
       expect(screen.width).toBe(800);
@@ -110,9 +97,8 @@ describe("InputPlugin", () => {
       );
       document.body.appendChild(domElement);
 
-      const editor = new Editor({
+      const editor = new Editor(domElement, {
         plugins: [InputPlugin],
-        resources: { domElement } satisfies InputResources,
       });
       await editor.initialize();
 
@@ -148,12 +134,11 @@ describe("InputPlugin - integration", () => {
         x: 0,
         y: 0,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
     document.body.appendChild(domElement);
 
-    editor = new Editor({
+    editor = new Editor(domElement, {
       plugins: [InputPlugin],
-      resources: { domElement } satisfies InputResources,
     });
     await editor.initialize();
     editor.tick();
@@ -165,7 +150,7 @@ describe("InputPlugin - integration", () => {
   });
 
   it("should handle combined keyboard and pointer input", () => {
-    const ctx = editor.getContext()!;
+    const ctx = editor._getContext()!;
 
     // Hold shift while clicking
     domElement.dispatchEvent(
@@ -197,7 +182,7 @@ describe("InputPlugin - integration", () => {
   });
 
   it("should handle rapid input sequences", () => {
-    const ctx = editor.getContext()!;
+    const ctx = editor._getContext()!;
 
     // Multiple events in one frame
     for (let i = 0; i < 10; i++) {

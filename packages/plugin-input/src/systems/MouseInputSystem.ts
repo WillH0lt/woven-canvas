@@ -1,8 +1,12 @@
-import { defineInputSystem, type EditorContext } from "@infinitecanvas/editor";
-import { getResources } from "@infinitecanvas/ecs";
+import {
+  defineEditorSystem,
+  getResources,
+  type Context,
+  type EditorResources,
+} from "@infinitecanvas/editor";
+
 import { Mouse } from "../components/Mouse";
 import { Screen } from "../components/Screen";
-import type { InputResources } from "../types";
 
 /**
  * Event types we track
@@ -38,9 +42,7 @@ const instanceState = new WeakMap<HTMLElement, MouseState>();
  * Attach mouse event listeners.
  * Called from plugin setup.
  */
-export function attachMouseListeners(resources: InputResources): void {
-  const { domElement } = resources;
-
+export function attachMouseListeners(domElement: HTMLElement): void {
   if (instanceState.has(domElement)) return;
 
   const state: MouseState = {
@@ -84,8 +86,7 @@ export function attachMouseListeners(resources: InputResources): void {
  * Detach mouse event listeners.
  * Called from plugin teardown.
  */
-export function detachMouseListeners(resources: InputResources): void {
-  const { domElement } = resources;
+export function detachMouseListeners(domElement: HTMLElement): void {
   const state = instanceState.get(domElement);
 
   if (!state) return;
@@ -106,59 +107,56 @@ export function detachMouseListeners(resources: InputResources): void {
  * - Wheel deltas (normalized across browsers)
  * - Triggers for move, wheel, enter, leave events
  */
-export const mouseInputSystem = defineInputSystem(
-  "mouse-input",
-  (ctx: EditorContext) => {
-    const resources = getResources<InputResources>(ctx);
-    const state = instanceState.get(resources.domElement);
-    if (!state) return;
+export const mouseInputSystem = defineEditorSystem((ctx: Context) => {
+  const resources = getResources<EditorResources>(ctx);
+  const state = instanceState.get(resources.domElement);
+  if (!state) return;
 
-    const mouse = Mouse.write(ctx);
-    const screen = Screen.read(ctx);
+  const mouse = Mouse.write(ctx);
+  const screen = Screen.read(ctx);
 
-    // Clear triggers from previous frame
-    mouse.moveTrigger = false;
-    mouse.wheelTrigger = false;
-    mouse.enterTrigger = false;
-    mouse.leaveTrigger = false;
-    mouse.wheelDeltaX = 0;
-    mouse.wheelDeltaY = 0;
+  // Clear triggers from previous frame
+  mouse.moveTrigger = false;
+  mouse.wheelTrigger = false;
+  mouse.enterTrigger = false;
+  mouse.leaveTrigger = false;
+  mouse.wheelDeltaX = 0;
+  mouse.wheelDeltaY = 0;
 
-    // Process buffered events
-    for (const event of state.eventsBuffer) {
-      switch (event.type) {
-        case "mousemove":
-          // Convert to element-relative coordinates
-          mouse.position = [
-            event.clientX! - screen.left,
-            event.clientY! - screen.top,
-          ];
-          mouse.moveTrigger = true;
-          break;
+  // Process buffered events
+  for (const event of state.eventsBuffer) {
+    switch (event.type) {
+      case "mousemove":
+        // Convert to element-relative coordinates
+        mouse.position = [
+          event.clientX! - screen.left,
+          event.clientY! - screen.top,
+        ];
+        mouse.moveTrigger = true;
+        break;
 
-        case "wheel":
-          mouse.wheelDeltaX = event.deltaX!;
-          mouse.wheelDeltaY = normalizeWheelDelta(
-            event.deltaY!,
-            event.deltaMode!
-          );
-          mouse.wheelTrigger = true;
-          break;
+      case "wheel":
+        mouse.wheelDeltaX = event.deltaX!;
+        mouse.wheelDeltaY = normalizeWheelDelta(
+          event.deltaY!,
+          event.deltaMode!
+        );
+        mouse.wheelTrigger = true;
+        break;
 
-        case "mouseenter":
-          mouse.enterTrigger = true;
-          break;
+      case "mouseenter":
+        mouse.enterTrigger = true;
+        break;
 
-        case "mouseleave":
-          mouse.leaveTrigger = true;
-          break;
-      }
+      case "mouseleave":
+        mouse.leaveTrigger = true;
+        break;
     }
-
-    // Clear buffer
-    state.eventsBuffer.length = 0;
   }
-);
+
+  // Clear buffer
+  state.eventsBuffer.length = 0;
+});
 
 /**
  * Normalize wheel deltaY across browsers and delta modes.
@@ -168,8 +166,7 @@ export const mouseInputSystem = defineInputSystem(
  */
 function normalizeWheelDelta(deltaY: number, deltaMode: number): number {
   const LINE_HEIGHT = 16;
-  const PAGE_HEIGHT =
-    typeof window !== "undefined" ? window.innerHeight : 800;
+  const PAGE_HEIGHT = typeof window !== "undefined" ? window.innerHeight : 800;
 
   let normalized = deltaY;
 

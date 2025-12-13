@@ -1,19 +1,15 @@
 import {
-  defineInputSystem,
-  type EditorContext,
+  defineEditorSystem,
   createEntity,
   removeEntity,
   addComponent,
+  getResources,
+  type Context,
+  type EditorResources,
 } from "@infinitecanvas/editor";
-import { getResources } from "@infinitecanvas/ecs";
-import {
-  Pointer,
-  getPointerButton,
-  getPointerType,
-  addPointerSample,
-} from "../components/Pointer";
+
+import { Pointer, addPointerSample } from "../components/Pointer";
 import { Screen } from "../components/Screen";
-import type { InputResources } from "../types";
 
 /**
  * Buffered pointer event
@@ -53,9 +49,7 @@ const instanceState = new WeakMap<HTMLElement, PointerState>();
  * Attach pointer event listeners.
  * Called from plugin setup.
  */
-export function attachPointerListeners(resources: InputResources): void {
-  const { domElement } = resources;
-
+export function attachPointerListeners(domElement: HTMLElement): void {
   if (instanceState.has(domElement)) return;
 
   const state: PointerState = {
@@ -149,8 +143,7 @@ export function attachPointerListeners(resources: InputResources): void {
  * Detach pointer event listeners.
  * Called from plugin teardown.
  */
-export function detachPointerListeners(resources: InputResources): void {
-  const { domElement } = resources;
+export function detachPointerListeners(domElement: HTMLElement): void {
   const state = instanceState.get(domElement);
 
   if (!state) return;
@@ -170,88 +163,85 @@ export function detachPointerListeners(resources: InputResources): void {
  * Creates a Pointer entity on pointerdown and deletes it on pointerup.
  * This allows multiple simultaneous pointers (for touch).
  */
-export const pointerInputSystem = defineInputSystem(
-  "pointer-input",
-  (ctx: EditorContext) => {
-    const resources = getResources<InputResources>(ctx);
-    const { domElement } = resources;
-    const state = instanceState.get(domElement);
-    if (!state) return;
+export const pointerInputSystem = defineEditorSystem((ctx: Context) => {
+  const resources = getResources<EditorResources>(ctx);
+  const { domElement } = resources;
+  const state = instanceState.get(domElement);
+  if (!state) return;
 
-    state.frameCount++;
-    const screen = Screen.read(ctx);
-    const time = state.frameCount / 60; // Approximate time in seconds
+  state.frameCount++;
+  const screen = Screen.read(ctx);
+  const time = state.frameCount / 60; // Approximate time in seconds
 
-    // Process buffered events
-    for (const event of state.eventsBuffer) {
-      switch (event.type) {
-        case "pointerdown": {
-          const position: [number, number] = [
-            event.clientX - screen.left,
-            event.clientY - screen.top,
-          ];
+  // Process buffered events
+  for (const event of state.eventsBuffer) {
+    switch (event.type) {
+      case "pointerdown": {
+        const position: [number, number] = [
+          event.clientX - screen.left,
+          event.clientY - screen.top,
+        ];
 
-          // Create pointer entity
-          const entityId = createEntity(ctx);
-          addComponent(ctx, entityId, Pointer, {
-            id: event.pointerId,
-            position: position,
-            downPosition: position,
-            downFrame: state.frameCount,
-            button: getPointerButton(event.button),
-            pointerType: getPointerType(event.pointerType),
-            pressure: event.pressure,
-            obscured: event.target !== domElement,
-          });
+        // Create pointer entity
+        const entityId = createEntity(ctx);
+        addComponent(ctx, entityId, Pointer, {
+          id: event.pointerId,
+          position: position,
+          downPosition: position,
+          downFrame: state.frameCount,
+          button: Pointer.getButton(event.button),
+          pointerType: Pointer.getType(event.pointerType),
+          pressure: event.pressure,
+          obscured: event.target !== domElement,
+        });
 
-          // Add initial position sample
-          const pointer = Pointer.write(ctx, entityId);
-          addPointerSample(pointer, position, time);
+        // Add initial position sample
+        const pointer = Pointer.write(ctx, entityId);
+        addPointerSample(pointer, position, time);
 
-          // Track in map
-          state.pointerEntityMap.set(event.pointerId, entityId);
-          break;
-        }
+        // Track in map
+        state.pointerEntityMap.set(event.pointerId, entityId);
+        break;
+      }
 
-        case "pointermove": {
-          const entityId = state.pointerEntityMap.get(event.pointerId);
-          if (entityId === undefined) break;
+      case "pointermove": {
+        const entityId = state.pointerEntityMap.get(event.pointerId);
+        if (entityId === undefined) break;
 
-          const position: [number, number] = [
-            event.clientX - screen.left,
-            event.clientY - screen.top,
-          ];
+        const position: [number, number] = [
+          event.clientX - screen.left,
+          event.clientY - screen.top,
+        ];
 
-          const pointer = Pointer.write(ctx, entityId);
-          addPointerSample(pointer, position, time);
-          pointer.pressure = event.pressure;
-          pointer.obscured = event.target !== domElement;
-          break;
-        }
+        const pointer = Pointer.write(ctx, entityId);
+        addPointerSample(pointer, position, time);
+        pointer.pressure = event.pressure;
+        pointer.obscured = event.target !== domElement;
+        break;
+      }
 
-        case "pointerup":
-        case "pointercancel": {
-          const entityId = state.pointerEntityMap.get(event.pointerId);
-          if (entityId === undefined) break;
+      case "pointerup":
+      case "pointercancel": {
+        const entityId = state.pointerEntityMap.get(event.pointerId);
+        if (entityId === undefined) break;
 
-          // Update final position before removal
-          const position: [number, number] = [
-            event.clientX - screen.left,
-            event.clientY - screen.top,
-          ];
+        // Update final position before removal
+        const position: [number, number] = [
+          event.clientX - screen.left,
+          event.clientY - screen.top,
+        ];
 
-          const pointer = Pointer.write(ctx, entityId);
-          addPointerSample(pointer, position, time);
+        const pointer = Pointer.write(ctx, entityId);
+        addPointerSample(pointer, position, time);
 
-          // Remove entity
-          removeEntity(ctx, entityId);
-          state.pointerEntityMap.delete(event.pointerId);
-          break;
-        }
+        // Remove entity
+        removeEntity(ctx, entityId);
+        state.pointerEntityMap.delete(event.pointerId);
+        break;
       }
     }
-
-    // Clear buffer
-    state.eventsBuffer.length = 0;
   }
-);
+
+  // Clear buffer
+  state.eventsBuffer.length = 0;
+});

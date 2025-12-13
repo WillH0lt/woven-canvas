@@ -1,7 +1,7 @@
 import {
   EditorSingletonDef,
   field,
-  type EditorContext,
+  type Context,
 } from "@infinitecanvas/editor";
 
 /** Binary size for key states (32 bytes = 256 bits = covers all keycodes) */
@@ -14,7 +14,10 @@ const KeyboardSchema = {
   /** Binary field where each bit represents whether a key is currently pressed. */
   keysDown: field.binary().max(KEY_BINARY_SIZE).default(EMPTY_KEY_BUFFER),
   /** Binary field for key-down triggers (true for exactly 1 frame when key is pressed). */
-  keysDownTrigger: field.binary().max(KEY_BINARY_SIZE).default(EMPTY_KEY_BUFFER),
+  keysDownTrigger: field
+    .binary()
+    .max(KEY_BINARY_SIZE)
+    .default(EMPTY_KEY_BUFFER),
   /** Binary field for key-up triggers (true for exactly 1 frame when key is released). */
   keysUpTrigger: field.binary().max(KEY_BINARY_SIZE).default(EMPTY_KEY_BUFFER),
   /** Common modifier - Shift key is down */
@@ -53,7 +56,7 @@ class KeyboardDef extends EditorSingletonDef<typeof KeyboardSchema> {
    * @param ctx - Editor context
    * @param keyCode - The keyCode to check (e.g., 65 for 'A')
    */
-  isKeyDown(ctx: EditorContext, keyCode: number): boolean {
+  isKeyDown(ctx: Context, keyCode: number): boolean {
     return getBit(this.read(ctx).keysDown, keyCode);
   }
 
@@ -62,7 +65,7 @@ class KeyboardDef extends EditorSingletonDef<typeof KeyboardSchema> {
    * @param ctx - Editor context
    * @param keyCode - The keyCode to check
    */
-  isKeyDownTrigger(ctx: EditorContext, keyCode: number): boolean {
+  isKeyDownTrigger(ctx: Context, keyCode: number): boolean {
     return getBit(this.read(ctx).keysDownTrigger, keyCode);
   }
 
@@ -71,25 +74,12 @@ class KeyboardDef extends EditorSingletonDef<typeof KeyboardSchema> {
    * @param ctx - Editor context
    * @param keyCode - The keyCode to check
    */
-  isKeyUpTrigger(ctx: EditorContext, keyCode: number): boolean {
+  isKeyUpTrigger(ctx: Context, keyCode: number): boolean {
     return getBit(this.read(ctx).keysUpTrigger, keyCode);
   }
 }
 
 export const Keyboard = new KeyboardDef();
-
-// Keep standalone functions for backwards compatibility
-export function isKeyDown(ctx: EditorContext, keyCode: number): boolean {
-  return Keyboard.isKeyDown(ctx, keyCode);
-}
-
-export function isKeyDownTrigger(ctx: EditorContext, keyCode: number): boolean {
-  return Keyboard.isKeyDownTrigger(ctx, keyCode);
-}
-
-export function isKeyUpTrigger(ctx: EditorContext, keyCode: number): boolean {
-  return Keyboard.isKeyUpTrigger(ctx, keyCode);
-}
 
 /**
  * Set a bit in a binary field.

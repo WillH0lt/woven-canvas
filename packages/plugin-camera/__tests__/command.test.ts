@@ -1,13 +1,11 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   Editor,
   defineCommand,
-  defineEditorSystem,
+  defineUpdateSystem,
   type EditorPlugin,
+  type EditorContext,
 } from "../src";
-
-// Mock DOM element for tests
-const mockDomElement = document.createElement("div");
 
 describe("Command System", () => {
   let editor: Editor;
@@ -43,8 +41,8 @@ describe("Command System", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineEditorSystem((ctx) => {
+        systems: [
+          defineUpdateSystem("handle-commands", (ctx) => {
             for (const { payload } of SelectAll.iter(ctx)) {
               receivedPayloads.push(payload);
             }
@@ -52,7 +50,7 @@ describe("Command System", () => {
         ],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       // Spawn command
@@ -70,8 +68,8 @@ describe("Command System", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineEditorSystem((ctx) => {
+        systems: [
+          defineUpdateSystem("handle-undo", (ctx) => {
             for (const _ of Undo.iter(ctx)) {
               undoCount++;
             }
@@ -79,7 +77,7 @@ describe("Command System", () => {
         ],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       // Spawn void command (no payload argument needed)
@@ -96,8 +94,8 @@ describe("Command System", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineEditorSystem((ctx) => {
+        systems: [
+          defineUpdateSystem("handle-add", (ctx) => {
             for (const { payload } of AddItem.iter(ctx)) {
               receivedIds.push(payload.id);
             }
@@ -105,7 +103,7 @@ describe("Command System", () => {
         ],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       // Spawn multiple commands
@@ -127,13 +125,13 @@ describe("Command System", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineEditorSystem((ctx) => {
+        systems: [
+          defineUpdateSystem("handle-a", (ctx) => {
             for (const { payload } of CmdA.iter(ctx)) {
               resultsA.push(payload.a);
             }
           }),
-          defineEditorSystem((ctx) => {
+          defineUpdateSystem("handle-b", (ctx) => {
             for (const { payload } of CmdB.iter(ctx)) {
               resultsB.push(payload.b);
             }
@@ -141,7 +139,7 @@ describe("Command System", () => {
         ],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       editor.command(CmdA, { a: "hello" });
@@ -162,8 +160,8 @@ describe("Command System", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineEditorSystem((ctx) => {
+        systems: [
+          defineUpdateSystem("count-commands", (ctx) => {
             let count = 0;
             for (const _ of TestCmd.iter(ctx)) {
               count++;
@@ -173,7 +171,7 @@ describe("Command System", () => {
         ],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       // Frame 1: spawn a command
@@ -193,8 +191,8 @@ describe("Command System", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineEditorSystem((ctx) => {
+        systems: [
+          defineUpdateSystem("collect", (ctx) => {
             for (const { payload } of TestCmd.iter(ctx)) {
               allPayloads.push(payload.data);
             }
@@ -202,7 +200,7 @@ describe("Command System", () => {
         ],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       // Frame 1
@@ -227,9 +225,9 @@ describe("Command System", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
+        systems: [
           // First system spawns ResponseCmd when it sees TriggerCmd
-          defineEditorSystem((ctx) => {
+          defineUpdateSystem("trigger-handler", (ctx) => {
             for (const _ of TriggerCmd.iter(ctx)) {
               // Spawn directly using ctx - this creates the entity mid-frame
               // The .added() query won't see it until next tick's sync
@@ -237,7 +235,7 @@ describe("Command System", () => {
             }
           }),
           // Second system collects responses
-          defineEditorSystem((ctx) => {
+          defineUpdateSystem("response-handler", (ctx) => {
             for (const { payload } of ResponseCmd.iter(ctx)) {
               responses.push(payload.triggered);
             }
@@ -245,7 +243,7 @@ describe("Command System", () => {
         ],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       // Frame 1: TriggerCmd spawns ResponseCmd mid-frame
@@ -264,8 +262,8 @@ describe("Command System", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineEditorSystem((ctx) => {
+        systems: [
+          defineUpdateSystem("collect", (ctx) => {
             for (const { payload } of TestCmd.iter(ctx)) {
               values.push(payload.value);
             }
@@ -273,7 +271,7 @@ describe("Command System", () => {
         ],
       };
 
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      editor = new Editor({ plugins: [plugin] });
       await editor.initialize();
 
       // editor.command uses nextTick, so command is spawned at start of tick

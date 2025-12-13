@@ -1,159 +1,209 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
-  defineInputSystem,
-  defineCaptureSystem,
-  defineUpdateSystem,
-  defineRenderSystem,
-  PHASE_ORDER,
-  type PhaseSystem,
+  Editor,
+  defineEditorSystem,
+  type EditorPlugin,
 } from "../src";
 
+// Mock DOM element for tests
+const mockDomElement = document.createElement("div");
+
 describe("System Phases", () => {
-  describe("PHASE_ORDER", () => {
-    it("should have correct phase order", () => {
-      expect(PHASE_ORDER).toEqual(["input", "capture", "update", "render"]);
-    });
+  let editor: Editor;
 
-    it("should be readonly", () => {
-      expect(Object.isFrozen(PHASE_ORDER)).toBe(true);
+  afterEach(async () => {
+    if (editor) {
+      await editor.dispose();
+    }
+  });
+
+  describe("Phase execution order", () => {
+    it("should execute phases in order: input, capture, update, render", async () => {
+      const executionOrder: string[] = [];
+
+      const plugin: EditorPlugin = {
+        name: "test",
+        inputSystems: [
+          defineEditorSystem(() => {
+            executionOrder.push("input");
+          }),
+        ],
+        captureSystems: [
+          defineEditorSystem(() => {
+            executionOrder.push("capture");
+          }),
+        ],
+        updateSystems: [
+          defineEditorSystem(() => {
+            executionOrder.push("update");
+          }),
+        ],
+        renderSystems: [
+          defineEditorSystem(() => {
+            executionOrder.push("render");
+          }),
+        ],
+      };
+
+      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      await editor.initialize();
+
+      editor.tick();
+
+      expect(executionOrder).toEqual(["input", "capture", "update", "render"]);
     });
   });
 
-  describe("defineInputSystem", () => {
-    it("should create an input phase system", () => {
+  describe("defineEditorSystem", () => {
+    it("should create a system function", () => {
       const execute = vi.fn();
-      const system = defineInputSystem("test-input", execute);
+      const system = defineEditorSystem(execute);
 
-      expect(system.phase).toBe("input");
-      expect(system.name).toBe("test-input");
-      expect(system.execute).toBe(execute);
+      // The system should be callable
+      expect(typeof system).toBe("function");
     });
-  });
 
-  describe("defineCaptureSystem", () => {
-    it("should create a capture phase system", () => {
-      const execute = vi.fn();
-      const system = defineCaptureSystem("test-capture", execute);
+    it("should pass context to system", async () => {
+      let capturedCtx: unknown = null;
 
-      expect(system.phase).toBe("capture");
-      expect(system.name).toBe("test-capture");
-      expect(system.execute).toBe(execute);
-    });
-  });
+      const plugin: EditorPlugin = {
+        name: "test",
+        updateSystems: [
+          defineEditorSystem((ctx) => {
+            capturedCtx = ctx;
+          }),
+        ],
+      };
 
-  describe("defineUpdateSystem", () => {
-    it("should create an update phase system", () => {
-      const execute = vi.fn();
-      const system = defineUpdateSystem("test-update", execute);
+      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      await editor.initialize();
 
-      expect(system.phase).toBe("update");
-      expect(system.name).toBe("test-update");
-      expect(system.execute).toBe(execute);
-    });
-  });
+      editor.tick();
 
-  describe("defineRenderSystem", () => {
-    it("should create a render phase system", () => {
-      const execute = vi.fn();
-      const system = defineRenderSystem("test-render", execute);
-
-      expect(system.phase).toBe("render");
-      expect(system.name).toBe("test-render");
-      expect(system.execute).toBe(execute);
+      expect(capturedCtx).toBeDefined();
+      expect(capturedCtx).toHaveProperty("tick");
+      expect(capturedCtx).toHaveProperty("entityBuffer");
     });
   });
 
   describe("System execution", () => {
-    it("should allow systems to access editor context", () => {
-      let capturedCtx: any = null;
-
-      const system = defineUpdateSystem("test", (ctx) => {
-        capturedCtx = ctx;
-      });
-
-      // Simulate what Editor does
-      const mockCtx = {
-        editor: { emit: vi.fn() },
-        entityBuffer: {},
-        tick: 1,
-      };
-
-      system.execute(mockCtx as any);
-
-      expect(capturedCtx).toBe(mockCtx);
-      expect(capturedCtx.editor).toBeDefined();
-    });
-
-    it("should support multiple systems per phase", () => {
+    it("should support multiple systems per phase", async () => {
       const results: string[] = [];
 
-      const systems: PhaseSystem[] = [
-        defineInputSystem("input-a", () => results.push("input-a")),
-        defineInputSystem("input-b", () => results.push("input-b")),
-        defineCaptureSystem("capture-a", () => results.push("capture-a")),
-      ];
+      const plugin: EditorPlugin = {
+        name: "test",
+        inputSystems: [
+          defineEditorSystem(() => results.push("input-a")),
+          defineEditorSystem(() => results.push("input-b")),
+        ],
+        captureSystems: [
+          defineEditorSystem(() => results.push("capture-a")),
+        ],
+      };
 
-      // Execute all systems
-      for (const system of systems) {
-        system.execute({} as any);
-      }
+      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      await editor.initialize();
+
+      editor.tick();
 
       expect(results).toEqual(["input-a", "input-b", "capture-a"]);
     });
+
+    it("should execute systems from multiple plugins in order", async () => {
+      const results: string[] = [];
+
+      const pluginA: EditorPlugin = {
+        name: "a",
+        updateSystems: [
+          defineEditorSystem(() => results.push("a-update")),
+        ],
+      };
+
+      const pluginB: EditorPlugin = {
+        name: "b",
+        updateSystems: [
+          defineEditorSystem(() => results.push("b-update")),
+        ],
+      };
+
+      editor = new Editor(mockDomElement, { plugins: [pluginA, pluginB] });
+      await editor.initialize();
+
+      editor.tick();
+
+      expect(results).toEqual(["a-update", "b-update"]);
+    });
   });
 
-  describe("Phase responsibilities", () => {
-    it("input phase should be for converting DOM events", () => {
+  describe("Phase responsibilities (conceptual)", () => {
+    it("input phase should be for converting DOM events", async () => {
       // This is a documentation/conceptual test
-      const pointerInput = defineInputSystem("pointer", (ctx) => {
-        // Typically: read from DOM events, write to Pointer singleton
-      });
+      const plugin: EditorPlugin = {
+        name: "input-test",
+        inputSystems: [
+          defineEditorSystem(() => {
+            // Typically: read from DOM events, write to Pointer singleton
+          }),
+          defineEditorSystem(() => {
+            // Typically: track pressed keys, modifiers
+          }),
+        ],
+      };
 
-      const keyboardInput = defineInputSystem("keyboard", (ctx) => {
-        // Typically: track pressed keys, modifiers
-      });
-
-      expect(pointerInput.phase).toBe("input");
-      expect(keyboardInput.phase).toBe("input");
+      // Plugin should compile and be usable
+      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      expect(editor).toBeDefined();
     });
 
-    it("capture phase should be for hit testing", () => {
-      const hoverDetection = defineCaptureSystem("hover", (ctx) => {
-        // Typically: find what's under pointer, set Hovered component
-      });
+    it("capture phase should be for hit testing", async () => {
+      const plugin: EditorPlugin = {
+        name: "capture-test",
+        captureSystems: [
+          defineEditorSystem(() => {
+            // Typically: find what's under pointer, set Hovered component
+          }),
+          defineEditorSystem(() => {
+            // Typically: determine selection target
+          }),
+        ],
+      };
 
-      const selectionCapture = defineCaptureSystem("selection", (ctx) => {
-        // Typically: determine selection target
-      });
-
-      expect(hoverDetection.phase).toBe("capture");
-      expect(selectionCapture.phase).toBe("capture");
+      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      expect(editor).toBeDefined();
     });
 
-    it("update phase should be for state changes", () => {
-      const moveBlocks = defineUpdateSystem("move", (ctx) => {
-        // Typically: update Block positions based on drag
-      });
+    it("update phase should be for state changes", async () => {
+      const plugin: EditorPlugin = {
+        name: "update-test",
+        updateSystems: [
+          defineEditorSystem(() => {
+            // Typically: update Block positions based on drag
+          }),
+          defineEditorSystem(() => {
+            // Typically: execute queued commands
+          }),
+        ],
+      };
 
-      const processCommands = defineUpdateSystem("commands", (ctx) => {
-        // Typically: execute queued commands
-      });
-
-      expect(moveBlocks.phase).toBe("update");
-      expect(processCommands.phase).toBe("update");
+      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      expect(editor).toBeDefined();
     });
 
-    it("render phase should be for output", () => {
-      const domSync = defineRenderSystem("dom", (ctx) => {
-        // Typically: update DOM elements to match ECS state
-      });
+    it("render phase should be for output", async () => {
+      const plugin: EditorPlugin = {
+        name: "render-test",
+        renderSystems: [
+          defineEditorSystem(() => {
+            // Typically: update DOM elements to match ECS state
+          }),
+          defineEditorSystem(() => {
+            // Typically: push changes to store adapter
+          }),
+        ],
+      };
 
-      const storeSync = defineRenderSystem("store", (ctx) => {
-        // Typically: push changes to store adapter
-      });
-
-      expect(domSync.phase).toBe("render");
-      expect(storeSync.phase).toBe("render");
+      editor = new Editor(mockDomElement, { plugins: [plugin] });
+      expect(editor).toBeDefined();
     });
   });
 });

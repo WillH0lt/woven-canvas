@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Editor } from "@infinitecanvas/editor";
 import { InputPlugin, Screen } from "../src";
-import type { InputResources } from "../src";
 
 describe("Screen", () => {
   let editor: Editor;
@@ -30,13 +29,12 @@ describe("Screen", () => {
         x: 100,
         y: 50,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
 
     document.body.appendChild(domElement);
 
-    editor = new Editor({
+    editor = new Editor(domElement, {
       plugins: [InputPlugin],
-      resources: { domElement } satisfies InputResources,
     });
     await editor.initialize();
   });
@@ -48,7 +46,7 @@ describe("Screen", () => {
 
   describe("initial dimensions", () => {
     it("should capture initial dimensions on first tick", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // First tick should capture dimensions
       editor.tick();
@@ -63,7 +61,7 @@ describe("Screen", () => {
 
   describe("resize handling", () => {
     it("should update dimensions when element resizes", async () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // First tick to capture initial dimensions
       editor.tick();
@@ -88,7 +86,7 @@ describe("Screen", () => {
           x: 200,
           y: 100,
           toJSON: () => {},
-        }) as DOMRect;
+        } as DOMRect);
 
       // Trigger ResizeObserver callback (simulated)
       // In real usage, ResizeObserver would call this
@@ -122,7 +120,7 @@ describe("Screen - multiple instances", () => {
         x: 0,
         y: 0,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
 
     Object.defineProperty(domElement2, "clientWidth", { value: 400 });
     Object.defineProperty(domElement2, "clientHeight", { value: 300 });
@@ -137,18 +135,16 @@ describe("Screen - multiple instances", () => {
         x: 100,
         y: 100,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
 
     document.body.appendChild(domElement1);
     document.body.appendChild(domElement2);
 
-    const editor1 = new Editor({
+    const editor1 = new Editor(domElement1, {
       plugins: [InputPlugin],
-      resources: { domElement: domElement1 } satisfies InputResources,
     });
-    const editor2 = new Editor({
+    const editor2 = new Editor(domElement2, {
       plugins: [InputPlugin],
-      resources: { domElement: domElement2 } satisfies InputResources,
     });
 
     await editor1.initialize();
@@ -157,8 +153,8 @@ describe("Screen - multiple instances", () => {
     editor1.tick();
     editor2.tick();
 
-    const ctx1 = editor1.getContext()!;
-    const ctx2 = editor2.getContext()!;
+    const ctx1 = editor1._getContext()!;
+    const ctx2 = editor2._getContext()!;
 
     const screen1 = Screen.read(ctx1);
     const screen2 = Screen.read(ctx2);

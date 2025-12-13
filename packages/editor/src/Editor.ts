@@ -1,9 +1,12 @@
-import { World, type QueryDef } from "@infinitecanvas/ecs";
-import type { EditorContext } from "./types";
-import type { AnyEditorComponentDef as EditorComponentDef } from "./EditorComponentDef";
-import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
-import type { SystemPhase, PhaseSystem } from "./phase";
-import { PHASE_ORDER } from "./phase";
+import {
+  World,
+  type Context,
+  type QueryDef,
+  ComponentDef,
+  type SingletonDef,
+} from "@infinitecanvas/ecs";
+
+import type { EditorResources, SystemFn, SystemPhase } from "./types";
 import type { StoreAdapter } from "./store";
 import { type EditorPlugin, sortPluginsByDependencies } from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
@@ -31,22 +34,28 @@ export interface EditorOptions {
   maxEntities?: number;
 
   /**
-   * Custom resources accessible via getResources(ctx).
+   * Additional custom resources accessible via getResources(ctx).
+   * These are merged with the base EditorResources (which includes domElement and editor).
    */
-  resources?: unknown;
+  resources?: Record<string, unknown>;
 }
 
 /**
  * Query subscription callback
  */
 export type QueryCallback = (
-  ctx: EditorContext,
+  ctx: Context,
   result: {
     added: number[];
     changed: number[];
     removed: number[];
   }
 ) => void;
+
+/**
+ * Order of system execution phases
+ */
+const PHASE_ORDER: SystemPhase[] = ["input", "capture", "update", "render"];
 
 /**
  * Editor is the main entry point for building editor applications.
@@ -63,7 +72,7 @@ export type QueryCallback = (
  * import { Editor } from '@infinitecanvas/editor';
  * import { SelectionPlugin, TransformPlugin } from './plugins';
  *
- * const editor = new Editor({
+ * const editor = new Editor(document.getElementById('canvas')!, {
  *   plugins: [SelectionPlugin, TransformPlugin],
  *   store: myStoreAdapter,
  * });
@@ -84,27 +93,24 @@ export type QueryCallback = (
  */
 export class Editor {
   private world: World;
-  private phases: Map<SystemPhase, PhaseSystem[]>;
+  private phases: Map<SystemPhase, SystemFn[]>;
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
-  private editorContext: EditorContext | null = null;
 
-  constructor(options: EditorOptions = {}) {
+  constructor(domElement: HTMLElement, options?: EditorOptions) {
     const {
       plugins = [],
       store = null,
       maxEntities = 10_000,
-      resources,
-    } = options;
+      resources = {},
+    } = options ?? {};
 
     // Sort plugins by dependencies
     const sortedPlugins = sortPluginsByDependencies(plugins);
 
     // Collect all components and singletons from plugins
     // Always include CommandMarker for the command system
-    const allDefs: (EditorComponentDef | EditorSingletonDef)[] = [
-      CommandMarker as unknown as EditorComponentDef,
-    ];
+    const allDefs: (ComponentDef<any> | SingletonDef<any>)[] = [CommandMarker];
     for (const plugin of sortedPlugins) {
       if (plugin.components) {
         allDefs.push(...plugin.components);
@@ -114,11 +120,21 @@ export class Editor {
       }
     }
 
-    // Create ECS World
+    // Create ECS World with editor resources
+    // Note: We pass a placeholder for 'editor' and update it after construction
+    const allResources: EditorResources & Record<string, unknown> = {
+      ...resources,
+      domElement,
+      editor: null as unknown as Editor, // Will be set below
+    };
+
     this.world = new World(allDefs, {
       maxEntities,
-      resources,
+      resources: allResources,
     });
+
+    // Now set the editor reference in resources
+    allResources.editor = this;
 
     // Initialize phases
     this.phases = new Map();
@@ -128,13 +144,17 @@ export class Editor {
 
     // Register systems from plugins
     for (const plugin of sortedPlugins) {
-      if (plugin.systems) {
-        for (const system of plugin.systems) {
-          const phaseSystems = this.phases.get(system.phase);
-          if (phaseSystems) {
-            phaseSystems.push(system);
-          }
-        }
+      if (plugin.inputSystems) {
+        this.phases.get("input")!.push(...plugin.inputSystems);
+      }
+      if (plugin.captureSystems) {
+        this.phases.get("capture")!.push(...plugin.captureSystems);
+      }
+      if (plugin.updateSystems) {
+        this.phases.get("update")!.push(...plugin.updateSystems);
+      }
+      if (plugin.renderSystems) {
+        this.phases.get("render")!.push(...plugin.renderSystems);
       }
     }
 
@@ -146,16 +166,18 @@ export class Editor {
   }
 
   /**
+   * Get the ECS context.
+   * Use this to access ECS functions and resources.
+   */
+  private get ctx(): Context {
+    return this.world._getContext();
+  }
+
+  /**
    * Initialize the editor.
    * Call this after construction to run async setup.
    */
   async initialize(): Promise<void> {
-    // Create editor context by extending the ECS context
-    const ecsContext = this.world._getContext();
-    this.editorContext = Object.assign(Object.create(ecsContext), {
-      editor: this,
-    }) as EditorContext;
-
     // Load initial state from store
     if (this.store?.load) {
       const snapshot = await this.store.load();
@@ -166,7 +188,7 @@ export class Editor {
     // Run plugin setup
     for (const plugin of this.plugins.values()) {
       if (plugin.setup) {
-        await plugin.setup(this);
+        await plugin.setup(this.ctx);
       }
     }
   }
@@ -193,9 +215,7 @@ export class Editor {
     }
 
     // Clean up command entities at end of frame
-    if (this.editorContext) {
-      cleanupCommands(this.editorContext);
-    }
+    cleanupCommands(this.ctx);
   }
 
   /**
@@ -203,10 +223,10 @@ export class Editor {
    */
   private executePhase(phase: SystemPhase): void {
     const systems = this.phases.get(phase);
-    if (!systems || !this.editorContext) return;
+    if (!systems) return;
 
     for (const system of systems) {
-      system.execute(this.editorContext);
+      system(this.ctx);
     }
   }
 
@@ -226,11 +246,9 @@ export class Editor {
    * });
    * ```
    */
-  nextTick(callback: (ctx: EditorContext) => void): void {
-    this.world.nextSync(() => {
-      if (this.editorContext) {
-        callback(this.editorContext);
-      }
+  nextTick(callback: (ctx: Context) => void): void {
+    this.world.nextSync((ctx) => {
+      callback(ctx);
     });
   }
 
@@ -275,41 +293,15 @@ export class Editor {
    */
   subscribe(query: QueryDef, callback: QueryCallback): () => void {
     return this.world.subscribe(query, (ctx, result) => {
-      if (this.editorContext) {
-        callback(this.editorContext, result);
-      }
+      callback(ctx, result);
     });
   }
 
   /**
-   * Check if a plugin is registered.
-   * @param name - Plugin name
+   * Get the ECS context.
    */
-  hasPlugin(name: string): boolean {
-    return this.plugins.has(name);
-  }
-
-  /**
-   * Get a plugin by name.
-   * @param name - Plugin name
-   */
-  getPlugin(name: string): EditorPlugin | undefined {
-    return this.plugins.get(name);
-  }
-
-  /**
-   * Get the store adapter.
-   */
-  getStore(): StoreAdapter | null {
-    return this.store;
-  }
-
-  /**
-   * Get the editor context.
-   * Returns null if not initialized.
-   */
-  getContext(): EditorContext | null {
-    return this.editorContext;
+  _getContext(): Context {
+    return this.ctx;
   }
 
   /**
@@ -321,7 +313,7 @@ export class Editor {
     const plugins = Array.from(this.plugins.values()).reverse();
     for (const plugin of plugins) {
       if (plugin.teardown) {
-        await plugin.teardown(this);
+        await plugin.teardown(this.ctx);
       }
     }
 
@@ -331,6 +323,5 @@ export class Editor {
     // Clear state
     this.plugins.clear();
     this.phases.clear();
-    this.editorContext = null;
   }
 }

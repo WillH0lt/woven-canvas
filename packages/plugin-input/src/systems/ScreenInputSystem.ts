@@ -1,7 +1,5 @@
-import { defineInputSystem, type EditorContext } from "@infinitecanvas/editor";
-import { getResources } from "@infinitecanvas/ecs";
+import { defineEditorSystem, getResources, type EditorResources } from "@infinitecanvas/editor";
 import { Screen } from "../components/Screen";
-import type { InputResources } from "../types";
 
 /**
  * Per-instance state for screen input
@@ -21,9 +19,7 @@ const instanceState = new WeakMap<HTMLElement, ScreenState>();
  * Attach screen resize observer.
  * Called from plugin setup.
  */
-export function attachScreenObserver(resources: InputResources): void {
-  const { domElement } = resources;
-
+export function attachScreenObserver(domElement: HTMLElement): void {
   if (instanceState.has(domElement)) return;
 
   const state: ScreenState = {
@@ -42,8 +38,7 @@ export function attachScreenObserver(resources: InputResources): void {
  * Detach screen resize observer.
  * Called from plugin teardown.
  */
-export function detachScreenObserver(resources: InputResources): void {
-  const { domElement } = resources;
+export function detachScreenObserver(domElement: HTMLElement): void {
   const state = instanceState.get(domElement);
 
   if (!state) return;
@@ -58,10 +53,8 @@ export function detachScreenObserver(resources: InputResources): void {
  * Uses ResizeObserver to detect size changes and updates the Screen singleton.
  * Also handles initial sizing on the first frame.
  */
-export const screenInputSystem = defineInputSystem(
-  "screen-input",
-  (ctx: EditorContext) => {
-    const resources = getResources<InputResources>(ctx);
+export const screenInputSystem = defineEditorSystem((ctx) => {
+    const resources = getResources<EditorResources>(ctx);
     const { domElement } = resources;
     const state = instanceState.get(domElement);
     if (!state) return;
@@ -86,5 +79,4 @@ export const screenInputSystem = defineInputSystem(
 
       state.resizePending = false;
     }
-  }
-);
+});

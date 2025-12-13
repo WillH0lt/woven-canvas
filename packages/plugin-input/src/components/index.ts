@@ -1,12 +1,4 @@
-export {
-  Keyboard,
-  isKeyDown,
-  isKeyDownTrigger,
-  isKeyUpTrigger,
-  setBit,
-  clearBits,
-  KeyCode,
-} from "./Keyboard";
+export { Keyboard, setBit, clearBits, KeyCode } from "./Keyboard";
 
 export { Mouse } from "./Mouse";
 
@@ -16,8 +8,5 @@ export {
   Pointer,
   PointerButton,
   PointerType,
-  getPointerVelocity,
   addPointerSample,
-  getPointerButton,
-  getPointerType,
 } from "./Pointer";

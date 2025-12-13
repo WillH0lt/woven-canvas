@@ -5,10 +5,9 @@ import {
   createEntity,
   addComponent,
   removeEntity,
-  type ComponentDef,
-  type NumberFieldBuilder,
+  type EntityId,
+  type Context,
 } from "@infinitecanvas/ecs";
-import type { EditorContext, EntityId } from "./types";
 
 /**
  * Marker component for all command entities.
@@ -18,9 +17,6 @@ export const CommandMarker = defineComponent({
   typeId: field.uint32(),
 });
 
-/** Query to find all command entities (for cleanup) */
-const AllCommandsQuery = defineQuery((q) => q.with(CommandMarker));
-
 /** Store payloads outside ECS - keyed by entity ID */
 const commandPayloads = new Map<EntityId, unknown>();
 
@@ -28,7 +24,7 @@ const commandPayloads = new Map<EntityId, unknown>();
 let nextTypeId = 0;
 
 // Query for commands - we filter by typeId in iter()
-const query = defineQuery((q) => q.with(CommandMarker));
+const commands = defineQuery((q) => q.with(CommandMarker));
 
 /**
  * Command definition - provides typed spawn() and iteration.
@@ -50,7 +46,7 @@ export interface CommandDef<T> {
    * @param payload - Command payload data
    * @returns Entity ID of the spawned command
    */
-  spawn(ctx: EditorContext, payload: T): EntityId;
+  spawn(ctx: Context, payload: T): EntityId;
 
   /**
    * Iterate over commands of this type spawned this frame.
@@ -59,7 +55,7 @@ export interface CommandDef<T> {
    * @param ctx - Editor context
    * @returns Iterable of command entities with their payloads
    */
-  iter(ctx: EditorContext): IterableIterator<{ eid: EntityId; payload: T }>;
+  iter(ctx: Context): IterableIterator<{ eid: EntityId; payload: T }>;
 }
 
 /**
@@ -84,7 +80,7 @@ export interface CommandDef<T> {
  * editor.command(Undo);
  *
  * // React in a system
- * defineUpdateSystem("handle-selection", (ctx) => {
+ * DefineEditorSystem("update", (ctx) => {
  *   for (const { payload } of SelectAll.iter(ctx)) {
  *     selectAllBlocks(ctx, payload.filter);
  *   }
@@ -102,15 +98,15 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
     typeId,
     name,
 
-    spawn(ctx: EditorContext, payload: T): EntityId {
+    spawn(ctx: Context, payload: T): EntityId {
       const eid = createEntity(ctx);
       addComponent(ctx, eid, CommandMarker, { typeId });
       commandPayloads.set(eid, payload);
       return eid;
     },
 
-    *iter(ctx: EditorContext): IterableIterator<{ eid: EntityId; payload: T }> {
-      for (const eid of query.current(ctx)) {
+    *iter(ctx: Context): IterableIterator<{ eid: EntityId; payload: T }> {
+      for (const eid of commands.current(ctx)) {
         const marker = CommandMarker.read(ctx, eid);
         if (marker.typeId === typeId) {
           const payload = commandPayloads.get(eid) as T;
@@ -127,8 +123,8 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
  *
  * @internal
  */
-export function cleanupCommands(ctx: EditorContext): void {
-  for (const eid of AllCommandsQuery.current(ctx)) {
+export function cleanupCommands(ctx: Context): void {
+  for (const eid of commands.current(ctx)) {
     commandPayloads.delete(eid);
     removeEntity(ctx, eid);
   }

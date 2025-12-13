@@ -1,4 +1,30 @@
-import type { Context, EntityId } from "@infinitecanvas/ecs";
+import type { Context } from "@infinitecanvas/ecs";
+import type { Editor } from "./Editor";
+
+/**
+ * Base resources required by the Editor.
+ * Plugins can extend this interface for additional resources.
+ *
+ * @example
+ * ```typescript
+ * interface MyPluginResources extends EditorResources {
+ *   apiClient: ApiClient;
+ * }
+ * ```
+ */
+export interface EditorResources {
+  /**
+   * The DOM element to attach input listeners and render output to.
+   * This should be the editor's main container or canvas element.
+   */
+  domElement: HTMLElement;
+
+  /**
+   * Reference to the Editor instance.
+   * Use this to spawn commands, subscribe to queries, etc.
+   */
+  editor: Editor;
+}
 
 /**
  * Sync determines how component changes propagate
@@ -10,39 +36,17 @@ export type SyncBehavior =
   | "none"; // Not synced or stored anywhere
 
 /**
- * Data structure category
- */
-export type DataCategory = "block" | "meta" | "singleton";
-
-/**
  * Editor metadata attached to component definitions
  */
 export interface EditorComponentMeta {
-  category: DataCategory;
   sync: SyncBehavior;
 }
 
 /**
- * System function signature
+ * System function signature.
+ * Systems receive the ECS Context directly.
+ * Access editor resources via getResources<EditorResources>(ctx).
  */
-export type SystemFn = (ctx: EditorContext) => void;
+export type SystemFn = (ctx: Context) => void;
 
-/**
- * Editor context extends ECS context with editor-specific data
- */
-export interface EditorContext extends Context {
-  /** The editor instance */
-  editor: EditorInstance;
-}
-
-/**
- * Minimal editor interface for context (avoids circular deps)
- */
-export interface EditorInstance {
-  nextTick(callback: (ctx: EditorContext) => void): void;
-}
-
-/**
- * Re-export commonly used ECS types
- */
-export type { Context, EntityId };
+export type SystemPhase = "input" | "capture" | "update" | "render";

@@ -6,11 +6,7 @@ import {
   PointerButton,
   PointerType,
   Screen,
-  getPointerVelocity,
-  getPointerButton,
-  getPointerType,
 } from "../src";
-import type { InputResources } from "../src";
 
 // Query for pointer entities
 const pointerQuery = defineQuery((q) => q.with(Pointer));
@@ -35,13 +31,12 @@ describe("Pointer", () => {
         x: 0,
         y: 0,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
 
     document.body.appendChild(domElement);
 
-    editor = new Editor({
+    editor = new Editor(domElement, {
       plugins: [InputPlugin],
-      resources: { domElement } satisfies InputResources,
     });
     await editor.initialize();
 
@@ -56,7 +51,7 @@ describe("Pointer", () => {
 
   describe("pointer entity lifecycle", () => {
     it("should create pointer entity on pointerdown", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new PointerEvent("pointerdown", {
@@ -77,7 +72,7 @@ describe("Pointer", () => {
     });
 
     it("should remove pointer entity on pointerup", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new PointerEvent("pointerdown", {
@@ -109,7 +104,7 @@ describe("Pointer", () => {
     });
 
     it("should remove pointer entity on pointercancel", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new PointerEvent("pointerdown", {
@@ -139,7 +134,7 @@ describe("Pointer", () => {
 
   describe("pointer data", () => {
     it("should store pointer position relative to element", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new PointerEvent("pointerdown", {
@@ -163,7 +158,7 @@ describe("Pointer", () => {
     });
 
     it("should update position on pointermove", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new PointerEvent("pointerdown", {
@@ -199,7 +194,7 @@ describe("Pointer", () => {
     });
 
     it("should store pointer button", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new PointerEvent("pointerdown", {
@@ -220,7 +215,7 @@ describe("Pointer", () => {
     });
 
     it("should store pointer type", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new PointerEvent("pointerdown", {
@@ -241,7 +236,7 @@ describe("Pointer", () => {
     });
 
     it("should store pressure", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new PointerEvent("pointerdown", {
@@ -265,7 +260,7 @@ describe("Pointer", () => {
 
   describe("multiple pointers (touch)", () => {
     it("should support multiple simultaneous pointers", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // First touch
       domElement.dispatchEvent(
@@ -305,7 +300,7 @@ describe("Pointer", () => {
     });
 
     it("should remove correct pointer on individual release", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // Two touches down
       domElement.dispatchEvent(
@@ -348,21 +343,21 @@ describe("Pointer", () => {
     });
   });
 
-  describe("helper functions", () => {
-    it("getPointerButton should map button numbers correctly", () => {
-      expect(getPointerButton(0)).toBe(PointerButton.Left);
-      expect(getPointerButton(1)).toBe(PointerButton.Middle);
-      expect(getPointerButton(2)).toBe(PointerButton.Right);
-      expect(getPointerButton(3)).toBe(PointerButton.Back);
-      expect(getPointerButton(4)).toBe(PointerButton.Forward);
-      expect(getPointerButton(99)).toBe(PointerButton.None);
+  describe("class methods", () => {
+    it("getButton should map button numbers correctly", () => {
+      expect(Pointer.getButton(0)).toBe(PointerButton.Left);
+      expect(Pointer.getButton(1)).toBe(PointerButton.Middle);
+      expect(Pointer.getButton(2)).toBe(PointerButton.Right);
+      expect(Pointer.getButton(3)).toBe(PointerButton.Back);
+      expect(Pointer.getButton(4)).toBe(PointerButton.Forward);
+      expect(Pointer.getButton(99)).toBe(PointerButton.None);
     });
 
-    it("getPointerType should map pointer types correctly", () => {
-      expect(getPointerType("mouse")).toBe(PointerType.Mouse);
-      expect(getPointerType("pen")).toBe(PointerType.Pen);
-      expect(getPointerType("touch")).toBe(PointerType.Touch);
-      expect(getPointerType("unknown")).toBe(PointerType.Mouse); // Default
+    it("getType should map pointer types correctly", () => {
+      expect(Pointer.getType("mouse")).toBe(PointerType.Mouse);
+      expect(Pointer.getType("pen")).toBe(PointerType.Pen);
+      expect(Pointer.getType("touch")).toBe(PointerType.Touch);
+      expect(Pointer.getType("unknown")).toBe(PointerType.Mouse); // Default
     });
   });
 });
@@ -386,17 +381,15 @@ describe("Pointer - multiple instances", () => {
           x: 0,
           y: 0,
           toJSON: () => {},
-        }) as DOMRect;
+        } as DOMRect);
       document.body.appendChild(el);
     }
 
-    const editor1 = new Editor({
+    const editor1 = new Editor(domElement1, {
       plugins: [InputPlugin],
-      resources: { domElement: domElement1 } satisfies InputResources,
     });
-    const editor2 = new Editor({
+    const editor2 = new Editor(domElement2, {
       plugins: [InputPlugin],
-      resources: { domElement: domElement2 } satisfies InputResources,
     });
 
     await editor1.initialize();
@@ -420,8 +413,8 @@ describe("Pointer - multiple instances", () => {
     editor1.tick();
     editor2.tick();
 
-    const ctx1 = editor1.getContext()!;
-    const ctx2 = editor2.getContext()!;
+    const ctx1 = editor1._getContext()!;
+    const ctx2 = editor2._getContext()!;
 
     expect(pointerQuery.current(ctx1).length).toBe(1);
     expect(pointerQuery.current(ctx2).length).toBe(0);

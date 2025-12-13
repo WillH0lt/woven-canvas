@@ -1,16 +1,11 @@
-import { defineConfig } from 'vitest/config'
-import path from 'path'
+import { defineConfig, mergeConfig } from "vitest/config";
+import baseConfig from "../../vitest.config";
 
-export default defineConfig({
-  resolve: {
-    conditions: ['@infinitecanvas/source'],
-    alias: {
-      '@infinitecanvas/editor': path.resolve(__dirname, '../editor/src/index.ts'),
-      '@infinitecanvas/ecs': path.resolve(__dirname, '../ecs/src/index.ts'),
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    test: {
+      setupFiles: ["./vitest.setup.ts"],
     },
-  },
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
-  },
-})
+  })
+);

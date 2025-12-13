@@ -1,36 +1,62 @@
+import type { Context } from "@infinitecanvas/ecs";
 import type { AnyEditorComponentDef as EditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
-import type { PhaseSystem } from "./phase";
-import type { Editor } from "./Editor";
+import type { SystemFn } from "./types";
+
+/**
+ * Systems organized by execution phase.
+ *
+ * Phases execute in order:
+ * 1. **input** - Convert raw DOM events to ECS state
+ * 2. **capture** - Detect targets and compute intersections
+ * 3. **update** - Modify document state and process commands
+ * 4. **render** - Sync ECS state to output
+ */
+export interface PluginSystems {
+  /** Systems that convert raw DOM events to ECS state */
+  inputSystems?: SystemFn[];
+  /** Systems that detect targets and compute intersections */
+  captureSystems?: SystemFn[];
+  /** Systems that modify document state and process commands */
+  updateSystems?: SystemFn[];
+  /** Systems that sync ECS state to output */
+  renderSystems?: SystemFn[];
+}
 
 /**
  * Editor plugin interface.
  *
  * Plugins extend the editor with:
- * - Components (block and meta data)
- * - Singletons (global state)
+ * - Components (EditorComponentDef instances)
+ * - Singletons (EditorSingletonDef instances)
  * - Systems (behavior in specific phases)
  * - Commands (user actions)
  *
  * @example
  * ```typescript
- * import { EditorPlugin, defineBlock, defineMeta, defineCaptureSystem } from '@infinitecanvas/editor';
+ * import { EditorPlugin, EditorComponentDef, EditorSingletonDef, field } from '@infinitecanvas/editor';
+ *
+ * const Selected = new EditorComponentDef({}, { sync: 'presence' });
+ * const Hovered = new EditorComponentDef({}, { sync: 'none' });
+ * const Camera = new EditorSingletonDef({
+ *   x: field.float64().default(0),
+ *   y: field.float64().default(0),
+ *   zoom: field.float64().default(1),
+ * }, { sync: 'presence' });
  *
  * const SelectionPlugin: EditorPlugin = {
  *   name: 'selection',
  *
- *   components: [
- *     defineMeta({}, { sync: 'presence' }), // Selected
- *     defineMeta({}, { sync: 'none' }),     // Hovered
- *   ],
+ *   components: [Selected, Hovered],
+ *   singletons: [Camera],
  *
- *   systems: [
- *     defineCaptureSystem('hover', (ctx) => {
+ *   captureSystems: [
+ *     (ctx) => {
  *       // Detect hover state
- *     }),
- *     defineCaptureSystem('selection', (ctx) => {
+ *     },
+ *     (ctx) => {
  *       // Handle selection logic
- *     }),
+ *     },
  *   ],
  *
  *   commands: [
@@ -42,11 +68,11 @@ import type { Editor } from "./Editor";
  *     }
  *   ],
  *
- *   setup(editor) {
+ *   setup(ctx) {
  *     console.log('Selection plugin initialized');
  *   },
  *
- *   teardown(editor) {
+ *   teardown(ctx) {
  *     console.log('Selection plugin destroyed');
  *   }
  * };
@@ -63,34 +89,49 @@ export interface EditorPlugin {
   dependencies?: string[];
 
   /**
-   * Block and meta components to register.
-   * These are created with defineBlock() or defineMeta().
+   * Components to register.
+   * Create with new EditorComponentDef(schema, options).
    */
   components?: EditorComponentDef[];
 
   /**
    * Singletons to register.
-   * These are created with defineSingleton().
+   * Create with new EditorSingletonDef(schema, options).
    */
   singletons?: EditorSingletonDef[];
 
+  /** Systems that convert raw DOM events to ECS state */
+  inputSystems?: SystemFn[];
+
+  /** Systems that detect targets and compute intersections */
+  captureSystems?: SystemFn[];
+
+  /** Systems that modify document state and process commands */
+  updateSystems?: SystemFn[];
+
+  /** Systems that sync ECS state to output */
+  renderSystems?: SystemFn[];
+
   /**
-   * Systems to register, organized by phase.
-   * Create with defineInputSystem, defineCaptureSystem, etc.
+   * Commands to register.
+   * Each command has a type string and an execute function.
    */
-  systems?: PhaseSystem[];
+  commands?: Array<{
+    type: string;
+    execute: (ctx: Context, payload?: unknown) => void;
+  }>;
 
   /**
    * Called when the plugin is initialized.
    * Use this for one-time setup like adding event listeners.
    */
-  setup?: (editor: Editor) => void | Promise<void>;
+  setup?: (ctx: Context) => void | Promise<void>;
 
   /**
    * Called when the editor is destroyed.
    * Use this to clean up resources.
    */
-  teardown?: (editor: Editor) => void | Promise<void>;
+  teardown?: (ctx: Context) => void | Promise<void>;
 }
 
 /**

@@ -1,7 +1,7 @@
 import {
   EditorSingletonDef,
   field,
-  type EditorContext,
+  type Context,
 } from "@infinitecanvas/editor";
 
 const MouseSchema = {
@@ -33,33 +33,33 @@ class MouseDef extends EditorSingletonDef<typeof MouseSchema> {
   }
 
   /** Check if mouse moved this frame */
-  didMove(ctx: EditorContext): boolean {
+  didMove(ctx: Context): boolean {
     return this.read(ctx).moveTrigger;
   }
 
   /** Check if wheel was scrolled this frame */
-  didScroll(ctx: EditorContext): boolean {
+  didScroll(ctx: Context): boolean {
     return this.read(ctx).wheelTrigger;
   }
 
   /** Check if mouse entered the editor element this frame */
-  didEnter(ctx: EditorContext): boolean {
+  didEnter(ctx: Context): boolean {
     return this.read(ctx).enterTrigger;
   }
 
   /** Check if mouse left the editor element this frame */
-  didLeave(ctx: EditorContext): boolean {
+  didLeave(ctx: Context): boolean {
     return this.read(ctx).leaveTrigger;
   }
 
   /** Get current mouse position as [x, y] */
-  getPosition(ctx: EditorContext): [number, number] {
+  getPosition(ctx: Context): [number, number] {
     const m = this.read(ctx);
     return [m.position[0], m.position[1]];
   }
 
   /** Get wheel delta as [dx, dy] */
-  getWheelDelta(ctx: EditorContext): [number, number] {
+  getWheelDelta(ctx: Context): [number, number] {
     const m = this.read(ctx);
     return [m.wheelDeltaX, m.wheelDeltaY];
   }

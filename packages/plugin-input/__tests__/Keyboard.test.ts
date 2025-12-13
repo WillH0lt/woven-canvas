@@ -1,14 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Editor } from "@infinitecanvas/editor";
-import {
-  InputPlugin,
-  Keyboard,
-  isKeyDown,
-  isKeyDownTrigger,
-  isKeyUpTrigger,
-  KeyCode,
-} from "../src";
-import type { InputResources } from "../src";
+import { InputPlugin, Keyboard, KeyCode } from "../src";
 
 describe("Keyboard", () => {
   let editor: Editor;
@@ -19,9 +11,8 @@ describe("Keyboard", () => {
     domElement = document.createElement("div");
     document.body.appendChild(domElement);
 
-    editor = new Editor({
+    editor = new Editor(domElement, {
       plugins: [InputPlugin],
-      resources: { domElement } satisfies InputResources,
     });
     await editor.initialize();
   });
@@ -33,7 +24,7 @@ describe("Keyboard", () => {
 
   describe("key state tracking", () => {
     it("should track key down state", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // Simulate keydown
       domElement.dispatchEvent(
@@ -42,12 +33,12 @@ describe("Keyboard", () => {
 
       editor.tick();
 
-      expect(isKeyDown(ctx, KeyCode.A)).toBe(true);
-      expect(isKeyDownTrigger(ctx, KeyCode.A)).toBe(true);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.A)).toBe(true);
+      expect(Keyboard.isKeyDownTrigger(ctx, KeyCode.A)).toBe(true);
     });
 
     it("should clear trigger after one frame", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // Simulate keydown
       domElement.dispatchEvent(
@@ -55,16 +46,16 @@ describe("Keyboard", () => {
       );
 
       editor.tick();
-      expect(isKeyDownTrigger(ctx, KeyCode.A)).toBe(true);
+      expect(Keyboard.isKeyDownTrigger(ctx, KeyCode.A)).toBe(true);
 
       // Second tick - trigger should be cleared
       editor.tick();
-      expect(isKeyDown(ctx, KeyCode.A)).toBe(true); // Still down
-      expect(isKeyDownTrigger(ctx, KeyCode.A)).toBe(false); // Trigger cleared
+      expect(Keyboard.isKeyDown(ctx, KeyCode.A)).toBe(true); // Still down
+      expect(Keyboard.isKeyDownTrigger(ctx, KeyCode.A)).toBe(false); // Trigger cleared
     });
 
     it("should track key up state", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // Simulate keydown then keyup
       domElement.dispatchEvent(
@@ -77,12 +68,12 @@ describe("Keyboard", () => {
       );
       editor.tick();
 
-      expect(isKeyDown(ctx, KeyCode.A)).toBe(false);
-      expect(isKeyUpTrigger(ctx, KeyCode.A)).toBe(true);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.A)).toBe(false);
+      expect(Keyboard.isKeyUpTrigger(ctx, KeyCode.A)).toBe(true);
     });
 
     it("should track multiple keys simultaneously", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new KeyboardEvent("keydown", { keyCode: KeyCode.A, bubbles: true })
@@ -96,16 +87,16 @@ describe("Keyboard", () => {
 
       editor.tick();
 
-      expect(isKeyDown(ctx, KeyCode.A)).toBe(true);
-      expect(isKeyDown(ctx, KeyCode.B)).toBe(true);
-      expect(isKeyDown(ctx, KeyCode.C)).toBe(true);
-      expect(isKeyDown(ctx, KeyCode.D)).toBe(false);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.A)).toBe(true);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.B)).toBe(true);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.C)).toBe(true);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.D)).toBe(false);
     });
   });
 
   describe("modifier tracking", () => {
     it("should track shift modifier", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new KeyboardEvent("keydown", {
@@ -122,7 +113,7 @@ describe("Keyboard", () => {
     });
 
     it("should track alt modifier", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new KeyboardEvent("keydown", {
@@ -139,7 +130,7 @@ describe("Keyboard", () => {
     });
 
     it("should track ctrl/meta modifier as modDown", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new KeyboardEvent("keydown", {
@@ -156,7 +147,7 @@ describe("Keyboard", () => {
     });
 
     it("should track meta key as modDown", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new KeyboardEvent("keydown", {
@@ -175,7 +166,7 @@ describe("Keyboard", () => {
 
   describe("blur handling", () => {
     it("should reset all keys on blur", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // Press some keys
       domElement.dispatchEvent(
@@ -186,19 +177,19 @@ describe("Keyboard", () => {
       );
       editor.tick();
 
-      expect(isKeyDown(ctx, KeyCode.A)).toBe(true);
-      expect(isKeyDown(ctx, KeyCode.B)).toBe(true);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.A)).toBe(true);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.B)).toBe(true);
 
       // Blur
       domElement.dispatchEvent(new FocusEvent("blur", { bubbles: true }));
       editor.tick();
 
-      expect(isKeyDown(ctx, KeyCode.A)).toBe(false);
-      expect(isKeyDown(ctx, KeyCode.B)).toBe(false);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.A)).toBe(false);
+      expect(Keyboard.isKeyDown(ctx, KeyCode.B)).toBe(false);
     });
 
     it("should reset modifiers on blur", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new KeyboardEvent("keydown", {
@@ -257,13 +248,11 @@ describe("Keyboard - multiple instances", () => {
     document.body.appendChild(domElement1);
     document.body.appendChild(domElement2);
 
-    const editor1 = new Editor({
+    const editor1 = new Editor(domElement1, {
       plugins: [InputPlugin],
-      resources: { domElement: domElement1 } satisfies InputResources,
     });
-    const editor2 = new Editor({
+    const editor2 = new Editor(domElement2, {
       plugins: [InputPlugin],
-      resources: { domElement: domElement2 } satisfies InputResources,
     });
 
     await editor1.initialize();
@@ -277,11 +266,11 @@ describe("Keyboard - multiple instances", () => {
     editor1.tick();
     editor2.tick();
 
-    const ctx1 = editor1.getContext()!;
-    const ctx2 = editor2.getContext()!;
+    const ctx1 = editor1._getContext()!;
+    const ctx2 = editor2._getContext()!;
 
-    expect(isKeyDown(ctx1, KeyCode.A)).toBe(true);
-    expect(isKeyDown(ctx2, KeyCode.A)).toBe(false);
+    expect(Keyboard.isKeyDown(ctx1, KeyCode.A)).toBe(true);
+    expect(Keyboard.isKeyDown(ctx2, KeyCode.A)).toBe(false);
 
     await editor1.dispose();
     await editor2.dispose();

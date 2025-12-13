@@ -1,9 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import { field } from "@infinitecanvas/ecs";
 import { sortPluginsByDependencies, type EditorPlugin } from "../src/plugin";
-import { defineEditorSystem } from "../src";
-import { EditorComponentDef } from "../src/EditorComponentDef";
-import { EditorSingletonDef } from "../src/EditorSingletonDef";
+import {
+  defineBlock,
+  defineMeta,
+  defineSingleton,
+  defineUpdateSystem,
+  defineRenderSystem,
+} from "../src";
 
 describe("Plugin System", () => {
   describe("sortPluginsByDependencies", () => {
@@ -119,18 +123,18 @@ describe("Plugin System", () => {
       expect(plugin.name).toBe("minimal");
       expect(plugin.dependencies).toBeUndefined();
       expect(plugin.components).toBeUndefined();
-      expect(plugin.updateSystems).toBeUndefined();
+      expect(plugin.systems).toBeUndefined();
     });
 
     it("should support plugin with components", () => {
-      const Block = new EditorComponentDef({
+      const Block = defineBlock({
         x: field.float32(),
         y: field.float32(),
       });
 
-      const Selected = new EditorComponentDef({}, { sync: "presence" });
+      const Selected = defineMeta({}, { sync: "presence" });
 
-      const Camera = new EditorSingletonDef(
+      const Camera = defineSingleton(
         {
           zoom: field.float64().default(1),
         },
@@ -148,17 +152,17 @@ describe("Plugin System", () => {
     });
 
     it("should support plugin with systems", () => {
-      const updateSystem = defineEditorSystem(() => {});
-      const renderSystem = defineEditorSystem(() => {});
+      const updateSystem = defineUpdateSystem("position", () => {});
+      const renderSystem = defineRenderSystem("dom", () => {});
 
       const plugin: EditorPlugin = {
         name: "rendering",
-        updateSystems: [updateSystem],
-        renderSystems: [renderSystem],
+        systems: [updateSystem, renderSystem],
       };
 
-      expect(plugin.updateSystems).toHaveLength(1);
-      expect(plugin.renderSystems).toHaveLength(1);
+      expect(plugin.systems).toHaveLength(2);
+      expect(plugin.systems![0].phase).toBe("update");
+      expect(plugin.systems![1].phase).toBe("render");
     });
 
     it("should support plugin with commands", () => {
@@ -196,15 +200,15 @@ describe("Plugin System", () => {
     });
 
     it("should support full-featured plugin", () => {
-      const Block = new EditorComponentDef({
+      const Block = defineBlock({
         id: field.string().max(36),
         x: field.float64(),
         y: field.float64(),
       });
 
-      const Selected = new EditorComponentDef({}, { sync: "presence" });
+      const Selected = defineMeta({}, { sync: "presence" });
 
-      const Camera = new EditorSingletonDef(
+      const Camera = defineSingleton(
         {
           x: field.float64().default(0),
           y: field.float64().default(0),
@@ -218,11 +222,11 @@ describe("Plugin System", () => {
         dependencies: ["core"],
         components: [Block, Selected],
         singletons: [Camera],
-        updateSystems: [
-          defineEditorSystem(() => {}),
-          defineEditorSystem(() => {}),
+        systems: [
+          defineUpdateSystem("pan", () => {}),
+          defineUpdateSystem("zoom", () => {}),
+          defineRenderSystem("canvas", () => {}),
         ],
-        renderSystems: [defineEditorSystem(() => {})],
         commands: [
           { type: "canvas:pan", execute: vi.fn() },
           { type: "canvas:zoom", execute: vi.fn() },
@@ -236,8 +240,7 @@ describe("Plugin System", () => {
       expect(plugin.dependencies).toEqual(["core"]);
       expect(plugin.components).toHaveLength(2);
       expect(plugin.singletons).toHaveLength(1);
-      expect(plugin.updateSystems).toHaveLength(2);
-      expect(plugin.renderSystems).toHaveLength(1);
+      expect(plugin.systems).toHaveLength(3);
       expect(plugin.commands).toHaveLength(3);
       expect(plugin.setup).toBeDefined();
       expect(plugin.teardown).toBeDefined();
@@ -246,7 +249,7 @@ describe("Plugin System", () => {
 
   describe("real-world plugin scenarios", () => {
     it("should support a core plugin", () => {
-      const Block = new EditorComponentDef({
+      const Block = defineBlock({
         id: field.string().max(36),
         left: field.float64(),
         top: field.float64(),
@@ -258,16 +261,16 @@ describe("Plugin System", () => {
       const corePlugin: EditorPlugin = {
         name: "core",
         components: [Block],
-        renderSystems: [defineEditorSystem(() => {})],
+        systems: [defineRenderSystem("layout", () => {})],
       };
 
       expect(corePlugin.name).toBe("core");
-      expect(corePlugin.components![0].__editor.sync).toBe("none");
+      expect(corePlugin.components![0].__editor.category).toBe("block");
     });
 
     it("should support a selection plugin depending on core", () => {
-      const Selected = new EditorComponentDef({}, { sync: "presence" });
-      const Hovered = new EditorComponentDef({}, { sync: "none" });
+      const Selected = defineMeta({}, { sync: "presence" });
+      const Hovered = defineMeta({}, { sync: "none" });
 
       const selectionPlugin: EditorPlugin = {
         name: "selection",
@@ -287,16 +290,16 @@ describe("Plugin System", () => {
     });
 
     it("should support a transform plugin depending on selection", () => {
-      const Dragging = new EditorComponentDef({}, { sync: "none" });
-      const Resizing = new EditorComponentDef({}, { sync: "none" });
+      const Dragging = defineMeta({}, { sync: "none" });
+      const Resizing = defineMeta({}, { sync: "none" });
 
       const transformPlugin: EditorPlugin = {
         name: "transform",
         dependencies: ["core", "selection"],
         components: [Dragging, Resizing],
-        updateSystems: [
-          defineEditorSystem(() => {}),
-          defineEditorSystem(() => {}),
+        systems: [
+          defineUpdateSystem("drag", () => {}),
+          defineUpdateSystem("resize", () => {}),
         ],
         commands: [
           { type: "transform:move", execute: vi.fn() },

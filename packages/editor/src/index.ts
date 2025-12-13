@@ -3,46 +3,25 @@ export { field } from "@infinitecanvas/ecs";
 
 // Core types
 export type {
+  EditorResources,
   SyncBehavior,
-  DataCategory,
   EditorComponentMeta,
   SystemFn,
-  EditorContext,
-  EditorInstance,
-  EntityId,
 } from "./types";
 
-// Singleton base class and factory
+// Singleton base class
 export {
   EditorSingletonDef,
-  defineSingleton,
+  defineEditorSingleton,
   type EditorSingletonOptions,
 } from "./EditorSingletonDef";
 
-// Re-export Any* type aliases for backwards compatibility
-export type { AnyEditorSingletonDef } from "./EditorSingletonDef";
-
-// Component base classes and factories
+// Component base classes
 export {
   EditorComponentDef,
-  BlockDef,
-  MetaDef,
-  defineBlock,
-  defineMeta,
+  defineEditorComponent,
   type EditorComponentOptions,
 } from "./EditorComponentDef";
-export type { AnyEditorComponentDef, AnyBlockDef, AnyMetaDef } from "./EditorComponentDef";
-
-// System phases
-export {
-  type SystemPhase,
-  type PhaseSystem,
-  PHASE_ORDER,
-  defineInputSystem,
-  defineCaptureSystem,
-  defineUpdateSystem,
-  defineRenderSystem,
-} from "./phase";
 
 // Store adapter
 export type {
@@ -60,6 +39,9 @@ export { type EditorPlugin } from "./plugin";
 // Command system
 export { defineCommand, type CommandDef } from "./command";
 
+// System definition
+export { defineEditorSystem } from "./System";
+
 // Editor class
 export { Editor, type EditorOptions, type QueryCallback } from "./Editor";
 
@@ -71,5 +53,9 @@ export {
   removeComponent,
   hasComponent,
   defineQuery,
+  getResources,
+  defineSystem,
+  type Context,
+  type EntityId,
   type QueryDef,
 } from "@infinitecanvas/ecs";

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Editor } from "@infinitecanvas/editor";
 import { InputPlugin, Mouse, Screen } from "../src";
-import type { InputResources } from "../src";
 
 describe("Mouse", () => {
   let editor: Editor;
@@ -23,13 +22,12 @@ describe("Mouse", () => {
         x: 100,
         y: 50,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
 
     document.body.appendChild(domElement);
 
-    editor = new Editor({
+    editor = new Editor(domElement, {
       plugins: [InputPlugin],
-      resources: { domElement } satisfies InputResources,
     });
     await editor.initialize();
 
@@ -44,7 +42,7 @@ describe("Mouse", () => {
 
   describe("position tracking", () => {
     it("should track mouse position relative to element", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       // Dispatch mousemove at client coords (150, 100)
       // Element is at (100, 50), so relative position should be (50, 50)
@@ -64,7 +62,7 @@ describe("Mouse", () => {
     });
 
     it("should set moveTrigger when mouse moves", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       window.dispatchEvent(
         new MouseEvent("mousemove", {
@@ -81,7 +79,7 @@ describe("Mouse", () => {
     });
 
     it("should clear moveTrigger after one frame", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       window.dispatchEvent(
         new MouseEvent("mousemove", {
@@ -101,7 +99,7 @@ describe("Mouse", () => {
 
   describe("wheel events", () => {
     it("should track wheel delta", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new WheelEvent("wheel", {
@@ -120,7 +118,7 @@ describe("Mouse", () => {
     });
 
     it("should set wheelTrigger when wheel scrolls", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new WheelEvent("wheel", {
@@ -137,7 +135,7 @@ describe("Mouse", () => {
     });
 
     it("should clear wheel state after one frame", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
         new WheelEvent("wheel", {
@@ -161,7 +159,7 @@ describe("Mouse", () => {
 
   describe("enter/leave events", () => {
     it("should set enterTrigger on mouseenter", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
 
@@ -171,7 +169,7 @@ describe("Mouse", () => {
     });
 
     it("should set leaveTrigger on mouseleave", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
 
@@ -181,7 +179,7 @@ describe("Mouse", () => {
     });
 
     it("should clear enter/leave triggers after one frame", () => {
-      const ctx = editor.getContext()!;
+      const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
       editor.tick();
@@ -213,17 +211,15 @@ describe("Mouse - multiple instances", () => {
           x: 0,
           y: 0,
           toJSON: () => {},
-        }) as DOMRect;
+        } as DOMRect);
       document.body.appendChild(el);
     }
 
-    const editor1 = new Editor({
+    const editor1 = new Editor(domElement1, {
       plugins: [InputPlugin],
-      resources: { domElement: domElement1 } satisfies InputResources,
     });
-    const editor2 = new Editor({
+    const editor2 = new Editor(domElement2, {
       plugins: [InputPlugin],
-      resources: { domElement: domElement2 } satisfies InputResources,
     });
 
     await editor1.initialize();
@@ -246,8 +242,8 @@ describe("Mouse - multiple instances", () => {
     editor1.tick();
     editor2.tick();
 
-    const ctx1 = editor1.getContext()!;
-    const ctx2 = editor2.getContext()!;
+    const ctx1 = editor1._getContext()!;
+    const ctx2 = editor2._getContext()!;
 
     expect(Mouse.read(ctx1).wheelTrigger).toBe(true);
     expect(Mouse.read(ctx2).wheelTrigger).toBe(false);

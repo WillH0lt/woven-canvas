@@ -1,5 +1,9 @@
-import type { EditorPlugin } from "@infinitecanvas/editor";
-import { getResources } from "@infinitecanvas/ecs";
+import {
+  type EditorPlugin,
+  getResources,
+  type EditorResources,
+} from "@infinitecanvas/editor";
+
 import { Keyboard, Mouse, Screen, Pointer } from "./components";
 import {
   keyboardInputSystem,
@@ -15,7 +19,6 @@ import {
   attachPointerListeners,
   detachPointerListeners,
 } from "./systems";
-import type { InputResources } from "./types";
 
 /**
  * Input plugin - handles keyboard, mouse, screen, and pointer input.
@@ -31,13 +34,10 @@ import type { InputResources } from "./types";
  * @example
  * ```typescript
  * import { Editor } from '@infinitecanvas/editor';
- * import { InputPlugin, type InputResources } from '@infinitecanvas/plugin-input';
+ * import { InputPlugin } from '@infinitecanvas/plugin-input';
  *
- * const editor = new Editor({
+ * const editor = new Editor(document.getElementById('canvas')!, {
  *   plugins: [InputPlugin],
- *   resources: {
- *     domElement: document.getElementById('canvas')!,
- *   } satisfies InputResources,
  * });
  *
  * await editor.initialize();
@@ -50,48 +50,30 @@ export const InputPlugin: EditorPlugin = {
 
   components: [Pointer],
 
-  systems: [
+  inputSystems: [
     keyboardInputSystem,
     mouseInputSystem,
     screenInputSystem,
     pointerInputSystem,
   ],
 
-  setup(editor) {
-    const ctx = editor.getContext();
-    if (!ctx) {
-      throw new Error(
-        "InputPlugin: Editor context not available. Call editor.initialize() first."
-      );
-    }
-
-    const resources = getResources<InputResources>(ctx);
-
-    if (!resources.domElement) {
-      throw new Error(
-        "InputPlugin: domElement is required in resources. " +
-          "Pass { domElement: yourElement } when creating the Editor."
-      );
-    }
+  setup(ctx) {
+    const { domElement } = getResources<EditorResources>(ctx);
 
     // Attach all event listeners
-    attachKeyboardListeners(resources);
-    attachMouseListeners(resources);
-    attachScreenObserver(resources);
-    attachPointerListeners(resources);
+    attachKeyboardListeners(domElement);
+    attachMouseListeners(domElement);
+    attachScreenObserver(domElement);
+    attachPointerListeners(domElement);
   },
 
-  teardown(editor) {
-    const ctx = editor.getContext();
-    if (!ctx) return;
-
-    const resources = getResources<InputResources>(ctx);
-    if (!resources.domElement) return;
+  teardown(ctx) {
+    const { domElement } = getResources<EditorResources>(ctx);
 
     // Detach all event listeners
-    detachKeyboardListeners(resources);
-    detachMouseListeners(resources);
-    detachScreenObserver(resources);
-    detachPointerListeners(resources);
+    detachKeyboardListeners(domElement);
+    detachMouseListeners(domElement);
+    detachScreenObserver(domElement);
+    detachPointerListeners(domElement);
   },
 };

@@ -1,14 +1,15 @@
 {
   "private": true,
-  "name": "@infinitecanvas/plugin-input",
+  "name": "@infinitecanvas/template",
   "version": "0.1.0",
-  "description": "Input handling plugin for the editor framework",
+  "description": "Framework-agnostic editor library built on ECS",
   "files": [
     "build"
   ],
   "main": "./build/index.js",
   "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
+  "__exports-comment": "// Define output files for Node.js export maps (https://nodejs.org/api/packages.html#exports)",
   "exports": {
     ".": {
       "import": {
@@ -31,18 +32,15 @@
     "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
-    "test": "vitest run",
-    "test:watch": "vitest --watch"
+    "test": "vitest  --config ../../vitest.config.ts run",
+    "test:watch": "vitest  --config ../../vitest.config.ts run --watch"
   },
   "dependencies": {
-    "@infinitecanvas/ecs": "workspace:*",
-    "@infinitecanvas/editor": "workspace:*"
+    "@infinitecanvas/ecs": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "jsdom": "^27.3.0",
-    "resize-observer-polyfill": "^1.5.1",
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.7",
+    "@types/bun": "latest"
   },
   "type": "module",
   "peerDependencies": {

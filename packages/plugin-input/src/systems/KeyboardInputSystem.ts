@@ -1,7 +1,10 @@
-import { defineInputSystem, type EditorContext } from "@infinitecanvas/editor";
-import { getResources } from "@infinitecanvas/ecs";
+import {
+  defineEditorSystem,
+  type Context,
+  type EditorResources,
+  getResources,
+} from "@infinitecanvas/editor";
 import { Keyboard, setBit } from "../components/Keyboard";
-import type { InputResources } from "../types";
 
 /**
  * Per-instance state for keyboard input
@@ -22,9 +25,7 @@ const instanceState = new WeakMap<HTMLElement, KeyboardState>();
  * Attach keyboard event listeners.
  * Called from plugin setup.
  */
-export function attachKeyboardListeners(resources: InputResources): void {
-  const { domElement } = resources;
-
+export function attachKeyboardListeners(domElement: HTMLElement): void {
   if (instanceState.has(domElement)) return;
 
   // Make element focusable if not already
@@ -61,8 +62,7 @@ export function attachKeyboardListeners(resources: InputResources): void {
  * Detach keyboard event listeners.
  * Called from plugin teardown.
  */
-export function detachKeyboardListeners(resources: InputResources): void {
-  const { domElement } = resources;
+export function detachKeyboardListeners(domElement: HTMLElement): void {
   const state = instanceState.get(domElement);
 
   if (!state) return;
@@ -83,62 +83,59 @@ export function detachKeyboardListeners(resources: InputResources): void {
  * - Sets bits in keysUpTrigger for released keys (1 frame)
  * - Updates modifier booleans (shiftDown, altDown, modDown)
  */
-export const keyboardInputSystem = defineInputSystem(
-  "keyboard-input",
-  (ctx: EditorContext) => {
-    const resources = getResources<InputResources>(ctx);
-    const state = instanceState.get(resources.domElement);
-    if (!state) return;
+export const keyboardInputSystem = defineEditorSystem((ctx: Context) => {
+  const resources = getResources<EditorResources>(ctx);
+  const state = instanceState.get(resources.domElement);
+  if (!state) return;
 
-    const keyboard = Keyboard.write(ctx);
+  const keyboard = Keyboard.write(ctx);
 
-    // Get mutable copies of the binary buffers
-    // (ECS returns copies, so we need to modify and reassign)
-    const keysDown = new Uint8Array(keyboard.keysDown);
-    const keysDownTrigger = new Uint8Array(32); // Fresh buffer, cleared each frame
-    const keysUpTrigger = new Uint8Array(32); // Fresh buffer, cleared each frame
+  // Get mutable copies of the binary buffers
+  // (ECS returns copies, so we need to modify and reassign)
+  const keysDown = new Uint8Array(keyboard.keysDown);
+  const keysDownTrigger = new Uint8Array(32); // Fresh buffer, cleared each frame
+  const keysUpTrigger = new Uint8Array(32); // Fresh buffer, cleared each frame
 
-    // Process buffered events
-    for (const event of state.eventsBuffer) {
-      if (event.type === "blur") {
-        // Reset all keys on blur
-        keysDown.fill(0);
-        keyboard.shiftDown = false;
-        keyboard.altDown = false;
-        keyboard.modDown = false;
-        continue;
-      }
-
-      const keyCode = event.keyCode;
-
-      if (event.type === "keydown") {
-        // Check if this is a new press (wasn't down before)
-        const wasDown = getBit(keysDown, keyCode);
-        if (!wasDown) {
-          setBit(keysDownTrigger, keyCode, true);
-        }
-
-        setBit(keysDown, keyCode, true);
-      } else if (event.type === "keyup") {
-        setBit(keysDown, keyCode, false);
-        setBit(keysUpTrigger, keyCode, true);
-      }
-
-      // Update modifier state from the event
-      keyboard.shiftDown = event.shiftKey;
-      keyboard.altDown = event.altKey;
-      keyboard.modDown = event.ctrlKey || event.metaKey;
+  // Process buffered events
+  for (const event of state.eventsBuffer) {
+    if (event.type === "blur") {
+      // Reset all keys on blur
+      keysDown.fill(0);
+      keyboard.shiftDown = false;
+      keyboard.altDown = false;
+      keyboard.modDown = false;
+      continue;
     }
 
-    // Write back the modified buffers
-    keyboard.keysDown = keysDown;
-    keyboard.keysDownTrigger = keysDownTrigger;
-    keyboard.keysUpTrigger = keysUpTrigger;
+    const keyCode = event.keyCode;
 
-    // Clear buffer
-    state.eventsBuffer.length = 0;
+    if (event.type === "keydown") {
+      // Check if this is a new press (wasn't down before)
+      const wasDown = getBit(keysDown, keyCode);
+      if (!wasDown) {
+        setBit(keysDownTrigger, keyCode, true);
+      }
+
+      setBit(keysDown, keyCode, true);
+    } else if (event.type === "keyup") {
+      setBit(keysDown, keyCode, false);
+      setBit(keysUpTrigger, keyCode, true);
+    }
+
+    // Update modifier state from the event
+    keyboard.shiftDown = event.shiftKey;
+    keyboard.altDown = event.altKey;
+    keyboard.modDown = event.ctrlKey || event.metaKey;
   }
-);
+
+  // Write back the modified buffers
+  keyboard.keysDown = keysDown;
+  keyboard.keysDownTrigger = keysDownTrigger;
+  keyboard.keysUpTrigger = keysUpTrigger;
+
+  // Clear buffer
+  state.eventsBuffer.length = 0;
+});
 
 /**
  * Get a bit from a binary field.
