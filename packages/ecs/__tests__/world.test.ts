@@ -1078,7 +1078,6 @@ describe("World", () => {
 
       world.sync();
 
-      console.log("after sync");
       // Subscriber should see the value written by nextSync callback
       expect(xValueInSubscriber).toBe(999);
     });
