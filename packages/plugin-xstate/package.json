@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "@infinitecanvas/plugin-input",
+  "name": "@infinitecanvas/plugin-xstate",
   "version": "0.1.0",
-  "description": "Input handling plugin for the editor framework",
+  "description": "XState state machine utilities for infinite canvas ECS applications",
   "files": [
     "build"
   ],
@@ -31,18 +31,18 @@
     "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
-    "test": "vitest run",
-    "test:watch": "vitest --watch"
+    "test": "vitest  --config ../../vitest.config.ts run",
+    "test:watch": "vitest  --config ../../vitest.config.ts run --watch"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "jsdom": "^27.3.0",
-    "resize-observer-polyfill": "^1.5.1",
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.7",
+    "@types/bun": "latest"
   },
-  "type": "module",
   "peerDependencies": {
     "@infinitecanvas/editor": "workspace:*",
-    "typescript": "^5"
-  }
+    "@infinitecanvas/plugin-input": "workspace:*",
+    "typescript": "^5",
+    "xstate": "^5.0.0"
+  },
+  "type": "module"
 }

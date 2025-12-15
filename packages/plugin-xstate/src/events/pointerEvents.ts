@@ -1,0 +1,378 @@
+import {
+  defineQuery,
+  type Context,
+  type EntityId,
+} from "@infinitecanvas/editor";
+import {
+  Pointer,
+  Keyboard,
+  type PointerButton,
+} from "@infinitecanvas/plugin-input";
+import type { PointerInput, PointerInputOptions } from "./types";
+
+// Default thresholds for click detection
+const DEFAULT_CLICK_MOVE_THRESHOLD = 3;
+const DEFAULT_CLICK_FRAME_THRESHOLD = 30;
+
+// Query for pointer entities with change tracking
+const pointerQuery = defineQuery((q) => q.tracking(Pointer));
+
+/**
+ * Per-context state for tracking pointer events across frames.
+ * Keyed by context readerId to support multiple editor instances.
+ */
+interface PointerTrackingState {
+  /** Frame counter for click detection */
+  frameCount: number;
+  /** Previous frame's pointer positions for movement detection */
+  prevPositions: Map<number, [number, number]>;
+  /** Previous modifier key state */
+  prevModifiers: {
+    shiftDown: boolean;
+    altDown: boolean;
+    modDown: boolean;
+  };
+}
+
+const trackingState = new Map<string, PointerTrackingState>();
+
+function getTrackingState(ctx: Context): PointerTrackingState {
+  const key = ctx.readerId;
+  let state = trackingState.get(key);
+  if (!state) {
+    state = {
+      frameCount: 0,
+      prevPositions: new Map(),
+      prevModifiers: {
+        shiftDown: false,
+        altDown: false,
+        modDown: false,
+      },
+    };
+    trackingState.set(key, state);
+  }
+  return state;
+}
+
+/**
+ * Calculate distance between two points.
+ */
+function distance(a: [number, number], b: [number, number]): number {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Interface for optional Camera singleton.
+ * Users can provide their own camera implementation.
+ */
+export interface CameraProvider {
+  /** Get camera position [left, top, zoom] */
+  getCamera(ctx: Context): { left: number; top: number; zoom: number };
+  /** Convert screen position to world position */
+  toWorld(
+    ctx: Context,
+    screenPos: [number, number]
+  ): [number, number];
+}
+
+// Default camera provider (no camera - world = screen)
+const defaultCameraProvider: CameraProvider = {
+  getCamera: () => ({ left: 0, top: 0, zoom: 1 }),
+  toWorld: (_ctx, screenPos) => screenPos,
+};
+
+// Current camera provider (can be set by user)
+let cameraProvider: CameraProvider = defaultCameraProvider;
+
+/**
+ * Set a custom camera provider for world coordinate conversion.
+ *
+ * @param provider - Camera provider implementation
+ *
+ * @example
+ * ```typescript
+ * import { setCameraProvider } from '@infinitecanvas/plugin-xstate';
+ * import { Camera } from './my-camera-plugin';
+ *
+ * setCameraProvider({
+ *   getCamera(ctx) {
+ *     const cam = Camera.read(ctx);
+ *     return { left: cam.left, top: cam.top, zoom: cam.zoom };
+ *   },
+ *   toWorld(ctx, screenPos) {
+ *     const cam = Camera.read(ctx);
+ *     return [
+ *       screenPos[0] / cam.zoom + cam.left,
+ *       screenPos[1] / cam.zoom + cam.top,
+ *     ];
+ *   },
+ * });
+ * ```
+ */
+export function setCameraProvider(provider: CameraProvider): void {
+  cameraProvider = provider;
+}
+
+/**
+ * Reset the camera provider to the default (no camera).
+ */
+export function resetCameraProvider(): void {
+  cameraProvider = defaultCameraProvider;
+}
+
+/**
+ * Generate high-level pointer input events from ECS state for state machine consumption.
+ *
+ * This function transforms raw Pointer component data into semantic events
+ * suitable for XState machines. It handles:
+ *
+ * - **pointerDown** - When a new pointer matching the specified buttons is added
+ * - **pointerUp** - When a matching pointer is removed
+ * - **pointerMove** - When a matching pointer's position changes, or modifier keys change
+ * - **click** - After pointerUp, if the pointer didn't move much and wasn't held long
+ * - **cancel** - When Escape is pressed or multi-touch is detected
+ * - **frame** - Optional continuous event while pointer is active
+ *
+ * @param ctx - ECS context
+ * @param buttons - Array of pointer buttons to filter for (e.g., ['left', 'middle'])
+ * @param options - Optional configuration
+ * @returns Array of pointer input events to process
+ *
+ * @example
+ * ```typescript
+ * import { getPointerInput, runMachine } from '@infinitecanvas/plugin-xstate';
+ *
+ * const panSystem = defineEditorSystem((ctx) => {
+ *   const events = getPointerInput(ctx, ['middle']);
+ *   if (events.length === 0) return;
+ *
+ *   const { value, context } = runMachine(panMachine, state.state, state.context, events);
+ *   // Update state...
+ * });
+ * ```
+ */
+export function getPointerInput(
+  ctx: Context,
+  buttons: PointerButton[],
+  options: PointerInputOptions = {}
+): PointerInput[] {
+  if (buttons.length === 0) return [];
+
+  const {
+    includeFrameEvent = false,
+    clickMoveThreshold = DEFAULT_CLICK_MOVE_THRESHOLD,
+    clickFrameThreshold = DEFAULT_CLICK_FRAME_THRESHOLD,
+  } = options;
+
+  const state = getTrackingState(ctx);
+  state.frameCount++;
+
+  const events: PointerInput[] = [];
+
+  // Get keyboard state for modifiers
+  const keyboard = Keyboard.read(ctx);
+  const modifiers = {
+    shiftDown: keyboard.shiftDown,
+    altDown: keyboard.altDown,
+    modDown: keyboard.modDown,
+  };
+
+  // Get camera state
+  const camera = cameraProvider.getCamera(ctx);
+
+  // Helper to check if pointer button matches filter
+  const matchesButtons = (entityId: EntityId) => {
+    const pointer = Pointer.read(ctx, entityId);
+    return buttons.includes(pointer.button);
+  };
+
+  // Helper to create event from pointer
+  const createEvent = (
+    type: PointerInput["type"],
+    entityId: EntityId
+  ): PointerInput => {
+    const pointer = Pointer.read(ctx, entityId);
+    const screenPos: [number, number] = [
+      pointer.position[0],
+      pointer.position[1],
+    ];
+    const worldPos = cameraProvider.toWorld(ctx, screenPos);
+
+    return {
+      type,
+      screenPosition: screenPos,
+      worldPosition: worldPos,
+      velocity: [pointer._velocity[0], pointer._velocity[1]],
+      pressure: pointer.pressure,
+      button: pointer.button,
+      pointerType: pointer.pointerType,
+      obscured: pointer.obscured,
+      shiftDown: modifiers.shiftDown,
+      altDown: modifiers.altDown,
+      modDown: modifiers.modDown,
+      cameraLeft: camera.left,
+      cameraTop: camera.top,
+      cameraZoom: camera.zoom,
+      pointerId: entityId,
+    };
+  };
+
+  // Get query results
+  const addedPointers = pointerQuery.added(ctx);
+  const removedPointers = pointerQuery.removed(ctx);
+  const changedPointers = pointerQuery.changed(ctx);
+  const currentPointers = pointerQuery.current(ctx);
+
+  // Filter by button
+  const matchingAdded = addedPointers.filter(matchesButtons);
+  const matchingRemoved = removedPointers.filter(matchesButtons);
+  const matchingChanged = changedPointers.filter(matchesButtons);
+  const matchingCurrent = Array.from(currentPointers).filter(matchesButtons);
+
+  // Check for cancel conditions
+  const escapePressed = Keyboard.isKeyDownTrigger(ctx, 27); // Escape key
+  const multiTouch =
+    matchingCurrent.length > 1 && matchingAdded.length > 0;
+
+  if ((escapePressed || multiTouch) && matchingCurrent.length > 0) {
+    // Generate cancel event using the first current pointer
+    events.push(createEvent("cancel", matchingCurrent[0]));
+    return events;
+  }
+
+  // Handle pointer down (new pointer added, and we now have exactly 1 matching)
+  if (matchingAdded.length > 0 && matchingCurrent.length === 1) {
+    const entityId = matchingCurrent[0];
+    const pointer = Pointer.read(ctx, entityId);
+
+    // Only generate pointerDown if not obscured
+    if (!pointer.obscured) {
+      events.push(createEvent("pointerDown", entityId));
+
+      // Store initial position for click detection
+      state.prevPositions.set(entityId, [
+        pointer.position[0],
+        pointer.position[1],
+      ]);
+    }
+  }
+
+  // Handle pointer up (pointer removed, we now have 0 matching)
+  if (matchingRemoved.length > 0 && matchingCurrent.length === 0) {
+    const entityId = matchingRemoved[0];
+    const pointer = Pointer.read(ctx, entityId);
+
+    events.push(createEvent("pointerUp", entityId));
+
+    // Check for click
+    const downPos = state.prevPositions.get(entityId);
+    if (downPos) {
+      const currentPos: [number, number] = [
+        pointer.position[0],
+        pointer.position[1],
+      ];
+      const dist = distance(downPos, currentPos);
+      const deltaFrame = state.frameCount - pointer.downFrame;
+
+      if (dist < clickMoveThreshold && deltaFrame < clickFrameThreshold) {
+        events.push(createEvent("click", entityId));
+      }
+
+      state.prevPositions.delete(entityId);
+    }
+  }
+
+  // Handle pointer move (position changed or modifier keys changed)
+  const modifiersChanged =
+    modifiers.shiftDown !== state.prevModifiers.shiftDown ||
+    modifiers.altDown !== state.prevModifiers.altDown ||
+    modifiers.modDown !== state.prevModifiers.modDown;
+
+  if ((matchingChanged.length > 0 || modifiersChanged) && matchingCurrent.length === 1) {
+    events.push(createEvent("pointerMove", matchingCurrent[0]));
+  }
+
+  // Handle frame event
+  if (includeFrameEvent && matchingCurrent.length === 1) {
+    events.push(createEvent("frame", matchingCurrent[0]));
+  }
+
+  // Update previous modifier state
+  state.prevModifiers = { ...modifiers };
+
+  return events;
+}
+
+/**
+ * Get the current position of the first matching active pointer.
+ *
+ * @param ctx - ECS context
+ * @param buttons - Array of pointer buttons to filter for
+ * @returns Screen position [x, y] or null if no matching pointer
+ */
+export function getPointerPosition(
+  ctx: Context,
+  buttons: PointerButton[]
+): [number, number] | null {
+  const currentPointers = pointerQuery.current(ctx);
+
+  for (const entityId of currentPointers) {
+    const pointer = Pointer.read(ctx, entityId as EntityId);
+    if (buttons.includes(pointer.button)) {
+      return [pointer.position[0], pointer.position[1]];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get the current world position of the first matching active pointer.
+ *
+ * @param ctx - ECS context
+ * @param buttons - Array of pointer buttons to filter for
+ * @returns World position [x, y] or null if no matching pointer
+ */
+export function getPointerWorldPosition(
+  ctx: Context,
+  buttons: PointerButton[]
+): [number, number] | null {
+  const screenPos = getPointerPosition(ctx, buttons);
+  if (!screenPos) return null;
+  return cameraProvider.toWorld(ctx, screenPos);
+}
+
+/**
+ * Check if any matching pointer is currently active.
+ *
+ * @param ctx - ECS context
+ * @param buttons - Array of pointer buttons to check
+ * @returns True if at least one matching pointer is active
+ */
+export function hasActivePointer(
+  ctx: Context,
+  buttons: PointerButton[]
+): boolean {
+  const currentPointers = pointerQuery.current(ctx);
+
+  for (const entityId of currentPointers) {
+    const pointer = Pointer.read(ctx, entityId as EntityId);
+    if (buttons.includes(pointer.button)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Clear tracking state for a context.
+ * Call this when the editor is destroyed.
+ *
+ * @param ctx - ECS context
+ */
+export function clearPointerTrackingState(ctx: Context): void {
+  trackingState.delete(ctx.readerId);
+}

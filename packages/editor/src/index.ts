@@ -59,3 +59,23 @@ export {
   type EntityId,
   type QueryDef,
 } from "@infinitecanvas/ecs";
+
+// Plugin
+export { CorePlugin } from "./CorePlugin";
+
+// Components
+export {
+  // Camera
+  Camera,
+  // Keyboard
+  Keyboard,
+  KeyCode,
+  // Mouse
+  Mouse,
+  // Screen
+  Screen,
+  // Pointer
+  Pointer,
+  PointerButton,
+  PointerType,
+} from "./components";

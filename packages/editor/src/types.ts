@@ -1,5 +1,8 @@
-import type { Context } from "@infinitecanvas/ecs";
+import type { Context, EntityId } from "@infinitecanvas/ecs";
 import type { Editor } from "./Editor";
+
+// Re-export EntityId for convenience
+export type { EntityId };
 
 /**
  * Base resources required by the Editor.
