@@ -1,12 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Editor, defineQuery } from "@infinitecanvas/editor";
-import {
-  CorePlugin,
-  Pointer,
-  PointerButton,
-  PointerType,
-  Screen,
-} from "../../src";
+import { Pointer, PointerButton, PointerType } from "../../src";
 
 // Query for pointer entities
 const pointerQuery = defineQuery((q) => q.with(Pointer));
@@ -36,7 +30,7 @@ describe("Pointer", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     await editor.initialize();
 
@@ -388,10 +382,10 @@ describe("Pointer - multiple instances", () => {
     }
 
     const editor1 = new Editor(domElement1, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     const editor2 = new Editor(domElement2, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
 
     await editor1.initialize();

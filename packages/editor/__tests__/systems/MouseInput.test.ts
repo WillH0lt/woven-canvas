@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Editor } from "@infinitecanvas/editor";
-import { CorePlugin, Mouse } from "../../src";
+import { Mouse } from "../../src";
 
 describe("Mouse", () => {
   let editor: Editor;
@@ -27,7 +27,7 @@ describe("Mouse", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     await editor.initialize();
 
@@ -216,10 +216,10 @@ describe("Mouse - multiple instances", () => {
     }
 
     const editor1 = new Editor(domElement1, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     const editor2 = new Editor(domElement2, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
 
     await editor1.initialize();

@@ -1,5 +1,5 @@
 import "./style.css";
-import { Editor, CorePlugin, Camera } from "@infinitecanvas/editor";
+import { Editor, Camera } from "@infinitecanvas/editor";
 import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
 
 // Create canvas element
@@ -27,7 +27,7 @@ const ctxCanvas = canvas.getContext("2d")!;
 
 // Create editor with CorePlugin and ControlsPlugin
 const editor = new Editor(container, {
-  plugins: [CorePlugin, ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
+  plugins: [ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
 });
 
 // Initialize editor

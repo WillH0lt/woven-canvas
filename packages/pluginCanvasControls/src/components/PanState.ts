@@ -23,6 +23,10 @@ export const PanState = defineEditorState(
     targetX: field.float64().default(0),
     /** Target Y position for fling animation */
     targetY: field.float64().default(0),
+    /** Expected camera left position (to detect external changes) */
+    expectedLeft: field.float64().default(0),
+    /** Expected camera top position (to detect external changes) */
+    expectedTop: field.float64().default(0),
   },
   { sync: "none" }
 );

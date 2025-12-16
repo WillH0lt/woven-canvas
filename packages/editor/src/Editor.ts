@@ -11,6 +11,7 @@ import type { EditorResources, SystemPhase } from "./types";
 import type { StoreAdapter } from "./store";
 import { type EditorPlugin, sortPluginsByDependencies } from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
+import { CorePlugin } from "./CorePlugin";
 
 /**
  * Editor configuration options
@@ -106,8 +107,8 @@ export class Editor {
       resources = {},
     } = options ?? {};
 
-    // Sort plugins by dependencies
-    const sortedPlugins = sortPluginsByDependencies(plugins);
+    // Sort plugins by dependencies, always including CorePlugin first
+    const sortedPlugins = sortPluginsByDependencies([CorePlugin, ...plugins]);
 
     // Collect all components and singletons from plugins
     // Always include CommandMarker for the command system

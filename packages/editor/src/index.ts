@@ -91,10 +91,13 @@ export {
   type MouseInput,
   type MouseInputType,
   type FrameInput,
+  type KeyboardInput,
+  type KeyboardInputType,
   getPointerInput,
   clearPointerTrackingState,
   getMouseInput,
   getFrameInput,
+  getKeyboardInput,
 } from "./events";
 
 // State machine utilities

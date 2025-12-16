@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { Editor, CorePlugin, Camera } from "@infinitecanvas/editor";
+import { Editor, Camera } from "@infinitecanvas/editor";
 import { ControlsPlugin, PanState, PanStateValue } from "../src";
 
 describe("ControlsPlugin", () => {
@@ -40,7 +40,7 @@ describe("ControlsPlugin", () => {
   describe("plugin registration", () => {
     it("should register with default options", async () => {
       editor = new Editor(domElement, {
-        plugins: [CorePlugin, ControlsPlugin()],
+        plugins: [ControlsPlugin()],
       });
       await editor.initialize();
 
@@ -55,7 +55,7 @@ describe("ControlsPlugin", () => {
 
     it("should register with custom options", async () => {
       editor = new Editor(domElement, {
-        plugins: [CorePlugin, ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
+        plugins: [ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
       });
       await editor.initialize();
 
@@ -67,7 +67,7 @@ describe("ControlsPlugin", () => {
   describe("PanState singleton", () => {
     it("should initialize with idle state", async () => {
       editor = new Editor(domElement, {
-        plugins: [CorePlugin, ControlsPlugin()],
+        plugins: [ControlsPlugin()],
       });
       await editor.initialize();
 
@@ -83,7 +83,7 @@ describe("ControlsPlugin", () => {
   describe("Camera singleton", () => {
     it("should initialize with default values", async () => {
       editor = new Editor(domElement, {
-        plugins: [CorePlugin, ControlsPlugin()],
+        plugins: [ControlsPlugin()],
       });
       await editor.initialize();
 
@@ -125,7 +125,7 @@ describe("captureZoom system", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin, ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
+      plugins: [ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
     });
     await editor.initialize();
     await editor.tick(); // Initialize screen dimensions
@@ -145,7 +145,7 @@ describe("captureZoom system", () => {
     // Hold modifier key (Ctrl/Cmd)
     domElement.dispatchEvent(
       new KeyboardEvent("keydown", {
-        keyCode: 17, // Ctrl
+        code: "ControlLeft",
         ctrlKey: true,
         bubbles: true,
       })
@@ -177,7 +177,7 @@ describe("captureZoom system", () => {
     // Hold modifier key
     domElement.dispatchEvent(
       new KeyboardEvent("keydown", {
-        keyCode: 17,
+        code: "ControlLeft",
         ctrlKey: true,
         bubbles: true,
       })
@@ -229,7 +229,7 @@ describe("captureZoom system", () => {
     // Hold modifier key
     domElement.dispatchEvent(
       new KeyboardEvent("keydown", {
-        keyCode: 17,
+        code: "ControlLeft",
         ctrlKey: true,
         bubbles: true,
       })
@@ -259,7 +259,7 @@ describe("captureZoom system", () => {
     // Hold modifier key
     domElement.dispatchEvent(
       new KeyboardEvent("keydown", {
-        keyCode: 17,
+        code: "ControlLeft",
         ctrlKey: true,
         bubbles: true,
       })
@@ -312,7 +312,7 @@ describe("captureScroll system", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin, ControlsPlugin()],
+      plugins: [ControlsPlugin()],
     });
     await editor.initialize();
     await editor.tick();
@@ -377,7 +377,7 @@ describe("captureScroll system", () => {
     // Hold modifier key
     domElement.dispatchEvent(
       new KeyboardEvent("keydown", {
-        keyCode: 17,
+        code: "ControlLeft",
         ctrlKey: true,
         bubbles: true,
       })
@@ -458,7 +458,7 @@ describe("capturePan system", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin, ControlsPlugin()],
+      plugins: [ControlsPlugin()],
     });
     await editor.initialize();
     await editor.tick();
@@ -611,7 +611,7 @@ describe("capturePan system", () => {
     // Press escape
     domElement.dispatchEvent(
       new KeyboardEvent("keydown", {
-        keyCode: 27, // Escape
+        code: "Escape",
         bubbles: true,
       })
     );
@@ -650,7 +650,7 @@ describe("camera gliding", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin, ControlsPlugin()],
+      plugins: [ControlsPlugin()],
     });
     await editor.initialize();
     await editor.tick();

@@ -16,7 +16,6 @@
  * const editor = new Editor({
  *   domElement: document.getElementById('canvas'),
  *   plugins: [
- *     CorePlugin,
  *     ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
  *   ],
  * });

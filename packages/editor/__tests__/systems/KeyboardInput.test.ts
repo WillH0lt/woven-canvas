@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Editor } from "@infinitecanvas/editor";
-import { CorePlugin, Keyboard, Key } from "../../src";
+import { Keyboard, Key } from "../../src";
 
 describe("Keyboard", () => {
   let editor: Editor;
@@ -12,7 +12,7 @@ describe("Keyboard", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     await editor.initialize();
   });
@@ -227,10 +227,10 @@ describe("Keyboard - multiple instances", () => {
     document.body.appendChild(domElement2);
 
     const editor1 = new Editor(domElement1, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     const editor2 = new Editor(domElement2, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
 
     await editor1.initialize();

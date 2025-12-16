@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Editor } from "@infinitecanvas/editor";
-import { CorePlugin, Screen } from "../../src";
+import { Screen } from "../../src";
 
 describe("Screen", () => {
   let editor: Editor;
@@ -34,7 +34,7 @@ describe("Screen", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     await editor.initialize();
   });
@@ -141,10 +141,10 @@ describe("Screen - multiple instances", () => {
     document.body.appendChild(domElement2);
 
     const editor1 = new Editor(domElement1, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     const editor2 = new Editor(domElement2, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
 
     await editor1.initialize();

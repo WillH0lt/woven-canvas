@@ -2,10 +2,13 @@ import {
   defineSystem,
   Camera,
   Controls,
+  Key,
   getPointerInput,
   getFrameInput,
+  getKeyboardInput,
   type PointerInput,
   type FrameInput,
+  type KeyboardInput,
   type InferStateContext,
 } from "@infinitecanvas/editor";
 import { assign, setup } from "xstate";
@@ -22,9 +25,9 @@ const VELOCITY_THRESHOLD = 0.1;
 
 /**
  * Event types for the pan state machine.
- * Combines PointerInput with FrameInput for glide animation.
+ * Combines PointerInput, FrameInput, and KeyboardInput for full input handling.
  */
-type PanEvent = PointerInput | FrameInput;
+type PanEvent = PointerInput | FrameInput | KeyboardInput;
 
 /**
  * Pan state machine context - derived from PanState schema.
@@ -52,6 +55,16 @@ const panMachine = setup({
       return (
         Math.hypot(context.velocityX, context.velocityY) < VELOCITY_THRESHOLD
       );
+    },
+    cameraWasMoved: ({ context, event }) => {
+      const camera = Camera.read((event as FrameInput).ctx);
+      return (
+        camera.left !== context.expectedLeft ||
+        camera.top !== context.expectedTop
+      );
+    },
+    isEscapeKey: ({ event }) => {
+      return (event as KeyboardInput).key === Key.Escape;
     },
   },
   actions: {
@@ -86,6 +99,8 @@ const panMachine = setup({
         velocityY,
         targetX: camera.left + velocityX * CAMERA_GLIDE_SECONDS,
         targetY: camera.top + velocityY * CAMERA_GLIDE_SECONDS,
+        expectedLeft: camera.left,
+        expectedTop: camera.top,
       };
     }),
 
@@ -111,6 +126,8 @@ const panMachine = setup({
       return {
         velocityX: newVelocity[0],
         velocityY: newVelocity[1],
+        expectedLeft: position[0],
+        expectedTop: position[1],
       };
     }),
 
@@ -121,6 +138,8 @@ const panMachine = setup({
       velocityY: 0,
       targetX: 0,
       targetY: 0,
+      expectedLeft: 0,
+      expectedTop: 0,
     }),
   },
 }).createMachine({
@@ -133,6 +152,8 @@ const panMachine = setup({
     velocityY: 0,
     targetX: 0,
     targetY: 0,
+    expectedLeft: 0,
+    expectedTop: 0,
   },
   states: {
     [PanStateValue.Idle]: {
@@ -159,7 +180,8 @@ const panMachine = setup({
             target: PanStateValue.Idle,
           },
         ],
-        cancel: {
+        keyDown: {
+          guard: "isEscapeKey",
           target: PanStateValue.Idle,
         },
       },
@@ -167,6 +189,12 @@ const panMachine = setup({
     [PanStateValue.Gliding]: {
       on: {
         frame: [
+          // Stop glide if another system moved the camera
+          {
+            guard: "cameraWasMoved",
+            actions: "resetContext",
+            target: PanStateValue.Idle,
+          },
           {
             guard: "isGlideComplete",
             actions: "resetContext",
@@ -210,6 +238,9 @@ export const capturePanSystem = defineSystem((ctx) => {
   if (currentState === PanStateValue.Gliding) {
     events.push(getFrameInput(ctx));
   }
+
+  // Check for Escape key to cancel panning
+  events.push(...getKeyboardInput(ctx, [Key.Escape]));
 
   if (events.length === 0) return;
 

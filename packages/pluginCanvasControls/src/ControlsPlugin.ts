@@ -28,7 +28,6 @@ import { DEFAULT_CONTROLS_OPTIONS, type ControlsOptions } from "./types";
  * const editor = new Editor({
  *   domElement: document.getElementById('canvas'),
  *   plugins: [
- *     CorePlugin,
  *     ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
  *   ],
  * });

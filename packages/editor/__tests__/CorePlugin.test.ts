@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Editor, defineQuery } from "@infinitecanvas/editor";
-import { CorePlugin, Keyboard, Mouse, Screen, Pointer } from "../src";
+import { Keyboard, Mouse, Screen, Pointer } from "../src";
 
 // Query for pointer entities
 const pointerQuery = defineQuery((q) => q.with(Pointer));
@@ -12,7 +12,7 @@ describe("CorePlugin", () => {
       document.body.appendChild(domElement);
 
       const editor = new Editor(domElement, {
-        plugins: [CorePlugin],
+        plugins: [],
       });
       await editor.initialize();
 
@@ -33,7 +33,7 @@ describe("CorePlugin", () => {
       document.body.appendChild(domElement);
 
       const editor = new Editor(domElement, {
-        plugins: [CorePlugin],
+        plugins: [],
       });
       await editor.initialize();
 
@@ -69,7 +69,7 @@ describe("CorePlugin", () => {
       document.body.appendChild(domElement);
 
       const editor = new Editor(domElement, {
-        plugins: [CorePlugin],
+        plugins: [],
       });
       await editor.initialize();
 
@@ -98,7 +98,7 @@ describe("CorePlugin", () => {
       document.body.appendChild(domElement);
 
       const editor = new Editor(domElement, {
-        plugins: [CorePlugin],
+        plugins: [],
       });
       await editor.initialize();
 
@@ -138,7 +138,7 @@ describe("CorePlugin - integration", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [CorePlugin],
+      plugins: [],
     });
     await editor.initialize();
     await editor.tick();
