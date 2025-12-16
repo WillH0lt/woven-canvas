@@ -74,7 +74,7 @@ export {
   Controls,
   Frame,
   Keyboard,
-  KeyCode,
+  Key,
   Mouse,
   Screen,
   Pointer,

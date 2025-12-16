@@ -51,28 +51,28 @@ class KeyboardDef extends EditorSingletonDef<typeof KeyboardSchema> {
   /**
    * Check if a key is currently pressed.
    * @param ctx - Editor context
-   * @param keyCode - The keyCode to check (e.g., 65 for 'A')
+   * @param key - The key index to check (use Key.A, Key.Space, etc.)
    */
-  isKeyDown(ctx: Context, keyCode: number): boolean {
-    return getBit(this.read(ctx).keysDown, keyCode);
+  isKeyDown(ctx: Context, key: number): boolean {
+    return getBit(this.read(ctx).keysDown, key);
   }
 
   /**
    * Check if a key was just pressed this frame.
    * @param ctx - Editor context
-   * @param keyCode - The keyCode to check
+   * @param key - The key index to check (use Key.A, Key.Space, etc.)
    */
-  isKeyDownTrigger(ctx: Context, keyCode: number): boolean {
-    return getBit(this.read(ctx).keysDownTrigger, keyCode);
+  isKeyDownTrigger(ctx: Context, key: number): boolean {
+    return getBit(this.read(ctx).keysDownTrigger, key);
   }
 
   /**
    * Check if a key was just released this frame.
    * @param ctx - Editor context
-   * @param keyCode - The keyCode to check
+   * @param key - The key index to check (use Key.A, Key.Space, etc.)
    */
-  isKeyUpTrigger(ctx: Context, keyCode: number): boolean {
-    return getBit(this.read(ctx).keysUpTrigger, keyCode);
+  isKeyUpTrigger(ctx: Context, key: number): boolean {
+    return getBit(this.read(ctx).keysUpTrigger, key);
   }
 }
 
@@ -106,97 +106,240 @@ export function clearBits(buffer: Uint8Array): void {
 }
 
 /**
- * Common key codes for convenience
+ * Mapping from event.code strings to bit indices.
+ * Using event.code instead of event.keyCode for layout-independent key detection.
+ * @internal
  */
-export const KeyCode = {
-  // Letters
-  A: 65,
-  B: 66,
-  C: 67,
-  D: 68,
-  E: 69,
-  F: 70,
-  G: 71,
-  H: 72,
-  I: 73,
-  J: 74,
-  K: 75,
-  L: 76,
-  M: 77,
-  N: 78,
-  O: 79,
-  P: 80,
-  Q: 81,
-  R: 82,
-  S: 83,
-  T: 84,
-  U: 85,
-  V: 86,
-  W: 87,
-  X: 88,
-  Y: 89,
-  Z: 90,
+export const codeToIndex: Record<string, number> = {
+  // Letters (0-25)
+  KeyA: 0,
+  KeyB: 1,
+  KeyC: 2,
+  KeyD: 3,
+  KeyE: 4,
+  KeyF: 5,
+  KeyG: 6,
+  KeyH: 7,
+  KeyI: 8,
+  KeyJ: 9,
+  KeyK: 10,
+  KeyL: 11,
+  KeyM: 12,
+  KeyN: 13,
+  KeyO: 14,
+  KeyP: 15,
+  KeyQ: 16,
+  KeyR: 17,
+  KeyS: 18,
+  KeyT: 19,
+  KeyU: 20,
+  KeyV: 21,
+  KeyW: 22,
+  KeyX: 23,
+  KeyY: 24,
+  KeyZ: 25,
 
-  // Numbers
-  Digit0: 48,
-  Digit1: 49,
-  Digit2: 50,
-  Digit3: 51,
-  Digit4: 52,
-  Digit5: 53,
-  Digit6: 54,
-  Digit7: 55,
-  Digit8: 56,
-  Digit9: 57,
+  // Numbers (26-35)
+  Digit0: 26,
+  Digit1: 27,
+  Digit2: 28,
+  Digit3: 29,
+  Digit4: 30,
+  Digit5: 31,
+  Digit6: 32,
+  Digit7: 33,
+  Digit8: 34,
+  Digit9: 35,
 
-  // Function keys
-  F1: 112,
-  F2: 113,
-  F3: 114,
-  F4: 115,
-  F5: 116,
-  F6: 117,
-  F7: 118,
-  F8: 119,
-  F9: 120,
-  F10: 121,
-  F11: 122,
-  F12: 123,
+  // Function keys (36-47)
+  F1: 36,
+  F2: 37,
+  F3: 38,
+  F4: 39,
+  F5: 40,
+  F6: 41,
+  F7: 42,
+  F8: 43,
+  F9: 44,
+  F10: 45,
+  F11: 46,
+  F12: 47,
 
-  // Modifiers
-  Shift: 16,
-  Control: 17,
-  Alt: 18,
-  Meta: 91, // Cmd on Mac, Windows key on Windows
+  // Modifiers (48-51)
+  ShiftLeft: 48,
+  ShiftRight: 49,
+  ControlLeft: 50,
+  ControlRight: 51,
+  AltLeft: 52,
+  AltRight: 53,
+  MetaLeft: 54,
+  MetaRight: 55,
 
-  // Navigation
-  Escape: 27,
-  Space: 32,
-  Enter: 13,
-  Tab: 9,
-  Backspace: 8,
-  Delete: 46,
-  ArrowLeft: 37,
-  ArrowUp: 38,
-  ArrowRight: 39,
-  ArrowDown: 40,
-  Home: 36,
-  End: 35,
-  PageUp: 33,
-  PageDown: 34,
+  // Navigation (56-71)
+  Escape: 56,
+  Space: 57,
+  Enter: 58,
+  Tab: 59,
+  Backspace: 60,
+  Delete: 61,
+  ArrowLeft: 62,
+  ArrowUp: 63,
+  ArrowRight: 64,
+  ArrowDown: 65,
+  Home: 66,
+  End: 67,
+  PageUp: 68,
+  PageDown: 69,
+  Insert: 70,
 
-  // Punctuation
-  Semicolon: 186,
-  Equal: 187,
-  Comma: 188,
-  Minus: 189,
-  Period: 190,
-  Slash: 191,
-  Backquote: 192,
-  BracketLeft: 219,
-  Backslash: 220,
-  BracketRight: 221,
-  Quote: 222,
+  // Punctuation (72-83)
+  Semicolon: 72,
+  Equal: 73,
+  Comma: 74,
+  Minus: 75,
+  Period: 76,
+  Slash: 77,
+  Backquote: 78,
+  BracketLeft: 79,
+  Backslash: 80,
+  BracketRight: 81,
+  Quote: 82,
+
+  // Numpad (84-99)
+  Numpad0: 84,
+  Numpad1: 85,
+  Numpad2: 86,
+  Numpad3: 87,
+  Numpad4: 88,
+  Numpad5: 89,
+  Numpad6: 90,
+  Numpad7: 91,
+  Numpad8: 92,
+  Numpad9: 93,
+  NumpadAdd: 94,
+  NumpadSubtract: 95,
+  NumpadMultiply: 96,
+  NumpadDivide: 97,
+  NumpadDecimal: 98,
+  NumpadEnter: 99,
 };
 
-export type KeyCode = (typeof KeyCode)[keyof typeof KeyCode];
+/**
+ * Key codes for use with Keyboard.isKeyDown(), isKeyDownTrigger(), isKeyUpTrigger().
+ * These are numeric indices into the bit array, mapped from physical key positions (event.code).
+ */
+export const Key = {
+  // Letters
+  A: codeToIndex.KeyA,
+  B: codeToIndex.KeyB,
+  C: codeToIndex.KeyC,
+  D: codeToIndex.KeyD,
+  E: codeToIndex.KeyE,
+  F: codeToIndex.KeyF,
+  G: codeToIndex.KeyG,
+  H: codeToIndex.KeyH,
+  I: codeToIndex.KeyI,
+  J: codeToIndex.KeyJ,
+  K: codeToIndex.KeyK,
+  L: codeToIndex.KeyL,
+  M: codeToIndex.KeyM,
+  N: codeToIndex.KeyN,
+  O: codeToIndex.KeyO,
+  P: codeToIndex.KeyP,
+  Q: codeToIndex.KeyQ,
+  R: codeToIndex.KeyR,
+  S: codeToIndex.KeyS,
+  T: codeToIndex.KeyT,
+  U: codeToIndex.KeyU,
+  V: codeToIndex.KeyV,
+  W: codeToIndex.KeyW,
+  X: codeToIndex.KeyX,
+  Y: codeToIndex.KeyY,
+  Z: codeToIndex.KeyZ,
+
+  // Numbers
+  Digit0: codeToIndex.Digit0,
+  Digit1: codeToIndex.Digit1,
+  Digit2: codeToIndex.Digit2,
+  Digit3: codeToIndex.Digit3,
+  Digit4: codeToIndex.Digit4,
+  Digit5: codeToIndex.Digit5,
+  Digit6: codeToIndex.Digit6,
+  Digit7: codeToIndex.Digit7,
+  Digit8: codeToIndex.Digit8,
+  Digit9: codeToIndex.Digit9,
+
+  // Function keys
+  F1: codeToIndex.F1,
+  F2: codeToIndex.F2,
+  F3: codeToIndex.F3,
+  F4: codeToIndex.F4,
+  F5: codeToIndex.F5,
+  F6: codeToIndex.F6,
+  F7: codeToIndex.F7,
+  F8: codeToIndex.F8,
+  F9: codeToIndex.F9,
+  F10: codeToIndex.F10,
+  F11: codeToIndex.F11,
+  F12: codeToIndex.F12,
+
+  // Modifiers
+  ShiftLeft: codeToIndex.ShiftLeft,
+  ShiftRight: codeToIndex.ShiftRight,
+  ControlLeft: codeToIndex.ControlLeft,
+  ControlRight: codeToIndex.ControlRight,
+  AltLeft: codeToIndex.AltLeft,
+  AltRight: codeToIndex.AltRight,
+  MetaLeft: codeToIndex.MetaLeft,
+  MetaRight: codeToIndex.MetaRight,
+
+  // Navigation
+  Escape: codeToIndex.Escape,
+  Space: codeToIndex.Space,
+  Enter: codeToIndex.Enter,
+  Tab: codeToIndex.Tab,
+  Backspace: codeToIndex.Backspace,
+  Delete: codeToIndex.Delete,
+  ArrowLeft: codeToIndex.ArrowLeft,
+  ArrowUp: codeToIndex.ArrowUp,
+  ArrowRight: codeToIndex.ArrowRight,
+  ArrowDown: codeToIndex.ArrowDown,
+  Home: codeToIndex.Home,
+  End: codeToIndex.End,
+  PageUp: codeToIndex.PageUp,
+  PageDown: codeToIndex.PageDown,
+  Insert: codeToIndex.Insert,
+
+  // Punctuation
+  Semicolon: codeToIndex.Semicolon,
+  Equal: codeToIndex.Equal,
+  Comma: codeToIndex.Comma,
+  Minus: codeToIndex.Minus,
+  Period: codeToIndex.Period,
+  Slash: codeToIndex.Slash,
+  Backquote: codeToIndex.Backquote,
+  BracketLeft: codeToIndex.BracketLeft,
+  Backslash: codeToIndex.Backslash,
+  BracketRight: codeToIndex.BracketRight,
+  Quote: codeToIndex.Quote,
+
+  // Numpad
+  Numpad0: codeToIndex.Numpad0,
+  Numpad1: codeToIndex.Numpad1,
+  Numpad2: codeToIndex.Numpad2,
+  Numpad3: codeToIndex.Numpad3,
+  Numpad4: codeToIndex.Numpad4,
+  Numpad5: codeToIndex.Numpad5,
+  Numpad6: codeToIndex.Numpad6,
+  Numpad7: codeToIndex.Numpad7,
+  Numpad8: codeToIndex.Numpad8,
+  Numpad9: codeToIndex.Numpad9,
+  NumpadAdd: codeToIndex.NumpadAdd,
+  NumpadSubtract: codeToIndex.NumpadSubtract,
+  NumpadMultiply: codeToIndex.NumpadMultiply,
+  NumpadDivide: codeToIndex.NumpadDivide,
+  NumpadDecimal: codeToIndex.NumpadDecimal,
+  NumpadEnter: codeToIndex.NumpadEnter,
+} as const;
+
+export type Key = (typeof Key)[keyof typeof Key];

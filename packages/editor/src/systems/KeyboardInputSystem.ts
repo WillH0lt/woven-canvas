@@ -1,6 +1,6 @@
 import { getResources, type Context, defineSystem } from "@infinitecanvas/ecs";
 import type { EditorResources } from "../types";
-import { Keyboard, setBit } from "../components/Keyboard";
+import { Keyboard, setBit, codeToIndex } from "../components/Keyboard";
 
 /**
  * Per-instance state for keyboard input
@@ -103,19 +103,20 @@ export const keyboardInputSystem = defineSystem((ctx: Context) => {
       continue;
     }
 
-    const keyCode = event.keyCode;
+    const keyIndex = codeToIndex[event.code];
+    if (keyIndex === undefined) continue; // Unknown key, skip
 
     if (event.type === "keydown") {
       // Check if this is a new press (wasn't down before)
-      const wasDown = getBit(keysDown, keyCode);
+      const wasDown = getBit(keysDown, keyIndex);
       if (!wasDown) {
-        setBit(keysDownTrigger, keyCode, true);
+        setBit(keysDownTrigger, keyIndex, true);
       }
 
-      setBit(keysDown, keyCode, true);
+      setBit(keysDown, keyIndex, true);
     } else if (event.type === "keyup") {
-      setBit(keysDown, keyCode, false);
-      setBit(keysUpTrigger, keyCode, true);
+      setBit(keysDown, keyIndex, false);
+      setBit(keysUpTrigger, keyIndex, true);
     }
 
     // Update modifier state from the event

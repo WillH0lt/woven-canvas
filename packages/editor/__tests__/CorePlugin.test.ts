@@ -155,7 +155,7 @@ describe("CorePlugin - integration", () => {
     // Hold shift while clicking
     domElement.dispatchEvent(
       new KeyboardEvent("keydown", {
-        keyCode: 16, // Shift
+        code: "ShiftLeft",
         shiftKey: true,
         bubbles: true,
       })
