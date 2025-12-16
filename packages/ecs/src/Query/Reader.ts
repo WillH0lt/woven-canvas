@@ -228,6 +228,15 @@ export class QueryReader {
               added.length--;
             }
             seen[entityId] = STATE_REMOVED;
+          } else if (existingState === STATE_CHANGED && wasInCache) {
+            // Changed then removed - remove from changed, add to removed
+            const idx = changed.indexOf(entityId);
+            if (idx !== -1) {
+              changed[idx] = changed[changed.length - 1];
+              changed.length--;
+            }
+            seen[entityId] = STATE_REMOVED;
+            removed.push(entityId);
           } else if (!existingState && wasInCache) {
             // Entity was in cache, now removed
             seen[entityId] = STATE_REMOVED;

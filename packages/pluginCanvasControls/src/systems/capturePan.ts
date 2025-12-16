@@ -26,10 +26,7 @@ const panMachine = setup({
   },
   actions: {
     setDragStart: assign({
-      panStartX: ({ event }) => {
-        console.log("setDragStart", event.worldPosition);
-        return event.worldPosition[0];
-      },
+      panStartX: ({ event }) => event.worldPosition[0],
       panStartY: ({ event }) => event.worldPosition[1],
     }),
 
@@ -92,19 +89,12 @@ const panMachine = setup({
  * Active when: A button mapped to the "hand" tool is held and dragged.
  */
 export const capturePanSystem = defineSystem((ctx) => {
-  console.log(ctx.readerId);
-
   // Get pointer events for buttons mapped to the "hand" tool
   const buttons = Controls.getButtons(ctx, "hand");
 
   const events = getPointerInput(ctx, buttons);
 
   if (events.length === 0) return;
-
-  const pointerUp = events.find((e) => e.type === "pointerUp");
-  if (pointerUp) {
-    console.log("pointerUp", pointerUp.worldPosition);
-  }
 
   // Run machine through events - EditorStateDef.run() handles
   // reading current state, running the machine, and writing back

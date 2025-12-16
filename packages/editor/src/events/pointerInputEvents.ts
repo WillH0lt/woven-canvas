@@ -170,10 +170,6 @@ export function getPointerInput(
   const escapePressed = Keyboard.isKeyDownTrigger(ctx, 27); // Escape key
   const multiTouch = matchingCurrent.length > 1 && matchingAdded.length > 0;
 
-  if (removedPointers.length > 0) {
-    console.log("Multiple pointers detected, but not all are matching.");
-  }
-
   if ((escapePressed || multiTouch) && matchingCurrent.length > 0) {
     // Generate cancel event using the first current pointer
     events.push(createEvent("cancel", matchingCurrent[0]));

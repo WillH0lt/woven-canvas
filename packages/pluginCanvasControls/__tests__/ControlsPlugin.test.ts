@@ -21,7 +21,7 @@ describe("ControlsPlugin", () => {
         x: 0,
         y: 0,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
     return el;
   }
 
@@ -116,7 +116,7 @@ describe("captureZoom system", () => {
         x: 0,
         y: 0,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
     return el;
   }
 
@@ -303,7 +303,7 @@ describe("captureScroll system", () => {
         x: 0,
         y: 0,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
     return el;
   }
 
@@ -449,7 +449,7 @@ describe("capturePan system", () => {
         x: 0,
         y: 0,
         toJSON: () => {},
-      }) as DOMRect;
+      } as DOMRect);
     return el;
   }
 
@@ -532,11 +532,7 @@ describe("capturePan system", () => {
     expect(camera.top).toBe(100);
   });
 
-  // TODO: This test is skipped because there's a complex issue with how the query's
-  // prevEventIndex interacts with multiple consecutive tests. The pointerUp event
-  // detection works correctly in isolation but fails in this test suite due to
-  // query state accumulation across beforeEach/afterEach cycles.
-  it.skip("should stop panning on middle mouse up", async () => {
+  it("should stop panning on middle mouse up", async () => {
     const ctx = editor._getContext()!;
 
     // Middle mouse down
