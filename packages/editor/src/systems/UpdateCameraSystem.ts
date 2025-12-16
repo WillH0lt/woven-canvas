@@ -1,6 +1,5 @@
-import { type Context } from "@infinitecanvas/ecs";
+import { type Context, defineSystem } from "@infinitecanvas/ecs";
 
-import { defineEditorSystem } from "../System";
 import { Camera } from "../components/Camera";
 
 /**
@@ -9,7 +8,7 @@ import { Camera } from "../components/Camera";
  * Currently a placeholder that ensures camera state is valid.
  * Camera animation and controls will be handled by extension-controls.
  */
-export const updateCameraSystem = defineEditorSystem((ctx: Context) => {
+export const updateCameraSystem = defineSystem((ctx: Context) => {
   const camera = Camera.read(ctx);
 
   // Ensure zoom is within valid bounds

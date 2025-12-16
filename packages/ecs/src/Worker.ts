@@ -112,7 +112,6 @@ function handleMessage(
         maxEntities: e.data.maxEntities,
         maxEvents: e.data.maxEvents,
         componentCount: e.data.componentCount,
-        tick: 0,
         threadIndex: e.data.threadIndex,
         threadCount: e.data.threadCount,
         readerId: "worker",
@@ -126,13 +125,12 @@ function handleMessage(
         throw new Error("Entity buffer not initialized");
       }
       const ctx = internalContext.context;
-      const currentEventIndex = ctx.eventBuffer.getWriteIndex();
-      // prevEventIndex stays as-is (from last execution), will be updated after execute
-      ctx.tick++;
+      // Use currEventIndex from message to limit query visibility
+      ctx.currEventIndex = e.data.currEventIndex;
       ctx.threadIndex = threadIndex;
       internalContext.execute(ctx);
       // Update prevEventIndex for next execution
-      ctx.prevEventIndex = currentEventIndex;
+      ctx.prevEventIndex = e.data.currEventIndex;
       sendResult(self, threadIndex);
     }
   } catch (error: any) {

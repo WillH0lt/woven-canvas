@@ -25,8 +25,6 @@ export interface Context {
   maxEvents: number;
   /** Total registered component count */
   componentCount: number;
-  /** Current tick (incremented per execute() call) */
-  tick: number;
   /**
    * Worker thread index (0-based).
    * Always 0 on main thread. In workers, determines partition.
@@ -46,6 +44,12 @@ export interface Context {
    * added/removed/changed based on the previous frame, not all time since last run.
    */
   prevEventIndex: number;
+  /**
+   * Event buffer index at start of current execution. Used by queries to limit
+   * visibility to events that existed before this execute batch started.
+   * if undefined it will use the live event buffer index
+   */
+  currEventIndex?: number;
   /**
    * User-defined resources. Access via getResources<T>(ctx).
    */
@@ -79,19 +83,6 @@ export interface WorkerSystemOptions {
   priority?: WorkerPriority;
 }
 
-import type {
-  BaseSystemClass,
-  MainThreadSystemClass,
-  WorkerSystemClass,
-} from "./System";
-
-export type BaseSystem = BaseSystemClass;
-export type MainThreadSystem = MainThreadSystemClass;
-export type WorkerSystem = WorkerSystemClass;
-
-/** Union of all system types */
-export type System = MainThreadSystem | WorkerSystem;
-
 export type ComponentTransferData = {
   componentId: number;
   buffer: ComponentBuffer<any>;
@@ -121,6 +112,7 @@ export interface InitMessage {
 export interface ExecuteMessage {
   type: "execute";
   threadIndex: number;
+  currEventIndex: number;
 }
 
 /** All messages received by worker */

@@ -1,11 +1,12 @@
 import type {
   ComponentTransferMap,
   Context,
-  WorkerSystem,
   InitMessage,
   ExecuteMessage,
   WorkerOutgoingMessage,
 } from "./types";
+
+import type { WorkerSystem } from "./System";
 
 /**
  * WorkerManager - manages a pool of web workers for parallel execution
@@ -34,7 +35,11 @@ export class WorkerManager {
    * @param data - Optional data to pass to each worker
    * @returns Promise that resolves when all batches complete
    */
-  async execute(workerSystem: WorkerSystem, ctx: Context): Promise<void> {
+  async execute(
+    workerSystem: WorkerSystem,
+    ctx: Context,
+    currEventIndex: number
+  ): Promise<void> {
     const promises = [];
     const threads = workerSystem.threads;
 
@@ -47,7 +52,9 @@ export class WorkerManager {
 
     // Execute tasks (workers will be initialized on-demand)
     for (let i = 0; i < threads; i++) {
-      promises.push(this.executeTask(ctx, workerSystem.path, i, threads));
+      promises.push(
+        this.executeTask(ctx, workerSystem.path, i, threads, currEventIndex)
+      );
     }
 
     await Promise.all(promises);
@@ -127,7 +134,8 @@ export class WorkerManager {
     ctx: Context,
     workerPath: string,
     threadIndex: number,
-    threadCount: number
+    threadCount: number,
+    currEventIndex: number
   ): Promise<any> {
     const worker = await this.getWorker(workerPath);
 
@@ -167,6 +175,7 @@ export class WorkerManager {
       const executeMessage: ExecuteMessage = {
         type: "execute",
         threadIndex,
+        currEventIndex,
       };
       worker.postMessage(executeMessage);
     });

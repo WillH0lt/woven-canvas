@@ -6,7 +6,6 @@ export type {
   EditorResources,
   SyncBehavior,
   EditorComponentMeta,
-  SystemFn,
 } from "./types";
 
 // Singleton base class
@@ -15,6 +14,13 @@ export {
   defineEditorSingleton,
   type EditorSingletonOptions,
 } from "./EditorSingletonDef";
+
+// State machine singleton
+export {
+  EditorStateDef,
+  defineEditorState,
+  type StateSchema,
+} from "./EditorStateDef";
 
 // Component base classes
 export {
@@ -39,9 +45,6 @@ export { type EditorPlugin } from "./plugin";
 // Command system
 export { defineCommand, type CommandDef } from "./command";
 
-// System definition
-export { defineEditorSystem } from "./System";
-
 // Editor class
 export { Editor, type EditorOptions, type QueryCallback } from "./Editor";
 
@@ -58,6 +61,7 @@ export {
   type Context,
   type EntityId,
   type QueryDef,
+  type System,
 } from "@infinitecanvas/ecs";
 
 // Plugin
@@ -67,6 +71,8 @@ export { CorePlugin } from "./CorePlugin";
 export {
   // Camera
   Camera,
+  // Controls
+  Controls,
   // Keyboard
   Keyboard,
   KeyCode,
@@ -79,3 +85,21 @@ export {
   PointerButton,
   PointerType,
 } from "./components";
+
+// Events
+export {
+  // Types
+  type PointerInput,
+  type PointerInputType,
+  type PointerInputOptions,
+  type MouseInput,
+  type MouseInputType,
+  // Pointer input
+  getPointerInput,
+  clearPointerTrackingState,
+  // Mouse input
+  getMouseInput,
+} from "./events";
+
+// State machine utilities
+export { runMachine, type MachineResult } from "./machine";

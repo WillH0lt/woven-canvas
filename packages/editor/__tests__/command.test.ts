@@ -1,10 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import {
-  Editor,
-  defineCommand,
-  defineEditorSystem,
-  type EditorPlugin,
-} from "../src";
+import { Editor, defineCommand, defineSystem, type EditorPlugin } from "../src";
 
 // Mock DOM element for tests
 const mockDomElement = document.createElement("div");
@@ -44,7 +39,7 @@ describe("Command System", () => {
       const plugin: EditorPlugin = {
         name: "test",
         updateSystems: [
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const { payload } of SelectAll.iter(ctx)) {
               receivedPayloads.push(payload);
             }
@@ -59,7 +54,7 @@ describe("Command System", () => {
       editor.command(SelectAll, { filter: "blocks" });
 
       // Run tick to process
-      editor.tick();
+      await editor.tick();
 
       expect(receivedPayloads).toEqual([{ filter: "blocks" }]);
     });
@@ -71,7 +66,7 @@ describe("Command System", () => {
       const plugin: EditorPlugin = {
         name: "test",
         updateSystems: [
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const _ of Undo.iter(ctx)) {
               undoCount++;
             }
@@ -85,7 +80,7 @@ describe("Command System", () => {
       // Spawn void command (no payload argument needed)
       editor.command(Undo);
 
-      editor.tick();
+      await editor.tick();
 
       expect(undoCount).toBe(1);
     });
@@ -97,7 +92,7 @@ describe("Command System", () => {
       const plugin: EditorPlugin = {
         name: "test",
         updateSystems: [
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const { payload } of AddItem.iter(ctx)) {
               receivedIds.push(payload.id);
             }
@@ -113,7 +108,7 @@ describe("Command System", () => {
       editor.command(AddItem, { id: 2 });
       editor.command(AddItem, { id: 3 });
 
-      editor.tick();
+      await editor.tick();
 
       expect(receivedIds).toEqual([1, 2, 3]);
     });
@@ -128,12 +123,12 @@ describe("Command System", () => {
       const plugin: EditorPlugin = {
         name: "test",
         updateSystems: [
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const { payload } of CmdA.iter(ctx)) {
               resultsA.push(payload.a);
             }
           }),
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const { payload } of CmdB.iter(ctx)) {
               resultsB.push(payload.b);
             }
@@ -148,7 +143,7 @@ describe("Command System", () => {
       editor.command(CmdB, { b: 42 });
       editor.command(CmdA, { a: "world" });
 
-      editor.tick();
+      await editor.tick();
 
       expect(resultsA).toEqual(["hello", "world"]);
       expect(resultsB).toEqual([42]);
@@ -163,7 +158,7 @@ describe("Command System", () => {
       const plugin: EditorPlugin = {
         name: "test",
         updateSystems: [
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             let count = 0;
             for (const _ of TestCmd.iter(ctx)) {
               count++;
@@ -178,10 +173,10 @@ describe("Command System", () => {
 
       // Frame 1: spawn a command
       editor.command(TestCmd, { value: 1 });
-      editor.tick();
+      await editor.tick();
 
       // Frame 2: no new command spawned
-      editor.tick();
+      await editor.tick();
 
       // Frame 1 should see 1 command, Frame 2 should see 0
       expect(counts).toEqual([1, 0]);
@@ -194,7 +189,7 @@ describe("Command System", () => {
       const plugin: EditorPlugin = {
         name: "test",
         updateSystems: [
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const { payload } of TestCmd.iter(ctx)) {
               allPayloads.push(payload.data);
             }
@@ -207,11 +202,11 @@ describe("Command System", () => {
 
       // Frame 1
       editor.command(TestCmd, { data: "frame1" });
-      editor.tick();
+      await editor.tick();
 
       // Frame 2
       editor.command(TestCmd, { data: "frame2" });
-      editor.tick();
+      await editor.tick();
 
       // Each frame should only see its own command
       expect(allPayloads).toEqual(["frame1", "frame2"]);
@@ -229,7 +224,7 @@ describe("Command System", () => {
         name: "test",
         updateSystems: [
           // First system spawns ResponseCmd when it sees TriggerCmd
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const _ of TriggerCmd.iter(ctx)) {
               // Spawn directly using ctx - this creates the entity mid-frame
               // The .added() query won't see it until next tick's sync
@@ -237,7 +232,7 @@ describe("Command System", () => {
             }
           }),
           // Second system collects responses
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const { payload } of ResponseCmd.iter(ctx)) {
               responses.push(payload.triggered);
             }
@@ -250,7 +245,7 @@ describe("Command System", () => {
 
       // Frame 1: TriggerCmd spawns ResponseCmd mid-frame
       editor.command(TriggerCmd);
-      editor.tick();
+      await editor.tick();
 
       // Commands spawned mid-frame are cleaned up at end of frame,
       // so they won't be seen. This is expected ECS behavior.
@@ -265,7 +260,7 @@ describe("Command System", () => {
       const plugin: EditorPlugin = {
         name: "test",
         updateSystems: [
-          defineEditorSystem((ctx) => {
+          defineSystem((ctx) => {
             for (const { payload } of TestCmd.iter(ctx)) {
               values.push(payload.value);
             }
@@ -278,7 +273,7 @@ describe("Command System", () => {
 
       // editor.command uses nextTick, so command is spawned at start of tick
       editor.command(TestCmd, { value: 42 });
-      editor.tick();
+      await editor.tick();
 
       expect(values).toEqual([42]);
     });

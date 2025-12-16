@@ -9,7 +9,10 @@ import {
   removeComponent,
   hasComponent,
   defineQuery,
-} from "../src/index";
+  defineSystem,
+} from "../src";
+
+import { nextFrame } from "../src/Context";
 
 describe("World", () => {
   describe("World Creation", () => {
@@ -954,24 +957,6 @@ describe("World", () => {
       expect(callbackExecuted).toBe(true);
     });
 
-    it("should provide context to callback", () => {
-      const Position = defineComponent({
-        x: field.float32(),
-        y: field.float32(),
-      });
-
-      const world = new World([Position]);
-      const ctx = world._getContext();
-
-      let receivedCtx: any = null;
-      world.nextSync((syncCtx) => {
-        receivedCtx = syncCtx;
-      });
-
-      world.sync();
-      expect(receivedCtx).toBe(ctx);
-    });
-
     it("should execute multiple callbacks in order", () => {
       const world = new World([]);
       const order: number[] = [];
@@ -1085,6 +1070,325 @@ describe("World", () => {
 
       // Subscriber should see the value written by nextSync callback
       expect(xValueInSubscriber).toBe(999);
+    });
+  });
+
+  describe("currEventIndex - System isolation within execute batch", () => {
+    it("should prevent systems from seeing entities in added() created by earlier systems in the same execute batch", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      const positionQuery = defineQuery((q) => q.with(Position));
+
+      // Track what each system sees in added()
+      const system1Added: number[] = [];
+      const system2Added: number[] = [];
+
+      // System 1: Creates an entity
+      const system1 = defineSystem((ctx) => {
+        // Record what we see BEFORE creating
+        system1Added.length = 0;
+        system1Added.push(...positionQuery.added(ctx));
+
+        // Create a new entity
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position, { x: 100, y: 200 });
+      });
+
+      // System 2: Should NOT see the entity created by system1 in added()
+      const system2 = defineSystem((ctx) => {
+        system2Added.length = 0;
+        system2Added.push(...positionQuery.added(ctx));
+      });
+
+      // Execute both systems in the same batch
+      await world.execute(system1, system2);
+
+      // System 1 should see nothing in added() (no entities existed before this frame)
+      expect(system1Added).toHaveLength(0);
+
+      // System 2 should ALSO see nothing in added() - the entity created by system1
+      // should not be visible in added() until the NEXT execute batch
+      expect(system2Added).toHaveLength(0);
+
+      // Now execute again - both systems should see the entity in added()
+      await world.execute(system1, system2);
+
+      // System 1 should now see 1 entity in added() (created in previous batch)
+      expect(system1Added).toHaveLength(1);
+
+      // System 2 should see the same entity in added() (from previous batch)
+      expect(system2Added).toHaveLength(1);
+    });
+
+    it("should allow queries called after execute to see entities created during execute", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      const positionQuery = defineQuery((q) => q.with(Position));
+
+      // System that creates an entity
+      const creatorSystem = defineSystem((ctx) => {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position, { x: 50, y: 50 });
+      });
+
+      // Before execute, no entities
+      expect(positionQuery.current(ctx)).toHaveLength(0);
+
+      // Execute the system
+      await world.execute(creatorSystem);
+
+      // After execute, the entity should be visible via direct query on ctx
+      // (currEventIndex should be updated to allow seeing new entities)
+      expect(positionQuery.current(ctx)).toHaveLength(1);
+    });
+
+    it("should prevent removed() from seeing removals within the same execute batch", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      // Create an entity before the systems run
+      const existingEntity = createEntity(ctx);
+      addComponent(ctx, existingEntity, Position, { x: 0, y: 0 });
+
+      const positionQuery = defineQuery((q) => q.with(Position));
+
+      // Track what system sees in removed()
+      const systemRemoved: number[] = [];
+
+      // Initialize the query so it tracks the existing entity
+      world.sync();
+
+      // System that checks removed() and then removes the entity
+      const system = defineSystem((ctx) => {
+        systemRemoved.length = 0;
+        systemRemoved.push(...positionQuery.removed(ctx));
+
+        // Remove the entity
+        removeEntity(ctx, existingEntity);
+      });
+
+      // Execute the system
+      await world.execute(system);
+
+      // Should not report it as removed yet (removal event is after currEventIndex)
+      expect(systemRemoved).toHaveLength(0);
+
+      // Next execute batch should see the removal in removed()
+      await world.execute(system);
+
+      expect(systemRemoved).toHaveLength(1);
+    });
+
+    it("should not allow sync() callbacks to see entities created within the callback", () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      const positionQuery = defineQuery((q) => q.with(Position));
+
+      let entityCreatedInCallback: number = -1;
+      let queryResultsInCallback: number[] = [];
+
+      // Schedule a callback that creates an entity
+      world.nextSync((ctx) => {
+        entityCreatedInCallback = createEntity(ctx);
+        addComponent(ctx, entityCreatedInCallback, Position, { x: 10, y: 20 });
+
+        // Query immediately after creation within the same callback
+        queryResultsInCallback = [...positionQuery.current(ctx)];
+      });
+
+      // Before sync, nothing exists
+      expect(positionQuery.current(ctx)).toHaveLength(0);
+
+      // Run sync
+      world.sync();
+
+      // The callback should have been able to see the entity it created
+      // because currEventIndex is set to the current write index for sync
+      expect(queryResultsInCallback).toHaveLength(0);
+
+      // After sync, the entity should also be visible from outside
+      nextFrame(ctx);
+      expect(positionQuery.current(ctx)).toHaveLength(1);
+    });
+
+    it("should handle multiple systems creating entities - added() shows only previous batch entities", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const Velocity = defineComponent({
+        dx: field.float32(),
+        dy: field.float32(),
+      });
+
+      const world = new World([Position, Velocity]);
+
+      const positionOnlyQuery = defineQuery((q) =>
+        q.with(Position).without(Velocity)
+      );
+      const movingQuery = defineQuery((q) => q.with(Position, Velocity));
+
+      const results: {
+        positionOnlyAdded: number[];
+        movingAdded: number[];
+      }[] = [];
+
+      // System 1: Creates position-only entities
+      const system1 = defineSystem((ctx) => {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position, { x: 1, y: 1 });
+      });
+
+      // System 2: Creates moving entities (Position + Velocity)
+      const system2 = defineSystem((ctx) => {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position, { x: 2, y: 2 });
+        addComponent(ctx, e, Velocity, { dx: 1, dy: 1 });
+      });
+
+      // System 3: Records added() results
+      const system3 = defineSystem((ctx) => {
+        results.push({
+          positionOnlyAdded: [...positionOnlyQuery.added(ctx)],
+          movingAdded: [...movingQuery.added(ctx)],
+        });
+      });
+
+      // Execute all systems 3 times
+      await world.execute(system1, system2, system3);
+      await world.execute(system1, system2, system3);
+      await world.execute(system1, system2, system3);
+
+      // Frame 1: system3 sees nothing in added() (entities created this frame not visible)
+      expect(results[0].positionOnlyAdded).toHaveLength(0);
+      expect(results[0].movingAdded).toHaveLength(0);
+
+      // Frame 2: system3 sees 1 entity each in added() (from frame 1)
+      expect(results[1].positionOnlyAdded).toHaveLength(1);
+      expect(results[1].movingAdded).toHaveLength(1);
+
+      // Frame 3: system3 sees 1 entity each in added() (from frame 2 only, not cumulative)
+      expect(results[2].positionOnlyAdded).toHaveLength(1);
+      expect(results[2].movingAdded).toHaveLength(1);
+    });
+
+    it("should prevent changed() from seeing changes made by earlier systems in the same batch", async () => {
+      const TrackedPosition = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([TrackedPosition]);
+      const ctx = world._getContext();
+
+      // Create an entity before systems run
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, TrackedPosition, { x: 0, y: 0 });
+
+      const trackedQuery = defineQuery((q) => q.tracking(TrackedPosition));
+
+      // Initialize the query
+      world.sync();
+
+      const system1Changes: number[] = [];
+      const system2Changes: number[] = [];
+
+      // System 1: Modifies the component
+      const system1 = defineSystem((ctx) => {
+        system1Changes.push(...trackedQuery.changed(ctx));
+        const writer = TrackedPosition.write(ctx, entity);
+        writer.x = 999;
+      });
+
+      // System 2: Should NOT see the change from system1
+      const system2 = defineSystem((ctx) => {
+        system2Changes.push(...trackedQuery.changed(ctx));
+      });
+
+      // Execute both systems
+      await world.execute(system1, system2);
+
+      // Neither system should see changes (changes happened during this batch)
+      expect(system1Changes).toHaveLength(0);
+      expect(system2Changes).toHaveLength(0);
+
+      // Next batch should see the change
+      await world.execute(system1, system2);
+
+      // Now both should see the change from the previous batch
+      expect(system1Changes).toHaveLength(1);
+      expect(system2Changes).toHaveLength(1);
+    });
+
+    it("should correctly handle currEventIndex across sync and execute", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      const positionQuery = defineQuery((q) => q.with(Position));
+
+      // Create entity via nextSync
+      world.nextSync((ctx) => {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position, { x: 1, y: 1 });
+      });
+
+      // Before sync, query sees nothing
+      expect(positionQuery.current(ctx)).toHaveLength(0);
+
+      // After sync, query sees the entity
+      world.sync();
+      expect(positionQuery.current(ctx)).toHaveLength(1);
+
+      let systemResult: number[] = [];
+      const system = defineSystem((ctx) => {
+        systemResult = [...positionQuery.current(ctx)];
+      });
+
+      // Execute should also see the entity
+      await world.execute(system);
+      expect(systemResult).toHaveLength(1);
+
+      // Create another entity during execute
+      const creatorSystem = defineSystem((ctx) => {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Position, { x: 2, y: 2 });
+      });
+
+      await world.execute(creatorSystem, system);
+
+      // System in same batch should still see only 1 entity
+      expect(systemResult).toHaveLength(1);
+
+      // After execute, direct query should see 2 entities
+      expect(positionQuery.current(ctx)).toHaveLength(2);
     });
   });
 });

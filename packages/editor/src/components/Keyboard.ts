@@ -1,8 +1,5 @@
-import {
-  EditorSingletonDef,
-  field,
-  type Context,
-} from "@infinitecanvas/editor";
+import { field, type Context } from "@infinitecanvas/ecs";
+import { EditorSingletonDef } from "../EditorSingletonDef";
 
 /** Binary size for key states (32 bytes = 256 bits = covers all keycodes) */
 const KEY_BINARY_SIZE = 32;

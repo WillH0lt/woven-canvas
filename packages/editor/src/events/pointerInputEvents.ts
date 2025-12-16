@@ -1,8 +1,4 @@
-import {
-  defineQuery,
-  type Context,
-  type EntityId,
-} from "@infinitecanvas/editor";
+import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
 
 import { Camera, Pointer, Keyboard, type PointerButton } from "../components";
 import type { PointerInput, PointerInputOptions } from "./types";
@@ -82,7 +78,7 @@ function distance(a: [number, number], b: [number, number]): number {
  * ```typescript
  * import { getPointerInput, runMachine } from '@infinitecanvas/plugin-xstate';
  *
- * const panSystem = defineEditorSystem((ctx) => {
+ * const panSystem = defineSystem((ctx) => {
  *   const events = getPointerInput(ctx, ['middle']);
  *   if (events.length === 0) return;
  *
@@ -140,6 +136,7 @@ export function getPointerInput(
 
     return {
       type,
+      ctx,
       screenPosition: screenPos,
       worldPosition: worldPos,
       velocity: [pointer._velocity[0], pointer._velocity[1]],
@@ -172,6 +169,10 @@ export function getPointerInput(
   // Check for cancel conditions
   const escapePressed = Keyboard.isKeyDownTrigger(ctx, 27); // Escape key
   const multiTouch = matchingCurrent.length > 1 && matchingAdded.length > 0;
+
+  if (removedPointers.length > 0) {
+    console.log("Multiple pointers detected, but not all are matching.");
+  }
 
   if ((escapePressed || multiTouch) && matchingCurrent.length > 0) {
     // Generate cancel event using the first current pointer

@@ -74,7 +74,7 @@ describe("CorePlugin", () => {
       await editor.initialize();
 
       // First tick should initialize screen dimensions
-      editor.tick();
+      await editor.tick();
 
       const ctx = editor._getContext()!;
       const screen = Screen.read(ctx);
@@ -141,7 +141,7 @@ describe("CorePlugin - integration", () => {
       plugins: [CorePlugin],
     });
     await editor.initialize();
-    editor.tick();
+    await editor.tick();
   });
 
   afterEach(async () => {
@@ -149,7 +149,7 @@ describe("CorePlugin - integration", () => {
     document.body.removeChild(domElement);
   });
 
-  it("should handle combined keyboard and pointer input", () => {
+  it("should handle combined keyboard and pointer input", async () => {
     const ctx = editor._getContext()!;
 
     // Hold shift while clicking
@@ -172,7 +172,7 @@ describe("CorePlugin - integration", () => {
       })
     );
 
-    editor.tick();
+    await editor.tick();
 
     const keyboard = Keyboard.read(ctx);
     expect(keyboard.shiftDown).toBe(true);
@@ -181,7 +181,7 @@ describe("CorePlugin - integration", () => {
     expect(pointerQuery.current(ctx).length).toBe(1);
   });
 
-  it("should handle rapid input sequences", () => {
+  it("should handle rapid input sequences", async () => {
     const ctx = editor._getContext()!;
 
     // Multiple events in one frame
@@ -195,7 +195,7 @@ describe("CorePlugin - integration", () => {
       );
     }
 
-    editor.tick();
+    await editor.tick();
 
     // Should have processed all events, final position should be last event
     const mouse = Mouse.read(ctx);

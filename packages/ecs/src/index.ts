@@ -29,8 +29,9 @@ export {
 export {
   defineSystem,
   defineWorkerSystem,
-  type MainThreadSystemClass,
-  type WorkerSystemClass,
+  type System,
+  type MainThreadSystem,
+  type WorkerSystem,
 } from "./System";
 export type { Context, EntityId } from "./types";
 export { defineQuery, type QueryDef, type QueryOptions } from "./Query";

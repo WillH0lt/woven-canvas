@@ -45,11 +45,4 @@ export interface EditorComponentMeta {
   sync: SyncBehavior;
 }
 
-/**
- * System function signature.
- * Systems receive the ECS Context directly.
- * Access editor resources via getResources<EditorResources>(ctx).
- */
-export type SystemFn = (ctx: Context) => void;
-
 export type SystemPhase = "input" | "capture" | "update" | "render";

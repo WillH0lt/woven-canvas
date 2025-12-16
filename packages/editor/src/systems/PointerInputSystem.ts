@@ -1,12 +1,12 @@
 import {
-  defineEditorSystem,
   createEntity,
   removeEntity,
   addComponent,
   getResources,
+  defineSystem,
   type Context,
-  type EditorResources,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/ecs";
+import type { EditorResources } from "../types";
 
 import { Pointer, addPointerSample } from "../components/Pointer";
 import { Screen } from "../components/Screen";
@@ -163,7 +163,7 @@ export function detachPointerListeners(domElement: HTMLElement): void {
  * Creates a Pointer entity on pointerdown and deletes it on pointerup.
  * This allows multiple simultaneous pointers (for touch).
  */
-export const pointerInputSystem = defineEditorSystem((ctx: Context) => {
+export const pointerInputSystem = defineSystem((ctx: Context) => {
   const resources = getResources<EditorResources>(ctx);
   const { domElement } = resources;
   const state = instanceState.get(domElement);
@@ -237,6 +237,7 @@ export const pointerInputSystem = defineEditorSystem((ctx: Context) => {
         // Remove entity
         removeEntity(ctx, entityId);
         state.pointerEntityMap.delete(event.pointerId);
+
         break;
       }
     }

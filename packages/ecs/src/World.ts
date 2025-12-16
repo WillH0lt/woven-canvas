@@ -3,8 +3,9 @@ import { Component, ComponentDef, SingletonDef } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer, EventType } from "./EventBuffer";
 import { Pool } from "./Pool";
-import { type QueryDef } from "./Query";
-import type { System, Context } from "./types";
+import type { QueryDef } from "./Query";
+import type { System } from "./System";
+import type { Context } from "./types";
 
 /** Query subscription callback */
 export type QuerySubscribeCallback = (
@@ -83,6 +84,7 @@ export class World {
   private componentIdToDef: Map<number, ComponentDef<any> | SingletonDef<any>> =
     new Map();
   private nextSyncCallbacks: NextSyncCallback[] = [];
+  private prevSyncEventIndex = 0;
 
   /**
    * Create a new world instance
@@ -143,7 +145,6 @@ export class World {
       maxEvents,
       componentCount,
       pool: Pool.create(maxEntities),
-      tick: 0,
       threadIndex: 0,
       threadCount: 1,
       readerId: `world_${this.worldId}`,
@@ -171,8 +172,6 @@ export class World {
    */
   async execute(...systems: System[]): Promise<void> {
     const ctx = this.context;
-    ctx.tick++;
-
     const currentEventIndex = ctx.eventBuffer.getWriteIndex();
 
     for (let i = 0; i < systems.length; i++) {
@@ -193,7 +192,7 @@ export class World {
     );
 
     const promises = sortedWorkerSystems.map((system) =>
-      this.workerManager.execute(system, ctx)
+      this.workerManager.execute(system, ctx, currentEventIndex)
     );
 
     for (const system of mainThreadSystems) {
@@ -204,6 +203,7 @@ export class World {
         ...ctx,
         readerId,
         prevEventIndex,
+        currEventIndex: currentEventIndex,
       });
     }
 
@@ -308,32 +308,36 @@ export class World {
    * ```
    */
   sync(): void {
-    this.context.tick++;
+    const currEventIndex = this.context.eventBuffer.getWriteIndex();
 
     if (this.nextSyncCallbacks.length > 0) {
       const callbacks = this.nextSyncCallbacks;
       this.nextSyncCallbacks = [];
       for (const callback of callbacks) {
-        callback(this.context);
+        callback({
+          ...this.context,
+          prevEventIndex: this.prevSyncEventIndex,
+          currEventIndex,
+        });
       }
+
+      this.prevSyncEventIndex = currEventIndex;
     }
 
     if (this.subscribers.length === 0) {
       return;
     }
 
-    this.context.tick++;
-    const currentEventIndex = this.context.eventBuffer.getWriteIndex();
-
     for (const subscriber of this.subscribers) {
       const ctx = {
         ...this.context,
         readerId: subscriber.readerId,
         prevEventIndex: subscriber.prevEventIndex,
+        currEventIndex,
       };
 
       // Update subscriber's event index for next sync
-      subscriber.prevEventIndex = currentEventIndex;
+      subscriber.prevEventIndex = currEventIndex;
 
       const queryDef = subscriber.queryDef;
 

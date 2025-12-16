@@ -80,7 +80,7 @@ export interface CommandDef<T> {
  * editor.command(Undo);
  *
  * // React in a system
- * DefineEditorSystem("update", (ctx) => {
+ * defineSystem("update", (ctx) => {
  *   for (const { payload } of SelectAll.iter(ctx)) {
  *     selectAllBlocks(ctx, payload.filter);
  *   }

@@ -10,7 +10,10 @@ import { SINGLETON_ENTITY_ID } from "../Component";
  */
 export class QueryReader {
   private lastIndex: number;
-  private lastTick: number = -1;
+
+  // Track the last processed event range to avoid reprocessing
+  private lastPrevEventIndex: number = -1;
+  private lastCurrEventIndex: number = -1;
 
   // Event range for cache updates (all events since last read)
   private prevExecutionIndex: number = 0;
@@ -33,20 +36,28 @@ export class QueryReader {
    * Check for new events and update the cache.
    */
   updateCache(ctx: Context, cache: QueryCache, masks: QueryMasks): void {
-    if (ctx.tick === this.lastTick) {
+    // currEventIndex limits visibility to events before execute batch started.
+    // undefined means "use live write index" for direct query calls outside execute/sync.
+    const currentIndex = ctx.currEventIndex ?? ctx.eventBuffer.getWriteIndex();
+    const prevIndex = ctx.prevEventIndex;
+
+    // Skip if we've already processed this exact event range
+    if (
+      prevIndex === this.lastPrevEventIndex &&
+      currentIndex === this.lastCurrEventIndex
+    ) {
       return;
     }
 
-    // Reset for new tick
+    // Reset for new event range
     this.added = [];
     this.removed = [];
     this.changed = [];
-    this.lastTick = ctx.tick;
-
-    const currentIndex = ctx.eventBuffer.getWriteIndex();
+    this.lastPrevEventIndex = prevIndex;
+    this.lastCurrEventIndex = currentIndex;
 
     this.prevExecutionIndex = this.lastIndex;
-    this.prevFrameIndex = ctx.prevEventIndex;
+    this.prevFrameIndex = prevIndex;
 
     this.toIndex = currentIndex;
     this.lastIndex = currentIndex;
@@ -60,18 +71,25 @@ export class QueryReader {
    * Singleton queries don't use the cache, so we only process CHANGED events.
    */
   updateSingletonChanged(ctx: Context, masks: QueryMasks): void {
-    if (ctx.tick === this.lastTick) {
-      return; // Already processed this tick
+    // Use currEventIndex if set, otherwise use live write index
+    const currentIndex = ctx.currEventIndex ?? ctx.eventBuffer.getWriteIndex();
+    const prevIndex = ctx.prevEventIndex;
+
+    // Skip if we've already processed this exact event range
+    if (
+      prevIndex === this.lastPrevEventIndex &&
+      currentIndex === this.lastCurrEventIndex
+    ) {
+      return;
     }
 
-    // Reset for new tick
+    // Reset for new event range
     this.changed = [];
-    this.lastTick = ctx.tick;
-
-    const currentIndex = ctx.eventBuffer.getWriteIndex();
+    this.lastPrevEventIndex = prevIndex;
+    this.lastCurrEventIndex = currentIndex;
 
     // Results range: only events since prevEventIndex (last frame's events)
-    this.prevFrameIndex = ctx.prevEventIndex;
+    this.prevFrameIndex = prevIndex;
     this.toIndex = currentIndex;
     this.lastIndex = currentIndex;
 
@@ -185,6 +203,7 @@ export class QueryReader {
       // Check if this event is within the results range (last frame only)
       const inResultsRange = eventIndex >= prevFrameIndex;
 
+      // console.log(dataIndex);
       const entityId = Atomics.load(dataView, dataIndex);
       const packedData = Atomics.load(dataView, dataIndex + 1);
       const eventType = packedData & 0xff;

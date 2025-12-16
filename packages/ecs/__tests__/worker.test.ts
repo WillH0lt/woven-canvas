@@ -6,8 +6,6 @@ import {
   createEntity,
   addComponent,
 } from "../src/index";
-import { EntityBuffer } from "../src/EntityBuffer";
-import { EventBuffer } from "../src/EventBuffer";
 import { Pool } from "../src/Pool";
 import { setupWorker, __resetWorkerState } from "../src/Worker";
 import type {
@@ -180,6 +178,7 @@ describe("Worker", () => {
       const executeMessage: ExecuteMessage = {
         type: "execute",
         threadIndex: 1,
+        currEventIndex: ctx.eventBuffer.getWriteIndex(),
       };
 
       mockSelf.onmessage!({
@@ -212,6 +211,7 @@ describe("Worker", () => {
       const executeMessage: ExecuteMessage = {
         type: "execute",
         threadIndex: 1,
+        currEventIndex: 0,
       };
 
       mockSelf.onmessage!({
@@ -281,6 +281,7 @@ describe("Worker", () => {
       const executeMessage: ExecuteMessage = {
         type: "execute",
         threadIndex: 2,
+        currEventIndex: ctx.eventBuffer.getWriteIndex(),
       };
 
       mockSelf.onmessage!({
@@ -346,6 +347,7 @@ describe("Worker", () => {
       const executeMessage: ExecuteMessage = {
         type: "execute",
         threadIndex: 1,
+        currEventIndex: ctx.eventBuffer.getWriteIndex(),
       };
 
       mockSelf.onmessage!({
@@ -413,6 +415,7 @@ describe("Worker", () => {
       const executeMessage: ExecuteMessage = {
         type: "execute",
         threadIndex: 1,
+        currEventIndex: ctx.eventBuffer.getWriteIndex(),
       };
 
       mockSelf.onmessage!({
@@ -425,66 +428,6 @@ describe("Worker", () => {
       const readData = workerComponent.read(eid);
       expect(readData.x).toBeCloseTo(42);
       expect(readData.y).toBeCloseTo(24);
-    });
-  });
-
-  describe("Tick Management", () => {
-    it("should increment tick on each execute", () => {
-      const ticks: number[] = [];
-      const execute = vi.fn().mockImplementation((ctx: Context) => {
-        ticks.push(ctx.tick);
-      });
-
-      setupWorker(execute);
-
-      // Create world
-      const TestComp = defineComponent({
-        x: field.float32(),
-      });
-
-      const world = new World([TestComp]);
-      const ctx = world._getContext();
-
-      // Create component transfer data
-      const componentTransferMap: ComponentTransferMap = {};
-      for (const [name, component] of Object.entries(ctx.components)) {
-        componentTransferMap[name] = {
-          name,
-          componentId: component.componentId,
-          buffer: component.buffer,
-          schema: component.schema,
-          isSingleton: component.isSingleton,
-        };
-      }
-
-      const pool = Pool.create(ctx.maxEntities);
-
-      const initMessage: InitMessage = {
-        type: "init",
-        threadIndex: 1,
-        threadCount: 1,
-        entitySAB: ctx.entityBuffer.getBuffer() as SharedArrayBuffer,
-        eventSAB: ctx.eventBuffer.getBuffer() as SharedArrayBuffer,
-        poolSAB: pool.getBuffer(),
-        poolBucketCount: pool.getBucketCount(),
-        poolSize: pool.getSize(),
-        componentTransferMap,
-        maxEntities: ctx.maxEntities,
-        maxEvents: ctx.maxEvents,
-        componentCount: ctx.componentCount,
-      };
-
-      mockSelf.onmessage!({ data: initMessage } as MessageEvent<InitMessage>);
-
-      // Execute multiple times
-      for (let i = 0; i < 3; i++) {
-        mockSelf.onmessage!({
-          data: { type: "execute", threadIndex: i + 2 } as ExecuteMessage,
-        } as MessageEvent<ExecuteMessage>);
-      }
-
-      // Each execute should have an incrementing tick
-      expect(ticks).toEqual([1, 2, 3]);
     });
   });
 

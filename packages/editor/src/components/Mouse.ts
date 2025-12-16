@@ -1,8 +1,5 @@
-import {
-  EditorSingletonDef,
-  field,
-  type Context,
-} from "@infinitecanvas/editor";
+import { field, type Context } from "@infinitecanvas/ecs";
+import { EditorSingletonDef } from "../EditorSingletonDef";
 
 const MouseSchema = {
   /** Current mouse position relative to the editor element [x, y] */

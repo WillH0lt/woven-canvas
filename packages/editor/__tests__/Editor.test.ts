@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   Editor,
-  defineEditorSystem,
+  defineSystem,
   getResources,
   type EditorPlugin,
   type StoreAdapter,
@@ -66,22 +66,22 @@ describe("Editor", () => {
       const plugin: EditorPlugin = {
         name: "test",
         inputSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             executionOrder.push("input");
           }),
         ],
         captureSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             executionOrder.push("capture");
           }),
         ],
         updateSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             executionOrder.push("update");
           }),
         ],
         renderSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             executionOrder.push("render");
           }),
         ],
@@ -90,7 +90,7 @@ describe("Editor", () => {
       editor = new Editor(mockDomElement, { plugins: [plugin] });
       await editor.initialize();
 
-      editor.tick();
+      await editor.tick();
 
       expect(executionOrder).toEqual(["input", "capture", "update", "render"]);
     });
@@ -101,7 +101,7 @@ describe("Editor", () => {
       const plugin: EditorPlugin = {
         name: "test",
         updateSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             order.push("update");
           }),
         ],
@@ -114,7 +114,7 @@ describe("Editor", () => {
         order.push("nextTick");
       });
 
-      editor.tick();
+      await editor.tick();
 
       expect(order).toEqual(["nextTick", "update"]);
     });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { field } from "@infinitecanvas/ecs";
 import { sortPluginsByDependencies, type EditorPlugin } from "../src/plugin";
-import { defineEditorSystem } from "../src";
+import { defineSystem } from "../src";
 import { EditorComponentDef } from "../src/EditorComponentDef";
 import { EditorSingletonDef } from "../src/EditorSingletonDef";
 
@@ -148,8 +148,8 @@ describe("Plugin System", () => {
     });
 
     it("should support plugin with systems", () => {
-      const updateSystem = defineEditorSystem(() => {});
-      const renderSystem = defineEditorSystem(() => {});
+      const updateSystem = defineSystem(() => {});
+      const renderSystem = defineSystem(() => {});
 
       const plugin: EditorPlugin = {
         name: "rendering",
@@ -218,11 +218,8 @@ describe("Plugin System", () => {
         dependencies: ["core"],
         components: [Block, Selected],
         singletons: [Camera],
-        updateSystems: [
-          defineEditorSystem(() => {}),
-          defineEditorSystem(() => {}),
-        ],
-        renderSystems: [defineEditorSystem(() => {})],
+        updateSystems: [defineSystem(() => {}), defineSystem(() => {})],
+        renderSystems: [defineSystem(() => {})],
         commands: [
           { type: "canvas:pan", execute: vi.fn() },
           { type: "canvas:zoom", execute: vi.fn() },
@@ -258,7 +255,7 @@ describe("Plugin System", () => {
       const corePlugin: EditorPlugin = {
         name: "core",
         components: [Block],
-        renderSystems: [defineEditorSystem(() => {})],
+        renderSystems: [defineSystem(() => {})],
       };
 
       expect(corePlugin.name).toBe("core");
@@ -294,10 +291,7 @@ describe("Plugin System", () => {
         name: "transform",
         dependencies: ["core", "selection"],
         components: [Dragging, Resizing],
-        updateSystems: [
-          defineEditorSystem(() => {}),
-          defineEditorSystem(() => {}),
-        ],
+        updateSystems: [defineSystem(() => {}), defineSystem(() => {})],
         commands: [
           { type: "transform:move", execute: vi.fn() },
           { type: "transform:resize", execute: vi.fn() },

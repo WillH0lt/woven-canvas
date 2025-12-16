@@ -23,7 +23,7 @@ describe("Keyboard", () => {
   });
 
   describe("key state tracking", () => {
-    it("should track key down state", () => {
+    it("should track key down state", async () => {
       const ctx = editor._getContext()!;
 
       // Simulate keydown
@@ -37,7 +37,7 @@ describe("Keyboard", () => {
       expect(Keyboard.isKeyDownTrigger(ctx, KeyCode.A)).toBe(true);
     });
 
-    it("should clear trigger after one frame", () => {
+    it("should clear trigger after one frame", async () => {
       const ctx = editor._getContext()!;
 
       // Simulate keydown

@@ -5,7 +5,7 @@ import type {
 } from "./types";
 
 /** Base class for all systems */
-export abstract class BaseSystemClass {
+export abstract class BaseSystem {
   private static systemCounter = 0;
 
   /** Unique system ID */
@@ -21,12 +21,12 @@ export abstract class BaseSystemClass {
   currEventIndex: number = 0;
 
   constructor() {
-    this.id = BaseSystemClass.systemCounter++;
+    this.id = BaseSystem.systemCounter++;
   }
 }
 
 /** Main thread system (created via defineSystem) */
-export class MainThreadSystemClass extends BaseSystemClass {
+export class MainThreadSystem extends BaseSystem {
   readonly type = "main" as const;
   readonly execute: SystemFunction;
 
@@ -37,7 +37,7 @@ export class MainThreadSystemClass extends BaseSystemClass {
 }
 
 /** Worker system (created via defineWorkerSystem) */
-export class WorkerSystemClass extends BaseSystemClass {
+export class WorkerSystem extends BaseSystem {
   readonly type = "worker" as const;
   readonly path: string;
   readonly threads: number;
@@ -54,7 +54,7 @@ export class WorkerSystemClass extends BaseSystemClass {
 /**
  * Define a system that runs on the main thread
  * @param execute - System execution function
- * @returns MainThreadSystemClass instance
+ * @returns MainThreadSystem instance
  * @example
  * ```typescript
  * const movementSystem = defineSystem((ctx) => {
@@ -67,8 +67,8 @@ export class WorkerSystemClass extends BaseSystemClass {
  * });
  * ```
  */
-export function defineSystem(execute: SystemFunction): MainThreadSystemClass {
-  return new MainThreadSystemClass(execute);
+export function defineSystem(execute: SystemFunction): MainThreadSystem {
+  return new MainThreadSystem(execute);
 }
 
 /**
@@ -76,7 +76,7 @@ export function defineSystem(execute: SystemFunction): MainThreadSystemClass {
  * Worker file must use setupWorker() to define its execution logic.
  * @param workerPath - Path to worker file (use new URL('./worker.ts', import.meta.url).href)
  * @param options - Worker configuration
- * @returns WorkerSystemClass instance
+ * @returns WorkerSystem instance
  * @example
  * ```typescript
  * const physicsSystem = defineWorkerSystem(
@@ -88,6 +88,9 @@ export function defineSystem(execute: SystemFunction): MainThreadSystemClass {
 export function defineWorkerSystem(
   path: string,
   options: WorkerSystemOptions = {}
-): WorkerSystemClass {
-  return new WorkerSystemClass(path, options);
+): WorkerSystem {
+  return new WorkerSystem(path, options);
 }
+
+/** Union of all system types */
+export type System = MainThreadSystem | WorkerSystem;

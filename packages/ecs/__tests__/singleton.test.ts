@@ -6,6 +6,7 @@ import {
   defineSystem,
   defineQuery,
 } from "../src";
+import { nextFrame } from "../src/Context";
 
 describe("Singleton", () => {
   describe("SingletonDef API", () => {
@@ -240,7 +241,7 @@ describe("Singleton", () => {
       mouse.y = 200;
 
       // Next tick - should detect change
-      ctx.tick++;
+      nextFrame(ctx);
       const changed = mouseQuery.changed(ctx);
       expect(changed.length).toBe(1);
       expect(changed[0]).toBe(0xffffffff); // SINGLETON_ENTITY_ID
@@ -261,19 +262,21 @@ describe("Singleton", () => {
       expect(timeQuery.changed(ctx).length).toBe(0);
 
       // Simulate frame start - capture event index before work
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
 
       // Update elapsed time (this happens during the frame)
       const time = Time.write(ctx);
       time.elapsed = 1.0;
 
+      // Set currEventIndex after the work is done
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
+
       // Check for changes - should see the change from this frame
       expect(timeQuery.changed(ctx).length).toBe(1);
 
       // Simulate next frame start - capture event index before work
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // No more changes on this frame
       expect(timeQuery.changed(ctx).length).toBe(0);
@@ -319,23 +322,25 @@ describe("Singleton", () => {
       expect(timeQuery.changed(ctx).length).toBe(0);
 
       // Simulate frame start
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
 
       // Update only Mouse during this frame
       const mouse = Mouse.write(ctx);
       mouse.x = 100;
 
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
+
       expect(mouseQuery.changed(ctx).length).toBe(1);
       expect(timeQuery.changed(ctx).length).toBe(0);
 
       // Simulate next frame start
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
 
       // Update only Time during this frame
       const time = Time.write(ctx);
       time.delta = 0.016;
+
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       expect(mouseQuery.changed(ctx).length).toBe(0);
       expect(timeQuery.changed(ctx).length).toBe(1);
@@ -363,14 +368,14 @@ describe("Singleton", () => {
       const mouse = Mouse.write(ctx);
       mouse.x = 100;
 
-      ctx.tick++;
+      nextFrame(ctx);
       expect(inputQuery.changed(ctx).length).toBe(1);
 
       // Update Keyboard
       const kb = Keyboard.write(ctx);
       kb.pressed = true;
 
-      ctx.tick++;
+      nextFrame(ctx);
       expect(inputQuery.changed(ctx).length).toBe(1);
     });
   });
@@ -405,21 +410,22 @@ describe("Singleton", () => {
       expect(changedCount).toBe(0);
 
       // Simulate frame start
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
 
       // Update mouse during this frame
       const mouse = Mouse.write(ctx);
       mouse.x = 100;
       mouse.y = 200;
 
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
+
       // System execution - should detect change
       system.execute(ctx);
       expect(changedCount).toBe(1);
 
       // Simulate next frame start
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // System execution - no more changes
       system.execute(ctx);
@@ -456,7 +462,7 @@ describe("Singleton", () => {
       mouse.x = 100;
 
       // Check for changes
-      ctx.tick++;
+      nextFrame(ctx);
       checkChanges();
       expect(callbackCount).toBe(1);
     });
@@ -481,7 +487,7 @@ describe("Singleton", () => {
       Mouse.copy(ctx, { x: 100, y: 200 });
 
       // Should detect change
-      ctx.tick++;
+      nextFrame(ctx);
       expect(mouseQuery.changed(ctx).length).toBe(1);
     });
   });
@@ -500,9 +506,9 @@ describe("Singleton", () => {
 
       // Multiple checks with no changes
       expect(mouseQuery.changed(ctx).length).toBe(0);
-      ctx.tick++;
+      nextFrame(ctx);
       expect(mouseQuery.changed(ctx).length).toBe(0);
-      ctx.tick++;
+      nextFrame(ctx);
       expect(mouseQuery.changed(ctx).length).toBe(0);
     });
 
@@ -521,22 +527,23 @@ describe("Singleton", () => {
       expect(mouseQuery.changed(ctx).length).toBe(0);
 
       // Simulate frame start
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
 
       // Update during this frame
       const mouse = Mouse.write(ctx);
       mouse.x = 100;
 
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
+
       // Check once - should see the change
       expect(mouseQuery.changed(ctx).length).toBe(1);
 
-      // Same tick - should return cached result
+      // Same frame - should return cached result
       expect(mouseQuery.changed(ctx).length).toBe(1);
 
       // Simulate next frame start
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // No changes this frame
       expect(mouseQuery.changed(ctx).length).toBe(0);

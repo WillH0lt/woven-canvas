@@ -12,6 +12,7 @@ import {
 } from "../src";
 import type { ComponentDef } from "../src";
 import { QueryCache } from "../src/Query/Cache";
+import { nextFrame } from "../src/Context";
 
 describe("Query", () => {
   let Position: ComponentDef<any>;
@@ -464,7 +465,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
 
       // Simulate next frame - query updates are frame-based
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Should appear in added()
       added = movingQuery.added(ctx);
@@ -488,7 +489,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Position, { x: 10, y: 20 });
 
       // Simulate next frame and clear the added buffer
-      ctx.tick++;
+      nextFrame(ctx);
       movingQuery.added(ctx);
 
       // Entity doesn't match query yet
@@ -498,7 +499,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Entity should now appear in added()
       const added = movingQuery.added(ctx);
@@ -521,7 +522,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Velocity);
 
       // Simulate next frame and clear the added/removed buffers
-      ctx.tick++;
+      nextFrame(ctx);
       movingQuery.added(ctx);
       movingQuery.removed(ctx);
 
@@ -529,7 +530,7 @@ describe("Query", () => {
       removeEntity(ctx, e1);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Should appear in removed()
       const removed = movingQuery.removed(ctx);
@@ -549,7 +550,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Velocity);
 
       // Simulate next frame and clear the buffers
-      ctx.tick++;
+      nextFrame(ctx);
       movingQuery.added(ctx);
       movingQuery.removed(ctx);
 
@@ -560,7 +561,7 @@ describe("Query", () => {
       removeComponent(ctx, e1, Velocity);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Entity should appear in removed()
       const removed = movingQuery.removed(ctx);
@@ -585,7 +586,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Health);
 
       // Simulate next frame and clear buffers
-      ctx.tick++;
+      nextFrame(ctx);
       positionQuery.added(ctx);
       positionQuery.removed(ctx);
 
@@ -593,7 +594,7 @@ describe("Query", () => {
       removeComponent(ctx, e1, Velocity);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Entity should NOT appear in removed() since it still matches
       const removed = positionQuery.removed(ctx);
@@ -616,7 +617,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Enemy);
 
       // Simulate next frame and clear buffers
-      ctx.tick++;
+      nextFrame(ctx);
       nonEnemyQuery.added(ctx);
       nonEnemyQuery.removed(ctx);
 
@@ -627,7 +628,7 @@ describe("Query", () => {
       removeComponent(ctx, e1, Enemy);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Entity should appear in added()
       const added = nonEnemyQuery.added(ctx);
@@ -647,7 +648,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Position);
 
       // Simulate next frame and clear buffers
-      ctx.tick++;
+      nextFrame(ctx);
       nonEnemyQuery.added(ctx);
       nonEnemyQuery.removed(ctx);
 
@@ -658,7 +659,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Enemy);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Entity should appear in removed()
       const removed = nonEnemyQuery.removed(ctx);
@@ -684,7 +685,7 @@ describe("Query", () => {
       addComponent(ctx, e3, Position);
 
       // Simulate next frame and clear buffers
-      ctx.tick++;
+      nextFrame(ctx);
       movingQuery.added(ctx);
       movingQuery.removed(ctx);
 
@@ -693,7 +694,7 @@ describe("Query", () => {
       addComponent(ctx, e2, Velocity);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Check added
       let added = movingQuery.added(ctx);
@@ -706,7 +707,7 @@ describe("Query", () => {
       removeComponent(ctx, e1, Velocity);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Check removed
       const removed = movingQuery.removed(ctx);
@@ -728,7 +729,7 @@ describe("Query", () => {
       const e1 = createEntity(ctx);
 
       // Simulate next frame and clear buffers
-      ctx.tick++;
+      nextFrame(ctx);
       query.added(ctx);
 
       // Add all three components
@@ -737,7 +738,7 @@ describe("Query", () => {
       addComponent(ctx, e1, Health);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Entity should appear only once in added()
       const added = query.added(ctx);
@@ -760,7 +761,7 @@ describe("Query", () => {
       addComponent(ctx, e2, Velocity);
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // First call to current()
       const current1 = movingQuery.current(ctx);
@@ -780,7 +781,7 @@ describe("Query", () => {
       expect(current3).toEqual(current1);
 
       // But on the next frame, we see the new entity
-      ctx.tick++;
+      nextFrame(ctx);
       const current4 = movingQuery.current(ctx);
       expect(current4).toHaveLength(3);
       expect(current4).toContain(e3);
@@ -810,7 +811,7 @@ describe("Query", () => {
       }
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Thread 0 sees entities where entityId % 2 === 0
       const added0 = movingQuery.added(ctx, { partitioned: true });
@@ -843,7 +844,7 @@ describe("Query", () => {
       }
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Thread 1 sees entities where entityId % 2 === 1
       const added1 = movingQuery.added(ctx, { partitioned: true });
@@ -876,7 +877,7 @@ describe("Query", () => {
       }
 
       // Consume added
-      ctx.tick++;
+      nextFrame(ctx);
       movingQuery.added(ctx);
 
       // Remove all entities
@@ -885,7 +886,7 @@ describe("Query", () => {
       }
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Thread 0 sees removed entities where entityId % 2 === 0
       const removed0 = movingQuery.removed(ctx, { partitioned: true });
@@ -923,7 +924,7 @@ describe("Query", () => {
       }
 
       // Consume initial added
-      ctx.tick++;
+      nextFrame(ctx);
       trackedQuery.added(ctx);
       trackedQuery.changed(ctx);
 
@@ -934,7 +935,7 @@ describe("Query", () => {
       }
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Thread 0 sees changed entities where entityId % 2 === 0
       const changed0 = trackedQuery.changed(ctx, { partitioned: true });
@@ -967,7 +968,7 @@ describe("Query", () => {
       }
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Single thread should see all entities
       const added = movingQuery.added(ctx);
@@ -997,7 +998,7 @@ describe("Query", () => {
       }
 
       // Simulate next frame
-      ctx.tick++;
+      nextFrame(ctx);
 
       // Thread 0 sees entities where entityId % 3 === 0
       const current0 = movingQuery.current(ctx, { partitioned: true });
@@ -1059,9 +1060,9 @@ describe("Query", () => {
       expect(entities1).toEqual(entities2);
 
       // Simulate next frame
-      ctx0.tick++;
-      ctx1.tick++;
-      ctx2.tick++;
+      nextFrame(ctx0);
+      nextFrame(ctx1);
+      nextFrame(ctx2);
 
       const added0 = query0.added(ctx0, { partitioned: true });
       const added1 = query1.added(ctx1, { partitioned: true });
@@ -1091,28 +1092,25 @@ describe("Query", () => {
       // Initialize the query
       movingQuery.added(ctx);
 
-      // Frame 1: Create entity e1
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      // Frame 1: Create entity e1 (query doesn't run this frame)
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position);
       addComponent(ctx, e1, Velocity);
 
-      // Frame 2: Create entity e2
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      // Frame 2: Create entity e2 (query doesn't run this frame)
       const e2 = createEntity(ctx);
       addComponent(ctx, e2, Position);
       addComponent(ctx, e2, Velocity);
 
-      // Frame 3: Create entity e3
-      ctx.tick++;
+      // Frame 3: Start of the frame where query will run
+      // Set prevEventIndex to now (start of this frame's visibility window)
       ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
       const e3 = createEntity(ctx);
       addComponent(ctx, e3, Position);
       addComponent(ctx, e3, Velocity);
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
-      // Now query runs - it skipped frames 1 and 2, only sees frame 3's prevEventIndex
+      // Now query runs - it skipped frames 1 and 2, only sees frame 3's events
       // So added() should only contain e3 (from the last frame)
       const added = movingQuery.added(ctx);
       expect(added).toHaveLength(1);
@@ -1146,25 +1144,21 @@ describe("Query", () => {
       addComponent(ctx, e3, Velocity);
 
       // Initialize the query and consume initial added
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      nextFrame(ctx);
       movingQuery.added(ctx);
       movingQuery.removed(ctx);
 
-      // Frame 1: Remove e1
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      // Frame 1: Remove e1 (query doesn't run)
       removeEntity(ctx, e1);
 
-      // Frame 2: Remove e2
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      // Frame 2: Remove e2 (query doesn't run)
       removeEntity(ctx, e2);
 
-      // Frame 3: Remove e3
-      ctx.tick++;
+      // Frame 3: Remove e3 (query will run after this)
+      // Set prevEventIndex to now (start of this frame's visibility window)
       ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
       removeEntity(ctx, e3);
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // Query runs - should only see e3 removed (from the last frame)
       const removed = movingQuery.removed(ctx);
@@ -1198,25 +1192,21 @@ describe("Query", () => {
       addComponent(ctx, e3, TrackedPosition);
 
       // Initialize the query and consume initial added/changed
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      nextFrame(ctx);
       trackedQuery.added(ctx);
       trackedQuery.changed(ctx);
 
-      // Frame 1: Change e1
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      // Frame 1: Change e1 (query doesn't run)
       TrackedPosition.write(ctx, e1).x = 10;
 
-      // Frame 2: Change e2
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      // Frame 2: Change e2 (query doesn't run)
       TrackedPosition.write(ctx, e2).x = 20;
 
-      // Frame 3: Change e3
-      ctx.tick++;
+      // Frame 3: Change e3 (query will run after this)
+      // Set prevEventIndex to now (start of this frame's visibility window)
       ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
       TrackedPosition.write(ctx, e3).x = 30;
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // Query runs - should only see e3 changed (from the last frame)
       const changed = trackedQuery.changed(ctx);
@@ -1236,11 +1226,11 @@ describe("Query", () => {
       movingQuery.added(ctx);
 
       // Frame 1: Create e1
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
       const e1 = createEntity(ctx);
       addComponent(ctx, e1, Position);
       addComponent(ctx, e1, Velocity);
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // Query runs immediately after frame 1
       let added = movingQuery.added(ctx);
@@ -1248,11 +1238,11 @@ describe("Query", () => {
       expect(added).toContain(e1);
 
       // Frame 2: Create e2
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
       const e2 = createEntity(ctx);
       addComponent(ctx, e2, Position);
       addComponent(ctx, e2, Velocity);
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // Query runs immediately after frame 2
       added = movingQuery.added(ctx);
@@ -1261,11 +1251,11 @@ describe("Query", () => {
       expect(added).not.toContain(e1); // e1 was from previous frame
 
       // Frame 3: Create e3
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
       const e3 = createEntity(ctx);
       addComponent(ctx, e3, Position);
       addComponent(ctx, e3, Velocity);
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // Query runs immediately after frame 3
       added = movingQuery.added(ctx);
@@ -1285,33 +1275,29 @@ describe("Query", () => {
       addComponent(ctx, e1, Velocity);
 
       // Initialize the query
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      nextFrame(ctx);
       movingQuery.added(ctx);
       movingQuery.removed(ctx);
 
-      // Frame 1: Remove e1, add e2
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      // Frame 1: Remove e1, add e2 (query doesn't run)
       removeEntity(ctx, e1);
       const e2 = createEntity(ctx);
       addComponent(ctx, e2, Position);
       addComponent(ctx, e2, Velocity);
 
-      // Frame 2: Remove e2, add e3
-      ctx.tick++;
-      ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+      // Frame 2: Remove e2, add e3 (query doesn't run)
       removeEntity(ctx, e2);
       const e3 = createEntity(ctx);
       addComponent(ctx, e3, Position);
       addComponent(ctx, e3, Velocity);
 
       // Frame 3: This is the "current" frame - add e4
-      ctx.tick++;
+      // Set prevEventIndex to now (start of this frame's visibility window)
       ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
       const e4 = createEntity(ctx);
       addComponent(ctx, e4, Position);
       addComponent(ctx, e4, Velocity);
+      ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // Query runs - should only see frame 3's events
       const added = movingQuery.added(ctx);
@@ -1343,22 +1329,22 @@ describe("Query", () => {
       addComponent(ctx, e1, Velocity);
 
       // Initialize the query
-      ctx.tick++;
+      nextFrame(ctx);
       ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
       movingQuery.added(ctx);
 
       // Frame 1: No changes - query skips
-      ctx.tick++;
+      nextFrame(ctx);
       ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
       // (no entity operations)
 
       // Frame 2: No changes - query skips
-      ctx.tick++;
+      nextFrame(ctx);
       ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
       // (no entity operations)
 
       // Frame 3: No changes - query runs
-      ctx.tick++;
+      nextFrame(ctx);
       ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
 
       // added() should be empty since no new entities in frame 3
@@ -1390,7 +1376,7 @@ describe("Query", () => {
         addComponent(ctx, e2, Position);
         addComponent(ctx, e2, Velocity);
 
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         movingQuery.current(ctx);
 
@@ -1408,7 +1394,7 @@ describe("Query", () => {
         removeEntity(ctx, e1);
 
         // Move to next frame
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
 
         // Query should rebuild cache from entity buffer and still be correct
@@ -1434,15 +1420,14 @@ describe("Query", () => {
         const movingQuery = defineQuery((q) => q.with(Position, Velocity));
 
         // Initialize query
-        ctx.tick++;
-        ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
+        nextFrame(ctx);
         movingQuery.added(ctx);
 
-        // Simulate a frame with many events that overflow the buffer
-        ctx.tick++;
+        // Mark start of the visible frame
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
 
         // Create many entities to overflow the results range
+        // 5 entities * 3 events each (ADDED + 2 COMPONENT_ADDED) = 15 events > 10 maxEvents
         const entities: number[] = [];
         for (let i = 0; i < 5; i++) {
           const e = createEntity(ctx);
@@ -1450,6 +1435,8 @@ describe("Query", () => {
           addComponent(ctx, e, Velocity);
           entities.push(e);
         }
+
+        ctx.currEventIndex = ctx.eventBuffer.getWriteIndex();
 
         // Capture console.warn
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -1490,12 +1477,12 @@ describe("Query", () => {
         addComponent(ctx, e1, Position);
         addComponent(ctx, e1, Velocity);
 
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         movingQuery.current(ctx);
 
         // Frame 1: Generate events to start filling buffer (query skips this frame)
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         for (let i = 0; i < 3; i++) {
           const e = createEntity(ctx);
@@ -1504,7 +1491,7 @@ describe("Query", () => {
         }
 
         // Frame 2: More events (query skips this frame too)
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         for (let i = 0; i < 3; i++) {
           const e = createEntity(ctx);
@@ -1513,7 +1500,7 @@ describe("Query", () => {
         }
 
         // Frame 3: Create one more entity (this is the "current" frame)
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         const lastEntity = createEntity(ctx);
         addComponent(ctx, lastEntity, Position);
@@ -1555,18 +1542,18 @@ describe("Query", () => {
         }
 
         // Initialize query
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         movingQuery.current(ctx);
         expect(movingQuery.current(ctx)).toHaveLength(5);
 
         // Frame 1-2: Generate lots of events by creating and removing entities
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         removeEntity(ctx, entities[0]);
         removeEntity(ctx, entities[1]);
 
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         // Create new entities to overflow buffer
         for (let i = 0; i < 4; i++) {
@@ -1576,7 +1563,7 @@ describe("Query", () => {
         }
 
         // Frame 3: Remove another entity
-        ctx.tick++;
+        nextFrame(ctx);
         ctx.prevEventIndex = ctx.eventBuffer.getWriteIndex();
         removeEntity(ctx, entities[2]);
 

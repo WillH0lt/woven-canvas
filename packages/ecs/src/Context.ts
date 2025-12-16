@@ -197,3 +197,22 @@ export function hasComponent<T extends ComponentSchema>(
 export function getResources<R>(ctx: Context): R {
   return ctx.resources as R;
 }
+
+/**
+ * Advance the context to the next frame for testing purposes.
+ * Updates prevEventIndex and currEventIndex so queries process new events.
+ * @param ctx - The context to advance
+ * @example
+ * ```typescript
+ * createEntity(ctx);
+ * nextFrame(ctx);  // Query will now see the new entity in added()
+ * const added = myQuery.added(ctx);
+ * ```
+ */
+export function nextFrame(ctx: Context): void {
+  const currentWriteIndex = ctx.eventBuffer.getWriteIndex();
+  // prevEventIndex marks where the previous frame ended (start of current range)
+  // currEventIndex marks where the current frame ends (end of current range)
+  ctx.prevEventIndex = ctx.currEventIndex ?? ctx.prevEventIndex;
+  ctx.currEventIndex = currentWriteIndex;
+}

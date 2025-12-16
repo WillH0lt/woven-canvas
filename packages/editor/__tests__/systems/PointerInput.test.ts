@@ -299,7 +299,7 @@ describe("Pointer", () => {
       expect(id1).not.toBe(id2);
     });
 
-    it("should remove correct pointer on individual release", () => {
+    it("should remove correct pointer on individual release", async () => {
       const ctx = editor._getContext()!;
 
       // Two touches down
@@ -321,7 +321,9 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
+
+      console.log(ctx);
 
       expect(pointerQuery.current(ctx).length).toBe(2);
 
@@ -332,7 +334,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       const pointers = pointerQuery.current(ctx);
       expect(pointers.length).toBe(1);
@@ -395,8 +397,8 @@ describe("Pointer - multiple instances", () => {
     await editor1.initialize();
     await editor2.initialize();
 
-    editor1.tick();
-    editor2.tick();
+    await editor1.tick();
+    await editor2.tick();
 
     // Pointer down on element1 only
     domElement1.dispatchEvent(
@@ -410,8 +412,8 @@ describe("Pointer - multiple instances", () => {
       })
     );
 
-    editor1.tick();
-    editor2.tick();
+    await editor1.tick();
+    await editor2.tick();
 
     const ctx1 = editor1._getContext()!;
     const ctx2 = editor2._getContext()!;

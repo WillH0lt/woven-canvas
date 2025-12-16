@@ -1,4 +1,6 @@
-import { defineEditorSystem, getResources, type EditorResources } from "@infinitecanvas/editor";
+import { getResources, defineSystem } from "@infinitecanvas/ecs";
+
+import type { EditorResources } from "../types";
 import { Screen } from "../components/Screen";
 
 /**
@@ -53,30 +55,30 @@ export function detachScreenObserver(domElement: HTMLElement): void {
  * Uses ResizeObserver to detect size changes and updates the Screen singleton.
  * Also handles initial sizing on the first frame.
  */
-export const screenInputSystem = defineEditorSystem((ctx) => {
-    const resources = getResources<EditorResources>(ctx);
-    const { domElement } = resources;
-    const state = instanceState.get(domElement);
-    if (!state) return;
+export const screenInputSystem = defineSystem((ctx) => {
+  const resources = getResources<EditorResources>(ctx);
+  const { domElement } = resources;
+  const state = instanceState.get(domElement);
+  if (!state) return;
 
-    state.frameCount++;
+  state.frameCount++;
 
-    // Handle initial sizing on first frame
-    if (state.frameCount === 1) {
-      state.resizePending = true;
-    }
+  // Handle initial sizing on first frame
+  if (state.frameCount === 1) {
+    state.resizePending = true;
+  }
 
-    // Update screen dimensions if resize pending
-    if (state.resizePending) {
-      const screen = Screen.write(ctx);
+  // Update screen dimensions if resize pending
+  if (state.resizePending) {
+    const screen = Screen.write(ctx);
 
-      screen.width = domElement.clientWidth;
-      screen.height = domElement.clientHeight;
+    screen.width = domElement.clientWidth;
+    screen.height = domElement.clientHeight;
 
-      const rect = domElement.getBoundingClientRect();
-      screen.left = rect.left;
-      screen.top = rect.top;
+    const rect = domElement.getBoundingClientRect();
+    screen.left = rect.left;
+    screen.top = rect.top;
 
-      state.resizePending = false;
-    }
+    state.resizePending = false;
+  }
 });

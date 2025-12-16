@@ -3,10 +3,11 @@ import {
   type Context,
   type QueryDef,
   ComponentDef,
+  type System,
   type SingletonDef,
 } from "@infinitecanvas/ecs";
 
-import type { EditorResources, SystemFn, SystemPhase } from "./types";
+import type { EditorResources, SystemPhase } from "./types";
 import type { StoreAdapter } from "./store";
 import { type EditorPlugin, sortPluginsByDependencies } from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
@@ -93,7 +94,7 @@ const PHASE_ORDER: SystemPhase[] = ["input", "capture", "update", "render"];
  */
 export class Editor {
   private world: World;
-  private phases: Map<SystemPhase, SystemFn[]>;
+  private phases: Map<SystemPhase, System[]>;
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
 
@@ -205,13 +206,13 @@ export class Editor {
    * Commands spawned via `command()` are available during this frame
    * and automatically cleaned up at the end.
    */
-  tick(): void {
+  async tick(): Promise<void> {
     // Process scheduled callbacks (including command spawns)
     this.world.sync();
 
     // Execute phases in order
     for (const phase of PHASE_ORDER) {
-      this.executePhase(phase);
+      await this.executePhase(phase);
     }
 
     // Clean up command entities at end of frame
@@ -221,13 +222,11 @@ export class Editor {
   /**
    * Execute all systems in a phase
    */
-  private executePhase(phase: SystemPhase): void {
+  private async executePhase(phase: SystemPhase): Promise<void> {
     const systems = this.phases.get(phase);
-    if (!systems) return;
+    if (!systems || systems.length === 0) return;
 
-    for (const system of systems) {
-      system(this.ctx);
-    }
+    await this.world.execute(...systems);
   }
 
   /**

@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import {
-  Editor,
-  defineEditorSystem,
-  type EditorPlugin,
-} from "../src";
+import { Editor, defineSystem, type EditorPlugin } from "../src";
 
 // Mock DOM element for tests
 const mockDomElement = document.createElement("div");
@@ -24,22 +20,22 @@ describe("System Phases", () => {
       const plugin: EditorPlugin = {
         name: "test",
         inputSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             executionOrder.push("input");
           }),
         ],
         captureSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             executionOrder.push("capture");
           }),
         ],
         updateSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             executionOrder.push("update");
           }),
         ],
         renderSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             executionOrder.push("render");
           }),
         ],
@@ -48,41 +44,9 @@ describe("System Phases", () => {
       editor = new Editor(mockDomElement, { plugins: [plugin] });
       await editor.initialize();
 
-      editor.tick();
+      await editor.tick();
 
       expect(executionOrder).toEqual(["input", "capture", "update", "render"]);
-    });
-  });
-
-  describe("defineEditorSystem", () => {
-    it("should create a system function", () => {
-      const execute = vi.fn();
-      const system = defineEditorSystem(execute);
-
-      // The system should be callable
-      expect(typeof system).toBe("function");
-    });
-
-    it("should pass context to system", async () => {
-      let capturedCtx: unknown = null;
-
-      const plugin: EditorPlugin = {
-        name: "test",
-        updateSystems: [
-          defineEditorSystem((ctx) => {
-            capturedCtx = ctx;
-          }),
-        ],
-      };
-
-      editor = new Editor(mockDomElement, { plugins: [plugin] });
-      await editor.initialize();
-
-      editor.tick();
-
-      expect(capturedCtx).toBeDefined();
-      expect(capturedCtx).toHaveProperty("tick");
-      expect(capturedCtx).toHaveProperty("entityBuffer");
     });
   });
 
@@ -93,18 +57,16 @@ describe("System Phases", () => {
       const plugin: EditorPlugin = {
         name: "test",
         inputSystems: [
-          defineEditorSystem(() => results.push("input-a")),
-          defineEditorSystem(() => results.push("input-b")),
+          defineSystem(() => results.push("input-a")),
+          defineSystem(() => results.push("input-b")),
         ],
-        captureSystems: [
-          defineEditorSystem(() => results.push("capture-a")),
-        ],
+        captureSystems: [defineSystem(() => results.push("capture-a"))],
       };
 
       editor = new Editor(mockDomElement, { plugins: [plugin] });
       await editor.initialize();
 
-      editor.tick();
+      await editor.tick();
 
       expect(results).toEqual(["input-a", "input-b", "capture-a"]);
     });
@@ -114,22 +76,18 @@ describe("System Phases", () => {
 
       const pluginA: EditorPlugin = {
         name: "a",
-        updateSystems: [
-          defineEditorSystem(() => results.push("a-update")),
-        ],
+        updateSystems: [defineSystem(() => results.push("a-update"))],
       };
 
       const pluginB: EditorPlugin = {
         name: "b",
-        updateSystems: [
-          defineEditorSystem(() => results.push("b-update")),
-        ],
+        updateSystems: [defineSystem(() => results.push("b-update"))],
       };
 
       editor = new Editor(mockDomElement, { plugins: [pluginA, pluginB] });
       await editor.initialize();
 
-      editor.tick();
+      await editor.tick();
 
       expect(results).toEqual(["a-update", "b-update"]);
     });
@@ -141,10 +99,10 @@ describe("System Phases", () => {
       const plugin: EditorPlugin = {
         name: "input-test",
         inputSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             // Typically: read from DOM events, write to Pointer singleton
           }),
-          defineEditorSystem(() => {
+          defineSystem(() => {
             // Typically: track pressed keys, modifiers
           }),
         ],
@@ -159,10 +117,10 @@ describe("System Phases", () => {
       const plugin: EditorPlugin = {
         name: "capture-test",
         captureSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             // Typically: find what's under pointer, set Hovered component
           }),
-          defineEditorSystem(() => {
+          defineSystem(() => {
             // Typically: determine selection target
           }),
         ],
@@ -176,10 +134,10 @@ describe("System Phases", () => {
       const plugin: EditorPlugin = {
         name: "update-test",
         updateSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             // Typically: update Block positions based on drag
           }),
-          defineEditorSystem(() => {
+          defineSystem(() => {
             // Typically: execute queued commands
           }),
         ],
@@ -193,10 +151,10 @@ describe("System Phases", () => {
       const plugin: EditorPlugin = {
         name: "render-test",
         renderSystems: [
-          defineEditorSystem(() => {
+          defineSystem(() => {
             // Typically: update DOM elements to match ECS state
           }),
-          defineEditorSystem(() => {
+          defineSystem(() => {
             // Typically: push changes to store adapter
           }),
         ],

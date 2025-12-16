@@ -1,8 +1,5 @@
-import {
-  EditorSingletonDef,
-  field,
-  type Context,
-} from "@infinitecanvas/editor";
+import { field, type Context } from "@infinitecanvas/ecs";
+import { EditorSingletonDef } from "../EditorSingletonDef";
 
 const ScreenSchema = {
   /** Width of the editor element in pixels */

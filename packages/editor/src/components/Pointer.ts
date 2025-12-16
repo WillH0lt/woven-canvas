@@ -1,8 +1,5 @@
-import {
-  EditorComponentDef,
-  field,
-  type Context,
-} from "@infinitecanvas/editor";
+import { field, type Context } from "@infinitecanvas/ecs";
+import { EditorComponentDef } from "../EditorComponentDef";
 
 /**
  * Pointer button types

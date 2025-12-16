@@ -1,4 +1,4 @@
-import { type Context } from "@infinitecanvas/editor";
+import type { Context } from "@infinitecanvas/ecs";
 
 import type { MouseInput } from "./types";
 import { Camera, Mouse } from "../components";
@@ -22,7 +22,7 @@ import { Camera, Mouse } from "../components";
  * ```typescript
  * import { getMouseInput, runMachine } from '@infinitecanvas/plugin-xstate';
  *
- * const zoomSystem = defineEditorSystem((ctx) => {
+ * const zoomSystem = defineSystem((ctx) => {
  *   const events = getMouseInput(ctx);
  *   if (events.length === 0) return;
  *
@@ -45,6 +45,7 @@ export function getMouseInput(ctx: Context): MouseInput[] {
   if (mouse.wheelTrigger) {
     events.push({
       type: "wheel",
+      ctx,
       screenPosition: screenPos,
       worldPosition: worldPos,
       wheelDeltaX: mouse.wheelDeltaX,
@@ -56,6 +57,7 @@ export function getMouseInput(ctx: Context): MouseInput[] {
   if (mouse.moveTrigger) {
     events.push({
       type: "mouseMove",
+      ctx,
       screenPosition: screenPos,
       worldPosition: worldPos,
       wheelDeltaX: 0,

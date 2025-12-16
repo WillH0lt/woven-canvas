@@ -1,7 +1,7 @@
-import type { Context } from "@infinitecanvas/ecs";
+import type { Context, System } from "@infinitecanvas/ecs";
+
 import type { AnyEditorComponentDef as EditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
-import type { SystemFn } from "./types";
 
 /**
  * Systems organized by execution phase.
@@ -14,13 +14,13 @@ import type { SystemFn } from "./types";
  */
 export interface PluginSystems {
   /** Systems that convert raw DOM events to ECS state */
-  inputSystems?: SystemFn[];
+  inputSystems?: System[];
   /** Systems that detect targets and compute intersections */
-  captureSystems?: SystemFn[];
+  captureSystems?: System[];
   /** Systems that modify document state and process commands */
-  updateSystems?: SystemFn[];
+  updateSystems?: System[];
   /** Systems that sync ECS state to output */
-  renderSystems?: SystemFn[];
+  renderSystems?: System[];
 }
 
 /**
@@ -101,16 +101,16 @@ export interface EditorPlugin {
   singletons?: EditorSingletonDef[];
 
   /** Systems that convert raw DOM events to ECS state */
-  inputSystems?: SystemFn[];
+  inputSystems?: System[];
 
   /** Systems that detect targets and compute intersections */
-  captureSystems?: SystemFn[];
+  captureSystems?: System[];
 
   /** Systems that modify document state and process commands */
-  updateSystems?: SystemFn[];
+  updateSystems?: System[];
 
   /** Systems that sync ECS state to output */
-  renderSystems?: SystemFn[];
+  renderSystems?: System[];
 
   /**
    * Commands to register.

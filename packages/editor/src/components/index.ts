@@ -1,5 +1,7 @@
 export { Camera } from "./Camera";
 
+export { Controls } from "./Controls";
+
 export { Keyboard, setBit, clearBits, KeyCode } from "./Keyboard";
 
 export { Mouse } from "./Mouse";
