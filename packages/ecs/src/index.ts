@@ -5,6 +5,7 @@ export {
   ComponentDef,
   SingletonDef,
   type ComponentSchema,
+  type InferComponentType,
   type FieldBuilder,
   type StringFieldBuilder,
   type NumberFieldBuilder,

@@ -1,0 +1,1 @@
+export { smoothDamp } from "./smoothDamp";

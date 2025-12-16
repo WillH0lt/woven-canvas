@@ -136,7 +136,7 @@ export function addPointerSample(
 ): void {
   // Avoid duplicate samples at same time
   const currentIndex = pointer._sampleCount % SAMPLE_COUNT;
-  const mostRecentTime = pointer._prevTimes[currentIndex];
+  const mostRecentTime = pointer._prevTimes[currentIndex] || 0;
   if (Math.abs(mostRecentTime - time) < 0.001) return;
 
   // Update current position
@@ -173,7 +173,7 @@ export function addPointerSample(
   for (let j = 0; j < pointCount; j++) {
     const idx = mod(pointer._sampleCount - pointCount + 1 + j);
 
-    const t = pointer._prevTimes[idx];
+    const t = pointer._prevTimes[idx] || 0;
     const u = t - time;
     const recency = -u;
 
@@ -181,8 +181,8 @@ export function addPointerSample(
 
     const w = Math.exp(-recency / TAU);
 
-    const x = pointer._prevPositions[idx * 2];
-    const y = pointer._prevPositions[idx * 2 + 1];
+    const x = pointer._prevPositions[idx * 2] || 0;
+    const y = pointer._prevPositions[idx * 2 + 1] || 0;
 
     W += w;
     WU += w * u;
@@ -200,13 +200,15 @@ export function addPointerSample(
     // Fallback: last-segment velocity
     const iCurr = pointer._sampleCount % SAMPLE_COUNT;
     const iPrev = mod(pointer._sampleCount - 1);
-    const dt = pointer._prevTimes[iCurr] - pointer._prevTimes[iPrev];
+    const dt =
+      (pointer._prevTimes[iCurr] || 0) - (pointer._prevTimes[iPrev] || 0);
     if (dt > EPS) {
       const dx =
-        pointer._prevPositions[iCurr * 2] - pointer._prevPositions[iPrev * 2];
+        (pointer._prevPositions[iCurr * 2] || 0) -
+        (pointer._prevPositions[iPrev * 2] || 0);
       const dy =
-        pointer._prevPositions[iCurr * 2 + 1] -
-        pointer._prevPositions[iPrev * 2 + 1];
+        (pointer._prevPositions[iCurr * 2 + 1] || 0) -
+        (pointer._prevPositions[iPrev * 2 + 1] || 0);
       pointer._velocity = [dx / dt, dy / dt];
     } else {
       pointer._velocity = [0, 0];

@@ -1,35 +1,28 @@
-import {
-  field,
-  type Context,
-  EditorStateDef,
-} from "@infinitecanvas/editor";
+import { field, defineEditorState } from "@infinitecanvas/editor";
 
 import { PanStateValue } from "../types";
-
-const PanStateSchema = {
-  /** Current state of the pan state machine */
-  state: field.string().max(16).default(PanStateValue.Idle),
-  /** World X coordinate where pan started */
-  panStartX: field.float64().default(0),
-  /** World Y coordinate where pan started */
-  panStartY: field.float64().default(0),
-};
 
 /**
  * Pan state singleton - stores the state machine state and context for panning.
  *
- * Uses EditorStateDef to simplify XState machine integration.
+ * Uses defineEditorState to simplify XState machine integration.
  */
-class PanStateDef extends EditorStateDef<typeof PanStateSchema> {
-  constructor() {
-    super(PanStateSchema, { sync: "none" });
-  }
-
-  /** Get the pan start position as [x, y] */
-  getPanStart(ctx: Context): [number, number] {
-    const s = this.read(ctx);
-    return [s.panStartX, s.panStartY];
-  }
-}
-
-export const PanState = new PanStateDef();
+export const PanState = defineEditorState(
+  {
+    /** Current state of the pan state machine */
+    state: field.string().max(16).default(PanStateValue.Idle),
+    /** World X coordinate where pan started */
+    panStartX: field.float64().default(0),
+    /** World Y coordinate where pan started */
+    panStartY: field.float64().default(0),
+    /** X velocity for fling animation (world units/second) */
+    velocityX: field.float64().default(0),
+    /** Y velocity for fling animation (world units/second) */
+    velocityY: field.float64().default(0),
+    /** Target X position for fling animation */
+    targetX: field.float64().default(0),
+    /** Target Y position for fling animation */
+    targetY: field.float64().default(0),
+  },
+  { sync: "none" }
+);

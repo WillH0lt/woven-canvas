@@ -1,6 +1,6 @@
 import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
 
-import { Camera, Pointer, Keyboard, type PointerButton } from "../components";
+import { Camera, Frame, Pointer, Keyboard, type PointerButton } from "../components";
 import type { PointerInput, PointerInputOptions } from "./types";
 
 // Default thresholds for click detection
@@ -15,8 +15,6 @@ const pointerQuery = defineQuery((q) => q.tracking(Pointer));
  * Keyed by context readerId to support multiple editor instances.
  */
 interface PointerTrackingState {
-  /** Frame counter for click detection */
-  frameCount: number;
   /** Previous frame's pointer positions for movement detection */
   prevPositions: Map<number, [number, number]>;
   /** Previous modifier key state */
@@ -34,7 +32,6 @@ function getTrackingState(ctx: Context): PointerTrackingState {
   let state = trackingState.get(key);
   if (!state) {
     state = {
-      frameCount: 0,
       prevPositions: new Map(),
       prevModifiers: {
         shiftDown: false,
@@ -101,7 +98,7 @@ export function getPointerInput(
   } = options;
 
   const state = getTrackingState(ctx);
-  state.frameCount++;
+  const frameNumber = Frame.read(ctx).number;
 
   const events: PointerInput[] = [];
 
@@ -208,7 +205,7 @@ export function getPointerInput(
         pointer.position[1],
       ];
       const dist = distance(downPos, currentPos);
-      const deltaFrame = state.frameCount - pointer.downFrame;
+      const deltaFrame = frameNumber - pointer.downFrame;
 
       if (dist < clickMoveThreshold && deltaFrame < clickFrameThreshold) {
         events.push(createEvent("click", entityId));

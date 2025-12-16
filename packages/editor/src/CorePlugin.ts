@@ -2,8 +2,17 @@ import { getResources } from "@infinitecanvas/ecs";
 import type { EditorPlugin } from "./plugin";
 import type { EditorResources } from "./types";
 
-import { Camera, Controls, Keyboard, Mouse, Screen, Pointer } from "./components";
 import {
+  Camera,
+  Controls,
+  Frame,
+  Keyboard,
+  Mouse,
+  Screen,
+  Pointer,
+} from "./components";
+import {
+  frameInputSystem,
   keyboardInputSystem,
   attachKeyboardListeners,
   detachKeyboardListeners,
@@ -25,11 +34,12 @@ import {
 export const CorePlugin: EditorPlugin = {
   name: "core",
 
-  singletons: [Camera, Controls, Keyboard, Mouse, Screen],
+  singletons: [Camera, Controls, Frame, Keyboard, Mouse, Screen],
 
   components: [Pointer],
 
   inputSystems: [
+    frameInputSystem,
     keyboardInputSystem,
     mouseInputSystem,
     screenInputSystem,

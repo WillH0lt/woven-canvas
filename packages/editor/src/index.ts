@@ -20,6 +20,7 @@ export {
   EditorStateDef,
   defineEditorState,
   type StateSchema,
+  type InferStateContext,
 } from "./EditorStateDef";
 
 // Component base classes
@@ -69,18 +70,13 @@ export { CorePlugin } from "./CorePlugin";
 
 // Components
 export {
-  // Camera
   Camera,
-  // Controls
   Controls,
-  // Keyboard
+  Frame,
   Keyboard,
   KeyCode,
-  // Mouse
   Mouse,
-  // Screen
   Screen,
-  // Pointer
   Pointer,
   PointerButton,
   PointerType,
@@ -94,11 +90,11 @@ export {
   type PointerInputOptions,
   type MouseInput,
   type MouseInputType,
-  // Pointer input
+  type FrameInput,
   getPointerInput,
   clearPointerTrackingState,
-  // Mouse input
   getMouseInput,
+  getFrameInput,
 } from "./events";
 
 // State machine utilities

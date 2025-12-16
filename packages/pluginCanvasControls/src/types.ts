@@ -29,4 +29,5 @@ export type ControlsResources = EditorResources & ControlsOptions;
 export enum PanStateValue {
   Idle = "idle",
   Panning = "panning",
+  Gliding = "gliding",
 }

@@ -621,3 +621,274 @@ describe("capturePan system", () => {
     expect(PanState.read(ctx).state).toBe(PanStateValue.Idle);
   });
 });
+
+describe("camera gliding", () => {
+  let editor: Editor;
+  let domElement: HTMLDivElement;
+
+  function createDomElement(): HTMLDivElement {
+    const el = document.createElement("div");
+    Object.defineProperty(el, "clientWidth", { value: 800 });
+    Object.defineProperty(el, "clientHeight", { value: 600 });
+    el.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        width: 800,
+        height: 600,
+        right: 800,
+        bottom: 600,
+        x: 0,
+        y: 0,
+        toJSON: () => {},
+      } as DOMRect);
+    return el;
+  }
+
+  beforeEach(async () => {
+    domElement = createDomElement();
+    document.body.appendChild(domElement);
+
+    editor = new Editor(domElement, {
+      plugins: [CorePlugin, ControlsPlugin()],
+    });
+    await editor.initialize();
+    await editor.tick();
+  });
+
+  afterEach(async () => {
+    await editor.dispose();
+    document.body.removeChild(domElement);
+  });
+
+  it("should enter gliding state when releasing pan with velocity", async () => {
+    const ctx = editor._getContext()!;
+
+    // Middle mouse down
+    domElement.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    // Simulate fast drag by moving quickly across multiple frames
+    // Need large movements to build up velocity above the 0.1 threshold
+    for (let i = 1; i <= 3; i++) {
+      window.dispatchEvent(
+        new PointerEvent("pointermove", {
+          pointerId: 1,
+          clientX: 400 - i * 100, // Move left 100px each frame
+          clientY: 300 - i * 100, // Move up 100px each frame
+          button: 1,
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      await editor.tick();
+    }
+
+    // Release immediately after movement (no extra frames to let velocity decay)
+    window.dispatchEvent(
+      new PointerEvent("pointerup", {
+        pointerId: 1,
+        clientX: 100,
+        clientY: 0,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    // Should be in gliding state
+    const panState = PanState.read(ctx);
+    expect(panState.state).toBe(PanStateValue.Gliding);
+  });
+
+  it("should not enter gliding state when releasing pan without velocity", async () => {
+    const ctx = editor._getContext()!;
+
+    // Middle mouse down
+    domElement.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    // Wait several frames without moving (velocity decays)
+    for (let i = 0; i < 10; i++) {
+      await editor.tick();
+    }
+
+    // Release without recent movement
+    window.dispatchEvent(
+      new PointerEvent("pointerup", {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    // Should go directly to idle (no glide)
+    const panState = PanState.read(ctx);
+    expect(panState.state).toBe(PanStateValue.Idle);
+  });
+
+  it("should animate camera during gliding", async () => {
+    const ctx = editor._getContext()!;
+
+    // Middle mouse down
+    domElement.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    // Fast drag
+    for (let i = 1; i <= 5; i++) {
+      window.dispatchEvent(
+        new PointerEvent("pointermove", {
+          pointerId: 1,
+          clientX: 400 - i * 50,
+          clientY: 300,
+          button: 1,
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      await editor.tick();
+    }
+
+    // Final move and release in same frame to preserve velocity
+    window.dispatchEvent(
+      new PointerEvent("pointermove", {
+        pointerId: 1,
+        clientX: 100,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    window.dispatchEvent(
+      new PointerEvent("pointerup", {
+        pointerId: 1,
+        clientX: 100,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Gliding);
+
+    const cameraAfterRelease = Camera.read(ctx).left;
+
+    // Continue ticking to animate
+    for (let i = 0; i < 10; i++) {
+      await editor.tick();
+    }
+
+    const cameraAfterGlide = Camera.read(ctx).left;
+
+    // Camera should have moved further in the same direction during glide
+    // Since we dragged left (decreasing clientX), camera.left increases
+    expect(cameraAfterGlide).toBeGreaterThan(cameraAfterRelease);
+  });
+
+  it("should interrupt gliding when starting a new pan", async () => {
+    const ctx = editor._getContext()!;
+
+    // Start and release a fast pan
+    domElement.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    for (let i = 1; i <= 5; i++) {
+      window.dispatchEvent(
+        new PointerEvent("pointermove", {
+          pointerId: 1,
+          clientX: 400 - i * 50,
+          clientY: 300,
+          button: 1,
+          pointerType: "mouse",
+          bubbles: true,
+        })
+      );
+      await editor.tick();
+    }
+
+    // Final move and release in same frame to preserve velocity
+    window.dispatchEvent(
+      new PointerEvent("pointermove", {
+        pointerId: 1,
+        clientX: 100,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    window.dispatchEvent(
+      new PointerEvent("pointerup", {
+        pointerId: 1,
+        clientX: 100,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Gliding);
+
+    // Start a new pan while gliding
+    domElement.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        pointerId: 2,
+        clientX: 400,
+        clientY: 300,
+        button: 1,
+        pointerType: "mouse",
+        bubbles: true,
+      })
+    );
+    await editor.tick();
+
+    // Should have interrupted glide and be panning again
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Panning);
+  });
+});

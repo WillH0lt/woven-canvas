@@ -1025,6 +1025,277 @@ describe("Component", () => {
       expect(result.nums).toEqual([1.0, 2.0]);
       expect(result.strs).toEqual(["used"]);
     });
+
+    it("should support direct index writes on writable arrays", () => {
+      const Polygon = defineComponent({
+        pts: field.array(field.float32(), 10),
+      });
+      const world = new World([Polygon]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Polygon, { pts: [1.0, 2.0, 3.0] });
+
+      // Direct index write
+      const polygon = Polygon.write(ctx, entityId);
+      polygon.pts[1] = 99.0;
+
+      const result = Polygon.read(ctx, entityId);
+      expect(result.pts).toEqual([1.0, 99.0, 3.0]);
+    });
+
+    it("should auto-expand array length on index write beyond current length", () => {
+      const Data = defineComponent({
+        values: field.array(field.float32(), 10),
+      });
+      const world = new World([Data]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Data, { values: [1.0] });
+
+      // Write to index 4 (beyond current length of 1)
+      const data = Data.write(ctx, entityId);
+      data.values[4] = 5.0;
+
+      const result = Data.read(ctx, entityId);
+      expect(result.values.length).toBe(5);
+      expect(result.values[0]).toBe(1.0);
+      expect(result.values[4]).toBe(5.0);
+    });
+
+    it("should support direct index reads on writable arrays", () => {
+      const Points = defineComponent({
+        coords: field.array(field.float32(), 20),
+      });
+      const world = new World([Points]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Points, { coords: [10.0, 20.0, 30.0] });
+
+      const points = Points.write(ctx, entityId);
+      expect(points.coords[0]).toBe(10.0);
+      expect(points.coords[1]).toBe(20.0);
+      expect(points.coords[2]).toBe(30.0);
+      expect(points.coords[3]).toBeUndefined();
+    });
+
+    it("should report correct length on writable array proxy", () => {
+      const Buffer = defineComponent({
+        data: field.array(field.uint8(), 100),
+      });
+      const world = new World([Buffer]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Buffer, { data: [1, 2, 3, 4, 5] });
+
+      const buffer = Buffer.write(ctx, entityId);
+      expect(buffer.data.length).toBe(5);
+
+      // After extending
+      buffer.data[9] = 10;
+      expect(buffer.data.length).toBe(10);
+    });
+
+    it("should support multiple index writes in sequence", () => {
+      const Matrix = defineComponent({
+        cells: field.array(field.float32(), 16),
+      });
+      const world = new World([Matrix]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Matrix, { cells: [0, 0, 0, 0] });
+
+      const matrix = Matrix.write(ctx, entityId);
+      matrix.cells[0] = 1.0;
+      matrix.cells[1] = 2.0;
+      matrix.cells[2] = 3.0;
+      matrix.cells[3] = 4.0;
+
+      const result = Matrix.read(ctx, entityId);
+      expect(result.cells).toEqual([1.0, 2.0, 3.0, 4.0]);
+    });
+
+    it("should support index writes on string arrays", () => {
+      const Tags = defineComponent({
+        names: field.array(field.string().max(50), 10),
+      });
+      const world = new World([Tags]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Tags, { names: ["one", "two", "three"] });
+
+      const tags = Tags.write(ctx, entityId);
+      tags.names[1] = "TWO";
+
+      const result = Tags.read(ctx, entityId);
+      expect(result.names).toEqual(["one", "TWO", "three"]);
+    });
+
+    it("should support index writes on boolean arrays", () => {
+      const Flags = defineComponent({
+        bits: field.array(field.boolean(), 8),
+      });
+      const world = new World([Flags]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Flags, { bits: [true, false, true, false] });
+
+      const flags = Flags.write(ctx, entityId);
+      flags.bits[0] = false;
+      flags.bits[1] = true;
+
+      const result = Flags.read(ctx, entityId);
+      expect(result.bits).toEqual([false, true, true, false]);
+    });
+
+    it("should not write beyond maxLength", () => {
+      const Small = defineComponent({
+        nums: field.array(field.float32(), 3),
+      });
+      const world = new World([Small]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Small, { nums: [1.0] });
+
+      const small = Small.write(ctx, entityId);
+      small.nums[0] = 10.0;
+      small.nums[2] = 30.0;
+      small.nums[5] = 60.0; // Beyond maxLength, should be ignored
+
+      const result = Small.read(ctx, entityId);
+      expect(result.nums.length).toBe(3);
+      expect(result.nums[0]).toBe(10.0);
+      expect(result.nums[2]).toBe(30.0);
+    });
+
+    it("should isolate index writes between entities", () => {
+      const Scores = defineComponent({
+        values: field.array(field.uint32(), 10),
+      });
+      const world = new World([Scores]);
+      const ctx = world._getContext();
+
+      const e1 = createEntity(ctx);
+      const e2 = createEntity(ctx);
+      addComponent(ctx, e1, Scores, { values: [100, 200] });
+      addComponent(ctx, e2, Scores, { values: [300, 400] });
+
+      // Modify only e1
+      const scores1 = Scores.write(ctx, e1);
+      scores1.values[0] = 999;
+
+      // e2 should be unchanged
+      expect(Scores.read(ctx, e1).values).toEqual([999, 200]);
+      expect(Scores.read(ctx, e2).values).toEqual([300, 400]);
+    });
+
+    it("should support push method", () => {
+      const Items = defineComponent({
+        ids: field.array(field.uint32(), 10),
+      });
+      const world = new World([Items]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Items, { ids: [1, 2, 3] });
+
+      const items = Items.write(ctx, entityId);
+
+      // push returns the new length and persists the change
+      const newLength = items.ids.push(4);
+      expect(newLength).toBe(4);
+
+      const result = Items.read(ctx, entityId);
+      expect(result.ids).toEqual([1, 2, 3, 4]);
+
+      // Push multiple values
+      items.ids.push(5, 6);
+      expect(Items.read(ctx, entityId).ids).toEqual([1, 2, 3, 4, 5, 6]);
+    });
+
+    it("should support pop method", () => {
+      const Items = defineComponent({
+        ids: field.array(field.uint32(), 10),
+      });
+      const world = new World([Items]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Items, { ids: [1, 2, 3] });
+
+      const items = Items.write(ctx, entityId);
+
+      const popped = items.ids.pop();
+      expect(popped).toBe(3);
+      expect(Items.read(ctx, entityId).ids).toEqual([1, 2]);
+    });
+
+    it("should support shift and unshift methods", () => {
+      const Items = defineComponent({
+        ids: field.array(field.uint32(), 10),
+      });
+      const world = new World([Items]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Items, { ids: [1, 2, 3] });
+
+      const items = Items.write(ctx, entityId);
+
+      // shift removes from front
+      const shifted = items.ids.shift();
+      expect(shifted).toBe(1);
+      expect(Items.read(ctx, entityId).ids).toEqual([2, 3]);
+
+      // unshift adds to front
+      const newLen = items.ids.unshift(0);
+      expect(newLen).toBe(3);
+      expect(Items.read(ctx, entityId).ids).toEqual([0, 2, 3]);
+    });
+
+    it("should support splice method", () => {
+      const Items = defineComponent({
+        ids: field.array(field.uint32(), 10),
+      });
+      const world = new World([Items]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Items, { ids: [1, 2, 3, 4, 5] });
+
+      const items = Items.write(ctx, entityId);
+
+      // Remove 2 elements starting at index 1, insert 10, 20
+      const removed = items.ids.splice(1, 2, 10, 20);
+      expect(removed).toEqual([2, 3]);
+      expect(Items.read(ctx, entityId).ids).toEqual([1, 10, 20, 4, 5]);
+    });
+
+    it("should support reverse and sort methods", () => {
+      const Items = defineComponent({
+        ids: field.array(field.uint32(), 10),
+      });
+      const world = new World([Items]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Items, { ids: [3, 1, 4, 1, 5] });
+
+      const items = Items.write(ctx, entityId);
+
+      items.ids.reverse();
+      expect(Items.read(ctx, entityId).ids).toEqual([5, 1, 4, 1, 3]);
+
+      items.ids.sort((a: number, b: number) => a - b);
+      expect(Items.read(ctx, entityId).ids).toEqual([1, 1, 3, 4, 5]);
+    });
   });
 
   describe("Enum Field Handling", () => {

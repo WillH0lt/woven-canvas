@@ -1,3 +1,5 @@
+export { frameInputSystem } from "./FrameInputSystem";
+
 export {
   keyboardInputSystem,
   attachKeyboardListeners,

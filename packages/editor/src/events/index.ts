@@ -5,6 +5,7 @@ export type {
   PointerInputOptions,
   MouseInput,
   MouseInputType,
+  FrameInput,
 } from "./types";
 
 // Pointer input
@@ -15,3 +16,6 @@ export {
 
 // Mouse input
 export { getMouseInput } from "./mouseInputEvents";
+
+// Frame input
+export { getFrameInput } from "./frameInputEvents";

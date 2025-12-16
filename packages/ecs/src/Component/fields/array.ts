@@ -327,6 +327,179 @@ export class ArrayBufferView {
     }
   }
 
+  /**
+   * Get a single element from the array
+   * @param index - The entity index
+   * @param elementIndex - The index of the element within the array
+   * @returns The element value, or undefined if out of bounds
+   */
+  getElement(index: number, elementIndex: number): any {
+    const offset = index * this.bytesPerEntry;
+    const storedLength = this.readUint32(offset);
+
+    if (elementIndex < 0 || elementIndex >= storedLength) {
+      return undefined;
+    }
+
+    const dataOffset = offset + ArrayBufferView.LENGTH_BYTES;
+
+    switch (this.elementDef.type) {
+      case "number": {
+        const typedArray = createTypedArrayAtOffset(
+          this.elementDef.btype,
+          storedLength,
+          this.buffer,
+          dataOffset
+        );
+        const useAtomics =
+          this.elementDef.btype !== "float32" &&
+          this.elementDef.btype !== "float64";
+        if (useAtomics) {
+          return Atomics.load(
+            typedArray as Exclude<typeof typedArray, Float32Array | Float64Array>,
+            elementIndex
+          );
+        } else {
+          return typedArray[elementIndex];
+        }
+      }
+      case "boolean": {
+        return Atomics.load(this.uint8View, dataOffset + elementIndex) !== 0;
+      }
+      case "string": {
+        const strOffset = dataOffset + elementIndex * this.bytesPerElement;
+        const strLen = this.readUint32(strOffset);
+        if (strLen === 0) {
+          return "";
+        }
+        const stringBytes = new Uint8Array(strLen);
+        for (let j = 0; j < strLen; j++) {
+          stringBytes[j] = Atomics.load(this.uint8View, strOffset + 4 + j);
+        }
+        return textDecoder.decode(stringBytes);
+      }
+      case "binary": {
+        const binOffset = dataOffset + elementIndex * this.bytesPerElement;
+        const binLen = this.readUint32(binOffset);
+        if (binLen === 0) {
+          return new Uint8Array(0);
+        }
+        const binData = new Uint8Array(binLen);
+        for (let j = 0; j < binLen; j++) {
+          binData[j] = Atomics.load(this.uint8View, binOffset + 4 + j);
+        }
+        return binData;
+      }
+    }
+  }
+
+  /**
+   * Set a single element in the array
+   * @param index - The entity index
+   * @param elementIndex - The index of the element within the array
+   * @param value - The value to set
+   */
+  setElement(index: number, elementIndex: number, value: any): void {
+    if (elementIndex < 0 || elementIndex >= this.maxLength) {
+      return;
+    }
+
+    const offset = index * this.bytesPerEntry;
+    let storedLength = this.readUint32(offset);
+
+    // Expand array length if necessary
+    if (elementIndex >= storedLength) {
+      storedLength = elementIndex + 1;
+      this.writeUint32(offset, storedLength);
+    }
+
+    const dataOffset = offset + ArrayBufferView.LENGTH_BYTES;
+
+    switch (this.elementDef.type) {
+      case "number": {
+        const typedArray = createTypedArrayAtOffset(
+          this.elementDef.btype,
+          this.maxLength,
+          this.buffer,
+          dataOffset
+        );
+        const useAtomics =
+          this.elementDef.btype !== "float32" &&
+          this.elementDef.btype !== "float64";
+        if (useAtomics) {
+          Atomics.store(
+            typedArray as Exclude<typeof typedArray, Float32Array | Float64Array>,
+            elementIndex,
+            value
+          );
+        } else {
+          typedArray[elementIndex] = value;
+        }
+        break;
+      }
+      case "boolean": {
+        Atomics.store(this.uint8View, dataOffset + elementIndex, value ? 1 : 0);
+        break;
+      }
+      case "string": {
+        const strOffset = dataOffset + elementIndex * this.bytesPerElement;
+        const str = value as string;
+        const encoded = textEncoder.encode(str);
+        const maxDataBytes = this.bytesPerElement - 4;
+        const bytesToCopy = Math.min(encoded.length, maxDataBytes);
+
+        // Clear existing string data
+        for (let j = 0; j < maxDataBytes; j++) {
+          Atomics.store(this.uint8View, strOffset + 4 + j, 0);
+        }
+
+        // Write string length
+        this.writeUint32(strOffset, bytesToCopy);
+
+        // Write string data
+        for (let j = 0; j < bytesToCopy; j++) {
+          Atomics.store(this.uint8View, strOffset + 4 + j, encoded[j]);
+        }
+        break;
+      }
+      case "binary": {
+        const binOffset = dataOffset + elementIndex * this.bytesPerElement;
+        const bin = value as Uint8Array;
+        const maxDataBytes = this.bytesPerElement - 4;
+        const bytesToCopy = Math.min(bin.length, maxDataBytes);
+
+        // Clear existing binary data
+        for (let j = 0; j < maxDataBytes; j++) {
+          Atomics.store(this.uint8View, binOffset + 4 + j, 0);
+        }
+
+        // Write binary length
+        this.writeUint32(binOffset, bytesToCopy);
+
+        // Write binary data
+        for (let j = 0; j < bytesToCopy; j++) {
+          Atomics.store(this.uint8View, binOffset + 4 + j, bin[j]);
+        }
+        break;
+      }
+    }
+  }
+
+  /**
+   * Get the current stored length for an entity's array
+   */
+  getStoredLength(index: number): number {
+    const offset = index * this.bytesPerEntry;
+    return this.readUint32(offset);
+  }
+
+  /**
+   * Get the maximum allowed length for arrays
+   */
+  getMaxLength(): number {
+    return this.maxLength;
+  }
+
   getBuffer(): ArrayBufferLike {
     return this.buffer;
   }
@@ -386,8 +559,99 @@ export class ArrayField extends Field<ArrayFieldDef> {
       enumerable: true,
       configurable: false,
       get: () => {
-        const array = (buffer as any)[fieldName];
-        return array.get(getEntityId());
+        const arrayView = (buffer as any)[fieldName] as ArrayBufferView;
+        const entityId = getEntityId();
+
+        // Mutating array methods that need special handling
+        const mutatingMethods = new Set([
+          "push",
+          "pop",
+          "shift",
+          "unshift",
+          "splice",
+          "reverse",
+          "sort",
+          "fill",
+          "copyWithin",
+        ]);
+
+        // Return a proxy that intercepts index reads/writes
+        return new Proxy([] as any[], {
+          get(target, prop) {
+            // Handle numeric indices
+            if (typeof prop === "string" && /^\d+$/.test(prop)) {
+              const index = parseInt(prop, 10);
+              return arrayView.getElement(entityId, index);
+            }
+            // Handle 'length' property
+            if (prop === "length") {
+              return arrayView.getStoredLength(entityId);
+            }
+            // Handle mutating array methods by operating on copy and persisting
+            if (typeof prop === "string" && mutatingMethods.has(prop)) {
+              return (...args: any[]) => {
+                const arr = arrayView.get(entityId);
+                const result = (arr as any)[prop](...args);
+                arrayView.set(entityId, arr);
+                return result;
+              };
+            }
+            // Handle non-mutating array methods by getting the full array first
+            const fullArray = arrayView.get(entityId);
+            const value = (fullArray as any)[prop];
+            if (typeof value === "function") {
+              return value.bind(fullArray);
+            }
+            return value;
+          },
+          set(target, prop, value) {
+            // Handle numeric indices
+            if (typeof prop === "string" && /^\d+$/.test(prop)) {
+              const index = parseInt(prop, 10);
+              arrayView.setElement(entityId, index, value);
+              return true;
+            }
+            return false;
+          },
+          has(target, prop) {
+            if (typeof prop === "string" && /^\d+$/.test(prop)) {
+              const index = parseInt(prop, 10);
+              return index >= 0 && index < arrayView.getStoredLength(entityId);
+            }
+            return prop in [];
+          },
+          ownKeys() {
+            const length = arrayView.getStoredLength(entityId);
+            const keys: string[] = [];
+            for (let i = 0; i < length; i++) {
+              keys.push(String(i));
+            }
+            keys.push("length");
+            return keys;
+          },
+          getOwnPropertyDescriptor(target, prop) {
+            if (typeof prop === "string" && /^\d+$/.test(prop)) {
+              const index = parseInt(prop, 10);
+              if (index >= 0 && index < arrayView.getStoredLength(entityId)) {
+                return {
+                  value: arrayView.getElement(entityId, index),
+                  writable: true,
+                  enumerable: true,
+                  configurable: true,
+                };
+              }
+            }
+            if (prop === "length") {
+              return {
+                value: arrayView.getStoredLength(entityId),
+                writable: false,
+                enumerable: false,
+                configurable: false,
+              };
+            }
+            return undefined;
+          },
+        });
       },
       set: (value: any) => {
         const array = (buffer as any)[fieldName];

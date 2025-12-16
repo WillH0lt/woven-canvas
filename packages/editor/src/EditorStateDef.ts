@@ -1,4 +1,8 @@
-import type { Context } from "@infinitecanvas/ecs";
+import type {
+  Context,
+  ComponentSchema,
+  InferComponentType,
+} from "@infinitecanvas/ecs";
 import type { AnyStateMachine } from "xstate";
 
 import {
@@ -11,24 +15,38 @@ import { runMachine } from "./machine";
  * Schema type for state machine singletons.
  * Must include a 'state' field that stores the current state value.
  */
-export interface StateSchema {
+export interface StateSchema extends ComponentSchema {
   /** The current state machine state value */
   state: { def: { type: "string" } };
-  /** Additional context fields */
-  [key: string]: { def: any };
 }
 
 /**
- * Infer the machine context type from a state schema.
- * Excludes the 'state' field since that's the state value, not context.
+ * Internal type: infer machine context from schema (excludes 'state' field).
  */
-type InferMachineContext<T extends StateSchema> = {
-  [K in Exclude<keyof T, "state">]: T[K] extends { def: { default: infer D } }
-    ? D extends () => infer R
-      ? R
-      : D
-    : unknown;
-};
+type InferMachineContext<T extends StateSchema> = Omit<
+  InferComponentType<T>,
+  "state"
+>;
+
+/**
+ * Extract the machine context type from an EditorStateDef instance.
+ * Returns all fields except 'state', properly typed.
+ *
+ * @example
+ * ```typescript
+ * const PanState = defineEditorState({
+ *   state: field.string().max(16).default("idle"),
+ *   panStartX: field.float64().default(0),
+ *   panStartY: field.float64().default(0),
+ * });
+ *
+ * type PanContext = InferStateContext<typeof PanState>;
+ * // { panStartX: number; panStartY: number }
+ * ```
+ */
+export type InferStateContext<T> = T extends EditorStateDef<infer S>
+  ? InferMachineContext<S>
+  : never;
 
 /**
  * Editor singleton definition for XState state machine state storage.

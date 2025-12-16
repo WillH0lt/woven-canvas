@@ -3,12 +3,33 @@ import {
   Camera,
   Controls,
   getPointerInput,
+  getFrameInput,
   type PointerInput,
+  type FrameInput,
+  type InferStateContext,
 } from "@infinitecanvas/editor";
 import { assign, setup } from "xstate";
 
 import { PanState } from "../components";
+import { smoothDamp } from "../helpers";
 import { PanStateValue } from "../types";
+
+/** How long the glide should take to reach the target (seconds) */
+const CAMERA_GLIDE_SECONDS = 0.1;
+
+/** Velocity threshold below which the glide stops */
+const VELOCITY_THRESHOLD = 0.1;
+
+/**
+ * Event types for the pan state machine.
+ * Combines PointerInput with FrameInput for glide animation.
+ */
+type PanEvent = PointerInput | FrameInput;
+
+/**
+ * Pan state machine context - derived from PanState schema.
+ */
+type PanContext = InferStateContext<typeof PanState>;
 
 /**
  * Pan state machine - created once at module level.
@@ -18,31 +39,88 @@ import { PanStateValue } from "../types";
  */
 const panMachine = setup({
   types: {
-    context: {} as {
-      panStartX: number;
-      panStartY: number;
+    context: {} as PanContext,
+    events: {} as PanEvent,
+  },
+  guards: {
+    hasVelocity: ({ event }) => {
+      if (event.type !== "pointerUp") return false;
+      const velocity = (event as PointerInput).velocity;
+      return Math.hypot(velocity[0], velocity[1]) > VELOCITY_THRESHOLD;
     },
-    events: {} as PointerInput,
+    isGlideComplete: ({ context }) => {
+      return (
+        Math.hypot(context.velocityX, context.velocityY) < VELOCITY_THRESHOLD
+      );
+    },
   },
   actions: {
     setDragStart: assign({
-      panStartX: ({ event }) => event.worldPosition[0],
-      panStartY: ({ event }) => event.worldPosition[1],
+      panStartX: ({ event }) => (event as PointerInput).worldPosition[0],
+      panStartY: ({ event }) => (event as PointerInput).worldPosition[1],
     }),
 
     moveCamera: ({ context, event }) => {
-      const { ctx } = event;
-      const deltaX = event.worldPosition[0] - context.panStartX;
-      const deltaY = event.worldPosition[1] - context.panStartY;
+      const e = event as PointerInput;
+      const { ctx } = e;
+      const deltaX = e.worldPosition[0] - context.panStartX;
+      const deltaY = e.worldPosition[1] - context.panStartY;
 
       const cam = Camera.write(ctx);
       cam.left -= deltaX;
       cam.top -= deltaY;
     },
 
+    startGlide: assign(({ event }) => {
+      const e = event as PointerInput;
+      const { ctx } = e;
+      const camera = Camera.read(ctx);
+      const zoom = e.cameraZoom;
+
+      // Convert screen velocity to world velocity
+      const velocityX = -e.velocity[0] / zoom;
+      const velocityY = -e.velocity[1] / zoom;
+
+      return {
+        velocityX,
+        velocityY,
+        targetX: camera.left + velocityX * CAMERA_GLIDE_SECONDS,
+        targetY: camera.top + velocityY * CAMERA_GLIDE_SECONDS,
+      };
+    }),
+
+    animateGlide: assign(({ context, event }) => {
+      const e = event as FrameInput;
+      const { ctx, delta } = e;
+      const camera = Camera.read(ctx);
+
+      const { position, velocity: newVelocity } = smoothDamp(
+        [camera.left, camera.top],
+        [context.targetX, context.targetY],
+        [context.velocityX, context.velocityY],
+        CAMERA_GLIDE_SECONDS,
+        Number.POSITIVE_INFINITY,
+        delta
+      );
+
+      // Update camera position
+      const cam = Camera.write(ctx);
+      cam.left = position[0];
+      cam.top = position[1];
+
+      return {
+        velocityX: newVelocity[0],
+        velocityY: newVelocity[1],
+      };
+    }),
+
     resetContext: assign({
       panStartX: 0,
       panStartY: 0,
+      velocityX: 0,
+      velocityY: 0,
+      targetX: 0,
+      targetY: 0,
     }),
   },
 }).createMachine({
@@ -51,10 +129,13 @@ const panMachine = setup({
   context: {
     panStartX: 0,
     panStartY: 0,
+    velocityX: 0,
+    velocityY: 0,
+    targetX: 0,
+    targetY: 0,
   },
   states: {
     [PanStateValue.Idle]: {
-      entry: "resetContext",
       on: {
         pointerDown: {
           actions: "setDragStart",
@@ -68,11 +149,37 @@ const panMachine = setup({
         pointerMove: {
           actions: "moveCamera",
         },
-        pointerUp: {
-          target: PanStateValue.Idle,
-        },
+        pointerUp: [
+          {
+            guard: "hasVelocity",
+            actions: "startGlide",
+            target: PanStateValue.Gliding,
+          },
+          {
+            target: PanStateValue.Idle,
+          },
+        ],
         cancel: {
           target: PanStateValue.Idle,
+        },
+      },
+    },
+    [PanStateValue.Gliding]: {
+      on: {
+        frame: [
+          {
+            guard: "isGlideComplete",
+            actions: "resetContext",
+            target: PanStateValue.Idle,
+          },
+          {
+            actions: "animateGlide",
+          },
+        ],
+        // User can interrupt glide by starting a new pan
+        pointerDown: {
+          actions: ["resetContext", "setDragStart"],
+          target: PanStateValue.Panning,
         },
       },
     },
@@ -85,14 +192,24 @@ const panMachine = setup({
  * Uses an XState state machine to track pan state:
  * - Idle: Waiting for "hand" tool button press
  * - Panning: Dragging to pan the canvas
+ * - Gliding: Smooth deceleration after releasing a pan with velocity
  *
  * Active when: A button mapped to the "hand" tool is held and dragged.
  */
 export const capturePanSystem = defineSystem((ctx) => {
+  const currentState = PanState.read(ctx).state;
+
   // Get pointer events for buttons mapped to the "hand" tool
   const buttons = Controls.getButtons(ctx, "hand");
+  const pointerEvents = getPointerInput(ctx, buttons);
 
-  const events = getPointerInput(ctx, buttons);
+  // Build events array
+  const events: PanEvent[] = [...pointerEvents];
+
+  // Add frame event when gliding (to drive animation)
+  if (currentState === PanStateValue.Gliding) {
+    events.push(getFrameInput(ctx));
+  }
 
   if (events.length === 0) return;
 
