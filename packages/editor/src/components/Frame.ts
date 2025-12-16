@@ -8,6 +8,8 @@ const FrameSchema = {
   delta: field.float64().default(0),
   /** Timestamp of current frame in milliseconds (from performance.now()) */
   time: field.float64().default(0),
+  /** Timestamp of previous frame in milliseconds (0 if first frame) */
+  lastTime: field.float64().default(0),
 };
 
 /**

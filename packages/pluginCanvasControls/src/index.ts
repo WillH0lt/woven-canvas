@@ -33,7 +33,6 @@ export { ControlsPlugin } from "./ControlsPlugin";
 // Types
 export {
   type ControlsOptions,
-  type ControlsResources,
   DEFAULT_CONTROLS_OPTIONS,
   PanStateValue,
 } from "./types";

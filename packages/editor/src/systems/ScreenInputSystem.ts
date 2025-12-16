@@ -2,6 +2,7 @@ import { getResources, defineSystem } from "@infinitecanvas/ecs";
 
 import type { EditorResources } from "../types";
 import { Screen } from "../components/Screen";
+import { Frame } from "../components/Frame";
 
 /**
  * Per-instance state for screen input
@@ -9,7 +10,6 @@ import { Screen } from "../components/Screen";
 interface ScreenState {
   resizePending: boolean;
   resizeObserver: ResizeObserver;
-  frameCount: number;
 }
 
 /**
@@ -26,7 +26,6 @@ export function attachScreenObserver(domElement: HTMLElement): void {
 
   const state: ScreenState = {
     resizePending: false,
-    frameCount: 0,
     resizeObserver: new ResizeObserver(() => {
       state.resizePending = true;
     }),
@@ -61,10 +60,10 @@ export const screenInputSystem = defineSystem((ctx) => {
   const state = instanceState.get(domElement);
   if (!state) return;
 
-  state.frameCount++;
+  const frame = Frame.read(ctx);
 
   // Handle initial sizing on first frame
-  if (state.frameCount === 1) {
+  if (frame.number === 1) {
     state.resizePending = true;
   }
 

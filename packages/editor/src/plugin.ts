@@ -78,9 +78,15 @@ export interface PluginSystems {
  * };
  * ```
  */
-export interface EditorPlugin {
+export interface EditorPlugin<TResources = unknown> {
   /** Unique plugin identifier */
   name: string;
+
+  /**
+   * Plugin-specific resources/options.
+   * Access in systems via getPluginResources<T>(ctx, pluginName).
+   */
+  resources?: TResources;
 
   /**
    * Names of plugins this one depends on.

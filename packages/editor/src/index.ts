@@ -7,6 +7,7 @@ export type {
   SyncBehavior,
   EditorComponentMeta,
 } from "./types";
+export { getPluginResources } from "./types";
 
 // Singleton base class
 export {

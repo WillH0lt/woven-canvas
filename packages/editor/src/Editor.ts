@@ -122,12 +122,21 @@ export class Editor {
       }
     }
 
+    // Collect plugin resources
+    const pluginResources: Record<string, unknown> = {};
+    for (const plugin of sortedPlugins) {
+      if (plugin.resources !== undefined) {
+        pluginResources[plugin.name] = plugin.resources;
+      }
+    }
+
     // Create ECS World with editor resources
     // Note: We pass a placeholder for 'editor' and update it after construction
     const allResources: EditorResources & Record<string, unknown> = {
       ...resources,
       domElement,
       editor: null as unknown as Editor, // Will be set below
+      pluginResources,
     };
 
     this.world = new World(allDefs, {

@@ -1,9 +1,6 @@
 import { defineSystem } from "@infinitecanvas/ecs";
 import { Frame } from "../components";
 
-/** Last frame timestamp, keyed by context readerId */
-const lastFrameTime = new Map<string, number>();
-
 /**
  * Frame input system - updates frame timing at the start of each tick.
  *
@@ -12,14 +9,14 @@ const lastFrameTime = new Map<string, number>();
  */
 export const frameInputSystem = defineSystem((ctx) => {
   const now = performance.now();
-  const last = lastFrameTime.get(ctx.readerId);
-  lastFrameTime.set(ctx.readerId, now);
-
   const frame = Frame.write(ctx);
+  const last = frame.lastTime;
+
   frame.number++;
+  frame.lastTime = now;
   frame.time = now;
 
-  if (last === undefined) {
+  if (last === 0) {
     // First frame, assume 16ms (60fps)
     frame.delta = 0.016;
   } else {

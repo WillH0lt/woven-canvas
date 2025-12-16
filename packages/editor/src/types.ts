@@ -1,4 +1,5 @@
 import type { Context, EntityId } from "@infinitecanvas/ecs";
+export type { Context };
 import type { Editor } from "./Editor";
 
 // Re-export EntityId for convenience
@@ -27,6 +28,13 @@ export interface EditorResources {
    * Use this to spawn commands, subscribe to queries, etc.
    */
   editor: Editor;
+
+  /**
+   * Plugin-specific resources keyed by plugin name.
+   * Access via getPluginResources<T>(ctx, pluginName).
+   * @internal Populated automatically from plugin.resources
+   */
+  pluginResources: Record<string, unknown>;
 }
 
 /**
@@ -46,3 +54,36 @@ export interface EditorComponentMeta {
 }
 
 export type SystemPhase = "input" | "capture" | "update" | "render";
+
+/**
+ * Get plugin-specific resources from the context.
+ *
+ * @typeParam T - The expected plugin resources type
+ * @param ctx - The ECS context
+ * @param pluginName - The plugin name to get resources for
+ * @returns The plugin resources cast to type T
+ *
+ * @example
+ * ```typescript
+ * interface ControlsOptions {
+ *   zoomSpeed: number;
+ *   panSpeed: number;
+ * }
+ *
+ * const ControlsPlugin: EditorPlugin<ControlsOptions> = {
+ *   name: "controls",
+ *   resources: { zoomSpeed: 1.0, panSpeed: 1.0 },
+ *   // ...
+ * };
+ *
+ * // In a system:
+ * function mySystem(ctx: Context) {
+ *   const opts = getPluginResources<ControlsOptions>(ctx, "controls");
+ *   console.log(opts.zoomSpeed);
+ * }
+ * ```
+ */
+export function getPluginResources<T>(ctx: Context, pluginName: string): T {
+  const resources = ctx.resources as EditorResources;
+  return resources.pluginResources[pluginName] as T;
+}

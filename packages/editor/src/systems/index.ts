@@ -23,5 +23,3 @@ export {
   attachPointerListeners,
   detachPointerListeners,
 } from "./PointerInputSystem";
-
-export { updateCameraSystem } from "./UpdateCameraSystem";

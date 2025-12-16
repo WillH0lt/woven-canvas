@@ -1,7 +1,6 @@
 import { type EditorPlugin } from "@infinitecanvas/editor";
 
 import { PanState } from "./components";
-import { setControlsOptions } from "./options";
 import {
   captureZoomSystem,
   captureScrollSystem,
@@ -35,22 +34,17 @@ import { DEFAULT_CONTROLS_OPTIONS, type ControlsOptions } from "./types";
  */
 export function ControlsPlugin(
   options: Partial<ControlsOptions> = {}
-): EditorPlugin {
-  const resolvedOptions: ControlsOptions = {
-    ...DEFAULT_CONTROLS_OPTIONS,
-    ...options,
-  };
-
+): EditorPlugin<ControlsOptions> {
   return {
     name: "controls",
+
+    resources: {
+      ...DEFAULT_CONTROLS_OPTIONS,
+      ...options,
+    },
 
     singletons: [PanState],
 
     captureSystems: [captureZoomSystem, captureScrollSystem, capturePanSystem],
-
-    setup() {
-      // Store options for systems to access
-      setControlsOptions(resolvedOptions);
-    },
   };
 }

@@ -25,7 +25,6 @@ import {
   pointerInputSystem,
   attachPointerListeners,
   detachPointerListeners,
-  updateCameraSystem,
 } from "./systems";
 
 /**
@@ -45,8 +44,6 @@ export const CorePlugin: EditorPlugin = {
     screenInputSystem,
     pointerInputSystem,
   ],
-
-  updateSystems: [updateCameraSystem],
 
   setup(ctx) {
     const { domElement } = getResources<EditorResources>(ctx);

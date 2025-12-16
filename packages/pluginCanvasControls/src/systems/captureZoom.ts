@@ -7,9 +7,10 @@ import {
   Keyboard,
   Controls,
   getMouseInput,
+  getPluginResources,
 } from "@infinitecanvas/editor";
 
-import { getControlsOptions } from "../options";
+import type { ControlsOptions } from "../types";
 
 /**
  * Capture zoom system - handles mouse scroll zoom with modifier key.
@@ -20,7 +21,7 @@ import { getControlsOptions } from "../options";
  * Active when: Mouse wheel scrolled and "zoom" tool is active for wheel input.
  */
 export const captureZoomSystem = defineSystem((ctx: Context) => {
-  const options = getControlsOptions();
+  const options = getPluginResources<ControlsOptions>(ctx, "controls");
   const keyboard = Keyboard.read(ctx);
 
   // Only zoom when the zoom tool is active for wheel input
