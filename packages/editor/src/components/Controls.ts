@@ -23,7 +23,7 @@ const ControlsSchema = {
  */
 class ControlsDef extends EditorSingletonDef<typeof ControlsSchema> {
   constructor() {
-    super(ControlsSchema, { sync: "none" });
+    super("controls", ControlsSchema, { sync: "none" });
   }
 
   /**

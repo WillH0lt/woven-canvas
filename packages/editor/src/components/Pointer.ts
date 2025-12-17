@@ -73,7 +73,7 @@ const PointerSchema = {
  */
 class PointerDef extends EditorComponentDef<typeof PointerSchema> {
   constructor() {
-    super(PointerSchema, { sync: "none" });
+    super("pointer", PointerSchema, { sync: "none" });
   }
 
   /** Get the computed velocity of a pointer */

@@ -28,7 +28,7 @@ const MouseSchema = {
  */
 class MouseDef extends EditorSingletonDef<typeof MouseSchema> {
   constructor() {
-    super(MouseSchema, { sync: "none" });
+    super("mouse", MouseSchema, { sync: "none" });
   }
 
   /** Check if mouse moved this frame */

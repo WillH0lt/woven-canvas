@@ -123,14 +123,15 @@ describe("Plugin System", () => {
     });
 
     it("should support plugin with components", () => {
-      const Block = new EditorComponentDef({
+      const Block = new EditorComponentDef("block", {
         x: field.float32(),
         y: field.float32(),
       });
 
-      const Selected = new EditorComponentDef({}, { sync: "presence" });
+      const Selected = new EditorComponentDef("selected", {}, { sync: "presence" });
 
       const Camera = new EditorSingletonDef(
+        "camera",
         {
           zoom: field.float64().default(1),
         },
@@ -196,15 +197,16 @@ describe("Plugin System", () => {
     });
 
     it("should support full-featured plugin", () => {
-      const Block = new EditorComponentDef({
+      const Block = new EditorComponentDef("block", {
         id: field.string().max(36),
         x: field.float64(),
         y: field.float64(),
       });
 
-      const Selected = new EditorComponentDef({}, { sync: "presence" });
+      const Selected = new EditorComponentDef("selected", {}, { sync: "presence" });
 
       const Camera = new EditorSingletonDef(
+        "camera",
         {
           x: field.float64().default(0),
           y: field.float64().default(0),
@@ -243,7 +245,7 @@ describe("Plugin System", () => {
 
   describe("real-world plugin scenarios", () => {
     it("should support a core plugin", () => {
-      const Block = new EditorComponentDef({
+      const Block = new EditorComponentDef("block", {
         id: field.string().max(36),
         left: field.float64(),
         top: field.float64(),
@@ -263,8 +265,12 @@ describe("Plugin System", () => {
     });
 
     it("should support a selection plugin depending on core", () => {
-      const Selected = new EditorComponentDef({}, { sync: "presence" });
-      const Hovered = new EditorComponentDef({}, { sync: "none" });
+      const Selected = new EditorComponentDef(
+        "selected",
+        {},
+        { sync: "presence" }
+      );
+      const Hovered = new EditorComponentDef("hovered", {}, { sync: "none" });
 
       const selectionPlugin: EditorPlugin = {
         name: "selection",
@@ -284,8 +290,8 @@ describe("Plugin System", () => {
     });
 
     it("should support a transform plugin depending on selection", () => {
-      const Dragging = new EditorComponentDef({}, { sync: "none" });
-      const Resizing = new EditorComponentDef({}, { sync: "none" });
+      const Dragging = new EditorComponentDef("dragging", {}, { sync: "none" });
+      const Resizing = new EditorComponentDef("resizing", {}, { sync: "none" });
 
       const transformPlugin: EditorPlugin = {
         name: "transform",

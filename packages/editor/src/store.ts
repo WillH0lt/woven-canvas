@@ -1,144 +1,157 @@
 import type { EntityId } from "./types";
-import type { AnyEditorComponentDef as EditorComponentDef } from "./EditorComponentDef";
-import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
+import type { AnyEditorComponentDef } from "./EditorComponentDef";
 
 /**
- * Represents a change to document data
- */
-export interface DocumentChange {
-  /** The entity that changed */
-  entityId: EntityId;
-  /** The component definition that changed */
-  componentDef: EditorComponentDef | EditorSingletonDef;
-  /** Type of change */
-  type: "added" | "changed" | "removed";
-  /** Current data (undefined for removed) */
-  data?: unknown;
-}
-
-/**
- * Represents a change to presence data (cursors, selections)
- */
-export interface PresenceChange {
-  /** The entity that changed */
-  entityId: EntityId;
-  /** The component definition that changed */
-  componentDef: EditorComponentDef | EditorSingletonDef;
-  /** Type of change */
-  type: "added" | "changed" | "removed";
-  /** Current data (undefined for removed) */
-  data?: unknown;
-}
-
-/**
- * Represents a change to local-only data
- */
-export interface LocalChange {
-  /** The entity that changed */
-  entityId: EntityId;
-  /** The component definition that changed */
-  componentDef: EditorComponentDef | EditorSingletonDef;
-  /** Type of change */
-  type: "added" | "changed" | "removed";
-  /** Current data (undefined for removed) */
-  data?: unknown;
-}
-
-/**
- * Snapshot of document state for loading
+ * Snapshot of document state for loading.
+ * Returned by `StoreAdapter.load()` to hydrate the Editor on startup.
  */
 export interface DocumentSnapshot {
-  /** Entity data keyed by entity ID */
-  entities: Map<EntityId, EntitySnapshot>;
-  /** Singleton data keyed by component def ID */
-  singletons: Map<number, unknown>;
+  /**
+   * Entity data keyed by entity ID.
+   * Each entity contains a map of component names to component data.
+   */
+  entities: Map<number, EntitySnapshot>;
+
+  /**
+   * Singleton data keyed by singleton name.
+   */
+  singletons: Map<string, unknown>;
 }
 
 /**
- * Snapshot of a single entity
+ * Snapshot of a single entity's component data.
  */
 export interface EntitySnapshot {
-  /** Component data keyed by component def ID */
-  components: Map<number, unknown>;
+  /**
+   * Component data keyed by component name.
+   */
+  components: Map<string, unknown>;
+}
+
+/**
+ * Describes a change to component data in the document.
+ * Used by `StoreAdapter.onDocumentChange()` to batch updates.
+ */
+export interface DocumentChange {
+  /**
+   * The type of change:
+   * - "added": Component was added to an entity
+   * - "updated": Component data was modified
+   * - "removed": Component was removed from an entity
+   */
+  type: "added" | "updated" | "removed";
+
+  /**
+   * The entity that was modified.
+   */
+  entityId: EntityId;
+
+  /**
+   * The component definition. Use `componentDef.name` for storage keys.
+   */
+  componentDef: AnyEditorComponentDef;
+
+  /**
+   * The component data as a plain object.
+   * Present for "added" and "updated" changes, undefined for "removed".
+   */
+  data?: unknown;
 }
 
 /**
  * Store adapter interface for persistence and sync.
  *
- * Implement this interface to add:
- * - Local persistence (IndexedDB)
+ * Implement this interface to integrate with storage backends like:
+ * - Local persistence (IndexedDB, localStorage)
  * - Server sync (REST, WebSocket)
- * - Real-time collaboration (CRDTs like Loro)
- * - Undo/redo history
+ * - Real-time collaboration (CRDTs like Loro, Yjs)
  *
- * All methods are optional - implement only what you need.
+ * The Editor calls `onDocumentChange()` automatically when ECS state changes
+ * for components with `sync: "document"` behavior.
  *
  * @example
  * ```typescript
- * const localStore: StoreAdapter = {
- *   onDocumentChange(changes) {
+ * class MyStore implements StoreAdapter {
+ *   onDocumentChange(changes: DocumentChange[]): void {
  *     for (const change of changes) {
- *       indexedDB.put('entities', change.entityId, change.data);
+ *       const key = `${change.entityId}:${change.componentDef.name}`;
+ *       if (change.type === "removed") {
+ *         this.db.delete(key);
+ *       } else {
+ *         this.db.put(key, change.data);
+ *       }
  *     }
- *   },
- *
- *   async load() {
- *     const entities = await indexedDB.getAll('entities');
- *     return { entities, singletons: new Map() };
- *   },
- *
- *   checkpoint() {
- *     // Save current state to undo stack
- *   },
- *
- *   undo() {
- *     // Restore previous checkpoint
- *   },
- *
- *   redo() {
- *     // Restore next checkpoint
  *   }
- * };
+ *
+ *   async load(): Promise<DocumentSnapshot> {
+ *     const entities = new Map();
+ *     for (const [key, data] of this.db.entries()) {
+ *       const [entityId, componentName] = key.split(":");
+ *       // ... reconstruct entities map
+ *     }
+ *     return { entities, singletons: new Map() };
+ *   }
+ * }
  * ```
  */
 export interface StoreAdapter {
   /**
-   * Called when document data changes (blocks, meta with sync='document').
-   * Use this to persist changes to database or sync to server.
+   * Called when document state changes.
+   * Receives a batch of changes that occurred during the current frame.
+   *
+   * Changes are batched for efficiency - multiple modifications to the same
+   * component within a frame are collapsed into a single "updated" change.
+   *
+   * @param changes - Array of document changes to persist
    */
-  onDocumentChange?: (changes: DocumentChange[]) => void;
+  onDocumentChange(changes: DocumentChange[]): void;
 
   /**
-   * Called when presence data changes (components with sync='presence').
-   * Use this to broadcast cursor positions, selections, etc.
+   * Load initial document state from storage.
+   * Called during `Editor.initialize()` to hydrate entities and singletons.
+   *
+   * Return a snapshot containing all persisted entities and their component data.
+   * The Editor will recreate entities and apply component data from the snapshot.
+   *
+   * @returns A promise resolving to the document snapshot
+   *
+   * @example
+   * ```typescript
+   * async load(): Promise<DocumentSnapshot> {
+   *   const entities = new Map();
+   *   const singletons = new Map();
+   *
+   *   // Load entities from database
+   *   for (const row of await db.entities.getAll()) {
+   *     const components = new Map();
+   *     for (const comp of row.components) {
+   *       components.set(comp.name, comp.data);
+   *     }
+   *     entities.set(row.id, { components });
+   *   }
+   *
+   *   return { entities, singletons };
+   * }
+   * ```
    */
-  onPresenceChange?: (changes: PresenceChange[]) => void;
-
-  /**
-   * Called when local data changes (components with sync='local').
-   * Use this to cache session data in localStorage/IndexedDB.
-   */
-  onLocalChange?: (changes: LocalChange[]) => void;
-
-  /**
-   * Load initial document state.
-   * Called during editor initialization.
-   */
-  load?: () => Promise<DocumentSnapshot>;
+  load(): Promise<DocumentSnapshot>;
 
   /**
    * Create a checkpoint for undo/redo.
-   * Called after significant user actions.
+   * Called by the Editor when the user performs an undoable action.
+   * Optional - implement if your store supports undo/redo.
    */
-  checkpoint?: () => void;
+  checkpoint?(): void;
 
   /**
-   * Undo to the previous checkpoint.
+   * Undo the last change.
+   * Optional - implement if your store supports undo/redo.
    */
-  undo?: () => void;
+  undo?(): void;
 
   /**
-   * Redo to the next checkpoint.
+   * Redo a previously undone change.
+   * Optional - implement if your store supports undo/redo.
    */
-  redo?: () => void;
+  redo?(): void;
 }

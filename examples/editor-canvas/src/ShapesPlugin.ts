@@ -20,6 +20,7 @@ import { sub, add, scale, type Vec2 } from "@infinitecanvas/math";
  * position, size, and color data for each shape entity.
  */
 export const Shape = defineEditorComponent(
+  "shapes",
   {
     /** World position (center of shape) [x, y] */
     position: field.tuple(field.float64(), 2).default([0, 0]),
@@ -39,6 +40,7 @@ export const shapeQuery = defineQuery((q) => q.with(Shape));
  * Using a singleton ensures proper ECS integration and supports multiple editor instances.
  */
 export const DragState = defineEditorSingleton(
+  "dragState",
   {
     /** Whether a drag is currently active */
     active: field.boolean().default(false),

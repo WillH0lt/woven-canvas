@@ -45,7 +45,7 @@ function getBit(buffer: Uint8Array, bitIndex: number): boolean {
  */
 class KeyboardDef extends EditorSingletonDef<typeof KeyboardSchema> {
   constructor() {
-    super(KeyboardSchema, { sync: "none" });
+    super("keyboard", KeyboardSchema, { sync: "none" });
   }
 
   /**

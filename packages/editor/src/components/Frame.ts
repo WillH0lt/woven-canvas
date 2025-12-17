@@ -1,16 +1,5 @@
 import { field } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "../EditorSingletonDef";
-
-const FrameSchema = {
-  /** Current frame number (increments each tick) */
-  number: field.uint32().default(0),
-  /** Time since last frame in seconds */
-  delta: field.float64().default(0),
-  /** Timestamp of current frame in milliseconds (from performance.now()) */
-  time: field.float64().default(0),
-  /** Timestamp of previous frame in milliseconds (0 if first frame) */
-  lastTime: field.float64().default(0),
-};
+import { defineEditorSingleton } from "../EditorSingletonDef";
 
 /**
  * Frame singleton - tracks frame timing information.
@@ -27,10 +16,17 @@ const FrameSchema = {
  * });
  * ```
  */
-class FrameDef extends EditorSingletonDef<typeof FrameSchema> {
-  constructor() {
-    super(FrameSchema, { sync: "none" });
-  }
-}
-
-export const Frame = new FrameDef();
+export const Frame = defineEditorSingleton(
+  "frame",
+  {
+    /** Current frame number (increments each tick) */
+    number: field.uint32().default(0),
+    /** Time since last frame in seconds */
+    delta: field.float64().default(0),
+    /** Timestamp of current frame in milliseconds (from performance.now()) */
+    time: field.float64().default(0),
+    /** Timestamp of previous frame in milliseconds (0 if first frame) */
+    lastTime: field.float64().default(0),
+  },
+  { sync: "none" }
+);

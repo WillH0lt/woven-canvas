@@ -5,10 +5,7 @@ import type {
 } from "@infinitecanvas/ecs";
 import type { AnyStateMachine } from "xstate";
 
-import {
-  EditorSingletonDef,
-  type EditorSingletonOptions,
-} from "./EditorSingletonDef";
+import { EditorSingletonDef } from "./EditorSingletonDef";
 import { runMachine } from "./machine";
 
 /**
@@ -34,14 +31,14 @@ type InferMachineContext<T extends StateSchema> = Omit<
  *
  * @example
  * ```typescript
- * const PanState = defineEditorState({
+ * const DragState = defineEditorState({
  *   state: field.string().max(16).default("idle"),
- *   panStartX: field.float64().default(0),
- *   panStartY: field.float64().default(0),
+ *   startX: field.float64().default(0),
+ *   startY: field.float64().default(0),
  * });
  *
- * type PanContext = InferStateContext<typeof PanState>;
- * // { panStartX: number; panStartY: number }
+ * type DragContext = InferStateContext<typeof DragState>;
+ * // { startX: number; startY: number }
  * ```
  */
 export type InferStateContext<T> = T extends EditorStateDef<infer S>
@@ -59,19 +56,11 @@ export type InferStateContext<T> = T extends EditorStateDef<infer S>
  *
  * @example
  * ```typescript
- * const PanStateSchema = {
+ * export const PanState = defineEditorState({
  *   state: field.string().max(16).default("idle"),
  *   panStartX: field.float64().default(0),
  *   panStartY: field.float64().default(0),
- * };
- *
- * class PanStateDef extends EditorStateDef<typeof PanStateSchema> {
- *   constructor() {
- *     super(PanStateSchema, { sync: "none" });
- *   }
- * }
- *
- * export const PanState = new PanStateDef();
+ * });
  *
  * // In a system:
  * const events = getPointerInput(ctx, ["middle"]);
@@ -83,8 +72,9 @@ export type InferStateContext<T> = T extends EditorStateDef<infer S>
 export class EditorStateDef<
   T extends StateSchema
 > extends EditorSingletonDef<T> {
-  constructor(schema: T, options: EditorSingletonOptions = {}) {
-    super(schema, options);
+  constructor(schema: T) {
+    // State machine state is never synced - it's ephemeral runtime state
+    super("__state__", schema, { sync: "none" });
   }
 
   /**
@@ -178,8 +168,10 @@ export class EditorStateDef<
 /**
  * Define an editor state singleton for XState machine state storage.
  *
+ * State machine state is ephemeral runtime state that is never persisted or synced.
+ * Use this for UI state machines like pan, drag, selection, etc.
+ *
  * @param schema - The singleton schema (must include 'state' field)
- * @param options - Editor singleton options
  * @returns EditorStateDef instance
  *
  * @example
@@ -192,8 +184,7 @@ export class EditorStateDef<
  * ```
  */
 export function defineEditorState<T extends StateSchema>(
-  schema: T,
-  options: EditorSingletonOptions = {}
+  schema: T
 ): EditorStateDef<T> {
-  return new EditorStateDef(schema, options);
+  return new EditorStateDef(schema);
 }

@@ -190,7 +190,7 @@ export class Editor {
    */
   async initialize(): Promise<void> {
     // Load initial state from store
-    if (this.store?.load) {
+    if (this.store) {
       const snapshot = await this.store.load();
       // TODO: Hydrate entities from snapshot
       console.log("Loaded snapshot:", snapshot);
@@ -308,6 +308,8 @@ export class Editor {
 
   /**
    * Get the ECS context.
+   * Only for testing and advanced use cases.
+   * @internal
    */
   _getContext(): Context {
     return this.ctx;

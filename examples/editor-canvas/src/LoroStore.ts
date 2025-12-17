@@ -75,8 +75,8 @@ export class LoroStore implements StoreAdapter {
 
   private initialized: boolean = false;
 
-  /** Map from component def ID to container name */
-  private componentNames: Map<number, string> = new Map();
+  /** Set of registered component names for tracking */
+  private registeredComponents: Set<string> = new Set();
 
   constructor(options: LoroStoreOptions = {}) {
     this.dbName = options.dbName ?? "infinitecanvas";
@@ -137,11 +137,11 @@ export class LoroStore implements StoreAdapter {
   }
 
   /**
-   * Register a component name for a def ID.
-   * Used to create named containers in Loro.
+   * Register a component for Loro storage.
+   * Components are identified by their stable `name` property.
    */
-  registerComponent(defId: number, name: string): void {
-    this.componentNames.set(defId, name);
+  registerComponent(name: string): void {
+    this.registeredComponents.add(name);
   }
 
   /**
@@ -158,16 +158,15 @@ export class LoroStore implements StoreAdapter {
     const entitiesMap = this.doc.getMap("entities");
 
     for (const change of changes) {
-      const defId = (change.componentDef as any)._defId as number;
-      const containerName =
-        this.componentNames.get(defId) ?? `component_${defId}`;
+      // Use the component's stable name directly
+      const componentName = change.componentDef.name;
 
       if (change.type === "removed") {
         const entityMap = entitiesMap.get(
           String(change.entityId)
         ) as LoroMap | undefined;
         if (entityMap) {
-          entityMap.delete(containerName);
+          entityMap.delete(componentName);
         }
       } else {
         let entityMap = entitiesMap.get(
@@ -177,7 +176,7 @@ export class LoroStore implements StoreAdapter {
           entitiesMap.setContainer(String(change.entityId), new LoroMap());
           entityMap = entitiesMap.get(String(change.entityId)) as LoroMap;
         }
-        entityMap.set(containerName, change.data);
+        entityMap.set(componentName, change.data);
       }
     }
 
@@ -189,7 +188,7 @@ export class LoroStore implements StoreAdapter {
    */
   load = async (): Promise<DocumentSnapshot> => {
     const entities = new Map<number, EntitySnapshot>();
-    const singletons = new Map<number, unknown>();
+    const singletons = new Map<string, unknown>();
 
     const entitiesMap = this.doc.getMap("entities");
 
@@ -198,36 +197,18 @@ export class LoroStore implements StoreAdapter {
       if (isNaN(entityId)) continue;
 
       const entityMap = entityData as LoroMap;
-      const components = new Map<number, unknown>();
+      const components = new Map<string, unknown>();
 
-      for (const [defIdOrName, data] of entityMap.entries()) {
-        let defId: number | undefined;
-        for (const [id, name] of this.componentNames) {
-          if (name === defIdOrName) {
-            defId = id;
-            break;
-          }
-        }
-        if (defId === undefined) {
-          const parsed = parseInt(defIdOrName.replace("component_", ""), 10);
-          if (!isNaN(parsed)) {
-            defId = parsed;
-          }
-        }
-        if (defId !== undefined) {
-          components.set(defId, data);
-        }
+      for (const [componentName, data] of entityMap.entries()) {
+        components.set(componentName, data);
       }
 
       entities.set(entityId, { components });
     }
 
     const singletonsMap = this.doc.getMap("singletons");
-    for (const [defIdStr, data] of singletonsMap.entries()) {
-      const defId = parseInt(defIdStr, 10);
-      if (!isNaN(defId)) {
-        singletons.set(defId, data);
-      }
+    for (const [singletonName, data] of singletonsMap.entries()) {
+      singletons.set(singletonName, data);
     }
 
     return { entities, singletons };

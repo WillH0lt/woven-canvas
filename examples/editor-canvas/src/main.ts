@@ -41,8 +41,8 @@ const store = new LoroStore({
 // Initialize the store (loads from IndexedDB)
 await store.initialize();
 
-// Register shape component for Loro storage
-store.registerComponent((Shape as any)._defId, "shapes");
+// Register shape component for Loro storage (use the component's stable name)
+store.registerComponent(Shape.name);
 
 // Create editor with CorePlugin, ControlsPlugin, and ShapesPlugin
 const editor = new Editor(container, {

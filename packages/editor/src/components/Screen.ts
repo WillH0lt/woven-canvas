@@ -21,7 +21,7 @@ const ScreenSchema = {
  */
 class ScreenDef extends EditorSingletonDef<typeof ScreenSchema> {
   constructor() {
-    super(ScreenSchema, { sync: "none" });
+    super("screen", ScreenSchema, { sync: "none" });
   }
 
   /** Get screen dimensions as [width, height] */

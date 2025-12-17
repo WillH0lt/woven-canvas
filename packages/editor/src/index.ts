@@ -1,6 +1,3 @@
-// Re-export field builders from ECS for convenience
-export { field } from "@infinitecanvas/ecs";
-
 // Re-export math types
 export type { Vec2 } from "@infinitecanvas/math";
 
@@ -37,11 +34,9 @@ export {
 // Store adapter
 export type {
   StoreAdapter,
-  DocumentChange,
-  PresenceChange,
-  LocalChange,
   DocumentSnapshot,
   EntitySnapshot,
+  DocumentChange,
 } from "./store";
 
 // Plugin system
@@ -55,6 +50,7 @@ export { Editor, type EditorOptions, type QueryCallback } from "./Editor";
 
 // Re-export useful ECS utilities
 export {
+  field,
   createEntity,
   removeEntity,
   addComponent,
@@ -67,6 +63,7 @@ export {
   type EntityId,
   type QueryDef,
   type System,
+  type InferComponentType,
 } from "@infinitecanvas/ecs";
 
 // Plugin
