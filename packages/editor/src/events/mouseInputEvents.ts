@@ -1,4 +1,5 @@
 import type { Context } from "@infinitecanvas/ecs";
+import type { Vec2 } from "@infinitecanvas/math";
 
 import type { MouseInput } from "./types";
 import { Camera, Mouse } from "../components";
@@ -36,7 +37,7 @@ export function getMouseInput(ctx: Context): MouseInput[] {
   const mouse = Mouse.read(ctx);
 
   // Get screen position
-  const screenPos: [number, number] = [mouse.position[0], mouse.position[1]];
+  const screenPos: Vec2 = [mouse.position[0], mouse.position[1]];
 
   // Get world position using Camera component
   const worldPos = Camera.toWorld(ctx, screenPos);

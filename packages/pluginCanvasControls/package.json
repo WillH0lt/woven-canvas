@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@infinitecanvas/editor": "workspace:*",
+    "@infinitecanvas/math": "workspace:*",
     "xstate": "^5.24.0"
   },
   "devDependencies": {

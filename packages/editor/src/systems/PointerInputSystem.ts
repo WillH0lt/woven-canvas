@@ -6,8 +6,9 @@ import {
   defineSystem,
   type Context,
 } from "@infinitecanvas/ecs";
-import type { EditorResources } from "../types";
+import type { Vec2 } from "@infinitecanvas/math";
 
+import type { EditorResources } from "../types";
 import { Pointer, addPointerSample } from "../components/Pointer";
 import { Screen } from "../components/Screen";
 
@@ -177,7 +178,7 @@ export const pointerInputSystem = defineSystem((ctx: Context) => {
   for (const event of state.eventsBuffer) {
     switch (event.type) {
       case "pointerdown": {
-        const position: [number, number] = [
+        const position: Vec2 = [
           event.clientX - screen.left,
           event.clientY - screen.top,
         ];
@@ -208,7 +209,7 @@ export const pointerInputSystem = defineSystem((ctx: Context) => {
         const entityId = state.pointerEntityMap.get(event.pointerId);
         if (entityId === undefined) break;
 
-        const position: [number, number] = [
+        const position: Vec2 = [
           event.clientX - screen.left,
           event.clientY - screen.top,
         ];
@@ -226,7 +227,7 @@ export const pointerInputSystem = defineSystem((ctx: Context) => {
         if (entityId === undefined) break;
 
         // Update final position before removal
-        const position: [number, number] = [
+        const position: Vec2 = [
           event.clientX - screen.left,
           event.clientY - screen.top,
         ];

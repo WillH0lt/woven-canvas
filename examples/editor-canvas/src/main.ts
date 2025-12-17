@@ -1,6 +1,8 @@
 import "./style.css";
 import { Editor, Camera } from "@infinitecanvas/editor";
 import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
+import { ShapesPlugin, Shape, shapeQuery, createShape } from "./ShapesPlugin";
+import { LoroStore } from "./LoroStore";
 
 // Create canvas element
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -11,6 +13,9 @@ app.innerHTML = `
       <p><strong>Scroll:</strong> Pan the canvas</p>
       <p><strong>Ctrl/Cmd + Scroll:</strong> Zoom in/out</p>
       <p><strong>Middle Mouse Drag:</strong> Pan the canvas</p>
+      <p><strong>Left Click + Drag:</strong> Move shapes</p>
+      <p><strong>Ctrl/Cmd + Z:</strong> Undo</p>
+      <p><strong>Ctrl/Cmd + Y:</strong> Redo</p>
       <div id="camera-info">
         <span>X: <span id="cam-x">0</span></span>
         <span>Y: <span id="cam-y">0</span></span>
@@ -25,13 +30,51 @@ const container = document.getElementById("canvas-container")!;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctxCanvas = canvas.getContext("2d")!;
 
-// Create editor with CorePlugin and ControlsPlugin
+// Create Loro store (handles IndexedDB persistence and optional WebSocket sync)
+const store = new LoroStore({
+  dbName: "editor-canvas",
+  // Uncomment to enable multiplayer:
+  // websocketUrl: "ws://localhost:8787",
+  // roomId: "editor-canvas",
+});
+
+// Initialize the store (loads from IndexedDB)
+await store.initialize();
+
+// Register shape component for Loro storage
+store.registerComponent((Shape as any)._defId, "shapes");
+
+// Create editor with CorePlugin, ControlsPlugin, and ShapesPlugin
 const editor = new Editor(container, {
-  plugins: [ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
+  store,
+  plugins: [ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }), ShapesPlugin],
 });
 
 // Initialize editor
 await editor.initialize();
+
+// Create some initial shapes only if this is first load (no shapes exist)
+const ctx = editor._getContext();
+if (shapeQuery.current(ctx).length === 0) {
+  createShape(ctx, 100, 100, 60, 60, "#0f3460");
+  createShape(ctx, 250, 150, 80, 80, "#533483");
+  createShape(ctx, 150, 300, 50, 50, "#e94560");
+  createShape(ctx, -100, -100, 70, 70, "#16a085");
+  createShape(ctx, -200, 200, 90, 90, "#f39c12");
+}
+
+// Keyboard shortcuts for undo/redo
+document.addEventListener("keydown", (e) => {
+  const isMod = e.ctrlKey || e.metaKey;
+
+  if (isMod && e.key === "z" && !e.shiftKey) {
+    e.preventDefault();
+    store.undo();
+  } else if (isMod && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+    e.preventDefault();
+    store.redo();
+  }
+});
 
 // UI elements for camera info
 const camX = document.getElementById("cam-x")!;
@@ -92,44 +135,50 @@ function drawGrid(
   ctx.lineTo(originX, originY + 20);
   ctx.stroke();
 
-  // Draw some sample shapes at fixed world positions
-  const shapes = [
-    { x: 100, y: 100, size: 60, color: "#0f3460" },
-    { x: 250, y: 150, size: 80, color: "#533483" },
-    { x: 150, y: 300, size: 50, color: "#e94560" },
-    { x: -100, y: -100, size: 70, color: "#16a085" },
-    { x: -200, y: 200, size: 90, color: "#f39c12" },
-  ];
-
-  for (const shape of shapes) {
-    const screenX = (shape.x - camera.left) * zoom;
-    const screenY = (shape.y - camera.top) * zoom;
-    const screenSize = shape.size * zoom;
-
-    ctx.fillStyle = shape.color;
-    ctx.fillRect(
-      screenX - screenSize / 2,
-      screenY - screenSize / 2,
-      screenSize,
-      screenSize
-    );
-
-    // Label with world coordinates
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `${12 * Math.min(zoom, 1.5)}px monospace`;
-    ctx.textAlign = "center";
-    ctx.fillText(
-      `(${shape.x}, ${shape.y})`,
-      screenX,
-      screenY + screenSize / 2 + 15 * zoom
-    );
-  }
 
   // Draw "origin" label
   ctx.fillStyle = "#e94560";
   ctx.font = "14px monospace";
   ctx.textAlign = "left";
   ctx.fillText("Origin (0, 0)", originX + 25, originY - 10);
+}
+
+// Draw all shapes from the ECS
+function drawShapes(
+  canvasCtx: CanvasRenderingContext2D,
+  ecsCtx: ReturnType<typeof editor._getContext>,
+  camera: { left: number; top: number; zoom: number }
+) {
+  const zoom = camera.zoom;
+
+  // Iterate all Shape entities and render them
+  for (const eid of shapeQuery.current(ecsCtx)) {
+    const shape = Shape.read(ecsCtx, eid);
+
+    const screenX = (shape.position[0] - camera.left) * zoom;
+    const screenY = (shape.position[1] - camera.top) * zoom;
+    const screenW = shape.size[0] * zoom;
+    const screenH = shape.size[1] * zoom;
+
+    // Draw the rectangle
+    canvasCtx.fillStyle = shape.color;
+    canvasCtx.fillRect(
+      screenX - screenW / 2,
+      screenY - screenH / 2,
+      screenW,
+      screenH
+    );
+
+    // Label with world coordinates
+    canvasCtx.fillStyle = "#ffffff";
+    canvasCtx.font = `${12 * Math.min(zoom, 1.5)}px monospace`;
+    canvasCtx.textAlign = "center";
+    canvasCtx.fillText(
+      `(${Math.round(shape.position[0])}, ${Math.round(shape.position[1])})`,
+      screenX,
+      screenY + screenH / 2 + 15 * zoom
+    );
+  }
 }
 
 // Resize canvas to fill container
@@ -157,6 +206,7 @@ function loop() {
 
   // Draw the canvas
   drawGrid(ctxCanvas, camera);
+  drawShapes(ctxCanvas, ctx, camera);
 
   requestAnimationFrame(loop);
 }

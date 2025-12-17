@@ -1,4 +1,6 @@
 import { field, type Context } from "@infinitecanvas/ecs";
+import type { Vec2 } from "@infinitecanvas/math";
+
 import { EditorComponentDef } from "../EditorComponentDef";
 
 /**
@@ -75,7 +77,7 @@ class PointerDef extends EditorComponentDef<typeof PointerSchema> {
   }
 
   /** Get the computed velocity of a pointer */
-  getVelocity(ctx: Context, entityId: number): [number, number] {
+  getVelocity(ctx: Context, entityId: number): Vec2 {
     const p = this.read(ctx, entityId);
     return [p._velocity[0], p._velocity[1]];
   }
@@ -131,7 +133,7 @@ export const Pointer = new PointerDef();
  */
 export function addPointerSample(
   pointer: ReturnType<typeof Pointer.write>,
-  position: [number, number],
+  position: Vec2,
   time: number
 ): void {
   // Avoid duplicate samples at same time

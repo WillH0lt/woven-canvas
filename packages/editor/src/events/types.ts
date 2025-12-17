@@ -1,4 +1,6 @@
 import type { Context } from "@infinitecanvas/ecs";
+import type { Vec2 } from "@infinitecanvas/math";
+
 import type { PointerButton, PointerType } from "../components/Pointer";
 
 /**
@@ -31,11 +33,11 @@ export interface PointerInput {
   /** ECS context for accessing components in state machine actions */
   ctx: Context;
   /** Position in screen/client coordinates [x, y] */
-  screenPosition: [number, number];
+  screenPosition: Vec2;
   /** Position in world coordinates [x, y] (requires Camera singleton) */
-  worldPosition: [number, number];
+  worldPosition: Vec2;
   /** Velocity in screen pixels per second [vx, vy] */
-  velocity: [number, number];
+  velocity: Vec2;
   /** Pressure from 0 to 1 (for pen/touch, 0.5 for mouse) */
   pressure: number;
   /** Which button is pressed */
@@ -77,9 +79,9 @@ export interface MouseInput {
   /** ECS context for accessing components in state machine actions */
   ctx: Context;
   /** Position in screen/client coordinates [x, y] */
-  screenPosition: [number, number];
+  screenPosition: Vec2;
   /** Position in world coordinates [x, y] (requires Camera singleton) */
-  worldPosition: [number, number];
+  worldPosition: Vec2;
   /** Horizontal wheel delta (positive = scroll right) */
   wheelDeltaX: number;
   /** Vertical wheel delta (positive = scroll down) */

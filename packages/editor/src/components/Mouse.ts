@@ -1,4 +1,6 @@
 import { field, type Context } from "@infinitecanvas/ecs";
+import type { Vec2 } from "@infinitecanvas/math";
+
 import { EditorSingletonDef } from "../EditorSingletonDef";
 
 const MouseSchema = {
@@ -50,13 +52,13 @@ class MouseDef extends EditorSingletonDef<typeof MouseSchema> {
   }
 
   /** Get current mouse position as [x, y] */
-  getPosition(ctx: Context): [number, number] {
+  getPosition(ctx: Context): Vec2 {
     const m = this.read(ctx);
     return [m.position[0], m.position[1]];
   }
 
   /** Get wheel delta as [dx, dy] */
-  getWheelDelta(ctx: Context): [number, number] {
+  getWheelDelta(ctx: Context): Vec2 {
     const m = this.read(ctx);
     return [m.wheelDeltaX, m.wheelDeltaY];
   }

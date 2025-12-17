@@ -1,4 +1,5 @@
 import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
+import { type Vec2, distance } from "@infinitecanvas/math";
 
 import { Camera, Frame, Pointer, Keyboard, type PointerButton } from "../components";
 import type { PointerInput, PointerInputOptions } from "./types";
@@ -16,7 +17,7 @@ const pointerQuery = defineQuery((q) => q.tracking(Pointer));
  */
 interface PointerTrackingState {
   /** Previous frame's pointer positions for movement detection */
-  prevPositions: Map<number, [number, number]>;
+  prevPositions: Map<number, Vec2>;
   /** Previous modifier key state */
   prevModifiers: {
     shiftDown: boolean;
@@ -42,15 +43,6 @@ function getTrackingState(ctx: Context): PointerTrackingState {
     trackingState.set(key, state);
   }
   return state;
-}
-
-/**
- * Calculate distance between two points.
- */
-function distance(a: [number, number], b: [number, number]): number {
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**
@@ -125,10 +117,7 @@ export function getPointerInput(
     entityId: EntityId
   ): PointerInput => {
     const pointer = Pointer.read(ctx, entityId);
-    const screenPos: [number, number] = [
-      pointer.position[0],
-      pointer.position[1],
-    ];
+    const screenPos: Vec2 = [pointer.position[0], pointer.position[1]];
     const worldPos = Camera.toWorld(ctx, screenPos);
 
     return {
@@ -200,10 +189,7 @@ export function getPointerInput(
     // Check for click
     const downPos = state.prevPositions.get(entityId);
     if (downPos) {
-      const currentPos: [number, number] = [
-        pointer.position[0],
-        pointer.position[1],
-      ];
+      const currentPos: Vec2 = [pointer.position[0], pointer.position[1]];
       const dist = distance(downPos, currentPos);
       const deltaFrame = frameNumber - pointer.downFrame;
 

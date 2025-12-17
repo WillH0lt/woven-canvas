@@ -1,4 +1,5 @@
 import { field, type Context } from "@infinitecanvas/ecs";
+import type { Vec2 } from "@infinitecanvas/math";
 
 import { EditorSingletonDef } from "../EditorSingletonDef";
 import { Screen } from "./Screen";
@@ -32,7 +33,7 @@ class CameraDef extends EditorSingletonDef<typeof CameraSchema> {
    * @param screenPos - Position in screen pixels [x, y]
    * @returns Position in world coordinates [x, y]
    */
-  toWorld(ctx: Context, screenPos: [number, number]): [number, number] {
+  toWorld(ctx: Context, screenPos: Vec2): Vec2 {
     const camera = this.read(ctx);
     const worldX = camera.left + screenPos[0] / camera.zoom;
     const worldY = camera.top + screenPos[1] / camera.zoom;
@@ -45,7 +46,7 @@ class CameraDef extends EditorSingletonDef<typeof CameraSchema> {
    * @param worldPos - Position in world coordinates [x, y]
    * @returns Position in screen pixels [x, y]
    */
-  toScreen(ctx: Context, worldPos: [number, number]): [number, number] {
+  toScreen(ctx: Context, worldPos: Vec2): Vec2 {
     const camera = this.read(ctx);
     const screenX = (worldPos[0] - camera.left) * camera.zoom;
     const screenY = (worldPos[1] - camera.top) * camera.zoom;
@@ -57,7 +58,7 @@ class CameraDef extends EditorSingletonDef<typeof CameraSchema> {
    * @param ctx - ECS context
    * @returns Center position in world coordinates [x, y]
    */
-  getWorldCenter(ctx: Context): [number, number] {
+  getWorldCenter(ctx: Context): Vec2 {
     const camera = this.read(ctx);
     const screen = Screen.read(ctx);
     return [

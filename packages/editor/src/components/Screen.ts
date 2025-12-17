@@ -1,4 +1,6 @@
 import { field, type Context } from "@infinitecanvas/ecs";
+import type { Vec2 } from "@infinitecanvas/math";
+
 import { EditorSingletonDef } from "../EditorSingletonDef";
 
 const ScreenSchema = {
@@ -23,19 +25,19 @@ class ScreenDef extends EditorSingletonDef<typeof ScreenSchema> {
   }
 
   /** Get screen dimensions as [width, height] */
-  getSize(ctx: Context): [number, number] {
+  getSize(ctx: Context): Vec2 {
     const s = this.read(ctx);
     return [s.width, s.height];
   }
 
   /** Get screen position as [left, top] */
-  getPosition(ctx: Context): [number, number] {
+  getPosition(ctx: Context): Vec2 {
     const s = this.read(ctx);
     return [s.left, s.top];
   }
 
   /** Get the center point of the screen */
-  getCenter(ctx: Context): [number, number] {
+  getCenter(ctx: Context): Vec2 {
     const s = this.read(ctx);
     return [s.left + s.width / 2, s.top + s.height / 2];
   }

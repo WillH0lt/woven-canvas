@@ -1,6 +1,9 @@
 // Re-export field builders from ECS for convenience
 export { field } from "@infinitecanvas/ecs";
 
+// Re-export math types
+export type { Vec2 } from "@infinitecanvas/math";
+
 // Core types
 export type {
   EditorResources,

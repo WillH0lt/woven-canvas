@@ -1,3 +1,5 @@
+import { type Vec2, sub, scale, lengthSq, dot } from "@infinitecanvas/math";
+
 /**
  * Smooth damp function for 2D vectors.
  *
@@ -16,13 +18,13 @@
  * @returns New position and velocity
  */
 export function smoothDamp(
-  current: [number, number],
-  target: [number, number],
-  velocity: [number, number],
+  current: Vec2,
+  target: Vec2,
+  velocity: Vec2,
   smoothTime: number,
   maxSpeed: number,
   deltaTime: number
-): { position: [number, number]; velocity: [number, number] } {
+): { position: Vec2; velocity: Vec2 } {
   // Based on Game Programming Gems 4 Chapter 1.10
   smoothTime = Math.max(0.0001, smoothTime);
   const omega = 2 / smoothTime;
@@ -30,58 +32,45 @@ export function smoothDamp(
   const x = omega * deltaTime;
   const exp = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
 
-  let targetX = target[0];
-  let targetY = target[1];
-
-  let changeX = current[0] - targetX;
-  let changeY = current[1] - targetY;
-
-  const originalToX = targetX;
-  const originalToY = targetY;
+  const originalTo = target;
+  let change = sub(current, target);
 
   // Clamp maximum speed
   const maxChange = maxSpeed * smoothTime;
-
   const maxChangeSq = maxChange * maxChange;
-  const magnitudeSq = changeX * changeX + changeY * changeY;
+  const changeLenSq = lengthSq(change);
 
-  if (magnitudeSq > maxChangeSq) {
-    const magnitude = Math.sqrt(magnitudeSq);
-    changeX = (changeX / magnitude) * maxChange;
-    changeY = (changeY / magnitude) * maxChange;
+  if (changeLenSq > maxChangeSq) {
+    change = scale(change, maxChange / Math.sqrt(changeLenSq));
   }
 
-  targetX = current[0] - changeX;
-  targetY = current[1] - changeY;
+  const clampedTarget = sub(current, change);
 
-  const tempX = (velocity[0] + omega * changeX) * deltaTime;
-  const tempY = (velocity[1] + omega * changeY) * deltaTime;
-
-  const newVelocity: [number, number] = [
-    (velocity[0] - omega * tempX) * exp,
-    (velocity[1] - omega * tempY) * exp,
+  const temp: Vec2 = [
+    (velocity[0] + omega * change[0]) * deltaTime,
+    (velocity[1] + omega * change[1]) * deltaTime,
   ];
 
-  const position: [number, number] = [
-    targetX + (changeX + tempX) * exp,
-    targetY + (changeY + tempY) * exp,
+  const newVelocity: Vec2 = [
+    (velocity[0] - omega * temp[0]) * exp,
+    (velocity[1] - omega * temp[1]) * exp,
+  ];
+
+  const position: Vec2 = [
+    clampedTarget[0] + (change[0] + temp[0]) * exp,
+    clampedTarget[1] + (change[1] + temp[1]) * exp,
   ];
 
   // Prevent overshooting
-  const origMinusCurrentX = originalToX - current[0];
-  const origMinusCurrentY = originalToY - current[1];
-  const outMinusOrigX = position[0] - originalToX;
-  const outMinusOrigY = position[1] - originalToY;
+  const origMinusCurrent = sub(originalTo, current);
+  const outMinusOrig = sub(position, originalTo);
 
-  if (
-    origMinusCurrentX * outMinusOrigX + origMinusCurrentY * outMinusOrigY >
-    0
-  ) {
-    position[0] = originalToX;
-    position[1] = originalToY;
+  if (dot(origMinusCurrent, outMinusOrig) > 0) {
+    position[0] = originalTo[0];
+    position[1] = originalTo[1];
 
-    newVelocity[0] = (position[0] - originalToX) / deltaTime;
-    newVelocity[1] = (position[1] - originalToY) / deltaTime;
+    newVelocity[0] = (position[0] - originalTo[0]) / deltaTime;
+    newVelocity[1] = (position[1] - originalTo[1]) / deltaTime;
   }
 
   return { position, velocity: newVelocity };

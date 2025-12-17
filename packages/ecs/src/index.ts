@@ -4,6 +4,7 @@ export {
   defineSingleton,
   ComponentDef,
   SingletonDef,
+  SINGLETON_ENTITY_ID,
   type ComponentSchema,
   type InferComponentType,
   type FieldBuilder,
@@ -36,3 +37,4 @@ export {
 } from "./System";
 export type { Context, EntityId } from "./types";
 export { defineQuery, type QueryDef, type QueryOptions } from "./Query";
+export { EventType, type EventTypeValue } from "./EventBuffer";

@@ -27,7 +27,7 @@ export interface MachineResult<TState, TContext> {
  * ```typescript
  * const panMachine = setup({
  *   types: {
- *     context: {} as { panStart: [number, number] },
+ *     context: {} as { panStart: Vec2 },
  *     events: {} as PointerEvent,
  *   },
  *   actions: {
