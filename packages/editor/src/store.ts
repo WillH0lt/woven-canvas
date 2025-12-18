@@ -1,62 +1,6 @@
-import type { EntityId } from "./types";
+import type { Context } from "@infinitecanvas/ecs";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
-
-/**
- * Snapshot of document state for loading.
- * Returned by `StoreAdapter.load()` to hydrate the Editor on startup.
- */
-export interface DocumentSnapshot {
-  /**
-   * Entity data keyed by entity ID.
-   * Each entity contains a map of component names to component data.
-   */
-  entities: Map<number, EntitySnapshot>;
-
-  /**
-   * Singleton data keyed by singleton name.
-   */
-  singletons: Map<string, unknown>;
-}
-
-/**
- * Snapshot of a single entity's component data.
- */
-export interface EntitySnapshot {
-  /**
-   * Component data keyed by component name.
-   */
-  components: Map<string, unknown>;
-}
-
-/**
- * Describes a change to component data in the document.
- * Used by `StoreAdapter.onDocumentChange()` to batch updates.
- */
-export interface DocumentChange {
-  /**
-   * The type of change:
-   * - "added": Component was added to an entity
-   * - "updated": Component data was modified
-   * - "removed": Component was removed from an entity
-   */
-  type: "added" | "updated" | "removed";
-
-  /**
-   * The entity that was modified.
-   */
-  entityId: EntityId;
-
-  /**
-   * The component definition. Use `componentDef.name` for storage keys.
-   */
-  componentDef: AnyEditorComponentDef;
-
-  /**
-   * The component data as a plain object.
-   * Present for "added" and "updated" changes, undefined for "removed".
-   */
-  data?: unknown;
-}
+import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 
 /**
  * Store adapter interface for persistence and sync.
@@ -66,92 +10,115 @@ export interface DocumentChange {
  * - Server sync (REST, WebSocket)
  * - Real-time collaboration (CRDTs like Loro, Yjs)
  *
- * The Editor calls `onDocumentChange()` automatically when ECS state changes
- * for components with `sync: "document"` behavior.
+ * The Editor calls these methods automatically when ECS state changes
+ * for components/singletons with `sync: "document"` behavior.
+ *
+ * Data is organized by component type, then by entity's stable `id` field.
+ * Entity IDs (runtime numbers) are never persisted - only UUID strings.
  *
  * @example
  * ```typescript
  * class MyStore implements StoreAdapter {
- *   onDocumentChange(changes: DocumentChange[]): void {
- *     for (const change of changes) {
- *       const key = `${change.entityId}:${change.componentDef.name}`;
- *       if (change.type === "removed") {
- *         this.db.delete(key);
- *       } else {
- *         this.db.put(key, change.data);
- *       }
- *     }
+ *   onComponentAdded(componentDef, id, data) {
+ *     this.db.put(componentDef.name, id, data);
  *   }
- *
- *   async load(): Promise<DocumentSnapshot> {
- *     const entities = new Map();
- *     for (const [key, data] of this.db.entries()) {
- *       const [entityId, componentName] = key.split(":");
- *       // ... reconstruct entities map
- *     }
- *     return { entities, singletons: new Map() };
+ *   onComponentUpdated(componentDef, id, data) {
+ *     this.db.put(componentDef.name, id, data);
+ *   }
+ *   onComponentRemoved(componentDef, id) {
+ *     this.db.delete(componentDef.name, id);
+ *   }
+ *   onSingletonUpdated(singletonDef, data) {
+ *     this.db.singletons.put(singletonDef.name, data);
+ *   }
+ *   async load() {
+ *     // ... load from database
  *   }
  * }
  * ```
  */
 export interface StoreAdapter {
   /**
-   * Called when document state changes.
-   * Receives a batch of changes that occurred during the current frame.
+   * Called when a component is added to an entity.
+   * This is called for components with `sync: "document"` behavior.
    *
-   * Changes are batched for efficiency - multiple modifications to the same
-   * component within a frame are collapsed into a single "updated" change.
-   *
-   * @param changes - Array of document changes to persist
+   * @param componentDef - The component definition (use `name` for storage keys)
+   * @param id - The entity's stable UUID (from the component's `id` field)
+   * @param data - The component data as a plain object (includes `id` field)
    */
-  onDocumentChange(changes: DocumentChange[]): void;
+  onComponentAdded(
+    componentDef: AnyEditorComponentDef,
+    id: string,
+    data: unknown
+  ): void;
 
   /**
-   * Load initial document state from storage.
-   * Called during `Editor.initialize()` to hydrate entities and singletons.
+   * Called when a component's data is modified.
+   * This is called for components with `sync: "document"` behavior.
    *
-   * Return a snapshot containing all persisted entities and their component data.
-   * The Editor will recreate entities and apply component data from the snapshot.
-   *
-   * @returns A promise resolving to the document snapshot
-   *
-   * @example
-   * ```typescript
-   * async load(): Promise<DocumentSnapshot> {
-   *   const entities = new Map();
-   *   const singletons = new Map();
-   *
-   *   // Load entities from database
-   *   for (const row of await db.entities.getAll()) {
-   *     const components = new Map();
-   *     for (const comp of row.components) {
-   *       components.set(comp.name, comp.data);
-   *     }
-   *     entities.set(row.id, { components });
-   *   }
-   *
-   *   return { entities, singletons };
-   * }
-   * ```
+   * @param componentDef - The component definition (use `name` for storage keys)
+   * @param id - The entity's stable UUID (from the component's `id` field)
+   * @param data - The updated component data as a plain object
    */
-  load(): Promise<DocumentSnapshot>;
+  onComponentUpdated(
+    componentDef: AnyEditorComponentDef,
+    id: string,
+    data: unknown
+  ): void;
 
   /**
-   * Create a checkpoint for undo/redo.
-   * Called by the Editor when the user performs an undoable action.
-   * Optional - implement if your store supports undo/redo.
+   * Called when a component is removed from an entity.
+   * This is called for components with `sync: "document"` behavior.
+   *
+   * @param componentDef - The component definition (use `name` for storage keys)
+   * @param id - The entity's stable UUID
    */
-  checkpoint?(): void;
+  onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void;
 
   /**
-   * Undo the last change.
-   * Optional - implement if your store supports undo/redo.
+   * Called when a singleton's data is modified.
+   * Singletons are global state with exactly one instance per world.
+   * This is called for singletons with `sync: "document"` behavior.
+   *
+   * @param singletonDef - The singleton definition (use `name` for storage keys)
+   * @param data - The updated singleton data as a plain object
    */
-  undo?(): void;
+  onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void;
 
   /**
-   * Redo a previously undone change.
-   * Optional - implement if your store supports undo/redo.
+   * Commit pending changes to storage.
+   * Called by the Editor at the end of each frame after all mutations are complete.
+   * Use this to batch writes for better performance (e.g., CRDT commit).
    */
-  redo?(): void;
+  commit(): void;
+
+  /**
+   * Initialize the store with the Editor's context.
+   * Called by the Editor during initialization to set up bidirectional sync.
+   *
+   * Use this to:
+   * - Store component/singleton defs for flushChanges lookup
+   * - Set up persistence (IndexedDB, etc.)
+   * - Connect to network sync (WebSocket, etc.)
+   *
+   * @param components - Array of component definitions
+   * @param singletons - Array of singleton definitions
+   */
+  initialize(
+    components: AnyEditorComponentDef[],
+    singletons: AnyEditorSingletonDef[]
+  ): Promise<void>;
+
+  /**
+   * Flush pending changes from the store to the ECS world.
+   * Called by the Editor each frame to apply updates from
+   * undo/redo operations, network sync, etc.
+   *
+   * The store implementation has full control over how to apply changes.
+   * It receives the ECS context and can create/update/remove entities
+   * and components as needed.
+   *
+   * @param ctx - The ECS context for applying changes
+   */
+  flushChanges(ctx: Context): void;
 }

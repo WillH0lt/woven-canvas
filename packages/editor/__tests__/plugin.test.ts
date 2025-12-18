@@ -128,7 +128,11 @@ describe("Plugin System", () => {
         y: field.float32(),
       });
 
-      const Selected = new EditorComponentDef("selected", {}, { sync: "presence" });
+      const Selected = new EditorComponentDef(
+        "selected",
+        {},
+        { sync: "presence" }
+      );
 
       const Camera = new EditorSingletonDef(
         "camera",
@@ -203,7 +207,11 @@ describe("Plugin System", () => {
         y: field.float64(),
       });
 
-      const Selected = new EditorComponentDef("selected", {}, { sync: "presence" });
+      const Selected = new EditorComponentDef(
+        "selected",
+        {},
+        { sync: "presence" }
+      );
 
       const Camera = new EditorSingletonDef(
         "camera",

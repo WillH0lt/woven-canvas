@@ -105,15 +105,15 @@ describe("defineSingleton", () => {
     expect(GridConfig.__editor.sync).toBe("document");
   });
 
-  it("should allow local sync for session data", () => {
+  it("should allow presence sync for session data", () => {
     const SessionData = defineSingleton(
       {
         lastViewedAt: field.float64(),
       },
-      { sync: "local" }
+      { sync: "presence" }
     );
 
-    expect(SessionData.__editor.sync).toBe("local");
+    expect(SessionData.__editor.sync).toBe("presence");
   });
 });
 

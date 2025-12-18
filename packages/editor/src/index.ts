@@ -14,6 +14,7 @@ export {
   EditorSingletonDef,
   defineEditorSingleton,
   type EditorSingletonOptions,
+  type AnyEditorSingletonDef,
 } from "./EditorSingletonDef";
 
 // State machine singleton
@@ -29,15 +30,11 @@ export {
   EditorComponentDef,
   defineEditorComponent,
   type EditorComponentOptions,
+  type AnyEditorComponentDef,
 } from "./EditorComponentDef";
 
 // Store adapter
-export type {
-  StoreAdapter,
-  DocumentSnapshot,
-  EntitySnapshot,
-  DocumentChange,
-} from "./store";
+export type { StoreAdapter } from "./store";
 
 // Plugin system
 export { type EditorPlugin } from "./plugin";

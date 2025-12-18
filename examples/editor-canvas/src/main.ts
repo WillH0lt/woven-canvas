@@ -1,5 +1,5 @@
 import "./style.css";
-import { Editor, Camera } from "@infinitecanvas/editor";
+import { Editor, Camera, removeEntity } from "@infinitecanvas/editor";
 import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
 import { ShapesPlugin, Shape, shapeQuery, createShape } from "./ShapesPlugin";
 import { LoroStore } from "./LoroStore";
@@ -16,6 +16,10 @@ app.innerHTML = `
       <p><strong>Left Click + Drag:</strong> Move shapes</p>
       <p><strong>Ctrl/Cmd + Z:</strong> Undo</p>
       <p><strong>Ctrl/Cmd + Y:</strong> Redo</p>
+      <div id="buttons">
+        <button id="add-shape">Add Shape</button>
+        <button id="clear-shapes">Clear Shapes</button>
+      </div>
       <div id="camera-info">
         <span>X: <span id="cam-x">0</span></span>
         <span>Y: <span id="cam-y">0</span></span>
@@ -32,17 +36,10 @@ const ctxCanvas = canvas.getContext("2d")!;
 
 // Create Loro store (handles IndexedDB persistence and optional WebSocket sync)
 const store = new LoroStore({
-  dbName: "editor-canvas",
-  // Uncomment to enable multiplayer:
-  // websocketUrl: "ws://localhost:8787",
-  // roomId: "editor-canvas",
+  // dbName: "editor-canvas",
+  websocketUrl: "ws://localhost:8787",
+  roomId: "editor-canvas",
 });
-
-// Initialize the store (loads from IndexedDB)
-await store.initialize();
-
-// Register shape component for Loro storage (use the component's stable name)
-store.registerComponent(Shape.name);
 
 // Create editor with CorePlugin, ControlsPlugin, and ShapesPlugin
 const editor = new Editor(container, {
@@ -52,16 +49,6 @@ const editor = new Editor(container, {
 
 // Initialize editor
 await editor.initialize();
-
-// Create some initial shapes only if this is first load (no shapes exist)
-const ctx = editor._getContext();
-if (shapeQuery.current(ctx).length === 0) {
-  createShape(ctx, 100, 100, 60, 60, "#0f3460");
-  createShape(ctx, 250, 150, 80, 80, "#533483");
-  createShape(ctx, 150, 300, 50, 50, "#e94560");
-  createShape(ctx, -100, -100, 70, 70, "#16a085");
-  createShape(ctx, -200, 200, 90, 90, "#f39c12");
-}
 
 // Keyboard shortcuts for undo/redo
 document.addEventListener("keydown", (e) => {
@@ -80,6 +67,37 @@ document.addEventListener("keydown", (e) => {
 const camX = document.getElementById("cam-x")!;
 const camY = document.getElementById("cam-y")!;
 const camZoom = document.getElementById("cam-zoom")!;
+
+// Shape colors
+const colors = [
+  "#e94560",
+  "#0f3460",
+  "#16c79a",
+  "#f9a826",
+  "#6c5ce7",
+  "#fd79a8",
+];
+
+// Add shape button
+document.getElementById("add-shape")!.addEventListener("click", () => {
+  editor.nextTick((ctx) => {
+    const camera = Camera.read(ctx);
+    // Place shape in center of current view
+    const x = camera.left + canvas.width / camera.zoom / 2;
+    const y = camera.top + canvas.height / camera.zoom / 2;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    createShape(ctx, x, y, 60, 60, color);
+  });
+});
+
+// Clear shapes button
+document.getElementById("clear-shapes")!.addEventListener("click", () => {
+  editor.nextTick((ctx) => {
+    for (const eid of shapeQuery.current(ctx)) {
+      removeEntity(ctx, eid);
+    }
+  });
+});
 
 // Draw a grid on the canvas to visualize panning/zooming
 function drawGrid(
@@ -134,7 +152,6 @@ function drawGrid(
   ctx.moveTo(originX, originY - 20);
   ctx.lineTo(originX, originY + 20);
   ctx.stroke();
-
 
   // Draw "origin" label
   ctx.fillStyle = "#e94560";

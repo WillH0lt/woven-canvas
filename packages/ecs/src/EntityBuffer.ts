@@ -228,4 +228,27 @@ export class EntityBuffer {
       EntityBuffer.GENERATION_SHIFT
     );
   }
+
+  /**
+   * Iterate over all component IDs that an entity has.
+   * More efficient than checking each component individually when
+   * you need to find any component on an entity.
+   */
+  *getComponentIds(entityId: EntityId): Generator<number> {
+    const offset = entityId * this.bytesPerEntity;
+    const view = this.view;
+    const componentBytes = this.bytesPerEntity - 1;
+
+    for (let byteIndex = 0; byteIndex < componentBytes; byteIndex++) {
+      const byte = Atomics.load(view, offset + 1 + byteIndex);
+      if (byte === 0) continue;
+
+      // Check each bit in the byte
+      for (let bit = 0; bit < 8; bit++) {
+        if (byte & (1 << bit)) {
+          yield byteIndex * 8 + bit;
+        }
+      }
+    }
+  }
 }

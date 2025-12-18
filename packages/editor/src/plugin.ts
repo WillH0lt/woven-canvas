@@ -1,6 +1,11 @@
-import type { Context, System } from "@infinitecanvas/ecs";
+import type {
+  Context,
+  System,
+  ComponentDef,
+  ComponentSchema,
+} from "@infinitecanvas/ecs";
 
-import type { AnyEditorComponentDef as EditorComponentDef } from "./EditorComponentDef";
+import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
 
 /**
@@ -34,11 +39,13 @@ export interface PluginSystems {
  *
  * @example
  * ```typescript
- * import { EditorPlugin, EditorComponentDef, EditorSingletonDef, field } from '@infinitecanvas/editor';
+ * import { EditorPlugin, defineEditorComponent, defineEditorSingleton, field } from '@infinitecanvas/editor';
  *
- * const Selected = new EditorComponentDef({}, { sync: 'presence' });
- * const Hovered = new EditorComponentDef({}, { sync: 'none' });
- * const Camera = new EditorSingletonDef({
+ * const Selected = defineEditorComponent('selected', {}, { sync: 'presence' });
+ *
+ * const Hovered = defineEditorComponent('hovered', {}, { sync: 'none' });
+ *
+ * const CameraState = defineEditorSingleton('camera', {
  *   x: field.float64().default(0),
  *   y: field.float64().default(0),
  *   zoom: field.float64().default(1),
@@ -48,7 +55,7 @@ export interface PluginSystems {
  *   name: 'selection',
  *
  *   components: [Selected, Hovered],
- *   singletons: [Camera],
+ *   singletons: [CameraState],
  *
  *   captureSystems: [
  *     (ctx) => {
@@ -96,9 +103,10 @@ export interface EditorPlugin<TResources = unknown> {
 
   /**
    * Components to register.
-   * Create with new EditorComponentDef(schema, options).
+   * User-defined components should use defineEditorComponent() with an `id` field.
+   * Internal components may use base ComponentDef.
    */
-  components?: EditorComponentDef[];
+  components?: AnyEditorComponentDef[];
 
   /**
    * Singletons to register.

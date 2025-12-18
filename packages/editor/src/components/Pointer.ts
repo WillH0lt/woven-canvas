@@ -1,6 +1,5 @@
-import { field, type Context } from "@infinitecanvas/ecs";
+import { field, ComponentDef, type Context } from "@infinitecanvas/ecs";
 import type { Vec2 } from "@infinitecanvas/math";
-
 import { EditorComponentDef } from "../EditorComponentDef";
 
 /**
@@ -35,7 +34,7 @@ const SAMPLE_COUNT = 6;
 
 const PointerSchema = {
   /** Unique pointer ID (from PointerEvent.pointerId) */
-  id: field.uint16().default(0),
+  pointerId: field.uint16().default(0),
   /** Current position relative to the editor element [x, y] */
   position: field.tuple(field.float32(), 2).default([0, 0]),
   /** Position where the pointer went down [x, y] */
@@ -70,6 +69,9 @@ const PointerSchema = {
  *
  * This component stores position history for smooth velocity calculation
  * using exponentially time-decayed weighted least-squares fitting.
+ *
+ * Note: This is an internal runtime component using base ComponentDef,
+ * not EditorComponentDef, since it doesn't need sync or a string id.
  */
 class PointerDef extends EditorComponentDef<typeof PointerSchema> {
   constructor() {

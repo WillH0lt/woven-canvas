@@ -285,11 +285,11 @@ describe("Pointer", () => {
       const pointers = pointerQuery.current(ctx);
       expect(pointers.length).toBe(2);
 
-      // Verify they have different IDs
+      // Verify they have different pointer IDs
       // Note: ECS read() returns a view object that gets updated on each call,
-      // so we must extract the id immediately before calling read() again
-      const id1 = Pointer.read(ctx, pointers[0]).id;
-      const id2 = Pointer.read(ctx, pointers[1]).id;
+      // so we must extract the pointerId immediately before calling read() again
+      const id1 = Pointer.read(ctx, pointers[0]).pointerId;
+      const id2 = Pointer.read(ctx, pointers[1]).pointerId;
       expect(id1).not.toBe(id2);
     });
 
@@ -335,7 +335,7 @@ describe("Pointer", () => {
 
       // Remaining pointer should be pointer 2
       const remaining = Pointer.read(ctx, pointers[0]);
-      expect(remaining.id).toBe(2);
+      expect(remaining.pointerId).toBe(2);
     });
   });
 

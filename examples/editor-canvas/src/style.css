@@ -58,6 +58,27 @@ html, body {
   color: #fff;
 }
 
+#buttons {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+#buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #e94560;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#buttons button:hover {
+  background: #d63850;
+}
+
 #camera-info {
   margin-top: 12px;
   padding-top: 12px;

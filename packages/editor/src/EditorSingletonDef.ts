@@ -53,7 +53,7 @@ export type AnyEditorSingletonDef = EditorSingletonDef<ComponentSchema>;
  *     top: field.float64().default(0),
  *     zoom: field.float64().default(1),
  *   },
- *   { sync: "local" }
+ *   { sync: "none" }
  * );
  * ```
  */

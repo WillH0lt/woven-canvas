@@ -5,6 +5,8 @@ import {
   ComponentDef,
   type System,
   type SingletonDef,
+  EventType,
+  SINGLETON_ENTITY_ID,
 } from "@infinitecanvas/ecs";
 
 import type { EditorResources, SystemPhase } from "./types";
@@ -12,6 +14,8 @@ import type { StoreAdapter } from "./store";
 import { type EditorPlugin, sortPluginsByDependencies } from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
+import type { AnyEditorComponentDef } from "./EditorComponentDef";
+import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 
 /**
  * Editor configuration options
@@ -99,6 +103,10 @@ export class Editor {
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
 
+  private components: Map<number, AnyEditorComponentDef> = new Map();
+  private singletons: Map<number, AnyEditorSingletonDef> = new Map();
+  private storeEventIndex: number = 0;
+
   constructor(domElement: HTMLElement, options?: EditorOptions) {
     const {
       plugins = [],
@@ -174,6 +182,31 @@ export class Editor {
 
     // Store adapter
     this.store = store;
+
+    // Build maps of synced components/singletons for store sync
+    if (this.store) {
+      for (const plugin of sortedPlugins) {
+        if (plugin.components) {
+          for (const comp of plugin.components) {
+            if ("__editor" in comp) {
+              const componentId = comp._getComponentId(this.ctx);
+              this.components.set(componentId, comp as AnyEditorComponentDef);
+            }
+          }
+        }
+        if (plugin.singletons) {
+          for (const singleton of plugin.singletons) {
+            if ("__editor" in singleton) {
+              const componentId = singleton._getComponentId(this.ctx);
+              this.singletons.set(
+                componentId,
+                singleton as AnyEditorSingletonDef
+              );
+            }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -189,11 +222,12 @@ export class Editor {
    * Call this after construction to run async setup.
    */
   async initialize(): Promise<void> {
-    // Load initial state from store
+    // Initialize store with component/singleton defs for bidirectional sync
     if (this.store) {
-      const snapshot = await this.store.load();
-      // TODO: Hydrate entities from snapshot
-      console.log("Loaded snapshot:", snapshot);
+      await this.store.initialize(
+        Array.from(this.components.values()),
+        Array.from(this.singletons.values())
+      );
     }
 
     // Run plugin setup
@@ -217,6 +251,17 @@ export class Editor {
    * and automatically cleaned up at the end.
    */
   async tick(): Promise<void> {
+    if (this.store) {
+      // Sync local ECS changes to the store
+      this.syncToStore(this.storeEventIndex);
+
+      // Flush external changes (undo/redo, network sync) from store to ECS
+      this.store.flushChanges(this.ctx);
+
+      // Advance past flushChanges events so they don't get synced back to store
+      this.storeEventIndex = this.ctx.eventBuffer.getWriteIndex();
+    }
+
     // Process scheduled callbacks (including command spawns)
     this.world.sync();
 
@@ -227,6 +272,94 @@ export class Editor {
 
     // Clean up command entities at end of frame
     cleanupCommands(this.ctx);
+  }
+
+  /**
+   * Read the stable entity UUID from any EditorComponent on this entity,
+   * or generate a new one if none exists.
+   */
+  private readOrCreateEntityUuid(entityId: number): string {
+    const ctx = this.ctx;
+
+    // Iterate only over components the entity actually has
+    for (const componentId of ctx.entityBuffer.getComponentIds(entityId)) {
+      const componentDef = this.components.get(componentId);
+      if (componentDef) {
+        const instance = componentDef._getInstance(ctx);
+        const id = instance.buffer._id.get(entityId);
+        if (id) return id;
+      }
+    }
+    return crypto.randomUUID();
+  }
+
+  /**
+   * Read events from the event buffer and sync document-synced
+   * components/singletons to the store.
+   */
+  private syncToStore(eventIndex: number): void {
+    if (!this.store) return;
+
+    const ctx = this.ctx;
+    const { events } = ctx.eventBuffer.readEvents(eventIndex);
+
+    if (events.length === 0) return;
+
+    for (const event of events) {
+      const { entityId, eventType, componentId } = event;
+
+      switch (eventType) {
+        case EventType.COMPONENT_ADDED: {
+          const componentDef = this.components.get(componentId);
+          if (componentDef) {
+            const instance = componentDef._getInstance(ctx);
+            const id = this.readOrCreateEntityUuid(entityId);
+            instance.buffer._id.set(entityId, id);
+
+            const data = componentDef.snapshot(ctx, entityId);
+            this.store.onComponentAdded(componentDef, id, data);
+          }
+          break;
+        }
+
+        case EventType.COMPONENT_REMOVED: {
+          const componentDef = this.components.get(componentId);
+          if (componentDef) {
+            // Component data still exists when we receive the event
+            const instance = componentDef._getInstance(ctx);
+            const id = instance.buffer._id.get(entityId);
+            if (id) {
+              this.store.onComponentRemoved(componentDef, id);
+            }
+          }
+          break;
+        }
+
+        case EventType.CHANGED: {
+          if (entityId === SINGLETON_ENTITY_ID) {
+            const singletonDef = this.singletons.get(componentId);
+            if (singletonDef) {
+              const data = singletonDef.snapshot(ctx);
+              this.store.onSingletonUpdated(singletonDef, data);
+            }
+          } else {
+            const componentDef = this.components.get(componentId);
+            if (componentDef) {
+              const instance = componentDef._getInstance(ctx);
+              const id = instance.buffer._id.get(entityId);
+              if (id) {
+                const data = componentDef.snapshot(ctx, entityId);
+                this.store.onComponentUpdated(componentDef, id, data);
+              }
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    // Commit all changes at end of frame
+    this.store.commit();
   }
 
   /**

@@ -186,7 +186,7 @@ export const pointerInputSystem = defineSystem((ctx: Context) => {
         // Create pointer entity
         const entityId = createEntity(ctx);
         addComponent(ctx, entityId, Pointer, {
-          id: event.pointerId,
+          pointerId: event.pointerId,
           position: position,
           downPosition: position,
           downFrame: state.frameCount,

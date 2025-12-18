@@ -1,23 +1,23 @@
-import { LoroDoc, LoroMap, UndoManager, VersionVector } from "loro-crdt";
+import {
+  LoroDoc,
+  LoroMap,
+  UndoManager,
+  type LoroEventBatch,
+  type MapDiff,
+} from "loro-crdt";
 import { LoroWebsocketClient } from "loro-websocket";
 import { LoroAdaptor } from "loro-adaptors/loro";
-import { openDB, type IDBPDatabase } from "idb";
-import type {
-  StoreAdapter,
-  DocumentChange,
-  DocumentSnapshot,
-  EntitySnapshot,
+import {
+  createEntity,
+  addComponent,
+  removeEntity,
+  hasComponent,
+  type Context,
+  type StoreAdapter,
+  type AnyEditorComponentDef,
+  type AnyEditorSingletonDef,
 } from "@infinitecanvas/editor";
-
-const OBJECT_STORE_NAME = "document";
-const SNAPSHOT_KEY = "snapshot";
-const UPDATE_KEY_PREFIX = "update-";
-const METADATA_KEY = "metadata";
-const CONSOLIDATION_THRESHOLD = 10;
-
-interface Metadata {
-  nextUpdateIndex: number;
-}
+import { LocalDB } from "./LocalDB";
 
 export interface LoroStoreOptions {
   /** IndexedDB database name for local persistence */
@@ -26,8 +26,6 @@ export interface LoroStoreOptions {
   websocketUrl?: string;
   /** Room ID for multiplayer (defaults to "default") */
   roomId?: string;
-  /** Throttle delay for saves in ms (defaults to 2000) */
-  saveDelayMs?: number;
 }
 
 /**
@@ -60,12 +58,7 @@ export class LoroStore implements StoreAdapter {
   private undoManager: UndoManager;
 
   // Persistence
-  private db: IDBPDatabase | null = null;
-  private dbName: string;
-  private lastVersion: VersionVector | null = null;
-  private nextUpdateIndex: number = 0;
-  private saveTimeout: ReturnType<typeof setTimeout> | null = null;
-  private saveDelayMs: number;
+  private localDB?: LocalDB;
 
   // Network
   private client: LoroWebsocketClient | null = null;
@@ -75,14 +68,25 @@ export class LoroStore implements StoreAdapter {
 
   private initialized: boolean = false;
 
-  /** Set of registered component names for tracking */
-  private registeredComponents: Set<string> = new Set();
+  // Bidirectional sync state
+  /** Map of component name -> component def for applying changes */
+  private componentDefsByName: Map<string, AnyEditorComponentDef> = new Map();
+  /** Map of singleton name -> singleton def for applying changes */
+  private singletonDefsByName: Map<string, AnyEditorSingletonDef> = new Map();
+  /** Map of _id -> entityId for tracking entities we've created */
+  private idToEntityId: Map<string, number> = new Map();
+  /** Map of entityId -> _id for reverse lookup */
+  private entityIdToId: Map<number, string> = new Map();
+  /** Cached events from external changes (undo/redo, network sync) */
+  private pendingEvents: LoroEventBatch[] = [];
 
   constructor(options: LoroStoreOptions = {}) {
-    this.dbName = options.dbName ?? "infinitecanvas";
     this.websocketUrl = options.websocketUrl;
     this.roomId = options.roomId ?? "default";
-    this.saveDelayMs = options.saveDelayMs ?? 2000;
+
+    if (options.dbName) {
+      this.localDB = new LocalDB(options.dbName);
+    }
 
     this.doc = new LoroDoc();
     this.undoManager = new UndoManager(this.doc, {
@@ -90,32 +94,53 @@ export class LoroStore implements StoreAdapter {
     });
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // StoreAdapter implementation
+  // ─────────────────────────────────────────────────────────────
+
   /**
-   * Initialize the store.
+   * Initialize the store with component/singleton definitions.
    * Loads from IndexedDB and connects to WebSocket if configured.
+   *
+   * Called by the Editor during initialization to set up bidirectional sync.
+   *
+   * @param components - Array of component definitions
+   * @param singletons - Array of singleton definitions
    */
-  async initialize(): Promise<void> {
+  async initialize(
+    components: AnyEditorComponentDef[],
+    singletons: AnyEditorSingletonDef[]
+  ): Promise<void> {
     if (this.initialized) return;
 
-    // Initialize IndexedDB
-    this.db = await openDB(this.dbName, 1, {
-      upgrade(db) {
-        db.createObjectStore(OBJECT_STORE_NAME);
-      },
-    });
-
-    // Load metadata
-    const metadata = (await this.db.get(
-      OBJECT_STORE_NAME,
-      METADATA_KEY
-    )) as Metadata | undefined;
-
-    if (metadata) {
-      this.nextUpdateIndex = metadata.nextUpdateIndex;
+    // Build name -> def maps for flushChanges lookup
+    for (const componentDef of components) {
+      if (componentDef.__editor.sync === "document") {
+        this.componentDefsByName.set(componentDef.name, componentDef);
+      }
+    }
+    for (const singletonDef of singletons) {
+      if (singletonDef.__editor.sync === "document") {
+        this.singletonDefsByName.set(singletonDef.name, singletonDef);
+      }
     }
 
-    // Load from IndexedDB
-    await this.loadFromDB();
+    // Subscribe to doc changes for persistence and caching external events
+    this.doc.subscribe((event: LoroEventBatch) => {
+      this.localDB?.saveDoc(this.doc);
+
+      // Cache external events (undo/redo, network sync) for flushChanges
+      // Skip local changes since they already went through the ECS
+      if (event.origin !== "editor") {
+        this.pendingEvents.push(event);
+      }
+    });
+
+    // Initialize local persistence and load document
+    if (this.localDB) {
+      await this.localDB.initialize();
+      await this.localDB.loadIntoDoc(this.doc);
+    }
 
     // Connect to WebSocket if configured
     if (this.websocketUrl) {
@@ -128,116 +153,214 @@ export class LoroStore implements StoreAdapter {
       });
     }
 
-    // Subscribe to doc changes for persistence
-    this.doc.subscribe(() => {
-      this.scheduleSave();
-    });
-
     this.initialized = true;
   }
 
   /**
-   * Register a component for Loro storage.
-   * Components are identified by their stable `name` property.
+   * Called when a component is added to an entity.
+   * Data is stored at: components/{componentName}/{id}
+   *
+   * @param componentDef - The component definition
+   * @param id - The entity's stable UUID (from component's `id` field)
+   * @param data - The component data (includes `id` field)
    */
-  registerComponent(name: string): void {
-    this.registeredComponents.add(name);
+  onComponentAdded(
+    componentDef: AnyEditorComponentDef,
+    id: string,
+    data: unknown
+  ): void {
+    if (componentDef.__editor.sync !== "document") return;
+
+    const componentsMap = this.doc.getMap("components");
+    let componentMap = componentsMap.get(componentDef.name) as
+      | LoroMap
+      | undefined;
+
+    if (!componentMap) {
+      componentMap = new LoroMap();
+      componentsMap.setContainer(componentDef.name, componentMap);
+    }
+    componentMap.set(id, data);
   }
 
   /**
-   * Get the Loro document for direct access.
+   * Called when a component is updated.
+   * Data is stored at: components/{componentName}/{id}
+   *
+   * @param componentDef - The component definition
+   * @param id - The entity's stable UUID
+   * @param data - The updated component data
    */
-  getDoc(): LoroDoc {
-    return this.doc;
+  onComponentUpdated(
+    componentDef: AnyEditorComponentDef,
+    id: string,
+    data: unknown
+  ): void {
+    if (componentDef.__editor.sync !== "document") return;
+
+    const componentsMap = this.doc.getMap("components");
+    const componentMap = componentsMap.get(componentDef.name) as
+      | LoroMap
+      | undefined;
+    if (componentMap) {
+      componentMap.set(id, data);
+    }
   }
 
   /**
-   * Called when document data changes in the ECS.
+   * Called when a component is removed from an entity.
+   *
+   * @param componentDef - The component definition
+   * @param id - The entity's stable UUID
    */
-  onDocumentChange = (changes: DocumentChange[]): void => {
-    const entitiesMap = this.doc.getMap("entities");
+  onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
+    if (componentDef.__editor.sync !== "document") return;
 
-    for (const change of changes) {
-      // Use the component's stable name directly
-      const componentName = change.componentDef.name;
-
-      if (change.type === "removed") {
-        const entityMap = entitiesMap.get(
-          String(change.entityId)
-        ) as LoroMap | undefined;
-        if (entityMap) {
-          entityMap.delete(componentName);
-        }
-      } else {
-        let entityMap = entitiesMap.get(
-          String(change.entityId)
-        ) as LoroMap | undefined;
-        if (!entityMap) {
-          entitiesMap.setContainer(String(change.entityId), new LoroMap());
-          entityMap = entitiesMap.get(String(change.entityId)) as LoroMap;
-        }
-        entityMap.set(componentName, change.data);
-      }
+    const componentsMap = this.doc.getMap("components");
+    const componentMap = componentsMap.get(componentDef.name) as
+      | LoroMap
+      | undefined;
+    if (componentMap) {
+      componentMap.delete(id);
     }
-
-    this.doc.commit({ origin: "local" });
-  };
+  }
 
   /**
-   * Load initial document state from Loro.
+   * Called when a singleton is updated.
+   * Data is stored at: singletons/{singletonName}
+   *
+   * @param singletonDef - The singleton definition
+   * @param data - The singleton data
    */
-  load = async (): Promise<DocumentSnapshot> => {
-    const entities = new Map<number, EntitySnapshot>();
-    const singletons = new Map<string, unknown>();
-
-    const entitiesMap = this.doc.getMap("entities");
-
-    for (const [entityIdStr, entityData] of entitiesMap.entries()) {
-      const entityId = parseInt(entityIdStr, 10);
-      if (isNaN(entityId)) continue;
-
-      const entityMap = entityData as LoroMap;
-      const components = new Map<string, unknown>();
-
-      for (const [componentName, data] of entityMap.entries()) {
-        components.set(componentName, data);
-      }
-
-      entities.set(entityId, { components });
-    }
+  onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void {
+    if (singletonDef.__editor.sync !== "document") return;
 
     const singletonsMap = this.doc.getMap("singletons");
-    for (const [singletonName, data] of singletonsMap.entries()) {
-      singletons.set(singletonName, data);
-    }
-
-    return { entities, singletons };
-  };
+    singletonsMap.set(singletonDef.name, data);
+  }
 
   /**
-   * Create a checkpoint for undo/redo.
+   * Commit all pending changes to the Loro document.
    */
-  checkpoint = (): void => {
-    // Loro's UndoManager tracks changes automatically
-  };
+  commit(): void {
+    this.doc.commit({ origin: "editor" });
+  }
+
+  /**
+   * Flush pending external changes (undo/redo, network sync) to the ECS world.
+   * Called by the Editor each frame.
+   *
+   * Processes cached events from doc.subscribe() that came from external sources
+   * (undo/redo, network sync). Local changes are skipped since they already
+   * went through the ECS.
+   */
+  flushChanges(ctx: Context): void {
+    if (this.pendingEvents.length === 0) return;
+
+    // Process all cached events in order
+    for (const eventBatch of this.pendingEvents) {
+      for (const event of eventBatch.events) {
+        // Event path tells us the container hierarchy: ["components", "Block", entityId]
+        // or ["singletons", "Camera"]
+        if (event.diff.type === "map") {
+          this.applyEventDiff(ctx, event.path, event.diff);
+        }
+      }
+    }
+
+    // Clear pending events after processing
+    this.pendingEvents = [];
+  }
+
+  /**
+   * Apply a MapDiff from an event to the ECS world.
+   * Uses the event path to determine what type of data changed.
+   *
+   * @param ctx - ECS context
+   * @param path - Event path like ["components", "Block"] or ["singletons"]
+   * @param diff - The MapDiff containing updated keys
+   */
+  private applyEventDiff(
+    ctx: Context,
+    path: (string | number)[],
+    diff: MapDiff
+  ): void {
+    // Path structure:
+    // - ["components", componentName] - changes to a component map
+    // - ["singletons"] - changes to the singletons map
+    if (path.length === 0) return;
+
+    const rootKey = path[0];
+
+    if (rootKey === "components" && path.length >= 2) {
+      // This is a component map: path = ["components", componentName]
+      const componentName = path[1] as string;
+      const componentDef = this.componentDefsByName.get(componentName);
+      if (!componentDef) return;
+
+      for (const [id, value] of Object.entries(diff.updated)) {
+        if (value === undefined) {
+          // Entity was deleted
+          const ecsEntityId = this.idToEntityId.get(id);
+          if (ecsEntityId !== undefined) {
+            removeEntity(ctx, ecsEntityId);
+            this.idToEntityId.delete(id);
+            this.entityIdToId.delete(ecsEntityId);
+          }
+        } else {
+          // Entity was added or updated
+          const existingEntityId = this.idToEntityId.get(id);
+
+          if (existingEntityId !== undefined) {
+            // Update existing entity
+            if (hasComponent(ctx, existingEntityId, componentDef)) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              componentDef.copy(ctx, existingEntityId, value as any);
+            } else {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              addComponent(ctx, existingEntityId, componentDef, value as any);
+            }
+          } else {
+            // Create new entity
+            const ecsEntityId = createEntity(ctx);
+            this.idToEntityId.set(id, ecsEntityId);
+            this.entityIdToId.set(ecsEntityId, id);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            addComponent(ctx, ecsEntityId, componentDef, value as any);
+          }
+        }
+      }
+    } else if (rootKey === "singletons") {
+      // This is the singletons map: path = ["singletons"]
+      for (const [singletonName, value] of Object.entries(diff.updated)) {
+        if (value !== undefined) {
+          const singletonDef = this.singletonDefsByName.get(singletonName);
+          if (singletonDef) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            singletonDef.copy(ctx, value as any);
+          }
+        }
+      }
+    }
+  }
 
   /**
    * Undo to the previous state.
    */
-  undo = (): void => {
+  undo(): void {
     if (this.undoManager.canUndo()) {
       this.undoManager.undo();
     }
-  };
+  }
 
   /**
    * Redo to the next state.
    */
-  redo = (): void => {
+  redo(): void {
     if (this.undoManager.canRedo()) {
       this.undoManager.redo();
     }
-  };
+  }
 
   /**
    * Check if undo is available.
@@ -256,13 +379,7 @@ export class LoroStore implements StoreAdapter {
   /**
    * Disconnect and cleanup resources.
    */
-  async dispose(): Promise<void> {
-    // Flush pending save
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
-      await this.saveNow();
-    }
-
+  dispose(): void {
     // Disconnect WebSocket
     if (this.client) {
       this.client.close();
@@ -270,114 +387,8 @@ export class LoroStore implements StoreAdapter {
     }
 
     // Close IndexedDB
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
+    this.localDB?.close();
 
     this.initialized = false;
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Private: IndexedDB persistence
-  // ─────────────────────────────────────────────────────────────
-
-  private scheduleSave(): void {
-    if (this.saveTimeout) return;
-
-    this.saveTimeout = setTimeout(() => {
-      this.saveTimeout = null;
-      this.saveNow().catch((err) =>
-        console.error("Error saving to IndexedDB:", err)
-      );
-    }, this.saveDelayMs);
-  }
-
-  private async loadFromDB(): Promise<void> {
-    if (!this.db) return;
-
-    // Load snapshot
-    const snapshot = (await this.db.get(
-      OBJECT_STORE_NAME,
-      SNAPSHOT_KEY
-    )) as Uint8Array | undefined;
-
-    // Load all updates in order
-    const updates: Uint8Array[] = [];
-    for (let i = 0; i < this.nextUpdateIndex; i++) {
-      const update = (await this.db.get(
-        OBJECT_STORE_NAME,
-        `${UPDATE_KEY_PREFIX}${i}`
-      )) as Uint8Array | undefined;
-      if (update) {
-        updates.push(update);
-      }
-    }
-
-    // Import into doc
-    if (snapshot) {
-      this.doc.import(snapshot);
-    }
-    for (const update of updates) {
-      this.doc.import(update);
-    }
-
-    this.lastVersion = this.doc.version();
-  }
-
-  private async saveNow(): Promise<void> {
-    if (!this.db) return;
-
-    const tx = this.db.transaction(OBJECT_STORE_NAME, "readwrite");
-    const store = tx.objectStore(OBJECT_STORE_NAME);
-
-    if (this.lastVersion) {
-      // Save incremental update
-      const update = this.doc.export({ mode: "update", from: this.lastVersion });
-      const updateKey = `${UPDATE_KEY_PREFIX}${this.nextUpdateIndex}`;
-      store.put(update, updateKey);
-      this.nextUpdateIndex++;
-    } else {
-      // First save is a snapshot
-      const snapshot = this.doc.export({ mode: "snapshot" });
-      store.put(snapshot, SNAPSHOT_KEY);
-    }
-
-    this.lastVersion = this.doc.version();
-
-    // Save metadata
-    const metadata: Metadata = { nextUpdateIndex: this.nextUpdateIndex };
-    store.put(metadata, METADATA_KEY);
-
-    await tx.done;
-
-    // Consolidate if needed
-    if (this.nextUpdateIndex >= CONSOLIDATION_THRESHOLD) {
-      await this.consolidate();
-    }
-  }
-
-  private async consolidate(): Promise<void> {
-    if (!this.db) return;
-
-    const snapshot = this.doc.export({ mode: "snapshot" });
-    const tx = this.db.transaction(OBJECT_STORE_NAME, "readwrite");
-    const store = tx.objectStore(OBJECT_STORE_NAME);
-
-    // Save new snapshot
-    store.put(snapshot, SNAPSHOT_KEY);
-
-    // Delete old updates
-    for (let i = 0; i < this.nextUpdateIndex; i++) {
-      store.delete(`${UPDATE_KEY_PREFIX}${i}`);
-    }
-
-    // Reset metadata
-    this.nextUpdateIndex = 0;
-    store.put({ nextUpdateIndex: 0 } as Metadata, METADATA_KEY);
-
-    await tx.done;
-
-    this.lastVersion = this.doc.version();
   }
 }

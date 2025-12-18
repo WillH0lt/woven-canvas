@@ -16,6 +16,7 @@ export {
   type TupleFieldBuilder,
   type EnumFieldBuilder,
   type RefFieldBuilder,
+  type StringFieldDef,
 } from "./Component";
 export { World } from "./World";
 export { setupWorker } from "./Worker";

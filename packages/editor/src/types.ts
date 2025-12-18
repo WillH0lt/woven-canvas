@@ -43,7 +43,6 @@ export interface EditorResources {
 export type SyncBehavior =
   | "document" // Persisted to database, synced to all clients
   | "presence" // Synced via websocket for presence (cursors, selections)
-  | "local" // Cached in local storage only (session data, camera position)
   | "none"; // Not synced or stored anywhere
 
 /**
