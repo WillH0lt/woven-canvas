@@ -34,9 +34,6 @@
     },
     {
       "path": "examples/asciinotes-com"
-    },
-    {
-      "path": "examples/ecs-test"
     }
   ],
   "compilerOptions": {

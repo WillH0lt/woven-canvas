@@ -7,6 +7,7 @@ import {
   type SingletonDef,
   EventType,
   SINGLETON_ENTITY_ID,
+  hasComponent,
 } from "@infinitecanvas/ecs";
 
 import type { EditorResources, SystemPhase } from "./types";
@@ -16,6 +17,7 @@ import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
+import { Storable } from "./components";
 
 /**
  * Editor configuration options
@@ -61,7 +63,20 @@ export type QueryCallback = (
 /**
  * Order of system execution phases
  */
-const PHASE_ORDER: SystemPhase[] = ["input", "capture", "update", "render"];
+const PHASE_ORDER: SystemPhase[] = [
+  "preInput",
+  "input",
+  "postInput",
+  "preCapture",
+  "capture",
+  "postCapture",
+  "preUpdate",
+  "update",
+  "postUpdate",
+  "preRender",
+  "render",
+  "postRender",
+];
 
 /**
  * Editor is the main entry point for building editor applications.
@@ -163,17 +178,41 @@ export class Editor {
 
     // Register systems from plugins
     for (const plugin of sortedPlugins) {
+      if (plugin.preInputSystems) {
+        this.phases.get("preInput")!.push(...plugin.preInputSystems);
+      }
       if (plugin.inputSystems) {
         this.phases.get("input")!.push(...plugin.inputSystems);
+      }
+      if (plugin.postInputSystems) {
+        this.phases.get("postInput")!.push(...plugin.postInputSystems);
+      }
+      if (plugin.preCaptureSystems) {
+        this.phases.get("preCapture")!.push(...plugin.preCaptureSystems);
       }
       if (plugin.captureSystems) {
         this.phases.get("capture")!.push(...plugin.captureSystems);
       }
+      if (plugin.postCaptureSystems) {
+        this.phases.get("postCapture")!.push(...plugin.postCaptureSystems);
+      }
+      if (plugin.preUpdateSystems) {
+        this.phases.get("preUpdate")!.push(...plugin.preUpdateSystems);
+      }
       if (plugin.updateSystems) {
         this.phases.get("update")!.push(...plugin.updateSystems);
       }
+      if (plugin.postUpdateSystems) {
+        this.phases.get("postUpdate")!.push(...plugin.postUpdateSystems);
+      }
+      if (plugin.preRenderSystems) {
+        this.phases.get("preRender")!.push(...plugin.preRenderSystems);
+      }
       if (plugin.renderSystems) {
         this.phases.get("render")!.push(...plugin.renderSystems);
+      }
+      if (plugin.postRenderSystems) {
+        this.phases.get("postRender")!.push(...plugin.postRenderSystems);
       }
     }
 
@@ -275,25 +314,6 @@ export class Editor {
   }
 
   /**
-   * Read the stable entity UUID from any EditorComponent on this entity,
-   * or generate a new one if none exists.
-   */
-  private readOrCreateEntityUuid(entityId: number): string {
-    const ctx = this.ctx;
-
-    // Iterate only over components the entity actually has
-    for (const componentId of ctx.entityBuffer.getComponentIds(entityId)) {
-      const componentDef = this.components.get(componentId);
-      if (componentDef) {
-        const instance = componentDef._getInstance(ctx);
-        const id = instance.buffer._id.get(entityId);
-        if (id) return id;
-      }
-    }
-    return crypto.randomUUID();
-  }
-
-  /**
    * Read events from the event buffer and sync document-synced
    * components/singletons to the store.
    */
@@ -308,14 +328,19 @@ export class Editor {
     for (const event of events) {
       const { entityId, eventType, componentId } = event;
 
+      // Skip entity events if the entity doesn't have the Storable component
+      if (
+        entityId !== SINGLETON_ENTITY_ID &&
+        !hasComponent(ctx, entityId, Storable)
+      ) {
+        continue;
+      }
+
       switch (eventType) {
         case EventType.COMPONENT_ADDED: {
           const componentDef = this.components.get(componentId);
           if (componentDef) {
-            const instance = componentDef._getInstance(ctx);
-            const id = this.readOrCreateEntityUuid(entityId);
-            instance.buffer._id.set(entityId, id);
-
+            const id = Storable.read(ctx, entityId).id;
             const data = componentDef.snapshot(ctx, entityId);
             this.store.onComponentAdded(componentDef, id, data);
           }
@@ -325,9 +350,7 @@ export class Editor {
         case EventType.COMPONENT_REMOVED: {
           const componentDef = this.components.get(componentId);
           if (componentDef) {
-            // Component data still exists when we receive the event
-            const instance = componentDef._getInstance(ctx);
-            const id = instance.buffer._id.get(entityId);
+            const id = Storable.read(ctx, entityId).id;
             if (id) {
               this.store.onComponentRemoved(componentDef, id);
             }
@@ -345,8 +368,7 @@ export class Editor {
           } else {
             const componentDef = this.components.get(componentId);
             if (componentDef) {
-              const instance = componentDef._getInstance(ctx);
-              const id = instance.buffer._id.get(entityId);
+              const id = Storable.read(ctx, entityId).id;
               if (id) {
                 const data = componentDef.snapshot(ctx, entityId);
                 this.store.onComponentUpdated(componentDef, id, data);

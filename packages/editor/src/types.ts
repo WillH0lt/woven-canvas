@@ -52,7 +52,19 @@ export interface EditorComponentMeta {
   sync: SyncBehavior;
 }
 
-export type SystemPhase = "input" | "capture" | "update" | "render";
+export type SystemPhase =
+  | "preInput"
+  | "input"
+  | "postInput"
+  | "preCapture"
+  | "capture"
+  | "postCapture"
+  | "preUpdate"
+  | "update"
+  | "postUpdate"
+  | "preRender"
+  | "render"
+  | "postRender";
 
 /**
  * Get plugin-specific resources from the context.

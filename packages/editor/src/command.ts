@@ -56,6 +56,15 @@ export interface CommandDef<T> {
    * @returns Iterable of command entities with their payloads
    */
   iter(ctx: Context): IterableIterator<{ eid: EntityId; payload: T }>;
+
+  /**
+   * Check if this command was spawned in the previous frame.
+   * Useful for testing - checks the removed query for commands cleaned up last frame.
+   *
+   * @param ctx - Editor context
+   * @returns True if at least one command of this type was spawned last frame
+   */
+  spawnedLastFrame(ctx: Context): boolean;
 }
 
 /**
@@ -113,6 +122,16 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
           yield { eid, payload };
         }
       }
+    },
+
+    spawnedLastFrame(ctx: Context): boolean {
+      for (const eid of commands.removed(ctx)) {
+        const marker = CommandMarker.read(ctx, eid);
+        if (marker.typeId === typeId) {
+          return true;
+        }
+      }
+      return false;
     },
   };
 }

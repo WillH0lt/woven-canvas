@@ -150,6 +150,7 @@ export class World {
       readerId: `world_${this.worldId}`,
       prevEventIndex: 0,
       resources: options.resources,
+      systemEventIndices: new Map(),
     };
   }
 
@@ -174,11 +175,15 @@ export class World {
     const ctx = this.context;
     const currentEventIndex = ctx.eventBuffer.getWriteIndex();
 
-    for (let i = 0; i < systems.length; i++) {
-      const system = systems[i];
-      const prevIndex = system.currEventIndex;
-      system.prevEventIndex = prevIndex;
-      system.currEventIndex = currentEventIndex;
+    // Update indices for all systems using context-based storage
+    for (const system of systems) {
+      let indices = ctx.systemEventIndices.get(system.id);
+      if (!indices) {
+        indices = { prev: 0, curr: 0 };
+        ctx.systemEventIndices.set(system.id, indices);
+      }
+      indices.prev = indices.curr;
+      indices.curr = currentEventIndex;
     }
 
     const workerSystems = systems.filter((system) => system.type === "worker");
@@ -198,11 +203,11 @@ export class World {
     for (const system of mainThreadSystems) {
       // Set readerId for this system's query instances
       const readerId = `world_${this.worldId}_system_${system.id}`;
-      const prevEventIndex = system.prevEventIndex;
+      const indices = ctx.systemEventIndices.get(system.id)!;
       system.execute({
         ...ctx,
         readerId,
-        prevEventIndex,
+        prevEventIndex: indices.prev,
         currEventIndex: currentEventIndex,
       });
     }
@@ -211,8 +216,9 @@ export class World {
     await Promise.all(promises);
 
     // Reclaim entity IDs from REMOVED events that all systems have processed
-    const minPrevIndex = Math.min(...systems.map((s) => s.prevEventIndex));
-    const maxCurrIndex = Math.max(...systems.map((s) => s.currEventIndex));
+    const allIndices = systems.map((s) => ctx.systemEventIndices.get(s.id)!);
+    const minPrevIndex = Math.min(...allIndices.map((i) => i.prev));
+    const maxCurrIndex = Math.max(...allIndices.map((i) => i.curr));
     this.reclaimRemovedEntityIds(minPrevIndex, maxCurrIndex);
   }
 

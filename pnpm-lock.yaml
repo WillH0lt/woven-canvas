@@ -41,6 +41,9 @@ importers:
       lint-staged:
         specifier: ^16.2.6
         version: 16.2.6
+      resize-observer-polyfill:
+        specifier: ^1.5.1
+        version: 1.5.1
       rimraf:
         specifier: ^6.1.0
         version: 6.1.0
@@ -512,9 +515,6 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.3.4
-      resize-observer-polyfill:
-        specifier: ^1.5.1
-        version: 1.5.1
       vitest:
         specifier: ^4.0.7
         version: 4.0.8(@types/node@24.10.0)(@vitest/ui@4.0.8)(jsdom@27.3.0)(tsx@4.20.6)
@@ -722,6 +722,65 @@ importers:
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
+      vitest:
+        specifier: ^4.0.7
+        version: 4.0.8(@types/node@24.10.0)(@vitest/ui@4.0.8)(jsdom@27.3.0)(tsx@4.20.6)
+
+  packages/pluginInfiniteCanvas:
+    dependencies:
+      '@dalet-oss/lexorank':
+        specifier: ^1.0.6
+        version: 1.1.1
+      '@infinitecanvas/editor':
+        specifier: workspace:^
+        version: link:../editor
+      '@infinitecanvas/math':
+        specifier: workspace:^
+        version: link:../math
+      fractional-indexing-jittered:
+        specifier: ^1.0.0
+        version: 1.0.0
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.5
+      vitest:
+        specifier: ^4.0.7
+        version: 4.0.8(@types/node@24.10.0)(@vitest/ui@4.0.8)(jsdom@27.3.0)(tsx@4.20.6)
+
+  packages/store:
+    dependencies:
+      '@infinitecanvas/editor':
+        specifier: workspace:*
+        version: link:../editor
+      idb:
+        specifier: ^8.0.3
+        version: 8.0.3
+      lodash.throttle:
+        specifier: ^4.1.1
+        version: 4.1.1
+      loro-adaptors:
+        specifier: ^0.5.0
+        version: 0.5.0(loro-crdt@1.10.3)
+      loro-crdt:
+        specifier: ^1.10.3
+        version: 1.10.3
+      loro-websocket:
+        specifier: ^0.5.0
+        version: 0.5.0(loro-crdt@1.10.3)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.4
+      '@types/lodash.throttle':
+        specifier: ^4.1.9
+        version: 4.1.9
       vitest:
         specifier: ^4.0.7
         version: 4.0.8(@types/node@24.10.0)(@vitest/ui@4.0.8)(jsdom@27.3.0)(tsx@4.20.6)
@@ -5064,6 +5123,12 @@ packages:
       bun-types: 1.3.4
     dev: true
 
+  /@types/bun@1.3.5:
+    resolution: {integrity: sha512-RnygCqNrd3srIPEWBd5LFeUYG7plCoH2Yw9WaZGyNmdTEei+gWaHqydbaIRkIkcbXwhBT94q78QljxN0Sk838w==}
+    dependencies:
+      bun-types: 1.3.5
+    dev: true
+
   /@types/caseless@0.12.5:
     resolution: {integrity: sha512-hWtVTC2q7hc7xZ/RLbxapMvDMgUnDvKvMOpKal4DrMyfGBUfB1oKaZlIRr6mJL+If3bAP6sV/QneGzF6tJjZDg==}
     requiresBuild: true
@@ -6431,6 +6496,12 @@ packages:
 
   /bun-types@1.3.4:
     resolution: {integrity: sha512-5ua817+BZPZOlNaRgGBpZJOSAQ9RQ17pkwPD0yR7CfJg+r8DgIILByFifDTa+IPDDxzf5VNhtNlcKqFzDgJvlQ==}
+    dependencies:
+      '@types/node': 24.10.2
+    dev: true
+
+  /bun-types@1.3.5:
+    resolution: {integrity: sha512-inmAYe2PFLs0SUbFOWSVD24sg1jFlMPxOjOSSCYqUgn4Hsc3rDc7dFvfVYjFPNHtov6kgUeulV4SxbuIV/stPw==}
     dependencies:
       '@types/node': 24.10.2
     dev: true
@@ -8013,6 +8084,10 @@ packages:
 
   /fraction.js@5.3.4:
     resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
+
+  /fractional-indexing-jittered@1.0.0:
+    resolution: {integrity: sha512-0tLU0FOedVY7lrvN4LK0DVj6FTuYM0pWDpN97/8UTZE2lx1+OwX8+2uL7IOWc2PmktYTHQjMT6FvZZ3SGCdZdg==}
+    dev: false
 
   /framer-motion@12.23.12:
     resolution: {integrity: sha512-6e78rdVtnBvlEVgu6eFEAgG9v3wLnYEboM8I5O5EXvfKC8gxGQB8wXJdhkMy10iVcn05jl6CNw7/HTsTCfwcWg==}

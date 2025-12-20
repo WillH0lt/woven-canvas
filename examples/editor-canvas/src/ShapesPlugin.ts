@@ -11,7 +11,7 @@ import {
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
-import { sub, add, scale, type Vec2 } from "@infinitecanvas/math";
+import { Vec2 } from "@infinitecanvas/math";
 
 /**
  * Shape component - represents a draggable rectangle on the canvas.
@@ -52,6 +52,10 @@ export const DragState = defineEditorSingleton(
   { sync: "none" }
 );
 
+// Temp vectors for calculations
+const _halfSize: Vec2 = [0, 0];
+const _tempPos: Vec2 = [0, 0];
+
 /**
  * Hit test to find which shape (if any) is under the given world position.
  * Returns the topmost (last created) shape that contains the point.
@@ -63,13 +67,14 @@ function hitTestShape(ctx: Context, worldPos: Vec2): EntityId | null {
   // Later entities are "on top" so we want the last match
   for (const eid of shapeQuery.current(ctx)) {
     const shape = Shape.read(ctx, eid);
-    const halfSize = scale(shape.size as Vec2, 0.5);
+    Vec2.copy(_halfSize, shape.size as Vec2);
+    Vec2.scale(_halfSize, 0.5);
 
     if (
-      worldPos[0] >= shape.position[0] - halfSize[0] &&
-      worldPos[0] <= shape.position[0] + halfSize[0] &&
-      worldPos[1] >= shape.position[1] - halfSize[1] &&
-      worldPos[1] <= shape.position[1] + halfSize[1]
+      worldPos[0] >= shape.position[0] - _halfSize[0] &&
+      worldPos[0] <= shape.position[0] + _halfSize[0] &&
+      worldPos[1] >= shape.position[1] - _halfSize[1] &&
+      worldPos[1] <= shape.position[1] + _halfSize[1]
     ) {
       hitEntity = eid;
     }
@@ -102,14 +107,19 @@ const shapeDragSystem = defineSystem((ctx: Context) => {
         const drag = DragState.write(ctx);
         drag.active = true;
         drag.entityId = hitEntity;
-        drag.offset = sub(shape.position, event.worldPosition);
+        // offset = position - worldPosition
+        Vec2.copy(drag.offset as Vec2, shape.position as Vec2);
+        Vec2.sub(drag.offset as Vec2, event.worldPosition);
       }
     } else if (event.type === "pointerMove") {
       const drag = DragState.read(ctx);
       if (drag.active) {
         // Move the shape to follow the cursor
         const shape = Shape.write(ctx, drag.entityId);
-        shape.position = add(event.worldPosition, drag.offset);
+        // position = worldPosition + offset
+        Vec2.copy(_tempPos, event.worldPosition);
+        Vec2.add(_tempPos, drag.offset as Vec2);
+        Vec2.copy(shape.position as Vec2, _tempPos);
       }
     } else if (event.type === "pointerUp" || event.type === "cancel") {
       // End the drag

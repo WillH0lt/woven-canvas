@@ -1,37 +1,104 @@
 /**
  * A 2D vector represented as a tuple [x, y].
  */
-export type Vec2 = [number, number];
+export type Vec2Tuple = [number, number];
 
-// Creation
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Vec2 {
+  // Creation (these allocate by nature)
 
-export const vec2 = (x: number, y: number): Vec2 => [x, y];
+  export const create = (x: number, y: number): Vec2Tuple => [x, y];
 
-export const vec2Zero = (): Vec2 => [0, 0];
+  export const zero = (): Vec2Tuple => [0, 0];
 
-// Basic Operations
+  export const clone = (v: Vec2Tuple): Vec2Tuple => [v[0], v[1]];
 
-export const add = (a: Vec2, b: Vec2): Vec2 => [a[0] + b[0], a[1] + b[1]];
+  // Geometric (non-mutating, return scalars or allocate)
 
-export const sub = (a: Vec2, b: Vec2): Vec2 => [a[0] - b[0], a[1] - b[1]];
+  export const dot = (a: Vec2Tuple, b: Vec2Tuple): number =>
+    a[0] * b[0] + a[1] * b[1];
 
-export const scale = (v: Vec2, s: number): Vec2 => [v[0] * s, v[1] * s];
+  export const lengthSq = (v: Vec2Tuple): number => v[0] * v[0] + v[1] * v[1];
 
-export const negate = (v: Vec2): Vec2 => [-v[0], -v[1]];
+  export const length = (v: Vec2Tuple): number => Math.hypot(v[0], v[1]);
 
-// Geometric
+  export const distance = (a: Vec2Tuple, b: Vec2Tuple): number => {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    return Math.hypot(dx, dy);
+  };
 
-export const dot = (a: Vec2, b: Vec2): number => a[0] * b[0] + a[1] * b[1];
+  export const distanceSq = (a: Vec2Tuple, b: Vec2Tuple): number => {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    return dx * dx + dy * dy;
+  };
 
-export const lengthSq = (v: Vec2): number => v[0] * v[0] + v[1] * v[1];
+  // Operations (mutating) - modify first argument in-place, return void
 
-export const length = (v: Vec2): number => Math.hypot(v[0], v[1]);
+  export const set = (out: Vec2Tuple, x: number, y: number): void => {
+    out[0] = x;
+    out[1] = y;
+  };
 
-export const distance = (a: Vec2, b: Vec2): number => length(sub(b, a));
+  export const copy = (out: Vec2Tuple, v: Vec2Tuple): void => {
+    out[0] = v[0];
+    out[1] = v[1];
+  };
 
-export const distanceSq = (a: Vec2, b: Vec2): number => lengthSq(sub(b, a));
+  export const add = (out: Vec2Tuple, v: Vec2Tuple): void => {
+    out[0] += v[0];
+    out[1] += v[1];
+  };
 
-export const normalize = (v: Vec2): Vec2 => {
-  const len = length(v);
-  return len > 0 ? scale(v, 1 / len) : vec2Zero();
-};
+  export const sub = (out: Vec2Tuple, v: Vec2Tuple): void => {
+    out[0] -= v[0];
+    out[1] -= v[1];
+  };
+
+  export const scale = (out: Vec2Tuple, s: number): void => {
+    out[0] *= s;
+    out[1] *= s;
+  };
+
+  export const negate = (out: Vec2Tuple): void => {
+    out[0] = -out[0];
+    out[1] = -out[1];
+  };
+
+  export const normalize = (out: Vec2Tuple): void => {
+    const len = length(out);
+    if (len > 0) {
+      out[0] /= len;
+      out[1] /= len;
+    }
+  };
+
+  /**
+   * Rotate a vector around the origin by an angle in radians.
+   */
+  export const rotate = (out: Vec2Tuple, angle: number): void => {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const x = out[0] * cos - out[1] * sin;
+    const y = out[0] * sin + out[1] * cos;
+    out[0] = x;
+    out[1] = y;
+  };
+
+  /**
+   * Rotate a vector around a pivot point by an angle in radians.
+   */
+  export const rotateAround = (
+    out: Vec2Tuple,
+    pivot: Vec2Tuple,
+    angle: number
+  ): void => {
+    sub(out, pivot);
+    rotate(out, angle);
+    add(out, pivot);
+  };
+}
+
+// Re-export type with same name for convenience
+export type Vec2 = Vec2Tuple;

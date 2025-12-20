@@ -78,6 +78,7 @@ export {
   Pointer,
   PointerButton,
   PointerType,
+  Storable,
 } from "./components";
 
 // Events

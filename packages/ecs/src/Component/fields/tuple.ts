@@ -98,6 +98,20 @@ export class TupleBufferView {
     | BinaryFieldDef;
   private tupleLength: number;
 
+  // Pre-allocated typed array for number tuples (covers entire buffer)
+  private numberTypedArray:
+    | Float32Array
+    | Float64Array
+    | Int8Array
+    | Int16Array
+    | Int32Array
+    | Uint8Array
+    | Uint16Array
+    | Uint32Array
+    | null = null;
+  // Elements per entry in the typed array (for stride calculation)
+  private elementsPerEntry: number = 0;
+
   constructor(
     buffer: ArrayBufferLike,
     capacity: number,
@@ -116,6 +130,19 @@ export class TupleBufferView {
     this.capacity = capacity;
     this.elementDef = elementDef;
     this.tupleLength = tupleLength;
+
+    // Pre-allocate typed array for number tuples
+    if (elementDef.type === "number") {
+      const bytesPerNum = getBytesPerElement(elementDef.btype);
+      this.elementsPerEntry = bytesPerEntry / bytesPerNum;
+      // Create one typed array view over the entire buffer
+      this.numberTypedArray = createTypedArrayAtOffset(
+        elementDef.btype,
+        capacity * this.elementsPerEntry,
+        buffer,
+        0
+      );
+    }
   }
 
   get length(): number {
@@ -146,42 +173,20 @@ export class TupleBufferView {
   /**
    * Get tuple data for an entity
    * @param index - The entity index
-   * @returns A tuple array containing the data
+   * @returns A typed array subarray for number tuples, or a plain array for other types
    */
-  get(index: number): any[] {
+  get(index: number): any {
+    // Fast path: number tuples return a subarray view (no allocation)
+    if (this.numberTypedArray !== null) {
+      const start = index * this.elementsPerEntry;
+      return this.numberTypedArray.subarray(start, start + this.tupleLength);
+    }
+
+    // Slow path: other types build an array
     const offset = index * this.bytesPerEntry;
     const result: any[] = [];
 
     switch (this.elementDef.type) {
-      case "number": {
-        const typedArray = createTypedArrayAtOffset(
-          this.elementDef.btype,
-          this.tupleLength,
-          this.buffer,
-          offset
-        );
-        const useAtomics =
-          this.elementDef.btype !== "float32" &&
-          this.elementDef.btype !== "float64";
-        for (let i = 0; i < this.tupleLength; i++) {
-          // For integer types, use Atomics; for floats, use direct access
-          // (floats don't support Atomics but are atomic on aligned access)
-          if (useAtomics) {
-            result.push(
-              Atomics.load(
-                typedArray as Exclude<
-                  typeof typedArray,
-                  Float32Array | Float64Array
-                >,
-                i
-              )
-            );
-          } else {
-            result.push(typedArray[i]);
-          }
-        }
-        break;
-      }
       case "boolean": {
         for (let i = 0; i < this.tupleLength; i++) {
           result.push(Atomics.load(this.uint8View, offset + i) !== 0);
@@ -230,7 +235,23 @@ export class TupleBufferView {
    * @param index - The entity index
    * @param value - The tuple data to store (must match tuple length)
    */
-  set(index: number, value: any[]): void {
+  set(index: number, value: ArrayLike<any>): void {
+    // Fast path: number tuples use direct typed array access
+    if (this.numberTypedArray !== null) {
+      const start = index * this.elementsPerEntry;
+      const len = Math.min(value.length, this.tupleLength);
+      // Direct element copy - no allocations
+      for (let i = 0; i < len; i++) {
+        this.numberTypedArray[start + i] = value[i];
+      }
+      // Zero remaining elements if value is shorter
+      for (let i = len; i < this.tupleLength; i++) {
+        this.numberTypedArray[start + i] = 0;
+      }
+      return;
+    }
+
+    // Slow path: other types
     const offset = index * this.bytesPerEntry;
     const elementsToCopy = Math.min(value.length, this.tupleLength);
 
@@ -243,33 +264,6 @@ export class TupleBufferView {
     if (elementsToCopy === 0) return;
 
     switch (this.elementDef.type) {
-      case "number": {
-        const typedArray = createTypedArrayAtOffset(
-          this.elementDef.btype,
-          this.tupleLength,
-          this.buffer,
-          offset
-        );
-        const useAtomics =
-          this.elementDef.btype !== "float32" &&
-          this.elementDef.btype !== "float64";
-        for (let i = 0; i < elementsToCopy; i++) {
-          // For integer types, use Atomics; for floats, use direct access
-          if (useAtomics) {
-            Atomics.store(
-              typedArray as Exclude<
-                typeof typedArray,
-                Float32Array | Float64Array
-              >,
-              i,
-              value[i]
-            );
-          } else {
-            typedArray[i] = value[i];
-          }
-        }
-        break;
-      }
       case "boolean": {
         for (let i = 0; i < elementsToCopy; i++) {
           Atomics.store(this.uint8View, offset + i, value[i] ? 1 : 0);

@@ -14,12 +14,6 @@ export abstract class BaseSystem {
   /** System type discriminator */
   abstract readonly type: "main" | "worker";
 
-  /** Event buffer index from previous execution (for deferred ID reclamation) */
-  prevEventIndex: number = 0;
-
-  /** Event buffer index at start of current execution */
-  currEventIndex: number = 0;
-
   constructor() {
     this.id = BaseSystem.systemCounter++;
   }

@@ -76,13 +76,22 @@ export class Component<T extends ComponentSchema> {
   /** Typed buffer accessor (e.g., Position.buffer.x[eid]) */
   private _buffer: ComponentBuffer<T> | null = null;
 
-  /** Master objects with getters/setters bound to current entity */
-  private readonly readonlyMaster: InferComponentType<T>;
-  private readonly writableMaster: InferComponentType<T>;
-
-  /** Currently bound entity IDs for read/write operations */
-  private readonlyEntityId: EntityId = 0;
-  private writableEntityId: EntityId = 0;
+  /**
+   * Pool of view objects for read/write operations.
+   * Each view has its own entityId, allowing multiple reads/writes to coexist
+   * (e.g., in Array.sort comparators). Uses round-robin allocation.
+   */
+  private static readonly POOL_SIZE = 8;
+  private readonlyPool: Array<{
+    view: InferComponentType<T>;
+    entityId: EntityId;
+  }> = [];
+  private writablePool: Array<{
+    view: InferComponentType<T>;
+    entityId: EntityId;
+  }> = [];
+  private readPoolIndex: number = 0;
+  private writePoolIndex: number = 0;
 
   /**
    * Create a Component instance from a ComponentDef descriptor.
@@ -124,7 +133,10 @@ export class Component<T extends ComponentSchema> {
    * @param schema - Field definitions or field builders
    * @param isSingleton - Whether this is a singleton (default: false)
    */
-  constructor(schema: T | Record<string, FieldDef>, isSingleton: boolean = false) {
+  constructor(
+    schema: T | Record<string, FieldDef>,
+    isSingleton: boolean = false
+  ) {
     this.isSingleton = isSingleton;
 
     this.schema = {};
@@ -135,9 +147,6 @@ export class Component<T extends ComponentSchema> {
       this.schema[fieldName] = fieldDef;
       this.fieldNames.push(fieldName);
     }
-
-    this.readonlyMaster = {} as InferComponentType<T>;
-    this.writableMaster = {} as InferComponentType<T>;
   }
 
   initialize(
@@ -237,29 +246,54 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Define getters/setters on master instances for direct buffer access
+   * Define getters/setters on view pools for direct buffer access
    */
   private initializeMasters(): void {
     if (this._buffer === null) {
       throw new Error("Component buffers not initialized");
     }
 
-    // Define getters/setters on master instances for each field
-    for (const fieldName of this.fieldNames) {
-      const field = this.fields[fieldName];
+    // Create pool of readonly view objects
+    // Each view has its own entityId, so multiple reads can coexist
+    for (let i = 0; i < Component.POOL_SIZE; i++) {
+      const poolEntry = {
+        view: {} as InferComponentType<T>,
+        entityId: 0 as EntityId,
+      };
 
-      field.defineReadonly(
-        this.readonlyMaster,
-        fieldName,
-        this._buffer,
-        () => this.readonlyEntityId
-      );
-      field.defineWritable(
-        this.writableMaster,
-        fieldName,
-        this._buffer,
-        () => this.writableEntityId
-      );
+      // Define getters that read from this pool entry's entityId
+      for (const fieldName of this.fieldNames) {
+        const field = this.fields[fieldName];
+        field.defineReadonly(
+          poolEntry.view,
+          fieldName,
+          this._buffer,
+          () => poolEntry.entityId
+        );
+      }
+
+      this.readonlyPool.push(poolEntry);
+    }
+
+    // Create pool of writable view objects
+    for (let i = 0; i < Component.POOL_SIZE; i++) {
+      const poolEntry = {
+        view: {} as InferComponentType<T>,
+        entityId: 0 as EntityId,
+      };
+
+      // Define getters/setters that read from this pool entry's entityId
+      for (const fieldName of this.fieldNames) {
+        const field = this.fields[fieldName];
+        field.defineWritable(
+          poolEntry.view,
+          fieldName,
+          this._buffer,
+          () => poolEntry.entityId
+        );
+      }
+
+      this.writablePool.push(poolEntry);
     }
   }
 
@@ -285,30 +319,42 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Read component data from an entity (readonly)
-   * Returns a bound master object with getters for each field
+   * Read component data from an entity (readonly).
+   *
    * @param entityId - Entity ID to read from
-   * @returns Readonly master object with component field values
+   * @returns Readonly view object with component field values
    */
   read(entityId: EntityId): Readonly<InferComponentType<T>> {
-    this.readonlyEntityId = entityId;
-    return this.readonlyMaster;
+    // Get next pool entry (round-robin)
+    const poolEntry = this.readonlyPool[this.readPoolIndex];
+    this.readPoolIndex = (this.readPoolIndex + 1) % Component.POOL_SIZE;
+
+    // Bind this entry to the requested entity
+    poolEntry.entityId = entityId;
+    return poolEntry.view;
   }
 
   /**
-   * Write component data to an entity
-   * Returns a bound master object with getters/setters for each field
-   * Automatically pushes a CHANGED event for reactive queries
+   * Write component data to an entity.
+   * Returns a view object with getters/setters for each field.
+   * Automatically pushes a CHANGED event for reactive queries.
+   *
    * @param entityId - Entity ID to write to
-   * @returns Writable master object for reading/writing component fields
+   * @returns Writable view object for reading/writing component fields
    */
   write(entityId: EntityId): InferComponentType<T> {
-    this.writableEntityId = entityId;
+    // Get next pool entry (round-robin)
+    const poolEntry = this.writablePool[this.writePoolIndex];
+    this.writePoolIndex = (this.writePoolIndex + 1) % Component.POOL_SIZE;
 
+    // Bind this entry to the requested entity
+    poolEntry.entityId = entityId;
+
+    // Push change event
     const eventEntityId = this.isSingleton ? SINGLETON_ENTITY_ID : entityId;
     this.eventBuffer?.pushChanged(eventEntityId, this.componentId);
 
-    return this.writableMaster;
+    return poolEntry.view;
   }
 
   /**

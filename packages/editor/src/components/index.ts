@@ -16,3 +16,5 @@ export {
   PointerType,
   addPointerSample,
 } from "./Pointer";
+
+export { Storable } from "./Storable";

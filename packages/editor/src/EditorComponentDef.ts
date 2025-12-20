@@ -1,9 +1,4 @@
-import {
-  ComponentDef,
-  field,
-  type ComponentSchema,
-  type StringFieldDef,
-} from "@infinitecanvas/ecs";
+import { ComponentDef, type ComponentSchema } from "@infinitecanvas/ecs";
 import type { SyncBehavior, EditorComponentMeta } from "./types";
 
 export interface EditorComponentOptions {
@@ -15,22 +10,12 @@ export interface EditorComponentOptions {
 }
 
 /**
- * The internal schema with injected `_id` field.
- */
-type EditorComponentSchema<T extends ComponentSchema> = T & {
-  _id: { def: StringFieldDef };
-};
-
-/**
  * An editor-aware component definition with sync behavior metadata.
  * Created via `defineEditorComponent()`.
  *
- * The `id` field is automatically injected - users don't need to define it.
- * All entities with EditorComponents share a single UUID stored in `id`.
+ * Entity identity is stored in the Storable component's `id` field.
  */
-export class EditorComponentDef<T extends ComponentSchema> extends ComponentDef<
-  EditorComponentSchema<T>
-> {
+export class EditorComponentDef<T extends ComponentSchema> extends ComponentDef<T> {
   /**
    * Stable identifier for storage and sync.
    * Use this instead of `_defId` for persistence keys.
@@ -41,21 +26,7 @@ export class EditorComponentDef<T extends ComponentSchema> extends ComponentDef<
   readonly __editor: EditorComponentMeta;
 
   constructor(name: string, schema: T, options: EditorComponentOptions = {}) {
-    // Prevent user from defining `_id` - it's injected automatically
-    if ("_id" in schema) {
-      throw new Error(
-        `EditorComponent "${name}" must not define an "_id" field. ` +
-          `The _id field is automatically injected for entity identity.`
-      );
-    }
-
-    // Inject the _id field into the schema
-    const schemaWithId = {
-      ...schema,
-      _id: field.string().max(36),
-    } as EditorComponentSchema<T>;
-
-    super(schemaWithId, false);
+    super(schema, false);
     this.name = name;
     this.__editor = {
       sync: options.sync ?? "none",
@@ -69,8 +40,8 @@ export type AnyEditorComponentDef = EditorComponentDef<ComponentSchema>;
 /**
  * Define an editor component with a stable name.
  *
- * The `id` field is automatically injected - you don't need to define it.
- * All EditorComponents on an entity share the same `id` (the entity's UUID).
+ * Entity identity is stored in the Storable component's `id` field.
+ * Add Storable to any entity you want persisted/synced.
  *
  * @param name - Stable identifier for the component (e.g., "shapes", "blocks")
  * @param schema - Component schema

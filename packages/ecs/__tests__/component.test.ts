@@ -238,6 +238,65 @@ describe("Component", () => {
       expect(spread.dx).toBeCloseTo(10);
       expect(spread.dy).toBeCloseTo(20);
     });
+
+    it("should allow multiple reads to coexist in Array.sort comparator", () => {
+      const Rank = defineComponent({
+        value: field.string().max(10),
+      });
+      const world = new World([Rank]);
+      const ctx = world._getContext();
+
+      // Create entities with ranks that should sort as: c, b, a (descending)
+      const e1 = createEntity(ctx);
+      const e2 = createEntity(ctx);
+      const e3 = createEntity(ctx);
+      addComponent(ctx, e1, Rank, { value: "a" });
+      addComponent(ctx, e2, Rank, { value: "c" });
+      addComponent(ctx, e3, Rank, { value: "b" });
+
+      const entityIds = [e1, e2, e3];
+
+      // Sort using read() inside comparator - this previously failed
+      // because all reads shared the same binding
+      entityIds.sort((a, b) => {
+        const rankA = Rank.read(ctx, a).value;
+        const rankB = Rank.read(ctx, b).value;
+        // Descending order
+        if (rankB > rankA) return 1;
+        if (rankB < rankA) return -1;
+        return 0;
+      });
+
+      // Should be sorted descending: c, b, a
+      expect(entityIds).toEqual([e2, e3, e1]);
+      expect(Rank.read(ctx, entityIds[0]).value).toBe("c");
+      expect(Rank.read(ctx, entityIds[1]).value).toBe("b");
+      expect(Rank.read(ctx, entityIds[2]).value).toBe("a");
+    });
+
+    it("should handle many concurrent reads within pool size", () => {
+      const Data = defineComponent({
+        id: field.uint32(),
+      });
+      const world = new World([Data]);
+      const ctx = world._getContext();
+
+      // Create 8 entities (matches pool size)
+      const entities: number[] = [];
+      for (let i = 0; i < 8; i++) {
+        const e = createEntity(ctx);
+        addComponent(ctx, e, Data, { id: i * 10 });
+        entities.push(e);
+      }
+
+      // Read all 8 at once and store views
+      const views = entities.map((e) => Data.read(ctx, e));
+
+      // All views should still have correct values
+      for (let i = 0; i < 8; i++) {
+        expect(views[i].id).toBe(i * 10);
+      }
+    });
   });
 
   describe("Numeric Field Types", () => {
@@ -1554,7 +1613,8 @@ describe("Component", () => {
       addComponent(ctx, entityId, Position, { coords: [1.5, 2.5] });
 
       const result = Position.read(ctx, entityId);
-      expect(result.coords).toEqual([1.5, 2.5]);
+      // Number tuples return typed array views for performance
+      expect([...result.coords]).toEqual([1.5, 2.5]);
     });
 
     it("should default to zeros when not provided", () => {
@@ -1568,7 +1628,7 @@ describe("Component", () => {
       addComponent(ctx, entityId, Position, {});
 
       const result = Position.read(ctx, entityId);
-      expect(result.coords).toEqual([0, 0, 0]);
+      expect([...result.coords]).toEqual([0, 0, 0]);
     });
 
     it("should use default tuple value when provided", () => {
@@ -1582,7 +1642,7 @@ describe("Component", () => {
       addComponent(ctx, entityId, Position, {});
 
       const result = Position.read(ctx, entityId);
-      expect(result.coords).toEqual([10, 20]);
+      expect([...result.coords]).toEqual([10, 20]);
     });
 
     it("should allow updating tuple data", () => {
@@ -1599,7 +1659,7 @@ describe("Component", () => {
       position.coords = [10.0, 20.0];
 
       const result = Position.read(ctx, entityId);
-      expect(result.coords).toEqual([10.0, 20.0]);
+      expect([...result.coords]).toEqual([10.0, 20.0]);
     });
 
     it("should handle multiple entities with different tuples", () => {
@@ -1615,8 +1675,8 @@ describe("Component", () => {
       addComponent(ctx, e1, Position, { coords: [1.0, 2.0] });
       addComponent(ctx, e2, Position, { coords: [3.0, 4.0] });
 
-      expect(Position.read(ctx, e1).coords).toEqual([1.0, 2.0]);
-      expect(Position.read(ctx, e2).coords).toEqual([3.0, 4.0]);
+      expect([...Position.read(ctx, e1).coords]).toEqual([1.0, 2.0]);
+      expect([...Position.read(ctx, e2).coords]).toEqual([3.0, 4.0]);
     });
 
     it("should support different numeric tuple types", () => {
@@ -1636,9 +1696,9 @@ describe("Component", () => {
       });
 
       const result = MixedTuples.read(ctx, entityId);
-      expect(result.floatPair).toEqual([1.5, 2.5]);
-      expect(result.intTriple).toEqual([-10, 0, 10]);
-      expect(result.byteQuad).toEqual([255, 128, 64, 0]);
+      expect([...result.floatPair]).toEqual([1.5, 2.5]);
+      expect([...result.intTriple]).toEqual([-10, 0, 10]);
+      expect([...result.byteQuad]).toEqual([255, 128, 64, 0]);
     });
 
     it("should handle tuples in mixed components", () => {
@@ -1661,9 +1721,28 @@ describe("Component", () => {
 
       const result = Transform.read(ctx, entityId);
       expect(result.id).toBe(42);
-      expect(result.position).toEqual([1.0, 2.0, 3.0]);
-      expect(result.rotation).toEqual([0.0, 0.0, 0.0, 1.0]);
+      expect([...result.position]).toEqual([1.0, 2.0, 3.0]);
+      expect([...result.rotation]).toEqual([0.0, 0.0, 0.0, 1.0]);
       expect(result.active).toBe(true);
+    });
+
+    it("should allow direct mutation of number tuple elements", () => {
+      const Position = defineComponent({
+        coords: field.tuple(field.float32(), 2),
+      });
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Position, { coords: [1.0, 2.0] });
+
+      // Mutate individual elements via the typed array view
+      const position = Position.write(ctx, entityId);
+      position.coords[0] = 10.0;
+      position.coords[1] = 20.0;
+
+      const result = Position.read(ctx, entityId);
+      expect([...result.coords]).toEqual([10.0, 20.0]);
     });
 
     it("should store and retrieve string tuples", () => {

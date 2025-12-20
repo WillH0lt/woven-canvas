@@ -1,5 +1,5 @@
 import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { type Vec2, distance } from "@infinitecanvas/math";
+import { Vec2 } from "@infinitecanvas/math";
 
 import { Camera, Frame, Pointer, Keyboard, type PointerButton } from "../components";
 import type { PointerInput, PointerInputOptions } from "./types";
@@ -190,7 +190,7 @@ export function getPointerInput(
     const downPos = state.prevPositions.get(entityId);
     if (downPos) {
       const currentPos: Vec2 = [pointer.position[0], pointer.position[1]];
-      const dist = distance(downPos, currentPos);
+      const dist = Vec2.distance(downPos, currentPos);
       const deltaFrame = frameNumber - pointer.downFrame;
 
       if (dist < clickMoveThreshold && deltaFrame < clickFrameThreshold) {

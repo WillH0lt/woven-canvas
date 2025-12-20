@@ -395,16 +395,9 @@ export const field = {
    * @example
    * ```typescript
    * const Child = defineComponent("Child", {
-   *   parent: field.ref().cascade(), // Delete child when parent is deleted
+   *   parent: field.ref()
    * });
-   *
-   * const Player = defineComponent("Player", {
-   *   target: field.ref().nullify(), // Set to null when target is deleted
-   * });
-   *
-   * const OrderItem = defineComponent("OrderItem", {
-   *   product: field.ref().restrict(), // Prevent product deletion while referenced
-   * });
+
    * ```
    */
   ref: () => new RefFieldBuilder(),

@@ -1,0 +1,52 @@
+{
+  "private": true,
+  "name": "@infinitecanvas/template",
+  "version": "0.1.0",
+  "description": "Framework-agnostic editor library built on ECS",
+  "files": [
+    "build"
+  ],
+  "main": "./build/index.js",
+  "module": "./build/index.mjs",
+  "types": "./build/index.d.ts",
+  "__exports-comment": "// Define output files for Node.js export maps (https://nodejs.org/api/packages.html#exports)",
+  "exports": {
+    ".": {
+      "import": {
+        "@infinitecanvas/source": "./src/index.ts",
+        "types": "./build/index.d.mts",
+        "import": "./build/index.mjs",
+        "default": "./build/index.mjs"
+      },
+      "require": {
+        "@infinitecanvas/source": "./src/index.ts",
+        "types": "./build/index.d.ts",
+        "import": "./build/index.js",
+        "default": "./build/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "clean": "rimraf build .turbo",
+    "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
+    "build:watch": "pnpm build --watch",
+    "check:exports": "attw --pack .",
+    "test": "vitest --config ../../vitest.config.ts run",
+    "test:watch": "vitest --config ../../vitest.config.ts --watch"
+  },
+  "dependencies": {
+    "@infinitecanvas/editor": "workspace:^",
+    "@infinitecanvas/math": "workspace:^",
+    "fractional-indexing-jittered": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "vitest": "^4.0.7"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5",
+    "xstate": "^5"
+  }
+}

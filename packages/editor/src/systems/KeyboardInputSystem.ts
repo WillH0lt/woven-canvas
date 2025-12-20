@@ -10,6 +10,10 @@ interface KeyboardState {
   onKeyDown: (e: KeyboardEvent) => void;
   onKeyUp: (e: KeyboardEvent) => void;
   onBlur: () => void;
+  // Reusable buffers to avoid allocation each frame
+  keysDown: Uint8Array;
+  keysDownTrigger: Uint8Array;
+  keysUpTrigger: Uint8Array;
 }
 
 /**
@@ -45,6 +49,10 @@ export function attachKeyboardListeners(domElement: HTMLElement): void {
       // Create a synthetic event to signal blur
       state.eventsBuffer.push({ type: "blur" } as unknown as KeyboardEvent);
     },
+    // Reusable buffers - allocated once per instance
+    keysDown: new Uint8Array(32),
+    keysDownTrigger: new Uint8Array(32),
+    keysUpTrigger: new Uint8Array(32),
   };
 
   instanceState.set(domElement, state);
@@ -86,11 +94,13 @@ export const keyboardInputSystem = defineSystem((ctx: Context) => {
 
   const keyboard = Keyboard.write(ctx);
 
-  // Get mutable copies of the binary buffers
-  // (ECS returns copies, so we need to modify and reassign)
-  const keysDown = new Uint8Array(keyboard.keysDown);
-  const keysDownTrigger = new Uint8Array(32); // Fresh buffer, cleared each frame
-  const keysUpTrigger = new Uint8Array(32); // Fresh buffer, cleared each frame
+  const keysDown = state.keysDown;
+  const keysDownTrigger = state.keysDownTrigger;
+  const keysUpTrigger = state.keysUpTrigger;
+
+  keysDownTrigger.fill(0);
+  keysUpTrigger.fill(0);
+  keysDown.set(keyboard.keysDown);
 
   // Process buffered events
   for (const event of state.eventsBuffer) {
