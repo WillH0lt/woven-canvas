@@ -13,7 +13,7 @@ export interface EditorComponentOptions {
  * An editor-aware component definition with sync behavior metadata.
  * Created via `defineEditorComponent()`.
  *
- * Entity identity is stored in the Storable component's `id` field.
+ * Entity identity is stored in the Persistent component's `id` field.
  */
 export class EditorComponentDef<T extends ComponentSchema> extends ComponentDef<T> {
   /**
@@ -40,8 +40,8 @@ export type AnyEditorComponentDef = EditorComponentDef<ComponentSchema>;
 /**
  * Define an editor component with a stable name.
  *
- * Entity identity is stored in the Storable component's `id` field.
- * Add Storable to any entity you want persisted/synced.
+ * Entity identity is stored in the Persistent component's `id` field.
+ * Add Persistent to any entity you want persisted/synced.
  *
  * @param name - Stable identifier for the component (e.g., "shapes", "blocks")
  * @param schema - Component schema

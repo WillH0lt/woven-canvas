@@ -9,18 +9,18 @@ import { Frame } from "../components";
  */
 export const frameInputSystem = defineSystem((ctx) => {
   const now = performance.now();
-  const frame = Frame.write(ctx);
-  const last = frame.lastTime;
+  const buffer = Frame._getInstance(ctx).buffer;
+  const last = buffer.lastTime[0];
 
-  frame.number++;
-  frame.lastTime = now;
-  frame.time = now;
+  buffer.number[0]++;
+  buffer.lastTime[0] = now;
+  buffer.time[0] = now;
 
   if (last === 0) {
     // First frame, assume 16ms (60fps)
-    frame.delta = 0.016;
+    buffer.delta[0] = 0.016;
   } else {
     // Convert to seconds, clamp to reasonable range (max 100ms)
-    frame.delta = Math.min((now - last) / 1000, 0.1);
+    buffer.delta[0] = Math.min((now - last) / 1000, 0.1);
   }
 });

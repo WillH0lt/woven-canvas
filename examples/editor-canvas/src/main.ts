@@ -1,8 +1,15 @@
 import "./style.css";
-import { Editor, Camera, removeEntity } from "@infinitecanvas/editor";
+import {
+  Editor,
+  Camera,
+  removeEntity,
+  type Context,
+} from "@infinitecanvas/editor";
 import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
+import { Store } from "@infinitecanvas/store";
+import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-infinite-canvas";
+
 import { ShapesPlugin, Shape, shapeQuery, createShape } from "./ShapesPlugin";
-import { LoroStore } from "./LoroStore";
 
 // Create canvas element
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -35,7 +42,7 @@ const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctxCanvas = canvas.getContext("2d")!;
 
 // Create Loro store (handles IndexedDB persistence and optional WebSocket sync)
-const store = new LoroStore({
+const store = new Store({
   // dbName: "editor-canvas",
   websocketUrl: "ws://localhost:8787",
   roomId: "editor-canvas",
@@ -44,7 +51,11 @@ const store = new LoroStore({
 // Create editor with CorePlugin, ControlsPlugin, and ShapesPlugin
 const editor = new Editor(container, {
   store,
-  plugins: [ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }), ShapesPlugin],
+  plugins: [
+    ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
+    InfiniteCanvasPlugin,
+    ShapesPlugin,
+  ],
 });
 
 // Initialize editor
@@ -163,7 +174,7 @@ function drawGrid(
 // Draw all shapes from the ECS
 function drawShapes(
   canvasCtx: CanvasRenderingContext2D,
-  ecsCtx: ReturnType<typeof editor._getContext>,
+  ecsCtx: Context,
   camera: { left: number; top: number; zoom: number }
 ) {
   const zoom = camera.zoom;

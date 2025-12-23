@@ -7,10 +7,11 @@ import {
   type EditorPlugin,
   Camera,
   Controls,
+  Persistent,
 } from "@infinitecanvas/editor";
-import { Block, Aabb, Hovered, Persistent } from "../../src/components";
+import { Block, Aabb, Hovered } from "../../src/components";
 import { Intersect, RankBounds } from "../../src/singletons";
-import { intersectSystem } from "../../src/systems/preCaptureIntersect";
+import { PreCaptureIntersect } from "../../src/systems/PreCaptureIntersect";
 import {
   simulateMouseMove,
   simulateMouseLeave,
@@ -23,12 +24,12 @@ const mockDomElement = createMockElement();
 // Factory function to create test plugin with fresh system instance
 const testPlugin: EditorPlugin = {
   name: "test",
-  components: [Block, Aabb, Hovered, Persistent],
+  components: [Block, Aabb, Hovered],
   singletons: [Intersect, RankBounds],
-  captureSystems: [intersectSystem],
+  preCaptureSystems: [PreCaptureIntersect],
 };
 
-describe("intersectSystem", () => {
+describe("preCaptureIntersect", () => {
   let editor: Editor;
 
   beforeEach(async () => {

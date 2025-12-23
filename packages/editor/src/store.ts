@@ -44,11 +44,13 @@ export interface StoreAdapter {
    *
    * @param componentDef - The component definition (use `name` for storage keys)
    * @param id - The entity's stable UUID (from the component's `id` field)
+   * @param entityId - The runtime entity ID (for stores that need bidirectional sync)
    * @param data - The component data as a plain object (includes `id` field)
    */
   onComponentAdded(
     componentDef: AnyEditorComponentDef,
     id: string,
+    entityId: number,
     data: unknown
   ): void;
 

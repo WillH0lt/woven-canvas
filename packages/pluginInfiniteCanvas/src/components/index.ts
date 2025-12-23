@@ -9,7 +9,6 @@ export { Edited } from "./Edited";
 
 // State
 export { Locked } from "./Locked";
-export { Persistent } from "./Persistent";
 
 // Transform components
 export { DragStart } from "./DragStart";

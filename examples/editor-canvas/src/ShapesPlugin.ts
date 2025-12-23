@@ -7,6 +7,7 @@ import {
   getPointerInput,
   createEntity,
   addComponent,
+  Storable,
   type EditorPlugin,
   type Context,
   type EntityId,
@@ -149,8 +150,10 @@ export function createShape(
   color: string
 ): EntityId {
   const entityId = createEntity(ctx);
-  addComponent(ctx, entityId, Shape);
-  Shape.copy(ctx, entityId, {
+  addComponent(ctx, entityId, Storable, {
+    id: crypto.randomUUID(),
+  });
+  addComponent(ctx, entityId, Shape, {
     position: [x, y],
     size: [width, height],
     color,

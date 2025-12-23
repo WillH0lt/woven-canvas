@@ -1,4 +1,9 @@
-export { InfiniteCanvasPlugin } from "./Plugin";
+export {
+  InfiniteCanvasPlugin,
+  createInfiniteCanvasPlugin,
+  type InfiniteCanvasPluginOptions,
+  type InfiniteCanvasResources,
+} from "./Plugin";
 
 // Re-export everything else
 export * from "./components";

@@ -1,3 +1,3 @@
-export { captureZoomSystem } from "./captureZoom";
-export { captureScrollSystem } from "./captureScroll";
-export { capturePanSystem } from "./capturePan";
+export { PostInputZoom } from "./PostInputZoom";
+export { PostInputScroll } from "./PostInputScroll";
+export { PostInputPan } from "./PostInputPan";

@@ -2,9 +2,9 @@ import { type EditorPlugin } from "@infinitecanvas/editor";
 
 import { PanState } from "./components";
 import {
-  captureZoomSystem,
-  captureScrollSystem,
-  capturePanSystem,
+  PostInputZoom,
+  PostInputScroll,
+  PostInputPan,
 } from "./systems";
 import { DEFAULT_CONTROLS_OPTIONS, type ControlsOptions } from "./types";
 
@@ -45,6 +45,6 @@ export function ControlsPlugin(
 
     singletons: [PanState],
 
-    captureSystems: [captureZoomSystem, captureScrollSystem, capturePanSystem],
+    postInputSystems: [PostInputZoom, PostInputScroll, PostInputPan],
   };
 }

@@ -6,17 +6,6 @@ import type { QueryInstance } from "./Query";
 import type { ComponentBuffer, FieldDef } from "./Component/types";
 
 /**
- * Event buffer indices tracked per-system within a world.
- * Used to determine which events are "new" since last execution.
- */
-export interface SystemEventIndices {
-  /** Event buffer index from previous execution */
-  prev: number;
-  /** Event buffer index at start of current execution */
-  curr: number;
-}
-
-/**
  * Context for system execution.
  * Contains entity buffer, components, and metadata.
  * Works identically on main thread and worker threads.
@@ -65,12 +54,6 @@ export interface Context {
    * User-defined resources. Access via getResources<T>(ctx).
    */
   readonly resources: unknown;
-  /**
-   * Event buffer indices tracked per-system (keyed by system ID).
-   * Stored in context rather than on system instances to ensure
-   * proper isolation when the same system runs across multiple worlds.
-   */
-  systemEventIndices: Map<number, SystemEventIndices>;
 }
 
 /** Entity identifier */

@@ -10,15 +10,15 @@ const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
  */
 export const EventType = {
   /** Entity created */
-  ADDED: 1 << 0,
+  ADDED: 1,
   /** Entity removed from world */
-  REMOVED: 1 << 1,
+  REMOVED: 1 << 1, // 2
   /** Component data modified */
-  CHANGED: 1 << 2,
+  CHANGED: 1 << 2, // 4
   /** Component added to existing entity */
-  COMPONENT_ADDED: 1 << 3,
+  COMPONENT_ADDED: 1 << 3, // 8
   /** Component removed from existing entity */
-  COMPONENT_REMOVED: 1 << 4,
+  COMPONENT_REMOVED: 1 << 4, // 16
 } as const;
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];

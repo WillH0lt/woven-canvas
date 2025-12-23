@@ -10,15 +10,8 @@ import { Vec2 } from "@infinitecanvas/math";
 const X = 0;
 const Y = 1;
 
-// Internal temp vectors for methods that return Vec2
-// These are safe because they're copied to `out` before returning
+// Internal temp vector for getCenter (caller can pass `out` to avoid allocation)
 const _tempCenter: Vec2 = [0, 0];
-const _tempCorners: [Vec2, Vec2, Vec2, Vec2] = [
-  [0, 0],
-  [0, 0],
-  [0, 0],
-  [0, 0],
-];
 
 // Internal temp vector for transform methods (not returned to caller)
 const _tempVec: Vec2 = [0, 0];
@@ -70,13 +63,9 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
   /**
    * Get the four corner points of a block (accounting for rotation).
    * Returns corners in order: top-left, top-right, bottom-right, bottom-left.
-   * @param out - Optional output array to write to (avoids allocation)
+   * Returns a new array each call - safe to store or modify.
    */
-  getCorners(
-    ctx: Context,
-    entityId: EntityId,
-    out: [Vec2, Vec2, Vec2, Vec2] = _tempCorners
-  ): [Vec2, Vec2, Vec2, Vec2] {
+  getCorners(ctx: Context, entityId: EntityId): [Vec2, Vec2, Vec2, Vec2] {
     const { position, size, rotateZ } = this.read(ctx, entityId);
 
     const halfWidth = size[X] / 2;
@@ -84,31 +73,22 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
     const centerX = position[X] + halfWidth;
     const centerY = position[Y] + halfHeight;
 
-    // Local corner offsets relative to center
-    const offsets = [
-      -halfWidth,
-      -halfHeight, // top-left
-      halfWidth,
-      -halfHeight, // top-right
-      halfWidth,
-      halfHeight, // bottom-right
-      -halfWidth,
-      halfHeight, // bottom-left
-    ];
-
     const cos = Math.cos(rotateZ);
     const sin = Math.sin(rotateZ);
 
-    // Rotate each corner around center and write to out
-    for (let i = 0; i < 4; i++) {
-      const ox = offsets[i * 2];
-      const oy = offsets[i * 2 + 1];
-      // Rotate offset and add center
-      out[i][X] = centerX + ox * cos - oy * sin;
-      out[i][Y] = centerY + ox * sin + oy * cos;
-    }
+    // Local corner offsets relative to center: TL, TR, BR, BL
+    const offsets: [number, number][] = [
+      [-halfWidth, -halfHeight],
+      [halfWidth, -halfHeight],
+      [halfWidth, halfHeight],
+      [-halfWidth, halfHeight],
+    ];
 
-    return out;
+    // Rotate each corner around center
+    return offsets.map(([ox, oy]) => [
+      centerX + ox * cos - oy * sin,
+      centerY + ox * sin + oy * cos,
+    ]) as [Vec2, Vec2, Vec2, Vec2];
   }
 
   /**

@@ -7,7 +7,7 @@ import {
   field,
   createEntity,
   addComponent,
-  Storable,
+  Persistent,
   type EditorPlugin,
   type StoreAdapter,
   type EditorResources,

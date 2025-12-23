@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * State for selection state machine.
  */
@@ -67,16 +69,38 @@ export enum VerticalAlign {
 }
 
 /**
- * Block definition for custom block types.
+ * Block definition edit options schema.
  */
-export interface BlockDef {
-  tag: string;
-  editOptions?: {
-    canEdit?: boolean;
-    removeWhenTextEmpty?: boolean;
-  };
-  resizeMode?: ResizeMode;
-  canRotate?: boolean;
-  canScale?: boolean;
-  noHtml?: boolean;
-}
+const BlockDefEditOptions = z.object({
+  canEdit: z.boolean().default(false),
+  removeWhenTextEmpty: z.boolean().default(false),
+});
+
+/**
+ * Block definition schema with validation and defaults.
+ * Defines how different block types behave (editing, resizing, rotation, etc.)
+ */
+export const BlockDef = z.object({
+  tag: z.string(),
+  editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
+  resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),
+  canRotate: z.boolean().default(true),
+  canScale: z.boolean().default(true),
+  noHtml: z.boolean().default(false),
+});
+
+/**
+ * Input type for block definitions (what users provide).
+ * All fields except `tag` are optional.
+ */
+export type BlockDefInput = z.input<typeof BlockDef>;
+
+/**
+ * Normalized block definition type (after parsing with defaults applied).
+ */
+export type BlockDef = z.infer<typeof BlockDef>;
+
+/**
+ * Map of block tag to normalized block definition.
+ */
+export type BlockDefMap = Record<string, BlockDef>;

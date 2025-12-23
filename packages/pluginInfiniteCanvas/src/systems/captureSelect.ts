@@ -1,17 +1,15 @@
 import { assign, and, not, setup } from "xstate";
 import { Vec2 as Vec2Ns } from "@infinitecanvas/math";
 import {
-  type Context,
   type EntityId,
-  type PointerInput,
   type InferStateContext,
   defineSystem,
   Controls,
-  getPointerInput,
   hasComponent,
+  Persistent,
 } from "@infinitecanvas/editor";
 
-import { Block, Locked, Persistent, Selected, TransformBox } from "../components";
+import { Block, Locked, Selected, TransformBox } from "../components";
 import {
   SelectBlock,
   DeselectAll,
@@ -24,19 +22,15 @@ import {
   UpdateSelectionBox,
   RemoveSelectionBox,
 } from "../commands";
-import { Intersect, SelectionStateSingleton } from "../singletons";
+import {
+  getPointerInputWithIntersects,
+  type PointerInputWithIntersects,
+} from "../helpers";
+import { SelectionStateSingleton } from "../singletons";
 import { SelectionState } from "../types";
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4;
-
-/**
- * Extended pointer input with intersection data from the Intersect singleton.
- */
-export interface SelectionPointerEvent extends PointerInput {
-  /** Entity IDs at the pointer position, sorted by z-order (topmost first) */
-  intersects: EntityId[];
-}
 
 /**
  * Selection state machine context - derived from SelectionStateSingleton schema.
@@ -66,20 +60,23 @@ function getDragCursorSvg(): string {
 const selectionMachine = setup({
   types: {
     context: {} as SelectionContext,
-    events: {} as SelectionPointerEvent,
+    events: {} as PointerInputWithIntersects,
   },
   guards: {
     isThresholdReached: ({ context, event }) => {
-      const dist = Vec2Ns.distance(context.pointingStartClient, event.screenPosition);
+      const dist = Vec2Ns.distance(
+        context.pointingStartClient,
+        event.screenPosition
+      );
       return dist >= POINTING_THRESHOLD;
     },
     isOverBlock: ({ event }) => {
-      return event.intersects.length > 0 && event.intersects[0] !== 0;
+      return event.intersects.length > 0;
     },
     isOverPersistentBlock: ({ event }) => {
       const ctx = event.ctx;
       for (const entityId of event.intersects) {
-        if (entityId && hasComponent(ctx, entityId, Persistent)) {
+        if (hasComponent(ctx, entityId, Persistent)) {
           return true;
         }
       }
@@ -150,8 +147,14 @@ const selectionMachine = setup({
         const ctx = event.ctx;
         if (!context.draggedEntityId) return false;
 
-        let left = context.draggedEntityStart[0] + event.worldPosition[0] - context.dragStart[0];
-        let top = context.draggedEntityStart[1] + event.worldPosition[1] - context.dragStart[1];
+        let left =
+          context.draggedEntityStart[0] +
+          event.worldPosition[0] -
+          context.dragStart[0];
+        let top =
+          context.draggedEntityStart[1] +
+          event.worldPosition[1] -
+          context.dragStart[1];
 
         const draggingPersistent =
           hasComponent(ctx, context.draggedEntityId, Persistent) ||
@@ -201,10 +204,22 @@ const selectionMachine = setup({
       },
     }),
     resizeSelectionBox: ({ context, event }) => {
-      const left = Math.min(context.pointingStartWorld[0], event.worldPosition[0]);
-      const top = Math.min(context.pointingStartWorld[1], event.worldPosition[1]);
-      const right = Math.max(context.pointingStartWorld[0], event.worldPosition[0]);
-      const bottom = Math.max(context.pointingStartWorld[1], event.worldPosition[1]);
+      const left = Math.min(
+        context.pointingStartWorld[0],
+        event.worldPosition[0]
+      );
+      const top = Math.min(
+        context.pointingStartWorld[1],
+        event.worldPosition[1]
+      );
+      const right = Math.max(
+        context.pointingStartWorld[0],
+        event.worldPosition[0]
+      );
+      const bottom = Math.max(
+        context.pointingStartWorld[1],
+        event.worldPosition[1]
+      );
 
       UpdateSelectionBox.spawn(event.ctx, {
         bounds: [left, top, right, bottom],
@@ -216,13 +231,13 @@ const selectionMachine = setup({
       let intersectId: EntityId | undefined;
 
       for (const entityId of event.intersects) {
-        if (entityId && hasComponent(ctx, entityId, Persistent)) {
+        if (hasComponent(ctx, entityId, Persistent)) {
           intersectId = entityId;
           break;
         }
       }
 
-      if (!intersectId) return;
+      if (intersectId === undefined) return;
 
       if (event.shiftDown) {
         ToggleSelect.spawn(ctx, { entityId: intersectId });
@@ -300,7 +315,11 @@ const selectionMachine = setup({
       },
     },
     [SelectionState.Dragging]: {
-      entry: ["setDragStart", "setDragCursor", "deselectAllIfDraggedNotSelected"],
+      entry: [
+        "setDragStart",
+        "setDragCursor",
+        "deselectAllIfDraggedNotSelected",
+      ],
       exit: ["unsetDragCursor"],
       on: {
         pointerMove: {
@@ -350,19 +369,6 @@ const selectionMachine = setup({
 });
 
 /**
- * Extend PointerInput with intersection data.
- */
-function extendPointerEvent(
-  ctx: Context,
-  event: PointerInput
-): SelectionPointerEvent {
-  return {
-    ...event,
-    intersects: Intersect.getAll(ctx),
-  };
-}
-
-/**
  * Selection capture system - runs the selection state machine.
  *
  * Handles pointer events for:
@@ -372,18 +378,17 @@ function extendPointerEvent(
  * - Shift+click to toggle selection
  * - Selection box (marquee) for multi-select
  */
-export const selectCaptureSystem = defineSystem((ctx) => {
+export const CaptureSelect = defineSystem((ctx) => {
   // Get pointer buttons mapped to 'select' tool
   const buttons = Controls.getButtons(ctx, "select");
 
-  // Get pointer events for those buttons
-  const rawEvents = getPointerInput(ctx, buttons);
-  if (rawEvents.length === 0) return;
-
-  // Extend events with intersection data
-  const events = rawEvents.map((e) => extendPointerEvent(ctx, e));
+  // Get pointer events with intersection data
+  const events = getPointerInputWithIntersects(ctx, buttons);
+  if (events.length === 0) return;
 
   // Run machine through events - SelectionStateSingleton.run() handles
   // reading current state, running the machine, and writing back
   SelectionStateSingleton.run(ctx, selectionMachine, events);
+
+  console.log("Selection state:", SelectionStateSingleton.getState(ctx));
 });

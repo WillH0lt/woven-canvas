@@ -108,6 +108,17 @@ export const mouseInputSystem = defineSystem((ctx: Context) => {
   const state = instanceState.get(resources.domElement);
   if (!state) return;
 
+  const currentMouse = Mouse.read(ctx);
+  const hadTriggers =
+    currentMouse.moveTrigger ||
+    currentMouse.wheelTrigger ||
+    currentMouse.enterTrigger ||
+    currentMouse.leaveTrigger;
+  const hasEvents = state.eventsBuffer.length > 0;
+
+  // Only write if we need to clear previous triggers or process new events
+  if (!hadTriggers && !hasEvents) return;
+
   const mouse = Mouse.write(ctx);
   const screen = Screen.read(ctx);
 

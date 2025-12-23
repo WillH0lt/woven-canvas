@@ -6,17 +6,17 @@ import {
   addComponent,
   removeComponent,
   hasComponent,
+  on,
+  Persistent,
   type Context,
 } from "@infinitecanvas/editor";
-import { Aabb as AabbNs } from "@infinitecanvas/math";
 
-import { Block, Aabb, Selected, Persistent, SelectionBox } from "../components";
+import { Block, Aabb, Selected, SelectionBox } from "../components";
 import {
   AddSelectionBox,
   UpdateSelectionBox,
   RemoveSelectionBox,
 } from "../commands";
-import { RankBounds } from "../singletons";
 import { intersectAabb } from "../helpers";
 
 // Query for selection box entities
@@ -26,10 +26,12 @@ const selectionBoxQuery = defineQuery((q) => q.with(Block).with(SelectionBox));
 const selectedBlocksQuery = defineQuery((q) => q.with(Block).with(Selected));
 
 // Query for all persistent blocks (for intersection)
-const persistentBlocksQuery = defineQuery((q) => q.with(Block).with(Persistent).with(Aabb));
+const persistentBlocksQuery = defineQuery((q) =>
+  q.with(Block).with(Persistent).with(Aabb)
+);
 
 // Selection box z-order rank (always on top)
-const SELECTION_BOX_RANK = "~"; // '~' is near the end of ASCII, so it's always on top
+const SELECTION_BOX_RANK = "z";
 
 /**
  * Selection update system - handles selection box commands.
@@ -39,10 +41,8 @@ const SELECTION_BOX_RANK = "~"; // '~' is near the end of ASCII, so it's always 
  * - UpdateSelectionBox: Updates bounds and selects intersecting blocks
  * - RemoveSelectionBox: Removes the selection box entity
  */
-export const selectionUpdateSystem = defineSystem((ctx: Context) => {
-  // Handle AddSelectionBox command
-  for (const _ of AddSelectionBox.iter(ctx)) {
-    // Create selection box entity
+export const UpdateSelect = defineSystem((ctx: Context) => {
+  on(ctx, AddSelectionBox, (ctx) => {
     const entityId = createEntity(ctx);
     addComponent(ctx, entityId, Block, {
       tag: "selectionBox",
@@ -52,17 +52,13 @@ export const selectionUpdateSystem = defineSystem((ctx: Context) => {
       rank: SELECTION_BOX_RANK,
     });
     addComponent(ctx, entityId, SelectionBox, {});
-  }
+  });
 
-  // Handle UpdateSelectionBox command
-  for (const { payload } of UpdateSelectionBox.iter(ctx)) {
-    const { bounds, deselectOthers } = payload;
-
-    // Find the selection box entity
+  on(ctx, UpdateSelectionBox, (ctx, { bounds, deselectOthers }) => {
     const selectionBoxes = selectionBoxQuery.current(ctx);
     if (selectionBoxes.length === 0) {
       console.warn("Can't update selection box: not found");
-      continue;
+      return;
     }
 
     const selectionBoxId = selectionBoxes[0];
@@ -78,7 +74,11 @@ export const selectionUpdateSystem = defineSystem((ctx: Context) => {
     block.size = [width, height];
 
     // Find all blocks intersecting the selection box
-    const intersectedEntityIds = intersectAabb(ctx, bounds, persistentBlocksQuery.current(ctx));
+    const intersectedEntityIds = intersectAabb(
+      ctx,
+      bounds,
+      persistentBlocksQuery.current(ctx)
+    );
 
     // Deselect blocks outside the selection box if requested
     if (deselectOthers) {
@@ -96,17 +96,16 @@ export const selectionUpdateSystem = defineSystem((ctx: Context) => {
         addComponent(ctx, entityId, Selected, { selectedBy: "" });
       }
     }
-  }
+  });
 
-  // Handle RemoveSelectionBox command
-  for (const _ of RemoveSelectionBox.iter(ctx)) {
+  on(ctx, RemoveSelectionBox, (ctx) => {
     const selectionBoxes = selectionBoxQuery.current(ctx);
     if (selectionBoxes.length === 0) {
       console.warn("Can't remove selection box: not found");
-      continue;
+      return;
     }
 
     const selectionBoxId = selectionBoxes[0];
     removeEntity(ctx, selectionBoxId);
-  }
+  });
 });

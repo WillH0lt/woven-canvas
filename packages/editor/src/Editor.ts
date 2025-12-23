@@ -17,7 +17,7 @@ import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
-import { Storable } from "./components";
+import { Persistent } from "./components";
 
 /**
  * Editor configuration options
@@ -118,8 +118,8 @@ export class Editor {
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
 
-  private components: Map<number, AnyEditorComponentDef> = new Map();
-  private singletons: Map<number, AnyEditorSingletonDef> = new Map();
+  private documentComponents: Map<number, AnyEditorComponentDef> = new Map();
+  private documentSingletons: Map<number, AnyEditorSingletonDef> = new Map();
   private storeEventIndex: number = 0;
 
   constructor(domElement: HTMLElement, options?: EditorOptions) {
@@ -227,17 +227,20 @@ export class Editor {
       for (const plugin of sortedPlugins) {
         if (plugin.components) {
           for (const comp of plugin.components) {
-            if ("__editor" in comp) {
+            if (comp.__editor.sync === "document") {
               const componentId = comp._getComponentId(this.ctx);
-              this.components.set(componentId, comp as AnyEditorComponentDef);
+              this.documentComponents.set(
+                componentId,
+                comp as AnyEditorComponentDef
+              );
             }
           }
         }
         if (plugin.singletons) {
           for (const singleton of plugin.singletons) {
-            if ("__editor" in singleton) {
+            if (singleton.__editor.sync === "document") {
               const componentId = singleton._getComponentId(this.ctx);
-              this.singletons.set(
+              this.documentSingletons.set(
                 componentId,
                 singleton as AnyEditorSingletonDef
               );
@@ -264,8 +267,8 @@ export class Editor {
     // Initialize store with component/singleton defs for bidirectional sync
     if (this.store) {
       await this.store.initialize(
-        Array.from(this.components.values()),
-        Array.from(this.singletons.values())
+        Array.from(this.documentComponents.values()),
+        Array.from(this.documentSingletons.values())
       );
     }
 
@@ -290,17 +293,6 @@ export class Editor {
    * and automatically cleaned up at the end.
    */
   async tick(): Promise<void> {
-    if (this.store) {
-      // Sync local ECS changes to the store
-      this.syncToStore(this.storeEventIndex);
-
-      // Flush external changes (undo/redo, network sync) from store to ECS
-      this.store.flushChanges(this.ctx);
-
-      // Advance past flushChanges events so they don't get synced back to store
-      this.storeEventIndex = this.ctx.eventBuffer.getWriteIndex();
-    }
-
     // Process scheduled callbacks (including command spawns)
     this.world.sync();
 
@@ -311,6 +303,17 @@ export class Editor {
 
     // Clean up command entities at end of frame
     cleanupCommands(this.ctx);
+
+    if (this.store) {
+      // Sync local ECS changes to the store
+      this.syncToStore(this.storeEventIndex);
+
+      // Flush external changes (undo/redo, network sync) from store to ECS
+      this.store.flushChanges(this.ctx);
+
+      // Advance past flushChanges events so they don't get synced back to store
+      this.storeEventIndex = this.ctx.eventBuffer.getWriteIndex();
+    }
   }
 
   /**
@@ -328,30 +331,43 @@ export class Editor {
     for (const event of events) {
       const { entityId, eventType, componentId } = event;
 
-      // Skip entity events if the entity doesn't have the Storable component
+      // Skip entity events if the entity doesn't have the Persistent component
       if (
         entityId !== SINGLETON_ENTITY_ID &&
-        !hasComponent(ctx, entityId, Storable)
+        !hasComponent(ctx, entityId, Persistent, false)
       ) {
         continue;
       }
 
       switch (eventType) {
         case EventType.COMPONENT_ADDED: {
-          const componentDef = this.components.get(componentId);
+          const componentDef = this.documentComponents.get(componentId);
           if (componentDef) {
-            const id = Storable.read(ctx, entityId).id;
+            const id = Persistent.read(ctx, entityId).id;
             const data = componentDef.snapshot(ctx, entityId);
-            this.store.onComponentAdded(componentDef, id, data);
+            this.store.onComponentAdded(componentDef, id, entityId, data);
           }
           break;
         }
 
         case EventType.COMPONENT_REMOVED: {
-          const componentDef = this.components.get(componentId);
+          const componentDef = this.documentComponents.get(componentId);
           if (componentDef) {
-            const id = Storable.read(ctx, entityId).id;
-            if (id) {
+            const id = Persistent.read(ctx, entityId).id;
+            this.store.onComponentRemoved(componentDef, id);
+          }
+          break;
+        }
+
+        case EventType.REMOVED: {
+          // Entity removed - notify store to remove all data for this entity
+          // Component data is still preserved after markDead, so we can read it
+          const id = Persistent.read(ctx, entityId).id;
+          for (const componentId of ctx.entityBuffer.getComponentIds(
+            entityId
+          )) {
+            const componentDef = this.documentComponents.get(componentId);
+            if (componentDef) {
               this.store.onComponentRemoved(componentDef, id);
             }
           }
@@ -360,19 +376,17 @@ export class Editor {
 
         case EventType.CHANGED: {
           if (entityId === SINGLETON_ENTITY_ID) {
-            const singletonDef = this.singletons.get(componentId);
+            const singletonDef = this.documentSingletons.get(componentId);
             if (singletonDef) {
               const data = singletonDef.snapshot(ctx);
               this.store.onSingletonUpdated(singletonDef, data);
             }
           } else {
-            const componentDef = this.components.get(componentId);
+            const componentDef = this.documentComponents.get(componentId);
             if (componentDef) {
-              const id = Storable.read(ctx, entityId).id;
-              if (id) {
-                const data = componentDef.snapshot(ctx, entityId);
-                this.store.onComponentUpdated(componentDef, id, data);
-              }
+              const id = Persistent.read(ctx, entityId).id;
+              const data = componentDef.snapshot(ctx, entityId);
+              this.store.onComponentUpdated(componentDef, id, data);
             }
           }
           break;

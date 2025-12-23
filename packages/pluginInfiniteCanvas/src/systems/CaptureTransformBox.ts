@@ -2,11 +2,9 @@ import { and, not, setup } from "xstate";
 import {
   type Context,
   type EntityId,
-  type PointerInput,
   defineSystem,
   defineQuery,
   Controls,
-  getPointerInput,
   hasComponent,
 } from "@infinitecanvas/editor";
 
@@ -19,7 +17,13 @@ import {
   RemoveTransformBox,
   StartTransformBoxEdit,
 } from "../commands";
-import { Intersect, TransformBoxStateSingleton } from "../singletons";
+import {
+  getPointerInputWithIntersects,
+  type PointerInputWithIntersects,
+  canBlockEdit,
+  getBlockDef,
+} from "../helpers";
+import { TransformBoxStateSingleton } from "../singletons";
 import { TransformBoxState } from "../types";
 
 /**
@@ -32,16 +36,9 @@ interface SelectionChangedEvent {
 }
 
 /**
- * Extended pointer input with intersection data.
- */
-interface TransformBoxPointerEvent extends PointerInput {
-  intersects: EntityId[];
-}
-
-/**
  * Union of events the transform box machine handles.
  */
-type TransformBoxEvent = SelectionChangedEvent | TransformBoxPointerEvent;
+type TransformBoxEvent = SelectionChangedEvent | PointerInputWithIntersects;
 
 /**
  * Transform box state machine - created once at module level.
@@ -60,17 +57,9 @@ const transformBoxMachine = setup({
   },
   guards: {
     isSelectionEditable: ({ event }) => {
-      if (!("selectedEntityIds" in event)) return false;
-      if (event.selectedEntityIds.length !== 1) return false;
-
-      // TODO: Check if the block type is editable
-      // For now, allow editing any single selection
-      const entityId = event.selectedEntityIds[0];
-      if (!entityId) return false;
-
-      const block = Block.read(event.ctx, entityId);
-      // In the future, check blockDef.editOptions.canEdit
-      return block.tag !== ""; // Simple check - has a tag
+      // Read current selection state, not from event
+      // This matches the core implementation which queries current selection
+      return checkSelectionEditable(event.ctx);
     },
     isOverTransformBox: ({ event }) => {
       if (!("intersects" in event)) return false;
@@ -89,34 +78,31 @@ const transformBoxMachine = setup({
       if (event.selectedEntityIds.length > 1) return true;
       if (event.selectedEntityIds.length === 0) return false;
 
-      // TODO: Check if single block allows transform (resizeMode !== 'groupOnly')
-      return true;
+      // Check if single block allows transform (resizeMode !== 'groupOnly')
+      const entityId = event.selectedEntityIds[0];
+      const block = Block.read(event.ctx, entityId);
+      const blockDef = getBlockDef(event.ctx, block.tag);
+      return blockDef.resizeMode !== "groupOnly";
     },
   },
   actions: {
     addOrUpdateTransformBox: ({ event }) => {
-      const ctx = "ctx" in event ? event.ctx : undefined;
-      if (ctx) AddOrUpdateTransformBox.spawn(ctx, undefined);
+      AddOrUpdateTransformBox.spawn(event.ctx);
     },
     updateTransformBox: ({ event }) => {
-      const ctx = "ctx" in event ? event.ctx : undefined;
-      if (ctx) UpdateTransformBox.spawn(ctx, undefined);
+      UpdateTransformBox.spawn(event.ctx);
     },
     hideTransformBox: ({ event }) => {
-      const ctx = "ctx" in event ? event.ctx : undefined;
-      if (ctx) HideTransformBox.spawn(ctx, undefined);
+      HideTransformBox.spawn(event.ctx);
     },
     showTransformBox: ({ event }) => {
-      const ctx = "ctx" in event ? event.ctx : undefined;
-      if (ctx) ShowTransformBox.spawn(ctx, undefined);
+      ShowTransformBox.spawn(event.ctx);
     },
     removeTransformBox: ({ event }) => {
-      const ctx = "ctx" in event ? event.ctx : undefined;
-      if (ctx) RemoveTransformBox.spawn(ctx, undefined);
+      RemoveTransformBox.spawn(event.ctx);
     },
     startTransformBoxEdit: ({ event }) => {
-      const ctx = "ctx" in event ? event.ctx : undefined;
-      if (ctx) StartTransformBoxEdit.spawn(ctx, undefined);
+      StartTransformBoxEdit.spawn(event.ctx);
     },
   },
 }).createMachine({
@@ -170,23 +156,25 @@ const transformBoxMachine = setup({
   },
 });
 
-/**
- * Extend PointerInput with intersection data for transform box events.
- */
-function extendTransformBoxPointerEvent(
-  ctx: Context,
-  event: PointerInput
-): TransformBoxPointerEvent {
-  return {
-    ...event,
-    intersects: Intersect.getAll(ctx),
-  };
-}
-
 // Query for selected blocks with change tracking
 const selectedBlocksQuery = defineQuery((q) =>
   q.with(Block).with(Selected).tracking(Selected)
 );
+
+/**
+ * Check if the current selection is editable.
+ * Used by the isSelectionEditable guard - reads current state, not event.
+ */
+function checkSelectionEditable(ctx: Context): boolean {
+  const selectedEntities = Array.from(selectedBlocksQuery.current(ctx));
+
+  if (selectedEntities.length !== 1) return false;
+
+  const entityId = selectedEntities[0];
+  const block = Block.read(ctx, entityId);
+
+  return canBlockEdit(ctx, block.tag);
+}
 
 /**
  * Transform box capture system - manages transform box lifecycle.
@@ -196,7 +184,7 @@ const selectedBlocksQuery = defineQuery((q) =>
  * - Showing/hiding transform box during pointer interactions
  * - Transitioning to edit mode on click
  */
-export const transformBoxCaptureSystem = defineSystem((ctx) => {
+export const CaptureTransformBox = defineSystem((ctx) => {
   const events: TransformBoxEvent[] = [];
 
   // Check for selection changes
@@ -215,14 +203,10 @@ export const transformBoxCaptureSystem = defineSystem((ctx) => {
     events.push(selectionEvent);
   }
 
-  // Get pointer events for select tool
+  // Get pointer events with intersection data for select tool
   const buttons = Controls.getButtons(ctx, "select");
-  const rawEvents = getPointerInput(ctx, buttons);
-
-  // Extend pointer events with intersection data
-  for (const e of rawEvents) {
-    events.push(extendTransformBoxPointerEvent(ctx, e));
-  }
+  const pointerEvents = getPointerInputWithIntersects(ctx, buttons);
+  events.push(...pointerEvents);
 
   if (events.length === 0) return;
 

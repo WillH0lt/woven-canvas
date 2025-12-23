@@ -102,6 +102,8 @@ export function removeEntity(ctx: Context, entityId: EntityId): void {
  * @param entityId - Entity ID
  * @param component - Component to add
  * @param data - Optional initial component data
+ * @param checkExistence - Whether to check if the entity exists before adding
+ * @throws Error if entity doesn't exist (when checkExistence is true)
  * @example
  * ```typescript
  *   addComponent(ctx, entityId, Position, { x: 0, y: 0 });
@@ -111,8 +113,13 @@ export function addComponent<T extends ComponentSchema>(
   ctx: Context,
   entityId: EntityId,
   componentDef: ComponentDef<T>,
-  data: Partial<InferComponentType<T>> = {} as any
+  data: Partial<InferComponentType<T>> = {} as any,
+  checkExistence = true
 ): void {
+  if (checkExistence && !ctx.entityBuffer.has(entityId)) {
+    throw new Error(`Entity with ID ${entityId} does not exist.`);
+  }
+
   const component = componentDef._getInstance(ctx);
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
   component.copy(entityId, data as any);
@@ -124,7 +131,8 @@ export function addComponent<T extends ComponentSchema>(
  * @param ctx - The context
  * @param entityId - Entity ID
  * @param component - Component to remove
- * @throws Error if entity doesn't exist
+ * @param checkExistence - Whether to check if the entity exists before removing
+ * @throws Error if entity doesn't exist (when checkExistence is true)
  * @example
  * ```typescript
  * removeComponent(ctx, entityId, Position);
@@ -133,9 +141,10 @@ export function addComponent<T extends ComponentSchema>(
 export function removeComponent<T extends ComponentSchema>(
   ctx: Context,
   entityId: EntityId,
-  componentDef: ComponentDef<T>
+  componentDef: ComponentDef<T>,
+  checkExistence = true
 ): void {
-  if (!ctx.entityBuffer.has(entityId)) {
+  if (checkExistence && !ctx.entityBuffer.has(entityId)) {
     throw new Error(`Entity with ID ${entityId} does not exist.`);
   }
 
@@ -149,8 +158,9 @@ export function removeComponent<T extends ComponentSchema>(
  * @param ctx - The context
  * @param entityId - Entity ID to check
  * @param component - Component to check for
+ * @param checkExistence - Whether to check if the entity exists
  * @returns True if entity has the component
- * @throws Error if entity doesn't exist
+ * @throws Error if entity doesn't exist (when checkExistence is true)
  * @example
  * ```typescript
  * if (hasComponent(ctx, entityId, Position)) {
@@ -161,9 +171,10 @@ export function removeComponent<T extends ComponentSchema>(
 export function hasComponent<T extends ComponentSchema>(
   ctx: Context,
   entityId: EntityId,
-  componentDef: ComponentDef<T>
+  componentDef: ComponentDef<T>,
+  checkExistence = true
 ): boolean {
-  if (!ctx.entityBuffer.has(entityId)) {
+  if (checkExistence && !ctx.entityBuffer.has(entityId)) {
     throw new Error(`Entity with ID ${entityId} does not exist.`);
   }
 

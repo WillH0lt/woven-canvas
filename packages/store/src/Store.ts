@@ -43,9 +43,9 @@ export interface StoreOptions {
  * @example
  * ```typescript
  * const store = new Store({
- *   dbName: "my-app",
- *   websocketUrl: "ws://localhost:8787",  // optional
  *   roomId: "my-document",
+ *   dbName: "my-app", // optional
+ *   websocketUrl: "ws://localhost:8787",  // optional
  * });
  *
  * await store.initialize();
@@ -84,6 +84,8 @@ export class Store implements StoreAdapter {
   private pendingEvents: LoroEventBatch[] = [];
 
   constructor(options: StoreOptions = {}) {
+    console.log("Store options:", options);
+
     this.websocketUrl = options.websocketUrl;
     this.roomId = options.roomId ?? "default";
 
@@ -114,14 +116,10 @@ export class Store implements StoreAdapter {
 
     // Build name -> def maps for flushChanges lookup
     for (const componentDef of components) {
-      if (componentDef.__editor.sync === "document") {
-        this.componentDefsByName.set(componentDef.name, componentDef);
-      }
+      this.componentDefsByName.set(componentDef.name, componentDef);
     }
     for (const singletonDef of singletons) {
-      if (singletonDef.__editor.sync === "document") {
-        this.singletonDefsByName.set(singletonDef.name, singletonDef);
-      }
+      this.singletonDefsByName.set(singletonDef.name, singletonDef);
     }
 
     // Subscribe to doc changes for persistence and caching external events
@@ -143,6 +141,7 @@ export class Store implements StoreAdapter {
 
     // Connect to WebSocket if configured
     if (this.websocketUrl) {
+      console.log(`Connecting to WebSocket at ${this.websocketUrl}...`);
       this.adaptor = new LoroAdaptor(this.doc);
       this.client = new LoroWebsocketClient({ url: this.websocketUrl });
       await this.client.waitConnected();
@@ -161,14 +160,21 @@ export class Store implements StoreAdapter {
    *
    * @param componentDef - The component definition
    * @param id - The entity's stable UUID (from component's `id` field)
+   * @param entityId - The runtime entity ID (for bidirectional sync)
    * @param data - The component data (includes `id` field)
    */
   onComponentAdded(
     componentDef: AnyEditorComponentDef,
     id: string,
+    entityId: number,
     data: unknown
   ): void {
-    if (componentDef.__editor.sync !== "document") return;
+    // Register UUID -> entityId mapping for locally-created entities
+    // This allows flushChanges to find the entity when remote deletions arrive
+    if (!this.idToEntityId.has(id)) {
+      this.idToEntityId.set(id, entityId);
+      this.entityIdToId.set(entityId, id);
+    }
 
     const componentsMap = this.doc.getMap("components");
     let componentMap = componentsMap.get(componentDef.name) as
@@ -195,8 +201,6 @@ export class Store implements StoreAdapter {
     id: string,
     data: unknown
   ): void {
-    if (componentDef.__editor.sync !== "document") return;
-
     const componentsMap = this.doc.getMap("components");
     const componentMap = componentsMap.get(componentDef.name) as
       | LoroMap
@@ -213,14 +217,19 @@ export class Store implements StoreAdapter {
    * @param id - The entity's stable UUID
    */
   onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
-    if (componentDef.__editor.sync !== "document") return;
-
     const componentsMap = this.doc.getMap("components");
     const componentMap = componentsMap.get(componentDef.name) as
       | LoroMap
       | undefined;
     if (componentMap) {
       componentMap.delete(id);
+    }
+
+    // Clean up UUID -> entityId mapping when entity is removed
+    const entityId = this.idToEntityId.get(id);
+    if (entityId !== undefined) {
+      this.idToEntityId.delete(id);
+      this.entityIdToId.delete(entityId);
     }
   }
 
@@ -232,8 +241,6 @@ export class Store implements StoreAdapter {
    * @param data - The singleton data
    */
   onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void {
-    if (singletonDef.__editor.sync !== "document") return;
-
     const singletonsMap = this.doc.getMap("singletons");
     singletonsMap.set(singletonDef.name, data);
   }
@@ -324,7 +331,6 @@ export class Store implements StoreAdapter {
             const ecsEntityId = createEntity(ctx);
             this.idToEntityId.set(id, ecsEntityId);
             this.entityIdToId.set(ecsEntityId, id);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             addComponent(ctx, ecsEntityId, componentDef, value as any);
           }
         }

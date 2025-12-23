@@ -1824,5 +1824,31 @@ describe("Component", () => {
       const result = Flags.read(ctx, entityId);
       expect(result.bits).toEqual([false, false, false]);
     });
+
+    it("should handle object with numeric keys (CRDT/Loro format)", () => {
+      const Transform = defineComponent({
+        position: field.tuple(field.float32(), 2),
+        size: field.tuple(field.float32(), 2),
+      });
+      const world = new World([Transform]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Transform, {});
+
+      // Simulate data from Loro/CRDT store which uses objects with numeric keys
+      const loroData = {
+        position: { "0": 307.5, "1": 395.5 },
+        size: { "0": 60, "1": 60 },
+      };
+
+      Transform.copy(ctx, entityId, loroData as any);
+
+      const result = Transform.read(ctx, entityId);
+      expect(result.position[0]).toBeCloseTo(307.5);
+      expect(result.position[1]).toBeCloseTo(395.5);
+      expect(result.size[0]).toBeCloseTo(60);
+      expect(result.size[1]).toBeCloseTo(60);
+    });
   });
 });

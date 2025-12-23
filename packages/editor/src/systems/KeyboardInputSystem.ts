@@ -92,6 +92,15 @@ export const keyboardInputSystem = defineSystem((ctx: Context) => {
   const state = instanceState.get(resources.domElement);
   if (!state) return;
 
+  const hasEvents = state.eventsBuffer.length > 0;
+
+  // Check if triggers need to be cleared from previous frame
+  const triggersNeedClearing =
+    !isZeroed(state.keysDownTrigger) || !isZeroed(state.keysUpTrigger);
+
+  // Only write if there are events or triggers need clearing
+  if (!hasEvents && !triggersNeedClearing) return;
+
   const keyboard = Keyboard.write(ctx);
 
   const keysDown = state.keysDown;
@@ -153,4 +162,15 @@ function getBit(buffer: Uint8Array, bitIndex: number): boolean {
   const byteIndex = Math.floor(bitIndex / 8);
   const bitOffset = bitIndex % 8;
   return (buffer[byteIndex] & (1 << bitOffset)) !== 0;
+}
+
+/**
+ * Check if a buffer is all zeros.
+ * @internal
+ */
+function isZeroed(buffer: Uint8Array): boolean {
+  for (let i = 0; i < buffer.length; i++) {
+    if (buffer[i] !== 0) return false;
+  }
+  return true;
 }

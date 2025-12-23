@@ -39,10 +39,3 @@ export {
 
 // Components (for advanced use cases)
 export { PanState } from "./components";
-
-// Systems (for advanced use cases)
-export {
-  captureZoomSystem,
-  captureScrollSystem,
-  capturePanSystem,
-} from "./systems";

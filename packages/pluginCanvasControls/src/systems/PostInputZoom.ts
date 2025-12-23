@@ -13,14 +13,14 @@ import {
 import type { ControlsOptions } from "../types";
 
 /**
- * Capture zoom system - handles mouse scroll zoom with modifier key.
+ * Post input zoom system - handles mouse scroll zoom with modifier key.
  *
  * Zooms toward the mouse cursor position, maintaining the world point
  * under the cursor. Respects minZoom and maxZoom bounds.
  *
  * Active when: Mouse wheel scrolled and "zoom" tool is active for wheel input.
  */
-export const captureZoomSystem = defineSystem((ctx: Context) => {
+export const PostInputZoom = defineSystem((ctx: Context) => {
   const options = getPluginResources<ControlsOptions>(ctx, "controls");
   const keyboard = Keyboard.read(ctx);
 

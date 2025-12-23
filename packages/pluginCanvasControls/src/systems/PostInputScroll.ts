@@ -8,14 +8,14 @@ import {
 } from "@infinitecanvas/editor";
 
 /**
- * Capture scroll system - handles mouse scroll canvas panning.
+ * Post input scroll system - handles mouse scroll canvas panning.
  *
  * Pans the canvas based on wheel deltas. Only active when
  * the "scroll" tool is active for wheel input.
  *
  * Active when: Mouse wheel scrolled and "scroll" tool is active.
  */
-export const captureScrollSystem = defineSystem((ctx: Context) => {
+export const PostInputScroll = defineSystem((ctx: Context) => {
   const keyboard = Keyboard.read(ctx);
 
   // Only scroll when the scroll tool is active for wheel input

@@ -2,6 +2,58 @@
  * Shared test utilities for simulating pointer and mouse events.
  */
 
+import { type Context, createEntity, addComponent, Persistent } from "@infinitecanvas/editor";
+import { Block, Aabb, Selected } from "../src/components";
+
+/**
+ * Options for creating a test block.
+ */
+export interface CreateBlockOptions {
+  position?: [number, number];
+  size?: [number, number];
+  rank?: string;
+  tag?: string;
+  rotateZ?: number;
+  persistent?: boolean;
+  selected?: boolean;
+}
+
+/**
+ * Create a block entity for testing.
+ * Returns the entity ID.
+ */
+export function createBlock(ctx: Context, options: CreateBlockOptions = {}): number {
+  const {
+    position = [100, 100],
+    size = [100, 100],
+    rank = "a",
+    tag = "text",
+    rotateZ = 0,
+    persistent = true,
+    selected = false,
+  } = options;
+
+  const entityId = createEntity(ctx);
+  addComponent(ctx, entityId, Block, {
+    position,
+    size,
+    rank,
+    tag,
+    rotateZ,
+  });
+  addComponent(ctx, entityId, Aabb, {});
+
+  if (persistent) {
+    addComponent(ctx, entityId, Persistent, {});
+  }
+
+  if (selected) {
+    addComponent(ctx, entityId, Selected, { selectedBy: "" });
+  }
+
+  return entityId;
+}
+
 export interface PointerEventOptions {
   shiftKey?: boolean;
   altKey?: boolean;

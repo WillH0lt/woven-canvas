@@ -66,7 +66,7 @@ function arraysEqual(a: number[], b: number[]): boolean {
 }
 
 /**
- * Intersect system - computes AABBs and detects mouse-block intersections.
+ * Pre-capture intersect system - computes AABBs and detects mouse-block intersections.
  *
  * Capture phase system that:
  * 1. Updates AABB for blocks that have changed
@@ -76,7 +76,7 @@ function arraysEqual(a: number[], b: number[]): boolean {
  *
  * Note: For test isolation, use createIntersectSystem() instead to get a fresh instance.
  */
-export const intersectSystem = defineSystem((ctx: Context) => {
+export const PreCaptureIntersect = defineSystem((ctx: Context) => {
   // Update AABBs for changed blocks
   const added = blocksChanged.added(ctx);
   const changed = blocksChanged.changed(ctx);
@@ -96,10 +96,16 @@ export const intersectSystem = defineSystem((ctx: Context) => {
   // Check if we need to update intersections
   const mouseDidMove = Mouse.didMove(ctx);
   const mouseDidLeave = Mouse.didLeave(ctx);
+  const mouseDidScroll = Mouse.didScroll(ctx);
   const blocksHaveChanged = added.length > 0 || changed.length > 0;
 
-  // Only update if mouse moved, left, or blocks changed
-  if (!mouseDidMove && !mouseDidLeave && !blocksHaveChanged) {
+  // Only update if mouse moved, left, scrolled, or blocks changed
+  if (
+    !mouseDidMove &&
+    !mouseDidLeave &&
+    !mouseDidScroll &&
+    !blocksHaveChanged
+  ) {
     return;
   }
 

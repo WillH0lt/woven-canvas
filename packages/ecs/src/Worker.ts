@@ -117,7 +117,6 @@ function handleMessage(
         readerId: "worker",
         prevEventIndex: 0,
         resources: undefined,
-        systemEventIndices: new Map(),
       };
 
       sendResult(self, threadIndex);

@@ -1073,6 +1073,191 @@ describe("World", () => {
     });
   });
 
+  describe("Entity ID Reclamation", () => {
+    it("should not reclaim entity IDs until RECLAIM_DELAY executions have passed", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      // Create and remove an entity
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+      expect(entity).toBe(0);
+
+      removeEntity(ctx, entity);
+
+      const system = defineSystem(() => {
+        // no-op system to drive execute cycles
+      });
+
+      // Execute once - entity should NOT be reclaimed yet (need RECLAIM_DELAY = 3 executions)
+      await world.execute(system);
+      const e1 = createEntity(ctx);
+      expect(e1).toBe(1); // Should get new ID, not reclaimed 0
+
+      // Execute twice more
+      await world.execute(system);
+      const e2 = createEntity(ctx);
+      expect(e2).toBe(2); // Still getting new IDs
+
+      await world.execute(system);
+
+      // After 3 executions, the removed entity ID should be reclaimable
+      // Next entity creation should reuse ID 0
+      const e3 = createEntity(ctx);
+      expect(e3).toBe(0); // Reclaimed ID
+    });
+
+    it("should track reclaim watermark per system independently", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      const systemA = defineSystem(() => {});
+      const systemB = defineSystem(() => {});
+
+      // Create and remove an entity
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+      removeEntity(ctx, entity);
+
+      // Execute both systems together - both need to build up history
+      // After 1 execution, neither has enough history (need 3)
+      await world.execute(systemA, systemB);
+      const e1 = createEntity(ctx);
+      expect(e1).toBe(1); // New ID, not reclaimed yet
+
+      // After 2 executions, still not enough
+      await world.execute(systemA, systemB);
+      const e2 = createEntity(ctx);
+      expect(e2).toBe(2); // Still new IDs
+
+      // After 3 executions, both have enough history
+      await world.execute(systemA, systemB);
+
+      // Now entity should be reclaimable
+      const e3 = createEntity(ctx);
+      expect(e3).toBe(0); // Reclaimed ID
+    });
+
+    it("should allow systems to see removed entities via removed() in the frame after removal", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      // Create an entity
+      const entity = createEntity(ctx);
+      addComponent(ctx, entity, Position, { x: 10, y: 20 });
+
+      const positionQuery = defineQuery((q) => q.with(Position));
+      const removedEntities: number[][] = [];
+
+      const system = defineSystem((ctx) => {
+        removedEntities.push([...positionQuery.removed(ctx)]);
+      });
+
+      // First execute to register the system
+      await world.execute(system);
+      expect(removedEntities[0]).toHaveLength(0); // Nothing removed yet
+
+      // Remove the entity
+      removeEntity(ctx, entity);
+
+      // Execute - should see the removed entity in removed() query
+      await world.execute(system);
+      expect(removedEntities[1]).toContain(entity);
+
+      // Next execute - the removal event is now outside the [prev, curr] window
+      // so removed() no longer reports it (this is expected query behavior)
+      await world.execute(system);
+      expect(removedEntities[2]).not.toContain(entity);
+    });
+
+    it("should reclaim multiple entity IDs in correct order", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      // Create several entities
+      const e0 = createEntity(ctx);
+      const e1 = createEntity(ctx);
+      const e2 = createEntity(ctx);
+      addComponent(ctx, e0, Position, { x: 0, y: 0 });
+      addComponent(ctx, e1, Position, { x: 1, y: 1 });
+      addComponent(ctx, e2, Position, { x: 2, y: 2 });
+
+      // Remove them in order
+      removeEntity(ctx, e0);
+      removeEntity(ctx, e1);
+      removeEntity(ctx, e2);
+
+      const system = defineSystem(() => {});
+
+      // Execute RECLAIM_DELAY times
+      await world.execute(system);
+      await world.execute(system);
+      await world.execute(system);
+
+      // All IDs should now be reclaimable
+      // Pool returns them in LIFO order (last freed = first allocated)
+      const newE0 = createEntity(ctx);
+      const newE1 = createEntity(ctx);
+      const newE2 = createEntity(ctx);
+
+      // Should reuse the freed IDs (order depends on pool implementation)
+      expect([newE0, newE1, newE2].sort()).toEqual([0, 1, 2]);
+    });
+
+    it("should not reclaim IDs for entities that are still alive", async () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      // Create two entities, remove only one
+      const e0 = createEntity(ctx);
+      const e1 = createEntity(ctx);
+      addComponent(ctx, e0, Position, { x: 0, y: 0 });
+      addComponent(ctx, e1, Position, { x: 1, y: 1 });
+
+      removeEntity(ctx, e0); // Only remove e0
+
+      const system = defineSystem(() => {});
+
+      // Execute RECLAIM_DELAY times
+      await world.execute(system);
+      await world.execute(system);
+      await world.execute(system);
+
+      // Create new entity - should reuse e0's ID
+      const newEntity = createEntity(ctx);
+      expect(newEntity).toBe(0); // Reclaimed from e0
+
+      // e1 should still be alive and accessible
+      expect(hasComponent(ctx, e1, Position)).toBe(true);
+      expect(Position.read(ctx, e1).x).toBe(1);
+    });
+  });
+
   describe("currEventIndex - System isolation within execute batch", () => {
     it("should prevent systems from seeing entities in added() created by earlier systems in the same execute batch", async () => {
       const Position = defineComponent({

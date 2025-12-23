@@ -64,7 +64,7 @@ export interface CommandDef<T> {
    * @param ctx - Editor context
    * @returns True if at least one command of this type was spawned last frame
    */
-  spawnedLastFrame(ctx: Context): boolean;
+  didSpawnLastFrame(ctx: Context): boolean;
 }
 
 /**
@@ -124,7 +124,7 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
       }
     },
 
-    spawnedLastFrame(ctx: Context): boolean {
+    didSpawnLastFrame(ctx: Context): boolean {
       for (const eid of commands.removed(ctx)) {
         const marker = CommandMarker.read(ctx, eid);
         if (marker.typeId === typeId) {
@@ -146,5 +146,38 @@ export function cleanupCommands(ctx: Context): void {
   for (const eid of commands.current(ctx)) {
     commandPayloads.delete(eid);
     removeEntity(ctx, eid);
+  }
+}
+
+/**
+ * Execute a handler for each command of a given type spawned this frame.
+ *
+ * This is a convenience helper that iterates over commands and calls
+ * the handler for each one. Use this to reduce boilerplate in systems.
+ *
+ * @param ctx - Editor context
+ * @param def - The command definition to listen for
+ * @param handler - Function to call for each command
+ *
+ * @example
+ * ```typescript
+ * defineSystem((ctx) => {
+ *   on(ctx, SelectAll, (ctx, payload) => {
+ *     selectAllBlocks(ctx, payload.filter);
+ *   });
+ *
+ *   on(ctx, Undo, (ctx) => {
+ *     performUndo(ctx);
+ *   });
+ * });
+ * ```
+ */
+export function on<T>(
+  ctx: Context,
+  def: CommandDef<T>,
+  handler: (ctx: Context, payload: T) => void
+): void {
+  for (const { payload } of def.iter(ctx)) {
+    handler(ctx, payload);
   }
 }

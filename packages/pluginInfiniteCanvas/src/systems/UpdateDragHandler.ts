@@ -40,7 +40,7 @@ const transformHandleQuery = defineQuery((q) =>
  * - When scale handle moves: scale all selected blocks proportionally
  * - When rotate handle moves: rotate all selected blocks around the center
  */
-export const dragHandlerSystem = defineSystem((ctx: Context) => {
+export const UpdateDragHandler = defineSystem((ctx: Context) => {
   // Check for transform box changes
   for (const boxId of transformBoxQuery.changed(ctx)) {
     onTransformBoxMove(ctx, boxId);

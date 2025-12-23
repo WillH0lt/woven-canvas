@@ -386,6 +386,15 @@ export class TupleField extends Field<TupleFieldDef> {
   }
 
   setValue(tuple: any, entityId: EntityId, value: any) {
+    // Handle object with numeric keys (e.g., {"0": 60, "1": 60} from Loro/CRDT stores)
+    // by converting to an array
+    if (value && typeof value === "object" && !Array.isArray(value) && value.length === undefined) {
+      const arr = new Array(this.fieldDef.length);
+      for (let i = 0; i < this.fieldDef.length; i++) {
+        arr[i] = value[i];
+      }
+      value = arr;
+    }
     tuple.set(entityId, value);
   }
 }

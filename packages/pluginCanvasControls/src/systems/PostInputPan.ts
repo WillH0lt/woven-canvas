@@ -215,7 +215,7 @@ const panMachine = setup({
 });
 
 /**
- * Capture pan system - handles dragging to pan the canvas.
+ * Post input pan system - handles dragging to pan the canvas.
  *
  * Uses an XState state machine to track pan state:
  * - Idle: Waiting for "hand" tool button press
@@ -224,7 +224,7 @@ const panMachine = setup({
  *
  * Active when: A button mapped to the "hand" tool is held and dragged.
  */
-export const capturePanSystem = defineSystem((ctx) => {
+export const PostInputPan = defineSystem((ctx) => {
   const currentState = PanState.read(ctx).state;
 
   // Get pointer events for buttons mapped to the "hand" tool

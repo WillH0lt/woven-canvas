@@ -10,7 +10,6 @@ import {
 import {
   Block,
   Aabb,
-  Persistent,
   Selected,
   Locked,
   Hovered,
@@ -20,11 +19,12 @@ import {
   RankBounds,
   SelectionStateSingleton,
 } from "../../src/singletons";
-import { intersectSystem, selectCaptureSystem } from "../../src/systems";
+import { CaptureSelect } from "../../src/systems";
 import { DeselectAll } from "../../src/commands";
 import { SelectionState } from "../../src/types";
 import {
   createPointerSimulator,
+  createBlock,
   simulateMouseMove,
   simulateKeyDown,
 } from "../testUtils";
@@ -35,9 +35,9 @@ const pointer = createPointerSimulator();
 // Factory function to create test plugin
 const testPlugin: EditorPlugin = {
   name: "test",
-  components: [Block, Aabb, Persistent, Selected, Locked, Hovered],
+  components: [Block, Aabb, Selected, Locked, Hovered],
   singletons: [Intersect, RankBounds, SelectionStateSingleton],
-  captureSystems: [intersectSystem, selectCaptureSystem],
+  captureSystems: [CaptureSelect],
   setup(ctx) {
     // Set up select tool on left mouse button
     const controls = Controls.write(ctx);
@@ -159,6 +159,41 @@ describe("selectCaptureSystem", () => {
     });
   });
 
+  describe("block selection", () => {
+    it("should transition to Pointing state when clicking on a block", async () => {
+      // This test verifies that the isOverBlock guard correctly identifies
+      // a block is under the cursor when intersects array has entries.
+      // This confirms the fix for the bug where `intersects[0] !== 0`
+      // would incorrectly reject entity ID 0.
+      let state: string | undefined;
+      let entityId: number | undefined;
+
+      // Create a persistent block and set up intersect
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
+        Intersect.setAll(ctx, [entityId]);
+      });
+      await editor.tick();
+
+      // Set intersect before pointer down
+      editor.nextTick((ctx) => {
+        Intersect.setAll(ctx, [entityId!]);
+      });
+      pointer.pointerDown(domElement, 50, 50);
+      await editor.tick();
+
+      // Check state - should be Pointing (not SelectionBoxPointing)
+      editor.nextTick((ctx) => {
+        state = SelectionStateSingleton.read(ctx).state;
+      });
+      await editor.tick();
+
+      // If isOverBlock guard works, we should be in Pointing state
+      // The old bug with `intersects[0] !== 0` would put us in SelectionBoxPointing
+      expect(state).toBe(SelectionState.Pointing);
+    });
+  });
+
   describe("non-persistent blocks", () => {
     it("should not select non-persistent blocks on click", async () => {
       let entityId: number | undefined;
@@ -205,7 +240,7 @@ describe("selectCaptureSystem", () => {
 
       // Check if command was spawned last frame using nextTick
       editor.nextTick((ctx) => {
-        deselectAllSpawned = DeselectAll.spawnedLastFrame(ctx);
+        deselectAllSpawned = DeselectAll.didSpawnLastFrame(ctx);
       });
 
       await editor.tick();
@@ -226,7 +261,7 @@ describe("selectCaptureSystem", () => {
 
       // Check if command was spawned last frame
       editor.nextTick((ctx) => {
-        deselectAllSpawned = DeselectAll.spawnedLastFrame(ctx);
+        deselectAllSpawned = DeselectAll.didSpawnLastFrame(ctx);
       });
 
       await editor.tick();

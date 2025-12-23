@@ -2,6 +2,7 @@ import { WorkerManager } from "./WorkerManager";
 import { Component, ComponentDef, SingletonDef } from "./Component";
 import { EntityBuffer } from "./EntityBuffer";
 import { EventBuffer, EventType } from "./EventBuffer";
+import { History } from "./History";
 import { Pool } from "./Pool";
 import type { QueryDef } from "./Query";
 import type { System } from "./System";
@@ -48,20 +49,6 @@ export interface WorldOptions {
   /**
    * User-defined resources accessible from systems via getResources<T>(ctx).
    * Use this to share application state, configuration, or services.
-   * @example
-   * ```typescript
-   * interface Resources {
-   *   maxParticles: number;
-   *   debugMode: boolean;
-   * }
-   * const world = new World([Position, Velocity], {
-   *   resources: { maxParticles: 1000, debugMode: true }
-   * });
-   *
-   * // In a system:
-   * const resources = getResources<Resources>(ctx);
-   * console.log(resources.maxParticles); // 1000
-   * ```
    */
   resources?: unknown;
 }
@@ -85,6 +72,8 @@ export class World {
     new Map();
   private nextSyncCallbacks: NextSyncCallback[] = [];
   private prevSyncEventIndex = 0;
+
+  private history: History;
 
   /**
    * Create a new world instance
@@ -136,6 +125,7 @@ export class World {
     }
 
     this.worldId = World.worldCounter++;
+    this.history = new History(maxEvents);
 
     this.context = {
       entityBuffer,
@@ -150,7 +140,6 @@ export class World {
       readerId: `world_${this.worldId}`,
       prevEventIndex: 0,
       resources: options.resources,
-      systemEventIndices: new Map(),
     };
   }
 
@@ -175,15 +164,9 @@ export class World {
     const ctx = this.context;
     const currentEventIndex = ctx.eventBuffer.getWriteIndex();
 
-    // Update indices for all systems using context-based storage
+    // Record execution for all systems
     for (const system of systems) {
-      let indices = ctx.systemEventIndices.get(system.id);
-      if (!indices) {
-        indices = { prev: 0, curr: 0 };
-        ctx.systemEventIndices.set(system.id, indices);
-      }
-      indices.prev = indices.curr;
-      indices.curr = currentEventIndex;
+      this.history.recordExecution(system.id, currentEventIndex);
     }
 
     const workerSystems = systems.filter((system) => system.type === "worker");
@@ -203,11 +186,11 @@ export class World {
     for (const system of mainThreadSystems) {
       // Set readerId for this system's query instances
       const readerId = `world_${this.worldId}_system_${system.id}`;
-      const indices = ctx.systemEventIndices.get(system.id)!;
+      const prevEventIndex = this.history.getPrevIndex(system.id);
       system.execute({
         ...ctx,
         readerId,
-        prevEventIndex: indices.prev,
+        prevEventIndex,
         currEventIndex: currentEventIndex,
       });
     }
@@ -215,11 +198,15 @@ export class World {
     // Wait for all worker systems to complete
     await Promise.all(promises);
 
-    // Reclaim entity IDs from REMOVED events that all systems have processed
-    const allIndices = systems.map((s) => ctx.systemEventIndices.get(s.id)!);
-    const minPrevIndex = Math.min(...allIndices.map((i) => i.prev));
-    const maxCurrIndex = Math.max(...allIndices.map((i) => i.curr));
-    this.reclaimRemovedEntityIds(minPrevIndex, maxCurrIndex);
+    // Reclaim entity IDs from REMOVED events that are old enough
+    const watermark = this.history.calculateWatermark(currentEventIndex);
+    if (watermark !== null) {
+      this.reclaimRemovedEntityIds(
+        this.history.getLastReclaimIndex(),
+        watermark
+      );
+      this.history.markReclaimed(watermark);
+    }
   }
 
   /**
@@ -399,6 +386,7 @@ export class World {
     this.subscribers = [];
     this.nextSyncCallbacks = [];
     this.componentIdToDef.clear();
+    this.history.clear();
 
     // Note: SharedArrayBuffers (Pool, EntityBuffer, EventBuffer) are managed by garbage collection
     // and will be freed when no references remain

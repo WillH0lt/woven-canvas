@@ -5,11 +5,13 @@ import {
   addComponent,
   removeComponent,
   hasComponent,
+  on,
+  Persistent,
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
 
-import { Block, Aabb, Selected, Persistent } from "../components";
+import { Block, Aabb, Selected } from "../components";
 import {
   SelectBlock,
   DeselectBlock,
@@ -31,7 +33,9 @@ import { RankBounds, Cursor } from "../singletons";
 const selectedBlocksQuery = defineQuery((q) => q.with(Block).with(Selected));
 
 // Query for persistent blocks
-const persistentBlocksQuery = defineQuery((q) => q.with(Block).with(Persistent));
+const persistentBlocksQuery = defineQuery((q) =>
+  q.with(Block).with(Persistent)
+);
 
 /**
  * Block update system - handles block manipulation commands.
@@ -43,92 +47,62 @@ const persistentBlocksQuery = defineQuery((q) => q.with(Block).with(Persistent))
  * - BringForwardSelected, SendBackwardSelected, BringToFrontSelected, SendToBackSelected
  * - SetCursor
  */
-export const blockUpdateSystem = defineSystem((ctx: Context) => {
-  // Handle DragBlock command
-  for (const { payload } of DragBlock.iter(ctx)) {
-    const { entityId, position } = payload;
-    if (!hasComponent(ctx, entityId, Block)) continue;
-
+export const UpdateBlock = defineSystem((ctx: Context) => {
+  on(ctx, DragBlock, (ctx, { entityId, position }) => {
+    if (!hasComponent(ctx, entityId, Block)) return;
     const block = Block.write(ctx, entityId);
     block.position = position;
-  }
+  });
 
-  // Handle SelectBlock command
-  for (const { payload } of SelectBlock.iter(ctx)) {
-    const { entityId, deselectOthers } = payload;
-
+  on(ctx, SelectBlock, (ctx, { entityId, deselectOthers }) => {
     if (deselectOthers) {
       deselectAllBlocks(ctx);
     }
-
     if (!hasComponent(ctx, entityId, Selected)) {
       addComponent(ctx, entityId, Selected, { selectedBy: "" });
     }
-  }
+  });
 
-  // Handle DeselectBlock command
-  for (const { payload } of DeselectBlock.iter(ctx)) {
-    const { entityId } = payload;
+  on(ctx, DeselectBlock, (ctx, { entityId }) => {
     if (hasComponent(ctx, entityId, Selected)) {
       removeComponent(ctx, entityId, Selected);
     }
-  }
+  });
 
-  // Handle ToggleSelect command
-  for (const { payload } of ToggleSelect.iter(ctx)) {
-    const { entityId } = payload;
+  on(ctx, ToggleSelect, (ctx, { entityId }) => {
     if (hasComponent(ctx, entityId, Selected)) {
       removeComponent(ctx, entityId, Selected);
     } else {
       addComponent(ctx, entityId, Selected, { selectedBy: "" });
     }
-  }
+  });
 
-  // Handle DeselectAll command
-  for (const _ of DeselectAll.iter(ctx)) {
-    deselectAllBlocks(ctx);
-  }
+  on(ctx, DeselectAll, deselectAllBlocks);
 
-  // Handle SelectAll command
-  for (const _ of SelectAll.iter(ctx)) {
+  on(ctx, SelectAll, (ctx) => {
     for (const entityId of persistentBlocksQuery.current(ctx)) {
       if (!hasComponent(ctx, entityId, Selected)) {
         addComponent(ctx, entityId, Selected, { selectedBy: "" });
       }
     }
-  }
+  });
 
-  // Handle RemoveBlock command
-  for (const { payload } of RemoveBlock.iter(ctx)) {
-    const { entityId } = payload;
+  on(ctx, RemoveBlock, (ctx, { entityId }) => {
     removeEntity(ctx, entityId);
-  }
+  });
 
-  // Handle RemoveSelected command
-  for (const _ of RemoveSelected.iter(ctx)) {
+  on(ctx, RemoveSelected, (ctx) => {
     for (const entityId of selectedBlocksQuery.current(ctx)) {
       removeEntity(ctx, entityId);
     }
-  }
+  });
 
-  // Handle BringForwardSelected / BringToFrontSelected command
-  for (const _ of BringForwardSelected.iter(ctx)) {
-    bringSelectedForward(ctx);
-  }
-  for (const _ of BringToFrontSelected.iter(ctx)) {
-    bringSelectedForward(ctx);
-  }
+  on(ctx, BringForwardSelected, bringSelectedForward);
+  on(ctx, BringToFrontSelected, bringSelectedForward);
+  on(ctx, SendBackwardSelected, sendSelectedBackward);
+  on(ctx, SendToBackSelected, sendSelectedBackward);
 
-  // Handle SendBackwardSelected / SendToBackSelected command
-  for (const _ of SendBackwardSelected.iter(ctx)) {
-    sendSelectedBackward(ctx);
-  }
-  for (const _ of SendToBackSelected.iter(ctx)) {
-    sendSelectedBackward(ctx);
-  }
-
-  // Handle SetCursor command
-  for (const { payload } of SetCursor.iter(ctx)) {
+  on(ctx, SetCursor, (ctx, payload) => {
     const cursor = Cursor.write(ctx);
     if (payload.svg !== undefined) {
       cursor.svg = payload.svg;
@@ -136,7 +110,7 @@ export const blockUpdateSystem = defineSystem((ctx: Context) => {
     if (payload.contextSvg !== undefined) {
       cursor.contextSvg = payload.contextSvg;
     }
-  }
+  });
 });
 
 /**
