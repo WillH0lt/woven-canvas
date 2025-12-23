@@ -13,7 +13,7 @@ import { SelectionState } from "../types";
  * - pointingStartClient: Pointing start in client/screen coordinates [x, y]
  * - pointingStartWorld: Pointing start in world coordinates [x, y]
  * - draggedEntityStart: Dragged entity's original position [x, y]
- * - draggedEntityId: Entity ID of block being dragged (0 = none)
+ * - draggedEntity: Entity reference of block being dragged
  * - cloneGeneratorSeed: Seed for deterministic UUIDs when cloning
  * - isCloning: Whether in cloning mode (Alt+drag)
  *
@@ -32,7 +32,7 @@ export const SelectionStateSingleton = defineEditorState({
   pointingStartClient: field.tuple(field.float64(), 2).default([0, 0]),
   pointingStartWorld: field.tuple(field.float64(), 2).default([0, 0]),
   draggedEntityStart: field.tuple(field.float64(), 2).default([0, 0]),
-  draggedEntityId: field.uint32().default(0),
+  draggedEntity: field.ref(),
   cloneGeneratorSeed: field.string().max(36).default(""),
   isCloning: field.boolean().default(false),
 });

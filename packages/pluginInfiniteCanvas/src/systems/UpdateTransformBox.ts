@@ -11,7 +11,7 @@ import {
   type EntityId,
   Camera,
 } from "@infinitecanvas/editor";
-import { Vec2, Aabb as AabbNs } from "@infinitecanvas/math";
+import { Vec2, Rect } from "@infinitecanvas/math";
 
 import {
   Block,
@@ -35,27 +35,26 @@ import {
   EndTransformBoxEdit,
 } from "../commands";
 import { getBlockDef } from "../helpers";
-import { TransformHandleKind, CursorKind } from "../types";
+import { SelectionStateSingleton } from "../singletons";
+import { TransformHandleKind, CursorKind, SelectionState } from "../types";
 
 // Query for transform box entities
-const transformBoxQuery = defineQuery((q) => q.with(Block).with(TransformBox));
+const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));
 
 // Query for transform handle entities
-const transformHandleQuery = defineQuery((q) =>
-  q.with(Block).with(TransformHandle)
-);
+const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle));
 
 // Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) => q.with(Block).with(Selected));
+const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Query for edited blocks
-const editedBlocksQuery = defineQuery((q) => q.with(Block).with(Edited));
+const editedBlocksQuery = defineQuery((q) => q.with(Block, Edited));
 
 // Transform box z-order rank
-const TRANSFORM_BOX_RANK = "z";
-const TRANSFORM_HANDLE_CORNER_RANK = "za";
-const TRANSFORM_HANDLE_EDGE_RANK = "zb";
-const TRANSFORM_HANDLE_ROTATE_RANK = "zc";
+const TRANSFORM_BOX_RANK = "za";
+const TRANSFORM_HANDLE_ROTATE_RANK = "zb";
+const TRANSFORM_HANDLE_EDGE_RANK = "zc";
+const TRANSFORM_HANDLE_CORNER_RANK = "zd";
 
 /**
  * Transform box update system - manages transform box and handles.
@@ -75,6 +74,8 @@ export const UpdateTransformBox = defineSystem((ctx: Context) => {
  * Remove transform box and all handles.
  */
 function removeTransformBox(ctx: Context): void {
+  console.log("Removing transform box");
+
   // Remove all handles
   for (const handleId of transformHandleQuery.current(ctx)) {
     removeEntity(ctx, handleId);
@@ -157,56 +158,52 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
   }
 
   // Compute bounding box of all selected blocks
-  const allCorners: Vec2[] = [];
+  if (selectedBlocks.length === 0) return;
+
+  // Collect all corners from selected blocks
+  const corners: Vec2[] = [];
   for (const entityId of selectedBlocks) {
-    allCorners.push(...Block.getCorners(ctx, entityId));
+    const blockCorners = Block.getCorners(ctx, entityId);
+    corners.push(...blockCorners);
   }
 
-  if (allCorners.length === 0) return;
+  if (corners.length === 0) return;
 
-  // Calculate bounds
-  let minX = allCorners[0][0];
-  let minY = allCorners[0][1];
-  let maxX = allCorners[0][0];
-  let maxY = allCorners[0][1];
-
-  for (const corner of allCorners) {
-    minX = Math.min(minX, corner[0]);
-    minY = Math.min(minY, corner[1]);
-    maxX = Math.max(maxX, corner[0]);
-    maxY = Math.max(maxY, corner[1]);
-  }
-
-  // Update transform box block
+  // Update transform box block using Rect.boundPoints which handles rotation
   const boxBlock = Block.write(ctx, transformBoxId);
-  boxBlock.position = [minX, minY];
-  boxBlock.size = [maxX - minX, maxY - minY];
   boxBlock.rotateZ = rotateZ;
+  Rect.boundPoints(boxBlock.position, boxBlock.size, rotateZ, corners);
 
-  // Update DragStart
-  if (hasComponent(ctx, transformBoxId, DragStart)) {
-    const dragStart = DragStart.write(ctx, transformBoxId);
-    dragStart.position = [minX, minY];
-    dragStart.size = [maxX - minX, maxY - minY];
-    dragStart.rotateZ = rotateZ;
-  }
+  // Don't update DragStart if currently dragging - it would reset the delta calculation
+  const selectionState = SelectionStateSingleton.read(ctx);
+  const isDragging = selectionState.state === SelectionState.Dragging;
 
-  // Update DragStart for selected blocks
-  for (const entityId of selectedBlocks) {
-    const block = Block.read(ctx, entityId);
+  if (!isDragging) {
+    // Update DragStart for transform box
+    if (hasComponent(ctx, transformBoxId, DragStart)) {
+      const dragStart = DragStart.write(ctx, transformBoxId);
+      dragStart.position = [boxBlock.position[0], boxBlock.position[1]];
+      dragStart.size = [boxBlock.size[0], boxBlock.size[1]];
+      dragStart.rotateZ = rotateZ;
+    }
 
-    if (!hasComponent(ctx, entityId, DragStart)) {
-      addComponent(ctx, entityId, DragStart, {
-        position: [block.position[0], block.position[1]],
-        size: [block.size[0], block.size[1]],
-        rotateZ: block.rotateZ,
-        fontSize: 16,
-      });
-    } else {
-      const dragStart = DragStart.write(ctx, entityId);
-      dragStart.position = [block.position[0], block.position[1]];
-      dragStart.size = [block.size[0], block.size[1]];
-      dragStart.rotateZ = block.rotateZ;
+    // Update DragStart for selected blocks
+    for (const entityId of selectedBlocks) {
+      const block = Block.read(ctx, entityId);
+
+      if (!hasComponent(ctx, entityId, DragStart)) {
+        addComponent(ctx, entityId, DragStart, {
+          position: [block.position[0], block.position[1]],
+          size: [block.size[0], block.size[1]],
+          rotateZ: block.rotateZ,
+          fontSize: 16,
+        });
+      } else {
+        const dragStart = DragStart.write(ctx, entityId);
+        dragStart.position = [block.position[0], block.position[1]];
+        dragStart.size = [block.size[0], block.size[1]];
+        dragStart.rotateZ = block.rotateZ;
+      }
     }
   }
 
@@ -229,17 +226,6 @@ interface TransformHandleDef {
   height: number;
   rotateZ: number;
   rank: string;
-}
-
-/**
- * Rotate a point around a center point.
- */
-function rotatePoint(point: Vec2, center: Vec2, angleRad: number): Vec2 {
-  const cos = Math.cos(angleRad);
-  const sin = Math.sin(angleRad);
-  const dx = point[0] - center[0];
-  const dy = point[1] - center[1];
-  return [center[0] + dx * cos - dy * sin, center[1] + dx * sin + dy * cos];
 }
 
 /**
@@ -430,7 +416,8 @@ function addOrUpdateTransformHandles(
       def.left + def.width / 2,
       def.top + def.height / 2,
     ];
-    const rotatedCenter = rotatePoint(handleCenter, center, rotateZ);
+    const rotatedCenter = Vec2.clone(handleCenter);
+    Vec2.rotateAround(rotatedCenter, center, rotateZ);
     const finalLeft = rotatedCenter[0] - def.width / 2;
     const finalTop = rotatedCenter[1] - def.height / 2;
 

@@ -41,6 +41,22 @@ describe("Component", () => {
       expect(Position._getComponentId(ctx)).toBe(0);
       expect(Velocity._getComponentId(ctx)).toBe(1);
     });
+
+    it("should throw error when adding a component that already exists on an entity", () => {
+      const Position = defineComponent({
+        x: field.float32(),
+        y: field.float32(),
+      });
+      const world = new World([Position]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Position, { x: 1, y: 2 });
+
+      expect(() => {
+        addComponent(ctx, entityId, Position, { x: 3, y: 4 });
+      }).toThrow(/already has component/);
+    });
   });
 
   describe("Component Definition", () => {

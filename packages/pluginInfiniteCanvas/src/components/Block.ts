@@ -4,17 +4,25 @@ import {
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
-import { Vec2 } from "@infinitecanvas/math";
+import { Vec2, Rect, type Aabb as AabbTuple } from "@infinitecanvas/math";
 
-// Vec2 tuple indices
-const X = 0;
-const Y = 1;
-
-// Internal temp vector for getCenter (caller can pass `out` to avoid allocation)
-const _tempCenter: Vec2 = [0, 0];
-
-// Internal temp vector for transform methods (not returned to caller)
-const _tempVec: Vec2 = [0, 0];
+// Pre-allocated arrays for SAT intersection to avoid allocations
+const _aabbCorners: [Vec2, Vec2, Vec2, Vec2] = [
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+];
+const _blockCorners: [Vec2, Vec2, Vec2, Vec2] = [
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+];
+const _blockAxes: [Vec2, Vec2] = [
+  [0, 0],
+  [0, 0],
+];
 
 const BlockSchema = {
   /** Element tag name (e.g., "div", "img") */
@@ -44,10 +52,11 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
    * Get the center point of a block.
    * @param out - Optional output vector to write to (avoids allocation)
    */
-  getCenter(ctx: Context, entityId: EntityId, out: Vec2 = _tempCenter): Vec2 {
+  getCenter(ctx: Context, entityId: EntityId, out?: Vec2): Vec2 {
     const { position, size } = this.read(ctx, entityId);
-    Vec2.set(out, position[X] + size[X] / 2, position[Y] + size[Y] / 2);
-    return out;
+    const result: Vec2 = out ?? [0, 0];
+    Rect.getCenter(position, size, result);
+    return result;
   }
 
   /**
@@ -55,70 +64,36 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
    */
   setCenter(ctx: Context, entityId: EntityId, center: Vec2): void {
     const block = this.write(ctx, entityId);
-    const halfW = block.size[X] / 2;
-    const halfH = block.size[Y] / 2;
-    Vec2.set(block.position, center[X] - halfW, center[Y] - halfH);
+    Rect.setCenter(block.position, block.size, center);
   }
 
   /**
    * Get the four corner points of a block (accounting for rotation).
    * Returns corners in order: top-left, top-right, bottom-right, bottom-left.
-   * Returns a new array each call - safe to store or modify.
+   * @param out - Optional output array to write to (avoids allocation)
    */
-  getCorners(ctx: Context, entityId: EntityId): [Vec2, Vec2, Vec2, Vec2] {
+  getCorners(
+    ctx: Context,
+    entityId: EntityId,
+    out?: [Vec2, Vec2, Vec2, Vec2]
+  ): [Vec2, Vec2, Vec2, Vec2] {
     const { position, size, rotateZ } = this.read(ctx, entityId);
-
-    const halfWidth = size[X] / 2;
-    const halfHeight = size[Y] / 2;
-    const centerX = position[X] + halfWidth;
-    const centerY = position[Y] + halfHeight;
-
-    const cos = Math.cos(rotateZ);
-    const sin = Math.sin(rotateZ);
-
-    // Local corner offsets relative to center: TL, TR, BR, BL
-    const offsets: [number, number][] = [
-      [-halfWidth, -halfHeight],
-      [halfWidth, -halfHeight],
-      [halfWidth, halfHeight],
-      [-halfWidth, halfHeight],
+    const result: [Vec2, Vec2, Vec2, Vec2] = out ?? [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
     ];
-
-    // Rotate each corner around center
-    return offsets.map(([ox, oy]) => [
-      centerX + ox * cos - oy * sin,
-      centerY + ox * sin + oy * cos,
-    ]) as [Vec2, Vec2, Vec2, Vec2];
+    Rect.getCorners(position, size, rotateZ, result);
+    return result;
   }
 
   /**
    * Check if a point intersects a block (accounting for rotation).
-   * Optimized to avoid allocations - called frequently during hit testing.
    */
   containsPoint(ctx: Context, entityId: EntityId, point: Vec2): boolean {
     const { position, size, rotateZ } = this.read(ctx, entityId);
-
-    const halfWidth = size[X] / 2;
-    const halfHeight = size[Y] / 2;
-    const centerX = position[X] + halfWidth;
-    const centerY = position[Y] + halfHeight;
-
-    // Translate point relative to center
-    const dx = point[X] - centerX;
-    const dy = point[Y] - centerY;
-
-    // Rotate point in opposite direction to get local coordinates
-    const cos = Math.cos(-rotateZ);
-    const sin = Math.sin(-rotateZ);
-    const localX = dx * cos - dy * sin;
-    const localY = dx * sin + dy * cos;
-
-    return (
-      localX >= -halfWidth &&
-      localX <= halfWidth &&
-      localY >= -halfHeight &&
-      localY <= halfHeight
-    );
+    return Rect.containsPoint(position, size, rotateZ, point);
   }
 
   /**
@@ -126,7 +101,7 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
    */
   translate(ctx: Context, entityId: EntityId, delta: Vec2): void {
     const block = this.write(ctx, entityId);
-    Vec2.add(block.position, delta);
+    Rect.translate(block.position, delta);
   }
 
   /**
@@ -156,24 +131,20 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
   /**
    * Rotate a block around a pivot point.
    */
-  rotateAroundPivot(
+  rotateAround(
     ctx: Context,
     entityId: EntityId,
     pivot: Vec2,
     angle: number
   ): void {
     const block = this.write(ctx, entityId);
-    // center = position + size * 0.5
-    Vec2.copy(_tempVec, block.size);
-    Vec2.scale(_tempVec, 0.5);
-    Vec2.add(_tempVec, block.position);
-    // newCenter = rotateAround(center, pivot, angle)
-    Vec2.rotateAround(_tempVec, pivot, angle);
-    // position = newCenter - halfSize
-    const halfW = block.size[X] / 2;
-    const halfH = block.size[Y] / 2;
-    Vec2.set(block.position, _tempVec[X] - halfW, _tempVec[Y] - halfH);
-    block.rotateZ += angle;
+    block.rotateZ = Rect.rotateAround(
+      block.position,
+      block.size,
+      block.rotateZ,
+      pivot,
+      angle
+    );
   }
 
   /**
@@ -181,16 +152,7 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
    */
   scaleBy(ctx: Context, entityId: EntityId, scaleFactor: number): void {
     const block = this.write(ctx, entityId);
-    // center = position + size * 0.5
-    Vec2.copy(_tempVec, block.size);
-    Vec2.scale(_tempVec, 0.5);
-    Vec2.add(_tempVec, block.position);
-    // newSize = size * scaleFactor
-    Vec2.scale(block.size, scaleFactor);
-    // position = center - newSize * 0.5
-    const halfW = block.size[X] / 2;
-    const halfH = block.size[Y] / 2;
-    Vec2.set(block.position, _tempVec[X] - halfW, _tempVec[Y] - halfH);
+    Rect.scaleBy(block.position, block.size, scaleFactor);
   }
 
   /**
@@ -203,21 +165,26 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
     scaleFactor: number
   ): void {
     const block = this.write(ctx, entityId);
-    // center = position + size * 0.5
-    Vec2.copy(_tempVec, block.size);
-    Vec2.scale(_tempVec, 0.5);
-    Vec2.add(_tempVec, block.position);
-    // delta = center - pivot, then scale
-    Vec2.sub(_tempVec, pivot);
-    Vec2.scale(_tempVec, scaleFactor);
-    // newCenter = pivot + scaledDelta
-    Vec2.add(_tempVec, pivot);
-    // Scale size in place
-    Vec2.scale(block.size, scaleFactor);
-    // position = newCenter - newSize * 0.5
-    const halfW = block.size[X] / 2;
-    const halfH = block.size[Y] / 2;
-    Vec2.set(block.position, _tempVec[X] - halfW, _tempVec[Y] - halfH);
+    Rect.scaleAround(block.position, block.size, pivot, scaleFactor);
+  }
+
+  /**
+   * Check if an AABB intersects with this block using Separating Axis Theorem.
+   * This handles all intersection cases including narrow AABBs that pass through
+   * the middle of a rotated block without touching any corners.
+   * Optimized to avoid allocations for hot path usage.
+   */
+  intersectsAabb(ctx: Context, entityId: EntityId, aabb: AabbTuple): boolean {
+    const { position, size, rotateZ } = this.read(ctx, entityId);
+    return Rect.intersectsAabb(
+      position,
+      size,
+      rotateZ,
+      aabb,
+      _blockCorners,
+      _aabbCorners,
+      _blockAxes
+    );
   }
 }
 

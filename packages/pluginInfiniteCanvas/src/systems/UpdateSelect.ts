@@ -11,7 +11,7 @@ import {
   type Context,
 } from "@infinitecanvas/editor";
 
-import { Block, Aabb, Selected, SelectionBox } from "../components";
+import { Block, Aabb, Selected, SelectionBox, Opacity } from "../components";
 import {
   AddSelectionBox,
   UpdateSelectionBox,
@@ -20,14 +20,14 @@ import {
 import { intersectAabb } from "../helpers";
 
 // Query for selection box entities
-const selectionBoxQuery = defineQuery((q) => q.with(Block).with(SelectionBox));
+const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 
 // Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) => q.with(Block).with(Selected));
+const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Query for all persistent blocks (for intersection)
 const persistentBlocksQuery = defineQuery((q) =>
-  q.with(Block).with(Persistent).with(Aabb)
+  q.with(Block, Persistent, Aabb)
 );
 
 // Selection box z-order rank (always on top)
@@ -52,6 +52,7 @@ export const UpdateSelect = defineSystem((ctx: Context) => {
       rank: SELECTION_BOX_RANK,
     });
     addComponent(ctx, entityId, SelectionBox, {});
+    addComponent(ctx, entityId, Opacity, { value: 77 }); // ~30% opacity
   });
 
   on(ctx, UpdateSelectionBox, (ctx, { bounds, deselectOthers }) => {

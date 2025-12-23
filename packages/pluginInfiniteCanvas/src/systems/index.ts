@@ -1,6 +1,8 @@
-// Capture phase systems
+// Pre-capture phase systems
 export { PreCaptureIntersect } from "./PreCaptureIntersect";
-export { CaptureSelect } from "./CaptureSelect";
+export { PreCaptureSelect } from "./PreCaptureSelect";
+
+// Capture phase systems
 export { CaptureTransformBox } from "./CaptureTransformBox";
 
 // Update phase systems

@@ -63,18 +63,16 @@ const transformBoxMachine = setup({
     },
     isOverTransformBox: ({ event }) => {
       if (!("intersects" in event)) return false;
-      const intersectId = event.intersects[0];
-      if (!intersectId) return false;
-      return hasComponent(event.ctx, intersectId, TransformBox);
+      if (event.intersects.length === 0) return false;
+      return hasComponent(event.ctx, event.intersects[0], TransformBox);
     },
     isOverTransformHandle: ({ event }) => {
       if (!("intersects" in event)) return false;
-      const intersectId = event.intersects[0];
-      if (!intersectId) return false;
-      return hasComponent(event.ctx, intersectId, TransformHandle);
+      if (event.intersects.length === 0) return false;
+      return hasComponent(event.ctx, event.intersects[0], TransformHandle);
     },
     selectionIsTransformable: ({ event }) => {
-      if (!("selectedEntityIds" in event)) return false;
+      if (event.type !== "selectionChanged") return false;
       if (event.selectedEntityIds.length > 1) return true;
       if (event.selectedEntityIds.length === 0) return false;
 
@@ -158,7 +156,7 @@ const transformBoxMachine = setup({
 
 // Query for selected blocks with change tracking
 const selectedBlocksQuery = defineQuery((q) =>
-  q.with(Block).with(Selected).tracking(Selected)
+  q.with(Block).tracking(Selected)
 );
 
 /**

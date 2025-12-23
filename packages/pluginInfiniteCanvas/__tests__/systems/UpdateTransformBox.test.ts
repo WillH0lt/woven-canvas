@@ -1,9 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import {
   Editor,
-  createEntity,
-  addComponent,
-  removeComponent,
   hasComponent,
   defineQuery,
   type EditorPlugin,
@@ -25,6 +22,7 @@ import {
   Intersect,
   RankBounds,
   TransformBoxStateSingleton,
+  SelectionStateSingleton,
 } from "../../src/singletons";
 import { UpdateTransformBox } from "../../src/systems";
 import {
@@ -41,10 +39,8 @@ import type { InfiniteCanvasResources } from "../../src/Plugin";
 import { createBlock } from "../testUtils";
 
 // Define queries at module level
-const transformBoxQuery = defineQuery((q) => q.with(Block).with(TransformBox));
-const transformHandleQuery = defineQuery((q) =>
-  q.with(Block).with(TransformHandle)
-);
+const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));
+const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle));
 
 // Test plugin with UpdateTransformBox system
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
@@ -90,7 +86,12 @@ const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
     Edited,
     ScaleWithZoom,
   ],
-  singletons: [Intersect, RankBounds, TransformBoxStateSingleton],
+  singletons: [
+    Intersect,
+    RankBounds,
+    TransformBoxStateSingleton,
+    SelectionStateSingleton,
+  ],
   updateSystems: [UpdateTransformBox],
   setup(ctx) {
     const controls = Controls.write(ctx);
@@ -627,8 +628,7 @@ describe("UpdateTransformBox", () => {
         stretchHandleCount = handles.filter((id) => {
           const handle = TransformHandle.read(ctx, id);
           return (
-            handle.kind === TransformHandleKind.Stretch &&
-            handle.vectorY === 0 // Left/right edge handles
+            handle.kind === TransformHandleKind.Stretch && handle.vectorY === 0 // Left/right edge handles
           );
         }).length;
       });

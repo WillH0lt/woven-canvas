@@ -84,8 +84,6 @@ export class Store implements StoreAdapter {
   private pendingEvents: LoroEventBatch[] = [];
 
   constructor(options: StoreOptions = {}) {
-    console.log("Store options:", options);
-
     this.websocketUrl = options.websocketUrl;
     this.roomId = options.roomId ?? "default";
 
@@ -141,7 +139,6 @@ export class Store implements StoreAdapter {
 
     // Connect to WebSocket if configured
     if (this.websocketUrl) {
-      console.log(`Connecting to WebSocket at ${this.websocketUrl}...`);
       this.adaptor = new LoroAdaptor(this.doc);
       this.client = new LoroWebsocketClient({ url: this.websocketUrl });
       await this.client.waitConnected();

@@ -13,12 +13,14 @@ import {
   TransformHandle,
   DragStart,
 } from "../../src/components";
+import { DragBlock } from "../../src/commands";
 import { RankBounds } from "../../src/singletons";
 import { UpdateDragHandler } from "../../src/systems/UpdateDragHandler";
 import { TransformHandleKind } from "../../src/types";
 import { createBlock } from "../testUtils";
 
 // Factory function to create test plugin
+// Note: Only includes UpdateDragHandler to test it in isolation
 const testPlugin: EditorPlugin = {
   name: "test",
   components: [
@@ -90,10 +92,12 @@ describe("UpdateDragHandler", () => {
 
       await editor.tick();
 
-      // Move the transform box
+      // Move the transform box using DragBlock command
       editor.nextTick((ctx) => {
-        const box = Block.write(ctx, boxId!);
-        box.position = [150, 200]; // Move by (50, 100)
+        DragBlock.spawn(ctx, {
+          entityId: boxId!,
+          position: [150, 200], // Move by (50, 100)
+        });
       });
 
       await editor.tick();
@@ -158,10 +162,12 @@ describe("UpdateDragHandler", () => {
 
       await editor.tick();
 
-      // Move the transform box
+      // Move the transform box using DragBlock command
       editor.nextTick((ctx) => {
-        const box = Block.write(ctx, boxId!);
-        box.position = [120, 130]; // Move by (20, 30)
+        DragBlock.spawn(ctx, {
+          entityId: boxId!,
+          position: [120, 130], // Move by (20, 30)
+        });
       });
 
       await editor.tick();
@@ -212,10 +218,12 @@ describe("UpdateDragHandler", () => {
 
       await editor.tick();
 
-      // Move the transform box
+      // Move the transform box using DragBlock command
       editor.nextTick((ctx) => {
-        const box = Block.write(ctx, boxId!);
-        box.position = [150, 200];
+        DragBlock.spawn(ctx, {
+          entityId: boxId!,
+          position: [150, 200],
+        });
       });
 
       await editor.tick();
@@ -296,8 +304,10 @@ describe("UpdateDragHandler", () => {
       // Original handle center is at (200, 100) - top right
       // Move handle to (200, 200) - bottom right (90 degree rotation)
       editor.nextTick((ctx) => {
-        const handle = Block.write(ctx, handleId!);
-        handle.position = [195, 195]; // Center at (200, 200)
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [195, 195], // Center at (200, 200)
+        });
       });
 
       await editor.tick();
@@ -342,10 +352,12 @@ describe("UpdateDragHandler", () => {
 
       await editor.tick();
 
-      // Move the handle
+      // Move the handle using DragBlock command
       editor.nextTick((ctx) => {
-        const handle = Block.write(ctx, handleId!);
-        handle.position = [195, 195];
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [195, 195],
+        });
       });
 
       await editor.tick();
@@ -415,8 +427,10 @@ describe("UpdateDragHandler", () => {
 
       // Move the scale handle to make the box larger
       editor.nextTick((ctx) => {
-        const handle = Block.write(ctx, handleId!);
-        handle.position = [245, 245]; // Increase by 50px in each direction
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [245, 245], // Increase by 50px in each direction
+        });
       });
 
       await editor.tick();
@@ -491,8 +505,10 @@ describe("UpdateDragHandler", () => {
 
       // Move the scale handle
       editor.nextTick((ctx) => {
-        const handle = Block.write(ctx, handleId!);
-        handle.position = [345, 195];
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [345, 195],
+        });
       });
 
       await editor.tick();
@@ -537,10 +553,12 @@ describe("UpdateDragHandler", () => {
 
       await editor.tick();
 
-      // Move the handle
+      // Move the handle using DragBlock command
       editor.nextTick((ctx) => {
-        const handle = Block.write(ctx, handleId!);
-        handle.position = [245, 245];
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [245, 245],
+        });
       });
 
       await editor.tick();
@@ -610,8 +628,10 @@ describe("UpdateDragHandler", () => {
 
       // Move the stretch handle horizontally
       editor.nextTick((ctx) => {
-        const handle = Block.write(ctx, handleId!);
-        handle.position = [245, 145]; // Move right by 50
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [245, 145], // Move right by 50
+        });
       });
 
       await editor.tick();
@@ -686,8 +706,10 @@ describe("UpdateDragHandler", () => {
 
       // Move the stretch handle vertically
       editor.nextTick((ctx) => {
-        const handle = Block.write(ctx, handleId!);
-        handle.position = [145, 245]; // Move down by 50
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [145, 245], // Move down by 50
+        });
       });
 
       await editor.tick();
@@ -703,6 +725,504 @@ describe("UpdateDragHandler", () => {
       // Width should remain the same, height should have increased
       expect(blockSize![0]).toBe(100);
       expect(blockSize![1]).toBeGreaterThan(100);
+    });
+  });
+
+  describe("rotated box scaling", () => {
+    it("should scale correctly when box is rotated 45 degrees", async () => {
+      let blockId: number | undefined;
+      let boxId: number | undefined;
+      let handleId: number | undefined;
+      let blockSize: number[] | undefined;
+      let blockPosition: number[] | undefined;
+
+      const rotateZ = Math.PI / 4; // 45 degrees
+
+      // Create a selected block with rotation
+      editor.nextTick((ctx) => {
+        blockId = createBlock(ctx, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ,
+          selected: true,
+        });
+        addComponent(ctx, blockId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ,
+        });
+
+        // Create a rotated transform box
+        boxId = createEntity(ctx);
+        addComponent(ctx, boxId, Block, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ,
+          rank: "z",
+        });
+        addComponent(ctx, boxId, TransformBox, {});
+        addComponent(ctx, boxId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ,
+        });
+
+        // Create a scale handle at the bottom-right corner
+        handleId = createEntity(ctx);
+        addComponent(ctx, handleId, Block, {
+          position: [195, 195],
+          size: [10, 10],
+          rank: "z",
+        });
+        addComponent(ctx, handleId, TransformHandle, {
+          kind: TransformHandleKind.Scale,
+          vectorX: 1,
+          vectorY: 1,
+          transformBoxId: boxId,
+        });
+        addComponent(ctx, handleId, DragStart, {
+          position: [195, 195],
+          size: [10, 10],
+          rotateZ: 0,
+        });
+      });
+
+      await editor.tick();
+
+      // Move the scale handle to make the box larger
+      editor.nextTick((ctx) => {
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [245, 245],
+        });
+      });
+
+      await editor.tick();
+
+      // Check block was scaled
+      editor.nextTick((ctx) => {
+        const block = Block.read(ctx, blockId!);
+        blockSize = [...block.size];
+        blockPosition = [...block.position];
+      });
+
+      await editor.tick();
+
+      // Block should have been scaled
+      expect(blockSize![0]).toBeGreaterThan(100);
+      expect(blockSize![1]).toBeGreaterThan(100);
+      // Position should have changed due to scaling from corner
+      expect(blockPosition).toBeDefined();
+    });
+
+    it("should scale correctly when box is rotated 90 degrees", async () => {
+      let blockId: number | undefined;
+      let boxId: number | undefined;
+      let handleId: number | undefined;
+      let blockSize: number[] | undefined;
+
+      const rotateZ = Math.PI / 2; // 90 degrees
+
+      editor.nextTick((ctx) => {
+        blockId = createBlock(ctx, {
+          position: [100, 100],
+          size: [100, 50], // Non-square to verify correct axis
+          rotateZ,
+          selected: true,
+        });
+        addComponent(ctx, blockId, DragStart, {
+          position: [100, 100],
+          size: [100, 50],
+          rotateZ,
+        });
+
+        boxId = createEntity(ctx);
+        addComponent(ctx, boxId, Block, {
+          position: [100, 100],
+          size: [100, 50],
+          rotateZ,
+          rank: "z",
+        });
+        addComponent(ctx, boxId, TransformBox, {});
+        addComponent(ctx, boxId, DragStart, {
+          position: [100, 100],
+          size: [100, 50],
+          rotateZ,
+        });
+
+        handleId = createEntity(ctx);
+        addComponent(ctx, handleId, Block, {
+          position: [195, 145],
+          size: [10, 10],
+          rank: "z",
+        });
+        addComponent(ctx, handleId, TransformHandle, {
+          kind: TransformHandleKind.Scale,
+          vectorX: 1,
+          vectorY: 1,
+          transformBoxId: boxId,
+        });
+        addComponent(ctx, handleId, DragStart, {
+          position: [195, 145],
+          size: [10, 10],
+          rotateZ: 0,
+        });
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [245, 195],
+        });
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        const block = Block.read(ctx, blockId!);
+        blockSize = [...block.size];
+      });
+
+      await editor.tick();
+
+      // Block should have been scaled in both dimensions
+      expect(blockSize![0]).toBeGreaterThan(100);
+      expect(blockSize![1]).toBeGreaterThan(50);
+    });
+  });
+
+  describe("corner flip behavior", () => {
+    it("should handle dragging past the opposite corner horizontally", async () => {
+      let blockId: number | undefined;
+      let boxId: number | undefined;
+      let handleId: number | undefined;
+      let blockSize: number[] | undefined;
+      let blockPosition: number[] | undefined;
+
+      editor.nextTick((ctx) => {
+        blockId = createBlock(ctx, {
+          position: [100, 100],
+          size: [100, 100],
+          selected: true,
+        });
+        addComponent(ctx, blockId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ: 0,
+        });
+
+        boxId = createEntity(ctx);
+        addComponent(ctx, boxId, Block, {
+          position: [100, 100],
+          size: [100, 100],
+          rank: "z",
+        });
+        addComponent(ctx, boxId, TransformBox, {});
+        addComponent(ctx, boxId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ: 0,
+        });
+
+        // Right edge handle (center at x=200, y=150)
+        handleId = createEntity(ctx);
+        addComponent(ctx, handleId, Block, {
+          position: [195, 145],
+          size: [10, 10],
+          rank: "z",
+        });
+        addComponent(ctx, handleId, TransformHandle, {
+          kind: TransformHandleKind.Stretch,
+          vectorX: 1,
+          vectorY: 0,
+          transformBoxId: boxId,
+        });
+        addComponent(ctx, handleId, DragStart, {
+          position: [195, 145],
+          size: [10, 10],
+          rotateZ: 0,
+        });
+      });
+
+      await editor.tick();
+
+      // Drag the right edge past the left edge (flip)
+      // Handle center moves from x=200 to x=50, so new width = |50 - 100| = 50
+      editor.nextTick((ctx) => {
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [45, 145], // Center at x=50
+        });
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        const block = Block.read(ctx, blockId!);
+        blockSize = [...block.size];
+        blockPosition = [...block.position];
+      });
+
+      await editor.tick();
+
+      // Block should have flipped - new width based on distance from opposite edge
+      // Original left edge was at x=100 (opposite corner), handle at x=50
+      // New width = 50, new position should be at x=50
+      expect(blockSize![0]).toBeCloseTo(50, 0);
+      expect(blockSize![1]).toBe(100); // Height unchanged in stretch mode
+      expect(blockPosition![0]).toBeCloseTo(50, 0); // Position moved to new left edge
+      expect(blockPosition![1]).toBe(100); // Y position unchanged
+    });
+
+    it("should handle dragging past the opposite corner vertically", async () => {
+      let blockId: number | undefined;
+      let boxId: number | undefined;
+      let handleId: number | undefined;
+      let blockSize: number[] | undefined;
+      let blockPosition: number[] | undefined;
+
+      editor.nextTick((ctx) => {
+        blockId = createBlock(ctx, {
+          position: [100, 100],
+          size: [100, 100],
+          selected: true,
+        });
+        addComponent(ctx, blockId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ: 0,
+        });
+
+        boxId = createEntity(ctx);
+        addComponent(ctx, boxId, Block, {
+          position: [100, 100],
+          size: [100, 100],
+          rank: "z",
+        });
+        addComponent(ctx, boxId, TransformBox, {});
+        addComponent(ctx, boxId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ: 0,
+        });
+
+        // Bottom edge handle (center at x=150, y=200)
+        handleId = createEntity(ctx);
+        addComponent(ctx, handleId, Block, {
+          position: [145, 195],
+          size: [10, 10],
+          rank: "z",
+        });
+        addComponent(ctx, handleId, TransformHandle, {
+          kind: TransformHandleKind.Stretch,
+          vectorX: 0,
+          vectorY: 1,
+          transformBoxId: boxId,
+        });
+        addComponent(ctx, handleId, DragStart, {
+          position: [145, 195],
+          size: [10, 10],
+          rotateZ: 0,
+        });
+      });
+
+      await editor.tick();
+
+      // Drag the bottom edge past the top edge (flip)
+      // Handle center moves from y=200 to y=50
+      editor.nextTick((ctx) => {
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [145, 45], // Center at y=50
+        });
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        const block = Block.read(ctx, blockId!);
+        blockSize = [...block.size];
+        blockPosition = [...block.position];
+      });
+
+      await editor.tick();
+
+      // Block should have flipped vertically
+      // Original top edge was at y=100 (opposite corner), handle at y=50
+      // New height = 50, new position should be at y=50
+      expect(blockSize![0]).toBe(100); // Width unchanged in stretch mode
+      expect(blockSize![1]).toBeCloseTo(50, 0);
+      expect(blockPosition![0]).toBe(100); // X position unchanged
+      expect(blockPosition![1]).toBeCloseTo(50, 0); // Position moved to new top edge
+    });
+
+    it("should handle corner flip on rotated box", async () => {
+      let blockId: number | undefined;
+      let boxId: number | undefined;
+      let handleId: number | undefined;
+      let blockSize: number[] | undefined;
+      let blockPosition: number[] | undefined;
+
+      const rotateZ = Math.PI / 4; // 45 degrees
+
+      editor.nextTick((ctx) => {
+        blockId = createBlock(ctx, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ,
+          selected: true,
+        });
+        addComponent(ctx, blockId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ,
+        });
+
+        boxId = createEntity(ctx);
+        addComponent(ctx, boxId, Block, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ,
+          rank: "z",
+        });
+        addComponent(ctx, boxId, TransformBox, {});
+        addComponent(ctx, boxId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ,
+        });
+
+        handleId = createEntity(ctx);
+        addComponent(ctx, handleId, Block, {
+          position: [195, 195],
+          size: [10, 10],
+          rank: "z",
+        });
+        addComponent(ctx, handleId, TransformHandle, {
+          kind: TransformHandleKind.Scale,
+          vectorX: 1,
+          vectorY: 1,
+          transformBoxId: boxId,
+        });
+        addComponent(ctx, handleId, DragStart, {
+          position: [195, 195],
+          size: [10, 10],
+          rotateZ: 0,
+        });
+      });
+
+      await editor.tick();
+
+      // Drag corner past opposite corner
+      editor.nextTick((ctx) => {
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [45, 45], // Past the top-left corner
+        });
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        const block = Block.read(ctx, blockId!);
+        blockSize = [...block.size];
+        blockPosition = [...block.position];
+      });
+
+      await editor.tick();
+
+      // Block should still have positive size (minimum 1)
+      expect(blockSize![0]).toBeGreaterThanOrEqual(1);
+      expect(blockSize![1]).toBeGreaterThanOrEqual(1);
+      // Position should have changed to reflect the flip
+      expect(blockPosition![0]).not.toBe(100);
+      expect(blockPosition![1]).not.toBe(100);
+    });
+
+    it("should position block correctly after horizontal flip with scale handle", async () => {
+      let blockId: number | undefined;
+      let boxId: number | undefined;
+      let handleId: number | undefined;
+      let blockSize: number[] | undefined;
+      let blockPosition: number[] | undefined;
+
+      editor.nextTick((ctx) => {
+        // Block at position [100, 100] with size [100, 100]
+        // So it spans from (100,100) to (200,200)
+        blockId = createBlock(ctx, {
+          position: [100, 100],
+          size: [100, 100],
+          selected: true,
+        });
+        addComponent(ctx, blockId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ: 0,
+        });
+
+        boxId = createEntity(ctx);
+        addComponent(ctx, boxId, Block, {
+          position: [100, 100],
+          size: [100, 100],
+          rank: "z",
+        });
+        addComponent(ctx, boxId, TransformBox, {});
+        addComponent(ctx, boxId, DragStart, {
+          position: [100, 100],
+          size: [100, 100],
+          rotateZ: 0,
+        });
+
+        // Bottom-right corner handle (center at 200, 200)
+        handleId = createEntity(ctx);
+        addComponent(ctx, handleId, Block, {
+          position: [195, 195],
+          size: [10, 10],
+          rank: "z",
+        });
+        addComponent(ctx, handleId, TransformHandle, {
+          kind: TransformHandleKind.Scale,
+          vectorX: 1,
+          vectorY: 1,
+          transformBoxId: boxId,
+        });
+        addComponent(ctx, handleId, DragStart, {
+          position: [195, 195],
+          size: [10, 10],
+          rotateZ: 0,
+        });
+      });
+
+      await editor.tick();
+
+      // Drag bottom-right corner to position (50, 50)
+      // This should flip both X and Y since we're going past the top-left corner at (100, 100)
+      editor.nextTick((ctx) => {
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [45, 45], // Center at (50, 50)
+        });
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        const block = Block.read(ctx, blockId!);
+        blockSize = [...block.size];
+        blockPosition = [...block.position];
+      });
+
+      await editor.tick();
+
+      // After flip, the opposite corner (originally at 100,100) becomes the anchor
+      // Handle at (50, 50), so new size should be 50x50
+      // New box spans from (50, 50) to (100, 100)
+      expect(blockSize![0]).toBeCloseTo(50, 0);
+      expect(blockSize![1]).toBeCloseTo(50, 0);
+      expect(blockPosition![0]).toBeCloseTo(50, 0);
+      expect(blockPosition![1]).toBeCloseTo(50, 0);
     });
   });
 
@@ -777,8 +1297,10 @@ describe("UpdateDragHandler", () => {
 
       // Double the size by moving the handle
       editor.nextTick((ctx) => {
-        const handle = Block.write(ctx, handleId!);
-        handle.position = [295, 195]; // Roughly double the distance from center
+        DragBlock.spawn(ctx, {
+          entityId: handleId!,
+          position: [295, 195], // Roughly double the distance from center
+        });
       });
 
       await editor.tick();

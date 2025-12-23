@@ -19,7 +19,7 @@ import {
   RankBounds,
   SelectionStateSingleton,
 } from "../../src/singletons";
-import { CaptureSelect } from "../../src/systems";
+import { PreCaptureSelect } from "../../src/systems";
 import { DeselectAll } from "../../src/commands";
 import { SelectionState } from "../../src/types";
 import {
@@ -37,7 +37,7 @@ const testPlugin: EditorPlugin = {
   name: "test",
   components: [Block, Aabb, Selected, Locked, Hovered],
   singletons: [Intersect, RankBounds, SelectionStateSingleton],
-  captureSystems: [CaptureSelect],
+  preCaptureSystems: [PreCaptureSelect],
   setup(ctx) {
     // Set up select tool on left mouse button
     const controls = Controls.write(ctx);
@@ -45,7 +45,7 @@ const testPlugin: EditorPlugin = {
   },
 };
 
-describe("selectCaptureSystem", () => {
+describe("PreCaptureSelect", () => {
   let editor: Editor;
   let domElement: HTMLDivElement;
 

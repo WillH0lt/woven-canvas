@@ -11,6 +11,13 @@ import {
 } from "@infinitecanvas/math";
 import { Block } from "./Block";
 
+// Tuple indices for AABB
+const LEFT = 0;
+const TOP = 1;
+const RIGHT = 2;
+const BOTTOM = 3;
+
+
 const AabbSchema = {
   /** Bounds as [left, top, right, bottom] */
   value: field.tuple(field.float32(), 4).default([0, 0, 0, 0]),
@@ -152,10 +159,34 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
 
   /**
    * Get the four corner points of an entity's AABB.
+   * Returns corners in order: top-left, top-right, bottom-right, bottom-left.
+   * @param out - Optional output array to write to (avoids allocation)
    */
-  getCorners(ctx: Context, entityId: EntityId): [Vec2, Vec2, Vec2, Vec2] {
+  getCorners(
+    ctx: Context,
+    entityId: EntityId,
+    out?: [Vec2, Vec2, Vec2, Vec2]
+  ): [Vec2, Vec2, Vec2, Vec2] {
     const { value } = this.read(ctx, entityId);
-    return AabbNs.corners(value);
+    const result: [Vec2, Vec2, Vec2, Vec2] = out ?? [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ];
+    // TL
+    result[0][0] = value[LEFT];
+    result[0][1] = value[TOP];
+    // TR
+    result[1][0] = value[RIGHT];
+    result[1][1] = value[TOP];
+    // BR
+    result[2][0] = value[RIGHT];
+    result[2][1] = value[BOTTOM];
+    // BL
+    result[3][0] = value[LEFT];
+    result[3][1] = value[BOTTOM];
+    return result;
   }
 
   /**

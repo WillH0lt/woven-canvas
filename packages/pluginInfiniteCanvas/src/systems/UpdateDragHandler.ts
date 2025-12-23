@@ -2,10 +2,11 @@ import {
   defineSystem,
   defineQuery,
   hasComponent,
+  on,
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
-import { Vec2 } from "@infinitecanvas/math";
+import { Vec2, Scalar } from "@infinitecanvas/math";
 
 import {
   Block,
@@ -14,76 +15,96 @@ import {
   TransformHandle,
   DragStart,
 } from "../components";
+import { DragBlock } from "../commands";
 import { TransformHandleKind } from "../types";
 
 // Query for selected blocks
 const selectedBlocksQuery = defineQuery((q) =>
-  q.with(Block).with(Selected).with(DragStart)
+  q.with(Block, Selected, DragStart)
 );
 
 // Query for transform box
 const transformBoxQuery = defineQuery((q) =>
-  q.with(Block).with(TransformBox).with(DragStart).tracking(Block)
-);
-
-// Query for transform handles
-const transformHandleQuery = defineQuery((q) =>
-  q.with(Block).with(TransformHandle).with(DragStart).tracking(Block)
+  q.with(Block, TransformBox, DragStart)
 );
 
 /**
  * Drag handler system - updates selected blocks when transform box moves.
  *
- * This system monitors transform box and handle changes and updates
- * the selected blocks accordingly:
+ * This system listens for DragBlock commands on transform box and handles,
+ * and updates the selected blocks accordingly:
  * - When transform box moves: move all selected blocks by the same delta
  * - When scale handle moves: scale all selected blocks proportionally
  * - When rotate handle moves: rotate all selected blocks around the center
  */
 export const UpdateDragHandler = defineSystem((ctx: Context) => {
-  // Check for transform box changes
-  for (const boxId of transformBoxQuery.changed(ctx)) {
-    onTransformBoxMove(ctx, boxId);
-  }
-
-  // Check for transform handle changes (scale/rotate)
-  for (const handleId of transformHandleQuery.changed(ctx)) {
-    const handle = TransformHandle.read(ctx, handleId);
-    if (handle.kind === TransformHandleKind.Rotate) {
-      onRotateHandleMove(ctx, handleId);
-    } else if (handle.kind === TransformHandleKind.Scale) {
-      onScaleHandleMove(ctx, handleId, true);
-    } else if (handle.kind === TransformHandleKind.Stretch) {
-      onScaleHandleMove(ctx, handleId, false);
+  // Listen for DragBlock commands and handle transform box/handle drags
+  on(ctx, DragBlock, (ctx, { entityId, position }) => {
+    // Check if dragging transform box
+    if (hasComponent(ctx, entityId, TransformBox)) {
+      onTransformBoxDrag(ctx, entityId, position);
+      return;
     }
-  }
+
+    // Check if dragging transform handle
+    if (hasComponent(ctx, entityId, TransformHandle)) {
+      onTransformHandleDrag(ctx, entityId, position);
+      return;
+    }
+  });
 });
 
 /**
- * Handle transform box movement - move all selected blocks by the same delta.
+ * Handle transform box drag - move all selected blocks by the same delta.
+ * @param position - The new position being set on the transform box
  */
-function onTransformBoxMove(ctx: Context, boxId: EntityId): void {
+function onTransformBoxDrag(
+  ctx: Context,
+  boxId: EntityId,
+  position: Vec2
+): void {
   const boxStart = DragStart.read(ctx, boxId);
-  const boxBlock = Block.read(ctx, boxId);
 
-  const dx = boxBlock.position[0] - boxStart.position[0];
-  const dy = boxBlock.position[1] - boxStart.position[1];
+  const dx = position[0] - boxStart.position[0];
+  const dy = position[1] - boxStart.position[1];
 
   for (const blockId of selectedBlocksQuery.current(ctx)) {
     const blockStart = DragStart.read(ctx, blockId);
     const block = Block.write(ctx, blockId);
 
-    block.position = [
-      blockStart.position[0] + dx,
-      blockStart.position[1] + dy,
-    ];
+    block.position = [blockStart.position[0] + dx, blockStart.position[1] + dy];
   }
 }
 
 /**
- * Handle rotate handle movement - rotate all selected blocks around center.
+ * Handle transform handle drag - scale or rotate based on handle kind.
+ * @param position - The new position being set on the handle
  */
-function onRotateHandleMove(ctx: Context, handleId: EntityId): void {
+function onTransformHandleDrag(
+  ctx: Context,
+  handleId: EntityId,
+  position: Vec2
+): void {
+  const handle = TransformHandle.read(ctx, handleId);
+
+  if (handle.kind === TransformHandleKind.Rotate) {
+    onRotateHandleDrag(ctx, handleId, position);
+  } else if (handle.kind === TransformHandleKind.Scale) {
+    onScaleHandleDrag(ctx, handleId, position, true);
+  } else if (handle.kind === TransformHandleKind.Stretch) {
+    onScaleHandleDrag(ctx, handleId, position, false);
+  }
+}
+
+/**
+ * Handle rotate handle drag - rotate all selected blocks around center.
+ * @param position - The new position being set on the handle
+ */
+function onRotateHandleDrag(
+  ctx: Context,
+  handleId: EntityId,
+  position: Vec2
+): void {
   const transformBoxes = transformBoxQuery.current(ctx);
   if (transformBoxes.length === 0) {
     console.warn("No transform box found for rotation");
@@ -95,23 +116,21 @@ function onRotateHandleMove(ctx: Context, handleId: EntityId): void {
   const boxCenter = Block.getCenter(ctx, boxId);
 
   const handleBlock = Block.read(ctx, handleId);
+  // Use the new position to calculate handle center
   const handleCenter: Vec2 = [
-    handleBlock.position[0] + handleBlock.size[0] / 2,
-    handleBlock.position[1] + handleBlock.size[1] / 2,
+    position[0] + handleBlock.size[0] / 2,
+    position[1] + handleBlock.size[1] / 2,
   ];
 
   // Calculate angle from center to handle
-  const angleHandle = Math.atan2(
-    handleCenter[1] - boxCenter[1],
-    handleCenter[0] - boxCenter[0]
-  );
+  const angleHandle = Vec2.angleTo(boxCenter, handleCenter);
 
   const handle = TransformHandle.read(ctx, handleId);
   const handleStartAngle =
-    Math.atan2(
+    Vec2.angle([
+      boxBlock.size[0] * handle.vectorX,
       boxBlock.size[1] * handle.vectorY,
-      boxBlock.size[0] * handle.vectorX
-    ) + boxBlock.rotateZ;
+    ]) + boxBlock.rotateZ;
 
   const delta = angleHandle - handleStartAngle;
 
@@ -121,7 +140,7 @@ function onRotateHandleMove(ctx: Context, handleId: EntityId): void {
     const block = Block.write(ctx, blockId);
 
     // Update rotation
-    block.rotateZ = (blockStart.rotateZ + delta) % (2 * Math.PI);
+    block.rotateZ = Scalar.normalizeAngle(blockStart.rotateZ + delta);
 
     // Rotate position around box center
     const startCenter: Vec2 = [
@@ -129,27 +148,26 @@ function onRotateHandleMove(ctx: Context, handleId: EntityId): void {
       blockStart.position[1] + blockStart.size[1] / 2,
     ];
 
-    const r = Math.hypot(
-      startCenter[1] - boxCenter[1],
-      startCenter[0] - boxCenter[0]
-    );
-    const angle =
-      Math.atan2(startCenter[1] - boxCenter[1], startCenter[0] - boxCenter[0]) +
-      delta;
+    const r = Vec2.distance(boxCenter, startCenter);
+    const angle = Vec2.angleTo(boxCenter, startCenter) + delta;
 
+    const newCenter = Vec2.fromPolar(r, angle, boxCenter);
     block.position = [
-      boxCenter[0] + Math.cos(angle) * r - block.size[0] / 2,
-      boxCenter[1] + Math.sin(angle) * r - block.size[1] / 2,
+      newCenter[0] - block.size[0] / 2,
+      newCenter[1] - block.size[1] / 2,
     ];
   }
 }
 
 /**
- * Handle scale/stretch handle movement - scale all selected blocks.
+ * Handle scale/stretch handle drag - scale all selected blocks.
+ * @param position - The new position being set on the handle
+ * @param maintainAspectRatio - Whether to maintain aspect ratio
  */
-function onScaleHandleMove(
+function onScaleHandleDrag(
   ctx: Context,
   handleId: EntityId,
+  position: Vec2,
   maintainAspectRatio: boolean
 ): void {
   const transformBoxes = transformBoxQuery.current(ctx);
@@ -160,27 +178,60 @@ function onScaleHandleMove(
 
   const boxId = transformBoxes[0];
   const boxStart = DragStart.read(ctx, boxId);
-  const boxBlock = Block.read(ctx, boxId);
 
   const handle = TransformHandle.read(ctx, handleId);
   const handleBlock = Block.read(ctx, handleId);
 
-  // Calculate new box dimensions based on handle position
+  // Calculate handle center from the new position
   const handleCenter: Vec2 = [
-    handleBlock.position[0] + handleBlock.size[0] / 2,
-    handleBlock.position[1] + handleBlock.size[1] / 2,
+    position[0] + handleBlock.size[0] / 2,
+    position[1] + handleBlock.size[1] / 2,
   ];
 
-  // Calculate opposite corner position (fixed point)
-  const boxCenter = Block.getCenter(ctx, boxId);
-  const oppositeCorner: Vec2 = [
-    boxCenter[0] - (handleCenter[0] - boxCenter[0]),
-    boxCenter[1] - (handleCenter[1] - boxCenter[1]),
+  // Calculate the opposite corner position from the START state (fixed anchor point)
+  // The opposite corner is on the opposite side of the box from the handle
+  const boxRotateZ = boxStart.rotateZ;
+  const boxStartCenter: Vec2 = [
+    boxStart.position[0] + boxStart.size[0] / 2,
+    boxStart.position[1] + boxStart.size[1] / 2,
   ];
 
-  // Calculate new dimensions
-  let newWidth = Math.abs(handleCenter[0] - oppositeCorner[0]);
-  let newHeight = Math.abs(handleCenter[1] - oppositeCorner[1]);
+  // Calculate opposite corner in local space, then rotate to world space
+  // Handle vector is [-1,-1], [-1,1], [1,-1], or [1,1] for corners
+  // Opposite corner is at -vector direction from center
+  const oppositeLocal: Vec2 = [
+    (-handle.vectorX * boxStart.size[0]) / 2,
+    (-handle.vectorY * boxStart.size[1]) / 2,
+  ];
+  Vec2.rotate(oppositeLocal, boxRotateZ);
+  const oppositeCenter: Vec2 = [
+    boxStartCenter[0] + oppositeLocal[0],
+    boxStartCenter[1] + oppositeLocal[1],
+  ];
+
+  // Calculate difference from opposite corner to handle center
+  const difference: Vec2 = [
+    handleCenter[0] - oppositeCenter[0],
+    handleCenter[1] - oppositeCenter[1],
+  ];
+
+  // Rotate difference into local space to get proper width/height
+  const localDiff = Vec2.clone(difference);
+  Vec2.rotate(localDiff, -boxRotateZ);
+
+  // Flip handle vectors when crossing over (dragging past the opposite corner)
+  let vectorX = handle.vectorX;
+  let vectorY = handle.vectorY;
+  if (Math.sign(localDiff[0]) !== vectorX && vectorX !== 0) {
+    vectorX = -vectorX;
+  }
+  if (Math.sign(localDiff[1]) !== vectorY && vectorY !== 0) {
+    vectorY = -vectorY;
+  }
+
+  // Calculate new dimensions in local space
+  let newWidth = Math.max(Math.abs(localDiff[0]), 1);
+  let newHeight = Math.max(Math.abs(localDiff[1]), 1);
 
   // Maintain aspect ratio if needed
   if (maintainAspectRatio) {
@@ -205,11 +256,18 @@ function onScaleHandleMove(
   const scaleX = boxStart.size[0] > 0 ? newWidth / boxStart.size[0] : 1;
   const scaleY = boxStart.size[1] > 0 ? newHeight / boxStart.size[1] : 1;
 
-  // Calculate new box position (maintain center)
-  const newBoxLeft =
-    boxCenter[0] - (boxCenter[0] - boxStart.position[0]) * scaleX;
-  const newBoxTop =
-    boxCenter[1] - (boxCenter[1] - boxStart.position[1]) * scaleY;
+  // Calculate new box center by rotating the scaled vector back to world space
+  // and adding half of it to the opposite corner
+  const vec: Vec2 = [vectorX * newWidth, vectorY * newHeight];
+  Vec2.rotate(vec, boxRotateZ);
+
+  const newBoxCenter: Vec2 = [
+    oppositeCenter[0] + vec[0] / 2,
+    oppositeCenter[1] + vec[1] / 2,
+  ];
+
+  const newBoxLeft = newBoxCenter[0] - newWidth / 2;
+  const newBoxTop = newBoxCenter[1] - newHeight / 2;
 
   // Update all selected blocks
   for (const blockId of selectedBlocksQuery.current(ctx)) {

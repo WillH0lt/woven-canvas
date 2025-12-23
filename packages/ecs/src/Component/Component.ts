@@ -371,13 +371,13 @@ export class Component<T extends ComponentSchema> {
    * @returns A plain object copy of the component's field values
    */
   snapshot(entityId: EntityId): InferComponentType<T> {
+    // Use read() to get properly processed values through field getters
+    // This ensures ref fields return unpacked entity IDs, not raw packed values
+    const readView = this.read(entityId);
     const result = {} as InferComponentType<T>;
     for (let i = 0; i < this.fieldNames.length; i++) {
       const fieldName = this.fieldNames[i];
-      const array = (this.buffer as any)[fieldName];
-      (result as any)[fieldName] = array.get
-        ? array.get(entityId)
-        : array[entityId];
+      (result as any)[fieldName] = (readView as any)[fieldName];
     }
     return result;
   }

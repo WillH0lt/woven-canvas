@@ -29,7 +29,7 @@ import {
 
 import {
   PreCaptureIntersect,
-  CaptureSelect,
+  PreCaptureSelect,
   UpdateSelect,
   CaptureTransformBox,
   UpdateTransformBox,
@@ -130,9 +130,9 @@ export function createInfiniteCanvasPlugin(
       Cursor,
     ],
 
-    preCaptureSystems: [PreCaptureIntersect],
+    preCaptureSystems: [PreCaptureIntersect, PreCaptureSelect],
 
-    captureSystems: [CaptureSelect, CaptureTransformBox],
+    captureSystems: [CaptureTransformBox],
 
     updateSystems: [
       UpdateBlock,

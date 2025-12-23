@@ -121,6 +121,13 @@ export function addComponent<T extends ComponentSchema>(
   }
 
   const component = componentDef._getInstance(ctx);
+
+  if (ctx.entityBuffer.hasComponent(entityId, component.componentId)) {
+    throw new Error(
+      `Entity ${entityId} already has component. Use removeComponent() first or update the existing component.`
+    );
+  }
+
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
   component.copy(entityId, data as any);
   ctx.eventBuffer.pushComponentAdded(entityId, component.componentId);

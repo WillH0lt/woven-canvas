@@ -3,6 +3,7 @@ import {
   defineQuery,
   createEntity,
   addComponent,
+  hasComponent,
   Persistent,
   Camera,
   getPluginResources,
@@ -14,6 +15,11 @@ import {
   Block,
   Selected,
   Hovered,
+  Opacity,
+  TransformBox,
+  TransformHandle,
+  TransformHandleKind,
+  SelectionBox,
 } from "@infinitecanvas/plugin-infinite-canvas";
 
 /**
@@ -28,13 +34,24 @@ export interface RendererPluginResources {
 }
 
 /** Query for all entities with Block component */
-export const blockQuery = defineQuery((q) => q.with(Block));
+export const blockQuery = defineQuery((q) => q.with(Block, Persistent));
 
 /** Query for selected blocks */
 const selectedQuery = defineQuery((q) => q.with(Block).with(Selected));
 
 /** Query for hovered blocks */
 const hoveredQuery = defineQuery((q) => q.with(Block).with(Hovered));
+
+/** Query for transform box */
+const transformBoxQuery = defineQuery((q) => q.with(Block).with(TransformBox));
+
+/** Query for transform handles */
+const transformHandleQuery = defineQuery((q) =>
+  q.with(Block).with(TransformHandle)
+);
+
+/** Query for selection box (marquee) */
+const selectionBoxQuery = defineQuery((q) => q.with(Block).with(SelectionBox));
 
 // Block colors for demo
 const BLOCK_COLORS = [
@@ -121,8 +138,14 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
   ctx2d.textAlign = "left";
   ctx2d.fillText("Origin (0, 0)", originX + 25, originY - 10);
 
-  // === Draw all blocks ===
-  for (const eid of blockQuery.current(ctx)) {
+  // === Draw all blocks (sorted by rank for proper z-ordering) ===
+  const blocks = [...blockQuery.current(ctx)].sort((a, b) => {
+    const rankA = Block.read(ctx, a).rank;
+    const rankB = Block.read(ctx, b).rank;
+    return rankA > rankB ? 1 : -1;
+  });
+
+  for (const eid of blocks) {
     const block = Block.read(ctx, eid);
     const isSelected = selectedSet.has(eid);
     const isHovered = hoveredSet.has(eid);
@@ -146,9 +169,18 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
     // Use a color based on entity ID for variety
     const colorIndex = eid % BLOCK_COLORS.length;
     ctx2d.fillStyle = BLOCK_COLORS[colorIndex];
+
+    // Apply opacity from Opacity component if present (0-255 -> 0-1)
+    if (hasComponent(ctx, eid, Opacity)) {
+      const opacity = Opacity.read(ctx, eid);
+      ctx2d.globalAlpha = opacity.value / 255;
+    } else {
+      ctx2d.globalAlpha = 1;
+    }
     ctx2d.fillRect(-screenW / 2, -screenH / 2, screenW, screenH);
 
-    // Draw selection highlight
+    // Draw selection highlight (at full opacity)
+    ctx2d.globalAlpha = 1;
     if (isSelected) {
       ctx2d.strokeStyle = "#00d4ff";
       ctx2d.lineWidth = 3;
@@ -160,18 +192,88 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
     }
 
     ctx2d.restore();
+  }
 
-    // Label with world coordinates (outside rotation)
-    const labelX = screenX + screenW / 2;
-    const labelY = screenY + screenH + 15 * zoom;
+  // === Draw transform box (edge only) ===
+  for (const eid of transformBoxQuery.current(ctx)) {
+    // Skip if hidden via Opacity
+    if (hasComponent(ctx, eid, Opacity)) {
+      const opacity = Opacity.read(ctx, eid);
+      if (opacity.value === 0) continue;
+    }
+
+    const block = Block.read(ctx, eid);
+    const screenX = (block.position[0] - camera.left) * zoom;
+    const screenY = (block.position[1] - camera.top) * zoom;
+    const screenW = block.size[0] * zoom;
+    const screenH = block.size[1] * zoom;
+
+    ctx2d.save();
+    const centerX = screenX + screenW / 2;
+    const centerY = screenY + screenH / 2;
+    ctx2d.translate(centerX, centerY);
+    ctx2d.rotate(block.rotateZ);
+
+    // Draw just the edge (stroke only, no fill)
+    ctx2d.strokeStyle = "#00d4ff";
+    ctx2d.lineWidth = 1;
+    ctx2d.strokeRect(-screenW / 2, -screenH / 2, screenW, screenH);
+
+    ctx2d.restore();
+  }
+
+  // === Draw transform handles (corners only visible) ===
+  for (const eid of transformHandleQuery.current(ctx)) {
+    // Skip if hidden via Opacity
+    if (hasComponent(ctx, eid, Opacity)) {
+      const opacity = Opacity.read(ctx, eid);
+      if (opacity.value === 0) continue;
+    }
+
+    const handle = TransformHandle.read(ctx, eid);
+
+    // Only render corner handles (Scale kind with non-zero vectorX and vectorY)
+    const isCorner = handle.vectorX !== 0 && handle.vectorY !== 0;
+    if (!isCorner || handle.kind === TransformHandleKind.Rotate) continue;
+
+    const block = Block.read(ctx, eid);
+    const screenX = (block.position[0] - camera.left) * zoom;
+    const screenY = (block.position[1] - camera.top) * zoom;
+    const screenW = block.size[0] * zoom;
+    const screenH = block.size[1] * zoom;
+
+    ctx2d.save();
+    const centerX = screenX + screenW / 2;
+    const centerY = screenY + screenH / 2;
+    ctx2d.translate(centerX, centerY);
+    ctx2d.rotate(block.rotateZ);
+
+    // Draw corner handle as a small filled square
     ctx2d.fillStyle = "#ffffff";
-    ctx2d.font = `${12 * Math.min(zoom, 1.5)}px monospace`;
-    ctx2d.textAlign = "center";
-    ctx2d.fillText(
-      `(${Math.round(block.position[0])}, ${Math.round(block.position[1])})`,
-      labelX,
-      labelY
-    );
+    ctx2d.strokeStyle = "#00d4ff";
+    ctx2d.lineWidth = 1;
+    ctx2d.fillRect(-screenW / 2, -screenH / 2, screenW, screenH);
+    ctx2d.strokeRect(-screenW / 2, -screenH / 2, screenW, screenH);
+
+    ctx2d.restore();
+  }
+
+  // === Draw selection box (marquee) ===
+  for (const eid of selectionBoxQuery.current(ctx)) {
+    const block = Block.read(ctx, eid);
+    const screenX = (block.position[0] - camera.left) * zoom;
+    const screenY = (block.position[1] - camera.top) * zoom;
+    const screenW = block.size[0] * zoom;
+    const screenH = block.size[1] * zoom;
+
+    // Draw semi-transparent fill
+    ctx2d.fillStyle = "rgba(0, 212, 255, 0.1)";
+    ctx2d.fillRect(screenX, screenY, screenW, screenH);
+
+    // Draw border
+    ctx2d.strokeStyle = "#00d4ff";
+    ctx2d.lineWidth = 1;
+    ctx2d.strokeRect(screenX, screenY, screenW, screenH);
   }
 });
 
@@ -200,8 +302,6 @@ export function createBlock(
     position: [x, y],
     size: [width, height],
   });
-  // Mark as persistent so it can be selected
-  addComponent(ctx, entityId, Persistent, {});
   return entityId;
 }
 

@@ -2,7 +2,10 @@ import "./style.css";
 import { Editor, Camera, removeEntity } from "@infinitecanvas/editor";
 import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
 import { Store } from "@infinitecanvas/store";
-import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-infinite-canvas";
+import {
+  InfiniteCanvasPlugin,
+  RemoveSelected,
+} from "@infinitecanvas/plugin-infinite-canvas";
 
 import { RendererPlugin, blockQuery, createBlock } from "./ShapesPlugin";
 
@@ -18,6 +21,7 @@ app.innerHTML = `
       <p><strong>Left Click:</strong> Select blocks</p>
       <p><strong>Ctrl/Cmd + Z:</strong> Undo</p>
       <p><strong>Ctrl/Cmd + Y:</strong> Redo</p>
+      <p><strong>Delete/Backspace:</strong> Delete selected</p>
       <div id="buttons">
         <button id="add-block">Add Block</button>
         <button id="clear-blocks">Clear Blocks</button>
@@ -56,7 +60,7 @@ const editor = new Editor(container, {
 // Initialize editor
 await editor.initialize();
 
-// Keyboard shortcuts for undo/redo
+// Keyboard shortcuts for undo/redo and delete
 document.addEventListener("keydown", (e) => {
   const isMod = e.ctrlKey || e.metaKey;
 
@@ -66,6 +70,9 @@ document.addEventListener("keydown", (e) => {
   } else if (isMod && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
     e.preventDefault();
     store.redo();
+  } else if (e.key === "Delete" || e.key === "Backspace") {
+    e.preventDefault();
+    editor.command(RemoveSelected);
   }
 });
 

@@ -14,6 +14,7 @@ import {
   Selected,
   SelectionBox,
   Hovered,
+  Opacity,
 } from "../../src/components";
 import { Intersect, RankBounds } from "../../src/singletons";
 import { PreCaptureIntersect } from "../../src/systems/PreCaptureIntersect";
@@ -25,12 +26,12 @@ import {
 } from "../../src/commands";
 
 // Query for selection box entities
-const selectionBoxQuery = defineQuery((q) => q.with(Block).with(SelectionBox));
+const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 
 // Factory function to create test plugin
 const testPlugin: EditorPlugin = {
   name: "test",
-  components: [Block, Aabb, Selected, SelectionBox, Hovered],
+  components: [Block, Aabb, Selected, SelectionBox, Hovered, Opacity],
   singletons: [Intersect, RankBounds],
   preCaptureSystems: [PreCaptureIntersect],
   updateSystems: [UpdateSelect],

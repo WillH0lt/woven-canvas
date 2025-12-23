@@ -4,7 +4,7 @@ import { Aabb as AabbNs, type Aabb as AabbTuple, type Vec2 } from "@infinitecanv
 import { Block, Aabb } from "../components";
 
 // Query for all blocks with Aabb
-const blocksWithAabb = defineQuery((q) => q.with(Block).with(Aabb));
+const blocksWithAabb = defineQuery((q) => q.with(Block, Aabb));
 
 /**
  * Find all blocks that contain a point, sorted by z-order (topmost first).
@@ -45,8 +45,10 @@ export function intersectPoint(
 /**
  * Find all blocks that intersect with an AABB (selection box).
  *
- * Uses AABB-AABB for fast rejection, then checks if the selection
- * box fully contains the block's AABB or if there's actual intersection.
+ * Uses AABB-AABB for fast rejection, then uses Separating Axis Theorem (SAT)
+ * for precise AABB-to-oriented-block intersection. This correctly handles
+ * all cases including narrow AABBs that pass through the middle of a block
+ * without touching any corners.
  *
  * @param ctx - ECS context
  * @param bounds - Selection box bounds [left, top, right, bottom]
@@ -75,28 +77,9 @@ export function intersectAabb(
       continue;
     }
 
-    // For partial intersection, we need more precise checks
-    // Check if any corner of the selection box is inside the rotated block
-    const selectionCorners = AabbNs.corners(bounds);
-    let found = false;
-    for (const corner of selectionCorners) {
-      if (Block.containsPoint(ctx, entityId, corner)) {
-        found = true;
-        break;
-      }
-    }
-    if (found) {
+    // Use SAT for precise AABB-to-oriented-block intersection
+    if (Block.intersectsAabb(ctx, entityId, bounds)) {
       intersecting.push(entityId);
-      continue;
-    }
-
-    // Check if any corner of the block is inside the selection box
-    const blockCorners = Block.getCorners(ctx, entityId);
-    for (const corner of blockCorners) {
-      if (AabbNs.containsPoint(bounds, corner)) {
-        intersecting.push(entityId);
-        break;
-      }
     }
   }
 

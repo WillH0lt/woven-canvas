@@ -30,12 +30,10 @@ import {
 import { RankBounds, Cursor } from "../singletons";
 
 // Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) => q.with(Block).with(Selected));
+const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Query for persistent blocks
-const persistentBlocksQuery = defineQuery((q) =>
-  q.with(Block).with(Persistent)
-);
+const persistentBlocksQuery = defineQuery((q) => q.with(Block, Persistent));
 
 /**
  * Block update system - handles block manipulation commands.

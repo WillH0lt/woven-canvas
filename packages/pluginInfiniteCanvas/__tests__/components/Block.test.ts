@@ -308,7 +308,7 @@ describe("Block", () => {
         block.rotateZ = 0;
 
         // Rotate 90 degrees around point (100, 50) which is the right-center
-        Block.rotateAroundPivot(ctx, eid, [100, 50], Math.PI / 2);
+        Block.rotateAround(ctx, eid, [100, 50], Math.PI / 2);
 
         position = [...Block.read(ctx, eid).position];
         rotateZ = Block.read(ctx, eid).rotateZ;

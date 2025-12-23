@@ -34,6 +34,32 @@ export namespace Vec2 {
     return dx * dx + dy * dy;
   };
 
+  /**
+   * Get the angle from point `from` to point `to` in radians.
+   * Returns angle in range [-π, π].
+   */
+  export const angleTo = (from: Vec2Tuple, to: Vec2Tuple): number =>
+    Math.atan2(to[1] - from[1], to[0] - from[0]);
+
+  /**
+   * Get the angle of a vector from the origin in radians.
+   * Returns angle in range [-π, π].
+   */
+  export const angle = (v: Vec2Tuple): number => Math.atan2(v[1], v[0]);
+
+  /**
+   * Create a Vec2 from polar coordinates (radius and angle).
+   * Optionally offset by a center point.
+   */
+  export const fromPolar = (
+    radius: number,
+    angle: number,
+    center: Vec2Tuple = [0, 0]
+  ): Vec2Tuple => [
+    center[0] + Math.cos(angle) * radius,
+    center[1] + Math.sin(angle) * radius,
+  ];
+
   // Operations (mutating) - modify first argument in-place, return void
 
   export const set = (out: Vec2Tuple, x: number, y: number): void => {

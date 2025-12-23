@@ -9,7 +9,13 @@ import {
   Persistent,
 } from "@infinitecanvas/editor";
 
-import { Block, Locked, Selected, TransformBox } from "../components";
+import {
+  Block,
+  Locked,
+  Selected,
+  TransformBox,
+  TransformHandle,
+} from "../components";
 import {
   SelectBlock,
   DeselectAll,
@@ -83,8 +89,8 @@ const selectionMachine = setup({
       return false;
     },
     draggedEntityIsLocked: ({ context, event }) => {
-      if (!context.draggedEntityId) return false;
-      return hasComponent(event.ctx, context.draggedEntityId, Locked);
+      if (context.draggedEntity === null) return false;
+      return hasComponent(event.ctx, context.draggedEntity, Locked);
     },
   },
   actions: {
@@ -102,27 +108,27 @@ const selectionMachine = setup({
       SetCursor.spawn(event.ctx, { contextSvg: "" });
     },
     setDraggedEntity: assign({
-      draggedEntityId: ({ event }) => event.intersects[0] || 0,
+      draggedEntity: ({ event }) => event.intersects[0] ?? null,
       draggedEntityStart: ({ event }): [number, number] => {
+        if (!event.intersects.length) return [0, 0];
         const entityId = event.intersects[0];
-        if (!entityId) return [0, 0];
         const block = Block.read(event.ctx, entityId);
         return [block.position[0], block.position[1]];
       },
     }),
     resetDragged: ({ context, event }) => {
-      if (!context.draggedEntityId) return;
+      if (context.draggedEntity === null) return;
 
       // Reset block to original position
       DragBlock.spawn(event.ctx, {
-        entityId: context.draggedEntityId,
+        entityId: context.draggedEntity,
         position: context.draggedEntityStart,
       });
 
       // Unclone if we were cloning
       if (context.isCloning) {
         UncloneEntities.spawn(event.ctx, {
-          entityIds: [context.draggedEntityId],
+          entityIds: [context.draggedEntity],
           seed: context.cloneGeneratorSeed,
         });
       }
@@ -132,7 +138,7 @@ const selectionMachine = setup({
       pointingStartClient: (): [number, number] => [0, 0],
       pointingStartWorld: (): [number, number] => [0, 0],
       draggedEntityStart: (): [number, number] => [0, 0],
-      draggedEntityId: () => 0 as EntityId,
+      draggedEntity: () => null,
       cloneGeneratorSeed: () => crypto.randomUUID(),
       isCloning: () => false,
     }),
@@ -145,7 +151,7 @@ const selectionMachine = setup({
     updateDragged: assign({
       isCloning: ({ context, event }) => {
         const ctx = event.ctx;
-        if (!context.draggedEntityId) return false;
+        if (context.draggedEntity === null) return false;
 
         let left =
           context.draggedEntityStart[0] +
@@ -157,8 +163,8 @@ const selectionMachine = setup({
           context.dragStart[1];
 
         const draggingPersistent =
-          hasComponent(ctx, context.draggedEntityId, Persistent) ||
-          hasComponent(ctx, context.draggedEntityId, TransformBox);
+          hasComponent(ctx, context.draggedEntity, Persistent) ||
+          hasComponent(ctx, context.draggedEntity, TransformBox);
 
         // Shift constrains movement to axis
         if (event.shiftDown && draggingPersistent) {
@@ -173,28 +179,28 @@ const selectionMachine = setup({
 
         // Move the block
         DragBlock.spawn(ctx, {
-          entityId: context.draggedEntityId,
+          entityId: context.draggedEntity,
           position: [left, top],
         });
 
         // Alt+drag to clone
         let isCloning = context.isCloning;
         if (event.altDown && draggingPersistent && !context.isCloning) {
-          const block = Block.read(ctx, context.draggedEntityId);
+          const block = Block.read(ctx, context.draggedEntity);
           const dx = context.draggedEntityStart[0] - block.position[0];
           const dy = context.draggedEntityStart[1] - block.position[1];
 
           isCloning = true;
 
           CloneEntities.spawn(ctx, {
-            entityIds: [context.draggedEntityId],
+            entityIds: [context.draggedEntity],
             offset: [dx, dy],
             seed: context.cloneGeneratorSeed,
           });
         } else if (!event.altDown && context.isCloning) {
           // Alt released - unclone
           UncloneEntities.spawn(ctx, {
-            entityIds: [context.draggedEntityId],
+            entityIds: [context.draggedEntity],
             seed: context.cloneGeneratorSeed,
           });
           isCloning = false;
@@ -246,10 +252,10 @@ const selectionMachine = setup({
       }
     },
     selectDragged: ({ context, event }) => {
-      if (!context.draggedEntityId) return;
-      if (!hasComponent(event.ctx, context.draggedEntityId, Persistent)) return;
+      if (context.draggedEntity === null) return;
+      if (!hasComponent(event.ctx, context.draggedEntity, Persistent)) return;
       SelectBlock.spawn(event.ctx, {
-        entityId: context.draggedEntityId,
+        entityId: context.draggedEntity,
         deselectOthers: true,
       });
     },
@@ -258,8 +264,12 @@ const selectionMachine = setup({
       DeselectAll.spawn(event.ctx, undefined);
     },
     deselectAllIfDraggedNotSelected: ({ context, event }) => {
-      if (!context.draggedEntityId) return;
-      if (hasComponent(event.ctx, context.draggedEntityId, Selected)) return;
+      if (context.draggedEntity === null) return;
+      // Don't deselect if dragging a selected block
+      if (hasComponent(event.ctx, context.draggedEntity, Selected)) return;
+      // Don't deselect if dragging transform box or handle
+      if (hasComponent(event.ctx, context.draggedEntity, TransformBox)) return;
+      if (hasComponent(event.ctx, context.draggedEntity, TransformHandle)) return;
       DeselectAll.spawn(event.ctx, undefined);
     },
   },
@@ -271,7 +281,7 @@ const selectionMachine = setup({
     pointingStartClient: [0, 0],
     pointingStartWorld: [0, 0],
     draggedEntityStart: [0, 0],
-    draggedEntityId: 0 as EntityId,
+    draggedEntity: null,
     cloneGeneratorSeed: crypto.randomUUID(),
     isCloning: false,
   },
@@ -369,7 +379,7 @@ const selectionMachine = setup({
 });
 
 /**
- * Selection capture system - runs the selection state machine.
+ * Pre-capture selection system - runs the selection state machine.
  *
  * Handles pointer events for:
  * - Clicking to select blocks
@@ -378,7 +388,7 @@ const selectionMachine = setup({
  * - Shift+click to toggle selection
  * - Selection box (marquee) for multi-select
  */
-export const CaptureSelect = defineSystem((ctx) => {
+export const PreCaptureSelect = defineSystem((ctx) => {
   // Get pointer buttons mapped to 'select' tool
   const buttons = Controls.getButtons(ctx, "select");
 
@@ -389,6 +399,4 @@ export const CaptureSelect = defineSystem((ctx) => {
   // Run machine through events - SelectionStateSingleton.run() handles
   // reading current state, running the machine, and writing back
   SelectionStateSingleton.run(ctx, selectionMachine, events);
-
-  console.log("Selection state:", SelectionStateSingleton.getState(ctx));
 });

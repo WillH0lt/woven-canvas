@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   defineComponent,
   field,
@@ -6,9 +6,7 @@ import {
   createEntity,
   addComponent,
   removeEntity,
-  hasComponent,
   getBackrefs,
-  NULL_REF,
 } from "../src";
 
 describe("Ref Field", () => {
@@ -321,6 +319,91 @@ describe("Ref Field", () => {
 
       // Ref should be valid because we set it after the new entity was created
       expect(Child.read(ctx, childId).parent).toBe(newParentId);
+    });
+  });
+
+  describe("Snapshot with Ref Fields", () => {
+    it("should return unpacked entity ID in snapshot, not packed value", () => {
+      const Child = defineComponent({
+        parent: field.ref(),
+        name: field.string().max(50),
+      });
+      const world = new World([Child]);
+      const ctx = world._getContext();
+
+      const parentId = createEntity(ctx);
+      const childId = createEntity(ctx);
+
+      addComponent(ctx, childId, Child, { parent: parentId, name: "child" });
+
+      // Snapshot should return the actual entity ID, not the packed ref value
+      const snapshot = Child.snapshot(ctx, childId);
+
+      expect(snapshot.parent).toBe(parentId);
+      expect(snapshot.name).toBe("child");
+      // The packed value would be much larger due to generation bits
+      // e.g., parentId=0 with generation=1 would be 0x2000000 (33554432)
+      expect(typeof snapshot.parent).toBe("number");
+    });
+
+    it("should return null in snapshot for null refs", () => {
+      const Child = defineComponent({
+        parent: field.ref(),
+      });
+      const world = new World([Child]);
+      const ctx = world._getContext();
+
+      const childId = createEntity(ctx);
+      addComponent(ctx, childId, Child, { parent: null });
+
+      const snapshot = Child.snapshot(ctx, childId);
+      expect(snapshot.parent).toBeNull();
+    });
+
+    it("should return null in snapshot for deleted entity refs", () => {
+      const Child = defineComponent({
+        parent: field.ref(),
+      });
+      const world = new World([Child]);
+      const ctx = world._getContext();
+
+      const parentId = createEntity(ctx);
+      const childId = createEntity(ctx);
+
+      addComponent(ctx, childId, Child, { parent: parentId });
+      removeEntity(ctx, parentId);
+
+      // Snapshot should return null for the stale ref
+      const snapshot = Child.snapshot(ctx, childId);
+      expect(snapshot.parent).toBeNull();
+    });
+
+    it("should correctly snapshot after writing ref back from snapshot", () => {
+      // This tests the round-trip: snapshot -> modify -> write back
+      const Child = defineComponent({
+        parent: field.ref(),
+        value: field.float64(),
+      });
+      const world = new World([Child]);
+      const ctx = world._getContext();
+
+      const parentId = createEntity(ctx);
+      const childId = createEntity(ctx);
+
+      addComponent(ctx, childId, Child, { parent: parentId, value: 42 });
+
+      // Take snapshot
+      const snapshot = Child.snapshot(ctx, childId);
+      expect(snapshot.parent).toBe(parentId);
+
+      // Write snapshot values back (simulating state machine pattern)
+      const writable = Child.write(ctx, childId);
+      writable.parent = snapshot.parent;
+      writable.value = snapshot.value + 1;
+
+      // Verify the ref is still valid
+      expect(Child.read(ctx, childId).parent).toBe(parentId);
+      expect(Child.read(ctx, childId).value).toBe(43);
     });
   });
 

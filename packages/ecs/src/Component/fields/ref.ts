@@ -76,7 +76,8 @@ export class RefField extends Field<RefFieldDef> {
       configurable: false,
       get: () => {
         const array = buffer[fieldName] as Uint32Array;
-        const packedRef = Atomics.load(array, getEntityId());
+        const entityId = getEntityId();
+        const packedRef = Atomics.load(array, entityId);
         if (packedRef === NULL_REF) {
           return null;
         }
@@ -90,7 +91,7 @@ export class RefField extends Field<RefFieldDef> {
           entityBuffer.getGeneration(refEntityId) !== refGeneration
         ) {
           // Auto-nullify the stale reference using atomic store for thread safety
-          Atomics.store(array, getEntityId(), NULL_REF);
+          Atomics.store(array, entityId, NULL_REF);
           return null;
         }
         return refEntityId;
@@ -111,7 +112,8 @@ export class RefField extends Field<RefFieldDef> {
       configurable: false,
       get: () => {
         const array = buffer[fieldName] as Uint32Array;
-        const packedRef = Atomics.load(array, getEntityId());
+        const entityId = getEntityId();
+        const packedRef = Atomics.load(array, entityId);
         if (packedRef === NULL_REF) {
           return null;
         }
@@ -125,19 +127,20 @@ export class RefField extends Field<RefFieldDef> {
           entityBuffer.getGeneration(refEntityId) !== refGeneration
         ) {
           // Auto-nullify the stale reference using atomic store for thread safety
-          Atomics.store(array, getEntityId(), NULL_REF);
+          Atomics.store(array, entityId, NULL_REF);
           return null;
         }
         return refEntityId;
       },
       set: (value: EntityId | null) => {
         const array = buffer[fieldName] as Uint32Array;
-        if (value === null) {
-          Atomics.store(array, getEntityId(), NULL_REF);
+        const entityId = getEntityId();
+        if (value === null || value === NULL_REF) {
+          Atomics.store(array, entityId, NULL_REF);
         } else {
           // Pack the entity ID with its current generation
           const generation = entityBuffer.getGeneration(value);
-          Atomics.store(array, getEntityId(), packRef(value, generation));
+          Atomics.store(array, entityId, packRef(value, generation));
         }
       },
     });
