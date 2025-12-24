@@ -18,8 +18,6 @@ export {
   DuplicateSelected,
   BringForwardSelected,
   SendBackwardSelected,
-  BringToFrontSelected,
-  SendToBackSelected,
   CloneEntities,
   UncloneEntities,
   SetCursor,

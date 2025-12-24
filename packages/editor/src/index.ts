@@ -40,7 +40,7 @@ export type { StoreAdapter } from "./store";
 export { type EditorPlugin } from "./plugin";
 
 // Command system
-export { defineCommand, on, type CommandDef } from "./command";
+export { defineCommand, on, type CommandDef, CommandMarker } from "./command";
 
 // Editor class
 export { Editor, type EditorOptions, type QueryCallback } from "./Editor";

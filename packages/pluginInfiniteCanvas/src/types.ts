@@ -1,6 +1,24 @@
 import { z } from "zod";
 
 /**
+ * Keybind definition schema.
+ * Maps a key combination to a command.
+ */
+export const Keybind = z.object({
+  /** The command to execute when this keybind is triggered */
+  command: z.string(),
+  /** The key index from the Key constants (e.g., Key.A, Key.Delete) */
+  key: z.number(),
+  /** Whether the modifier key (Cmd on Mac, Ctrl on Windows) must be held */
+  mod: z.boolean().optional(),
+  /** Whether the Shift key must be held */
+  shift: z.boolean().optional(),
+});
+
+export type Keybind = z.infer<typeof Keybind>;
+export type KeybindInput = z.input<typeof Keybind>;
+
+/**
  * State for selection state machine.
  */
 export enum SelectionState {

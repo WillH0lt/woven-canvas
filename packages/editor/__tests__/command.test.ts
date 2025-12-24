@@ -14,13 +14,13 @@ describe("Command System", () => {
   });
 
   describe("defineCommand", () => {
-    it("should create a command with unique typeId", () => {
+    it("should create commands with unique names", () => {
       const Cmd1 = defineCommand("cmd1");
       const Cmd2 = defineCommand("cmd2");
 
-      expect(Cmd1.typeId).not.toBe(Cmd2.typeId);
       expect(Cmd1.name).toBe("cmd1");
       expect(Cmd2.name).toBe("cmd2");
+      expect(Cmd1.name).not.toBe(Cmd2.name);
     });
 
     it("should create typed commands", () => {

@@ -28,16 +28,25 @@ import {
 } from "./singletons";
 
 import {
+  PreInputRankBounds,
   PreCaptureIntersect,
   PreCaptureSelect,
   UpdateSelect,
   CaptureTransformBox,
+  CaptureKeyboard,
   UpdateTransformBox,
   UpdateBlock,
   UpdateDragHandler,
 } from "./systems";
 
-import { BlockDef, type BlockDefInput, type BlockDefMap } from "./types";
+import { DEFAULT_KEYBINDS } from "./constants";
+import {
+  BlockDef,
+  Keybind,
+  type BlockDefInput,
+  type BlockDefMap,
+  type KeybindInput,
+} from "./types";
 
 /**
  * Resources for the Infinite Canvas plugin.
@@ -45,6 +54,7 @@ import { BlockDef, type BlockDefInput, type BlockDefMap } from "./types";
  */
 export interface InfiniteCanvasResources {
   blockDefs: BlockDefMap;
+  keybinds: Keybind[];
 }
 
 /**
@@ -56,6 +66,13 @@ export interface InfiniteCanvasPluginOptions {
    * These define how different block types behave (editing, resizing, rotation, etc.)
    */
   customBlocks?: BlockDefInput[];
+
+  /**
+   * Keybind definitions for keyboard shortcuts.
+   * These map key combinations to plugin commands.
+   * Defaults to DEFAULT_KEYBINDS if not specified.
+   */
+  keybinds?: KeybindInput[];
 }
 
 /**
@@ -87,7 +104,7 @@ export interface InfiniteCanvasPluginOptions {
 export function createInfiniteCanvasPlugin(
   options: InfiniteCanvasPluginOptions = {}
 ): EditorPlugin<InfiniteCanvasResources> {
-  const { customBlocks = [] } = options;
+  const { customBlocks = [], keybinds: keybindsInput } = options;
 
   // Build normalized block definitions map using Zod parsing
   const blockDefs: BlockDefMap = {};
@@ -96,6 +113,12 @@ export function createInfiniteCanvasPlugin(
     blockDefs[parsed.tag] = parsed;
   }
 
+  // Parse keybinds with defaults
+  const keybinds =
+    keybindsInput !== undefined
+      ? keybindsInput.map((kb) => Keybind.parse(kb))
+      : DEFAULT_KEYBINDS.map((kb) => Keybind.parse(kb));
+
   return {
     name: "infiniteCanvas",
 
@@ -103,6 +126,7 @@ export function createInfiniteCanvasPlugin(
 
     resources: {
       blockDefs,
+      keybinds,
     },
 
     components: [
@@ -130,9 +154,11 @@ export function createInfiniteCanvasPlugin(
       Cursor,
     ],
 
+    preInputSystems: [PreInputRankBounds],
+
     preCaptureSystems: [PreCaptureIntersect, PreCaptureSelect],
 
-    captureSystems: [CaptureTransformBox],
+    captureSystems: [CaptureTransformBox, CaptureKeyboard],
 
     updateSystems: [
       UpdateBlock,

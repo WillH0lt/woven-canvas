@@ -1,4 +1,8 @@
-import { defineCommand, type EntityId, type Vec2 } from "@infinitecanvas/editor";
+import {
+  defineCommand,
+  type EntityId,
+  type Vec2,
+} from "@infinitecanvas/editor";
 
 /**
  * Drag/move a block to a new position.
@@ -32,22 +36,16 @@ export const DuplicateSelected = defineCommand<void>("duplicate-selected");
 /**
  * Bring selected blocks forward in z-order.
  */
-export const BringForwardSelected = defineCommand<void>("bring-forward-selected");
+export const BringForwardSelected = defineCommand<void>(
+  "bring-forward-selected"
+);
 
 /**
  * Send selected blocks backward in z-order.
  */
-export const SendBackwardSelected = defineCommand<void>("send-backward-selected");
-
-/**
- * Bring selected blocks to front (topmost z-order).
- */
-export const BringToFrontSelected = defineCommand<void>("bring-to-front-selected");
-
-/**
- * Send selected blocks to back (bottommost z-order).
- */
-export const SendToBackSelected = defineCommand<void>("send-to-back-selected");
+export const SendBackwardSelected = defineCommand<void>(
+  "send-backward-selected"
+);
 
 /**
  * Clone entities with an offset.

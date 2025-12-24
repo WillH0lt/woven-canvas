@@ -23,8 +23,6 @@ import {
   DragBlock,
   BringForwardSelected,
   SendBackwardSelected,
-  BringToFrontSelected,
-  SendToBackSelected,
   SetCursor,
 } from "../commands";
 import { RankBounds, Cursor } from "../singletons";
@@ -42,7 +40,7 @@ const persistentBlocksQuery = defineQuery((q) => q.with(Block, Persistent));
  * - SelectBlock, DeselectBlock, ToggleSelect, DeselectAll, SelectAll
  * - RemoveBlock, RemoveSelected
  * - DragBlock
- * - BringForwardSelected, SendBackwardSelected, BringToFrontSelected, SendToBackSelected
+ * - BringForwardSelected, SendBackwardSelected
  * - SetCursor
  */
 export const UpdateBlock = defineSystem((ctx: Context) => {
@@ -95,10 +93,8 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
     }
   });
 
-  on(ctx, BringForwardSelected, bringSelectedForward);
-  on(ctx, BringToFrontSelected, bringSelectedForward);
-  on(ctx, SendBackwardSelected, sendSelectedBackward);
-  on(ctx, SendToBackSelected, sendSelectedBackward);
+  on(ctx, BringForwardSelected, bringForwardSelected);
+  on(ctx, SendBackwardSelected, sendBackwardSelected);
 
   on(ctx, SetCursor, (ctx, payload) => {
     const cursor = Cursor.write(ctx);
@@ -125,7 +121,9 @@ function deselectAllBlocks(ctx: Context): void {
 /**
  * Bring selected blocks to front (generate new ranks).
  */
-function bringSelectedForward(ctx: Context): void {
+function bringForwardSelected(ctx: Context): void {
+  console.log("Bringing selected blocks forward");
+
   const selectedBlocks = Array.from(selectedBlocksQuery.current(ctx));
   if (selectedBlocks.length === 0) return;
 
@@ -151,7 +149,7 @@ function bringSelectedForward(ctx: Context): void {
 /**
  * Send selected blocks to back (generate new ranks).
  */
-function sendSelectedBackward(ctx: Context): void {
+function sendBackwardSelected(ctx: Context): void {
   const selectedBlocks = Array.from(selectedBlocksQuery.current(ctx));
   if (selectedBlocks.length === 0) return;
 

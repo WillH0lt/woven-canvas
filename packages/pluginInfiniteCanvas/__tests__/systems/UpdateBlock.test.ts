@@ -6,11 +6,7 @@ import {
   hasComponent,
   type EditorPlugin,
 } from "@infinitecanvas/editor";
-import {
-  Block,
-  Aabb,
-  Selected,
-} from "../../src/components";
+import { Block, Aabb, Selected } from "../../src/components";
 import { RankBounds, Cursor } from "../../src/singletons";
 import { UpdateBlock } from "../../src/systems/UpdateBlock";
 import {
@@ -24,8 +20,6 @@ import {
   DragBlock,
   BringForwardSelected,
   SendBackwardSelected,
-  BringToFrontSelected,
-  SendToBackSelected,
   SetCursor,
 } from "../../src/commands";
 import { createBlock } from "../testUtils";
@@ -552,7 +546,7 @@ describe("UpdateBlock", () => {
     });
   });
 
-  describe("BringForwardSelected / BringToFrontSelected commands", () => {
+  describe("BringForwardSelected commands", () => {
     it("should assign new ranks to selected blocks", async () => {
       let entityId1: number | undefined;
       let entityId2: number | undefined;
@@ -600,43 +594,6 @@ describe("UpdateBlock", () => {
       expect(rank2After).toBe(rank2Before);
     });
 
-    it("should preserve relative order of multiple selected blocks", async () => {
-      let entityId1: number | undefined;
-      let entityId2: number | undefined;
-      let rank1After: string | undefined;
-      let rank2After: string | undefined;
-
-      editor.nextTick((ctx) => {
-        entityId1 = createBlock(ctx, {
-          position: [0, 0],
-          rank: "a",
-          selected: true,
-        });
-        entityId2 = createBlock(ctx, {
-          position: [100, 100],
-          rank: "m",
-          selected: true,
-        });
-      });
-
-      await editor.tick();
-
-      editor.command(BringToFrontSelected);
-
-      await editor.tick();
-
-      editor.nextTick((ctx) => {
-        rank1After = Block.read(ctx, entityId1!).rank;
-        rank2After = Block.read(ctx, entityId2!).rank;
-      });
-
-      await editor.tick();
-
-      // The block that was originally higher (entityId2 with rank "m")
-      // should still be higher after the operation
-      expect(rank2After! > rank1After!).toBe(true);
-    });
-
     it("should do nothing if no blocks are selected", async () => {
       let entityId: number | undefined;
       let rankBefore: string | undefined;
@@ -671,7 +628,7 @@ describe("UpdateBlock", () => {
     });
   });
 
-  describe("SendBackwardSelected / SendToBackSelected commands", () => {
+  describe("SendBackwardSelected commands", () => {
     it("should assign new ranks to selected blocks", async () => {
       let entityId1: number | undefined;
       let entityId2: number | undefined;
@@ -717,43 +674,6 @@ describe("UpdateBlock", () => {
       expect(rank1After).not.toBe(rank1Before);
       // Unselected block should keep its rank
       expect(rank2After).toBe(rank2Before);
-    });
-
-    it("should preserve relative order of multiple selected blocks (highest first)", async () => {
-      let entityId1: number | undefined;
-      let entityId2: number | undefined;
-      let rank1After: string | undefined;
-      let rank2After: string | undefined;
-
-      editor.nextTick((ctx) => {
-        entityId1 = createBlock(ctx, {
-          position: [0, 0],
-          rank: "a",
-          selected: true,
-        });
-        entityId2 = createBlock(ctx, {
-          position: [100, 100],
-          rank: "m",
-          selected: true,
-        });
-      });
-
-      await editor.tick();
-
-      editor.command(SendToBackSelected);
-
-      await editor.tick();
-
-      editor.nextTick((ctx) => {
-        rank1After = Block.read(ctx, entityId1!).rank;
-        rank2After = Block.read(ctx, entityId2!).rank;
-      });
-
-      await editor.tick();
-
-      // The block that was originally higher (entityId2 with rank "m")
-      // should still be higher after the operation
-      expect(rank2After! > rank1After!).toBe(true);
     });
 
     it("should do nothing if no blocks are selected", async () => {

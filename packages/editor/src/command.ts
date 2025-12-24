@@ -14,16 +14,13 @@ import {
  * Commands are ephemeral entities that exist for exactly one frame.
  */
 export const CommandMarker = defineComponent({
-  typeId: field.uint32(),
+  name: field.string(),
 });
 
 /** Store payloads outside ECS - keyed by entity ID */
 const commandPayloads = new Map<EntityId, unknown>();
 
-/** Auto-incrementing type ID */
-let nextTypeId = 0;
-
-// Query for commands - we filter by typeId in iter()
+// Query for commands - we filter by name in iter()
 const commands = defineQuery((q) => q.with(CommandMarker));
 
 /**
@@ -32,10 +29,7 @@ const commands = defineQuery((q) => q.with(CommandMarker));
  * @typeParam T - The payload type for this command
  */
 export interface CommandDef<T> {
-  /** Unique numeric identifier for this command type */
-  readonly typeId: number;
-
-  /** Human-readable command name */
+  /** Unique command name */
   readonly name: string;
 
   /**
@@ -101,15 +95,12 @@ export interface CommandDef<T> {
  * ```
  */
 export function defineCommand<T = void>(name: string): CommandDef<T> {
-  const typeId = nextTypeId++;
-
   return {
-    typeId,
     name,
 
     spawn(ctx: Context, payload: T): EntityId {
       const eid = createEntity(ctx);
-      addComponent(ctx, eid, CommandMarker, { typeId });
+      addComponent(ctx, eid, CommandMarker, { name });
       commandPayloads.set(eid, payload);
       return eid;
     },
@@ -117,7 +108,7 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
     *iter(ctx: Context): IterableIterator<{ eid: EntityId; payload: T }> {
       for (const eid of commands.current(ctx)) {
         const marker = CommandMarker.read(ctx, eid);
-        if (marker.typeId === typeId) {
+        if (marker.name === name) {
           const payload = commandPayloads.get(eid) as T;
           yield { eid, payload };
         }
@@ -127,7 +118,7 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
     didSpawnLastFrame(ctx: Context): boolean {
       for (const eid of commands.removed(ctx)) {
         const marker = CommandMarker.read(ctx, eid);
-        if (marker.typeId === typeId) {
+        if (marker.name === name) {
           return true;
         }
       }
