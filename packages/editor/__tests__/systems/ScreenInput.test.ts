@@ -45,11 +45,11 @@ describe("Screen", () => {
   });
 
   describe("initial dimensions", () => {
-    it("should capture initial dimensions on first tick", () => {
+    it("should capture initial dimensions on first tick", async () => {
       const ctx = editor._getContext()!;
 
       // First tick should capture dimensions
-      editor.tick();
+      await editor.tick();
 
       const screen = Screen.read(ctx);
       expect(screen.width).toBe(800);
@@ -64,7 +64,7 @@ describe("Screen", () => {
       const ctx = editor._getContext()!;
 
       // First tick to capture initial dimensions
-      editor.tick();
+      await editor.tick();
 
       // Simulate resize
       Object.defineProperty(domElement, "clientWidth", {
@@ -150,8 +150,8 @@ describe("Screen - multiple instances", () => {
     await editor1.initialize();
     await editor2.initialize();
 
-    editor1.tick();
-    editor2.tick();
+    await editor1.tick();
+    await editor2.tick();
 
     const ctx1 = editor1._getContext()!;
     const ctx2 = editor2._getContext()!;

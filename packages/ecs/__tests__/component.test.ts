@@ -225,6 +225,43 @@ describe("Component", () => {
       expect(descriptor?.value).toBeCloseTo(100);
     });
 
+    it("should return independent tuple copies in snapshot (not buffer views)", () => {
+      const Transform = defineComponent({
+        position: field.tuple(field.float32(), 2),
+        size: field.tuple(field.float32(), 2),
+      });
+      const world = new World([Transform]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Transform, {
+        position: [100, 200],
+        size: [50, 50],
+      });
+
+      // Take a snapshot
+      const snapshot = Transform.snapshot(ctx, entityId);
+
+      // Verify initial values
+      expect([...snapshot.position]).toEqual([100, 200]);
+      expect([...snapshot.size]).toEqual([50, 50]);
+
+      // Modify the component data
+      const transform = Transform.write(ctx, entityId);
+      transform.position[0] = 999;
+      transform.position[1] = 888;
+      transform.size[0] = 777;
+
+      // Snapshot should still have original values (it's a copy, not a view)
+      expect([...snapshot.position]).toEqual([100, 200]);
+      expect([...snapshot.size]).toEqual([50, 50]);
+
+      // Verify current component has new values
+      const current = Transform.read(ctx, entityId);
+      expect([...current.position]).toEqual([999, 888]);
+      expect([...current.size]).toEqual([777, 50]);
+    });
+
     it("should allow spreading snapshot without the getter footgun", () => {
       const Velocity = defineComponent({
         dx: field.float32(),

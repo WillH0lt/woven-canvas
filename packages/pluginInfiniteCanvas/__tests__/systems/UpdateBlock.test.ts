@@ -4,10 +4,11 @@ import {
   createEntity,
   addComponent,
   hasComponent,
+  defineQuery,
   type EditorPlugin,
 } from "@infinitecanvas/editor";
-import { Block, Aabb, Selected } from "../../src/components";
-import { RankBounds, Cursor } from "../../src/singletons";
+import { Block, Aabb, Selected, Text } from "../../src/components";
+import { RankBounds, Cursor, Clipboard } from "../../src/singletons";
 import { UpdateBlock } from "../../src/systems/UpdateBlock";
 import {
   SelectBlock,
@@ -21,14 +22,21 @@ import {
   BringForwardSelected,
   SendBackwardSelected,
   SetCursor,
+  Copy,
+  Cut,
+  Paste,
 } from "../../src/commands";
 import { createBlock } from "../testUtils";
+
+// Define queries at module level
+const blocksQuery = defineQuery((q) => q.with(Block));
+const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Factory function to create test plugin
 const testPlugin: EditorPlugin = {
   name: "test",
-  components: [Block, Aabb, Selected],
-  singletons: [RankBounds, Cursor],
+  components: [Block, Aabb, Selected, Text],
+  singletons: [RankBounds, Cursor, Clipboard],
   updateSystems: [UpdateBlock],
 };
 
@@ -799,6 +807,495 @@ describe("UpdateBlock", () => {
 
       await editor.tick();
       expect(contextSvg).toBe("<svg>original</svg>");
+    });
+  });
+
+  describe("Copy command", () => {
+    it("should copy selected blocks to clipboard", async () => {
+      let entityId: number | undefined;
+      let clipboardCount = 0;
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          size: [50, 50],
+          selected: true,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        clipboardCount = Clipboard.read(ctx).count;
+      });
+
+      await editor.tick();
+      expect(clipboardCount).toBe(1);
+    });
+
+    it("should copy multiple selected blocks", async () => {
+      let clipboardCount = 0;
+
+      editor.nextTick((ctx) => {
+        createBlock(ctx, {
+          position: [0, 0],
+          size: [50, 50],
+          selected: true,
+          persistent: true,
+        });
+        createBlock(ctx, {
+          position: [100, 100],
+          size: [50, 50],
+          selected: true,
+          persistent: true,
+        });
+        createBlock(ctx, {
+          position: [200, 200],
+          size: [50, 50],
+          selected: false,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        clipboardCount = Clipboard.read(ctx).count;
+      });
+
+      await editor.tick();
+      expect(clipboardCount).toBe(2);
+    });
+
+    it("should do nothing if no blocks are selected", async () => {
+      let clipboardCount = 0;
+
+      editor.nextTick((ctx) => {
+        createBlock(ctx, {
+          position: [0, 0],
+          selected: false,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        clipboardCount = Clipboard.read(ctx).count;
+      });
+
+      await editor.tick();
+      expect(clipboardCount).toBe(0);
+    });
+
+    it("should calculate correct center for clipboard", async () => {
+      let center: [number, number] | undefined;
+
+      editor.nextTick((ctx) => {
+        // Block at [0, 0] with size [100, 100] -> AABB [0, 0, 100, 100]
+        createBlock(ctx, {
+          position: [0, 0],
+          size: [100, 100],
+          selected: true,
+          persistent: true,
+        });
+        // Block at [100, 100] with size [100, 100] -> AABB [100, 100, 200, 200]
+        createBlock(ctx, {
+          position: [100, 100],
+          size: [100, 100],
+          selected: true,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        center = [...Clipboard.read(ctx).center] as [number, number];
+      });
+
+      await editor.tick();
+      // Union AABB is [0, 0, 200, 200], center is [100, 100]
+      expect(center).toEqual([100, 100]);
+    });
+  });
+
+  describe("Cut command", () => {
+    it("should copy selected blocks to clipboard and remove them", async () => {
+      let entityId: number | undefined;
+      let clipboardCount = 0;
+      let entityRemoved = false;
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          selected: true,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Cut);
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        clipboardCount = Clipboard.read(ctx).count;
+        try {
+          hasComponent(ctx, entityId!, Block);
+          entityRemoved = false;
+        } catch {
+          entityRemoved = true;
+        }
+      });
+
+      await editor.tick();
+      expect(clipboardCount).toBe(1);
+      expect(entityRemoved).toBe(true);
+    });
+
+    it("should remove all selected blocks after copying", async () => {
+      let entityId1: number | undefined;
+      let entityId2: number | undefined;
+      let entityId3: number | undefined;
+      let entity1Removed = false;
+      let entity2Removed = false;
+      let entity3Exists = false;
+
+      editor.nextTick((ctx) => {
+        entityId1 = createBlock(ctx, {
+          position: [0, 0],
+          selected: true,
+          persistent: true,
+        });
+        entityId2 = createBlock(ctx, {
+          position: [100, 100],
+          selected: true,
+          persistent: true,
+        });
+        entityId3 = createBlock(ctx, {
+          position: [200, 200],
+          selected: false,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Cut);
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        try {
+          hasComponent(ctx, entityId1!, Block);
+          entity1Removed = false;
+        } catch {
+          entity1Removed = true;
+        }
+        try {
+          hasComponent(ctx, entityId2!, Block);
+          entity2Removed = false;
+        } catch {
+          entity2Removed = true;
+        }
+        try {
+          hasComponent(ctx, entityId3!, Block);
+          entity3Exists = true;
+        } catch {
+          entity3Exists = false;
+        }
+      });
+
+      await editor.tick();
+      expect(entity1Removed).toBe(true);
+      expect(entity2Removed).toBe(true);
+      expect(entity3Exists).toBe(true);
+    });
+  });
+
+  describe("Paste command", () => {
+    it("should create new entities from clipboard", async () => {
+      let originalEntityId: number | undefined;
+      let pastedBlockCount = 0;
+
+      editor.nextTick((ctx) => {
+        originalEntityId = createBlock(ctx, {
+          position: [100, 100],
+          size: [50, 50],
+          selected: true,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      // Deselect original
+      editor.command(DeselectAll);
+
+      await editor.tick();
+
+      editor.command(Paste, {});
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        // Count blocks (original + pasted)
+        pastedBlockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(pastedBlockCount).toBe(2); // Original + pasted
+    });
+
+    it("should paste at screen center when no position provided", async () => {
+      let pastedPosition: [number, number] | undefined;
+
+      editor.nextTick((ctx) => {
+        createBlock(ctx, {
+          position: [100, 100],
+          size: [50, 50],
+          selected: true,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.command(DeselectAll);
+
+      await editor.tick();
+
+      editor.command(Paste, {});
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        // Find the selected (pasted) block
+        for (const entityId of selectedBlocksQuery.current(ctx)) {
+          const block = Block.read(ctx, entityId);
+          pastedPosition = [...block.position] as [number, number];
+        }
+      });
+
+      await editor.tick();
+      // Block at [100, 100] with size [50, 50] has center at [125, 125]
+      // Screen center is [0, 0] (default screen size is 0x0)
+      // Offset = screenCenter - clipboardCenter = [0, 0] - [125, 125] = [-125, -125]
+      // New position = original + offset = [100, 100] + [-125, -125] = [-25, -25]
+      expect(pastedPosition).toEqual([-25, -25]);
+    });
+
+    it("should paste at specified position", async () => {
+      let pastedPosition: [number, number] | undefined;
+
+      editor.nextTick((ctx) => {
+        createBlock(ctx, {
+          position: [100, 100],
+          size: [100, 100],
+          selected: true,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.command(DeselectAll);
+
+      await editor.tick();
+
+      // Paste at position [500, 500]
+      // Original block center is at [150, 150] (position + size/2)
+      // Clipboard center should be [150, 150]
+      editor.command(Paste, { position: [500, 500] });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        for (const entityId of selectedBlocksQuery.current(ctx)) {
+          const block = Block.read(ctx, entityId);
+          pastedPosition = [...block.position] as [number, number];
+        }
+      });
+
+      await editor.tick();
+      // Offset = [500, 500] - [150, 150] = [350, 350]
+      // New position = [100, 100] + [350, 350] = [450, 450]
+      expect(pastedPosition).toEqual([450, 450]);
+    });
+
+    it("should select pasted blocks", async () => {
+      let pastedIsSelected = false;
+      let originalIsSelected = false;
+      let originalEntityId: number | undefined;
+
+      editor.nextTick((ctx) => {
+        originalEntityId = createBlock(ctx, {
+          position: [100, 100],
+          selected: true,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.command(Paste, {});
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        originalIsSelected = hasComponent(ctx, originalEntityId!, Selected);
+        // Find the other selected block (the pasted one)
+        for (const entityId of selectedBlocksQuery.current(ctx)) {
+          if (entityId !== originalEntityId) {
+            pastedIsSelected = true;
+          }
+        }
+      });
+
+      await editor.tick();
+      expect(originalIsSelected).toBe(false); // Original should be deselected
+      expect(pastedIsSelected).toBe(true); // Pasted should be selected
+    });
+
+    it("should assign new ranks to pasted blocks", async () => {
+      let originalRank: string | undefined;
+      let pastedRank: string | undefined;
+      let originalEntityId: number | undefined;
+
+      editor.nextTick((ctx) => {
+        originalEntityId = createBlock(ctx, {
+          position: [100, 100],
+          rank: "m",
+          selected: true,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.command(Paste, {});
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        originalRank = Block.read(ctx, originalEntityId!).rank;
+        for (const entityId of selectedBlocksQuery.current(ctx)) {
+          if (entityId !== originalEntityId) {
+            pastedRank = Block.read(ctx, entityId).rank;
+          }
+        }
+      });
+
+      await editor.tick();
+      expect(originalRank).toBe("m");
+      expect(pastedRank).not.toBe("m");
+      expect(pastedRank).toBeDefined();
+    });
+
+    it("should do nothing if clipboard is empty", async () => {
+      let blockCount = 0;
+
+      editor.nextTick((ctx) => {
+        createBlock(ctx, {
+          position: [100, 100],
+          selected: false,
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      // Paste without copying first
+      editor.command(Paste, {});
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(1); // Only the original block
+    });
+
+    it("should copy Text component along with Block", async () => {
+      let pastedHasText = false;
+      let pastedTextContent: string | undefined;
+
+      editor.nextTick((ctx) => {
+        const entityId = createBlock(ctx, {
+          position: [100, 100],
+          selected: true,
+          persistent: true,
+        });
+        addComponent(ctx, entityId, Text, { content: "Hello World" });
+      });
+
+      await editor.tick();
+
+      editor.command(Copy);
+
+      await editor.tick();
+
+      editor.command(DeselectAll);
+
+      await editor.tick();
+
+      editor.command(Paste, {});
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        for (const entityId of selectedBlocksQuery.current(ctx)) {
+          pastedHasText = hasComponent(ctx, entityId, Text);
+          if (pastedHasText) {
+            pastedTextContent = Text.read(ctx, entityId).content;
+          }
+        }
+      });
+
+      await editor.tick();
+      expect(pastedHasText).toBe(true);
+      expect(pastedTextContent).toBe("Hello World");
     });
   });
 });

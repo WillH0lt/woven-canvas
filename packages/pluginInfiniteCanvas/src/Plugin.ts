@@ -25,6 +25,7 @@ import {
   Intersect,
   RankBounds,
   Cursor,
+  Clipboard,
 } from "./singletons";
 
 import {
@@ -152,6 +153,7 @@ export function createInfiniteCanvasPlugin(
       Intersect,
       RankBounds,
       Cursor,
+      Clipboard,
     ],
 
     preInputSystems: [PreInputRankBounds],

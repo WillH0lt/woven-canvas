@@ -42,6 +42,8 @@ export function createBlock(ctx: Context, options: CreateBlockOptions = {}): num
     rotateZ,
   });
   addComponent(ctx, entityId, Aabb, {});
+  // Compute actual AABB from block corners
+  Aabb.computeFromBlock(ctx, entityId);
 
   if (persistent) {
     addComponent(ctx, entityId, Persistent, {});

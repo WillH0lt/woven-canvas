@@ -35,7 +35,7 @@ describe("Pointer", () => {
     await editor.initialize();
 
     // Initial tick to set up screen
-    editor.tick();
+    await editor.tick();
   });
 
   afterEach(async () => {
@@ -44,7 +44,7 @@ describe("Pointer", () => {
   });
 
   describe("pointer entity lifecycle", () => {
-    it("should create pointer entity on pointerdown", () => {
+    it("should create pointer entity on pointerdown", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -59,13 +59,13 @@ describe("Pointer", () => {
         })
       );
 
-      editor.tick();
+      await editor.tick();
 
       const pointers = pointerQuery.current(ctx);
       expect(pointers.length).toBe(1);
     });
 
-    it("should remove pointer entity on pointerup", () => {
+    it("should remove pointer entity on pointerup", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -78,7 +78,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       expect(pointerQuery.current(ctx).length).toBe(1);
 
@@ -92,12 +92,12 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       expect(pointerQuery.current(ctx).length).toBe(0);
     });
 
-    it("should remove pointer entity on pointercancel", () => {
+    it("should remove pointer entity on pointercancel", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -110,7 +110,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       expect(pointerQuery.current(ctx).length).toBe(1);
 
@@ -120,14 +120,14 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       expect(pointerQuery.current(ctx).length).toBe(0);
     });
   });
 
   describe("pointer data", () => {
-    it("should store pointer position relative to element", () => {
+    it("should store pointer position relative to element", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -140,7 +140,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       const pointers = pointerQuery.current(ctx);
       const pointer = Pointer.read(ctx, pointers[0]);
@@ -151,7 +151,7 @@ describe("Pointer", () => {
       expect(pointer.downPosition[1]).toBe(200);
     });
 
-    it("should update position on pointermove", () => {
+    it("should update position on pointermove", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -164,7 +164,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       window.dispatchEvent(
         new PointerEvent("pointermove", {
@@ -175,7 +175,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       const pointers = pointerQuery.current(ctx);
       const pointer = Pointer.read(ctx, pointers[0]);
@@ -187,7 +187,7 @@ describe("Pointer", () => {
       expect(pointer.downPosition[1]).toBe(100);
     });
 
-    it("should store pointer button", () => {
+    it("should store pointer button", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -200,7 +200,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       const pointers = pointerQuery.current(ctx);
       const pointer = Pointer.read(ctx, pointers[0]);
@@ -208,7 +208,7 @@ describe("Pointer", () => {
       expect(pointer.button).toBe(PointerButton.Right);
     });
 
-    it("should store pointer type", () => {
+    it("should store pointer type", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -221,7 +221,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       const pointers = pointerQuery.current(ctx);
       const pointer = Pointer.read(ctx, pointers[0]);
@@ -229,7 +229,7 @@ describe("Pointer", () => {
       expect(pointer.pointerType).toBe(PointerType.Pen);
     });
 
-    it("should store pressure", () => {
+    it("should store pressure", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -243,7 +243,7 @@ describe("Pointer", () => {
           bubbles: true,
         })
       );
-      editor.tick();
+      await editor.tick();
 
       const pointers = pointerQuery.current(ctx);
       const pointer = Pointer.read(ctx, pointers[0]);
@@ -253,7 +253,7 @@ describe("Pointer", () => {
   });
 
   describe("multiple pointers (touch)", () => {
-    it("should support multiple simultaneous pointers", () => {
+    it("should support multiple simultaneous pointers", async () => {
       const ctx = editor._getContext()!;
 
       // First touch
@@ -280,7 +280,7 @@ describe("Pointer", () => {
         })
       );
 
-      editor.tick();
+      await editor.tick();
 
       const pointers = pointerQuery.current(ctx);
       expect(pointers.length).toBe(2);
@@ -316,8 +316,6 @@ describe("Pointer", () => {
         })
       );
       await editor.tick();
-
-      console.log(ctx);
 
       expect(pointerQuery.current(ctx).length).toBe(2);
 

@@ -5,9 +5,12 @@ import {
   createEntity,
   addComponent,
   removeEntity,
+  getResources,
   type EntityId,
   type Context,
 } from "@infinitecanvas/ecs";
+import type { Editor } from "./Editor";
+import type { EditorResources } from "./types";
 
 /**
  * Marker component for all command entities.
@@ -17,8 +20,22 @@ export const CommandMarker = defineComponent({
   name: field.string(),
 });
 
-/** Store payloads outside ECS - keyed by entity ID */
-const commandPayloads = new Map<EntityId, unknown>();
+/**
+ * Per-editor command payload storage.
+ * Uses WeakMap keyed by Editor instance for world isolation and automatic cleanup.
+ */
+const editorPayloads = new WeakMap<Editor, Map<EntityId, unknown>>();
+
+/** Get or create the payload map for an editor */
+function getPayloadMap(ctx: Context): Map<EntityId, unknown> {
+  const { editor } = getResources<EditorResources>(ctx);
+  let map = editorPayloads.get(editor);
+  if (!map) {
+    map = new Map();
+    editorPayloads.set(editor, map);
+  }
+  return map;
+}
 
 // Query for commands - we filter by name in iter()
 const commands = defineQuery((q) => q.with(CommandMarker));
@@ -101,15 +118,16 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
     spawn(ctx: Context, payload: T): EntityId {
       const eid = createEntity(ctx);
       addComponent(ctx, eid, CommandMarker, { name });
-      commandPayloads.set(eid, payload);
+      getPayloadMap(ctx).set(eid, payload);
       return eid;
     },
 
     *iter(ctx: Context): IterableIterator<{ eid: EntityId; payload: T }> {
+      const payloads = getPayloadMap(ctx);
       for (const eid of commands.current(ctx)) {
         const marker = CommandMarker.read(ctx, eid);
         if (marker.name === name) {
-          const payload = commandPayloads.get(eid) as T;
+          const payload = payloads.get(eid) as T;
           yield { eid, payload };
         }
       }
@@ -134,8 +152,9 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
  * @internal
  */
 export function cleanupCommands(ctx: Context): void {
+  const payloads = getPayloadMap(ctx);
   for (const eid of commands.current(ctx)) {
-    commandPayloads.delete(eid);
+    payloads.delete(eid);
     removeEntity(ctx, eid);
   }
 }

@@ -377,7 +377,12 @@ export class Component<T extends ComponentSchema> {
     const result = {} as InferComponentType<T>;
     for (let i = 0; i < this.fieldNames.length; i++) {
       const fieldName = this.fieldNames[i];
-      (result as any)[fieldName] = (readView as any)[fieldName];
+      let value = (readView as any)[fieldName];
+      // Clone typed arrays (e.g., tuple subarrays) to ensure snapshot is independent
+      if (ArrayBuffer.isView(value)) {
+        value = (value as any).slice();
+      }
+      (result as any)[fieldName] = value;
     }
     return result;
   }

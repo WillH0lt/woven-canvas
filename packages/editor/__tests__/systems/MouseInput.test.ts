@@ -32,7 +32,7 @@ describe("Mouse", () => {
     await editor.initialize();
 
     // Run initial tick to set up screen dimensions
-    editor.tick();
+    await editor.tick();
   });
 
   afterEach(async () => {
@@ -41,7 +41,7 @@ describe("Mouse", () => {
   });
 
   describe("position tracking", () => {
-    it("should track mouse position relative to element", () => {
+    it("should track mouse position relative to element", async () => {
       const ctx = editor._getContext()!;
 
       // Dispatch mousemove at client coords (150, 100)
@@ -54,14 +54,14 @@ describe("Mouse", () => {
         })
       );
 
-      editor.tick();
+      await editor.tick();
 
       const mouse = Mouse.read(ctx);
       expect(mouse.position[0]).toBe(50);
       expect(mouse.position[1]).toBe(50);
     });
 
-    it("should set moveTrigger when mouse moves", () => {
+    it("should set moveTrigger when mouse moves", async () => {
       const ctx = editor._getContext()!;
 
       window.dispatchEvent(
@@ -72,13 +72,13 @@ describe("Mouse", () => {
         })
       );
 
-      editor.tick();
+      await editor.tick();
 
       const mouse = Mouse.read(ctx);
       expect(mouse.moveTrigger).toBe(true);
     });
 
-    it("should clear moveTrigger after one frame", () => {
+    it("should clear moveTrigger after one frame", async () => {
       const ctx = editor._getContext()!;
 
       window.dispatchEvent(
@@ -89,16 +89,16 @@ describe("Mouse", () => {
         })
       );
 
-      editor.tick();
+      await editor.tick();
       expect(Mouse.read(ctx).moveTrigger).toBe(true);
 
-      editor.tick();
+      await editor.tick();
       expect(Mouse.read(ctx).moveTrigger).toBe(false);
     });
   });
 
   describe("wheel events", () => {
-    it("should track wheel delta", () => {
+    it("should track wheel delta", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -110,14 +110,14 @@ describe("Mouse", () => {
         })
       );
 
-      editor.tick();
+      await editor.tick();
 
       const mouse = Mouse.read(ctx);
       expect(mouse.wheelDeltaX).toBe(10);
       expect(mouse.wheelTrigger).toBe(true);
     });
 
-    it("should set wheelTrigger when wheel scrolls", () => {
+    it("should set wheelTrigger when wheel scrolls", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -129,12 +129,12 @@ describe("Mouse", () => {
         })
       );
 
-      editor.tick();
+      await editor.tick();
 
       expect(Mouse.read(ctx).wheelTrigger).toBe(true);
     });
 
-    it("should clear wheel state after one frame", () => {
+    it("should clear wheel state after one frame", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(
@@ -146,11 +146,11 @@ describe("Mouse", () => {
         })
       );
 
-      editor.tick();
+      await editor.tick();
       expect(Mouse.read(ctx).wheelTrigger).toBe(true);
       expect(Mouse.read(ctx).wheelDeltaX).toBe(10);
 
-      editor.tick();
+      await editor.tick();
       expect(Mouse.read(ctx).wheelTrigger).toBe(false);
       expect(Mouse.read(ctx).wheelDeltaX).toBe(0);
       expect(Mouse.read(ctx).wheelDeltaY).toBe(0);
@@ -158,34 +158,34 @@ describe("Mouse", () => {
   });
 
   describe("enter/leave events", () => {
-    it("should set enterTrigger on mouseenter", () => {
+    it("should set enterTrigger on mouseenter", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
 
-      editor.tick();
+      await editor.tick();
 
       expect(Mouse.read(ctx).enterTrigger).toBe(true);
     });
 
-    it("should set leaveTrigger on mouseleave", () => {
+    it("should set leaveTrigger on mouseleave", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
 
-      editor.tick();
+      await editor.tick();
 
       expect(Mouse.read(ctx).leaveTrigger).toBe(true);
     });
 
-    it("should clear enter/leave triggers after one frame", () => {
+    it("should clear enter/leave triggers after one frame", async () => {
       const ctx = editor._getContext()!;
 
       domElement.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-      editor.tick();
+      await editor.tick();
       expect(Mouse.read(ctx).enterTrigger).toBe(true);
 
-      editor.tick();
+      await editor.tick();
       expect(Mouse.read(ctx).enterTrigger).toBe(false);
     });
   });
@@ -226,8 +226,8 @@ describe("Mouse - multiple instances", () => {
     await editor2.initialize();
 
     // Initial tick for screen setup
-    editor1.tick();
-    editor2.tick();
+    await editor1.tick();
+    await editor2.tick();
 
     // Wheel event on element1 only
     domElement1.dispatchEvent(
@@ -239,8 +239,8 @@ describe("Mouse - multiple instances", () => {
       })
     );
 
-    editor1.tick();
-    editor2.tick();
+    await editor1.tick();
+    await editor2.tick();
 
     const ctx1 = editor1._getContext()!;
     const ctx2 = editor2._getContext()!;

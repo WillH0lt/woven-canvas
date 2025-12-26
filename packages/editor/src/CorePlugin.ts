@@ -40,9 +40,9 @@ export const CorePlugin: EditorPlugin = {
 
   inputSystems: [
     frameInputSystem,
+    screenInputSystem,
     keyboardInputSystem,
     mouseInputSystem,
-    screenInputSystem,
     pointerInputSystem,
   ],
 

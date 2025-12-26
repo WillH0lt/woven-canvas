@@ -1,17 +1,21 @@
 import {
   defineSystem,
   defineQuery,
+  createEntity,
   removeEntity,
   addComponent,
   removeComponent,
   hasComponent,
+  getResources,
   on,
   Persistent,
+  Camera,
   type Context,
-  type EntityId,
+  type EditorResources,
 } from "@infinitecanvas/editor";
 
-import { Block, Aabb, Selected } from "../components";
+import { Aabb as AabbNs, Vec2 } from "@infinitecanvas/math";
+import { Aabb, Block, Selected } from "../components";
 import {
   SelectBlock,
   DeselectBlock,
@@ -24,8 +28,12 @@ import {
   BringForwardSelected,
   SendBackwardSelected,
   SetCursor,
+  Cut,
+  Copy,
+  Paste,
 } from "../commands";
-import { RankBounds, Cursor } from "../singletons";
+import { RankBounds, Cursor, Clipboard } from "../singletons";
+import type { ClipboardEntityData } from "../singletons/Clipboard";
 
 // Query for selected blocks
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
@@ -42,6 +50,7 @@ const persistentBlocksQuery = defineQuery((q) => q.with(Block, Persistent));
  * - DragBlock
  * - BringForwardSelected, SendBackwardSelected
  * - SetCursor
+ * - Cut, Copy, Paste
  */
 export const UpdateBlock = defineSystem((ctx: Context) => {
   on(ctx, DragBlock, (ctx, { entityId, position }) => {
@@ -104,6 +113,22 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
     if (payload.contextSvg !== undefined) {
       cursor.contextSvg = payload.contextSvg;
     }
+  });
+
+  on(ctx, Copy, (ctx) => {
+    copySelectedBlocks(ctx);
+  });
+
+  on(ctx, Cut, (ctx) => {
+    copySelectedBlocks(ctx);
+    // Remove selected blocks after copying
+    for (const entityId of selectedBlocksQuery.current(ctx)) {
+      removeEntity(ctx, entityId);
+    }
+  });
+
+  on(ctx, Paste, (ctx, payload) => {
+    pasteBlocks(ctx, payload?.position);
   });
 });
 
@@ -169,5 +194,134 @@ function sendBackwardSelected(ctx: Context): void {
   for (const entityId of selectedBlocks) {
     const block = Block.write(ctx, entityId);
     block.rank = RankBounds.genPrev(ctx);
+  }
+}
+
+/**
+ * Copy selected blocks to clipboard.
+ * Serializes all document-synced components for each selected entity.
+ */
+function copySelectedBlocks(ctx: Context): void {
+  const selectedBlocks = Array.from(selectedBlocksQuery.current(ctx));
+  if (selectedBlocks.length === 0) return;
+
+  const { editor } = getResources<EditorResources>(ctx);
+  const documentComponents = editor.getDocumentComponents();
+
+  const clipboardEntities: ClipboardEntityData[] = [];
+
+  // Compute union of all selected block AABBs
+  const unionAabb = AabbNs.zero();
+  let hasAabb = false;
+
+  // Serialize each selected entity
+  for (const entityId of selectedBlocks) {
+    const entityData: ClipboardEntityData = new Map();
+
+    // Iterate through entity's components and serialize document-synced ones
+    for (const componentId of ctx.entityBuffer.getComponentIds(entityId)) {
+      const componentDef = documentComponents.get(componentId);
+      if (componentDef) {
+        entityData.set(componentId, componentDef.snapshot(ctx, entityId));
+      }
+    }
+
+    clipboardEntities.push(entityData);
+
+    // Track bounding box for center calculation
+    if (hasComponent(ctx, entityId, Aabb)) {
+      const { value } = Aabb.read(ctx, entityId);
+      if (!hasAabb) {
+        AabbNs.copy(unionAabb, value);
+        hasAabb = true;
+      } else {
+        AabbNs.union(unionAabb, value);
+      }
+    }
+  }
+
+  // Store in clipboard
+  Clipboard.setEntities(ctx, clipboardEntities);
+  const clipboard = Clipboard.write(ctx);
+  clipboard.count = clipboardEntities.length;
+  clipboard.center = AabbNs.center(unionAabb);
+}
+
+/**
+ * Paste entities from clipboard.
+ * Restores all document-synced components for each entity.
+ * @param position - Optional position to paste at. If not provided, pastes at screen center.
+ */
+function pasteBlocks(ctx: Context, position?: Vec2): void {
+  const clipboardEntities = Clipboard.getEntities(ctx);
+  if (clipboardEntities.length === 0) return;
+
+  const { editor } = getResources<EditorResources>(ctx);
+  const documentComponents = editor.getDocumentComponents();
+
+  const clipboard = Clipboard.read(ctx);
+  const persistentComponentId = Persistent._getComponentId(ctx);
+  const blockComponentId = Block._getComponentId(ctx);
+
+  // Calculate paste offset
+  let offset: Vec2;
+  if (position) {
+    // Paste centered at the given position
+    offset = Vec2.clone(position);
+    Vec2.sub(offset, clipboard.center);
+  } else {
+    // Paste centered at the screen center
+    const screenCenter = Camera.getWorldCenter(ctx);
+    offset = Vec2.clone(screenCenter);
+    Vec2.sub(offset, clipboard.center);
+  }
+
+  // Sort clipboard entities by rank to maintain relative z-order
+  const sortedEntities = [...clipboardEntities].sort((a, b) => {
+    const blockDataA = a.get(blockComponentId) as { rank?: string } | undefined;
+    const blockDataB = b.get(blockComponentId) as { rank?: string } | undefined;
+    const rankA = blockDataA?.rank ?? "";
+    const rankB = blockDataB?.rank ?? "";
+    if (rankA < rankB) return -1;
+    if (rankA > rankB) return 1;
+    return 0;
+  });
+
+  // Deselect current selection
+  deselectAllBlocks(ctx);
+
+  // Create new entities from clipboard data
+  for (const entityData of sortedEntities) {
+    const entityId = createEntity(ctx);
+
+    // Add Persistent component with new UUID
+    addComponent(ctx, entityId, Persistent, {
+      id: crypto.randomUUID(),
+    });
+
+    // Add all other components from clipboard
+    for (const [componentId, componentData] of entityData) {
+      // Skip persistent - we already added it with a new ID
+      if (componentId === persistentComponentId) continue;
+
+      const componentDef = documentComponents.get(componentId);
+      if (!componentDef) continue;
+
+      // Clone the data to avoid mutating clipboard
+      const data = { ...(componentData as Record<string, unknown>) };
+
+      // Special handling for Block component: apply offset and new rank
+      if (componentId === blockComponentId) {
+        const pos = Vec2.clone(data.position as Vec2);
+        Vec2.add(pos, offset);
+        data.position = pos;
+        data.rank = RankBounds.genNext(ctx);
+      }
+
+      addComponent(ctx, entityId, componentDef, data as any);
+    }
+
+    // Select the pasted entity
+    addComponent(ctx, entityId, Selected, { selectedBy: "" });
   }
 }

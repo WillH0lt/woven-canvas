@@ -222,29 +222,27 @@ export class Editor {
     // Store adapter
     this.store = store;
 
-    // Build maps of synced components/singletons for store sync
-    if (this.store) {
-      for (const plugin of sortedPlugins) {
-        if (plugin.components) {
-          for (const comp of plugin.components) {
-            if (comp.__editor.sync === "document") {
-              const componentId = comp._getComponentId(this.ctx);
-              this.documentComponents.set(
-                componentId,
-                comp as AnyEditorComponentDef
-              );
-            }
+    // Build maps of synced components/singletons (needed for store sync and clipboard)
+    for (const plugin of sortedPlugins) {
+      if (plugin.components) {
+        for (const comp of plugin.components) {
+          if (comp.__editor.sync === "document") {
+            const componentId = comp._getComponentId(this.ctx);
+            this.documentComponents.set(
+              componentId,
+              comp as AnyEditorComponentDef
+            );
           }
         }
-        if (plugin.singletons) {
-          for (const singleton of plugin.singletons) {
-            if (singleton.__editor.sync === "document") {
-              const componentId = singleton._getComponentId(this.ctx);
-              this.documentSingletons.set(
-                componentId,
-                singleton as AnyEditorSingletonDef
-              );
-            }
+      }
+      if (plugin.singletons) {
+        for (const singleton of plugin.singletons) {
+          if (singleton.__editor.sync === "document") {
+            const componentId = singleton._getComponentId(this.ctx);
+            this.documentSingletons.set(
+              componentId,
+              singleton as AnyEditorSingletonDef
+            );
           }
         }
       }
@@ -482,6 +480,16 @@ export class Editor {
    */
   _getContext(): Context {
     return this.ctx;
+  }
+
+  /**
+   * Get the map of document-synced component definitions.
+   * Used for serializing/deserializing entities (e.g., clipboard).
+   *
+   * @returns Map of component ID to component definition
+   */
+  getDocumentComponents(): Map<number, AnyEditorComponentDef> {
+    return this.documentComponents;
   }
 
   /**
