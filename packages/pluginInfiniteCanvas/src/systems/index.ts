@@ -11,6 +11,8 @@ export { CaptureKeyboard } from "./CaptureKeyboard";
 
 // Update phase systems
 export { UpdateSelect } from "./UpdateSelect";
-export { UpdateTransformBox } from "./UpdateTransformBox";
 export { UpdateBlock } from "./UpdateBlock";
 export { UpdateDragHandler } from "./UpdateDragHandler";
+
+// Post-update phase systems
+export { PostUpdateTransformBox } from "./PostUpdateTransformBox";

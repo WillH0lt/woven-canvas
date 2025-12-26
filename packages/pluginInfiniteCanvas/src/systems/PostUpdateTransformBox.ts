@@ -58,8 +58,11 @@ const TRANSFORM_HANDLE_CORNER_RANK = "zd";
 
 /**
  * Transform box update system - manages transform box and handles.
+ *
+ * Runs in postUpdate phase so queries see selection changes made by
+ * UpdateBlock in the same frame.
  */
-export const UpdateTransformBox = defineSystem((ctx: Context) => {
+export const PostUpdateTransformBox = defineSystem((ctx: Context) => {
   // RemoveTransformBox must be first to avoid stale references
   on(ctx, RemoveTransformBox, removeTransformBox);
   on(ctx, AddOrUpdateTransformBox, addOrUpdateTransformBox);

@@ -24,17 +24,16 @@ import {
   TransformBoxStateSingleton,
   SelectionStateSingleton,
 } from "../../src/singletons";
-import { UpdateTransformBox } from "../../src/systems";
+import { PostUpdateTransformBox } from "../../src/systems";
 import {
   AddOrUpdateTransformBox,
-  UpdateTransformBox as UpdateTransformBoxCmd,
   HideTransformBox,
   ShowTransformBox,
   RemoveTransformBox,
   StartTransformBoxEdit,
   EndTransformBoxEdit,
 } from "../../src/commands";
-import { TransformHandleKind, CursorKind, BlockDef } from "../../src/types";
+import { TransformHandleKind, BlockDef } from "../../src/types";
 import type { InfiniteCanvasResources } from "../../src/Plugin";
 import { createBlock } from "../testUtils";
 
@@ -73,6 +72,7 @@ const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
         resizeMode: "groupOnly",
       }),
     },
+    keybinds: [],
   },
   components: [
     Block,
@@ -92,14 +92,14 @@ const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
     TransformBoxStateSingleton,
     SelectionStateSingleton,
   ],
-  updateSystems: [UpdateTransformBox],
+  postUpdateSystems: [PostUpdateTransformBox],
   setup(ctx) {
     const controls = Controls.write(ctx);
     controls.leftMouseTool = "select";
   },
 };
 
-describe("UpdateTransformBox", () => {
+describe("PostUpdateTransformBox", () => {
   let editor: Editor;
   let domElement: HTMLDivElement;
 

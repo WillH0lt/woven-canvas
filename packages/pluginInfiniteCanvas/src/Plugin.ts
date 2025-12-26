@@ -35,7 +35,7 @@ import {
   UpdateSelect,
   CaptureTransformBox,
   CaptureKeyboard,
-  UpdateTransformBox,
+  PostUpdateTransformBox,
   UpdateBlock,
   UpdateDragHandler,
 } from "./systems";
@@ -162,12 +162,9 @@ export function createInfiniteCanvasPlugin(
 
     captureSystems: [CaptureTransformBox, CaptureKeyboard],
 
-    updateSystems: [
-      UpdateBlock,
-      UpdateSelect,
-      UpdateTransformBox,
-      UpdateDragHandler,
-    ],
+    updateSystems: [UpdateBlock, UpdateSelect, UpdateDragHandler],
+
+    postUpdateSystems: [PostUpdateTransformBox],
   };
 }
 

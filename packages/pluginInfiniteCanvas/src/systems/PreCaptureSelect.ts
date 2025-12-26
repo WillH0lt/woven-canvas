@@ -4,6 +4,7 @@ import {
   type EntityId,
   type InferStateContext,
   defineSystem,
+  defineQuery,
   Controls,
   hasComponent,
   Persistent,
@@ -37,6 +38,11 @@ import { SelectionState } from "../types";
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4;
+
+// Query for selected persistent blocks (for cloning)
+const selectedBlocksQuery = defineQuery((q) =>
+  q.with(Block, Selected, Persistent)
+);
 
 /**
  * Selection state machine context - derived from SelectionStateSingleton schema.
@@ -192,15 +198,35 @@ const selectionMachine = setup({
 
           isCloning = true;
 
+          // When dragging a TransformBox, clone all selected blocks
+          // Otherwise just clone the single dragged entity
+          const isTransformBox = hasComponent(
+            ctx,
+            context.draggedEntity,
+            TransformBox
+          );
+          const entityIds = isTransformBox
+            ? Array.from(selectedBlocksQuery.current(ctx))
+            : [context.draggedEntity];
+
           CloneEntities.spawn(ctx, {
-            entityIds: [context.draggedEntity],
+            entityIds,
             offset: [dx, dy],
             seed: context.cloneGeneratorSeed,
           });
         } else if (!event.altDown && context.isCloning) {
           // Alt released - unclone
+          const isTransformBox = hasComponent(
+            ctx,
+            context.draggedEntity,
+            TransformBox
+          );
+          const entityIds = isTransformBox
+            ? Array.from(selectedBlocksQuery.current(ctx))
+            : [context.draggedEntity];
+
           UncloneEntities.spawn(ctx, {
-            entityIds: [context.draggedEntity],
+            entityIds,
             seed: context.cloneGeneratorSeed,
           });
           isCloning = false;

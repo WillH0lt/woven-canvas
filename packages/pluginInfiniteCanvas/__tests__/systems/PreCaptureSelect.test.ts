@@ -6,6 +6,7 @@ import {
   hasComponent,
   type EditorPlugin,
   Controls,
+  Keyboard,
 } from "@infinitecanvas/editor";
 import {
   Block,
@@ -13,6 +14,8 @@ import {
   Selected,
   Locked,
   Hovered,
+  TransformBox,
+  TransformHandle,
 } from "../../src/components";
 import {
   Intersect,
@@ -20,7 +23,7 @@ import {
   SelectionStateSingleton,
 } from "../../src/singletons";
 import { PreCaptureSelect } from "../../src/systems";
-import { DeselectAll } from "../../src/commands";
+import { DeselectAll, CloneEntities, UncloneEntities } from "../../src/commands";
 import { SelectionState } from "../../src/types";
 import {
   createPointerSimulator,
@@ -35,7 +38,7 @@ const pointer = createPointerSimulator();
 // Factory function to create test plugin
 const testPlugin: EditorPlugin = {
   name: "test",
-  components: [Block, Aabb, Selected, Locked, Hovered],
+  components: [Block, Aabb, Selected, Locked, Hovered, TransformBox, TransformHandle],
   singletons: [Intersect, RankBounds, SelectionStateSingleton],
   preCaptureSystems: [PreCaptureSelect],
   setup(ctx) {
@@ -266,6 +269,282 @@ describe("PreCaptureSelect", () => {
 
       await editor.tick();
       expect(deselectAllSpawned).toBe(false);
+    });
+  });
+
+  describe("alt+drag cloning", () => {
+    it("should spawn CloneEntities command when alt is held during drag", async () => {
+      let entityId: number | undefined;
+      let cloneCommandSpawned = false;
+
+      // Create a persistent block
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
+        Intersect.setAll(ctx, [entityId]);
+      });
+      await editor.tick();
+
+      // Set up intersect before pointer down
+      editor.nextTick((ctx) => {
+        Intersect.setAll(ctx, [entityId!]);
+      });
+      await editor.tick();
+
+      // Pointer down on block
+      pointer.pointerDown(domElement, 50, 50);
+      await editor.tick();
+
+      // Drag beyond threshold first (without alt)
+      pointer.pointerMove(70, 70);
+      await editor.tick();
+
+      // Now set alt key down and do another move to trigger clone
+      editor.nextTick((ctx) => {
+        const keyboard = Keyboard.write(ctx);
+        keyboard.altDown = true;
+      });
+      pointer.pointerMove(75, 75);
+      await editor.tick();
+
+      // Check if CloneEntities command was spawned
+      editor.nextTick((ctx) => {
+        cloneCommandSpawned = CloneEntities.didSpawnLastFrame(ctx);
+      });
+
+      await editor.tick();
+      expect(cloneCommandSpawned).toBe(true);
+    });
+
+    it("should spawn UncloneEntities command when alt is released during drag", async () => {
+      let entityId: number | undefined;
+      let uncloneCommandSpawned = false;
+
+      // Create a persistent block
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
+        Intersect.setAll(ctx, [entityId]);
+      });
+      await editor.tick();
+
+      // Set up intersect
+      editor.nextTick((ctx) => {
+        Intersect.setAll(ctx, [entityId!]);
+      });
+      await editor.tick();
+
+      // Pointer down on block
+      pointer.pointerDown(domElement, 50, 50);
+      await editor.tick();
+
+      // Drag beyond threshold first (without alt)
+      pointer.pointerMove(70, 70);
+      await editor.tick();
+
+      // Set alt key down and do another move to trigger clone
+      editor.nextTick((ctx) => {
+        const keyboard = Keyboard.write(ctx);
+        keyboard.altDown = true;
+      });
+      pointer.pointerMove(75, 75);
+      await editor.tick();
+
+      // Now release alt (set altDown to false) and do another move to trigger unclone
+      editor.nextTick((ctx) => {
+        const keyboard = Keyboard.write(ctx);
+        keyboard.altDown = false;
+      });
+      pointer.pointerMove(80, 80);
+      await editor.tick();
+
+      // Check if UncloneEntities command was spawned
+      editor.nextTick((ctx) => {
+        uncloneCommandSpawned = UncloneEntities.didSpawnLastFrame(ctx);
+      });
+
+      await editor.tick();
+      expect(uncloneCommandSpawned).toBe(true);
+    });
+
+    it("should spawn CloneEntities when completing alt+drag", async () => {
+      let entityId: number | undefined;
+      let cloneCommandSpawned = false;
+
+      // Create a persistent block
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
+        Intersect.setAll(ctx, [entityId]);
+      });
+      await editor.tick();
+
+      // Set up intersect
+      editor.nextTick((ctx) => {
+        Intersect.setAll(ctx, [entityId!]);
+      });
+      await editor.tick();
+
+      // Pointer down on block
+      pointer.pointerDown(domElement, 50, 50);
+      await editor.tick();
+
+      // Drag beyond threshold first (without alt)
+      pointer.pointerMove(70, 70);
+      await editor.tick();
+
+      // Now set alt key down and do another move to trigger clone
+      editor.nextTick((ctx) => {
+        const keyboard = Keyboard.write(ctx);
+        keyboard.altDown = true;
+      });
+      pointer.pointerMove(75, 75);
+      await editor.tick();
+
+      // Check CloneEntities was spawned during the drag
+      editor.nextTick((ctx) => {
+        cloneCommandSpawned = CloneEntities.didSpawnLastFrame(ctx);
+      });
+
+      await editor.tick();
+      expect(cloneCommandSpawned).toBe(true);
+    });
+
+    it("should not spawn CloneEntities when drag completes without alt", async () => {
+      let entityId: number | undefined;
+      let cloneCommandSpawned = false;
+
+      // Create a persistent block
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
+        Intersect.setAll(ctx, [entityId]);
+      });
+      await editor.tick();
+
+      // Set up intersect
+      editor.nextTick((ctx) => {
+        Intersect.setAll(ctx, [entityId!]);
+      });
+      await editor.tick();
+
+      // Pointer down on block
+      pointer.pointerDown(domElement, 50, 50);
+      await editor.tick();
+
+      // Drag beyond threshold WITHOUT alt
+      pointer.pointerMove(70, 70);
+      await editor.tick();
+
+      // Check CloneEntities was NOT spawned
+      editor.nextTick((ctx) => {
+        cloneCommandSpawned = CloneEntities.didSpawnLastFrame(ctx);
+      });
+
+      await editor.tick();
+      expect(cloneCommandSpawned).toBe(false);
+    });
+
+    it("should spawn UncloneEntities when alt is released before drag completes", async () => {
+      let entityId: number | undefined;
+      let cloneSpawned = false;
+      let uncloneSpawned = false;
+
+      // Create a persistent block
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
+        Intersect.setAll(ctx, [entityId]);
+      });
+      await editor.tick();
+
+      // Set up intersect
+      editor.nextTick((ctx) => {
+        Intersect.setAll(ctx, [entityId!]);
+      });
+      await editor.tick();
+
+      // Pointer down on block
+      pointer.pointerDown(domElement, 50, 50);
+      await editor.tick();
+
+      // Drag beyond threshold first (without alt)
+      pointer.pointerMove(70, 70);
+      await editor.tick();
+
+      // Set alt key down and do another move to trigger clone
+      editor.nextTick((ctx) => {
+        const keyboard = Keyboard.write(ctx);
+        keyboard.altDown = true;
+      });
+      pointer.pointerMove(75, 75);
+      await editor.tick();
+
+      // Clone should have been spawned
+      editor.nextTick((ctx) => {
+        cloneSpawned = CloneEntities.didSpawnLastFrame(ctx);
+      });
+      await editor.tick();
+      expect(cloneSpawned).toBe(true);
+
+      // Release alt and do another move to trigger unclone
+      editor.nextTick((ctx) => {
+        const keyboard = Keyboard.write(ctx);
+        keyboard.altDown = false;
+      });
+      pointer.pointerMove(80, 80);
+      await editor.tick();
+
+      // Unclone should have been spawned
+      editor.nextTick((ctx) => {
+        uncloneSpawned = UncloneEntities.didSpawnLastFrame(ctx);
+      });
+      await editor.tick();
+      expect(uncloneSpawned).toBe(true);
+    });
+
+    it("should not spawn CloneEntities for non-persistent blocks", async () => {
+      let entityId: number | undefined;
+      let cloneCommandSpawned = false;
+
+      // Create a non-persistent block
+      editor.nextTick((ctx) => {
+        entityId = createEntity(ctx);
+        addComponent(ctx, entityId, Block, {
+          position: [0, 0],
+          size: [100, 100],
+          rank: "a",
+        });
+        // Note: No Persistent component
+        Intersect.setAll(ctx, [entityId]);
+      });
+      await editor.tick();
+
+      // Set up intersect
+      editor.nextTick((ctx) => {
+        Intersect.setAll(ctx, [entityId!]);
+      });
+      await editor.tick();
+
+      // Pointer down on block
+      pointer.pointerDown(domElement, 50, 50);
+      await editor.tick();
+
+      // Drag beyond threshold first (without alt)
+      pointer.pointerMove(70, 70);
+      await editor.tick();
+
+      // Now set alt key down and do another move
+      editor.nextTick((ctx) => {
+        const keyboard = Keyboard.write(ctx);
+        keyboard.altDown = true;
+      });
+      pointer.pointerMove(75, 75);
+      await editor.tick();
+
+      // Check if CloneEntities command was NOT spawned
+      editor.nextTick((ctx) => {
+        cloneCommandSpawned = CloneEntities.didSpawnLastFrame(ctx);
+      });
+
+      await editor.tick();
+      // Non-persistent blocks should not trigger cloning
+      expect(cloneCommandSpawned).toBe(false);
     });
   });
 });

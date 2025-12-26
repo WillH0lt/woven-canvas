@@ -49,15 +49,9 @@ const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
         resizeMode: "text",
       }),
     },
+    keybinds: [],
   },
-  components: [
-    Block,
-    Aabb,
-    Selected,
-    Hovered,
-    TransformBox,
-    TransformHandle,
-  ],
+  components: [Block, Aabb, Selected, Hovered, TransformBox, TransformHandle],
   singletons: [Intersect, RankBounds, TransformBoxStateSingleton],
   captureSystems: [CaptureTransformBox],
   setup(ctx) {

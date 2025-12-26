@@ -5,6 +5,7 @@ import {
   addComponent,
   hasComponent,
   defineQuery,
+  Persistent,
   type EditorPlugin,
 } from "@infinitecanvas/editor";
 import { Block, Aabb, Selected, Text } from "../../src/components";
@@ -25,6 +26,8 @@ import {
   Copy,
   Cut,
   Paste,
+  CloneEntities,
+  UncloneEntities,
 } from "../../src/commands";
 import { createBlock } from "../testUtils";
 
@@ -1296,6 +1299,461 @@ describe("UpdateBlock", () => {
       await editor.tick();
       expect(pastedHasText).toBe(true);
       expect(pastedTextContent).toBe("Hello World");
+    });
+  });
+
+  describe("CloneEntities command", () => {
+    it("should create a clone of a persistent entity", async () => {
+      let entityId: number | undefined;
+      let blockCount = 0;
+      const seed = "test-seed";
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          size: [50, 50],
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(2); // Original + clone
+    });
+
+    it("should apply offset to cloned entity position", async () => {
+      let entityId: number | undefined;
+      let originalPosition: [number, number] | undefined;
+      let clonedPosition: [number, number] | undefined;
+      const seed = "test-seed";
+      const offset: [number, number] = [-50, -50];
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          size: [50, 50],
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset,
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        for (const blockId of blocksQuery.current(ctx)) {
+          const block = Block.read(ctx, blockId);
+          if (blockId === entityId) {
+            originalPosition = [...block.position] as [number, number];
+          } else {
+            clonedPosition = [...block.position] as [number, number];
+          }
+        }
+      });
+
+      await editor.tick();
+      expect(originalPosition).toEqual([100, 100]);
+      // Clone should be at original position + offset
+      expect(clonedPosition).toEqual([50, 50]);
+    });
+
+    it("should assign a rank behind the original", async () => {
+      let entityId: number | undefined;
+      let originalRank: string | undefined;
+      let clonedRank: string | undefined;
+      const seed = "test-seed";
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          rank: "m",
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        for (const blockId of blocksQuery.current(ctx)) {
+          const block = Block.read(ctx, blockId);
+          if (blockId === entityId) {
+            originalRank = block.rank;
+          } else {
+            clonedRank = block.rank;
+          }
+        }
+      });
+
+      await editor.tick();
+      expect(originalRank).toBe("m");
+      expect(clonedRank).toBeDefined();
+      // Clone rank should be before original (lexicographically smaller)
+      expect(clonedRank! < originalRank!).toBe(true);
+    });
+
+    it("should clone multiple entities", async () => {
+      let entityId1: number | undefined;
+      let entityId2: number | undefined;
+      let blockCount = 0;
+      const seed = "test-seed";
+
+      editor.nextTick((ctx) => {
+        entityId1 = createBlock(ctx, {
+          position: [100, 100],
+          persistent: true,
+        });
+        entityId2 = createBlock(ctx, {
+          position: [200, 200],
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(CloneEntities, {
+        entityIds: [entityId1!, entityId2!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(4); // 2 originals + 2 clones
+    });
+
+    it("should generate deterministic clone IDs based on seed", async () => {
+      let entityId: number | undefined;
+      let clonePersistentId1: string | undefined;
+      let clonePersistentId2: string | undefined;
+      const seed = "deterministic-seed";
+
+      // First clone operation
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        for (const blockId of blocksQuery.current(ctx)) {
+          if (blockId !== entityId) {
+            clonePersistentId1 = Persistent.read(ctx, blockId).id;
+          }
+        }
+      });
+
+      await editor.tick();
+
+      // Remove clone and do it again with same seed
+      editor.command(UncloneEntities, {
+        entityIds: [entityId!],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        for (const blockId of blocksQuery.current(ctx)) {
+          if (blockId !== entityId) {
+            clonePersistentId2 = Persistent.read(ctx, blockId).id;
+          }
+        }
+      });
+
+      await editor.tick();
+      // Same seed should produce same persistent ID
+      expect(clonePersistentId1).toBe(clonePersistentId2);
+    });
+
+    it("should not clone non-persistent entities", async () => {
+      let entityId: number | undefined;
+      let blockCount = 0;
+      const seed = "test-seed";
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          persistent: false,
+        });
+      });
+
+      await editor.tick();
+
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(1); // Only original, no clone
+    });
+
+    it("should copy Text component to clone", async () => {
+      let entityId: number | undefined;
+      let cloneHasText = false;
+      let cloneTextContent: string | undefined;
+      const seed = "test-seed";
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          persistent: true,
+        });
+        addComponent(ctx, entityId, Text, { content: "Cloned Text" });
+      });
+
+      await editor.tick();
+
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        for (const blockId of blocksQuery.current(ctx)) {
+          if (blockId !== entityId) {
+            cloneHasText = hasComponent(ctx, blockId, Text);
+            if (cloneHasText) {
+              cloneTextContent = Text.read(ctx, blockId).content;
+            }
+          }
+        }
+      });
+
+      await editor.tick();
+      expect(cloneHasText).toBe(true);
+      expect(cloneTextContent).toBe("Cloned Text");
+    });
+  });
+
+  describe("UncloneEntities command", () => {
+    it("should remove cloned entity by seed", async () => {
+      let entityId: number | undefined;
+      let blockCount = 0;
+      const seed = "test-seed";
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      // Clone first
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(2); // Original + clone
+
+      // Now unclone
+      editor.command(UncloneEntities, {
+        entityIds: [entityId!],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(1); // Only original remains
+    });
+
+    it("should only remove clone with matching seed", async () => {
+      let entityId: number | undefined;
+      let blockCount = 0;
+      const cloneSeed = "clone-seed";
+      const wrongSeed = "wrong-seed";
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      // Clone with one seed
+      editor.command(CloneEntities, {
+        entityIds: [entityId!],
+        offset: [0, 0],
+        seed: cloneSeed,
+      });
+
+      await editor.tick();
+
+      // Try to unclone with different seed
+      editor.command(UncloneEntities, {
+        entityIds: [entityId!],
+        seed: wrongSeed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      // Clone should still exist (wrong seed used)
+      expect(blockCount).toBe(2);
+    });
+
+    it("should unclone multiple entities", async () => {
+      let entityId1: number | undefined;
+      let entityId2: number | undefined;
+      let blockCount = 0;
+      const seed = "test-seed";
+
+      editor.nextTick((ctx) => {
+        entityId1 = createBlock(ctx, {
+          position: [100, 100],
+          persistent: true,
+        });
+        entityId2 = createBlock(ctx, {
+          position: [200, 200],
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      // Clone both
+      editor.command(CloneEntities, {
+        entityIds: [entityId1!, entityId2!],
+        offset: [0, 0],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(4); // 2 originals + 2 clones
+
+      // Unclone both
+      editor.command(UncloneEntities, {
+        entityIds: [entityId1!, entityId2!],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(2); // Only originals remain
+    });
+
+    it("should do nothing if clone does not exist", async () => {
+      let entityId: number | undefined;
+      let blockCount = 0;
+      const seed = "test-seed";
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          persistent: true,
+        });
+      });
+
+      await editor.tick();
+
+      // Try to unclone without cloning first
+      editor.command(UncloneEntities, {
+        entityIds: [entityId!],
+        seed,
+      });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length;
+      });
+
+      await editor.tick();
+      expect(blockCount).toBe(1); // Original still exists
     });
   });
 });

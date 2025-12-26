@@ -12,6 +12,7 @@ import {
   Camera,
   type Context,
   type EditorResources,
+  type EntityId,
 } from "@infinitecanvas/editor";
 
 import { Aabb as AabbNs, Vec2 } from "@infinitecanvas/math";
@@ -31,9 +32,12 @@ import {
   Cut,
   Copy,
   Paste,
+  CloneEntities,
+  UncloneEntities,
 } from "../commands";
 import { RankBounds, Cursor, Clipboard } from "../singletons";
 import type { ClipboardEntityData } from "../singletons/Clipboard";
+import { generateUuidBySeed } from "../helpers/uuid";
 
 // Query for selected blocks
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
@@ -129,6 +133,14 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
 
   on(ctx, Paste, (ctx, payload) => {
     pasteBlocks(ctx, payload?.position);
+  });
+
+  on(ctx, CloneEntities, (ctx, { entityIds, offset, seed }) => {
+    cloneEntities(ctx, entityIds, offset, seed);
+  });
+
+  on(ctx, UncloneEntities, (ctx, { entityIds, seed }) => {
+    uncloneEntities(ctx, entityIds, seed);
   });
 });
 
@@ -323,5 +335,86 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
 
     // Select the pasted entity
     addComponent(ctx, entityId, Selected, { selectedBy: "" });
+  }
+}
+
+/**
+ * Clone entities with deterministic UUIDs.
+ * Creates clones at the original position (offset applied to originals during drag).
+ */
+function cloneEntities(
+  ctx: Context,
+  entityIds: EntityId[],
+  offset: Vec2,
+  seed: string
+): void {
+  const { editor } = getResources<EditorResources>(ctx);
+  const documentComponents = editor.getDocumentComponents();
+  const persistentComponentId = Persistent._getComponentId(ctx);
+  const blockComponentId = Block._getComponentId(ctx);
+
+  for (const entityId of entityIds) {
+    if (!hasComponent(ctx, entityId, Persistent)) continue;
+
+    const persistent = Persistent.read(ctx, entityId);
+    const cloneId = generateUuidBySeed(persistent.id, seed);
+
+    // Create new entity for the clone
+    const cloneEntityId = createEntity(ctx);
+
+    // Add Persistent with deterministic UUID
+    addComponent(ctx, cloneEntityId, Persistent, { id: cloneId });
+
+    // Copy all document components
+    for (const componentId of ctx.entityBuffer.getComponentIds(entityId)) {
+      if (componentId === persistentComponentId) continue;
+
+      const componentDef = documentComponents.get(componentId);
+      if (!componentDef) continue;
+
+      // Clone the data to avoid mutating original
+      const data = { ...(componentDef.snapshot(ctx, entityId) as Record<string, unknown>) };
+
+      // For Block component: apply offset and generate rank behind original
+      if (componentId === blockComponentId) {
+        const pos = Vec2.clone(data.position as Vec2);
+        Vec2.add(pos, offset);
+        data.position = pos;
+        data.rank = RankBounds.genPrev(ctx);
+      }
+
+      addComponent(ctx, cloneEntityId, componentDef, data as any);
+    }
+  }
+}
+
+/**
+ * Remove cloned entities by regenerating their deterministic UUIDs.
+ */
+function uncloneEntities(
+  ctx: Context,
+  entityIds: EntityId[],
+  seed: string
+): void {
+  // Collect expected clone IDs first
+  const expectedCloneIds = new Set<string>();
+  for (const entityId of entityIds) {
+    if (!hasComponent(ctx, entityId, Persistent)) continue;
+    const persistent = Persistent.read(ctx, entityId);
+    expectedCloneIds.add(generateUuidBySeed(persistent.id, seed));
+  }
+
+  // Find and collect entities to remove (avoid modifying during iteration)
+  const entitiesToRemove: EntityId[] = [];
+  for (const candidateId of persistentBlocksQuery.current(ctx)) {
+    const candidatePersistent = Persistent.read(ctx, candidateId);
+    if (expectedCloneIds.has(candidatePersistent.id)) {
+      entitiesToRemove.push(candidateId);
+    }
+  }
+
+  // Remove collected entities
+  for (const entityId of entitiesToRemove) {
+    removeEntity(ctx, entityId);
   }
 }

@@ -54,14 +54,7 @@ const transformHandleQuery = defineQuery((q) =>
 const selectionBoxQuery = defineQuery((q) => q.with(Block).with(SelectionBox));
 
 // Block colors for demo
-const BLOCK_COLORS = [
-  "#e94560",
-  "#0f3460",
-  "#16c79a",
-  "#f9a826",
-  "#6c5ce7",
-  "#fd79a8",
-];
+const BLOCK_COLORS = ["#e94560", "#16c79a", "#f9a826", "#6c5ce7", "#fd79a8"];
 
 /**
  * Renderer system - draws the grid and all blocks to the canvas.
