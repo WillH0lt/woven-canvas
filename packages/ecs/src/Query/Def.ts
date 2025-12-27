@@ -107,6 +107,50 @@ export class QueryDef {
   changed(ctx: Context, options?: QueryOptions): number[] {
     return this._getInstance(ctx).changed(ctx, options);
   }
+
+  /**
+   * Get entities that were added or changed since the last check.
+   *
+   * @param ctx - The context object
+   * @param options - Optional query options to control behavior
+   * @returns An array of entity IDs that were added or changed
+   */
+  addedOrChanged(ctx: Context, options?: QueryOptions): number[] {
+    return this._getInstance(ctx).addedOrChanged(ctx, options);
+  }
+
+  /**
+   * Get entities that were added or removed since the last check.
+   *
+   * @param ctx - The context object
+   * @param options - Optional query options to control behavior
+   * @returns An array of entity IDs that were added or removed
+   */
+  addedOrRemoved(ctx: Context, options?: QueryOptions): number[] {
+    return this._getInstance(ctx).addedOrRemoved(ctx, options);
+  }
+
+  /**
+   * Get entities that were removed or changed since the last check.
+   *
+   * @param ctx - The context object
+   * @param options - Optional query options to control behavior
+   * @returns An array of entity IDs that were removed or changed
+   */
+  removedOrChanged(ctx: Context, options?: QueryOptions): number[] {
+    return this._getInstance(ctx).removedOrChanged(ctx, options);
+  }
+
+  /**
+   * Get entities that were added, changed, or removed since the last check.
+   *
+   * @param ctx - The context object
+   * @param options - Optional query options to control behavior
+   * @returns An array of entity IDs that were added, changed, or removed
+   */
+  addedOrChangedOrRemoved(ctx: Context, options?: QueryOptions): number[] {
+    return this._getInstance(ctx).addedOrChangedOrRemoved(ctx, options);
+  }
 }
 
 /**
@@ -126,8 +170,8 @@ export class QueryDef {
  * // Define query at module scope
  * const movingEntities = defineQuery((q) => q.with(Position, Velocity));
  *
- * // Define query with default partitioning disabled
- * const singletonQuery = defineQuery((q) => q.with(Singleton), { partition: false });
+ * // Define query with singleton tracking
+ * const singletonQuery = defineQuery((q) => q.tracking(Singleton));
  *
  * function execute(ctx: Context) {
  *   // Query lazily initializes on first call to current()

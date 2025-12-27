@@ -24,7 +24,7 @@ const CameraSchema = {
  */
 class CameraDef extends EditorSingletonDef<typeof CameraSchema> {
   constructor() {
-    super("camera", CameraSchema, { sync: "document" });
+    super("camera", CameraSchema, { sync: "none" });
   }
 
   /**

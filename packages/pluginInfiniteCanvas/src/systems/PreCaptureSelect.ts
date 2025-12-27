@@ -34,7 +34,8 @@ import {
   type PointerInputWithIntersects,
 } from "../helpers";
 import { SelectionStateSingleton } from "../singletons";
-import { SelectionState } from "../types";
+import { SelectionState, CursorKind } from "../types";
+import { getCursorSvg } from "../cursors";
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4;
@@ -48,13 +49,6 @@ const selectedBlocksQuery = defineQuery((q) =>
  * Selection state machine context - derived from SelectionStateSingleton schema.
  */
 type SelectionContext = InferStateContext<typeof SelectionStateSingleton>;
-
-/**
- * Get a simple cursor SVG for dragging
- */
-function getDragCursorSvg(): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M13 6v15h-2V6H5l7-5 7 5z" fill="currentColor"/></svg>`;
-}
 
 /**
  * Selection state machine - created once at module level.
@@ -108,7 +102,7 @@ const selectionMachine = setup({
       dragStart: ({ event }) => event.worldPosition,
     }),
     setDragCursor: ({ event }) => {
-      SetCursor.spawn(event.ctx, { contextSvg: getDragCursorSvg() });
+      SetCursor.spawn(event.ctx, { contextSvg: getCursorSvg(CursorKind.Drag, 0) });
     },
     unsetDragCursor: ({ event }) => {
       SetCursor.spawn(event.ctx, { contextSvg: "" });

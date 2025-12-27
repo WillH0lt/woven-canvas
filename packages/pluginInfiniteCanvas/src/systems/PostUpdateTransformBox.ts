@@ -77,8 +77,6 @@ export const PostUpdateTransformBox = defineSystem((ctx: Context) => {
  * Remove transform box and all handles.
  */
 function removeTransformBox(ctx: Context): void {
-  console.log("Removing transform box");
-
   // Remove all handles
   for (const handleId of transformHandleQuery.current(ctx)) {
     removeEntity(ctx, handleId);
@@ -447,7 +445,10 @@ function addOrUpdateTransformHandles(
         rotateZ: def.rotateZ,
         fontSize: 16,
       });
-      addComponent(ctx, handleId, ScaleWithZoom, {});
+      addComponent(ctx, handleId, ScaleWithZoom, {
+        startPosition: [finalLeft, finalTop],
+        startSize: [def.width, def.height],
+      });
     } else {
       // Update existing handle
       const block = Block.write(ctx, handleId);
@@ -468,6 +469,13 @@ function addOrUpdateTransformHandles(
         dragStart.position = [finalLeft, finalTop];
         dragStart.size = [def.width, def.height];
         dragStart.rotateZ = def.rotateZ;
+      }
+
+      // Update ScaleWithZoom base values so handles scale correctly from new position
+      if (hasComponent(ctx, handleId, ScaleWithZoom)) {
+        const swz = ScaleWithZoom.write(ctx, handleId);
+        Vec2.copy(swz.startPosition, block.position);
+        Vec2.copy(swz.startSize, block.size);
       }
     }
 

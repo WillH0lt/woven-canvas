@@ -87,6 +87,14 @@ export namespace Vec2 {
     out[1] *= s;
   };
 
+  /**
+   * Component-wise multiplication of two vectors.
+   */
+  export const multiply = (out: Vec2Tuple, v: Vec2Tuple): void => {
+    out[0] *= v[0];
+    out[1] *= v[1];
+  };
+
   export const negate = (out: Vec2Tuple): void => {
     out[0] = -out[0];
     out[1] = -out[1];

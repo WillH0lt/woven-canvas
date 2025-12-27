@@ -26,6 +26,7 @@ import {
   RankBounds,
   Cursor,
   Clipboard,
+  ScaleWithZoomState,
 } from "./singletons";
 
 import {
@@ -35,7 +36,10 @@ import {
   UpdateSelect,
   CaptureTransformBox,
   CaptureKeyboard,
+  CaptureHoverCursor,
   PostUpdateTransformBox,
+  PreRenderScaleWithZoom,
+  PostRenderCursor,
   UpdateBlock,
   UpdateDragHandler,
 } from "./systems";
@@ -154,17 +158,22 @@ export function createInfiniteCanvasPlugin(
       RankBounds,
       Cursor,
       Clipboard,
+      ScaleWithZoomState,
     ],
 
     preInputSystems: [PreInputRankBounds],
 
     preCaptureSystems: [PreCaptureIntersect, PreCaptureSelect],
 
-    captureSystems: [CaptureTransformBox, CaptureKeyboard],
+    captureSystems: [CaptureTransformBox, CaptureKeyboard, CaptureHoverCursor],
 
     updateSystems: [UpdateBlock, UpdateSelect, UpdateDragHandler],
 
     postUpdateSystems: [PostUpdateTransformBox],
+
+    preRenderSystems: [PreRenderScaleWithZoom],
+
+    postRenderSystems: [PostRenderCursor],
   };
 }
 

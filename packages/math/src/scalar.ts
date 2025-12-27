@@ -39,4 +39,13 @@ export namespace Scalar {
     b: number,
     epsilon = 0.0001
   ): boolean => Math.abs(normalizeAngleSigned(a - b)) < epsilon;
+
+  /**
+   * Check if two numbers are approximately equal (within epsilon).
+   */
+  export const approxEqual = (
+    a: number,
+    b: number,
+    epsilon = 0.0001
+  ): boolean => Math.abs(a - b) < epsilon;
 }

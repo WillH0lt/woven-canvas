@@ -112,7 +112,7 @@ function onRotateHandleDrag(
   }
 
   const boxId = transformBoxes[0];
-  const boxBlock = Block.read(ctx, boxId);
+  const boxBlock = Block.write(ctx, boxId);
   const boxCenter = Block.getCenter(ctx, boxId);
 
   const handleBlock = Block.read(ctx, handleId);
@@ -124,15 +124,19 @@ function onRotateHandleDrag(
 
   // Calculate angle from center to handle
   const angleHandle = Vec2.angleTo(boxCenter, handleCenter);
+  const dragStart = DragStart.read(ctx, boxId);
 
   const handle = TransformHandle.read(ctx, handleId);
   const handleStartAngle =
     Vec2.angle([
       boxBlock.size[0] * handle.vectorX,
       boxBlock.size[1] * handle.vectorY,
-    ]) + boxBlock.rotateZ;
+    ]) + dragStart.rotateZ;
 
   const delta = angleHandle - handleStartAngle;
+
+  // Update transform box rotation so cursor system can detect the change
+  boxBlock.rotateZ = Scalar.normalizeAngle(dragStart.rotateZ + delta);
 
   // Update all selected blocks
   for (const blockId of selectedBlocksQuery.current(ctx)) {
@@ -258,29 +262,48 @@ function onScaleHandleDrag(
 
   // Calculate new box center by rotating the scaled vector back to world space
   // and adding half of it to the opposite corner
-  const vec: Vec2 = [vectorX * newWidth, vectorY * newHeight];
+  const vec: Vec2 = Vec2.create(vectorX * newWidth, vectorY * newHeight);
   Vec2.rotate(vec, boxRotateZ);
+  Vec2.scale(vec, 0.5);
 
-  const newBoxCenter: Vec2 = [
-    oppositeCenter[0] + vec[0] / 2,
-    oppositeCenter[1] + vec[1] / 2,
-  ];
+  const newBoxCenter: Vec2 = Vec2.clone(oppositeCenter);
+  Vec2.add(newBoxCenter, vec);
 
-  const newBoxLeft = newBoxCenter[0] - newWidth / 2;
-  const newBoxTop = newBoxCenter[1] - newHeight / 2;
+  const scaleFactor: Vec2 = [scaleX, scaleY];
 
   // Update all selected blocks
+  // We use centers for position calculations since they're rotation-independent
   for (const blockId of selectedBlocksQuery.current(ctx)) {
     const blockStart = DragStart.read(ctx, blockId);
     const block = Block.write(ctx, blockId);
 
-    // Scale position relative to box
-    block.position = [
-      (blockStart.position[0] - boxStart.position[0]) * scaleX + newBoxLeft,
-      (blockStart.position[1] - boxStart.position[1]) * scaleY + newBoxTop,
-    ];
+    // Calculate block's start center
+    const blockStartCenter: Vec2 = Vec2.clone(blockStart.position);
+    Vec2.add(blockStartCenter, [
+      blockStart.size[0] / 2,
+      blockStart.size[1] / 2,
+    ]);
+
+    // Calculate offset from box center to block center
+    const offsetFromBoxCenter: Vec2 = Vec2.clone(blockStartCenter);
+    Vec2.sub(offsetFromBoxCenter, boxStartCenter);
+
+    // Transform to local space, scale, transform back to world space
+    Vec2.rotate(offsetFromBoxCenter, -boxRotateZ);
+    Vec2.multiply(offsetFromBoxCenter, scaleFactor);
+    Vec2.rotate(offsetFromBoxCenter, boxRotateZ);
+
+    // Add scaled offset to new box center
+    const newBlockCenter: Vec2 = Vec2.clone(newBoxCenter);
+    Vec2.add(newBlockCenter, offsetFromBoxCenter);
 
     // Scale size
-    block.size = [blockStart.size[0] * scaleX, blockStart.size[1] * scaleY];
+    const newBlockSize: Vec2 = Vec2.clone(blockStart.size);
+    Vec2.multiply(newBlockSize, scaleFactor);
+
+    // Convert center back to top-left position
+    Vec2.copy(block.position, newBlockCenter);
+    Vec2.sub(block.position, [newBlockSize[0] / 2, newBlockSize[1] / 2]);
+    Vec2.copy(block.size, newBlockSize);
   }
 }

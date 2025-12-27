@@ -83,13 +83,13 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
   const hoveredSet = new Set(hoveredQuery.current(ctx));
 
   // === Clear canvas and draw background ===
-  ctx2d.fillStyle = "#1a1a2e";
+  ctx2d.fillStyle = "#ffffff";
   ctx2d.fillRect(0, 0, width, height);
 
   // === Draw grid lines ===
   const gridSize = 50;
 
-  ctx2d.strokeStyle = "#16213e";
+  ctx2d.strokeStyle = "#16213e60";
   ctx2d.lineWidth = 1;
 
   // Vertical lines
@@ -175,11 +175,11 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
     // Draw selection highlight (at full opacity)
     ctx2d.globalAlpha = 1;
     if (isSelected) {
-      ctx2d.strokeStyle = "#00d4ff";
+      ctx2d.strokeStyle = "#3f1773ff";
       ctx2d.lineWidth = 3;
       ctx2d.strokeRect(-screenW / 2, -screenH / 2, screenW, screenH);
     } else if (isHovered) {
-      ctx2d.strokeStyle = "#ffffff";
+      ctx2d.strokeStyle = "#69449bff";
       ctx2d.lineWidth = 2;
       ctx2d.strokeRect(-screenW / 2, -screenH / 2, screenW, screenH);
     }
@@ -208,8 +208,8 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
     ctx2d.rotate(block.rotateZ);
 
     // Draw just the edge (stroke only, no fill)
-    ctx2d.strokeStyle = "#00d4ff";
-    ctx2d.lineWidth = 1;
+    ctx2d.strokeStyle = "#3f1773ff";
+    ctx2d.lineWidth = 2;
     ctx2d.strokeRect(-screenW / 2, -screenH / 2, screenW, screenH);
 
     ctx2d.restore();
@@ -243,7 +243,7 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
 
     // Draw corner handle as a small filled square
     ctx2d.fillStyle = "#ffffff";
-    ctx2d.strokeStyle = "#00d4ff";
+    ctx2d.strokeStyle = "#3f1773ff";
     ctx2d.lineWidth = 1;
     ctx2d.fillRect(-screenW / 2, -screenH / 2, screenW, screenH);
     ctx2d.strokeRect(-screenW / 2, -screenH / 2, screenW, screenH);
@@ -264,7 +264,7 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
     ctx2d.fillRect(screenX, screenY, screenW, screenH);
 
     // Draw border
-    ctx2d.strokeStyle = "#00d4ff";
+    ctx2d.strokeStyle = "#3f1773ff";
     ctx2d.lineWidth = 1;
     ctx2d.strokeRect(screenX, screenY, screenW, screenH);
   }

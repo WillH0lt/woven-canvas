@@ -13,9 +13,9 @@ export const ScaleWithZoom = defineEditorComponent(
     /** Pivot point for scaling as [x, y] (0-1, default 0.5,0.5 = center) */
     anchor: field.tuple(field.float64(), 2).default([0.5, 0.5]),
     /** Initial position as [left, top] at zoom=1 */
-    position: field.tuple(field.float64(), 2).default([0, 0]),
+    startPosition: field.tuple(field.float64(), 2).default([0, 0]),
     /** Initial size as [width, height] at zoom=1 */
-    size: field.tuple(field.float64(), 2).default([0, 0]),
+    startSize: field.tuple(field.float64(), 2).default([0, 0]),
   },
   { sync: "none" }
 );

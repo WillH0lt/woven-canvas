@@ -97,6 +97,30 @@ export class QueryInstance {
     return result;
   }
 
+  /** Get entities added or changed since last check */
+  addedOrChanged(ctx: Context, options?: QueryOptions): number[] {
+    return [...this.added(ctx, options), ...this.changed(ctx, options)];
+  }
+
+  /** Get entities added or removed since last check */
+  addedOrRemoved(ctx: Context, options?: QueryOptions): number[] {
+    return [...this.added(ctx, options), ...this.removed(ctx, options)];
+  }
+
+  /** Get entities removed or changed since last check */
+  removedOrChanged(ctx: Context, options?: QueryOptions): number[] {
+    return [...this.removed(ctx, options), ...this.changed(ctx, options)];
+  }
+
+  /** Get entities added, removed, or changed since last check */
+  addedOrChangedOrRemoved(ctx: Context, options?: QueryOptions): number[] {
+    return [
+      ...this.added(ctx, options),
+      ...this.removed(ctx, options),
+      ...this.changed(ctx, options),
+    ];
+  }
+
   private partitionEntities(
     entities: Uint32Array | number[],
     threadIndex: number,
