@@ -9,6 +9,15 @@
       "path": "packages/ecs"
     },
     {
+      "path": "packages/editor"
+    },
+    {
+      "path": "packages/plugin-canvas-controls"
+    },
+    {
+      "path": "packages/plugin-infinite-canvas"
+    },
+    {
       "path": "packages/extension-arrows"
     },
     {
@@ -34,6 +43,9 @@
     },
     {
       "path": "examples/asciinotes-com"
+    },
+    {
+      "path": "examples/asciinotes-com-new"
     }
   ],
   "compilerOptions": {

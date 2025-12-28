@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme {
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-primary: #6a58f2;
+  --color-primary-light: #8a76f4;
+  --color-error: #ff4d4f;
+  --color-gray-100: #f8f9f9;
+  --color-gray-200: #e3e5e8;
+  --color-gray-300: #c7ccd1;
+  --color-gray-400: #9099a4;
+  --color-gray-500: #4f5660;
+  --color-gray-600: #2e3338;
+  --color-gray-700: #060607;
+
+  --default-transition-duration: 0.25s;
+  --default-transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@font-face {
+  font-family: "CascadiaMono";
+  src: url(/fonts/CascadiaMono/CascadiaMono.ttf) format("truetype");
+}
+
+:root {
+  font-family: "CascadiaMono", monospace;
+}
+
+::selection {
+  background: var(--color-primary-light);
+}
+
+.link {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}

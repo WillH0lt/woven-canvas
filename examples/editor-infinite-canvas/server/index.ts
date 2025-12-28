@@ -25,8 +25,6 @@ const server = new SimpleServer({
     roomId: string,
     _crdt: CrdtType
   ): Promise<Uint8Array | null> => {
-    return null;
-
     const filePath = getRoomFilePath(roomId);
 
     if (!existsSync(filePath)) {
@@ -53,7 +51,6 @@ const server = new SimpleServer({
     _crdt: CrdtType,
     data: Uint8Array
   ): Promise<void> => {
-    return;
     const filePath = getRoomFilePath(roomId);
 
     try {

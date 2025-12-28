@@ -12,17 +12,14 @@
   "__exports-comment": "// Define output files for Node.js export maps (https://nodejs.org/api/packages.html#exports)",
   "exports": {
     ".": {
+      "@infinitecanvas/source": "./src/index.ts",
       "import": {
-        "@infinitecanvas/source": "./src/index.ts",
-        "types": "./build/index.d.mts",
-        "import": "./build/index.mjs",
-        "default": "./build/index.mjs"
+        "types": "./build/index.d.ts",
+        "default": "./build/index.js"
       },
       "require": {
-        "@infinitecanvas/source": "./src/index.ts",
-        "types": "./build/index.d.ts",
-        "import": "./build/index.js",
-        "default": "./build/index.js"
+        "types": "./build/index.d.cts",
+        "default": "./build/index.cjs"
       }
     },
     "./package.json": "./package.json"

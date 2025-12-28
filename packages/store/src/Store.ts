@@ -7,6 +7,7 @@ import {
 } from "loro-crdt";
 import { LoroWebsocketClient } from "loro-websocket";
 import { LoroAdaptor } from "loro-adaptors/loro";
+import { throttle } from "lodash-es";
 import {
   createEntity,
   addComponent,
@@ -132,20 +133,36 @@ export class Store implements StoreAdapter {
     });
 
     // Initialize local persistence and load document
+    const t0 = performance.now();
     if (this.localDB) {
       await this.localDB.initialize();
       await this.localDB.loadIntoDoc(this.doc);
     }
 
+    const t1 = performance.now();
+    console.log(`[Store] Loaded document in ${(t1 - t0).toFixed(2)} ms`);
+
     // Connect to WebSocket if configured
     if (this.websocketUrl) {
       this.adaptor = new LoroAdaptor(this.doc);
       this.client = new LoroWebsocketClient({ url: this.websocketUrl });
-      await this.client.waitConnected();
-      await this.client.join({
-        roomId: this.roomId,
-        crdtAdaptor: this.adaptor,
+
+      this.client.waitConnected().then(() => {
+        if (!this.client || !this.adaptor) return;
+        return this.client.join({
+          roomId: this.roomId,
+          crdtAdaptor: this.adaptor,
+        });
       });
+      // const t2 = performance.now();
+      // console.log(
+      //   `[Store] Connected to WebSocket in ${(t2 - t1).toFixed(2)} ms`
+      // );
+
+      // const t3 = performance.now();
+      // console.log(
+      //   `[Store] Joined room "${this.roomId}" in ${(t3 - t2).toFixed(2)} ms`
+      // );
     }
 
     this.initialized = true;
@@ -244,10 +261,11 @@ export class Store implements StoreAdapter {
 
   /**
    * Commit all pending changes to the Loro document.
+   * Throttled to run at most once every 250ms.
    */
-  commit(): void {
+  commit: () => void = throttle(() => {
     this.doc.commit({ origin: "editor" });
-  }
+  }, 250);
 
   /**
    * Flush pending external changes (undo/redo, network sync) to the ECS world.

@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../shared/prisma"
+
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ShareMode {
+  None
+  ReadOnly
+  ReadWrite
+}
+
+model User {
+  uid           String     @id
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  acceptedTerms Boolean    @default(false)
+  name          String?
+  avatarUrl     String?
+  pages         Page[]
+  userPages     UserPage[]
+
+  @@map(name: "users")
+}
+
+model Page {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  uid       String
+  user      User       @relation(fields: [uid], references: [uid], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  name      String
+  icon      String
+  userPages UserPage[]
+  shareMode ShareMode  @default(None)
+
+  @@map(name: "pages")
+}
+
+model UserPage {
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pageId   String  @db.Uuid
+  page     Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  uid      String
+  user     User    @relation(fields: [uid], references: [uid], onDelete: Cascade)
+  rank     String
+  isPinned Boolean @default(false)
+  isActive Boolean @default(false)
+
+  @@unique([rank, uid])
+  @@map(name: "user_pages")
+}
+
+// TODO once migrations settle down
+
+// make sure pinRank + uid is unique when pinRank is not null
+// CREATE UNIQUE INDEX "user_pages_pinrank_uid_unique" 
+// ON "user_pages" ("pinRank", "uid") 
+// WHERE "pinRank" IS NOT NULL;
+
+// add 'C' Collation to rank and pinRank fields for proper lexorank sorting
+// ALTER TABLE "user_pages" ALTER COLUMN "rank" TYPE VARCHAR COLLATE "C";
+// ALTER TABLE "user_pages" ALTER COLUMN "pinRank" TYPE VARCHAR COLLATE "C";

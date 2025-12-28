@@ -12,17 +12,14 @@
   "__exports-comment": "// Define output files for Node.js export maps (https://nodejs.org/api/packages.html#exports)",
   "exports": {
     ".": {
+      "@infinitecanvas/source": "./src/index.ts",
       "import": {
-        "@infinitecanvas/source": "./src/index.ts",
-        "types": "./build/index.d.mts",
-        "import": "./build/index.mjs",
-        "default": "./build/index.mjs"
+        "types": "./build/index.d.ts",
+        "default": "./build/index.js"
       },
       "require": {
-        "@infinitecanvas/source": "./src/index.ts",
-        "types": "./build/index.d.ts",
-        "import": "./build/index.js",
-        "default": "./build/index.js"
+        "types": "./build/index.d.cts",
+        "default": "./build/index.cjs"
       }
     },
     "./package.json": "./package.json"
@@ -38,15 +35,17 @@
   "dependencies": {
     "@infinitecanvas/editor": "workspace:*",
     "idb": "^8.0.3",
+    "lodash-es": "^4.17.22",
     "lodash.throttle": "^4.1.1",
     "loro-adaptors": "^0.5.0",
     "loro-crdt": "^1.10.3",
     "loro-websocket": "^0.5.0"
   },
   "devDependencies": {
+    "@types/bun": "latest",
+    "@types/lodash-es": "^4.17.12",
     "@types/lodash.throttle": "^4.1.9",
-    "vitest": "^4.0.7",
-    "@types/bun": "latest"
+    "vitest": "^4.0.7"
   },
   "type": "module",
   "peerDependencies": {
