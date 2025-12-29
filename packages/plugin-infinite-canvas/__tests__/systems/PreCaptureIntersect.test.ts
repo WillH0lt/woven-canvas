@@ -7,7 +7,7 @@ import {
   type EditorPlugin,
   Camera,
   Controls,
-  Persistent,
+  Synced,
 } from "@infinitecanvas/editor";
 import { Block, Aabb, Hovered } from "../../src/components";
 import { Intersect, RankBounds } from "../../src/singletons";
@@ -175,7 +175,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
       });
 
       await editor.tick();
@@ -206,7 +206,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
       });
 
       await editor.tick();
@@ -237,7 +237,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a", // lower rank = behind
         });
-        addComponent(ctx, backId, Persistent, {});
+        addComponent(ctx, backId, Synced, {});
 
         // Create front block (higher z-order)
         frontId = createEntity(ctx);
@@ -246,7 +246,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "b", // higher rank = in front
         });
-        addComponent(ctx, frontId, Persistent, {});
+        addComponent(ctx, frontId, Synced, {});
       });
 
       await editor.tick();
@@ -279,7 +279,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
       });
 
       await editor.tick();
@@ -322,7 +322,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
 
         // Enable select tool
         const controls = Controls.write(ctx);
@@ -355,7 +355,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
 
         // Set a different tool
         const controls = Controls.write(ctx);
@@ -391,7 +391,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, block1Id, Persistent, {});
+        addComponent(ctx, block1Id, Synced, {});
 
         block2Id = createEntity(ctx);
         addComponent(ctx, block2Id, Block, {
@@ -399,7 +399,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "b",
         });
-        addComponent(ctx, block2Id, Persistent, {});
+        addComponent(ctx, block2Id, Synced, {});
 
         const controls = Controls.write(ctx);
         controls.leftMouseTool = "select";
@@ -439,7 +439,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
 
         const controls = Controls.write(ctx);
         controls.leftMouseTool = "select";
@@ -486,7 +486,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
 
         // Pan camera to (450, 450) so block is visible at screen (50, 50)
         const camera = Camera.write(ctx);
@@ -522,7 +522,7 @@ describe("preCaptureIntersect", () => {
           size: [100, 100],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
 
         // Zoom to 2x - block appears twice as large on screen
         const camera = Camera.write(ctx);

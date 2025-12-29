@@ -42,7 +42,7 @@ export interface EditorResources {
  */
 export type SyncBehavior =
   | "document" // Persisted to database, synced to all clients
-  | "presence" // Synced via websocket for presence (cursors, selections)
+  | "ephemeral" // Synced via websocket for ephemeral (cursors, selections)
   | "none"; // Not synced or stored anywhere
 
 /**

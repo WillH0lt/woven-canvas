@@ -1,6 +1,6 @@
 import { type IDBPDatabase, openDB } from "idb";
 import { type LoroDoc, VersionVector } from "loro-crdt";
-import throttle from "lodash.throttle";
+import { throttle } from "lodash-es";
 
 const OBJECT_STORE_NAME = "document";
 const SNAPSHOT_KEY = "snapshot";
@@ -44,7 +44,7 @@ export class LocalDB {
     }
   }
 
-  public saveDoc: (doc: LoroDoc) => void = throttle(
+  public saveDoc: ReturnType<typeof throttle> = throttle(
     async (doc: LoroDoc): Promise<void> => {
       if (!this.db) {
         throw new Error(
@@ -124,7 +124,8 @@ export class LocalDB {
     this.lastVersion = doc.version();
   }
 
-  public close(): void {
+  public dispose(): void {
+    this.saveDoc.cancel();
     if (this.db) {
       this.db.close();
       this.db = null;

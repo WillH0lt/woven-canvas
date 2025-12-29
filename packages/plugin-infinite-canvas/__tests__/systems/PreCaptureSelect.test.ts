@@ -23,7 +23,11 @@ import {
   SelectionStateSingleton,
 } from "../../src/singletons";
 import { PreCaptureSelect } from "../../src/systems";
-import { DeselectAll, CloneEntities, UncloneEntities } from "../../src/commands";
+import {
+  DeselectAll,
+  CloneEntities,
+  UncloneEntities,
+} from "../../src/commands";
 import { SelectionState } from "../../src/types";
 import {
   createPointerSimulator,
@@ -38,7 +42,15 @@ const pointer = createPointerSimulator();
 // Factory function to create test plugin
 const testPlugin: EditorPlugin = {
   name: "test",
-  components: [Block, Aabb, Selected, Locked, Hovered, TransformBox, TransformHandle],
+  components: [
+    Block,
+    Aabb,
+    Selected,
+    Locked,
+    Hovered,
+    TransformBox,
+    TransformHandle,
+  ],
   singletons: [Intersect, RankBounds, SelectionStateSingleton],
   preCaptureSystems: [PreCaptureSelect],
   setup(ctx) {
@@ -171,7 +183,7 @@ describe("PreCaptureSelect", () => {
       let state: string | undefined;
       let entityId: number | undefined;
 
-      // Create a persistent block and set up intersect
+      // Create a synced block and set up intersect
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
         Intersect.setAll(ctx, [entityId]);
@@ -197,8 +209,8 @@ describe("PreCaptureSelect", () => {
     });
   });
 
-  describe("non-persistent blocks", () => {
-    it("should not select non-persistent blocks on click", async () => {
+  describe("non-synced blocks", () => {
+    it("should not select non-synced blocks on click", async () => {
       let entityId: number | undefined;
       let isSelected = false;
 
@@ -209,7 +221,7 @@ describe("PreCaptureSelect", () => {
           size: [100, 100],
           rank: "a",
         });
-        // Note: No Persistent component added
+        // Note: No Synced component added
       });
 
       await editor.tick();
@@ -227,7 +239,7 @@ describe("PreCaptureSelect", () => {
       });
 
       await editor.tick();
-      // Non-persistent blocks should not be selectable
+      // Non-synced blocks should not be selectable
       expect(isSelected).toBe(false);
     });
   });
@@ -277,7 +289,7 @@ describe("PreCaptureSelect", () => {
       let entityId: number | undefined;
       let cloneCommandSpawned = false;
 
-      // Create a persistent block
+      // Create a synced block
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
         Intersect.setAll(ctx, [entityId]);
@@ -319,7 +331,7 @@ describe("PreCaptureSelect", () => {
       let entityId: number | undefined;
       let uncloneCommandSpawned = false;
 
-      // Create a persistent block
+      // Create a synced block
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
         Intersect.setAll(ctx, [entityId]);
@@ -369,7 +381,7 @@ describe("PreCaptureSelect", () => {
       let entityId: number | undefined;
       let cloneCommandSpawned = false;
 
-      // Create a persistent block
+      // Create a synced block
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
         Intersect.setAll(ctx, [entityId]);
@@ -411,7 +423,7 @@ describe("PreCaptureSelect", () => {
       let entityId: number | undefined;
       let cloneCommandSpawned = false;
 
-      // Create a persistent block
+      // Create a synced block
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
         Intersect.setAll(ctx, [entityId]);
@@ -446,7 +458,7 @@ describe("PreCaptureSelect", () => {
       let cloneSpawned = false;
       let uncloneSpawned = false;
 
-      // Create a persistent block
+      // Create a synced block
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, { position: [0, 0], size: [100, 100] });
         Intersect.setAll(ctx, [entityId]);
@@ -498,11 +510,11 @@ describe("PreCaptureSelect", () => {
       expect(uncloneSpawned).toBe(true);
     });
 
-    it("should not spawn CloneEntities for non-persistent blocks", async () => {
+    it("should not spawn CloneEntities for non-synced blocks", async () => {
       let entityId: number | undefined;
       let cloneCommandSpawned = false;
 
-      // Create a non-persistent block
+      // Create a non-synced block
       editor.nextTick((ctx) => {
         entityId = createEntity(ctx);
         addComponent(ctx, entityId, Block, {
@@ -510,7 +522,7 @@ describe("PreCaptureSelect", () => {
           size: [100, 100],
           rank: "a",
         });
-        // Note: No Persistent component
+        // Note: No Synced component
         Intersect.setAll(ctx, [entityId]);
       });
       await editor.tick();
@@ -543,7 +555,7 @@ describe("PreCaptureSelect", () => {
       });
 
       await editor.tick();
-      // Non-persistent blocks should not trigger cloning
+      // Non-synced blocks should not trigger cloning
       expect(cloneCommandSpawned).toBe(false);
     });
   });

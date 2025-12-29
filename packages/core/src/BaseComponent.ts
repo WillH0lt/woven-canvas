@@ -37,8 +37,8 @@ export abstract class BaseComponent {
       } else if (type === "BackrefsType" || type === "RefType") {
         // no-op
       } else {
-        // @ts-ignore
         data[key] =
+          // @ts-ignore
           this[key] ?? schema[key].default ?? schema[key].type.default;
       }
     }

@@ -6,7 +6,7 @@ import {
   hasComponent,
   type EditorPlugin,
   defineQuery,
-  Persistent,
+  Synced,
 } from "@infinitecanvas/editor";
 import {
   Block,
@@ -138,7 +138,7 @@ describe("UpdateSelectSystem", () => {
       let entityId: number | undefined;
       let isSelected = false;
 
-      // Create a persistent block - AABB will be computed by preCaptureIntersect
+      // Create a synced block - AABB will be computed by preCaptureIntersect
       editor.nextTick((ctx) => {
         entityId = createEntity(ctx);
         addComponent(ctx, entityId, Block, {
@@ -146,7 +146,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
       });
 
       // Let preCaptureIntersect compute AABB
@@ -176,7 +176,7 @@ describe("UpdateSelectSystem", () => {
       let entityId: number | undefined;
       let isSelected = false;
 
-      // Create a persistent block
+      // Create a synced block
       editor.nextTick((ctx) => {
         entityId = createEntity(ctx);
         addComponent(ctx, entityId, Block, {
@@ -184,7 +184,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
       });
 
       // Let preCaptureIntersect compute AABB
@@ -216,7 +216,7 @@ describe("UpdateSelectSystem", () => {
       let isSelected1 = false;
       let isSelected2 = false;
 
-      // Create two persistent blocks, both pre-selected
+      // Create two synced blocks, both pre-selected
       editor.nextTick((ctx) => {
         entityId1 = createEntity(ctx);
         addComponent(ctx, entityId1, Block, {
@@ -224,7 +224,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "a",
         });
-        addComponent(ctx, entityId1, Persistent, {});
+        addComponent(ctx, entityId1, Synced, {});
         addComponent(ctx, entityId1, Selected, { selectedBy: "" });
 
         entityId2 = createEntity(ctx);
@@ -233,7 +233,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "b",
         });
-        addComponent(ctx, entityId2, Persistent, {});
+        addComponent(ctx, entityId2, Synced, {});
         addComponent(ctx, entityId2, Selected, { selectedBy: "" });
       });
 
@@ -268,7 +268,7 @@ describe("UpdateSelectSystem", () => {
       let isSelected1 = false;
       let isSelected2 = false;
 
-      // Create two persistent blocks, both pre-selected
+      // Create two synced blocks, both pre-selected
       editor.nextTick((ctx) => {
         entityId1 = createEntity(ctx);
         addComponent(ctx, entityId1, Block, {
@@ -276,7 +276,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "a",
         });
-        addComponent(ctx, entityId1, Persistent, {});
+        addComponent(ctx, entityId1, Synced, {});
         addComponent(ctx, entityId1, Selected, { selectedBy: "" });
 
         entityId2 = createEntity(ctx);
@@ -285,7 +285,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "b",
         });
-        addComponent(ctx, entityId2, Persistent, {});
+        addComponent(ctx, entityId2, Synced, {});
         addComponent(ctx, entityId2, Selected, { selectedBy: "" });
       });
 
@@ -383,7 +383,7 @@ describe("UpdateSelectSystem", () => {
       let isSelected2 = false;
       let isSelected3 = false;
 
-      // Create three persistent blocks
+      // Create three synced blocks
       editor.nextTick((ctx) => {
         entityId1 = createEntity(ctx);
         addComponent(ctx, entityId1, Block, {
@@ -391,7 +391,7 @@ describe("UpdateSelectSystem", () => {
           size: [30, 30],
           rank: "a",
         });
-        addComponent(ctx, entityId1, Persistent, {});
+        addComponent(ctx, entityId1, Synced, {});
 
         entityId2 = createEntity(ctx);
         addComponent(ctx, entityId2, Block, {
@@ -399,7 +399,7 @@ describe("UpdateSelectSystem", () => {
           size: [30, 30],
           rank: "b",
         });
-        addComponent(ctx, entityId2, Persistent, {});
+        addComponent(ctx, entityId2, Synced, {});
 
         entityId3 = createEntity(ctx);
         addComponent(ctx, entityId3, Block, {
@@ -407,7 +407,7 @@ describe("UpdateSelectSystem", () => {
           size: [30, 30],
           rank: "c",
         });
-        addComponent(ctx, entityId3, Persistent, {});
+        addComponent(ctx, entityId3, Synced, {});
       });
 
       // Let preCaptureIntersect compute AABBs
@@ -438,12 +438,12 @@ describe("UpdateSelectSystem", () => {
     });
   });
 
-  describe("non-persistent blocks", () => {
-    it("should not select blocks without Persistent component", async () => {
+  describe("non-synced blocks", () => {
+    it("should not select blocks without Synced component", async () => {
       let entityId: number | undefined;
       let isSelected = false;
 
-      // Create a block WITHOUT Persistent component
+      // Create a block WITHOUT Synced component
       editor.nextTick((ctx) => {
         entityId = createEntity(ctx);
         addComponent(ctx, entityId, Block, {
@@ -451,7 +451,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "a",
         });
-        // Note: No Persistent component - AABB will still be computed
+        // Note: No Synced component - AABB will still be computed
       });
 
       await editor.tick();
@@ -476,11 +476,11 @@ describe("UpdateSelectSystem", () => {
       expect(isSelected).toBe(false);
     });
 
-    it("should select persistent blocks with auto-computed Aabb", async () => {
+    it("should select synced blocks with auto-computed Aabb", async () => {
       let entityId: number | undefined;
       let isSelected = false;
 
-      // Create a persistent block - preCaptureIntersect will auto-add AABB
+      // Create a synced block - preCaptureIntersect will auto-add AABB
       editor.nextTick((ctx) => {
         entityId = createEntity(ctx);
         addComponent(ctx, entityId, Block, {
@@ -488,7 +488,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
       });
 
       await editor.tick();
@@ -510,7 +510,7 @@ describe("UpdateSelectSystem", () => {
       });
 
       await editor.tick();
-      // Since preCaptureIntersect adds AABB and the block is persistent,
+      // Since preCaptureIntersect adds AABB and the block is synced,
       // it should be selected
       expect(isSelected).toBe(true);
     });
@@ -521,7 +521,7 @@ describe("UpdateSelectSystem", () => {
       let entityId: number | undefined;
       let selectedBy: string | undefined;
 
-      // Create a persistent block that's already selected
+      // Create a synced block that's already selected
       editor.nextTick((ctx) => {
         entityId = createEntity(ctx);
         addComponent(ctx, entityId, Block, {
@@ -529,7 +529,7 @@ describe("UpdateSelectSystem", () => {
           size: [50, 50],
           rank: "a",
         });
-        addComponent(ctx, entityId, Persistent, {});
+        addComponent(ctx, entityId, Synced, {});
         addComponent(ctx, entityId, Selected, { selectedBy: "original" });
       });
 

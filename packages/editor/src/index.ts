@@ -78,7 +78,7 @@ export {
   Pointer,
   PointerButton,
   PointerType,
-  Persistent,
+  Synced,
 } from "./components";
 
 // Events

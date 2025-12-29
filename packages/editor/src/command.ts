@@ -17,7 +17,7 @@ import type { EditorResources } from "./types";
  * Commands are ephemeral entities that exist for exactly one frame.
  */
 export const CommandMarker = defineComponent({
-  name: field.string(),
+  name: field.string().max(128),
 });
 
 /**

@@ -39,6 +39,9 @@
       "path": "packages/extension-sticky-notes"
     },
     {
+      "path": "packages/store"
+    },
+    {
       "path": "examples/canvas"
     },
     {

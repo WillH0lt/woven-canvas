@@ -17,7 +17,7 @@ import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
-import { Persistent } from "./components";
+import { Synced } from "./components";
 
 /**
  * Editor configuration options
@@ -118,8 +118,10 @@ export class Editor {
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
 
-  private documentComponents: Map<number, AnyEditorComponentDef> = new Map();
-  private documentSingletons: Map<number, AnyEditorSingletonDef> = new Map();
+  /** All registered components keyed by componentId */
+  readonly components: Map<number, AnyEditorComponentDef> = new Map();
+  /** All registered singletons keyed by componentId */
+  readonly singletons: Map<number, AnyEditorSingletonDef> = new Map();
   private storeEventIndex: number = 0;
 
   constructor(domElement: HTMLElement, options?: EditorOptions) {
@@ -222,28 +224,18 @@ export class Editor {
     // Store adapter
     this.store = store;
 
-    // Build maps of synced components/singletons (needed for store sync and clipboard)
+    // Build maps of all components/singletons
     for (const plugin of sortedPlugins) {
       if (plugin.components) {
         for (const comp of plugin.components) {
-          if (comp.__editor.sync === "document") {
-            const componentId = comp._getComponentId(this.ctx);
-            this.documentComponents.set(
-              componentId,
-              comp as AnyEditorComponentDef
-            );
-          }
+          const componentId = comp._getComponentId(this.ctx);
+          this.components.set(componentId, comp);
         }
       }
       if (plugin.singletons) {
         for (const singleton of plugin.singletons) {
-          if (singleton.__editor.sync === "document") {
-            const componentId = singleton._getComponentId(this.ctx);
-            this.documentSingletons.set(
-              componentId,
-              singleton as AnyEditorSingletonDef
-            );
-          }
+          const componentId = singleton._getComponentId(this.ctx);
+          this.singletons.set(componentId, singleton);
         }
       }
     }
@@ -262,12 +254,15 @@ export class Editor {
    * Call this after construction to run async setup.
    */
   async initialize(): Promise<void> {
-    // Initialize store with component/singleton defs for bidirectional sync
+    // Initialize store with synced component/singleton defs
     if (this.store) {
-      await this.store.initialize(
-        Array.from(this.documentComponents.values()),
-        Array.from(this.documentSingletons.values())
+      const syncedComponents = [...this.components.values()].filter(
+        (def) => def.__editor.sync !== "none"
       );
+      const syncedSingletons = [...this.singletons.values()].filter(
+        (def) => def.__editor.sync !== "none"
+      );
+      await this.store.initialize(syncedComponents, syncedSingletons);
     }
 
     // Run plugin setup
@@ -315,8 +310,8 @@ export class Editor {
   }
 
   /**
-   * Read events from the event buffer and sync document-synced
-   * components/singletons to the store.
+   * Read events from the event buffer and sync components/singletons to the store.
+   * The store handles routing to document or ephemeral storage based on sync type.
    */
   private syncToStore(eventIndex: number): void {
     if (!this.store) return;
@@ -329,19 +324,32 @@ export class Editor {
     for (const event of events) {
       const { entityId, eventType, componentId } = event;
 
-      // Skip entity events if the entity doesn't have the Persistent component
+      // Check if this is a synced component or singleton
+      const componentDef = this.components.get(componentId);
+      const singletonDef = this.singletons.get(componentId);
+
+      // Skip if not a synced component/singleton (sync === "none")
+      const isSyncedComponent =
+        componentDef && componentDef.__editor.sync !== "none";
+      const isSyncedSingleton =
+        singletonDef && singletonDef.__editor.sync !== "none";
+      if (!isSyncedComponent && !isSyncedSingleton) {
+        continue;
+      }
+
+      // Skip entity events if the entity doesn't have the Synced component
+      // (required for stable ID lookup)
       if (
         entityId !== SINGLETON_ENTITY_ID &&
-        !hasComponent(ctx, entityId, Persistent, false)
+        !hasComponent(ctx, entityId, Synced, false)
       ) {
         continue;
       }
 
       switch (eventType) {
         case EventType.COMPONENT_ADDED: {
-          const componentDef = this.documentComponents.get(componentId);
-          if (componentDef) {
-            const id = Persistent.read(ctx, entityId).id;
+          if (isSyncedComponent) {
+            const id = Synced.read(ctx, entityId).id;
             const data = componentDef.snapshot(ctx, entityId);
             this.store.onComponentAdded(componentDef, id, entityId, data);
           }
@@ -349,9 +357,8 @@ export class Editor {
         }
 
         case EventType.COMPONENT_REMOVED: {
-          const componentDef = this.documentComponents.get(componentId);
-          if (componentDef) {
-            const id = Persistent.read(ctx, entityId).id;
+          if (isSyncedComponent) {
+            const id = Synced.read(ctx, entityId).id;
             this.store.onComponentRemoved(componentDef, id);
           }
           break;
@@ -360,32 +367,24 @@ export class Editor {
         case EventType.REMOVED: {
           // Entity removed - notify store to remove all data for this entity
           // Component data is still preserved after markDead, so we can read it
-          const id = Persistent.read(ctx, entityId).id;
-          for (const componentId of ctx.entityBuffer.getComponentIds(
-            entityId
-          )) {
-            const componentDef = this.documentComponents.get(componentId);
-            if (componentDef) {
-              this.store.onComponentRemoved(componentDef, id);
+          const id = Synced.read(ctx, entityId).id;
+          for (const cId of ctx.entityBuffer.getComponentIds(entityId)) {
+            const compDef = this.components.get(cId);
+            if (compDef && compDef.__editor.sync !== "none") {
+              this.store.onComponentRemoved(compDef, id);
             }
           }
           break;
         }
 
         case EventType.CHANGED: {
-          if (entityId === SINGLETON_ENTITY_ID) {
-            const singletonDef = this.documentSingletons.get(componentId);
-            if (singletonDef) {
-              const data = singletonDef.snapshot(ctx);
-              this.store.onSingletonUpdated(singletonDef, data);
-            }
-          } else {
-            const componentDef = this.documentComponents.get(componentId);
-            if (componentDef) {
-              const id = Persistent.read(ctx, entityId).id;
-              const data = componentDef.snapshot(ctx, entityId);
-              this.store.onComponentUpdated(componentDef, id, data);
-            }
+          if (entityId === SINGLETON_ENTITY_ID && isSyncedSingleton) {
+            const data = singletonDef.snapshot(ctx);
+            this.store.onSingletonUpdated(singletonDef, data);
+          } else if (isSyncedComponent) {
+            const id = Synced.read(ctx, entityId).id;
+            const data = componentDef.snapshot(ctx, entityId);
+            this.store.onComponentUpdated(componentDef, id, data);
           }
           break;
         }
@@ -483,25 +482,15 @@ export class Editor {
   }
 
   /**
-   * Get the map of document-synced component definitions.
-   * Used for serializing/deserializing entities (e.g., clipboard).
-   *
-   * @returns Map of component ID to component definition
-   */
-  getDocumentComponents(): Map<number, AnyEditorComponentDef> {
-    return this.documentComponents;
-  }
-
-  /**
    * Clean up the editor.
    * Call this when done to release resources.
    */
-  async dispose(): Promise<void> {
+  dispose(): void {
     // Run plugin teardown in reverse order
     const plugins = Array.from(this.plugins.values()).reverse();
     for (const plugin of plugins) {
       if (plugin.teardown) {
-        await plugin.teardown(this.ctx);
+        plugin.teardown(this.ctx);
       }
     }
 

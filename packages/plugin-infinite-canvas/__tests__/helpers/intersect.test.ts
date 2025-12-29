@@ -1,8 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
-import {
-  Editor,
-  type EditorPlugin,
-} from "@infinitecanvas/editor";
+import { Editor, type EditorPlugin } from "@infinitecanvas/editor";
 import { Block, Aabb } from "../../src/components";
 import { intersectAabb } from "../../src/helpers/intersect";
 import { createMockElement, createBlock } from "../testUtils";
@@ -39,7 +36,7 @@ describe("intersectAabb", () => {
         blockId = createBlock(ctx, {
           position: [50, 50],
           size: [100, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -63,7 +60,7 @@ describe("intersectAabb", () => {
         blockId = createBlock(ctx, {
           position: [100, 100],
           size: [100, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -87,7 +84,7 @@ describe("intersectAabb", () => {
         blockId = createBlock(ctx, {
           position: [0, 0],
           size: [100, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -114,7 +111,7 @@ describe("intersectAabb", () => {
         blockId = createBlock(ctx, {
           position: [0, 0],
           size: [100, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -140,7 +137,7 @@ describe("intersectAabb", () => {
         blockId = createBlock(ctx, {
           position: [0, 0],
           size: [100, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -166,7 +163,7 @@ describe("intersectAabb", () => {
         blockId = createBlock(ctx, {
           position: [100, 100],
           size: [100, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -191,7 +188,7 @@ describe("intersectAabb", () => {
         blockId = createBlock(ctx, {
           position: [0, 0],
           size: [100, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -220,7 +217,7 @@ describe("intersectAabb", () => {
           position: [0, 0],
           size: [100, 100],
           rotateZ: Math.PI / 4, // 45 degrees
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -247,7 +244,7 @@ describe("intersectAabb", () => {
           position: [50, 50],
           size: [100, 100],
           rotateZ: Math.PI / 4,
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, blockId);
       });
@@ -273,21 +270,21 @@ describe("intersectAabb", () => {
         const block1 = createBlock(ctx, {
           position: [0, 0],
           size: [50, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, block1);
 
         const block2 = createBlock(ctx, {
           position: [100, 0],
           size: [50, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, block2);
 
         const block3 = createBlock(ctx, {
           position: [200, 0],
           size: [50, 100],
-          persistent: false,
+          synced: false,
         });
         Aabb.computeFromBlock(ctx, block3);
       });

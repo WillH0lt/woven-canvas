@@ -1,4 +1,4 @@
-import type { EditorPlugin } from "@infinitecanvas/editor";
+import { createEntity, addComponent, type EditorPlugin } from "@infinitecanvas/editor";
 
 // Components
 import {
@@ -16,6 +16,7 @@ import {
   Opacity,
   Text,
   Connector,
+  User,
 } from "./components";
 
 // Singletons
@@ -46,11 +47,10 @@ import {
 
 import { DEFAULT_KEYBINDS } from "./constants";
 import {
-  BlockDef,
   Keybind,
-  type BlockDefInput,
+  InfiniteCanvasPluginOptions as PluginOptionsSchema,
   type BlockDefMap,
-  type KeybindInput,
+  type InfiniteCanvasPluginOptionsInput,
 } from "./types";
 
 /**
@@ -60,24 +60,6 @@ import {
 export interface InfiniteCanvasResources {
   blockDefs: BlockDefMap;
   keybinds: Keybind[];
-}
-
-/**
- * Options for the Infinite Canvas plugin.
- */
-export interface InfiniteCanvasPluginOptions {
-  /**
-   * Custom block definitions.
-   * These define how different block types behave (editing, resizing, rotation, etc.)
-   */
-  customBlocks?: BlockDefInput[];
-
-  /**
-   * Keybind definitions for keyboard shortcuts.
-   * These map key combinations to plugin commands.
-   * Defaults to DEFAULT_KEYBINDS if not specified.
-   */
-  keybinds?: KeybindInput[];
 }
 
 /**
@@ -107,21 +89,24 @@ export interface InfiniteCanvasPluginOptions {
  * ```
  */
 export function createInfiniteCanvasPlugin(
-  options: InfiniteCanvasPluginOptions = {}
+  optionsInput: InfiniteCanvasPluginOptionsInput = {}
 ): EditorPlugin<InfiniteCanvasResources> {
-  const { customBlocks = [], keybinds: keybindsInput } = options;
+  // Parse options with Zod schema
+  const options = PluginOptionsSchema.parse(optionsInput);
 
-  // Build normalized block definitions map using Zod parsing
+  // Generate user id if not provided
+  const userId = options.user?.id ?? crypto.randomUUID();
+
+  // Build normalized block definitions map
   const blockDefs: BlockDefMap = {};
-  for (const def of customBlocks) {
-    const parsed = BlockDef.parse(def);
-    blockDefs[parsed.tag] = parsed;
+  for (const def of options.customBlocks) {
+    blockDefs[def.tag] = def;
   }
 
-  // Parse keybinds with defaults
+  // Use provided keybinds or defaults
   const keybinds =
-    keybindsInput !== undefined
-      ? keybindsInput.map((kb) => Keybind.parse(kb))
+    options.keybinds !== undefined
+      ? options.keybinds
       : DEFAULT_KEYBINDS.map((kb) => Keybind.parse(kb));
 
   return {
@@ -149,6 +134,7 @@ export function createInfiniteCanvasPlugin(
       Opacity,
       Text,
       Connector,
+      User,
     ],
 
     singletons: [
@@ -174,6 +160,16 @@ export function createInfiniteCanvasPlugin(
     preRenderSystems: [PreRenderScaleWithZoom],
 
     postRenderSystems: [PostRenderCursor],
+
+    setup(ctx) {
+      // Create the user entity for presence tracking
+      const userEntity = createEntity(ctx);
+      addComponent(ctx, userEntity, User, {
+        id: userId,
+        name: options.user?.name ?? "",
+        profileUrl: options.user?.profileUrl ?? "",
+      });
+    },
   };
 }
 

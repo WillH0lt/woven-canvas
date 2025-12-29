@@ -11,5 +11,5 @@ export const Selected = defineEditorComponent(
   {
     selectedBy: field.string().max(36).default(""),
   },
-  { sync: "presence" }
+  { sync: "ephemeral" }
 );

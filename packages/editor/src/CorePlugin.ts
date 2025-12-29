@@ -10,7 +10,7 @@ import {
   Mouse,
   Screen,
   Pointer,
-  Persistent,
+  Synced,
 } from "./components";
 import {
   frameInputSystem,
@@ -36,7 +36,7 @@ export const CorePlugin: EditorPlugin = {
 
   singletons: [Camera, Controls, Frame, Keyboard, Mouse, Screen],
 
-  components: [Pointer, Persistent],
+  components: [Pointer, Synced],
 
   inputSystems: [
     frameInputSystem,

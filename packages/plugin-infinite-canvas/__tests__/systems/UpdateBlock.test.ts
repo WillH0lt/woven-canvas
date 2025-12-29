@@ -5,7 +5,7 @@ import {
   addComponent,
   hasComponent,
   defineQuery,
-  Persistent,
+  Synced,
   type EditorPlugin,
 } from "@infinitecanvas/editor";
 import { Block, Aabb, Selected, Text } from "../../src/components";
@@ -367,7 +367,7 @@ describe("UpdateBlock", () => {
   });
 
   describe("SelectAll command", () => {
-    it("should select all persistent blocks", async () => {
+    it("should select all synced blocks", async () => {
       let entityId1: number | undefined;
       let entityId2: number | undefined;
       let isSelected1 = false;
@@ -376,12 +376,12 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId1 = createBlock(ctx, {
           position: [0, 0],
-          persistent: true,
+          synced: true,
           selected: false,
         });
         entityId2 = createBlock(ctx, {
           position: [100, 100],
-          persistent: true,
+          synced: true,
           selected: false,
         });
       });
@@ -402,14 +402,14 @@ describe("UpdateBlock", () => {
       expect(isSelected2).toBe(true);
     });
 
-    it("should not select non-persistent blocks", async () => {
+    it("should not select non-synced blocks", async () => {
       let entityId: number | undefined;
       let isSelected = false;
 
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [0, 0],
-          persistent: false,
+          synced: false,
           selected: false,
         });
       });
@@ -435,7 +435,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [0, 0],
-          persistent: true,
+          synced: true,
           selected: true,
         });
       });
@@ -823,7 +823,7 @@ describe("UpdateBlock", () => {
           position: [100, 100],
           size: [50, 50],
           selected: true,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -849,19 +849,19 @@ describe("UpdateBlock", () => {
           position: [0, 0],
           size: [50, 50],
           selected: true,
-          persistent: true,
+          synced: true,
         });
         createBlock(ctx, {
           position: [100, 100],
           size: [50, 50],
           selected: true,
-          persistent: true,
+          synced: true,
         });
         createBlock(ctx, {
           position: [200, 200],
           size: [50, 50],
           selected: false,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -886,7 +886,7 @@ describe("UpdateBlock", () => {
         createBlock(ctx, {
           position: [0, 0],
           selected: false,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -913,14 +913,14 @@ describe("UpdateBlock", () => {
           position: [0, 0],
           size: [100, 100],
           selected: true,
-          persistent: true,
+          synced: true,
         });
         // Block at [100, 100] with size [100, 100] -> AABB [100, 100, 200, 200]
         createBlock(ctx, {
           position: [100, 100],
           size: [100, 100],
           selected: true,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -950,7 +950,7 @@ describe("UpdateBlock", () => {
         entityId = createBlock(ctx, {
           position: [100, 100],
           selected: true,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -987,17 +987,17 @@ describe("UpdateBlock", () => {
         entityId1 = createBlock(ctx, {
           position: [0, 0],
           selected: true,
-          persistent: true,
+          synced: true,
         });
         entityId2 = createBlock(ctx, {
           position: [100, 100],
           selected: true,
-          persistent: true,
+          synced: true,
         });
         entityId3 = createBlock(ctx, {
           position: [200, 200],
           selected: false,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1045,7 +1045,7 @@ describe("UpdateBlock", () => {
           position: [100, 100],
           size: [50, 50],
           selected: true,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1081,7 +1081,7 @@ describe("UpdateBlock", () => {
           position: [100, 100],
           size: [50, 50],
           selected: true,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1123,7 +1123,7 @@ describe("UpdateBlock", () => {
           position: [100, 100],
           size: [100, 100],
           selected: true,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1166,7 +1166,7 @@ describe("UpdateBlock", () => {
         originalEntityId = createBlock(ctx, {
           position: [100, 100],
           selected: true,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1205,7 +1205,7 @@ describe("UpdateBlock", () => {
           position: [100, 100],
           rank: "m",
           selected: true,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1241,7 +1241,7 @@ describe("UpdateBlock", () => {
         createBlock(ctx, {
           position: [100, 100],
           selected: false,
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1268,7 +1268,7 @@ describe("UpdateBlock", () => {
         const entityId = createBlock(ctx, {
           position: [100, 100],
           selected: true,
-          persistent: true,
+          synced: true,
         });
         addComponent(ctx, entityId, Text, { content: "Hello World" });
       });
@@ -1303,7 +1303,7 @@ describe("UpdateBlock", () => {
   });
 
   describe("CloneEntities command", () => {
-    it("should create a clone of a persistent entity", async () => {
+    it("should create a clone of a synced entity", async () => {
       let entityId: number | undefined;
       let blockCount = 0;
       const seed = "test-seed";
@@ -1312,7 +1312,7 @@ describe("UpdateBlock", () => {
         entityId = createBlock(ctx, {
           position: [100, 100],
           size: [50, 50],
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1345,7 +1345,7 @@ describe("UpdateBlock", () => {
         entityId = createBlock(ctx, {
           position: [100, 100],
           size: [50, 50],
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1386,7 +1386,7 @@ describe("UpdateBlock", () => {
         entityId = createBlock(ctx, {
           position: [100, 100],
           rank: "m",
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1427,11 +1427,11 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId1 = createBlock(ctx, {
           position: [100, 100],
-          persistent: true,
+          synced: true,
         });
         entityId2 = createBlock(ctx, {
           position: [200, 200],
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1455,15 +1455,15 @@ describe("UpdateBlock", () => {
 
     it("should generate deterministic clone IDs based on seed", async () => {
       let entityId: number | undefined;
-      let clonePersistentId1: string | undefined;
-      let clonePersistentId2: string | undefined;
+      let cloneSyncedId1: string | undefined;
+      let cloneSyncedId2: string | undefined;
       const seed = "deterministic-seed";
 
       // First clone operation
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [100, 100],
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1480,7 +1480,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         for (const blockId of blocksQuery.current(ctx)) {
           if (blockId !== entityId) {
-            clonePersistentId1 = Persistent.read(ctx, blockId).id;
+            cloneSyncedId1 = Synced.read(ctx, blockId).id;
           }
         }
       });
@@ -1506,17 +1506,17 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         for (const blockId of blocksQuery.current(ctx)) {
           if (blockId !== entityId) {
-            clonePersistentId2 = Persistent.read(ctx, blockId).id;
+            cloneSyncedId2 = Synced.read(ctx, blockId).id;
           }
         }
       });
 
       await editor.tick();
-      // Same seed should produce same persistent ID
-      expect(clonePersistentId1).toBe(clonePersistentId2);
+      // Same seed should produce same synced ID
+      expect(cloneSyncedId1).toBe(cloneSyncedId2);
     });
 
-    it("should not clone non-persistent entities", async () => {
+    it("should not clone non-synced entities", async () => {
       let entityId: number | undefined;
       let blockCount = 0;
       const seed = "test-seed";
@@ -1524,7 +1524,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [100, 100],
-          persistent: false,
+          synced: false,
         });
       });
 
@@ -1555,7 +1555,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [100, 100],
-          persistent: true,
+          synced: true,
         });
         addComponent(ctx, entityId, Text, { content: "Cloned Text" });
       });
@@ -1596,7 +1596,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [100, 100],
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1643,7 +1643,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [100, 100],
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1684,11 +1684,11 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId1 = createBlock(ctx, {
           position: [100, 100],
-          persistent: true,
+          synced: true,
         });
         entityId2 = createBlock(ctx, {
           position: [200, 200],
-          persistent: true,
+          synced: true,
         });
       });
 
@@ -1734,7 +1734,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [100, 100],
-          persistent: true,
+          synced: true,
         });
       });
 

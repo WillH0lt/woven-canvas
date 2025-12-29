@@ -2,7 +2,12 @@
  * Shared test utilities for simulating pointer and mouse events.
  */
 
-import { type Context, createEntity, addComponent, Persistent } from "@infinitecanvas/editor";
+import {
+  type Context,
+  createEntity,
+  addComponent,
+  Synced,
+} from "@infinitecanvas/editor";
 import { Block, Aabb, Selected } from "../src/components";
 
 /**
@@ -14,7 +19,7 @@ export interface CreateBlockOptions {
   rank?: string;
   tag?: string;
   rotateZ?: number;
-  persistent?: boolean;
+  synced?: boolean;
   selected?: boolean;
 }
 
@@ -22,14 +27,17 @@ export interface CreateBlockOptions {
  * Create a block entity for testing.
  * Returns the entity ID.
  */
-export function createBlock(ctx: Context, options: CreateBlockOptions = {}): number {
+export function createBlock(
+  ctx: Context,
+  options: CreateBlockOptions = {}
+): number {
   const {
     position = [100, 100],
     size = [100, 100],
     rank = "a",
     tag = "text",
     rotateZ = 0,
-    persistent = true,
+    synced = true,
     selected = false,
   } = options;
 
@@ -45,8 +53,8 @@ export function createBlock(ctx: Context, options: CreateBlockOptions = {}): num
   // Compute actual AABB from block corners
   Aabb.computeFromBlock(ctx, entityId);
 
-  if (persistent) {
-    addComponent(ctx, entityId, Persistent, {});
+  if (synced) {
+    addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() });
   }
 
   if (selected) {

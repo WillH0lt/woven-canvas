@@ -7,7 +7,7 @@ import {
   removeComponent,
   hasComponent,
   on,
-  Persistent,
+  Synced,
   type Context,
 } from "@infinitecanvas/editor";
 
@@ -25,9 +25,9 @@ const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 // Query for selected blocks
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
-// Query for all persistent blocks (for intersection)
-const persistentBlocksQuery = defineQuery((q) =>
-  q.with(Block, Persistent, Aabb)
+// Query for all synced blocks (for intersection)
+const syncedBlocksQuery = defineQuery((q) =>
+  q.with(Block, Synced, Aabb)
 );
 
 // Selection box z-order rank (always on top)
@@ -78,7 +78,7 @@ export const UpdateSelect = defineSystem((ctx: Context) => {
     const intersectedEntityIds = intersectAabb(
       ctx,
       bounds,
-      persistentBlocksQuery.current(ctx)
+      syncedBlocksQuery.current(ctx)
     );
 
     // Deselect blocks outside the selection box if requested

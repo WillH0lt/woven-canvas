@@ -131,7 +131,7 @@ describe("Plugin System", () => {
       const Selected = new EditorComponentDef(
         "selected",
         {},
-        { sync: "presence" }
+        { sync: "ephemeral" }
       );
 
       const Camera = new EditorSingletonDef(
@@ -139,7 +139,7 @@ describe("Plugin System", () => {
         {
           zoom: field.float64().default(1),
         },
-        { sync: "presence" }
+        { sync: "ephemeral" }
       );
 
       const plugin: EditorPlugin = {
@@ -210,7 +210,7 @@ describe("Plugin System", () => {
       const Selected = new EditorComponentDef(
         "selected",
         {},
-        { sync: "presence" }
+        { sync: "ephemeral" }
       );
 
       const Camera = new EditorSingletonDef(
@@ -220,7 +220,7 @@ describe("Plugin System", () => {
           y: field.float64().default(0),
           zoom: field.float64().default(1),
         },
-        { sync: "presence" }
+        { sync: "ephemeral" }
       );
 
       const plugin: EditorPlugin = {
@@ -276,7 +276,7 @@ describe("Plugin System", () => {
       const Selected = new EditorComponentDef(
         "selected",
         {},
-        { sync: "presence" }
+        { sync: "ephemeral" }
       );
       const Hovered = new EditorComponentDef("hovered", {}, { sync: "none" });
 
@@ -293,7 +293,7 @@ describe("Plugin System", () => {
       };
 
       expect(selectionPlugin.dependencies).toContain("core");
-      expect(selectionPlugin.components![0].__editor.sync).toBe("presence");
+      expect(selectionPlugin.components![0].__editor.sync).toBe("ephemeral");
       expect(selectionPlugin.components![1].__editor.sync).toBe("none");
     });
 

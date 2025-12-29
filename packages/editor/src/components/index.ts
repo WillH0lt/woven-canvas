@@ -17,4 +17,4 @@ export {
   addPointerSample,
 } from "./Pointer";
 
-export { Persistent } from "./Persistent";
+export { Synced } from "./Synced";

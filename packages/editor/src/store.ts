@@ -103,8 +103,11 @@ export interface StoreAdapter {
    * - Set up persistence (IndexedDB, etc.)
    * - Connect to network sync (WebSocket, etc.)
    *
-   * @param components - Array of component definitions
-   * @param singletons - Array of singleton definitions
+   * The store should check each definition's `__editor.sync` property to determine
+   * how to handle it: "document" for synced storage, "ephemeral" for transient sync.
+   *
+   * @param components - Array of all synced component definitions (document + ephemeral)
+   * @param singletons - Array of all synced singleton definitions (document + ephemeral)
    */
   initialize(
     components: AnyEditorComponentDef[],

@@ -65,7 +65,7 @@ export interface PluginSystems {
  * ```typescript
  * import { EditorPlugin, defineEditorComponent, defineEditorSingleton, field } from '@infinitecanvas/editor';
  *
- * const Selected = defineEditorComponent('selected', {}, { sync: 'presence' });
+ * const Selected = defineEditorComponent('selected', {}, { sync: 'ephemeral' });
  *
  * const Hovered = defineEditorComponent('hovered', {}, { sync: 'none' });
  *
@@ -73,7 +73,7 @@ export interface PluginSystems {
  *   x: field.float64().default(0),
  *   y: field.float64().default(0),
  *   zoom: field.float64().default(1),
- * }, { sync: 'presence' });
+ * }, { sync: 'ephemeral' });
  *
  * const SelectionPlugin: EditorPlugin = {
  *   name: 'selection',
@@ -193,7 +193,7 @@ export interface EditorPlugin<TResources = unknown> {
    * Called when the editor is destroyed.
    * Use this to clean up resources.
    */
-  teardown?: (ctx: Context) => void | Promise<void>;
+  teardown?: (ctx: Context) => void;
 }
 
 /**

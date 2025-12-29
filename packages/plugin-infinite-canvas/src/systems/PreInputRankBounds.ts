@@ -2,14 +2,14 @@ import {
   defineSystem,
   defineQuery,
   type Context,
-  Persistent,
+  Synced,
 } from "@infinitecanvas/editor";
 
 import { Block } from "../components";
 import { RankBounds } from "../singletons";
 
 // Query for blocks - tracks added blocks to sync their ranks
-const blocksQuery = defineQuery((q) => q.with(Persistent, Block));
+const blocksQuery = defineQuery((q) => q.with(Synced, Block));
 
 /**
  * Pre-input system - synchronizes RankBounds singleton with block ranks.

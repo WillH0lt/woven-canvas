@@ -7,7 +7,7 @@ import {
   defineQuery,
   Controls,
   hasComponent,
-  Persistent,
+  Synced,
 } from "@infinitecanvas/editor";
 
 import {
@@ -40,10 +40,8 @@ import { getCursorSvg } from "../cursors";
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4;
 
-// Query for selected persistent blocks (for cloning)
-const selectedBlocksQuery = defineQuery((q) =>
-  q.with(Block, Selected, Persistent)
-);
+// Query for selected synced blocks (for cloning)
+const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected, Synced));
 
 /**
  * Selection state machine context - derived from SelectionStateSingleton schema.
@@ -79,10 +77,10 @@ const selectionMachine = setup({
     isOverBlock: ({ event }) => {
       return event.intersects.length > 0;
     },
-    isOverPersistentBlock: ({ event }) => {
+    isOverSyncedBlock: ({ event }) => {
       const ctx = event.ctx;
       for (const entityId of event.intersects) {
-        if (hasComponent(ctx, entityId, Persistent)) {
+        if (hasComponent(ctx, entityId, Synced)) {
           return true;
         }
       }
@@ -180,12 +178,12 @@ const selectionMachine = setup({
           event.worldPosition[1] -
           context.dragStart[1];
 
-        const draggingPersistent =
-          hasComponent(ctx, context.draggedEntity, Persistent) ||
+        const draggingSynced =
+          hasComponent(ctx, context.draggedEntity, Synced) ||
           hasComponent(ctx, context.draggedEntity, TransformBox);
 
         // Shift constrains movement to axis
-        if (event.shiftDown && draggingPersistent) {
+        if (event.shiftDown && draggingSynced) {
           const dx = Math.abs(event.worldPosition[0] - context.dragStart[0]);
           const dy = Math.abs(event.worldPosition[1] - context.dragStart[1]);
           if (dx > dy) {
@@ -203,7 +201,7 @@ const selectionMachine = setup({
 
         // Alt+drag to clone
         let isCloning = context.isCloning;
-        if (event.altDown && draggingPersistent && !context.isCloning) {
+        if (event.altDown && draggingSynced && !context.isCloning) {
           const block = Block.read(ctx, context.draggedEntity);
           const dx = context.draggedEntityStart[0] - block.position[0];
           const dy = context.draggedEntityStart[1] - block.position[1];
@@ -275,7 +273,7 @@ const selectionMachine = setup({
       let intersectId: EntityId | undefined;
 
       for (const entityId of event.intersects) {
-        if (hasComponent(ctx, entityId, Persistent)) {
+        if (hasComponent(ctx, entityId, Synced)) {
           intersectId = entityId;
           break;
         }
@@ -291,7 +289,7 @@ const selectionMachine = setup({
     },
     selectDragged: ({ context, event }) => {
       if (context.draggedEntity === null) return;
-      if (!hasComponent(event.ctx, context.draggedEntity, Persistent)) return;
+      if (!hasComponent(event.ctx, context.draggedEntity, Synced)) return;
       SelectBlock.spawn(event.ctx, {
         entityId: context.draggedEntity,
         deselectOthers: true,
@@ -349,7 +347,7 @@ const selectionMachine = setup({
         },
         pointerUp: [
           {
-            guard: "isOverPersistentBlock",
+            guard: "isOverSyncedBlock",
             actions: "selectIntersect",
             target: SelectionState.Idle,
           },

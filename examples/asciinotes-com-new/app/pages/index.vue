@@ -15,8 +15,11 @@
     <div
       class="flex-1 relative flex items-center justify-center pointer-events-none"
     >
-      <ClientOnly>
-        <StudioView class="pointer-events-auto" />
+      <ClientOnly v-if="pageStore.activePage">
+        <StudioView
+          class="pointer-events-auto"
+          :pageId="pageStore.activePage.id"
+        />
       </ClientOnly>
       <div class="flex absolute top-0 left-0 m-2">
         <UTooltip
@@ -106,7 +109,6 @@ const termsModal = overlay.create(ModalTerms);
 
 const currentUser = useCurrentUser();
 const appStore = useAppStore();
-const auth = useFirebaseAuth()!;
 
 async function handleSignIn(): Promise<void> {
   loginModal.close();

@@ -4,7 +4,7 @@ import {
   createEntity,
   addComponent,
   hasComponent,
-  Persistent,
+  Synced,
   Camera,
   getPluginResources,
   type EditorPlugin,
@@ -34,7 +34,7 @@ export interface RendererPluginResources {
 }
 
 /** Query for all entities with Block component */
-export const blockQuery = defineQuery((q) => q.with(Block, Persistent));
+export const blockQuery = defineQuery((q) => q.with(Block, Synced));
 
 /** Query for selected blocks */
 const selectedQuery = defineQuery((q) => q.with(Block).with(Selected));
@@ -288,7 +288,7 @@ export function createBlock(
   height: number
 ): EntityId {
   const entityId = createEntity(ctx);
-  addComponent(ctx, entityId, Persistent, {
+  addComponent(ctx, entityId, Synced, {
     id: crypto.randomUUID(),
   });
   addComponent(ctx, entityId, Block, {

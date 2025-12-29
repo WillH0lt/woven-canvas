@@ -21,3 +21,6 @@ export { Opacity } from "./Opacity";
 // Content components
 export { Text, textHasContent, getTextStringContent } from "./Text";
 export { Connector } from "./Connector";
+
+// User presence
+export { User } from "./User";

@@ -42,9 +42,10 @@ const ctx2d = canvas.getContext("2d")!;
 
 // Create Loro store (handles IndexedDB persistence and optional WebSocket sync)
 const store = new Store({
-  dbName: "editor-canvas",
+  documentId: "editor-infinite-canvas",
   websocketUrl: "ws://localhost:8787",
-  roomId: "editor-canvas",
+  useWebSocket: true,
+  useLocalPersistence: true,
 });
 
 // Create editor with plugins

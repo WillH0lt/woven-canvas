@@ -8,7 +8,7 @@ import {
   hasComponent,
   getResources,
   on,
-  Persistent,
+  Synced,
   Camera,
   type Context,
   type EditorResources,
@@ -42,8 +42,8 @@ import { generateUuidBySeed } from "../helpers/uuid";
 // Query for selected blocks
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
-// Query for persistent blocks
-const persistentBlocksQuery = defineQuery((q) => q.with(Block, Persistent));
+// Query for synced blocks
+const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced));
 
 /**
  * Block update system - handles block manipulation commands.
@@ -89,7 +89,7 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
   on(ctx, DeselectAll, deselectAllBlocks);
 
   on(ctx, SelectAll, (ctx) => {
-    for (const entityId of persistentBlocksQuery.current(ctx)) {
+    for (const entityId of syncedBlocksQuery.current(ctx)) {
       if (!hasComponent(ctx, entityId, Selected)) {
         addComponent(ctx, entityId, Selected, { selectedBy: "" });
       }
@@ -218,7 +218,9 @@ function copySelectedBlocks(ctx: Context): void {
   if (selectedBlocks.length === 0) return;
 
   const { editor } = getResources<EditorResources>(ctx);
-  const documentComponents = editor.getDocumentComponents();
+  const documentComponents = new Map(
+    [...editor.components].filter(([, def]) => def.__editor.sync === "document")
+  );
 
   const clipboardEntities: ClipboardEntityData[] = [];
 
@@ -269,10 +271,12 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
   if (clipboardEntities.length === 0) return;
 
   const { editor } = getResources<EditorResources>(ctx);
-  const documentComponents = editor.getDocumentComponents();
+  const documentComponents = new Map(
+    [...editor.components].filter(([, def]) => def.__editor.sync === "document")
+  );
 
   const clipboard = Clipboard.read(ctx);
-  const persistentComponentId = Persistent._getComponentId(ctx);
+  const syncedComponentId = Synced._getComponentId(ctx);
   const blockComponentId = Block._getComponentId(ctx);
 
   // Calculate paste offset
@@ -306,15 +310,15 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
   for (const entityData of sortedEntities) {
     const entityId = createEntity(ctx);
 
-    // Add Persistent component with new UUID
-    addComponent(ctx, entityId, Persistent, {
+    // Add Synced component with new UUID
+    addComponent(ctx, entityId, Synced, {
       id: crypto.randomUUID(),
     });
 
     // Add all other components from clipboard
     for (const [componentId, componentData] of entityData) {
-      // Skip persistent - we already added it with a new ID
-      if (componentId === persistentComponentId) continue;
+      // Skip synced - we already added it with a new ID
+      if (componentId === syncedComponentId) continue;
 
       const componentDef = documentComponents.get(componentId);
       if (!componentDef) continue;
@@ -349,31 +353,35 @@ function cloneEntities(
   seed: string
 ): void {
   const { editor } = getResources<EditorResources>(ctx);
-  const documentComponents = editor.getDocumentComponents();
-  const persistentComponentId = Persistent._getComponentId(ctx);
+  const documentComponents = new Map(
+    [...editor.components].filter(([, def]) => def.__editor.sync === "document")
+  );
+  const syncedComponentId = Synced._getComponentId(ctx);
   const blockComponentId = Block._getComponentId(ctx);
 
   for (const entityId of entityIds) {
-    if (!hasComponent(ctx, entityId, Persistent)) continue;
+    if (!hasComponent(ctx, entityId, Synced)) continue;
 
-    const persistent = Persistent.read(ctx, entityId);
-    const cloneId = generateUuidBySeed(persistent.id, seed);
+    const synced = Synced.read(ctx, entityId);
+    const cloneId = generateUuidBySeed(synced.id, seed);
 
     // Create new entity for the clone
     const cloneEntityId = createEntity(ctx);
 
-    // Add Persistent with deterministic UUID
-    addComponent(ctx, cloneEntityId, Persistent, { id: cloneId });
+    // Add Synced with deterministic UUID
+    addComponent(ctx, cloneEntityId, Synced, { id: cloneId });
 
     // Copy all document components
     for (const componentId of ctx.entityBuffer.getComponentIds(entityId)) {
-      if (componentId === persistentComponentId) continue;
+      if (componentId === syncedComponentId) continue;
 
       const componentDef = documentComponents.get(componentId);
       if (!componentDef) continue;
 
       // Clone the data to avoid mutating original
-      const data = { ...(componentDef.snapshot(ctx, entityId) as Record<string, unknown>) };
+      const data = {
+        ...(componentDef.snapshot(ctx, entityId) as Record<string, unknown>),
+      };
 
       // For Block component: apply offset and generate rank behind original
       if (componentId === blockComponentId) {
@@ -399,16 +407,16 @@ function uncloneEntities(
   // Collect expected clone IDs first
   const expectedCloneIds = new Set<string>();
   for (const entityId of entityIds) {
-    if (!hasComponent(ctx, entityId, Persistent)) continue;
-    const persistent = Persistent.read(ctx, entityId);
-    expectedCloneIds.add(generateUuidBySeed(persistent.id, seed));
+    if (!hasComponent(ctx, entityId, Synced)) continue;
+    const synced = Synced.read(ctx, entityId);
+    expectedCloneIds.add(generateUuidBySeed(synced.id, seed));
   }
 
   // Find and collect entities to remove (avoid modifying during iteration)
   const entitiesToRemove: EntityId[] = [];
-  for (const candidateId of persistentBlocksQuery.current(ctx)) {
-    const candidatePersistent = Persistent.read(ctx, candidateId);
-    if (expectedCloneIds.has(candidatePersistent.id)) {
+  for (const candidateId of syncedBlocksQuery.current(ctx)) {
+    const candidateSynced = Synced.read(ctx, candidateId);
+    if (expectedCloneIds.has(candidateSynced.id)) {
       entitiesToRemove.push(candidateId);
     }
   }

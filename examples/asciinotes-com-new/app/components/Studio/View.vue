@@ -28,6 +28,10 @@ import {
 import { RendererPlugin, blockQuery, createBlock } from "./ShapesPlugin";
 import "./style.css";
 
+const props = defineProps<{
+  pageId: string;
+}>();
+
 const canvasContainer = ref<HTMLDivElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
@@ -39,31 +43,17 @@ let editor: Editor | null = null;
 let store: Store | null = null;
 let animationId: number | null = null;
 
+watch(
+  () => props.pageId,
+  async (newPageId) => {
+    console.log("Page ID changed:", newPageId);
+    disposeEditor();
+    await initializeEditor();
+  }
+);
+
 onMounted(async () => {
-  if (!canvasContainer.value || !canvasEl.value) return;
-
-  const canvas = canvasEl.value;
-  const ctx2d = canvas.getContext("2d")!;
-
-  // Create Loro store (handles IndexedDB persistence and optional WebSocket sync)
-  store = new Store({
-    dbName: "editor-canvas",
-    websocketUrl: "ws://localhost:8787",
-    roomId: "editor-canvas",
-  });
-
-  // Create editor with plugins
-  editor = new Editor(canvasContainer.value, {
-    store,
-    plugins: [
-      ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
-      InfiniteCanvasPlugin,
-      RendererPlugin({ canvas, ctx2d }),
-    ],
-  });
-
-  // Initialize editor
-  await editor.initialize();
+  await initializeEditor();
 
   // Keyboard shortcuts for undo/redo and delete
   document.addEventListener("keydown", handleKeydown);
@@ -82,7 +72,48 @@ onUnmounted(() => {
   if (animationId !== null) {
     cancelAnimationFrame(animationId);
   }
+
+  disposeEditor();
 });
+
+async function initializeEditor() {
+  if (!canvasContainer.value || !canvasEl.value) return;
+
+  const canvas = canvasEl.value;
+  const ctx2d = canvas.getContext("2d")!;
+
+  // Create Loro store (handles IndexedDB persistence and optional WebSocket sync)
+  store = new Store({
+    documentId: props.pageId,
+    websocketUrl: "ws://localhost:8787",
+    useLocalPersistence: true,
+    useWebSocket: true,
+  });
+
+  // Create editor with plugins
+  editor = new Editor(canvasContainer.value, {
+    store,
+    plugins: [
+      ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
+      InfiniteCanvasPlugin,
+      RendererPlugin({ canvas, ctx2d }),
+    ],
+  });
+
+  // Initialize editor
+  await editor.initialize();
+}
+
+function disposeEditor() {
+  if (editor) {
+    editor.dispose();
+    editor = null;
+  }
+  if (store) {
+    store.dispose();
+    store = null;
+  }
+}
 
 function handleKeydown(e: KeyboardEvent) {
   if (!editor || !store) return;

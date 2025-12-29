@@ -1,7 +1,6 @@
 export {
   InfiniteCanvasPlugin,
   createInfiniteCanvasPlugin,
-  type InfiniteCanvasPluginOptions,
   type InfiniteCanvasResources,
 } from "./Plugin";
 

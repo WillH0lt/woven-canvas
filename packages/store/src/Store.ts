@@ -2,11 +2,14 @@ import {
   LoroDoc,
   LoroMap,
   UndoManager,
+  EphemeralStore,
   type LoroEventBatch,
   type MapDiff,
+  type EphemeralStoreEvent,
+  type Value,
 } from "loro-crdt";
 import { LoroWebsocketClient } from "loro-websocket";
-import { LoroAdaptor } from "loro-adaptors/loro";
+import { LoroAdaptor, LoroEphemeralAdaptor } from "loro-adaptors/loro";
 import { throttle } from "lodash-es";
 import {
   createEntity,
@@ -24,12 +27,10 @@ import { LocalDB } from "./LocalDB";
  * StoreOptions - Options for configuring the Store.
  */
 export interface StoreOptions {
-  /** IndexedDB database name for local persistence */
-  dbName?: string;
-  /** WebSocket URL for real-time sync (optional) */
+  documentId: string;
   websocketUrl?: string;
-  /** Room ID for multiplayer (defaults to "default") */
-  roomId?: string;
+  useLocalPersistence?: boolean;
+  useWebSocket?: boolean;
 }
 
 /**
@@ -44,9 +45,9 @@ export interface StoreOptions {
  * @example
  * ```typescript
  * const store = new Store({
- *   roomId: "my-document",
- *   dbName: "my-app", // optional
- *   websocketUrl: "ws://localhost:8787",  // optional
+ *   documentId: "my-document",
+ *   useLocalPersistence: true, // optional
+ *   useWebSocket: true,  // optional
  * });
  *
  * await store.initialize();
@@ -60,6 +61,7 @@ export interface StoreOptions {
 export class Store implements StoreAdapter {
   private doc: LoroDoc;
   private undoManager: UndoManager;
+  private ephemeralStore: EphemeralStore;
 
   // Persistence
   private localDB?: LocalDB;
@@ -67,12 +69,13 @@ export class Store implements StoreAdapter {
   // Network
   private client: LoroWebsocketClient | null = null;
   private adaptor: LoroAdaptor | null = null;
+  private ephemeralAdaptor: LoroEphemeralAdaptor | null = null;
   private websocketUrl?: string;
-  private roomId: string;
+  private documentId: string;
 
   private initialized: boolean = false;
 
-  // Bidirectional sync state
+  // Bidirectional sync state for document-synced components
   /** Map of component name -> component def for applying changes */
   private componentDefsByName: Map<string, AnyEditorComponentDef> = new Map();
   /** Map of singleton name -> singleton def for applying changes */
@@ -83,19 +86,22 @@ export class Store implements StoreAdapter {
   private entityIdToId: Map<number, string> = new Map();
   /** Cached events from external changes (undo/redo, network sync) */
   private pendingEvents: LoroEventBatch[] = [];
+  /** Cached ephemeral events from remote peers */
+  private pendingEphemeralEvents: EphemeralStoreEvent[] = [];
 
-  constructor(options: StoreOptions = {}) {
+  constructor(options: StoreOptions = { documentId: "default" }) {
+    this.documentId = options.documentId;
     this.websocketUrl = options.websocketUrl;
-    this.roomId = options.roomId ?? "default";
 
-    if (options.dbName) {
-      this.localDB = new LocalDB(options.dbName);
+    if (options.useLocalPersistence) {
+      this.localDB = new LocalDB(options.documentId);
     }
 
     this.doc = new LoroDoc();
     this.undoManager = new UndoManager(this.doc, {
       excludeOriginPrefixes: ["sys:"],
     });
+    this.ephemeralStore = new EphemeralStore();
   }
 
   /**
@@ -103,9 +109,10 @@ export class Store implements StoreAdapter {
    * Loads from IndexedDB and connects to WebSocket if configured.
    *
    * Called by the Editor during initialization to set up bidirectional sync.
+   * Partitions components by their sync type internally.
    *
-   * @param components - Array of component definitions
-   * @param singletons - Array of singleton definitions
+   * @param components - Array of all synced component definitions
+   * @param singletons - Array of all synced singleton definitions
    */
   async initialize(
     components: AnyEditorComponentDef[],
@@ -113,7 +120,7 @@ export class Store implements StoreAdapter {
   ): Promise<void> {
     if (this.initialized) return;
 
-    // Build name -> def maps for flushChanges lookup
+    // Build name -> def maps
     for (const componentDef of components) {
       this.componentDefsByName.set(componentDef.name, componentDef);
     }
@@ -132,37 +139,40 @@ export class Store implements StoreAdapter {
       }
     });
 
+    // Subscribe to ephemeral store changes from remote peers
+    this.ephemeralStore.subscribe((event: EphemeralStoreEvent) => {
+      // Cache external ephemeral events for flushChanges
+      if (event.by !== "local") {
+        this.pendingEphemeralEvents.push(event);
+      }
+    });
+
     // Initialize local persistence and load document
-    const t0 = performance.now();
     if (this.localDB) {
       await this.localDB.initialize();
       await this.localDB.loadIntoDoc(this.doc);
     }
 
-    const t1 = performance.now();
-    console.log(`[Store] Loaded document in ${(t1 - t0).toFixed(2)} ms`);
-
     // Connect to WebSocket if configured
     if (this.websocketUrl) {
       this.adaptor = new LoroAdaptor(this.doc);
+      this.ephemeralAdaptor = new LoroEphemeralAdaptor(this.ephemeralStore);
       this.client = new LoroWebsocketClient({ url: this.websocketUrl });
 
-      this.client.waitConnected().then(() => {
-        if (!this.client || !this.adaptor) return;
-        return this.client.join({
-          roomId: this.roomId,
-          crdtAdaptor: this.adaptor,
-        });
-      });
-      // const t2 = performance.now();
-      // console.log(
-      //   `[Store] Connected to WebSocket in ${(t2 - t1).toFixed(2)} ms`
-      // );
+      this.client.waitConnected().then(async () => {
+        if (!this.client || !this.adaptor || !this.ephemeralAdaptor) return;
 
-      // const t3 = performance.now();
-      // console.log(
-      //   `[Store] Joined room "${this.roomId}" in ${(t3 - t2).toFixed(2)} ms`
-      // );
+        return Promise.all([
+          this.client.join({
+            roomId: this.documentId,
+            crdtAdaptor: this.adaptor,
+          }),
+          this.client.join({
+            roomId: this.documentId,
+            crdtAdaptor: this.ephemeralAdaptor,
+          }),
+        ]);
+      });
     }
 
     this.initialized = true;
@@ -170,7 +180,7 @@ export class Store implements StoreAdapter {
 
   /**
    * Called when a component is added to an entity.
-   * Data is stored at: components/{componentName}/{id}
+   * Routes to document or ephemeral storage based on sync type.
    *
    * @param componentDef - The component definition
    * @param id - The entity's stable UUID (from component's `id` field)
@@ -190,21 +200,28 @@ export class Store implements StoreAdapter {
       this.entityIdToId.set(entityId, id);
     }
 
-    const componentsMap = this.doc.getMap("components");
-    let componentMap = componentsMap.get(componentDef.name) as
-      | LoroMap
-      | undefined;
+    if (componentDef.__editor.sync === "document") {
+      // Store in Loro document for persistence
+      const componentsMap = this.doc.getMap("components");
+      let componentMap = componentsMap.get(componentDef.name) as
+        | LoroMap
+        | undefined;
 
-    if (!componentMap) {
-      componentMap = new LoroMap();
-      componentsMap.setContainer(componentDef.name, componentMap);
+      if (!componentMap) {
+        componentMap = new LoroMap();
+        componentsMap.setContainer(componentDef.name, componentMap);
+      }
+      componentMap.set(id, data);
+    } else if (componentDef.__editor.sync === "ephemeral") {
+      // Store in EphemeralStore for transient sync
+      const key = `${componentDef.name}:${id}`;
+      this.ephemeralStore.set(key, data as Value);
     }
-    componentMap.set(id, data);
   }
 
   /**
    * Called when a component is updated.
-   * Data is stored at: components/{componentName}/{id}
+   * Routes to document or ephemeral storage based on sync type.
    *
    * @param componentDef - The component definition
    * @param id - The entity's stable UUID
@@ -215,28 +232,39 @@ export class Store implements StoreAdapter {
     id: string,
     data: unknown
   ): void {
-    const componentsMap = this.doc.getMap("components");
-    const componentMap = componentsMap.get(componentDef.name) as
-      | LoroMap
-      | undefined;
-    if (componentMap) {
-      componentMap.set(id, data);
+    if (componentDef.__editor.sync === "document") {
+      const componentsMap = this.doc.getMap("components");
+      const componentMap = componentsMap.get(componentDef.name) as
+        | LoroMap
+        | undefined;
+      if (componentMap) {
+        componentMap.set(id, data);
+      }
+    } else if (componentDef.__editor.sync === "ephemeral") {
+      const key = `${componentDef.name}:${id}`;
+      this.ephemeralStore.set(key, data as Value);
     }
   }
 
   /**
    * Called when a component is removed from an entity.
+   * Routes to document or ephemeral storage based on sync type.
    *
    * @param componentDef - The component definition
    * @param id - The entity's stable UUID
    */
   onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
-    const componentsMap = this.doc.getMap("components");
-    const componentMap = componentsMap.get(componentDef.name) as
-      | LoroMap
-      | undefined;
-    if (componentMap) {
-      componentMap.delete(id);
+    if (componentDef.__editor.sync === "document") {
+      const componentsMap = this.doc.getMap("components");
+      const componentMap = componentsMap.get(componentDef.name) as
+        | LoroMap
+        | undefined;
+      if (componentMap) {
+        componentMap.delete(id);
+      }
+    } else if (componentDef.__editor.sync === "ephemeral") {
+      const key = `${componentDef.name}:${id}`;
+      this.ephemeralStore.delete(key);
     }
 
     // Clean up UUID -> entityId mapping when entity is removed
@@ -249,21 +277,26 @@ export class Store implements StoreAdapter {
 
   /**
    * Called when a singleton is updated.
-   * Data is stored at: singletons/{singletonName}
+   * Routes to document or ephemeral storage based on sync type.
    *
    * @param singletonDef - The singleton definition
    * @param data - The singleton data
    */
   onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void {
-    const singletonsMap = this.doc.getMap("singletons");
-    singletonsMap.set(singletonDef.name, data);
+    if (singletonDef.__editor.sync === "document") {
+      const singletonsMap = this.doc.getMap("singletons");
+      singletonsMap.set(singletonDef.name, data);
+    } else if (singletonDef.__editor.sync === "ephemeral") {
+      const key = `singleton:${singletonDef.name}`;
+      this.ephemeralStore.set(key, data as Value);
+    }
   }
 
   /**
    * Commit all pending changes to the Loro document.
    * Throttled to run at most once every 250ms.
    */
-  commit: () => void = throttle(() => {
+  commit: ReturnType<typeof throttle> = throttle(() => {
     this.doc.commit({ origin: "editor" });
   }, 250);
 
@@ -276,21 +309,161 @@ export class Store implements StoreAdapter {
    * went through the ECS.
    */
   flushChanges(ctx: Context): void {
-    if (this.pendingEvents.length === 0) return;
-
-    // Process all cached events in order
-    for (const eventBatch of this.pendingEvents) {
-      for (const event of eventBatch.events) {
-        // Event path tells us the container hierarchy: ["components", "Block", entityId]
-        // or ["singletons", "Camera"]
-        if (event.diff.type === "map") {
-          this.applyEventDiff(ctx, event.path, event.diff);
+    // Process document events
+    if (this.pendingEvents.length > 0) {
+      for (const eventBatch of this.pendingEvents) {
+        for (const event of eventBatch.events) {
+          // Event path tells us the container hierarchy: ["components", "Block", entityId]
+          // or ["singletons", "Camera"]
+          if (event.diff.type === "map") {
+            this.applyDocumentEvent(ctx, event.path, event.diff);
+          }
         }
+      }
+      this.pendingEvents = [];
+    }
+
+    // Process ephemeral events
+    if (this.pendingEphemeralEvents.length > 0) {
+      for (const event of this.pendingEphemeralEvents) {
+        this.applyEphemeralEvent(ctx, event);
+      }
+      this.pendingEphemeralEvents = [];
+    }
+  }
+
+  // ─── Helpers for applying external changes to ECS ───────────────────────────
+
+  /**
+   * Add a component to an entity, creating the entity if it doesn't exist.
+   */
+  private addComponentToEntity(
+    ctx: Context,
+    componentName: string,
+    id: string,
+    value: unknown
+  ): void {
+    const componentDef = this.componentDefsByName.get(componentName);
+    if (!componentDef) return;
+
+    const existingEntityId = this.idToEntityId.get(id);
+    if (existingEntityId !== undefined) {
+      // Entity exists - add or update component
+      if (hasComponent(ctx, existingEntityId, componentDef)) {
+        componentDef.copy(ctx, existingEntityId, value as any);
+      } else {
+        addComponent(ctx, existingEntityId, componentDef, value as any);
+      }
+    } else {
+      // Create new entity
+      const ecsEntityId = createEntity(ctx);
+      this.idToEntityId.set(id, ecsEntityId);
+      this.entityIdToId.set(ecsEntityId, id);
+      addComponent(ctx, ecsEntityId, componentDef, value as any);
+    }
+  }
+
+  /**
+   * Update a component on an existing entity.
+   */
+  private updateComponentOnEntity(
+    ctx: Context,
+    componentName: string,
+    id: string,
+    value: unknown
+  ): void {
+    const componentDef = this.componentDefsByName.get(componentName);
+    if (!componentDef) return;
+
+    const existingEntityId = this.idToEntityId.get(id);
+    if (existingEntityId !== undefined) {
+      if (hasComponent(ctx, existingEntityId, componentDef)) {
+        componentDef.copy(ctx, existingEntityId, value as any);
+      } else {
+        addComponent(ctx, existingEntityId, componentDef, value as any);
+      }
+    }
+  }
+
+  /**
+   * Remove an entity by its stable ID.
+   */
+  private removeEntityById(ctx: Context, id: string): void {
+    const ecsEntityId = this.idToEntityId.get(id);
+    if (ecsEntityId !== undefined) {
+      removeEntity(ctx, ecsEntityId);
+      this.idToEntityId.delete(id);
+      this.entityIdToId.delete(ecsEntityId);
+    }
+  }
+
+  /**
+   * Update a singleton's data.
+   */
+  private updateSingleton(
+    ctx: Context,
+    singletonName: string,
+    value: unknown
+  ): void {
+    const singletonDef = this.singletonDefsByName.get(singletonName);
+    if (singletonDef) {
+      singletonDef.copy(ctx, value as any);
+    }
+  }
+
+  // ─── Event processing ──────────────────────────────────────────────────────
+
+  /**
+   * Apply an ephemeral event to the ECS world.
+   * Keys are formatted as "{componentName}:{id}" or "singleton:{singletonName}"
+   */
+  private applyEphemeralEvent(ctx: Context, event: EphemeralStoreEvent): void {
+    // Process added keys
+    for (const key of event.added) {
+      const value = this.ephemeralStore.get(key);
+      if (value === undefined) continue;
+
+      if (key.startsWith("singleton:")) {
+        this.updateSingleton(ctx, key.slice("singleton:".length), value);
+      } else {
+        const colonIndex = key.indexOf(":");
+        if (colonIndex === -1) continue;
+        this.addComponentToEntity(
+          ctx,
+          key.slice(0, colonIndex),
+          key.slice(colonIndex + 1),
+          value
+        );
       }
     }
 
-    // Clear pending events after processing
-    this.pendingEvents = [];
+    // Process updated keys
+    for (const key of event.updated) {
+      const value = this.ephemeralStore.get(key);
+      if (value === undefined) continue;
+
+      if (key.startsWith("singleton:")) {
+        this.updateSingleton(ctx, key.slice("singleton:".length), value);
+      } else {
+        const colonIndex = key.indexOf(":");
+        if (colonIndex === -1) continue;
+        this.updateComponentOnEntity(
+          ctx,
+          key.slice(0, colonIndex),
+          key.slice(colonIndex + 1),
+          value
+        );
+      }
+    }
+
+    // Process removed keys (timeout or explicit deletion)
+    for (const key of event.removed) {
+      if (key.startsWith("singleton:")) continue; // Singletons don't get removed
+
+      const colonIndex = key.indexOf(":");
+      if (colonIndex === -1) continue;
+      this.removeEntityById(ctx, key.slice(colonIndex + 1));
+    }
   }
 
   /**
@@ -301,64 +474,29 @@ export class Store implements StoreAdapter {
    * @param path - Event path like ["components", "Block"] or ["singletons"]
    * @param diff - The MapDiff containing updated keys
    */
-  private applyEventDiff(
+  private applyDocumentEvent(
     ctx: Context,
     path: (string | number)[],
     diff: MapDiff
   ): void {
-    // Path structure:
-    // - ["components", componentName] - changes to a component map
-    // - ["singletons"] - changes to the singletons map
     if (path.length === 0) return;
 
     const rootKey = path[0];
 
     if (rootKey === "components" && path.length >= 2) {
-      // This is a component map: path = ["components", componentName]
       const componentName = path[1] as string;
-      const componentDef = this.componentDefsByName.get(componentName);
-      if (!componentDef) return;
 
       for (const [id, value] of Object.entries(diff.updated)) {
         if (value === undefined) {
-          // Entity was deleted
-          const ecsEntityId = this.idToEntityId.get(id);
-          if (ecsEntityId !== undefined) {
-            removeEntity(ctx, ecsEntityId);
-            this.idToEntityId.delete(id);
-            this.entityIdToId.delete(ecsEntityId);
-          }
+          this.removeEntityById(ctx, id);
         } else {
-          // Entity was added or updated
-          const existingEntityId = this.idToEntityId.get(id);
-
-          if (existingEntityId !== undefined) {
-            // Update existing entity
-            if (hasComponent(ctx, existingEntityId, componentDef)) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              componentDef.copy(ctx, existingEntityId, value as any);
-            } else {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              addComponent(ctx, existingEntityId, componentDef, value as any);
-            }
-          } else {
-            // Create new entity
-            const ecsEntityId = createEntity(ctx);
-            this.idToEntityId.set(id, ecsEntityId);
-            this.entityIdToId.set(ecsEntityId, id);
-            addComponent(ctx, ecsEntityId, componentDef, value as any);
-          }
+          this.addComponentToEntity(ctx, componentName, id, value);
         }
       }
     } else if (rootKey === "singletons") {
-      // This is the singletons map: path = ["singletons"]
       for (const [singletonName, value] of Object.entries(diff.updated)) {
         if (value !== undefined) {
-          const singletonDef = this.singletonDefsByName.get(singletonName);
-          if (singletonDef) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            singletonDef.copy(ctx, value as any);
-          }
+          this.updateSingleton(ctx, singletonName, value);
         }
       }
     }
@@ -407,7 +545,9 @@ export class Store implements StoreAdapter {
     }
 
     // Close IndexedDB
-    this.localDB?.close();
+    this.localDB?.dispose();
+
+    this.commit.cancel();
 
     this.initialized = false;
   }

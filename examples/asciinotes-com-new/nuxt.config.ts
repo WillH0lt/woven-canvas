@@ -91,14 +91,5 @@ export default defineNuxtConfig({
       wasm(),
       topLevelAwait(),
     ],
-    resolve: {
-      conditions: [
-        "@infinitecanvas/source",
-        "import",
-        "module",
-        "browser",
-        "default",
-      ],
-    },
   },
 });
