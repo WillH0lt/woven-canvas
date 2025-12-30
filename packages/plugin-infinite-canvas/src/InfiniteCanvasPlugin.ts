@@ -117,16 +117,21 @@ export function createInfiniteCanvasPlugin(
     blockDefs[def.tag] = def;
   }
 
-  // Use provided keybinds or defaults
-  const keybinds =
-    options.keybinds !== undefined
-      ? options.keybinds
-      : DEFAULT_KEYBINDS.map((kb) => Keybind.parse(kb));
+  // Merge user keybinds with defaults (user keybinds override by key combination)
+  const getKeybindKey = (kb: Keybind) =>
+    `${kb.key}:${kb.mod ?? false}:${kb.shift ?? false}`;
+  const defaultKeybinds = DEFAULT_KEYBINDS.map((kb) => Keybind.parse(kb));
+  const userKeybinds = options.keybinds ?? [];
+  const userKeybindKeys = new Set(userKeybinds.map(getKeybindKey));
+  const keybinds = [
+    ...defaultKeybinds.filter((kb) => !userKeybindKeys.has(getKeybindKey(kb))),
+    ...userKeybinds,
+  ];
 
-  // Merge user cursors with defaults
+  // Merge user cursors with defaults (user cursors override by kind)
   const cursors: CursorDefMap = {
     ...DEFAULT_CURSOR_DEFS,
-    ...optionsInput.cursors,
+    ...options.cursors,
   };
 
   return {
