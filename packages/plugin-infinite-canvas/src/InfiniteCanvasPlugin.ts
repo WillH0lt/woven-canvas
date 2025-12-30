@@ -54,10 +54,12 @@ import {
 import { DEFAULT_KEYBINDS } from "./constants";
 import {
   Keybind,
-  InfiniteCanvasPluginOptions as PluginOptionsSchema,
+  InfiniteCanvasPluginOptionsSchema,
   type BlockDefMap,
+  type CursorDefMap,
   type InfiniteCanvasPluginOptionsInput,
 } from "./types";
+import { DEFAULT_CURSOR_DEFS } from "./cursors";
 
 /**
  * Resources for the Infinite Canvas plugin.
@@ -68,6 +70,7 @@ export interface InfiniteCanvasResources {
   userId: string;
   blockDefs: BlockDefMap;
   keybinds: Keybind[];
+  cursors: CursorDefMap;
 }
 
 /**
@@ -103,7 +106,7 @@ export function createInfiniteCanvasPlugin(
   const sessionId = crypto.randomUUID();
 
   // Parse options with Zod schema
-  const options = PluginOptionsSchema.parse(optionsInput);
+  const options = InfiniteCanvasPluginOptionsSchema.parse(optionsInput);
 
   // Generate user id if not provided
   const userId = options.userId ?? crypto.randomUUID();
@@ -120,6 +123,12 @@ export function createInfiniteCanvasPlugin(
       ? options.keybinds
       : DEFAULT_KEYBINDS.map((kb) => Keybind.parse(kb));
 
+  // Merge user cursors with defaults
+  const cursors: CursorDefMap = {
+    ...DEFAULT_CURSOR_DEFS,
+    ...optionsInput.cursors,
+  };
+
   return {
     name: "infiniteCanvas",
 
@@ -130,6 +139,7 @@ export function createInfiniteCanvasPlugin(
       userId,
       blockDefs,
       keybinds,
+      cursors,
     },
 
     components: [

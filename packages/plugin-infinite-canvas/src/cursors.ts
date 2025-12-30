@@ -1,4 +1,4 @@
-import { CursorKind } from "./types";
+import { CursorKind, type CursorDef, type CursorDefMap } from "./types";
 
 // SVG Templates
 
@@ -48,13 +48,11 @@ function svgToCursor(svg: string, hotspot: [number, number]): string {
   } ${hotspot[1]}, auto`;
 }
 
-type CursorDef = {
-  makeSvg: (rotateZ: number) => string;
-  hotspot: [number, number];
-  rotationOffset: number;
-};
-
-const CURSOR_DEFS: Record<CursorKind, CursorDef> = {
+/**
+ * Default cursor definitions for all cursor kinds.
+ * Users can override these by providing custom cursors in plugin options.
+ */
+export const DEFAULT_CURSOR_DEFS: Record<string, CursorDef> = {
   [CursorKind.Drag]: {
     makeSvg: () => DRAG_SVG,
     hotspot: [12, 12],
@@ -102,8 +100,24 @@ const CURSOR_DEFS: Record<CursorKind, CursorDef> = {
   },
 };
 
-export function getCursorSvg(kind: CursorKind, rotateZ: number): string {
-  const def = CURSOR_DEFS[kind];
+/**
+ * Get a cursor CSS value for a given cursor kind and rotation.
+ * @param cursors - The cursor definitions map (from resources)
+ * @param kind - The cursor kind
+ * @param rotateZ - The rotation angle in radians
+ * @returns CSS cursor value string
+ */
+export function getCursorSvg(
+  cursors: CursorDefMap,
+  kind: string,
+  rotateZ: number
+): string {
+  const def = cursors[kind] ?? DEFAULT_CURSOR_DEFS[kind];
+  if (!def) {
+    console.warn(`No cursor definition found for kind: ${kind}`);
+    return "auto";
+  }
+
   const svg = def.makeSvg(rotateZ + def.rotationOffset);
   return svgToCursor(svg, def.hotspot);
 }

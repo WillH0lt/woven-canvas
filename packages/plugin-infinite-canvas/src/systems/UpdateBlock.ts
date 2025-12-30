@@ -107,12 +107,19 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
   on(ctx, SendBackwardSelected, sendBackwardSelected);
 
   on(ctx, SetCursor, (ctx, payload) => {
-    const cursor = Cursor.write(ctx);
-    if (payload.svg !== undefined) {
-      cursor.svg = payload.svg;
+    if (payload.cursorKind !== undefined) {
+      Cursor.setCursor(ctx, payload.cursorKind, payload.rotation ?? 0);
     }
-    if (payload.contextSvg !== undefined) {
-      cursor.contextSvg = payload.contextSvg;
+    if (payload.contextCursorKind !== undefined) {
+      Cursor.setContextCursor(
+        ctx,
+        payload.contextCursorKind,
+        payload.contextRotation ?? 0
+      );
+    }
+    // Allow clearing context cursor by passing empty string
+    if (payload.contextCursorKind === "") {
+      Cursor.clearContextCursor(ctx);
     }
   });
 

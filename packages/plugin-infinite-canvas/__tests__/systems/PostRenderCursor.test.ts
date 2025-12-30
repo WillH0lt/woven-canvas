@@ -1,18 +1,28 @@
-import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { Editor, type EditorPlugin } from "@infinitecanvas/editor";
 import { Cursor } from "../../src/singletons";
 import { PostRenderCursor } from "../../src/systems/PostRenderCursor";
 import { createMockElement } from "../testUtils";
+import { CursorKind } from "../../src/types";
+import { DEFAULT_CURSOR_DEFS, getCursorSvg } from "../../src/cursors";
+import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 
 // Mock DOM element for tests
 const mockDomElement = createMockElement();
 
-// Test plugin with only PostRenderCursor system
-const testPlugin: EditorPlugin = {
-  name: "test",
+// Test plugin with only PostRenderCursor system and resources
+const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+  name: "infiniteCanvas",
   components: [],
   singletons: [Cursor],
   postRenderSystems: [PostRenderCursor],
+  resources: {
+    sessionId: "test-session",
+    userId: "test-user",
+    blockDefs: {},
+    keybinds: [],
+    cursors: DEFAULT_CURSOR_DEFS,
+  },
 };
 
 describe("PostRenderCursor", () => {
@@ -37,37 +47,33 @@ describe("PostRenderCursor", () => {
   });
 
   describe("cursor application", () => {
-    it("should apply contextSvg to document.body.style.cursor", async () => {
-      const testCursor = "url(data:image/svg+xml,...) 12 12, auto";
-
+    it("should apply context cursor to document.body.style.cursor", async () => {
       editor.nextTick((ctx) => {
-        Cursor.setContextSvg(ctx, testCursor);
+        Cursor.setContextCursor(ctx, CursorKind.Drag, 0);
       });
 
       await editor.tick();
 
-      expect(document.body.style.cursor).toBe(testCursor);
+      const expectedCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      expect(document.body.style.cursor).toBe(expectedCursor);
     });
 
-    it("should apply svg when contextSvg is empty", async () => {
-      const testCursor = "url(data:image/svg+xml,...) 12 12, auto";
-
+    it("should apply base cursor when context cursor is empty", async () => {
       editor.nextTick((ctx) => {
-        const cursor = Cursor.write(ctx);
-        cursor.svg = testCursor;
-        cursor.contextSvg = "";
+        Cursor.setCursor(ctx, CursorKind.NS, 0);
       });
 
       await editor.tick();
 
-      expect(document.body.style.cursor).toBe(testCursor);
+      const expectedCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.NS, 0);
+      expect(document.body.style.cursor).toBe(expectedCursor);
     });
 
-    it("should use default cursor when both contextSvg and svg are empty", async () => {
+    it("should use default cursor when both context and base cursor are empty", async () => {
       editor.nextTick((ctx) => {
         const cursor = Cursor.write(ctx);
-        cursor.svg = "";
-        cursor.contextSvg = "";
+        cursor.cursorKind = "";
+        cursor.contextCursorKind = "";
       });
 
       await editor.tick();
@@ -77,57 +83,51 @@ describe("PostRenderCursor", () => {
   });
 
   describe("cursor priority", () => {
-    it("should prioritize contextSvg over svg", async () => {
-      const contextCursor = "url(context-cursor) 12 12, auto";
-      const svgCursor = "url(svg-cursor) 12 12, auto";
-
+    it("should prioritize context cursor over base cursor", async () => {
       editor.nextTick((ctx) => {
-        const cursor = Cursor.write(ctx);
-        cursor.contextSvg = contextCursor;
-        cursor.svg = svgCursor;
+        Cursor.setCursor(ctx, CursorKind.NS, 0);
+        Cursor.setContextCursor(ctx, CursorKind.Drag, 0);
       });
 
       await editor.tick();
 
-      expect(document.body.style.cursor).toBe(contextCursor);
+      const expectedCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      expect(document.body.style.cursor).toBe(expectedCursor);
     });
 
-    it("should fall back to svg when contextSvg is cleared", async () => {
-      const contextCursor = "url(context-cursor) 12 12, auto";
-      const svgCursor = "url(svg-cursor) 12 12, auto";
-
+    it("should fall back to base cursor when context cursor is cleared", async () => {
       // First set both
       editor.nextTick((ctx) => {
-        const cursor = Cursor.write(ctx);
-        cursor.contextSvg = contextCursor;
-        cursor.svg = svgCursor;
+        Cursor.setCursor(ctx, CursorKind.NS, 0);
+        Cursor.setContextCursor(ctx, CursorKind.Drag, 0);
       });
 
       await editor.tick();
-      expect(document.body.style.cursor).toBe(contextCursor);
+      const dragCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      expect(document.body.style.cursor).toBe(dragCursor);
 
-      // Clear contextSvg
+      // Clear context cursor
       editor.nextTick((ctx) => {
-        Cursor.clearContextSvg(ctx);
+        Cursor.clearContextCursor(ctx);
       });
 
       await editor.tick();
 
-      expect(document.body.style.cursor).toBe(svgCursor);
+      const nsCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.NS, 0);
+      expect(document.body.style.cursor).toBe(nsCursor);
     });
   });
 
   describe("change detection", () => {
     it("should only update DOM when cursor singleton changes", async () => {
-      const testCursor = "url(test-cursor) 12 12, auto";
-
       // Set initial cursor
       editor.nextTick((ctx) => {
-        Cursor.setContextSvg(ctx, testCursor);
+        Cursor.setContextCursor(ctx, CursorKind.Drag, 0);
       });
 
       await editor.tick();
-      expect(document.body.style.cursor).toBe(testCursor);
+      const dragCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      expect(document.body.style.cursor).toBe(dragCursor);
 
       // Manually change body cursor to something else
       document.body.style.cursor = "pointer";
@@ -140,42 +140,40 @@ describe("PostRenderCursor", () => {
     });
 
     it("should update DOM when cursor value changes", async () => {
-      const cursor1 = "url(cursor-1) 12 12, auto";
-      const cursor2 = "url(cursor-2) 12 12, auto";
-
       // Set first cursor
       editor.nextTick((ctx) => {
-        Cursor.setContextSvg(ctx, cursor1);
+        Cursor.setContextCursor(ctx, CursorKind.Drag, 0);
       });
 
       await editor.tick();
+      const cursor1 = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
       expect(document.body.style.cursor).toBe(cursor1);
 
       // Set second cursor
       editor.nextTick((ctx) => {
-        Cursor.setContextSvg(ctx, cursor2);
+        Cursor.setContextCursor(ctx, CursorKind.NS, 0);
       });
 
       await editor.tick();
+      const cursor2 = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.NS, 0);
       expect(document.body.style.cursor).toBe(cursor2);
     });
   });
 
   describe("clearing cursor", () => {
-    it("should revert to default when contextSvg is cleared and svg is empty", async () => {
-      const testCursor = "url(test-cursor) 12 12, auto";
-
+    it("should revert to default when context cursor is cleared and base cursor is empty", async () => {
       // Set cursor
       editor.nextTick((ctx) => {
-        Cursor.setContextSvg(ctx, testCursor);
+        Cursor.setContextCursor(ctx, CursorKind.Drag, 0);
       });
 
       await editor.tick();
-      expect(document.body.style.cursor).toBe(testCursor);
+      const dragCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      expect(document.body.style.cursor).toBe(dragCursor);
 
       // Clear cursor
       editor.nextTick((ctx) => {
-        Cursor.clearContextSvg(ctx);
+        Cursor.clearContextCursor(ctx);
       });
 
       await editor.tick();

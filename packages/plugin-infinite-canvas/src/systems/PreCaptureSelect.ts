@@ -35,7 +35,6 @@ import {
 } from "../helpers";
 import { SelectionStateSingleton } from "../singletons";
 import { SelectionState, CursorKind } from "../types";
-import { getCursorSvg } from "../cursors";
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4;
@@ -108,20 +107,19 @@ const selectionMachine = setup({
         const handle = TransformHandle.read(event.ctx, context.draggedEntity);
         const transformBoxBlock = Block.read(event.ctx, handle.transformBoxId);
         SetCursor.spawn(event.ctx, {
-          contextSvg: getCursorSvg(
-            handle.cursorKind as CursorKind,
-            transformBoxBlock.rotateZ
-          ),
+          contextCursorKind: handle.cursorKind,
+          contextRotation: transformBoxBlock.rotateZ,
         });
       } else {
         // For other entities (blocks, transform box), use drag cursor
         SetCursor.spawn(event.ctx, {
-          contextSvg: getCursorSvg(CursorKind.Drag, 0),
+          contextCursorKind: CursorKind.Drag,
+          contextRotation: 0,
         });
       }
     },
     unsetDragCursor: ({ event }) => {
-      SetCursor.spawn(event.ctx, { contextSvg: "" });
+      SetCursor.spawn(event.ctx, { contextCursorKind: "" });
     },
     setDraggedEntity: assign({
       draggedEntity: ({ event }) => event.intersects[0] ?? null,

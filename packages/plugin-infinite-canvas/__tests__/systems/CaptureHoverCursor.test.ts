@@ -4,25 +4,32 @@ import {
   createEntity,
   addComponent,
   removeComponent,
-  hasComponent,
   type EditorPlugin,
 } from "@infinitecanvas/editor";
 import { Block, Hovered, TransformHandle, TransformBox } from "../../src/components";
 import { Cursor } from "../../src/singletons";
 import { CaptureHoverCursor } from "../../src/systems/CaptureHoverCursor";
 import { CursorKind, TransformHandleKind } from "../../src/types";
-import { getCursorSvg } from "../../src/cursors";
+import { DEFAULT_CURSOR_DEFS } from "../../src/cursors";
 import { createMockElement } from "../testUtils";
+import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 
 // Mock DOM element for tests
 const mockDomElement = createMockElement();
 
 // Test plugin with only CaptureHoverCursor system and its dependencies
-const testPlugin: EditorPlugin = {
-  name: "test",
+const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+  name: "infiniteCanvas",
   components: [Block, Hovered, TransformHandle, TransformBox],
   singletons: [Cursor],
   captureSystems: [CaptureHoverCursor],
+  resources: {
+    sessionId: "test-session",
+    userId: "test-user",
+    blockDefs: {},
+    keybinds: [],
+    cursors: DEFAULT_CURSOR_DEFS,
+  },
 };
 
 describe("CaptureHoverCursor", () => {
@@ -40,10 +47,11 @@ describe("CaptureHoverCursor", () => {
   });
 
   describe("hover on transform handle", () => {
-    it("should set contextSvg when hovering a transform handle", async () => {
+    it("should set context cursor when hovering a transform handle", async () => {
       let transformBoxId: number;
       let handleId: number;
-      let contextSvg = "";
+      let contextCursorKind = "";
+      let contextRotation = 0;
 
       // Create transform box and handle
       editor.nextTick((ctx) => {
@@ -81,21 +89,23 @@ describe("CaptureHoverCursor", () => {
 
       // Check cursor was set
       editor.nextTick((ctx) => {
-        contextSvg = Cursor.read(ctx).contextSvg;
+        const cursor = Cursor.read(ctx);
+        contextCursorKind = cursor.contextCursorKind;
+        contextRotation = cursor.contextRotation;
       });
 
       await editor.tick();
 
       // Should have set the NWSE cursor with 0 rotation
-      const expectedCursor = getCursorSvg(CursorKind.NWSE, 0);
-      expect(contextSvg).toBe(expectedCursor);
+      expect(contextCursorKind).toBe(CursorKind.NWSE);
+      expect(contextRotation).toBe(0);
     });
 
-    it("should clear contextSvg when unhovering", async () => {
+    it("should clear context cursor when unhovering", async () => {
       let transformBoxId: number;
       let handleId: number;
-      let contextSvgBefore = "";
-      let contextSvgAfter = "";
+      let contextCursorKindBefore = "";
+      let contextCursorKindAfter = "";
 
       // Create transform box and handle with Hovered
       editor.nextTick((ctx) => {
@@ -126,7 +136,7 @@ describe("CaptureHoverCursor", () => {
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        contextSvgBefore = Cursor.read(ctx).contextSvg;
+        contextCursorKindBefore = Cursor.read(ctx).contextCursorKind;
       });
 
       await editor.tick();
@@ -139,13 +149,13 @@ describe("CaptureHoverCursor", () => {
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        contextSvgAfter = Cursor.read(ctx).contextSvg;
+        contextCursorKindAfter = Cursor.read(ctx).contextCursorKind;
       });
 
       await editor.tick();
 
-      expect(contextSvgBefore).not.toBe("");
-      expect(contextSvgAfter).toBe("");
+      expect(contextCursorKindBefore).toBe(CursorKind.NWSE);
+      expect(contextCursorKindAfter).toBe("");
     });
 
     it("should use correct cursor kind for different handle types", async () => {
@@ -192,15 +202,14 @@ describe("CaptureHoverCursor", () => {
 
         await editor.tick();
 
-        let contextSvg = "";
+        let contextCursorKind = "";
         editor.nextTick((ctx) => {
-          contextSvg = Cursor.read(ctx).contextSvg;
+          contextCursorKind = Cursor.read(ctx).contextCursorKind;
         });
 
         await editor.tick();
 
-        const expectedCursor = getCursorSvg(cursorKind, 0);
-        expect(contextSvg).toBe(expectedCursor);
+        expect(contextCursorKind).toBe(cursorKind);
 
         // Cleanup for next iteration
         editor.nextTick((ctx) => {
@@ -215,7 +224,8 @@ describe("CaptureHoverCursor", () => {
     it("should use transform box rotation for cursor", async () => {
       let transformBoxId: number;
       let handleId: number;
-      let contextSvg = "";
+      let contextCursorKind = "";
+      let contextRotation = 0;
       const rotation = Math.PI / 4; // 45 degrees
 
       editor.nextTick((ctx) => {
@@ -246,21 +256,23 @@ describe("CaptureHoverCursor", () => {
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        contextSvg = Cursor.read(ctx).contextSvg;
+        const cursor = Cursor.read(ctx);
+        contextCursorKind = cursor.contextCursorKind;
+        contextRotation = cursor.contextRotation;
       });
 
       await editor.tick();
 
       // Should use the transform box's rotation
-      const expectedCursor = getCursorSvg(CursorKind.NS, rotation);
-      expect(contextSvg).toBe(expectedCursor);
+      expect(contextCursorKind).toBe(CursorKind.NS);
+      expect(contextRotation).toBe(rotation);
     });
 
     it("should update cursor when transform box rotation changes", async () => {
       let transformBoxId: number;
       let handleId: number;
-      let contextSvgBefore = "";
-      let contextSvgAfter = "";
+      let rotationBefore = 0;
+      let rotationAfter = 0;
 
       // Create with initial rotation
       editor.nextTick((ctx) => {
@@ -291,7 +303,7 @@ describe("CaptureHoverCursor", () => {
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        contextSvgBefore = Cursor.read(ctx).contextSvg;
+        rotationBefore = Cursor.read(ctx).contextRotation;
       });
 
       await editor.tick();
@@ -305,17 +317,13 @@ describe("CaptureHoverCursor", () => {
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        contextSvgAfter = Cursor.read(ctx).contextSvg;
+        rotationAfter = Cursor.read(ctx).contextRotation;
       });
 
       await editor.tick();
 
-      const expectedBefore = getCursorSvg(CursorKind.NS, 0);
-      const expectedAfter = getCursorSvg(CursorKind.NS, Math.PI / 2);
-
-      expect(contextSvgBefore).toBe(expectedBefore);
-      expect(contextSvgAfter).toBe(expectedAfter);
-      expect(contextSvgBefore).not.toBe(contextSvgAfter);
+      expect(rotationBefore).toBe(0);
+      expect(rotationAfter).toBe(Math.PI / 2);
     });
   });
 
@@ -323,7 +331,6 @@ describe("CaptureHoverCursor", () => {
     it("should not update cursor if same cursor value", async () => {
       let transformBoxId: number;
       let handleId: number;
-      let writeCount = 0;
 
       // Create and hover
       editor.nextTick((ctx) => {
@@ -354,19 +361,17 @@ describe("CaptureHoverCursor", () => {
       await editor.tick();
 
       // Get initial cursor value
-      let initialContextSvg = "";
+      let initialCursorKind = "";
       editor.nextTick((ctx) => {
-        initialContextSvg = Cursor.read(ctx).contextSvg;
+        initialCursorKind = Cursor.read(ctx).contextCursorKind;
       });
 
       await editor.tick();
 
-      // Manually set to same value - system should not write again
+      // Verify it doesn't clear or change unnecessarily
       editor.nextTick((ctx) => {
-        // The system checks if cursor changed before writing
-        // So we just need to verify it doesn't clear or change unnecessarily
-        const currentContextSvg = Cursor.read(ctx).contextSvg;
-        expect(currentContextSvg).toBe(initialContextSvg);
+        const currentCursorKind = Cursor.read(ctx).contextCursorKind;
+        expect(currentCursorKind).toBe(initialCursorKind);
       });
 
       await editor.tick();
@@ -376,7 +381,7 @@ describe("CaptureHoverCursor", () => {
       let transformBoxId: number;
       let handleId1: number;
       let handleId2: number;
-      let contextSvg = "";
+      let contextCursorKind = "";
 
       editor.nextTick((ctx) => {
         transformBoxId = createEntity(ctx);
@@ -423,14 +428,14 @@ describe("CaptureHoverCursor", () => {
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        contextSvg = Cursor.read(ctx).contextSvg;
+        contextCursorKind = Cursor.read(ctx).contextCursorKind;
       });
 
       await editor.tick();
 
       // Should use one of the cursors (first in query order)
       // We just verify a cursor was set
-      expect(contextSvg).not.toBe("");
+      expect(contextCursorKind).not.toBe("");
     });
   });
 });

@@ -6,8 +6,6 @@ import {
 
 import { Block, Hovered, TransformHandle, TransformBox } from "../components";
 import { Cursor } from "../singletons";
-import { getCursorSvg } from "../cursors";
-import { CursorKind } from "../types";
 
 // Query for hovered entities that have transform handles
 const hoveredHandleQuery = defineQuery((q) =>
@@ -37,7 +35,7 @@ export const CaptureHoverCursor = defineSystem((ctx: Context) => {
 
   // Clear context cursor when unhovering
   if (currentHandles.length === 0 && removedHandles.length > 0) {
-    Cursor.clearContextSvg(ctx);
+    Cursor.clearContextCursor(ctx);
     return;
   }
 
@@ -52,15 +50,13 @@ export const CaptureHoverCursor = defineSystem((ctx: Context) => {
     const transformBoxId = handle.transformBoxId;
     const transformBoxBlock = Block.read(ctx, transformBoxId);
 
-    const contextSvg = getCursorSvg(
-      handle.cursorKind as CursorKind,
-      transformBoxBlock.rotateZ
-    );
-
-    // Only update if cursor changed
+    // Only update if cursor kind or rotation changed
     const currentCursor = Cursor.read(ctx);
-    if (contextSvg !== currentCursor.contextSvg) {
-      Cursor.setContextSvg(ctx, contextSvg);
+    if (
+      handle.cursorKind !== currentCursor.contextCursorKind ||
+      transformBoxBlock.rotateZ !== currentCursor.contextRotation
+    ) {
+      Cursor.setContextCursor(ctx, handle.cursorKind, transformBoxBlock.rotateZ);
     }
   }
 });

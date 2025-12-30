@@ -71,10 +71,14 @@ export const UncloneEntities = defineCommand<{
 
 /**
  * Set the cursor appearance.
- * @param svg - Optional SVG cursor image
- * @param contextSvg - Optional context-aware SVG cursor
+ * @param cursorKind - Optional cursor kind (from CursorKind enum or custom)
+ * @param rotation - Optional rotation in radians
+ * @param contextCursorKind - Optional context cursor kind (overrides cursorKind)
+ * @param contextRotation - Optional context rotation in radians
  */
 export const SetCursor = defineCommand<{
-  svg?: string;
-  contextSvg?: string;
+  cursorKind?: string;
+  rotation?: number;
+  contextCursorKind?: string;
+  contextRotation?: number;
 }>("set-cursor");

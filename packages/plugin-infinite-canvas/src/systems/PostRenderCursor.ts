@@ -2,10 +2,13 @@ import {
   type Context,
   defineSystem,
   defineQuery,
+  getPluginResources,
 } from "@infinitecanvas/editor";
 import { Cursor } from "../singletons";
+import { getCursorSvg } from "../cursors";
+import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
 
-// Default cursor when no tool is active
+// Default cursor when no cursor kind is set
 const DEFAULT_CURSOR = "default";
 
 const cursorQuery = defineQuery((q) => q.tracking(Cursor));
@@ -14,12 +17,12 @@ const cursorQuery = defineQuery((q) => q.tracking(Cursor));
  * Post-render cursor system - applies the current cursor to the DOM.
  *
  * Runs after rendering to update document.body.style.cursor based on:
- * 1. contextSvg (hover cursor) - highest priority
- * 2. Tool cursor - medium priority
+ * 1. contextCursorKind (hover/drag cursor) - highest priority
+ * 2. cursorKind (tool cursor) - medium priority
  * 3. Default cursor - fallback
  *
- * This is separated from CaptureHoverCursor to ensure cursor is always
- * applied at the right time in the frame lifecycle.
+ * Resolves cursor kind + rotation to SVG using getCursorSvg at render time,
+ * allowing cursor definitions to be changed dynamically.
  */
 export const PostRenderCursor = defineSystem((ctx: Context) => {
   const changedCursors = cursorQuery.changed(ctx);
@@ -29,15 +32,21 @@ export const PostRenderCursor = defineSystem((ctx: Context) => {
     return;
   }
 
-  const cursor = Cursor.read(ctx);
+  const { cursorKind, rotation } = Cursor.getEffective(ctx);
 
-  // TODO: Get tool cursor from tool definition when tools are implemented
-  // For now, use default cursor as the tool cursor
-  const toolCursor = DEFAULT_CURSOR;
+  // If no cursor kind set, use default
+  if (!cursorKind) {
+    document.body.style.cursor = DEFAULT_CURSOR;
+    return;
+  }
 
-  // Priority: contextSvg > toolCursor > DEFAULT_CURSOR
-  const svg = cursor.contextSvg || cursor.svg || toolCursor;
+  // Get cursors from resources and resolve to SVG
+  const { cursors } = getPluginResources<InfiniteCanvasResources>(
+    ctx,
+    "infiniteCanvas"
+  );
+  const cursorValue = getCursorSvg(cursors, cursorKind, rotation);
 
   // Apply to DOM
-  document.body.style.cursor = svg;
+  document.body.style.cursor = cursorValue;
 });

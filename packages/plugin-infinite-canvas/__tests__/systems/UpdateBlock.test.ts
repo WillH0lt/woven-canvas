@@ -729,94 +729,121 @@ describe("UpdateBlock", () => {
   });
 
   describe("SetCursor command", () => {
-    it("should set the cursor svg", async () => {
-      let svg: string | undefined;
+    it("should set the cursor kind and rotation", async () => {
+      let cursorKind: string | undefined;
+      let rotation: number | undefined;
 
-      editor.command(SetCursor, { svg: "<svg>test</svg>" });
-
-      await editor.tick();
-
-      editor.nextTick((ctx) => {
-        svg = Cursor.read(ctx).svg;
-      });
-
-      await editor.tick();
-      expect(svg).toBe("<svg>test</svg>");
-    });
-
-    it("should set the cursor contextSvg", async () => {
-      let contextSvg: string | undefined;
-
-      editor.command(SetCursor, { contextSvg: "<svg>context</svg>" });
+      editor.command(SetCursor, { cursorKind: "drag", rotation: 0.5 });
 
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        contextSvg = Cursor.read(ctx).contextSvg;
+        const cursor = Cursor.read(ctx);
+        cursorKind = cursor.cursorKind;
+        rotation = cursor.rotation;
       });
 
       await editor.tick();
-      expect(contextSvg).toBe("<svg>context</svg>");
+      expect(cursorKind).toBe("drag");
+      expect(rotation).toBe(0.5);
     });
 
-    it("should set both svg and contextSvg", async () => {
-      let svg: string | undefined;
-      let contextSvg: string | undefined;
+    it("should set the context cursor kind and rotation", async () => {
+      let contextCursorKind: string | undefined;
+      let contextRotation: number | undefined;
+
+      editor.command(SetCursor, { contextCursorKind: "nesw", contextRotation: 1.0 });
+
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        const cursor = Cursor.read(ctx);
+        contextCursorKind = cursor.contextCursorKind;
+        contextRotation = cursor.contextRotation;
+      });
+
+      await editor.tick();
+      expect(contextCursorKind).toBe("nesw");
+      expect(contextRotation).toBe(1.0);
+    });
+
+    it("should set both base and context cursor", async () => {
+      let cursorKind: string | undefined;
+      let contextCursorKind: string | undefined;
 
       editor.command(SetCursor, {
-        svg: "<svg>base</svg>",
-        contextSvg: "<svg>context</svg>",
+        cursorKind: "ns",
+        contextCursorKind: "ew",
       });
 
       await editor.tick();
 
       editor.nextTick((ctx) => {
         const cursor = Cursor.read(ctx);
-        svg = cursor.svg;
-        contextSvg = cursor.contextSvg;
+        cursorKind = cursor.cursorKind;
+        contextCursorKind = cursor.contextCursorKind;
       });
 
       await editor.tick();
-      expect(svg).toBe("<svg>base</svg>");
-      expect(contextSvg).toBe("<svg>context</svg>");
+      expect(cursorKind).toBe("ns");
+      expect(contextCursorKind).toBe("ew");
     });
 
-    it("should not modify svg if only contextSvg is provided", async () => {
-      let svg: string | undefined;
+    it("should not modify base cursor if only context cursor is provided", async () => {
+      let cursorKind: string | undefined;
 
-      // First set svg
-      editor.command(SetCursor, { svg: "<svg>original</svg>" });
+      // First set base cursor
+      editor.command(SetCursor, { cursorKind: "drag" });
       await editor.tick();
 
-      // Then set only contextSvg
-      editor.command(SetCursor, { contextSvg: "<svg>context</svg>" });
+      // Then set only context cursor
+      editor.command(SetCursor, { contextCursorKind: "nesw" });
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        svg = Cursor.read(ctx).svg;
+        cursorKind = Cursor.read(ctx).cursorKind;
       });
 
       await editor.tick();
-      expect(svg).toBe("<svg>original</svg>");
+      expect(cursorKind).toBe("drag");
     });
 
-    it("should not modify contextSvg if only svg is provided", async () => {
-      let contextSvg: string | undefined;
+    it("should not modify context cursor if only base cursor is provided", async () => {
+      let contextCursorKind: string | undefined;
 
-      // First set contextSvg
-      editor.command(SetCursor, { contextSvg: "<svg>original</svg>" });
+      // First set context cursor
+      editor.command(SetCursor, { contextCursorKind: "nesw" });
       await editor.tick();
 
-      // Then set only svg
-      editor.command(SetCursor, { svg: "<svg>base</svg>" });
+      // Then set only base cursor
+      editor.command(SetCursor, { cursorKind: "drag" });
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        contextSvg = Cursor.read(ctx).contextSvg;
+        contextCursorKind = Cursor.read(ctx).contextCursorKind;
       });
 
       await editor.tick();
-      expect(contextSvg).toBe("<svg>original</svg>");
+      expect(contextCursorKind).toBe("nesw");
+    });
+
+    it("should clear context cursor when empty string is provided", async () => {
+      let contextCursorKind: string | undefined;
+
+      // First set context cursor
+      editor.command(SetCursor, { contextCursorKind: "nesw" });
+      await editor.tick();
+
+      // Clear it
+      editor.command(SetCursor, { contextCursorKind: "" });
+      await editor.tick();
+
+      editor.nextTick((ctx) => {
+        contextCursorKind = Cursor.read(ctx).contextCursorKind;
+      });
+
+      await editor.tick();
+      expect(contextCursorKind).toBe("");
     });
   });
 

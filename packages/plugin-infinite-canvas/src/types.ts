@@ -63,6 +63,26 @@ export enum CursorKind {
 }
 
 /**
+ * Cursor definition schema.
+ * Defines how to generate the cursor SVG at a given rotation.
+ */
+export const CursorDef = z.object({
+  /** Function that generates the SVG string for a given rotation angle (in radians) */
+  makeSvg: z.function().args(z.number()).returns(z.string()),
+  /** Hotspot coordinates [x, y] for the cursor */
+  hotspot: z.tuple([z.number(), z.number()]),
+  /** Base rotation offset applied before the dynamic rotation */
+  rotationOffset: z.number(),
+});
+
+export type CursorDef = z.infer<typeof CursorDef>;
+
+/**
+ * Map of cursor kind to cursor definition.
+ */
+export type CursorDefMap = Partial<Record<string, CursorDef>>;
+
+/**
  * Block resize modes.
  */
 export type ResizeMode = "scale" | "text" | "free" | "groupOnly";
@@ -126,7 +146,7 @@ export type BlockDefMap = Record<string, BlockDef>;
 /**
  * Plugin options schema for the Infinite Canvas plugin.
  */
-export const InfiniteCanvasPluginOptions = z.object({
+export const InfiniteCanvasPluginOptionsSchema = z.object({
   /**
    * Custom block definitions.
    * These define how different block types behave (editing, resizing, rotation, etc.)
@@ -144,18 +164,25 @@ export const InfiniteCanvasPluginOptions = z.object({
    * If not provided, a crypto UUID will be generated.
    */
   userId: z.string().optional(),
+
+  /**
+   * Custom cursor definitions.
+   * Override default cursors or define new ones for transform operations.
+   * Keys are CursorKind values, values are CursorDef objects.
+   */
+  cursors: z.record(z.string(), CursorDef).optional(),
 });
 
 /**
  * Input type for plugin options (what users provide).
  */
 export type InfiniteCanvasPluginOptionsInput = z.input<
-  typeof InfiniteCanvasPluginOptions
+  typeof InfiniteCanvasPluginOptionsSchema
 >;
 
 /**
  * Normalized plugin options type (after parsing with defaults applied).
  */
 export type InfiniteCanvasPluginOptions = z.infer<
-  typeof InfiniteCanvasPluginOptions
+  typeof InfiniteCanvasPluginOptionsSchema
 >;
