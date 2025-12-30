@@ -4,7 +4,7 @@ import { Editor, defineCommand, defineSystem, type EditorPlugin } from "../src";
 // Mock DOM element for tests
 const mockDomElement = document.createElement("div");
 
-describe("Command System", () => {
+describe("Command", () => {
   let editor: Editor;
 
   afterEach(async () => {

@@ -2,54 +2,16 @@ import {
   createEntity,
   addComponent,
   Synced,
+  EditorComponentDef,
+  EditorSingletonDef,
+  MainThreadSystem,
   type EditorPlugin,
   type EditorPluginFactory,
 } from "@infinitecanvas/editor";
 
-// Components
-import {
-  Block,
-  Aabb,
-  Selected,
-  Hovered,
-  Edited,
-  Locked,
-  DragStart,
-  TransformBox,
-  TransformHandle,
-  SelectionBox,
-  ScaleWithZoom,
-  Opacity,
-  Text,
-  Connector,
-  User,
-} from "./components";
-
-// Singletons
-import {
-  SelectionStateSingleton,
-  TransformBoxStateSingleton,
-  Intersect,
-  RankBounds,
-  Cursor,
-  Clipboard,
-  ScaleWithZoomState,
-} from "./singletons";
-
-import {
-  PreInputRankBounds,
-  PreCaptureIntersect,
-  PreCaptureSelect,
-  UpdateSelect,
-  CaptureTransformBox,
-  CaptureKeyboard,
-  CaptureHoverCursor,
-  PostUpdateTransformBox,
-  PreRenderScaleWithZoom,
-  PostRenderCursor,
-  UpdateBlock,
-  UpdateDragHandler,
-} from "./systems";
+import * as components from "./components";
+import * as singletons from "./singletons";
+import * as systems from "./systems";
 
 import { DEFAULT_KEYBINDS, PLUGIN_NAME } from "./constants";
 import {
@@ -60,6 +22,12 @@ import {
   type InfiniteCanvasPluginOptionsInput,
 } from "./types";
 import { DEFAULT_CURSOR_DEFS } from "./cursors";
+
+// Helper to filter systems from a phase namespace
+const filterSystems = (ns: object): MainThreadSystem[] =>
+  Object.values(ns).filter(
+    (v): v is MainThreadSystem => v instanceof MainThreadSystem
+  );
 
 /**
  * Resources for the Infinite Canvas plugin.
@@ -145,47 +113,27 @@ export function createInfiniteCanvasPlugin(
       cursors,
     },
 
-    components: [
-      Block,
-      Aabb,
-      Selected,
-      Hovered,
-      Edited,
-      Locked,
-      DragStart,
-      TransformBox,
-      TransformHandle,
-      SelectionBox,
-      ScaleWithZoom,
-      Opacity,
-      Text,
-      Connector,
-      User,
-    ],
+    components: Object.values(components).filter(
+      (v): v is EditorComponentDef<any> => v instanceof EditorComponentDef
+    ),
 
-    singletons: [
-      SelectionStateSingleton,
-      TransformBoxStateSingleton,
-      Intersect,
-      RankBounds,
-      Cursor,
-      Clipboard,
-      ScaleWithZoomState,
-    ],
+    singletons: Object.values(singletons).filter(
+      (v): v is EditorSingletonDef<any> => v instanceof EditorSingletonDef
+    ),
 
-    preInputSystems: [PreInputRankBounds],
+    preInputSystems: filterSystems(systems.preInput),
 
-    preCaptureSystems: [PreCaptureIntersect, PreCaptureSelect],
+    preCaptureSystems: filterSystems(systems.preCapture),
 
-    captureSystems: [CaptureTransformBox, CaptureKeyboard, CaptureHoverCursor],
+    captureSystems: filterSystems(systems.capture),
 
-    updateSystems: [UpdateBlock, UpdateSelect, UpdateDragHandler],
+    updateSystems: filterSystems(systems.update),
 
-    postUpdateSystems: [PostUpdateTransformBox],
+    postUpdateSystems: filterSystems(systems.postUpdate),
 
-    preRenderSystems: [PreRenderScaleWithZoom],
+    preRenderSystems: filterSystems(systems.preRender),
 
-    postRenderSystems: [PostRenderCursor],
+    postRenderSystems: filterSystems(systems.postRender),
 
     setup(ctx) {
       // Create the user entity for presence tracking
@@ -193,7 +141,7 @@ export function createInfiniteCanvasPlugin(
       addComponent(ctx, userEntity, Synced, {
         id: sessionId,
       });
-      addComponent(ctx, userEntity, User, {
+      addComponent(ctx, userEntity, components.User, {
         id: userId,
       });
     },

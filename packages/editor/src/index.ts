@@ -62,6 +62,7 @@ export {
   defineQuery,
   getResources,
   defineSystem,
+  MainThreadSystem,
   type Context,
   type EntityId,
   type QueryDef,
