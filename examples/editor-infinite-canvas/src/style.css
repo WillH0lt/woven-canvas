@@ -79,7 +79,7 @@ html, body {
   background: #d63850;
 }
 
-#camera-info {
+#people-here {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid #333;
@@ -87,13 +87,5 @@ html, body {
   gap: 16px;
   font-family: monospace;
   font-size: 13px;
-}
-
-#camera-info span {
-  color: #888;
-}
-
-#camera-info span span {
-  color: #16a085;
-  font-weight: bold;
+  color: #eee;
 }

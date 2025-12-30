@@ -18,11 +18,18 @@ import { RankBounds } from "../../src/singletons";
 import { UpdateDragHandler } from "../../src/systems/UpdateDragHandler";
 import { TransformHandleKind } from "../../src/types";
 import { createBlock } from "../testUtils";
+import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 
 // Factory function to create test plugin
 // Note: Only includes UpdateDragHandler to test it in isolation
-const testPlugin: EditorPlugin = {
-  name: "test",
+const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+  name: "infiniteCanvas",
+  resources: {
+    sessionId: "test-session-id",
+    userId: "test-user-id",
+    blockDefs: {},
+    keybinds: [],
+  },
   components: [
     Block,
     Aabb,

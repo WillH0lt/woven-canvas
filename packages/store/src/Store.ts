@@ -14,8 +14,10 @@ import { throttle } from "lodash-es";
 import {
   createEntity,
   addComponent,
+  removeComponent,
   removeEntity,
   hasComponent,
+  Synced,
   type Context,
   type StoreAdapter,
   type AnyEditorComponentDef,
@@ -31,6 +33,7 @@ export interface StoreOptions {
   websocketUrl?: string;
   useLocalPersistence?: boolean;
   useWebSocket?: boolean;
+  ephemeralTimeoutMs?: number;
 }
 
 /**
@@ -71,7 +74,13 @@ export class Store implements StoreAdapter {
   private adaptor: LoroAdaptor | null = null;
   private ephemeralAdaptor: LoroEphemeralAdaptor | null = null;
   private websocketUrl?: string;
+  private ephemeralTimeoutMs: number;
   private documentId: string;
+
+  // Ephemeral data refresh
+  private localEphemeralKeys: Set<string> = new Set();
+  private ephemeralRefreshInterval: ReturnType<typeof setInterval> | null =
+    null;
 
   private initialized: boolean = false;
 
@@ -92,6 +101,7 @@ export class Store implements StoreAdapter {
   constructor(options: StoreOptions = { documentId: "default" }) {
     this.documentId = options.documentId;
     this.websocketUrl = options.websocketUrl;
+    this.ephemeralTimeoutMs = options.ephemeralTimeoutMs ?? 10000;
 
     if (options.useLocalPersistence) {
       this.localDB = new LocalDB(options.documentId);
@@ -101,7 +111,7 @@ export class Store implements StoreAdapter {
     this.undoManager = new UndoManager(this.doc, {
       excludeOriginPrefixes: ["sys:"],
     });
-    this.ephemeralStore = new EphemeralStore();
+    this.ephemeralStore = new EphemeralStore(this.ephemeralTimeoutMs);
   }
 
   /**
@@ -175,6 +185,9 @@ export class Store implements StoreAdapter {
       });
     }
 
+    // Start ephemeral data refresh to keep local data alive
+    this.startEphemeralRefresh();
+
     this.initialized = true;
   }
 
@@ -216,6 +229,9 @@ export class Store implements StoreAdapter {
       // Store in EphemeralStore for transient sync
       const key = `${componentDef.name}:${id}`;
       this.ephemeralStore.set(key, data as Value);
+      this.localEphemeralKeys.add(key);
+
+      console.log("adding ephemeral key:", key);
     }
   }
 
@@ -243,6 +259,7 @@ export class Store implements StoreAdapter {
     } else if (componentDef.__editor.sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       this.ephemeralStore.set(key, data as Value);
+      this.localEphemeralKeys.add(key);
     }
   }
 
@@ -265,6 +282,7 @@ export class Store implements StoreAdapter {
     } else if (componentDef.__editor.sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       this.ephemeralStore.delete(key);
+      this.localEphemeralKeys.delete(key);
     }
 
     // Clean up UUID -> entityId mapping when entity is removed
@@ -277,19 +295,14 @@ export class Store implements StoreAdapter {
 
   /**
    * Called when a singleton is updated.
-   * Routes to document or ephemeral storage based on sync type.
+   * Singletons are always stored in the document for persistence.
    *
    * @param singletonDef - The singleton definition
    * @param data - The singleton data
    */
   onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void {
-    if (singletonDef.__editor.sync === "document") {
-      const singletonsMap = this.doc.getMap("singletons");
-      singletonsMap.set(singletonDef.name, data);
-    } else if (singletonDef.__editor.sync === "ephemeral") {
-      const key = `singleton:${singletonDef.name}`;
-      this.ephemeralStore.set(key, data as Value);
-    }
+    const singletonsMap = this.doc.getMap("singletons");
+    singletonsMap.set(singletonDef.name, data);
   }
 
   /**
@@ -299,6 +312,46 @@ export class Store implements StoreAdapter {
   commit: ReturnType<typeof throttle> = throttle(() => {
     this.doc.commit({ origin: "editor" });
   }, 250);
+
+  /**
+   * Refresh all local ephemeral data to prevent timeout expiration.
+   * Re-sets each key with its current value to reset the TTL.
+   */
+  private refreshEphemeralData(): void {
+    for (const key of this.localEphemeralKeys) {
+      const value = this.ephemeralStore.get(key);
+      if (value !== undefined) {
+        this.ephemeralStore.set(key, value);
+      } else {
+        // Value already expired, remove from tracking
+        this.localEphemeralKeys.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Start the ephemeral data refresh interval.
+   * Refreshes at half the timeout period to ensure data stays alive.
+   */
+  private startEphemeralRefresh(): void {
+    if (this.ephemeralRefreshInterval) return;
+
+    // Refresh at half the timeout to ensure data doesn't expire
+    const refreshMs = Math.max(1000, this.ephemeralTimeoutMs / 2);
+    this.ephemeralRefreshInterval = setInterval(() => {
+      this.refreshEphemeralData();
+    }, refreshMs);
+  }
+
+  /**
+   * Stop the ephemeral data refresh interval.
+   */
+  private stopEphemeralRefresh(): void {
+    if (this.ephemeralRefreshInterval) {
+      clearInterval(this.ephemeralRefreshInterval);
+      this.ephemeralRefreshInterval = null;
+    }
+  }
 
   /**
    * Flush pending external changes (undo/redo, network sync) to the ECS world.
@@ -359,6 +412,8 @@ export class Store implements StoreAdapter {
       const ecsEntityId = createEntity(ctx);
       this.idToEntityId.set(id, ecsEntityId);
       this.entityIdToId.set(ecsEntityId, id);
+      // Add Synced component with the entity's stable ID
+      addComponent(ctx, ecsEntityId, Synced, { id });
       addComponent(ctx, ecsEntityId, componentDef, value as any);
     }
   }
@@ -386,14 +441,37 @@ export class Store implements StoreAdapter {
   }
 
   /**
-   * Remove an entity by its stable ID.
+   * Remove a component from an entity by its stable ID.
+   * If the entity only has the Synced component remaining after removal,
+   * the entity is deleted entirely.
    */
-  private removeEntityById(ctx: Context, id: string): void {
-    const ecsEntityId = this.idToEntityId.get(id);
-    if (ecsEntityId !== undefined) {
-      removeEntity(ctx, ecsEntityId);
-      this.idToEntityId.delete(id);
-      this.entityIdToId.delete(ecsEntityId);
+  private removeComponentFromEntity(
+    ctx: Context,
+    componentName: string,
+    id: string
+  ): void {
+    const componentDef = this.componentDefsByName.get(componentName);
+    if (!componentDef) return;
+
+    const entityId = this.idToEntityId.get(id);
+    if (entityId !== undefined && hasComponent(ctx, entityId, componentDef)) {
+      removeComponent(ctx, entityId, componentDef);
+
+      // Check if only Synced remains - if so, clean up the entity
+      const syncedId = Synced._getComponentId(ctx);
+      let hasOtherComponents = false;
+      for (const compId of ctx.entityBuffer.getComponentIds(entityId)) {
+        if (compId !== syncedId) {
+          hasOtherComponents = true;
+          break;
+        }
+      }
+
+      if (!hasOtherComponents) {
+        removeEntity(ctx, entityId);
+        this.idToEntityId.delete(id);
+        this.entityIdToId.delete(entityId);
+      }
     }
   }
 
@@ -415,7 +493,7 @@ export class Store implements StoreAdapter {
 
   /**
    * Apply an ephemeral event to the ECS world.
-   * Keys are formatted as "{componentName}:{id}" or "singleton:{singletonName}"
+   * Keys are formatted as "{componentName}:{id}"
    */
   private applyEphemeralEvent(ctx: Context, event: EphemeralStoreEvent): void {
     // Process added keys
@@ -423,18 +501,14 @@ export class Store implements StoreAdapter {
       const value = this.ephemeralStore.get(key);
       if (value === undefined) continue;
 
-      if (key.startsWith("singleton:")) {
-        this.updateSingleton(ctx, key.slice("singleton:".length), value);
-      } else {
-        const colonIndex = key.indexOf(":");
-        if (colonIndex === -1) continue;
-        this.addComponentToEntity(
-          ctx,
-          key.slice(0, colonIndex),
-          key.slice(colonIndex + 1),
-          value
-        );
-      }
+      const colonIndex = key.indexOf(":");
+      if (colonIndex === -1) continue;
+      this.addComponentToEntity(
+        ctx,
+        key.slice(0, colonIndex),
+        key.slice(colonIndex + 1),
+        value
+      );
     }
 
     // Process updated keys
@@ -442,27 +516,25 @@ export class Store implements StoreAdapter {
       const value = this.ephemeralStore.get(key);
       if (value === undefined) continue;
 
-      if (key.startsWith("singleton:")) {
-        this.updateSingleton(ctx, key.slice("singleton:".length), value);
-      } else {
-        const colonIndex = key.indexOf(":");
-        if (colonIndex === -1) continue;
-        this.updateComponentOnEntity(
-          ctx,
-          key.slice(0, colonIndex),
-          key.slice(colonIndex + 1),
-          value
-        );
-      }
+      const colonIndex = key.indexOf(":");
+      if (colonIndex === -1) continue;
+      this.updateComponentOnEntity(
+        ctx,
+        key.slice(0, colonIndex),
+        key.slice(colonIndex + 1),
+        value
+      );
     }
 
     // Process removed keys (timeout or explicit deletion)
     for (const key of event.removed) {
-      if (key.startsWith("singleton:")) continue; // Singletons don't get removed
-
       const colonIndex = key.indexOf(":");
       if (colonIndex === -1) continue;
-      this.removeEntityById(ctx, key.slice(colonIndex + 1));
+      this.removeComponentFromEntity(
+        ctx,
+        key.slice(0, colonIndex),
+        key.slice(colonIndex + 1)
+      );
     }
   }
 
@@ -488,7 +560,7 @@ export class Store implements StoreAdapter {
 
       for (const [id, value] of Object.entries(diff.updated)) {
         if (value === undefined) {
-          this.removeEntityById(ctx, id);
+          this.removeComponentFromEntity(ctx, componentName, id);
         } else {
           this.addComponentToEntity(ctx, componentName, id, value);
         }
@@ -538,6 +610,9 @@ export class Store implements StoreAdapter {
    * Disconnect and cleanup resources.
    */
   dispose(): void {
+    // Stop ephemeral refresh interval
+    this.stopEphemeralRefresh();
+
     // Disconnect WebSocket
     if (this.client) {
       this.client.close();

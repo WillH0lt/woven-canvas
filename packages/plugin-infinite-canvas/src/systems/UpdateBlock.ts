@@ -37,10 +37,11 @@ import {
 } from "../commands";
 import { RankBounds, Cursor, Clipboard } from "../singletons";
 import type { ClipboardEntityData } from "../singletons/Clipboard";
-import { generateUuidBySeed } from "../helpers/uuid";
-
-// Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
+import {
+  generateUuidBySeed,
+  selectBlock,
+  getLocalSelectedBlocks,
+} from "../helpers";
 
 // Query for synced blocks
 const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced));
@@ -67,9 +68,7 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
     if (deselectOthers) {
       deselectAllBlocks(ctx);
     }
-    if (!hasComponent(ctx, entityId, Selected)) {
-      addComponent(ctx, entityId, Selected, { selectedBy: "" });
-    }
+    selectBlock(ctx, entityId);
   });
 
   on(ctx, DeselectBlock, (ctx, { entityId }) => {
@@ -82,7 +81,7 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
     if (hasComponent(ctx, entityId, Selected)) {
       removeComponent(ctx, entityId, Selected);
     } else {
-      addComponent(ctx, entityId, Selected, { selectedBy: "" });
+      selectBlock(ctx, entityId);
     }
   });
 
@@ -90,9 +89,7 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
 
   on(ctx, SelectAll, (ctx) => {
     for (const entityId of syncedBlocksQuery.current(ctx)) {
-      if (!hasComponent(ctx, entityId, Selected)) {
-        addComponent(ctx, entityId, Selected, { selectedBy: "" });
-      }
+      selectBlock(ctx, entityId);
     }
   });
 
@@ -101,7 +98,7 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
   });
 
   on(ctx, RemoveSelected, (ctx) => {
-    for (const entityId of selectedBlocksQuery.current(ctx)) {
+    for (const entityId of getLocalSelectedBlocks(ctx)) {
       removeEntity(ctx, entityId);
     }
   });
@@ -126,7 +123,7 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
   on(ctx, Cut, (ctx) => {
     copySelectedBlocks(ctx);
     // Remove selected blocks after copying
-    for (const entityId of selectedBlocksQuery.current(ctx)) {
+    for (const entityId of getLocalSelectedBlocks(ctx)) {
       removeEntity(ctx, entityId);
     }
   });
@@ -145,23 +142,20 @@ export const UpdateBlock = defineSystem((ctx: Context) => {
 });
 
 /**
- * Deselect all blocks.
+ * Deselect all blocks selected by the current session.
  */
 function deselectAllBlocks(ctx: Context): void {
-  for (const entityId of selectedBlocksQuery.current(ctx)) {
-    if (hasComponent(ctx, entityId, Selected)) {
-      removeComponent(ctx, entityId, Selected);
-    }
+  for (const entityId of getLocalSelectedBlocks(ctx)) {
+    removeComponent(ctx, entityId, Selected);
   }
 }
 
 /**
  * Bring selected blocks to front (generate new ranks).
+ * Only affects blocks selected by the current session.
  */
 function bringForwardSelected(ctx: Context): void {
-  console.log("Bringing selected blocks forward");
-
-  const selectedBlocks = Array.from(selectedBlocksQuery.current(ctx));
+  const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
 
   // Sort by current rank (ascending)
@@ -185,9 +179,10 @@ function bringForwardSelected(ctx: Context): void {
 
 /**
  * Send selected blocks to back (generate new ranks).
+ * Only affects blocks selected by the current session.
  */
 function sendBackwardSelected(ctx: Context): void {
-  const selectedBlocks = Array.from(selectedBlocksQuery.current(ctx));
+  const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
 
   // Sort by current rank (descending - process highest rank first)
@@ -212,9 +207,10 @@ function sendBackwardSelected(ctx: Context): void {
 /**
  * Copy selected blocks to clipboard.
  * Serializes all document-synced components for each selected entity.
+ * Only copies blocks selected by the current session.
  */
 function copySelectedBlocks(ctx: Context): void {
-  const selectedBlocks = Array.from(selectedBlocksQuery.current(ctx));
+  const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
 
   const { editor } = getResources<EditorResources>(ctx);
@@ -338,7 +334,7 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
     }
 
     // Select the pasted entity
-    addComponent(ctx, entityId, Selected, { selectedBy: "" });
+    selectBlock(ctx, entityId);
   }
 }
 

@@ -1,6 +1,6 @@
 import { type Context, getPluginResources } from "@infinitecanvas/editor";
 
-import type { InfiniteCanvasResources } from "../Plugin";
+import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
 import { BlockDef, type BlockDefMap } from "../types";
 
 /**

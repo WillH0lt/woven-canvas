@@ -22,6 +22,7 @@ import {
   type PointerInputWithIntersects,
   canBlockEdit,
   getBlockDef,
+  getLocalSelectedBlocks,
 } from "../helpers";
 import { TransformBoxStateSingleton } from "../singletons";
 import { TransformBoxState } from "../types";
@@ -162,9 +163,10 @@ const selectedBlocksQuery = defineQuery((q) =>
 /**
  * Check if the current selection is editable.
  * Used by the isSelectionEditable guard - reads current state, not event.
+ * Only considers blocks selected by the current session.
  */
 function checkSelectionEditable(ctx: Context): boolean {
-  const selectedEntities = Array.from(selectedBlocksQuery.current(ctx));
+  const selectedEntities = getLocalSelectedBlocks(ctx);
 
   if (selectedEntities.length !== 1) return false;
 
@@ -190,8 +192,8 @@ export const CaptureTransformBox = defineSystem((ctx) => {
   const removed = selectedBlocksQuery.removed(ctx);
 
   if (added.length > 0 || removed.length > 0) {
-    const current = selectedBlocksQuery.current(ctx);
-    const selectedEntityIds = Array.from(current);
+    // Only include blocks selected by the current session
+    const selectedEntityIds = getLocalSelectedBlocks(ctx);
 
     const selectionEvent: SelectionChangedEvent = {
       type: "selectionChanged",

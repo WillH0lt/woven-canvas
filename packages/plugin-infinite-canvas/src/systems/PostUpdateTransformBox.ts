@@ -15,8 +15,6 @@ import { Vec2, Rect } from "@infinitecanvas/math";
 
 import {
   Block,
-  Aabb,
-  Selected,
   TransformBox,
   TransformHandle,
   DragStart,
@@ -34,7 +32,7 @@ import {
   StartTransformBoxEdit,
   EndTransformBoxEdit,
 } from "../commands";
-import { getBlockDef } from "../helpers";
+import { getBlockDef, getLocalSelectedBlocks } from "../helpers";
 import { SelectionStateSingleton } from "../singletons";
 import { TransformHandleKind, CursorKind, SelectionState } from "../types";
 
@@ -43,9 +41,6 @@ const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));
 
 // Query for transform handle entities
 const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle));
-
-// Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Query for edited blocks
 const editedBlocksQuery = defineQuery((q) => q.with(Block, Edited));
@@ -88,7 +83,7 @@ function removeTransformBox(ctx: Context): void {
   }
 
   // End editing if in edit mode
-  const selectedBlocks = Array.from(selectedBlocksQuery.current(ctx));
+  const selectedBlocks = getLocalSelectedBlocks(ctx);
   const isEditing =
     selectedBlocks.length &&
     selectedBlocks.every((id) => hasComponent(ctx, id, Edited));
@@ -142,7 +137,7 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
     transformBoxId = existingBoxes[0];
   }
 
-  const selectedBlocks = selectedBlocksQuery.current(ctx);
+  const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
 
   // Get common rotation (or 0 if mixed)
@@ -258,9 +253,9 @@ function addOrUpdateTransformHandles(
   ];
 
   // Get selected blocks and determine capabilities
-  const selectedBlocks = Array.from(selectedBlocksQuery.current(ctx));
+  const selectedBlocks = getLocalSelectedBlocks(ctx);
 
-  let resizeMode: "scale" | "text" | "free" | "groupOnly" = "scale";
+  let resizeMode = "scale";
   if (selectedBlocks.length === 1) {
     const block = Block.read(ctx, selectedBlocks[0]);
     const blockDef = getBlockDef(ctx, block.tag);
@@ -545,7 +540,7 @@ function startTransformBoxEdit(ctx: Context): void {
   }
 
   // Mark selected blocks as edited
-  for (const blockId of selectedBlocksQuery.current(ctx)) {
+  for (const blockId of getLocalSelectedBlocks(ctx)) {
     if (!hasComponent(ctx, blockId, Edited)) {
       addComponent(ctx, blockId, Edited, {});
     }

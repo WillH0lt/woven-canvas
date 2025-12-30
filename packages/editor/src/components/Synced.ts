@@ -27,5 +27,5 @@ export const Synced = new EditorComponentDef(
     /** The entity's stable UUID for storage and sync */
     id: field.string().max(36),
   },
-  { sync: "document" }
+  { sync: "none" }
 );

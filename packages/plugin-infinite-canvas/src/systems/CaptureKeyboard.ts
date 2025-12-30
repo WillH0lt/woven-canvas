@@ -8,7 +8,7 @@ import {
   CommandMarker,
 } from "@infinitecanvas/editor";
 
-import type { InfiniteCanvasResources } from "../Plugin";
+import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
 
 /**
  * Keyboard capture system - handles keybind-to-command mapping.

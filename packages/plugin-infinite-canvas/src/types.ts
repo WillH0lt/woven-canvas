@@ -124,28 +124,6 @@ export type BlockDef = z.infer<typeof BlockDef>;
 export type BlockDefMap = Record<string, BlockDef>;
 
 /**
- * User information schema for presence tracking.
- */
-export const UserInfo = z.object({
-  /** Unique user identifier. If not provided, a crypto UUID will be generated. */
-  id: z.string().optional(),
-  /** Optional display name */
-  name: z.string().optional(),
-  /** Optional profile image URL */
-  profileUrl: z.string().optional(),
-});
-
-/**
- * Input type for user info (what users provide).
- */
-export type UserInfoInput = z.input<typeof UserInfo>;
-
-/**
- * Normalized user info type (after parsing).
- */
-export type UserInfo = z.infer<typeof UserInfo>;
-
-/**
  * Plugin options schema for the Infinite Canvas plugin.
  */
 export const InfiniteCanvasPluginOptions = z.object({
@@ -162,11 +140,10 @@ export const InfiniteCanvasPluginOptions = z.object({
   keybinds: z.array(Keybind).optional(),
 
   /**
-   * User information for presence tracking.
-   * Used to show who is currently viewing the document.
-   * If not provided, an anonymous user with a generated UUID will be created.
+   * Unique user identifier for presence tracking.
+   * If not provided, a crypto UUID will be generated.
    */
-  user: UserInfo.optional(),
+  userId: z.string().optional(),
 });
 
 /**

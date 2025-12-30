@@ -20,6 +20,7 @@ import {
   TransformHandle,
   TransformHandleKind,
   SelectionBox,
+  type InfiniteCanvasResources,
 } from "@infinitecanvas/plugin-infinite-canvas";
 
 /**
@@ -74,12 +75,30 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
   const { canvas, ctx2d } = resources;
   const camera = Camera.read(ctx);
 
+  // Get current session ID to distinguish local vs remote selections
+  const { sessionId } = getPluginResources<InfiniteCanvasResources>(
+    ctx,
+    "infiniteCanvas"
+  );
+
   const width = canvas.width;
   const height = canvas.height;
   const zoom = camera.zoom;
 
-  // Build sets for quick lookup
-  const selectedSet = new Set(selectedQuery.current(ctx));
+  // Build sets for quick lookup - separate local and remote selections
+  const localSelectedSet = new Set<EntityId>();
+  const remoteSelectedSet = new Set<EntityId>();
+  for (const eid of selectedQuery.current(ctx)) {
+    const selected = Selected.read(ctx, eid);
+    if (selected.selectedBy === sessionId) {
+      localSelectedSet.add(eid);
+    } else {
+      remoteSelectedSet.add(eid);
+    }
+  }
+
+  console.log("Remote selected:", remoteSelectedSet.size);
+
   const hoveredSet = new Set(hoveredQuery.current(ctx));
 
   // === Clear canvas and draw background ===
@@ -140,7 +159,8 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
 
   for (const eid of blocks) {
     const block = Block.read(ctx, eid);
-    const isSelected = selectedSet.has(eid);
+    const isLocalSelected = localSelectedSet.has(eid);
+    const isRemoteSelected = remoteSelectedSet.has(eid);
     const isHovered = hoveredSet.has(eid);
 
     // Block uses position as top-left, not center
@@ -174,8 +194,14 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
 
     // Draw selection highlight (at full opacity)
     ctx2d.globalAlpha = 1;
-    if (isSelected) {
+    if (isLocalSelected) {
+      // Local selection - purple highlight
       ctx2d.strokeStyle = "#3f1773ff";
+      ctx2d.lineWidth = 3;
+      ctx2d.strokeRect(-screenW / 2, -screenH / 2, screenW, screenH);
+    } else if (isRemoteSelected) {
+      // Remote selection (another user) - orange/gold highlight
+      ctx2d.strokeStyle = "#f59e0b";
       ctx2d.lineWidth = 3;
       ctx2d.strokeRect(-screenW / 2, -screenH / 2, screenW, screenH);
     } else if (isHovered) {

@@ -24,13 +24,23 @@ import {
   UpdateSelectionBox,
   RemoveSelectionBox,
 } from "../../src/commands";
+import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 
 // Query for selection box entities
 const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 
+// Test session ID for consistent selection testing
+const TEST_SESSION_ID = "test-session-id";
+
 // Factory function to create test plugin
-const testPlugin: EditorPlugin = {
-  name: "test",
+const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+  name: "infiniteCanvas",
+  resources: {
+    sessionId: TEST_SESSION_ID,
+    userId: "test-user-id",
+    blockDefs: {},
+    keybinds: [],
+  },
   components: [Block, Aabb, Selected, SelectionBox, Hovered, Opacity],
   singletons: [Intersect, RankBounds],
   preCaptureSystems: [PreCaptureIntersect],
@@ -225,7 +235,7 @@ describe("UpdateSelectSystem", () => {
           rank: "a",
         });
         addComponent(ctx, entityId1, Synced, {});
-        addComponent(ctx, entityId1, Selected, { selectedBy: "" });
+        addComponent(ctx, entityId1, Selected, { selectedBy: TEST_SESSION_ID });
 
         entityId2 = createEntity(ctx);
         addComponent(ctx, entityId2, Block, {
@@ -234,7 +244,7 @@ describe("UpdateSelectSystem", () => {
           rank: "b",
         });
         addComponent(ctx, entityId2, Synced, {});
-        addComponent(ctx, entityId2, Selected, { selectedBy: "" });
+        addComponent(ctx, entityId2, Selected, { selectedBy: TEST_SESSION_ID });
       });
 
       // Let preCaptureIntersect compute AABBs
@@ -277,7 +287,7 @@ describe("UpdateSelectSystem", () => {
           rank: "a",
         });
         addComponent(ctx, entityId1, Synced, {});
-        addComponent(ctx, entityId1, Selected, { selectedBy: "" });
+        addComponent(ctx, entityId1, Selected, { selectedBy: TEST_SESSION_ID });
 
         entityId2 = createEntity(ctx);
         addComponent(ctx, entityId2, Block, {
@@ -286,7 +296,7 @@ describe("UpdateSelectSystem", () => {
           rank: "b",
         });
         addComponent(ctx, entityId2, Synced, {});
-        addComponent(ctx, entityId2, Selected, { selectedBy: "" });
+        addComponent(ctx, entityId2, Selected, { selectedBy: TEST_SESSION_ID });
       });
 
       // Let preCaptureIntersect compute AABBs

@@ -2,7 +2,7 @@ export {
   InfiniteCanvasPlugin,
   createInfiniteCanvasPlugin,
   type InfiniteCanvasResources,
-} from "./Plugin";
+} from "./InfiniteCanvasPlugin";
 
 // Re-export everything else
 export * from "./components";

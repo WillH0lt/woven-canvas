@@ -37,7 +37,12 @@ export {
 export type { StoreAdapter } from "./store";
 
 // Plugin system
-export { type EditorPlugin } from "./plugin";
+export {
+  type EditorPlugin,
+  type EditorPluginFactory,
+  type EditorPluginInput,
+  parsePlugin,
+} from "./plugin";
 
 // Command system
 export { defineCommand, on, type CommandDef, CommandMarker } from "./command";

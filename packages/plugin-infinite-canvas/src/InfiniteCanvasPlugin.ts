@@ -1,4 +1,10 @@
-import { createEntity, addComponent, type EditorPlugin } from "@infinitecanvas/editor";
+import {
+  createEntity,
+  addComponent,
+  Synced,
+  type EditorPlugin,
+  type EditorPluginFactory,
+} from "@infinitecanvas/editor";
 
 // Components
 import {
@@ -58,6 +64,8 @@ import {
  * Access via getPluginResources<InfiniteCanvasResources>(ctx, "infiniteCanvas").
  */
 export interface InfiniteCanvasResources {
+  sessionId: string;
+  userId: string;
   blockDefs: BlockDefMap;
   keybinds: Keybind[];
 }
@@ -91,11 +99,14 @@ export interface InfiniteCanvasResources {
 export function createInfiniteCanvasPlugin(
   optionsInput: InfiniteCanvasPluginOptionsInput = {}
 ): EditorPlugin<InfiniteCanvasResources> {
+  // Generate a unique session ID for this editor instance
+  const sessionId = crypto.randomUUID();
+
   // Parse options with Zod schema
   const options = PluginOptionsSchema.parse(optionsInput);
 
   // Generate user id if not provided
-  const userId = options.user?.id ?? crypto.randomUUID();
+  const userId = options.userId ?? crypto.randomUUID();
 
   // Build normalized block definitions map
   const blockDefs: BlockDefMap = {};
@@ -115,6 +126,8 @@ export function createInfiniteCanvasPlugin(
     dependencies: ["core"],
 
     resources: {
+      sessionId,
+      userId,
       blockDefs,
       keybinds,
     },
@@ -164,17 +177,18 @@ export function createInfiniteCanvasPlugin(
     setup(ctx) {
       // Create the user entity for presence tracking
       const userEntity = createEntity(ctx);
+      addComponent(ctx, userEntity, Synced, {
+        id: sessionId,
+      });
       addComponent(ctx, userEntity, User, {
         id: userId,
-        name: options.user?.name ?? "",
-        profileUrl: options.user?.profileUrl ?? "",
       });
     },
   };
 }
 
 /**
- * Infinite Canvas Plugin (default configuration)
+ * Infinite Canvas Plugin
  *
  * Provides core infinite canvas functionality:
  * - Block management (create, select, move, resize, rotate)
@@ -183,6 +197,27 @@ export function createInfiniteCanvasPlugin(
  * - Z-ordering (bring forward, send backward)
  * - Connectors (lines/arrows between blocks)
  *
- * For custom block definitions, use `createInfiniteCanvasPlugin()` instead.
+ * Can be used with or without options:
+ *
+ * @example
+ * ```typescript
+ * import { Editor } from '@infinitecanvas/editor';
+ * import { InfiniteCanvasPlugin } from '@infinitecanvas/plugin-infinite-canvas';
+ *
+ * // With default options (no parentheses needed)
+ * const editor = new Editor(el, {
+ *   plugins: [InfiniteCanvasPlugin],
+ * });
+ *
+ * // With custom options
+ * const editor = new Editor(el, {
+ *   plugins: [InfiniteCanvasPlugin({
+ *     customBlocks: [{ tag: "text", resizeMode: "text" }],
+ *   })],
+ * });
+ * ```
  */
-export const InfiniteCanvasPlugin: EditorPlugin = createInfiniteCanvasPlugin();
+export const InfiniteCanvasPlugin: EditorPluginFactory<
+  InfiniteCanvasPluginOptionsInput,
+  InfiniteCanvasResources
+> = (options = {}) => createInfiniteCanvasPlugin(options);

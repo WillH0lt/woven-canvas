@@ -15,6 +15,7 @@ import {
   TransformBox,
   TransformHandle,
 } from "../../src/components";
+import { selectBlock } from "../../src/helpers";
 import {
   Intersect,
   RankBounds,
@@ -28,7 +29,7 @@ import {
   RemoveTransformBox,
 } from "../../src/commands";
 import { TransformBoxState, BlockDef } from "../../src/types";
-import type { InfiniteCanvasResources } from "../../src/Plugin";
+import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 import {
   createPointerSimulator,
   simulateMouseMove,
@@ -42,6 +43,8 @@ const pointer = createPointerSimulator();
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
   name: "infiniteCanvas",
   resources: {
+    sessionId: "test-session-id",
+    userId: "test-user-id",
     blockDefs: {
       text: BlockDef.parse({
         tag: "text",
@@ -111,7 +114,7 @@ describe("CaptureTransformBox", () => {
 
       // Directly add Selected component to simulate selection
       editor.nextTick((ctx) => {
-        addComponent(ctx, entityId!, Selected, { selectedBy: "" });
+        selectBlock(ctx, entityId!);
       });
 
       await editor.tick();
@@ -138,7 +141,7 @@ describe("CaptureTransformBox", () => {
 
       // Directly add Selected component
       editor.nextTick((ctx) => {
-        addComponent(ctx, entityId!, Selected, { selectedBy: "" });
+        selectBlock(ctx, entityId!);
       });
 
       await editor.tick();
@@ -329,7 +332,7 @@ describe("CaptureTransformBox", () => {
 
       // Add second block to selection
       editor.nextTick((ctx) => {
-        addComponent(ctx, entity2!, Selected, { selectedBy: "" });
+        selectBlock(ctx, entity2!);
       });
 
       await editor.tick();

@@ -7,8 +7,10 @@ import {
   createEntity,
   addComponent,
   Synced,
+  getPluginResources,
 } from "@infinitecanvas/editor";
 import { Block, Aabb, Selected } from "../src/components";
+import type { InfiniteCanvasResources } from "../src/InfiniteCanvasPlugin";
 
 /**
  * Options for creating a test block.
@@ -58,7 +60,11 @@ export function createBlock(
   }
 
   if (selected) {
-    addComponent(ctx, entityId, Selected, { selectedBy: "" });
+    const { sessionId } = getPluginResources<InfiniteCanvasResources>(
+      ctx,
+      "infiniteCanvas"
+    );
+    addComponent(ctx, entityId, Selected, { selectedBy: sessionId });
   }
 
   return entityId;

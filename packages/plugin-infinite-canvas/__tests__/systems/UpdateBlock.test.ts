@@ -30,14 +30,21 @@ import {
   UncloneEntities,
 } from "../../src/commands";
 import { createBlock } from "../testUtils";
+import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 
 // Define queries at module level
 const blocksQuery = defineQuery((q) => q.with(Block));
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Factory function to create test plugin
-const testPlugin: EditorPlugin = {
-  name: "test",
+const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+  name: "infiniteCanvas",
+  resources: {
+    sessionId: "test-session-id",
+    userId: "test-user-id",
+    blockDefs: {},
+    keybinds: [],
+  },
   components: [Block, Aabb, Selected, Text],
   singletons: [RankBounds, Cursor, Clipboard],
   updateSystems: [UpdateBlock],

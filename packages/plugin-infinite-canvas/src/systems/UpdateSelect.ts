@@ -13,17 +13,18 @@ import {
 
 import { Block, Aabb, Selected, SelectionBox, Opacity } from "../components";
 import {
+  selectBlock,
+  getLocalSelectedBlocks,
+  intersectAabb,
+} from "../helpers";
+import {
   AddSelectionBox,
   UpdateSelectionBox,
   RemoveSelectionBox,
 } from "../commands";
-import { intersectAabb } from "../helpers";
 
 // Query for selection box entities
 const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
-
-// Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Query for all synced blocks (for intersection)
 const syncedBlocksQuery = defineQuery((q) =>
@@ -83,7 +84,7 @@ export const UpdateSelect = defineSystem((ctx: Context) => {
 
     // Deselect blocks outside the selection box if requested
     if (deselectOthers) {
-      for (const selectedId of selectedBlocksQuery.current(ctx)) {
+      for (const selectedId of getLocalSelectedBlocks(ctx)) {
         const shouldDeselect = !intersectedEntityIds.includes(selectedId);
         if (shouldDeselect && hasComponent(ctx, selectedId, Selected)) {
           removeComponent(ctx, selectedId, Selected);
@@ -93,9 +94,7 @@ export const UpdateSelect = defineSystem((ctx: Context) => {
 
     // Select all intersected blocks
     for (const entityId of intersectedEntityIds) {
-      if (!hasComponent(ctx, entityId, Selected)) {
-        addComponent(ctx, entityId, Selected, { selectedBy: "" });
-      }
+      selectBlock(ctx, entityId);
     }
   });
 

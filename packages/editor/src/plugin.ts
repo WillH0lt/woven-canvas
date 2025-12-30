@@ -1,9 +1,4 @@
-import type {
-  Context,
-  System,
-  ComponentDef,
-  ComponentSchema,
-} from "@infinitecanvas/ecs";
+import type { Context, System } from "@infinitecanvas/ecs";
 
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
@@ -194,6 +189,50 @@ export interface EditorPlugin<TResources = unknown> {
    * Use this to clean up resources.
    */
   teardown?: (ctx: Context) => void;
+}
+
+/**
+ * A plugin factory function that returns a plugin when called.
+ * Allows passing configuration options to plugins.
+ *
+ * @example
+ * ```typescript
+ * // Define a plugin factory
+ * export const ControlsPlugin = (options: ControlsOptions = {}) => ({
+ *   name: "controls",
+ *   resources: { zoomSpeed: options.zoomSpeed ?? 1.0 },
+ *   // ... systems, components, etc.
+ * });
+ *
+ * // Use with default options
+ * const editor = new Editor(el, { plugins: [ControlsPlugin] });
+ *
+ * // Or with custom options
+ * const editor = new Editor(el, { plugins: [ControlsPlugin({ zoomSpeed: 2.0 })] });
+ * ```
+ */
+export type EditorPluginFactory<TOptions = unknown, TResources = unknown> = (
+  options: TOptions
+) => EditorPlugin<TResources>;
+
+/**
+ * Input type for plugin configuration.
+ * Accepts either a plugin object directly or a factory function.
+ */
+export type EditorPluginInput = EditorPlugin | EditorPluginFactory<any, any>;
+
+/**
+ * Parse a plugin input into a plugin object.
+ * If the input is a factory function, it's called with empty options.
+ *
+ * @param input - Either a plugin object or factory function
+ * @returns The resolved plugin object
+ */
+export function parsePlugin(input: EditorPluginInput): EditorPlugin {
+  if (typeof input === "function") {
+    return input({});
+  }
+  return input;
 }
 
 /**

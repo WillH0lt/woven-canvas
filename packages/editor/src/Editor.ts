@@ -12,7 +12,12 @@ import {
 
 import type { EditorResources, SystemPhase } from "./types";
 import type { StoreAdapter } from "./store";
-import { type EditorPlugin, sortPluginsByDependencies } from "./plugin";
+import {
+  type EditorPlugin,
+  type EditorPluginInput,
+  parsePlugin,
+  sortPluginsByDependencies,
+} from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
@@ -26,8 +31,21 @@ export interface EditorOptions {
   /**
    * Plugins to load.
    * Plugins are sorted by dependencies automatically.
+   *
+   * Can be either plugin objects or factory functions:
+   * @example
+   * ```typescript
+   * // Direct plugin object
+   * { plugins: [MyPlugin] }
+   *
+   * // Factory function (called with default options)
+   * { plugins: [ControlsPlugin] }
+   *
+   * // Factory function with custom options
+   * { plugins: [ControlsPlugin({ zoomSpeed: 2.0 })] }
+   * ```
    */
-  plugins?: EditorPlugin[];
+  plugins?: EditorPluginInput[];
 
   /**
    * Store adapter for persistence and sync.
@@ -126,11 +144,14 @@ export class Editor {
 
   constructor(domElement: HTMLElement, options?: EditorOptions) {
     const {
-      plugins = [],
+      plugins: pluginInputs = [],
       store = null,
       maxEntities = 10_000,
       resources = {},
     } = options ?? {};
+
+    // Parse plugin inputs (handle both direct plugins and factory functions)
+    const plugins = pluginInputs.map(parsePlugin);
 
     // Sort plugins by dependencies, always including CorePlugin first
     const sortedPlugins = sortPluginsByDependencies([CorePlugin, ...plugins]);

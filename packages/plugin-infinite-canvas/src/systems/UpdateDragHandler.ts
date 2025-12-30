@@ -10,18 +10,13 @@ import { Vec2, Scalar } from "@infinitecanvas/math";
 
 import {
   Block,
-  Selected,
   TransformBox,
   TransformHandle,
   DragStart,
 } from "../components";
 import { DragBlock } from "../commands";
 import { TransformHandleKind } from "../types";
-
-// Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) =>
-  q.with(Block, Selected, DragStart)
-);
+import { getLocalSelectedBlocks } from "../helpers";
 
 // Query for transform box
 const transformBoxQuery = defineQuery((q) =>
@@ -68,7 +63,8 @@ function onTransformBoxDrag(
   const dx = position[0] - boxStart.position[0];
   const dy = position[1] - boxStart.position[1];
 
-  for (const blockId of selectedBlocksQuery.current(ctx)) {
+  for (const blockId of getLocalSelectedBlocks(ctx)) {
+    if (!hasComponent(ctx, blockId, DragStart)) continue;
     const blockStart = DragStart.read(ctx, blockId);
     const block = Block.write(ctx, blockId);
 
@@ -139,7 +135,8 @@ function onRotateHandleDrag(
   boxBlock.rotateZ = Scalar.normalizeAngle(dragStart.rotateZ + delta);
 
   // Update all selected blocks
-  for (const blockId of selectedBlocksQuery.current(ctx)) {
+  for (const blockId of getLocalSelectedBlocks(ctx)) {
+    if (!hasComponent(ctx, blockId, DragStart)) continue;
     const blockStart = DragStart.read(ctx, blockId);
     const block = Block.write(ctx, blockId);
 
@@ -273,7 +270,8 @@ function onScaleHandleDrag(
 
   // Update all selected blocks
   // We use centers for position calculations since they're rotation-independent
-  for (const blockId of selectedBlocksQuery.current(ctx)) {
+  for (const blockId of getLocalSelectedBlocks(ctx)) {
+    if (!hasComponent(ctx, blockId, DragStart)) continue;
     const blockStart = DragStart.read(ctx, blockId);
     const block = Block.write(ctx, blockId);
 

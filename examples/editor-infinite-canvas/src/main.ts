@@ -1,10 +1,16 @@
 import "./style.css";
-import { Editor, Camera, removeEntity } from "@infinitecanvas/editor";
+import {
+  Editor,
+  Camera,
+  removeEntity,
+  defineQuery,
+} from "@infinitecanvas/editor";
 import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
 import { Store } from "@infinitecanvas/store";
 import {
   InfiniteCanvasPlugin,
   RemoveSelected,
+  User,
 } from "@infinitecanvas/plugin-infinite-canvas";
 
 import { RendererPlugin, blockQuery, createBlock } from "./ShapesPlugin";
@@ -14,22 +20,12 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
   <div id="canvas-container">
     <div id="info">
-      <h3>Infinite Canvas Demo</h3>
-      <p><strong>Scroll:</strong> Pan the canvas</p>
-      <p><strong>Ctrl/Cmd + Scroll:</strong> Zoom in/out</p>
-      <p><strong>Middle Mouse Drag:</strong> Pan the canvas</p>
-      <p><strong>Left Click:</strong> Select blocks</p>
-      <p><strong>Ctrl/Cmd + Z:</strong> Undo</p>
-      <p><strong>Ctrl/Cmd + Y:</strong> Redo</p>
-      <p><strong>Delete/Backspace:</strong> Delete selected</p>
       <div id="buttons">
         <button id="add-block">Add Block</button>
         <button id="clear-blocks">Clear Blocks</button>
       </div>
-      <div id="camera-info">
-        <span>X: <span id="cam-x">0</span></span>
-        <span>Y: <span id="cam-y">0</span></span>
-        <span>Zoom: <span id="cam-zoom">100</span>%</span>
+      <div id="people-here">
+        People Here: <span id="people-count">1</span>
       </div>
     </div>
     <canvas id="canvas"></canvas>
@@ -42,7 +38,7 @@ const ctx2d = canvas.getContext("2d")!;
 
 // Create Loro store (handles IndexedDB persistence and optional WebSocket sync)
 const store = new Store({
-  documentId: "editor-infinite-canvas",
+  documentId: "editor-infinite-canvas-2",
   websocketUrl: "ws://localhost:8787",
   useWebSocket: true,
   useLocalPersistence: true,
@@ -56,6 +52,17 @@ const editor = new Editor(container, {
     InfiniteCanvasPlugin,
     RendererPlugin({ canvas, ctx2d }),
   ],
+});
+
+const users = defineQuery((q) => q.with(User));
+
+let count = 0;
+editor.subscribe(users, (ctx, userEntities) => {
+  console.log(userEntities.added, userEntities.removed);
+
+  count += userEntities.added.length - userEntities.removed.length;
+
+  peopleCount.textContent = count.toString();
 });
 
 // Initialize editor
@@ -77,10 +84,8 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// UI elements for camera info
-const camX = document.getElementById("cam-x")!;
-const camY = document.getElementById("cam-y")!;
-const camZoom = document.getElementById("cam-zoom")!;
+// UI elements
+const peopleCount = document.getElementById("people-count")!;
 
 // Add block button
 document.getElementById("add-block")!.addEventListener("click", () => {
@@ -115,14 +120,6 @@ window.addEventListener("resize", resizeCanvas);
 function loop() {
   // Run one frame of the editor (includes rendering via ShapesPlugin)
   editor.tick();
-
-  // Read camera state and update UI
-  const ctx = editor._getContext();
-  const camera = Camera.read(ctx);
-
-  camX.textContent = camera.left.toFixed(0);
-  camY.textContent = camera.top.toFixed(0);
-  camZoom.textContent = (camera.zoom * 100).toFixed(0);
 
   requestAnimationFrame(loop);
 }

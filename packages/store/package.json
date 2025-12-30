@@ -36,9 +36,9 @@
     "@infinitecanvas/editor": "workspace:*",
     "idb": "^8.0.3",
     "lodash-es": "^4.17.22",
-    "loro-adaptors": "^0.5.0",
+    "loro-adaptors": "^0.6.1",
     "loro-crdt": "^1.10.3",
-    "loro-websocket": "^0.5.0"
+    "loro-websocket": "^0.6.1"
   },
   "devDependencies": {
     "@types/bun": "latest",

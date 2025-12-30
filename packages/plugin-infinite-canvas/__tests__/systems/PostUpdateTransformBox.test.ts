@@ -34,7 +34,7 @@ import {
   EndTransformBoxEdit,
 } from "../../src/commands";
 import { TransformHandleKind, BlockDef } from "../../src/types";
-import type { InfiniteCanvasResources } from "../../src/Plugin";
+import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 import { createBlock } from "../testUtils";
 
 // Define queries at module level
@@ -45,6 +45,8 @@ const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle));
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
   name: "infiniteCanvas",
   resources: {
+    sessionId: "test-session-id",
+    userId: "test-user-id",
     blockDefs: {
       text: BlockDef.parse({
         tag: "text",

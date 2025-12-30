@@ -6,7 +6,7 @@ export interface EditorSingletonOptions {
    * How this singleton syncs across clients.
    * @default 'none'
    */
-  sync?: SyncBehavior;
+  sync?: Exclude<SyncBehavior, "ephemeral">;
 }
 
 /**
@@ -27,6 +27,7 @@ export class EditorSingletonDef<
 
   constructor(name: string, schema: T, options: EditorSingletonOptions = {}) {
     super(schema);
+
     this.name = name;
     this.__editor = {
       sync: options.sync ?? "none",
