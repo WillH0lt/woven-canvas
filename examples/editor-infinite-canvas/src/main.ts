@@ -4,14 +4,11 @@ import {
   Camera,
   removeEntity,
   defineQuery,
+  RemoveSelected,
+  User,
 } from "@infinitecanvas/editor";
 import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
 import { Store } from "@infinitecanvas/store";
-import {
-  InfiniteCanvasPlugin,
-  RemoveSelected,
-  User,
-} from "@infinitecanvas/plugin-infinite-canvas";
 
 import { RendererPlugin, blockQuery, createBlock } from "./ShapesPlugin";
 
@@ -38,10 +35,10 @@ const ctx2d = canvas.getContext("2d")!;
 
 // Create Loro store (handles IndexedDB persistence and optional WebSocket sync)
 const store = new Store({
-  documentId: "editor-infinite-canvas-2",
-  websocketUrl: "ws://localhost:8787",
-  useWebSocket: true,
-  useLocalPersistence: true,
+  documentId: "editor-infinite-canvas-1",
+  // websocketUrl: "ws://localhost:8787",
+  // useWebSocket: true,
+  // useLocalPersistence: true,
 });
 
 // Create editor with plugins
@@ -49,7 +46,6 @@ const editor = new Editor(container, {
   store,
   plugins: [
     ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
-    InfiniteCanvasPlugin,
     RendererPlugin({ canvas, ctx2d }),
   ],
 });

@@ -7,11 +7,6 @@ import {
   Synced,
   Camera,
   getPluginResources,
-  type EditorPlugin,
-  type Context,
-  type EntityId,
-} from "@infinitecanvas/editor";
-import {
   Block,
   Selected,
   Hovered,
@@ -21,7 +16,10 @@ import {
   TransformHandleKind,
   SelectionBox,
   type InfiniteCanvasResources,
-} from "@infinitecanvas/plugin-infinite-canvas";
+  type EditorPlugin,
+  type Context,
+  type EntityId,
+} from "@infinitecanvas/editor";
 
 /**
  * Resources for the RendererPlugin.
@@ -96,8 +94,6 @@ const blockRendererSystem = defineSystem((ctx: Context) => {
       remoteSelectedSet.add(eid);
     }
   }
-
-  console.log("Remote selected:", remoteSelectedSet.size);
 
   const hoveredSet = new Set(hoveredQuery.current(ctx));
 

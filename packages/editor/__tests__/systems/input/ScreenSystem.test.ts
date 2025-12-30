@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { Editor } from "@infinitecanvas/editor";
-import { Screen } from "../../../src";
+
+import { Editor, Screen } from "../../../src";
 
 describe("Screen System", () => {
   let editor: Editor;

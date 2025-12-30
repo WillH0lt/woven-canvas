@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Editor, defineQuery } from "@infinitecanvas/editor";
-import { Keyboard, Mouse, Screen, Pointer } from "../src";
+import { Editor, defineQuery, Keyboard, Mouse, Screen, Pointer } from "../src";
 
 // Query for pointer entities
 const pointerQuery = defineQuery((q) => q.with(Pointer));

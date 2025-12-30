@@ -17,7 +17,11 @@ import {
   type EditorOptionsInput,
 } from "./types";
 import type { StoreAdapter } from "./store";
-import { type EditorPlugin, parsePlugin, sortPluginsByDependencies } from "./plugin";
+import {
+  type EditorPlugin,
+  parsePlugin,
+  sortPluginsByDependencies,
+} from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
@@ -103,14 +107,22 @@ export class Editor {
   constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
     // Parse options with Zod schema
     const options = EditorOptionsSchema.parse(optionsInput ?? {});
-    const { plugins: pluginInputs, maxEntities, resources } = options;
+    const {
+      plugins: pluginInputs,
+      maxEntities,
+      resources,
+      excludeCorePlugin,
+    } = options;
     const store = options.store ?? null;
 
     // Parse plugin inputs (handle both direct plugins and factory functions)
     const plugins = pluginInputs.map(parsePlugin);
 
-    // Sort plugins by dependencies, always including CorePlugin first
-    const sortedPlugins = sortPluginsByDependencies([CorePlugin, ...plugins]);
+    // Sort plugins by dependencies, optionally including CorePlugin first
+    // CorePlugin is also a factory, so we need to parse it too
+    const sortedPlugins = sortPluginsByDependencies(
+      excludeCorePlugin ? plugins : [parsePlugin(CorePlugin), ...plugins]
+    );
 
     // Collect all components and singletons from plugins
     // Always include CommandMarker for the command system

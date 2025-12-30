@@ -7,8 +7,23 @@ export type {
   SyncBehavior,
   EditorComponentMeta,
   EditorOptionsInput,
+  // Infinite canvas types
+  BlockDefMap,
+  CursorDefMap,
+  InfiniteCanvasPluginOptionsInput,
+  InfiniteCanvasPluginOptions,
+  InfiniteCanvasResources,
+  SelectionState,
+  TransformBoxState,
 } from "./types";
-export { getPluginResources } from "./types";
+export {
+  getPluginResources,
+  BlockDef,
+  Keybind,
+  TransformHandleKind,
+  CursorKind,
+} from "./types";
+export type { CursorDef } from "./types";
 
 // Singleton base class
 export {
@@ -71,21 +86,25 @@ export {
 } from "@infinitecanvas/ecs";
 
 // Plugin
-export { CorePlugin } from "./CorePlugin";
+export { CorePlugin, createCorePlugin } from "./CorePlugin";
 
 // Singletons
-export {
-  Camera,
-  Controls,
-  Frame,
-  Keyboard,
-  Key,
-  Mouse,
-  Screen,
-} from "./singletons";
+export * from "./singletons";
 
 // Components
-export { Pointer, PointerButton, PointerType, Synced } from "./components";
+export * from "./components";
+
+// Commands
+export * from "./commands";
+
+// Helpers
+export * from "./helpers";
+
+// Constants
+export { PLUGIN_NAME, DEFAULT_KEYBINDS } from "./constants";
+
+// Cursors
+export { DEFAULT_CURSOR_DEFS, getCursorSvg } from "./cursors";
 
 // Events
 export {

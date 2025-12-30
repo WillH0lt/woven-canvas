@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { Editor } from "@infinitecanvas/editor";
-import { Keyboard, Key } from "../../../src";
+import { Editor, Keyboard, Key } from "../../../src";
 
 describe("Keyboard System", () => {
   let editor: Editor;

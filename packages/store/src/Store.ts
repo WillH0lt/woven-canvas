@@ -284,13 +284,6 @@ export class Store implements StoreAdapter {
       this.ephemeralStore.delete(key);
       this.localEphemeralKeys.delete(key);
     }
-
-    // Clean up UUID -> entityId mapping when entity is removed
-    const entityId = this.idToEntityId.get(id);
-    if (entityId !== undefined) {
-      this.idToEntityId.delete(id);
-      this.entityIdToId.delete(entityId);
-    }
   }
 
   /**

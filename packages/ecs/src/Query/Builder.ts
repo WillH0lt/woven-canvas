@@ -44,7 +44,7 @@ export class QueryBuilder {
     const component = this.ctx.components[componentDef._defId];
     if (!component) {
       throw new Error(
-        `Component with ID "${componentDef._defId}" is not registered with this World.`
+        `Component "${componentDef.constructor.name}" is not registered with this World.`
       );
     }
     return component.componentId;

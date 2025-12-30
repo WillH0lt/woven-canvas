@@ -134,13 +134,9 @@ describe("Plugin System", () => {
         { sync: "ephemeral" }
       );
 
-      const Camera = new EditorSingletonDef(
-        "camera",
-        {
-          zoom: field.float64().default(1),
-        },
-        { sync: "ephemeral" }
-      );
+      const Camera = new EditorSingletonDef("camera", {
+        zoom: field.float64().default(1),
+      });
 
       const plugin: EditorPlugin = {
         name: "canvas",
@@ -213,15 +209,11 @@ describe("Plugin System", () => {
         { sync: "ephemeral" }
       );
 
-      const Camera = new EditorSingletonDef(
-        "camera",
-        {
-          x: field.float64().default(0),
-          y: field.float64().default(0),
-          zoom: field.float64().default(1),
-        },
-        { sync: "ephemeral" }
-      );
+      const Camera = new EditorSingletonDef("camera", {
+        x: field.float64().default(0),
+        y: field.float64().default(0),
+        zoom: field.float64().default(1),
+      });
 
       const plugin: EditorPlugin = {
         name: "infinite-canvas",
