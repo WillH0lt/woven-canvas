@@ -6,6 +6,7 @@ export type {
   EditorResources,
   SyncBehavior,
   EditorComponentMeta,
+  EditorOptionsInput,
 } from "./types";
 export { getPluginResources } from "./types";
 
@@ -48,7 +49,7 @@ export {
 export { defineCommand, on, type CommandDef, CommandMarker } from "./command";
 
 // Editor class
-export { Editor, type EditorOptions, type QueryCallback } from "./Editor";
+export { Editor, type QueryCallback } from "./Editor";
 
 // Re-export useful ECS utilities
 export {
@@ -71,7 +72,7 @@ export {
 // Plugin
 export { CorePlugin } from "./CorePlugin";
 
-// Components
+// Singletons
 export {
   Camera,
   Controls,
@@ -80,11 +81,10 @@ export {
   Key,
   Mouse,
   Screen,
-  Pointer,
-  PointerButton,
-  PointerType,
-  Synced,
-} from "./components";
+} from "./singletons";
+
+// Components
+export { Pointer, PointerButton, PointerType, Synced } from "./components";
 
 // Events
 export {

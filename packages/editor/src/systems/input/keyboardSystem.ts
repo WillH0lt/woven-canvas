@@ -1,6 +1,6 @@
 import { getResources, type Context, defineSystem } from "@infinitecanvas/ecs";
-import type { EditorResources } from "../types";
-import { Keyboard, setBit, codeToIndex } from "../components/Keyboard";
+import type { EditorResources } from "../../types";
+import { Keyboard, setBit, codeToIndex } from "../../singletons/Keyboard";
 
 /**
  * Per-instance state for keyboard input
@@ -79,7 +79,7 @@ export function detachKeyboardListeners(domElement: HTMLElement): void {
 }
 
 /**
- * Keyboard input system - converts keyboard events to ECS state.
+ * Keyboard system - converts keyboard events to ECS state.
  *
  * Processes buffered keyboard events and updates the Keyboard singleton:
  * - Sets bits in keysDown for pressed keys
@@ -87,7 +87,7 @@ export function detachKeyboardListeners(domElement: HTMLElement): void {
  * - Sets bits in keysUpTrigger for released keys (1 frame)
  * - Updates modifier booleans (shiftDown, altDown, modDown)
  */
-export const keyboardInputSystem = defineSystem((ctx: Context) => {
+export const keyboardSystem = defineSystem((ctx: Context) => {
   const resources = getResources<EditorResources>(ctx);
   const state = instanceState.get(resources.domElement);
   if (!state) return;

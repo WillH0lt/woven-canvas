@@ -1,6 +1,9 @@
 import type { Context, EntityId } from "@infinitecanvas/ecs";
 export type { Context };
+import { z } from "zod";
 import type { Editor } from "./Editor";
+import type { EditorPluginInput } from "./plugin";
+import type { StoreAdapter } from "./store";
 
 // Re-export EntityId for convenience
 export type { EntityId };
@@ -98,3 +101,35 @@ export function getPluginResources<T>(ctx: Context, pluginName: string): T {
   const resources = ctx.resources as EditorResources;
   return resources.pluginResources[pluginName] as T;
 }
+
+/**
+ * Editor configuration options schema.
+ */
+export const EditorOptionsSchema = z.object({
+  /**
+   * Plugins to load.
+   * Plugins are sorted by dependencies automatically.
+   */
+  plugins: z.array(z.custom<EditorPluginInput>()).default([]),
+
+  /**
+   * Store adapter for persistence and sync.
+   */
+  store: z.custom<StoreAdapter>().optional(),
+
+  /**
+   * Maximum number of entities.
+   * @default 10_000
+   */
+  maxEntities: z.number().default(10_000),
+
+  /**
+   * Additional custom resources accessible via getResources(ctx).
+   * These are merged with the base EditorResources (which includes domElement and editor).
+   */
+  resources: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>;
+
+export type EditorOptions = z.infer<typeof EditorOptionsSchema>;

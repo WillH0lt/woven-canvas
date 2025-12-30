@@ -1,8 +1,8 @@
 import { getResources, type Context, defineSystem } from "@infinitecanvas/ecs";
-import type { EditorResources } from "../types";
+import type { EditorResources } from "../../types";
 
-import { Mouse } from "../components/Mouse";
-import { Screen } from "../components/Screen";
+import { Mouse } from "../../singletons/Mouse";
+import { Screen } from "../../singletons/Screen";
 
 /**
  * Event types we track
@@ -96,14 +96,14 @@ export function detachMouseListeners(domElement: HTMLElement): void {
 }
 
 /**
- * Mouse input system - converts mouse events to ECS state.
+ * Mouse system - converts mouse events to ECS state.
  *
  * Updates the Mouse singleton with:
  * - Current position (relative to editor element)
  * - Wheel deltas (normalized across browsers)
  * - Triggers for move, wheel, enter, leave events
  */
-export const mouseInputSystem = defineSystem((ctx: Context) => {
+export const mouseSystem = defineSystem((ctx: Context) => {
   const resources = getResources<EditorResources>(ctx);
   const state = instanceState.get(resources.domElement);
   if (!state) return;

@@ -692,12 +692,18 @@ importers:
       '@infinitecanvas/math':
         specifier: workspace:*
         version: link:../math
+      fractional-indexing-jittered:
+        specifier: ^1.0.0
+        version: 1.0.0
       typescript:
         specifier: ^5
         version: 5.9.3
       xstate:
         specifier: ^5.24.0
         version: 5.24.0
+      zod:
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -13617,3 +13623,7 @@ packages:
 
   /zod@4.1.12:
     resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
+
+  /zod@4.2.1:
+    resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
+    dev: false

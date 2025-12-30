@@ -1,6 +1,6 @@
 import { field, type Context } from "@infinitecanvas/ecs";
 import { EditorSingletonDef } from "../EditorSingletonDef";
-import { PointerButton } from "./Pointer";
+import { PointerButton } from "../components";
 
 const ControlsSchema = {
   /** Tool activated by left mouse button */

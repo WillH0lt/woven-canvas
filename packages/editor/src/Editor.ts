@@ -10,61 +10,19 @@ import {
   hasComponent,
 } from "@infinitecanvas/ecs";
 
-import type { EditorResources, SystemPhase } from "./types";
-import type { StoreAdapter } from "./store";
 import {
-  type EditorPlugin,
-  type EditorPluginInput,
-  parsePlugin,
-  sortPluginsByDependencies,
-} from "./plugin";
+  type EditorResources,
+  type SystemPhase,
+  EditorOptionsSchema,
+  type EditorOptionsInput,
+} from "./types";
+import type { StoreAdapter } from "./store";
+import { type EditorPlugin, parsePlugin, sortPluginsByDependencies } from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 import { Synced } from "./components";
-
-/**
- * Editor configuration options
- */
-export interface EditorOptions {
-  /**
-   * Plugins to load.
-   * Plugins are sorted by dependencies automatically.
-   *
-   * Can be either plugin objects or factory functions:
-   * @example
-   * ```typescript
-   * // Direct plugin object
-   * { plugins: [MyPlugin] }
-   *
-   * // Factory function (called with default options)
-   * { plugins: [ControlsPlugin] }
-   *
-   * // Factory function with custom options
-   * { plugins: [ControlsPlugin({ zoomSpeed: 2.0 })] }
-   * ```
-   */
-  plugins?: EditorPluginInput[];
-
-  /**
-   * Store adapter for persistence and sync.
-   * Optional - editor works in ephemeral mode without a store.
-   */
-  store?: StoreAdapter;
-
-  /**
-   * Maximum number of entities.
-   * @default 10_000
-   */
-  maxEntities?: number;
-
-  /**
-   * Additional custom resources accessible via getResources(ctx).
-   * These are merged with the base EditorResources (which includes domElement and editor).
-   */
-  resources?: Record<string, unknown>;
-}
 
 /**
  * Query subscription callback
@@ -142,13 +100,11 @@ export class Editor {
   readonly singletons: Map<number, AnyEditorSingletonDef> = new Map();
   private storeEventIndex: number = 0;
 
-  constructor(domElement: HTMLElement, options?: EditorOptions) {
-    const {
-      plugins: pluginInputs = [],
-      store = null,
-      maxEntities = 10_000,
-      resources = {},
-    } = options ?? {};
+  constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
+    // Parse options with Zod schema
+    const options = EditorOptionsSchema.parse(optionsInput ?? {});
+    const { plugins: pluginInputs, maxEntities, resources } = options;
+    const store = options.store ?? null;
 
     // Parse plugin inputs (handle both direct plugins and factory functions)
     const plugins = pluginInputs.map(parsePlugin);

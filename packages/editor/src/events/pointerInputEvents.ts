@@ -1,7 +1,8 @@
 import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
 import { Vec2 } from "@infinitecanvas/math";
 
-import { Camera, Frame, Pointer, Keyboard, type PointerButton } from "../components";
+import { Pointer, type PointerButton } from "../components";
+import { Camera, Frame, Keyboard } from "../singletons";
 import type { PointerInput, PointerInputOptions } from "./types";
 
 // Default thresholds for click detection

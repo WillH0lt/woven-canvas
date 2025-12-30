@@ -1,5 +1,5 @@
 import type { Context } from "@infinitecanvas/ecs";
-import { Keyboard } from "../components/Keyboard";
+import { Keyboard } from "../singletons";
 import type { KeyboardInput, KeyboardInputType } from "./types";
 
 /**

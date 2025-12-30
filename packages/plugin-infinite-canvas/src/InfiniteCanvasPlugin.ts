@@ -137,8 +137,6 @@ export function createInfiniteCanvasPlugin(
   return {
     name: PLUGIN_NAME,
 
-    dependencies: ["core"],
-
     resources: {
       sessionId,
       userId,

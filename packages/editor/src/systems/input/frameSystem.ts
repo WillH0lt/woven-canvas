@@ -1,13 +1,13 @@
 import { defineSystem } from "@infinitecanvas/ecs";
-import { Frame } from "../components";
+import { Frame } from "../../singletons";
 
 /**
- * Frame input system - updates frame timing at the start of each tick.
+ * Frame system - updates frame timing at the start of each tick.
  *
  * This system should run first in the input phase to ensure
  * frame.delta is available to all other systems.
  */
-export const frameInputSystem = defineSystem((ctx) => {
+export const frameSystem = defineSystem((ctx) => {
   const now = performance.now();
   const buffer = Frame._getInstance(ctx).buffer;
   const last = buffer.lastTime[0];

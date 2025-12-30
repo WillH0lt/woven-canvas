@@ -2,7 +2,7 @@ import type { Context } from "@infinitecanvas/ecs";
 import type { Vec2 } from "@infinitecanvas/math";
 
 import type { MouseInput } from "./types";
-import { Camera, Mouse } from "../components";
+import { Camera, Mouse } from "../singletons";
 
 /**
  * Generate high-level mouse input events from ECS state for state machine consumption.

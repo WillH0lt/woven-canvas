@@ -1,8 +1,7 @@
 import { getResources, defineSystem } from "@infinitecanvas/ecs";
 
-import type { EditorResources } from "../types";
-import { Screen } from "../components/Screen";
-import { Frame } from "../components/Frame";
+import type { EditorResources } from "../../types";
+import { Screen, Frame } from "../../singletons";
 
 /**
  * Per-instance state for screen input
@@ -49,12 +48,12 @@ export function detachScreenObserver(domElement: HTMLElement): void {
 }
 
 /**
- * Screen input system - tracks editor element dimensions.
+ * Screen system - tracks editor element dimensions.
  *
  * Uses ResizeObserver to detect size changes and updates the Screen singleton.
  * Also handles initial sizing on the first frame.
  */
-export const screenInputSystem = defineSystem((ctx) => {
+export const screenSystem = defineSystem((ctx) => {
   const resources = getResources<EditorResources>(ctx);
   const { domElement } = resources;
   const state = instanceState.get(domElement);

@@ -1,7 +1,7 @@
 import type { Context } from "@infinitecanvas/ecs";
 
 import type { FrameInput } from "./types";
-import { Frame } from "../components";
+import { Frame } from "../singletons";
 
 /**
  * Generate a frame input event from ECS state for state machine consumption.
