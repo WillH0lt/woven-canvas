@@ -51,7 +51,7 @@ import {
   UpdateDragHandler,
 } from "./systems";
 
-import { DEFAULT_KEYBINDS } from "./constants";
+import { DEFAULT_KEYBINDS, PLUGIN_NAME } from "./constants";
 import {
   Keybind,
   InfiniteCanvasPluginOptionsSchema,
@@ -63,7 +63,7 @@ import { DEFAULT_CURSOR_DEFS } from "./cursors";
 
 /**
  * Resources for the Infinite Canvas plugin.
- * Access via getPluginResources<InfiniteCanvasResources>(ctx, "infiniteCanvas").
+ * Access via getPluginResources<InfiniteCanvasResources>(ctx, PLUGIN_NAME).
  */
 export interface InfiniteCanvasResources {
   sessionId: string;
@@ -135,7 +135,7 @@ export function createInfiniteCanvasPlugin(
   };
 
   return {
-    name: "infiniteCanvas",
+    name: PLUGIN_NAME,
 
     dependencies: ["core"],
 

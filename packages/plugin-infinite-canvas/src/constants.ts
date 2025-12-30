@@ -11,6 +11,12 @@ import {
 } from "./commands";
 
 /**
+ * Plugin name for the Infinite Canvas plugin.
+ * Used for plugin registration and resource lookup.
+ */
+export const PLUGIN_NAME = "infiniteCanvas";
+
+/**
  * Default keybinds for the Infinite Canvas plugin.
  * These map key combinations to plugin commands.
  */

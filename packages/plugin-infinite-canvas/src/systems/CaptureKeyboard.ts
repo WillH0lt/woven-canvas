@@ -8,6 +8,7 @@ import {
   CommandMarker,
 } from "@infinitecanvas/editor";
 
+import { PLUGIN_NAME } from "../constants";
 import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
 
 /**
@@ -20,7 +21,7 @@ export const CaptureKeyboard = defineSystem((ctx: Context) => {
   const keyboard = Keyboard.read(ctx);
   const resources = getPluginResources<InfiniteCanvasResources>(
     ctx,
-    "infiniteCanvas"
+    PLUGIN_NAME
   );
 
   for (const keybind of resources.keybinds) {

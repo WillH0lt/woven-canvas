@@ -2,27 +2,22 @@ import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { Editor, type EditorPlugin } from "@infinitecanvas/editor";
 import { Cursor } from "../../src/singletons";
 import { PostRenderCursor } from "../../src/systems/PostRenderCursor";
-import { createMockElement } from "../testUtils";
 import { CursorKind } from "../../src/types";
 import { DEFAULT_CURSOR_DEFS, getCursorSvg } from "../../src/cursors";
+import { PLUGIN_NAME } from "../../src/constants";
 import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
+import { createMockElement, createTestResources } from "../testUtils";
 
 // Mock DOM element for tests
 const mockDomElement = createMockElement();
 
 // Test plugin with only PostRenderCursor system and resources
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
-  name: "infiniteCanvas",
+  name: PLUGIN_NAME,
   components: [],
   singletons: [Cursor],
   postRenderSystems: [PostRenderCursor],
-  resources: {
-    sessionId: "test-session",
-    userId: "test-user",
-    blockDefs: {},
-    keybinds: [],
-    cursors: DEFAULT_CURSOR_DEFS,
-  },
+  resources: createTestResources(),
 };
 
 describe("PostRenderCursor", () => {

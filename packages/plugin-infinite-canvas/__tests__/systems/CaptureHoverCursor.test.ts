@@ -10,8 +10,8 @@ import { Block, Hovered, TransformHandle, TransformBox } from "../../src/compone
 import { Cursor } from "../../src/singletons";
 import { CaptureHoverCursor } from "../../src/systems/CaptureHoverCursor";
 import { CursorKind, TransformHandleKind } from "../../src/types";
-import { DEFAULT_CURSOR_DEFS } from "../../src/cursors";
-import { createMockElement } from "../testUtils";
+import { PLUGIN_NAME } from "../../src/constants";
+import { createMockElement, createTestResources } from "../testUtils";
 import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 
 // Mock DOM element for tests
@@ -19,17 +19,11 @@ const mockDomElement = createMockElement();
 
 // Test plugin with only CaptureHoverCursor system and its dependencies
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
-  name: "infiniteCanvas",
+  name: PLUGIN_NAME,
   components: [Block, Hovered, TransformHandle, TransformBox],
   singletons: [Cursor],
   captureSystems: [CaptureHoverCursor],
-  resources: {
-    sessionId: "test-session",
-    userId: "test-user",
-    blockDefs: {},
-    keybinds: [],
-    cursors: DEFAULT_CURSOR_DEFS,
-  },
+  resources: createTestResources(),
 };
 
 describe("CaptureHoverCursor", () => {

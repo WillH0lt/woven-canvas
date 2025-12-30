@@ -34,8 +34,9 @@ import {
   EndTransformBoxEdit,
 } from "../../src/commands";
 import { TransformHandleKind, BlockDef } from "../../src/types";
+import { PLUGIN_NAME } from "../../src/constants";
 import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
-import { createBlock } from "../testUtils";
+import { createBlock, createTestResources } from "../testUtils";
 
 // Define queries at module level
 const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));
@@ -43,10 +44,8 @@ const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle));
 
 // Test plugin with UpdateTransformBox system
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
-  name: "infiniteCanvas",
-  resources: {
-    sessionId: "test-session-id",
-    userId: "test-user-id",
+  name: PLUGIN_NAME,
+  resources: createTestResources({
     blockDefs: {
       text: BlockDef.parse({
         tag: "text",
@@ -74,8 +73,7 @@ const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
         resizeMode: "groupOnly",
       }),
     },
-    keybinds: [],
-  },
+  }),
   components: [
     Block,
     Aabb,

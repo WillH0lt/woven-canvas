@@ -1,5 +1,6 @@
 import { type Context, getPluginResources } from "@infinitecanvas/editor";
 
+import { PLUGIN_NAME } from "../constants";
 import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
 import { BlockDef, type BlockDefMap } from "../types";
 
@@ -12,7 +13,7 @@ import { BlockDef, type BlockDefMap } from "../types";
 export function getBlockDefs(ctx: Context): BlockDefMap {
   const resources = getPluginResources<InfiniteCanvasResources>(
     ctx,
-    "infiniteCanvas"
+    PLUGIN_NAME
   );
   return resources.blockDefs;
 }

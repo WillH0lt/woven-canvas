@@ -6,6 +6,7 @@ import {
 } from "@infinitecanvas/editor";
 import { Cursor } from "../singletons";
 import { getCursorSvg } from "../cursors";
+import { PLUGIN_NAME } from "../constants";
 import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
 
 // Default cursor when no cursor kind is set
@@ -43,7 +44,7 @@ export const PostRenderCursor = defineSystem((ctx: Context) => {
   // Get cursors from resources and resolve to SVG
   const { cursors } = getPluginResources<InfiniteCanvasResources>(
     ctx,
-    "infiniteCanvas"
+    PLUGIN_NAME
   );
   const cursorValue = getCursorSvg(cursors, cursorKind, rotation);
 

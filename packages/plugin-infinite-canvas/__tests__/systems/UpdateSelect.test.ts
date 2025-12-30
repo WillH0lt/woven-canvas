@@ -24,23 +24,20 @@ import {
   UpdateSelectionBox,
   RemoveSelectionBox,
 } from "../../src/commands";
+import { PLUGIN_NAME } from "../../src/constants";
 import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
+import { createTestResources, DEFAULT_TEST_RESOURCES } from "../testUtils";
 
 // Query for selection box entities
 const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 
 // Test session ID for consistent selection testing
-const TEST_SESSION_ID = "test-session-id";
+const TEST_SESSION_ID = DEFAULT_TEST_RESOURCES.sessionId;
 
 // Factory function to create test plugin
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
-  name: "infiniteCanvas",
-  resources: {
-    sessionId: TEST_SESSION_ID,
-    userId: "test-user-id",
-    blockDefs: {},
-    keybinds: [],
-  },
+  name: PLUGIN_NAME,
+  resources: createTestResources(),
   components: [Block, Aabb, Selected, SelectionBox, Hovered, Opacity],
   singletons: [Intersect, RankBounds],
   preCaptureSystems: [PreCaptureIntersect],

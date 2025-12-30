@@ -29,7 +29,8 @@ import {
   CloneEntities,
   UncloneEntities,
 } from "../../src/commands";
-import { createBlock } from "../testUtils";
+import { createBlock, createTestResources } from "../testUtils";
+import { PLUGIN_NAME } from "../../src/constants";
 import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 
 // Define queries at module level
@@ -38,13 +39,8 @@ const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Factory function to create test plugin
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
-  name: "infiniteCanvas",
-  resources: {
-    sessionId: "test-session-id",
-    userId: "test-user-id",
-    blockDefs: {},
-    keybinds: [],
-  },
+  name: PLUGIN_NAME,
+  resources: createTestResources(),
   components: [Block, Aabb, Selected, Text],
   singletons: [RankBounds, Cursor, Clipboard],
   updateSystems: [UpdateBlock],

@@ -7,6 +7,7 @@ import {
   type EntityId,
 } from "@infinitecanvas/editor";
 import { Block, Selected } from "../components";
+import { PLUGIN_NAME } from "../constants";
 import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
 
 // Query for selected blocks
@@ -24,7 +25,7 @@ export function selectBlock(ctx: Context, entityId: EntityId): void {
 
   const { sessionId } = getPluginResources<InfiniteCanvasResources>(
     ctx,
-    "infiniteCanvas"
+    PLUGIN_NAME
   );
   addComponent(ctx, entityId, Selected, { selectedBy: sessionId });
 }
@@ -39,7 +40,7 @@ export function selectBlock(ctx: Context, entityId: EntityId): void {
 export function getLocalSelectedBlocks(ctx: Context): EntityId[] {
   const { sessionId } = getPluginResources<InfiniteCanvasResources>(
     ctx,
-    "infiniteCanvas"
+    PLUGIN_NAME
   );
 
   const result: EntityId[] = [];

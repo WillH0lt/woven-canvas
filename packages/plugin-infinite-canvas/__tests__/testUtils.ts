@@ -10,7 +10,45 @@ import {
   getPluginResources,
 } from "@infinitecanvas/editor";
 import { Block, Aabb, Selected } from "../src/components";
+import { PLUGIN_NAME } from "../src/constants";
 import type { InfiniteCanvasResources } from "../src/InfiniteCanvasPlugin";
+import { DEFAULT_CURSOR_DEFS } from "../src/cursors";
+
+/**
+ * Default test resources for plugin tests.
+ * These can be extended or overridden when creating test plugins.
+ */
+export const DEFAULT_TEST_RESOURCES: InfiniteCanvasResources = {
+  sessionId: "test-session-id",
+  userId: "test-user-id",
+  blockDefs: {},
+  keybinds: [],
+  cursors: DEFAULT_CURSOR_DEFS,
+};
+
+/**
+ * Create test resources by merging defaults with overrides.
+ * Useful for test plugins that need specific resource values.
+ *
+ * @example
+ * ```ts
+ * const testPlugin = {
+ *   name: PLUGIN_NAME,
+ *   resources: createTestResources({
+ *     blockDefs: { text: BlockDef.parse({ tag: "text" }) },
+ *   }),
+ *   // ...
+ * };
+ * ```
+ */
+export function createTestResources(
+  overrides: Partial<InfiniteCanvasResources> = {}
+): InfiniteCanvasResources {
+  return {
+    ...DEFAULT_TEST_RESOURCES,
+    ...overrides,
+  };
+}
 
 /**
  * Options for creating a test block.
@@ -62,7 +100,7 @@ export function createBlock(
   if (selected) {
     const { sessionId } = getPluginResources<InfiniteCanvasResources>(
       ctx,
-      "infiniteCanvas"
+      PLUGIN_NAME
     );
     addComponent(ctx, entityId, Selected, { selectedBy: sessionId });
   }

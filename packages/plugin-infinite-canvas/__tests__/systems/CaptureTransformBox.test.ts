@@ -29,11 +29,13 @@ import {
   RemoveTransformBox,
 } from "../../src/commands";
 import { TransformBoxState, BlockDef } from "../../src/types";
+import { PLUGIN_NAME } from "../../src/constants";
 import type { InfiniteCanvasResources } from "../../src/InfiniteCanvasPlugin";
 import {
   createPointerSimulator,
   simulateMouseMove,
   createBlock,
+  createTestResources,
 } from "../testUtils";
 
 // Pointer simulator for consistent pointer events
@@ -41,10 +43,8 @@ const pointer = createPointerSimulator();
 
 // Test plugin with only CaptureTransformBox system - no selection flow dependencies
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
-  name: "infiniteCanvas",
-  resources: {
-    sessionId: "test-session-id",
-    userId: "test-user-id",
+  name: PLUGIN_NAME,
+  resources: createTestResources({
     blockDefs: {
       text: BlockDef.parse({
         tag: "text",
@@ -52,8 +52,7 @@ const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
         resizeMode: "text",
       }),
     },
-    keybinds: [],
-  },
+  }),
   components: [Block, Aabb, Selected, Hovered, TransformBox, TransformHandle],
   singletons: [Intersect, RankBounds, TransformBoxStateSingleton],
   captureSystems: [CaptureTransformBox],
