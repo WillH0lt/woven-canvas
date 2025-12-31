@@ -411,7 +411,7 @@ export class ComponentDef<T extends ComponentSchema> {
     const instance = ctx.components[this._defId] as Component<T> | undefined;
     if (!instance) {
       throw new Error(
-        `Component "${this.constructor.name}" is not registered with this World.`
+        `Component with ID "${this._defId}" is not registered with this World.`
       );
     }
     return instance;
@@ -567,12 +567,12 @@ export class SingletonDef<T extends ComponentSchema> {
     const instance = ctx.components[this._defId] as Component<T> | undefined;
     if (!instance) {
       throw new Error(
-        `Singleton "${this.constructor.name}" is not registered with this World.`
+        `Singleton with ID "${this._defId}" is not registered with this World.`
       );
     }
     if (!instance.isSingleton) {
       throw new Error(
-        `Component "${this.constructor.name}" is not a singleton. Use defineSingleton() to create singletons.`
+        `Component with ID "${this._defId}" is not a singleton. Use defineSingleton() to create singletons.`
       );
     }
     return instance;

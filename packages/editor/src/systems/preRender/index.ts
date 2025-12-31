@@ -1,1 +1,0 @@
-export { scaleWithZoomSystem } from "./scaleWithZoomSystem";

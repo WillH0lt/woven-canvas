@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-
-import { Editor, Mouse } from "../../../src";
+import { Editor } from "@infinitecanvas/editor";
+import { Mouse } from "../../../src";
 
 describe("Mouse System", () => {
   let editor: Editor;
