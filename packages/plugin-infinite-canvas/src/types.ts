@@ -1,3 +1,4 @@
+import { EditorComponentDef } from "@infinitecanvas/editor";
 import { z } from "zod";
 
 /**
@@ -121,6 +122,7 @@ const BlockDefEditOptions = z.object({
 export const BlockDef = z.object({
   tag: z.string(),
   editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
+  components: z.array(z.custom<EditorComponentDef<any>>()).default([]),
   resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),

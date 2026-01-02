@@ -25,7 +25,7 @@
     "@infinitecanvas/extension-eraser": "workspace:*",
     "@infinitecanvas/extension-ink": "workspace:*",
     "@infinitecanvas/math": "workspace:*",
-    "@infinitecanvas/plugin-controls": "workspace:*",
+    "@infinitecanvas/plugin-canvas-controls": "workspace:*",
     "@infinitecanvas/plugin-infinite-canvas": "workspace:*",
     "@infinitecanvas/store": "workspace:*",
     "@invertase/firestore-stripe-payments": "^0.0.8",

@@ -22,11 +22,22 @@
         "default": "./build/index.cjs"
       }
     },
+    "./vue": {
+      "@infinitecanvas/source": "./src/vue/index.ts",
+      "import": {
+        "types": "./build/vue.d.ts",
+        "default": "./build/vue.js"
+      },
+      "require": {
+        "types": "./build/vue.d.cts",
+        "default": "./build/vue.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
     "clean": "rimraf build .turbo",
-    "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
+    "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts && vite build",
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
     "test": "vitest --config ../../vitest.config.ts run",
@@ -40,11 +51,20 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "vitest": "^4.0.7"
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.2.4",
+    "vitest": "^4.0.7",
+    "vue": "^3.5.0"
   },
   "type": "module",
   "peerDependencies": {
     "typescript": "^5",
+    "vue": "^3.3.0",
     "xstate": "^5"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
   }
 }

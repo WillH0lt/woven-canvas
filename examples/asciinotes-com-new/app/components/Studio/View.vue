@@ -18,7 +18,7 @@ import {
   removeEntity,
   type Context,
 } from "@infinitecanvas/editor";
-import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
+import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { Store } from "@infinitecanvas/store";
 import {
   InfiniteCanvasPlugin,
@@ -94,7 +94,7 @@ async function initializeEditor() {
   editor = new Editor(canvasContainer.value, {
     store,
     plugins: [
-      ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
+      CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
       InfiniteCanvasPlugin,
       RendererPlugin({ canvas, ctx2d }),
     ],

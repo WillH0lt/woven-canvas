@@ -1,5 +1,5 @@
 /**
- * @infinitecanvas/plugin-controls
+ * @infinitecanvas/plugin-canvas-controls
  *
  * Canvas controls plugin for infinite canvas applications.
  *
@@ -11,12 +11,12 @@
  * @example
  * ```typescript
  * import { Editor, CorePlugin } from '@infinitecanvas/editor';
- * import { ControlsPlugin } from '@infinitecanvas/plugin-controls';
+ * import { CanvasControlsPlugin } from '@infinitecanvas/plugin-canvas-controls';
  *
  * const editor = new Editor({
  *   domElement: document.getElementById('canvas'),
  *   plugins: [
- *     ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
+ *     CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
  *   ],
  * });
  *
@@ -28,11 +28,11 @@
  */
 
 // Plugin
-export { ControlsPlugin } from "./ControlsPlugin";
+export { CanvasControlsPlugin } from "./CanvasControlsPlugin";
 
 // Types
 export {
-  type ControlsOptions,
+  type CanvasControlsOptions,
   DEFAULT_CONTROLS_OPTIONS,
   PanStateValue,
 } from "./types";

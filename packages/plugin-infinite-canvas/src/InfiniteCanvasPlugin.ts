@@ -15,6 +15,7 @@ import * as systems from "./systems";
 
 import { DEFAULT_KEYBINDS, PLUGIN_NAME } from "./constants";
 import {
+  BlockDef,
   Keybind,
   InfiniteCanvasPluginOptionsSchema,
   type BlockDefMap,
@@ -79,8 +80,10 @@ export function createInfiniteCanvasPlugin(
   // Generate user id if not provided
   const userId = options.userId ?? crypto.randomUUID();
 
-  // Build normalized block definitions map
-  const blockDefs: BlockDefMap = {};
+  // Build normalized block definitions map (defaults + custom, custom overrides)
+  const blockDefs: BlockDefMap = {
+    rect: BlockDef.parse({ tag: "rect" }),
+  };
   for (const def of options.customBlocks) {
     blockDefs[def.tag] = def;
   }

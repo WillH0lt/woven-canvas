@@ -5,7 +5,7 @@ import {
   removeEntity,
   defineQuery,
 } from "@infinitecanvas/editor";
-import { ControlsPlugin } from "@infinitecanvas/plugin-controls";
+import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { Store } from "@infinitecanvas/store";
 import {
   InfiniteCanvasPlugin,
@@ -48,7 +48,7 @@ const store = new Store({
 const editor = new Editor(container, {
   store,
   plugins: [
-    ControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
+    CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
     InfiniteCanvasPlugin,
     RendererPlugin({ canvas, ctx2d }),
   ],

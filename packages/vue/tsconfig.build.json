@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.src.json",
   "include": ["src"],
-  "exclude": ["src/vue"],
   "compilerOptions": {
     // Specify an output folder for all emitted files.
     "outDir": "build",

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Editor, Camera } from "@infinitecanvas/editor";
-import { ControlsPlugin, PanState, PanStateValue } from "../src";
+import { CanvasControlsPlugin, PanState, PanStateValue } from "../src";
 
-describe("ControlsPlugin", () => {
+describe("CanvasControlsPlugin", () => {
   let editor: Editor;
   let domElement: HTMLDivElement;
 
@@ -40,7 +40,7 @@ describe("ControlsPlugin", () => {
   describe("plugin registration", () => {
     it("should register with default options", async () => {
       editor = new Editor(domElement, {
-        plugins: [ControlsPlugin()],
+        plugins: [CanvasControlsPlugin()],
       });
       await editor.initialize();
 
@@ -49,13 +49,13 @@ describe("ControlsPlugin", () => {
       // Should have Camera singleton from CorePlugin
       expect(() => Camera.read(ctx)).not.toThrow();
 
-      // Should have PanState singleton from ControlsPlugin
+      // Should have PanState singleton from CanvasControlsPlugin
       expect(() => PanState.read(ctx)).not.toThrow();
     });
 
     it("should register with custom options", async () => {
       editor = new Editor(domElement, {
-        plugins: [ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
+        plugins: [CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
       });
       await editor.initialize();
 
@@ -67,7 +67,7 @@ describe("ControlsPlugin", () => {
   describe("PanState singleton", () => {
     it("should initialize with idle state", async () => {
       editor = new Editor(domElement, {
-        plugins: [ControlsPlugin()],
+        plugins: [CanvasControlsPlugin()],
       });
       await editor.initialize();
 
@@ -83,7 +83,7 @@ describe("ControlsPlugin", () => {
   describe("Camera singleton", () => {
     it("should initialize with default values", async () => {
       editor = new Editor(domElement, {
-        plugins: [ControlsPlugin()],
+        plugins: [CanvasControlsPlugin()],
       });
       await editor.initialize();
 
@@ -125,7 +125,7 @@ describe("captureZoom system", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [ControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
+      plugins: [CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 })],
     });
     await editor.initialize();
     await editor.tick(); // Initialize screen dimensions
@@ -312,7 +312,7 @@ describe("captureScroll system", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [ControlsPlugin()],
+      plugins: [CanvasControlsPlugin()],
     });
     await editor.initialize();
     await editor.tick();
@@ -458,7 +458,7 @@ describe("capturePan system", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [ControlsPlugin()],
+      plugins: [CanvasControlsPlugin()],
     });
     await editor.initialize();
     await editor.tick();
@@ -650,7 +650,7 @@ describe("camera gliding", () => {
     document.body.appendChild(domElement);
 
     editor = new Editor(domElement, {
-      plugins: [ControlsPlugin()],
+      plugins: [CanvasControlsPlugin()],
     });
     await editor.initialize();
     await editor.tick();

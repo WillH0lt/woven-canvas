@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "@infinitecanvas/plugin-canvas-controls",
+  "name": "@infinitecanvas/vue",
   "version": "0.1.0",
-  "description": "Canvas controls plugin - pan, zoom, and scroll for infinite canvas",
+  "description": "Vue 3 adapter for Infinite Canvas",
   "files": [
     "build"
   ],
@@ -28,21 +28,23 @@
     "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
-    "test": "vitest  --config ./vitest.config.ts run",
-    "test:watch": "vitest  --config ./vitest.config.ts run --watch"
+    "test": "vitest --config ../../vitest.config.ts run",
+    "test:watch": "vitest --config ../../vitest.config.ts run --watch"
   },
   "dependencies": {
     "@infinitecanvas/editor": "workspace:*",
-    "@infinitecanvas/math": "workspace:*",
-    "xstate": "^5.24.0"
+    "@infinitecanvas/plugin-infinite-canvas": "workspace:*",
+    "@infinitecanvas/plugin-canvas-controls": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@vue/test-utils": "^2.4.0",
     "resize-observer-polyfill": "^1.5.1",
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.7",
+    "vue": "^3.5.0"
   },
-  "type": "module",
   "peerDependencies": {
+    "vue": "^3.3.0",
     "typescript": "^5"
-  }
+  },
+  "type": "module"
 }

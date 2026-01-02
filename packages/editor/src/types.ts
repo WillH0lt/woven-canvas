@@ -84,7 +84,7 @@ export type SystemPhase =
  *   panSpeed: number;
  * }
  *
- * const ControlsPlugin: EditorPlugin<ControlsOptions> = {
+ * const CanvasControlsPlugin: EditorPlugin<ControlsOptions> = {
  *   name: "controls",
  *   resources: { zoomSpeed: 1.0, panSpeed: 1.0 },
  *   // ...

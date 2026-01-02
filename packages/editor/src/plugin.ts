@@ -198,17 +198,17 @@ export interface EditorPlugin<TResources = unknown> {
  * @example
  * ```typescript
  * // Define a plugin factory
- * export const ControlsPlugin = (options: ControlsOptions = {}) => ({
+ * export const CanvasControlsPlugin = (options: ControlsOptions = {}) => ({
  *   name: "controls",
  *   resources: { zoomSpeed: options.zoomSpeed ?? 1.0 },
  *   // ... systems, components, etc.
  * });
  *
  * // Use with default options
- * const editor = new Editor(el, { plugins: [ControlsPlugin] });
+ * const editor = new Editor(el, { plugins: [CanvasControlsPlugin] });
  *
  * // Or with custom options
- * const editor = new Editor(el, { plugins: [ControlsPlugin({ zoomSpeed: 2.0 })] });
+ * const editor = new Editor(el, { plugins: [CanvasControlsPlugin({ zoomSpeed: 2.0 })] });
  * ```
  */
 export type EditorPluginFactory<TOptions = unknown, TResources = unknown> = (

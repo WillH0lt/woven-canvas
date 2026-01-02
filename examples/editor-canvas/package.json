@@ -18,7 +18,7 @@
   "dependencies": {
     "@infinitecanvas/editor": "workspace:^",
     "@infinitecanvas/math": "workspace:^",
-    "@infinitecanvas/plugin-controls": "workspace:^",
+    "@infinitecanvas/plugin-canvas-controls": "workspace:^",
     "@infinitecanvas/plugin-infinite-canvas": "workspace:^",
     "@infinitecanvas/store": "workspace:^",
     "idb": "^8.0.3",

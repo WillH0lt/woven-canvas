@@ -1,7 +1,7 @@
 /**
- * Options for the controls plugin.
+ * Options for the canvas controls plugin.
  */
-export interface ControlsOptions {
+export interface CanvasControlsOptions {
   /** Minimum zoom level (default: 0.05 = 5%) */
   minZoom: number;
   /** Maximum zoom level (default: 4 = 400%) */
@@ -11,7 +11,7 @@ export interface ControlsOptions {
 /**
  * Default control options.
  */
-export const DEFAULT_CONTROLS_OPTIONS: ControlsOptions = {
+export const DEFAULT_CONTROLS_OPTIONS: CanvasControlsOptions = {
   minZoom: 0.05,
   maxZoom: 4,
 };
