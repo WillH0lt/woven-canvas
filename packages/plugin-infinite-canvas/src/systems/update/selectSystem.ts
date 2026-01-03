@@ -9,14 +9,16 @@ import {
   on,
   Synced,
   type Context,
-} from "@infinitecanvas/editor";
-
-import { Block, Aabb, Selected, SelectionBox, Opacity } from "../../components";
-import {
+  Block,
+  Aabb,
+  Selected,
+  Opacity,
   selectBlock,
   getLocalSelectedBlocks,
   intersectAabb,
-} from "../../helpers";
+} from "@infinitecanvas/editor";
+
+import { SelectionBox } from "../../components";
 import {
   AddSelectionBox,
   UpdateSelectionBox,
@@ -27,9 +29,7 @@ import {
 const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 
 // Query for all synced blocks (for intersection)
-const syncedBlocksQuery = defineQuery((q) =>
-  q.with(Block, Synced, Aabb)
-);
+const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced, Aabb));
 
 // Selection box z-order rank (always on top)
 const SELECTION_BOX_RANK = "z";

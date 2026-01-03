@@ -1,4 +1,4 @@
-import type { Context } from "@infinitecanvas/ecs";
+import type { Context, EntityId } from "@infinitecanvas/ecs";
 import type { Vec2 } from "@infinitecanvas/math";
 
 import type { PointerButton, PointerType } from "../components/Pointer";
@@ -60,6 +60,8 @@ export interface PointerInput {
   cameraZoom: number;
   /** Entity ID of the pointer (for tracking across events) */
   pointerId: number;
+  /** Entity IDs at the pointer position, sorted by z-order (topmost first) */
+  intersects: EntityId[];
 }
 
 /**

@@ -1,15 +1,14 @@
 import {
   defineSystem,
-  getPluginResources,
-  Keyboard,
   type Context,
   createEntity,
   addComponent,
-  CommandMarker,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/ecs";
 
+import { Keyboard } from "../../singletons";
+import { CommandMarker } from "../../command";
 import { PLUGIN_NAME } from "../../constants";
-import type { InfiniteCanvasResources } from "../../InfiniteCanvasPlugin";
+import { type EditorResources, getPluginResources } from "../../types";
 
 /**
  * Keyboard capture system - handles keybind-to-command mapping.
@@ -19,12 +18,9 @@ import type { InfiniteCanvasResources } from "../../InfiniteCanvasPlugin";
  */
 export const keyboardSystem = defineSystem((ctx: Context) => {
   const keyboard = Keyboard.read(ctx);
-  const resources = getPluginResources<InfiniteCanvasResources>(
-    ctx,
-    PLUGIN_NAME
-  );
+  const { editor } = getPluginResources<EditorResources>(ctx, PLUGIN_NAME);
 
-  for (const keybind of resources.keybinds) {
+  for (const keybind of editor.keybinds) {
     // Check if key was just pressed
     let triggered = Keyboard.isKeyDownTrigger(ctx, keybind.key);
 
@@ -33,7 +29,7 @@ export const keyboardSystem = defineSystem((ctx: Context) => {
     triggered &&= !!keybind.shift === keyboard.shiftDown;
 
     if (triggered) {
-      // Spawn the command by name\
+      // Spawn the command by name
       const eid = createEntity(ctx);
       addComponent(ctx, eid, CommandMarker, { name: keybind.command });
 

@@ -1,9 +1,5 @@
-import {
-  field,
-  EditorComponentDef,
-  type Context,
-  type EntityId,
-} from "@infinitecanvas/editor";
+import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
+import { EditorComponentDef } from "../EditorComponentDef";
 import {
   Aabb as AabbNs,
   type Aabb as AabbTuple,

@@ -6,9 +6,16 @@ import {
   defineQuery,
   Controls,
   hasComponent,
+  Block,
+  Selected,
+  getPointerInput,
+  canBlockEdit,
+  getBlockDef,
+  getLocalSelectedBlocks,
+  type PointerInput,
 } from "@infinitecanvas/editor";
 
-import { Block, Selected, TransformBox, TransformHandle } from "../../components";
+import { TransformBox, TransformHandle } from "../../components";
 import {
   AddOrUpdateTransformBox,
   UpdateTransformBox,
@@ -17,13 +24,6 @@ import {
   RemoveTransformBox,
   StartTransformBoxEdit,
 } from "../../commands";
-import {
-  getPointerInputWithIntersects,
-  type PointerInputWithIntersects,
-  canBlockEdit,
-  getBlockDef,
-  getLocalSelectedBlocks,
-} from "../../helpers";
 import { TransformBoxStateSingleton } from "../../singletons";
 import { TransformBoxState } from "../../types";
 
@@ -39,7 +39,7 @@ interface SelectionChangedEvent {
 /**
  * Union of events the transform box machine handles.
  */
-type TransformBoxEvent = SelectionChangedEvent | PointerInputWithIntersects;
+type TransformBoxEvent = SelectionChangedEvent | PointerInput;
 
 /**
  * Transform box state machine - created once at module level.
@@ -205,7 +205,7 @@ export const transformBoxSystem = defineSystem((ctx) => {
 
   // Get pointer events with intersection data for select tool
   const buttons = Controls.getButtons(ctx, "select");
-  const pointerEvents = getPointerInputWithIntersects(ctx, buttons);
+  const pointerEvents = getPointerInput(ctx, buttons);
   events.push(...pointerEvents);
 
   if (events.length === 0) return;

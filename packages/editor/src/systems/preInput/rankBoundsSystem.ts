@@ -1,11 +1,6 @@
-import {
-  defineSystem,
-  defineQuery,
-  type Context,
-  Synced,
-} from "@infinitecanvas/editor";
+import { defineSystem, defineQuery, type Context } from "@infinitecanvas/ecs";
 
-import { Block } from "../../components";
+import { Synced, Block } from "../../components";
 import { RankBounds } from "../../singletons";
 
 // Query for blocks - tracks added blocks to sync their ranks

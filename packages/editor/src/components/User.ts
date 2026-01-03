@@ -1,4 +1,5 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field } from "@infinitecanvas/ecs";
+import { defineEditorComponent } from "../EditorComponentDef";
 
 /**
  * User component - tracks user presence on the canvas.

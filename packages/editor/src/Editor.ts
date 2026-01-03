@@ -15,9 +15,17 @@ import {
   type SystemPhase,
   EditorOptionsSchema,
   type EditorOptionsInput,
+  CursorDef,
+  Keybind,
+  type BlockDefMap,
+  BlockDef,
 } from "./types";
 import type { StoreAdapter } from "./store";
-import { type EditorPlugin, parsePlugin, sortPluginsByDependencies } from "./plugin";
+import {
+  type EditorPlugin,
+  parsePlugin,
+  sortPluginsByDependencies,
+} from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
@@ -89,6 +97,10 @@ const PHASE_ORDER: SystemPhase[] = [
  * ```
  */
 export class Editor {
+  public cursors: Record<string, CursorDef> = {};
+  public keybinds: Keybind[];
+  public blockDefs: BlockDefMap = {};
+
   private world: World;
   private phases: Map<SystemPhase, System[]>;
   private plugins: Map<string, EditorPlugin>;
@@ -103,8 +115,15 @@ export class Editor {
   constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
     // Parse options with Zod schema
     const options = EditorOptionsSchema.parse(optionsInput ?? {});
-    const { plugins: pluginInputs, maxEntities, resources } = options;
+    const { plugins: pluginInputs, maxEntities, resources, userId } = options;
     const store = options.store ?? null;
+
+    this.cursors = options.cursors;
+
+    // Generate unique session ID for this editor instance
+    const sessionId = crypto.randomUUID();
+    // Use provided userId or generate one
+    const resolvedUserId = userId ?? crypto.randomUUID();
 
     // Parse plugin inputs (handle both direct plugins and factory functions)
     const plugins = pluginInputs.map(parsePlugin);
@@ -124,6 +143,26 @@ export class Editor {
       }
     }
 
+    // Setup keybinds
+    const keybinds = options.keybinds.map((kb) => Keybind.parse(kb));
+    for (const plugin of sortedPlugins) {
+      if (plugin.keybinds) {
+        keybinds.push(...plugin.keybinds);
+      }
+    }
+    this.keybinds = keybinds;
+
+    // Setup block defs
+    const blockDefs: BlockDefMap = {};
+    for (const plugin of sortedPlugins) {
+      if (plugin.blockDefs) {
+        for (const [tag, def] of Object.entries(plugin.blockDefs)) {
+          blockDefs[tag] = def;
+        }
+      }
+    }
+    this.blockDefs = blockDefs;
+
     // Collect plugin resources
     const pluginResources: Record<string, unknown> = {};
     for (const plugin of sortedPlugins) {
@@ -138,6 +177,8 @@ export class Editor {
       ...resources,
       domElement,
       editor: null as unknown as Editor, // Will be set below
+      sessionId,
+      userId: resolvedUserId,
       pluginResources,
     };
 

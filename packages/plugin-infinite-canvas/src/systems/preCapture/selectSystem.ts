@@ -8,15 +8,14 @@ import {
   Controls,
   hasComponent,
   Synced,
+  Block,
+  getPointerInput,
+  Selected,
+  CursorKind,
+  type PointerInput,
 } from "@infinitecanvas/editor";
 
-import {
-  Block,
-  Locked,
-  Selected,
-  TransformBox,
-  TransformHandle,
-} from "../../components";
+import { Locked, TransformBox, TransformHandle } from "../../components";
 import {
   SelectBlock,
   DeselectAll,
@@ -29,12 +28,9 @@ import {
   UpdateSelectionBox,
   RemoveSelectionBox,
 } from "../../commands";
-import {
-  getPointerInputWithIntersects,
-  type PointerInputWithIntersects,
-} from "../../helpers";
+
 import { SelectionStateSingleton } from "../../singletons";
-import { SelectionState, CursorKind } from "../../types";
+import { SelectionState } from "../../types";
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4;
@@ -63,7 +59,7 @@ type SelectionContext = InferStateContext<typeof SelectionStateSingleton>;
 const selectionMachine = setup({
   types: {
     context: {} as SelectionContext,
-    events: {} as PointerInputWithIntersects,
+    events: {} as PointerInput,
   },
   guards: {
     isThresholdReached: ({ context, event }) => {
@@ -428,7 +424,7 @@ export const selectSystem = defineSystem((ctx) => {
   const buttons = Controls.getButtons(ctx, "select");
 
   // Get pointer events with intersection data
-  const events = getPointerInputWithIntersects(ctx, buttons);
+  const events = getPointerInput(ctx, buttons);
   if (events.length === 0) return;
 
   // Run machine through events - SelectionStateSingleton.run() handles

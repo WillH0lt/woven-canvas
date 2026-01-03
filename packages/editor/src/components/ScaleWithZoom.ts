@@ -1,4 +1,5 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field } from "@infinitecanvas/ecs";
+import { defineEditorComponent } from "../EditorComponentDef";
 
 /**
  * ScaleWithZoom component - marks an entity that should maintain

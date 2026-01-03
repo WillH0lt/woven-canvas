@@ -2,13 +2,12 @@ import {
   defineSystem,
   defineQuery,
   type Context,
-  Camera,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/ecs";
 import { Vec2, Scalar } from "@infinitecanvas/math";
 
+import { Camera, ScaleWithZoomState } from "../../singletons";
 import { Block, ScaleWithZoom } from "../../components";
-import { ScaleWithZoomState } from "../../singletons";
 
 // Query for entities with ScaleWithZoom
 const scaleWithZoomQuery = defineQuery((q) =>

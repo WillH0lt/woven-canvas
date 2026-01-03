@@ -13,10 +13,16 @@ import {
   type Context,
   type EditorResources,
   type EntityId,
+  Aabb,
+  Block,
+  Selected,
+  RankBounds,
+  Cursor,
+  selectBlock,
+  getLocalSelectedBlocks,
 } from "@infinitecanvas/editor";
 
 import { Aabb as AabbNs, Vec2 } from "@infinitecanvas/math";
-import { Aabb, Block, Selected } from "../../components";
 import {
   SelectBlock,
   DeselectBlock,
@@ -35,13 +41,9 @@ import {
   CloneEntities,
   UncloneEntities,
 } from "../../commands";
-import { RankBounds, Cursor, Clipboard } from "../../singletons";
+import { Clipboard } from "../../singletons";
 import type { ClipboardEntityData } from "../../singletons/Clipboard";
-import {
-  generateUuidBySeed,
-  selectBlock,
-  getLocalSelectedBlocks,
-} from "../../helpers";
+import { generateUuidBySeed } from "../../helpers";
 
 // Query for synced blocks
 const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced));

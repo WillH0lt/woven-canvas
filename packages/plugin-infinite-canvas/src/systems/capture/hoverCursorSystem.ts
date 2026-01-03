@@ -2,10 +2,12 @@ import {
   type Context,
   defineSystem,
   defineQuery,
+  Block,
+  Hovered,
+  Cursor,
 } from "@infinitecanvas/editor";
 
-import { Block, Hovered, TransformHandle, TransformBox } from "../../components";
-import { Cursor } from "../../singletons";
+import { TransformHandle, TransformBox } from "../../components";
 
 // Query for hovered entities that have transform handles
 const hoveredHandleQuery = defineQuery((q) =>
@@ -56,7 +58,11 @@ export const hoverCursorSystem = defineSystem((ctx: Context) => {
       handle.cursorKind !== currentCursor.contextCursorKind ||
       transformBoxBlock.rotateZ !== currentCursor.contextRotation
     ) {
-      Cursor.setContextCursor(ctx, handle.cursorKind, transformBoxBlock.rotateZ);
+      Cursor.setContextCursor(
+        ctx,
+        handle.cursorKind,
+        transformBoxBlock.rotateZ
+      );
     }
   }
 });

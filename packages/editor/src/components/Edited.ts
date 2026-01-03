@@ -1,4 +1,4 @@
-import { defineEditorComponent } from "@infinitecanvas/editor";
+import { defineEditorComponent } from "../EditorComponentDef";
 
 /**
  * Edited component - marks an entity as currently being edited.

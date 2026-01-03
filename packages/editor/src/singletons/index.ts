@@ -9,3 +9,11 @@ export { Keyboard, setBit, clearBits, Key, codeToIndex } from "./Keyboard";
 export { Mouse } from "./Mouse";
 
 export { Screen } from "./Screen";
+
+export { Cursor } from "./Cursor";
+
+export { Intersect } from "./Intersect";
+
+export { RankBounds } from "./RankBounds";
+
+export { ScaleWithZoomState } from "./ScaleWithZoomState";

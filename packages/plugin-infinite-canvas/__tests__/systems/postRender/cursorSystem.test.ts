@@ -1,9 +1,12 @@
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { Editor, type EditorPlugin } from "@infinitecanvas/editor";
 import { Cursor } from "../../../src/singletons";
-import { cursorSystem } from "../../../src/systems/postRender";
+import { cursorSystem } from "../../../../editor/src/systems/postRender";
 import { CursorKind } from "../../../src/types";
-import { DEFAULT_CURSOR_DEFS, getCursorSvg } from "../../../src/cursors";
+import {
+  DEFAULT_CURSOR_DEFS,
+  getCursorSvg,
+} from "../../../../editor/src/cursors";
 import { PLUGIN_NAME } from "../../../src/constants";
 import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin";
 import { createMockElement, createTestResources } from "../../testUtils";
@@ -49,7 +52,11 @@ describe("PostRenderCursor", () => {
 
       await editor.tick();
 
-      const expectedCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      const expectedCursor = getCursorSvg(
+        DEFAULT_CURSOR_DEFS,
+        CursorKind.Drag,
+        0
+      );
       expect(document.body.style.cursor).toBe(expectedCursor);
     });
 
@@ -60,7 +67,11 @@ describe("PostRenderCursor", () => {
 
       await editor.tick();
 
-      const expectedCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.NS, 0);
+      const expectedCursor = getCursorSvg(
+        DEFAULT_CURSOR_DEFS,
+        CursorKind.NS,
+        0
+      );
       expect(document.body.style.cursor).toBe(expectedCursor);
     });
 
@@ -86,7 +97,11 @@ describe("PostRenderCursor", () => {
 
       await editor.tick();
 
-      const expectedCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      const expectedCursor = getCursorSvg(
+        DEFAULT_CURSOR_DEFS,
+        CursorKind.Drag,
+        0
+      );
       expect(document.body.style.cursor).toBe(expectedCursor);
     });
 

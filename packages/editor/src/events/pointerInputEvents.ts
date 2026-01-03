@@ -2,7 +2,7 @@ import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
 import { Vec2 } from "@infinitecanvas/math";
 
 import { Pointer, type PointerButton } from "../components";
-import { Camera, Frame, Keyboard } from "../singletons";
+import { Camera, Frame, Keyboard, Intersect } from "../singletons";
 import type { PointerInput, PointerInputOptions } from "./types";
 
 // Default thresholds for click detection
@@ -112,6 +112,9 @@ export function getPointerInput(
     return buttons.includes(pointer.button);
   };
 
+  // Get current intersects
+  const intersects = Intersect.getAll(ctx);
+
   // Helper to create event from pointer
   const createEvent = (
     type: PointerInput["type"],
@@ -138,6 +141,7 @@ export function getPointerInput(
       cameraTop: camera.top,
       cameraZoom: camera.zoom,
       pointerId: entityId,
+      intersects,
     };
   };
 

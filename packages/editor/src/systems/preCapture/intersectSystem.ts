@@ -5,14 +5,10 @@ import {
   removeComponent,
   hasComponent,
   type Context,
-  Camera,
-  Mouse,
-  Pointer,
-  Controls,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/ecs";
 
-import { Block, Aabb, Hovered } from "../../components";
-import { Intersect } from "../../singletons";
+import { Camera, Mouse, Controls, Intersect } from "../../singletons";
+import { Pointer, Block, Aabb, Hovered } from "../../components";
 import { intersectPoint } from "../../helpers";
 
 // Query for blocks that have changed (need AABB recalculation)

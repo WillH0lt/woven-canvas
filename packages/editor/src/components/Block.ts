@@ -1,9 +1,5 @@
-import {
-  field,
-  EditorComponentDef,
-  type Context,
-  type EntityId,
-} from "@infinitecanvas/editor";
+import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
+import { EditorComponentDef } from "../EditorComponentDef";
 import { Vec2, Rect, type Aabb as AabbTuple } from "@infinitecanvas/math";
 
 // Pre-allocated arrays for SAT intersection to avoid allocations

@@ -1,13 +1,9 @@
-import {
-  type Context,
-  defineSystem,
-  defineQuery,
-  getPluginResources,
-} from "@infinitecanvas/editor";
+import { type Context, defineSystem, defineQuery } from "@infinitecanvas/ecs";
+
 import { Cursor } from "../../singletons";
 import { getCursorSvg } from "../../cursors";
 import { PLUGIN_NAME } from "../../constants";
-import type { InfiniteCanvasResources } from "../../InfiniteCanvasPlugin";
+import { type EditorResources, getPluginResources } from "../../types";
 
 // Default cursor when no cursor kind is set
 const DEFAULT_CURSOR = "default";
@@ -42,11 +38,8 @@ export const cursorSystem = defineSystem((ctx: Context) => {
   }
 
   // Get cursors from resources and resolve to SVG
-  const { cursors } = getPluginResources<InfiniteCanvasResources>(
-    ctx,
-    PLUGIN_NAME
-  );
-  const cursorValue = getCursorSvg(cursors, cursorKind, rotation);
+  const { editor } = getPluginResources<EditorResources>(ctx, PLUGIN_NAME);
+  const cursorValue = getCursorSvg(editor.cursors, cursorKind, rotation);
 
   // Apply to DOM
   document.body.style.cursor = cursorValue;

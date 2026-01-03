@@ -1,8 +1,12 @@
-import { type Context, getPluginResources } from "@infinitecanvas/editor";
+import { type Context } from "@infinitecanvas/ecs";
 
 import { PLUGIN_NAME } from "../constants";
-import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
-import { BlockDef, type BlockDefMap } from "../types";
+import {
+  BlockDef,
+  type BlockDefMap,
+  type EditorResources,
+  getPluginResources,
+} from "../types";
 
 /**
  * Get all block definitions from the plugin resources.
@@ -11,11 +15,8 @@ import { BlockDef, type BlockDefMap } from "../types";
  * @returns Map of block tag to normalized block definition
  */
 export function getBlockDefs(ctx: Context): BlockDefMap {
-  const resources = getPluginResources<InfiniteCanvasResources>(
-    ctx,
-    PLUGIN_NAME
-  );
-  return resources.blockDefs;
+  const { editor } = getPluginResources<EditorResources>(ctx, PLUGIN_NAME);
+  return editor.blockDefs;
 }
 
 /**

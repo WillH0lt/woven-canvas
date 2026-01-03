@@ -1,46 +1,33 @@
 import {
-  createEntity,
-  addComponent,
-  Synced,
   EditorComponentDef,
   EditorSingletonDef,
   MainThreadSystem,
   type EditorPlugin,
   type EditorPluginFactory,
+  Key,
 } from "@infinitecanvas/editor";
+
+import {
+  RemoveSelected,
+  SelectAll,
+  BringForwardSelected,
+  SendBackwardSelected,
+  Cut,
+  Copy,
+  Paste,
+} from "./commands";
 
 import * as components from "./components";
 import * as singletons from "./singletons";
 import * as systems from "./systems";
 
-import { DEFAULT_KEYBINDS, PLUGIN_NAME } from "./constants";
-import {
-  BlockDef,
-  Keybind,
-  InfiniteCanvasPluginOptionsSchema,
-  type BlockDefMap,
-  type CursorDefMap,
-  type InfiniteCanvasPluginOptionsInput,
-} from "./types";
-import { DEFAULT_CURSOR_DEFS } from "./cursors";
+import { PLUGIN_NAME } from "./constants";
 
 // Helper to filter systems from a phase namespace
 const filterSystems = (ns: object): MainThreadSystem[] =>
   Object.values(ns).filter(
     (v): v is MainThreadSystem => v instanceof MainThreadSystem
   );
-
-/**
- * Resources for the Infinite Canvas plugin.
- * Access via getPluginResources<InfiniteCanvasResources>(ctx, PLUGIN_NAME).
- */
-export interface InfiniteCanvasResources {
-  sessionId: string;
-  userId: string;
-  blockDefs: BlockDefMap;
-  keybinds: Keybind[];
-  cursors: CursorDefMap;
-}
 
 /**
  * Create an Infinite Canvas plugin with custom options.
@@ -68,53 +55,9 @@ export interface InfiniteCanvasResources {
  * const editor = new Editor(container, { plugins: [plugin] });
  * ```
  */
-export function createInfiniteCanvasPlugin(
-  optionsInput: InfiniteCanvasPluginOptionsInput = {}
-): EditorPlugin<InfiniteCanvasResources> {
-  // Generate a unique session ID for this editor instance
-  const sessionId = crypto.randomUUID();
-
-  // Parse options with Zod schema
-  const options = InfiniteCanvasPluginOptionsSchema.parse(optionsInput);
-
-  // Generate user id if not provided
-  const userId = options.userId ?? crypto.randomUUID();
-
-  // Build normalized block definitions map (defaults + custom, custom overrides)
-  const blockDefs: BlockDefMap = {
-    rect: BlockDef.parse({ tag: "rect" }),
-  };
-  for (const def of options.customBlocks) {
-    blockDefs[def.tag] = def;
-  }
-
-  // Merge user keybinds with defaults (user keybinds override by key combination)
-  const getKeybindKey = (kb: Keybind) =>
-    `${kb.key}:${kb.mod ?? false}:${kb.shift ?? false}`;
-  const defaultKeybinds = DEFAULT_KEYBINDS.map((kb) => Keybind.parse(kb));
-  const userKeybinds = options.keybinds ?? [];
-  const userKeybindKeys = new Set(userKeybinds.map(getKeybindKey));
-  const keybinds = [
-    ...defaultKeybinds.filter((kb) => !userKeybindKeys.has(getKeybindKey(kb))),
-    ...userKeybinds,
-  ];
-
-  // Merge user cursors with defaults (user cursors override by kind)
-  const cursors: CursorDefMap = {
-    ...DEFAULT_CURSOR_DEFS,
-    ...options.cursors,
-  };
-
+export function createInfiniteCanvasPlugin(): EditorPlugin {
   return {
     name: PLUGIN_NAME,
-
-    resources: {
-      sessionId,
-      userId,
-      blockDefs,
-      keybinds,
-      cursors,
-    },
 
     components: Object.values(components).filter(
       (v): v is EditorComponentDef<any> => v instanceof EditorComponentDef
@@ -124,8 +67,6 @@ export function createInfiniteCanvasPlugin(
       (v): v is EditorSingletonDef<any> => v instanceof EditorSingletonDef
     ),
 
-    preInputSystems: filterSystems(systems.preInput),
-
     preCaptureSystems: filterSystems(systems.preCapture),
 
     captureSystems: filterSystems(systems.capture),
@@ -134,20 +75,42 @@ export function createInfiniteCanvasPlugin(
 
     postUpdateSystems: filterSystems(systems.postUpdate),
 
-    preRenderSystems: filterSystems(systems.preRender),
-
     postRenderSystems: filterSystems(systems.postRender),
 
-    setup(ctx) {
-      // Create the user entity for presence tracking
-      const userEntity = createEntity(ctx);
-      addComponent(ctx, userEntity, Synced, {
-        id: sessionId,
-      });
-      addComponent(ctx, userEntity, components.User, {
-        id: userId,
-      });
-    },
+    keybinds: [
+      {
+        command: Cut.name,
+        key: Key.X,
+        mod: true,
+      },
+      {
+        command: Copy.name,
+        key: Key.C,
+        mod: true,
+      },
+      {
+        command: Paste.name,
+        key: Key.V,
+        mod: true,
+      },
+      {
+        command: RemoveSelected.name,
+        key: Key.Delete,
+      },
+      {
+        command: SelectAll.name,
+        key: Key.A,
+        mod: true,
+      },
+      {
+        command: BringForwardSelected.name,
+        key: Key.BracketRight,
+      },
+      {
+        command: SendBackwardSelected.name,
+        key: Key.BracketLeft,
+      },
+    ],
   };
 }
 
@@ -181,7 +144,5 @@ export function createInfiniteCanvasPlugin(
  * });
  * ```
  */
-export const InfiniteCanvasPlugin: EditorPluginFactory<
-  InfiniteCanvasPluginOptionsInput,
-  InfiniteCanvasResources
-> = (options = {}) => createInfiniteCanvasPlugin(options);
+export const InfiniteCanvasPlugin: EditorPluginFactory = () =>
+  createInfiniteCanvasPlugin();

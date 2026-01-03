@@ -1,14 +1,28 @@
 // Re-export math types
 export type { Vec2 } from "@infinitecanvas/math";
 
-// Core types
+// types
 export type {
   EditorResources,
   SyncBehavior,
   EditorComponentMeta,
   EditorOptionsInput,
+  KeybindInput,
+  CursorDefMap,
+  ResizeMode,
+  BlockDefInput,
+  BlockDefMap,
 } from "./types";
-export { getPluginResources } from "./types";
+
+export {
+  getPluginResources,
+  Keybind,
+  CursorKind,
+  CursorDef,
+  TextAlign,
+  VerticalAlign,
+  BlockDef,
+} from "./types";
 
 // Singleton base class
 export {
@@ -82,10 +96,31 @@ export {
   Key,
   Mouse,
   Screen,
+  Cursor,
+  Intersect,
+  RankBounds,
+  ScaleWithZoomState,
 } from "./singletons";
 
 // Components
-export { Pointer, PointerButton, PointerType, Synced } from "./components";
+export {
+  Pointer,
+  PointerButton,
+  PointerType,
+  Synced,
+  Block,
+  Aabb,
+  Selected,
+  Hovered,
+  Edited,
+  ScaleWithZoom,
+  Opacity,
+  Text,
+  textHasContent,
+  getTextStringContent,
+  Connector,
+  User,
+} from "./components";
 
 // Events
 export {
@@ -107,3 +142,19 @@ export {
 
 // State machine utilities
 export { runMachine, type MachineResult } from "./machine";
+
+// Helpers
+export {
+  intersectPoint,
+  intersectAabb,
+  getTopmostBlockAtPoint,
+  selectBlock,
+  getLocalSelectedBlocks,
+  canBlockEdit,
+  getBlockDef,
+} from "./helpers";
+
+// Systems
+export { intersectSystem } from "./systems/preCapture";
+export { rankBoundsSystem } from "./systems/preInput";
+export { scaleWithZoomSystem } from "./systems/preRender";

@@ -1,4 +1,5 @@
-import { field, EditorSingletonDef, type Context } from "@infinitecanvas/editor";
+import { field, type Context } from "@infinitecanvas/ecs";
+import { EditorSingletonDef } from "../EditorSingletonDef";
 
 const CursorSchema = {
   /** Base cursor kind (from current tool) */

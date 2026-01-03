@@ -1,7 +1,12 @@
-import { type Context, type EntityId, defineQuery } from "@infinitecanvas/editor";
-import { Aabb as AabbNs, type Aabb as AabbTuple, type Vec2 } from "@infinitecanvas/math";
+import { type Context, type EntityId, defineQuery } from "@infinitecanvas/ecs";
+import {
+  Aabb as AabbNs,
+  type Aabb as AabbTuple,
+  type Vec2,
+} from "@infinitecanvas/math";
 
-import { Block, Aabb } from "../components";
+import { Block } from "../components/Block";
+import { Aabb } from "../components/Aabb";
 
 // Query for all blocks with Aabb
 const blocksWithAabb = defineQuery((q) => q.with(Block, Aabb));

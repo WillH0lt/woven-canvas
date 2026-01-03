@@ -6,7 +6,12 @@ import {
   removeComponent,
   type EditorPlugin,
 } from "@infinitecanvas/editor";
-import { Block, Hovered, TransformHandle, TransformBox } from "../../../src/components";
+import {
+  Block,
+  Hovered,
+  TransformHandle,
+  TransformBox,
+} from "../../../src/components";
 import { Cursor } from "../../../src/singletons";
 import { hoverCursorSystem } from "../../../src/systems/capture";
 import { CursorKind, TransformHandleKind } from "../../../src/types";

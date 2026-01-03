@@ -1,5 +1,9 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
-import { TransformHandleKind, CursorKind } from "../types";
+import {
+  field,
+  defineEditorComponent,
+  CursorKind,
+} from "@infinitecanvas/editor";
+import { TransformHandleKind } from "../types";
 
 /**
  * TransformHandle component - marks an entity as a transform handle.

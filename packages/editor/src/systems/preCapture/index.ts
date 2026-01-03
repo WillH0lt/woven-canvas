@@ -1,0 +1,1 @@
+export { intersectSystem } from "./intersectSystem";

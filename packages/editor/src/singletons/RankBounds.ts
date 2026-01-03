@@ -1,8 +1,5 @@
-import {
-  field,
-  EditorSingletonDef,
-  type Context,
-} from "@infinitecanvas/editor";
+import { field, type Context } from "@infinitecanvas/ecs";
+import { EditorSingletonDef } from "../EditorSingletonDef";
 import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
 
 const RankBoundsSchema = {

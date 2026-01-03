@@ -12,7 +12,7 @@ import {
 import { Block, Aabb, Selected } from "../src/components";
 import { PLUGIN_NAME } from "../src/constants";
 import type { InfiniteCanvasResources } from "../src/InfiniteCanvasPlugin";
-import { DEFAULT_CURSOR_DEFS } from "../src/cursors";
+import { DEFAULT_CURSOR_DEFS } from "../../editor/src/cursors";
 
 /**
  * Default test resources for plugin tests.

@@ -26,14 +26,7 @@ import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin"
 const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
   name: PLUGIN_NAME,
   resources: createTestResources(),
-  components: [
-    Block,
-    Aabb,
-    Selected,
-    TransformBox,
-    TransformHandle,
-    DragStart,
-  ],
+  components: [Block, Aabb, Selected, TransformBox, TransformHandle, DragStart],
   singletons: [RankBounds],
   updateSystems: [dragHandlerSystem],
 };

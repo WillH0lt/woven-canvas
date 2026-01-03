@@ -1,4 +1,5 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field } from "@infinitecanvas/ecs";
+import { defineEditorComponent } from "../EditorComponentDef";
 
 /**
  * Connector component - defines a line/arrow between two blocks.

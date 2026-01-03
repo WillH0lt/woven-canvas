@@ -1,4 +1,5 @@
-import { field, defineEditorSingleton } from "@infinitecanvas/editor";
+import { field } from "@infinitecanvas/ecs";
+import { defineEditorSingleton } from "../EditorSingletonDef";
 
 /**
  * ScaleWithZoomState singleton - tracks state for the ScaleWithZoom system.

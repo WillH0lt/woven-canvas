@@ -10,18 +10,21 @@ import {
   type Context,
   type EntityId,
   Camera,
+  Opacity,
+  Edited,
+  ScaleWithZoom,
+  Block,
+  CursorKind,
+  getBlockDef,
+  getLocalSelectedBlocks,
 } from "@infinitecanvas/editor";
 import { Vec2, Rect } from "@infinitecanvas/math";
 
 import {
-  Block,
   TransformBox,
   TransformHandle,
   DragStart,
   Locked,
-  Opacity,
-  Edited,
-  ScaleWithZoom,
 } from "../../components";
 import {
   AddOrUpdateTransformBox,
@@ -32,9 +35,8 @@ import {
   StartTransformBoxEdit,
   EndTransformBoxEdit,
 } from "../../commands";
-import { getBlockDef, getLocalSelectedBlocks } from "../../helpers";
 import { SelectionStateSingleton } from "../../singletons";
-import { TransformHandleKind, CursorKind, SelectionState } from "../../types";
+import { TransformHandleKind, SelectionState } from "../../types";
 
 // Query for transform box entities
 const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));

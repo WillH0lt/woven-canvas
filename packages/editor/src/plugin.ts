@@ -2,6 +2,7 @@ import type { Context, System } from "@infinitecanvas/ecs";
 
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
+import type { BlockDefMap, Keybind } from "./types";
 
 /**
  * Systems organized by execution phase.
@@ -107,6 +108,12 @@ export interface PluginSystems {
 export interface EditorPlugin<TResources = unknown> {
   /** Unique plugin identifier */
   name: string;
+
+  /** Keybindings provided by the plugin */
+  keybinds?: Keybind[];
+
+  /** Block definitions provided by the plugin */
+  blockDefs?: BlockDefMap;
 
   /**
    * Plugin-specific resources/options.

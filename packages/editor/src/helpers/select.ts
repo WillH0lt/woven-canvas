@@ -1,14 +1,14 @@
 import {
   addComponent,
   hasComponent,
-  getPluginResources,
+  getResources,
   defineQuery,
   type Context,
   type EntityId,
-} from "@infinitecanvas/editor";
-import { Block, Selected } from "../components";
-import { PLUGIN_NAME } from "../constants";
-import type { InfiniteCanvasResources } from "../InfiniteCanvasPlugin";
+} from "@infinitecanvas/ecs";
+import type { EditorResources } from "../types";
+import { Block } from "../components/Block";
+import { Selected } from "../components/Selected";
 
 // Query for selected blocks
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
@@ -23,10 +23,7 @@ const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 export function selectBlock(ctx: Context, entityId: EntityId): void {
   if (hasComponent(ctx, entityId, Selected)) return;
 
-  const { sessionId } = getPluginResources<InfiniteCanvasResources>(
-    ctx,
-    PLUGIN_NAME
-  );
+  const { sessionId } = getResources<EditorResources>(ctx);
   addComponent(ctx, entityId, Selected, { selectedBy: sessionId });
 }
 
@@ -38,10 +35,7 @@ export function selectBlock(ctx: Context, entityId: EntityId): void {
  * @returns Array of entity IDs selected by the current session
  */
 export function getLocalSelectedBlocks(ctx: Context): EntityId[] {
-  const { sessionId } = getPluginResources<InfiniteCanvasResources>(
-    ctx,
-    PLUGIN_NAME
-  );
+  const { sessionId } = getResources<EditorResources>(ctx);
 
   const result: EntityId[] = [];
   for (const entityId of selectedBlocksQuery.current(ctx)) {

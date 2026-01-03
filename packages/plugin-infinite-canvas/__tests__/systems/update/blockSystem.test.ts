@@ -748,7 +748,10 @@ describe("UpdateBlock", () => {
       let contextCursorKind: string | undefined;
       let contextRotation: number | undefined;
 
-      editor.command(SetCursor, { contextCursorKind: "nesw", contextRotation: 1.0 });
+      editor.command(SetCursor, {
+        contextCursorKind: "nesw",
+        contextRotation: 1.0,
+      });
 
       await editor.tick();
 
