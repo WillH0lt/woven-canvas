@@ -26,7 +26,7 @@
     "@infinitecanvas/extension-ink": "workspace:*",
     "@infinitecanvas/math": "workspace:*",
     "@infinitecanvas/plugin-canvas-controls": "workspace:*",
-    "@infinitecanvas/plugin-infinite-canvas": "workspace:*",
+    "@infinitecanvas/plugin-selection": "workspace:*",
     "@infinitecanvas/store": "workspace:*",
     "@invertase/firestore-stripe-payments": "^0.0.8",
     "@nuxt/ui": "^4.1.0",

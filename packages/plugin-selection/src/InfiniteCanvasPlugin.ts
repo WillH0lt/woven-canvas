@@ -130,7 +130,7 @@ export function createInfiniteCanvasPlugin(): EditorPlugin {
  * @example
  * ```typescript
  * import { Editor } from '@infinitecanvas/editor';
- * import { InfiniteCanvasPlugin } from '@infinitecanvas/plugin-infinite-canvas';
+ * import { InfiniteCanvasPlugin } from '@infinitecanvas/plugin-selection';
  *
  * // With default options (no parentheses needed)
  * const editor = new Editor(el, {

@@ -7,7 +7,7 @@ import {
 } from "@infinitecanvas/editor";
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { Store } from "@infinitecanvas/store";
-import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-infinite-canvas";
+import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-selection";
 
 import { ShapesPlugin, Shape, shapeQuery, createShape } from "./ShapesPlugin";
 

@@ -23,7 +23,7 @@ import {
   Selected,
   Hovered,
   Edited,
-} from "@infinitecanvas/plugin-infinite-canvas";
+} from "@infinitecanvas/plugin-selection";
 import {
   CanvasControlsPlugin,
   type CanvasControlsOptions,

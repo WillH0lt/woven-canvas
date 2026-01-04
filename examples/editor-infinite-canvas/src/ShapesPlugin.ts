@@ -22,7 +22,7 @@ import {
   TransformHandle,
   TransformHandleKind,
   SelectionBox,
-} from "@infinitecanvas/plugin-infinite-canvas";
+} from "@infinitecanvas/plugin-selection";
 
 /**
  * Resources for the RendererPlugin.

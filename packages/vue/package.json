@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@infinitecanvas/editor": "workspace:*",
-    "@infinitecanvas/plugin-infinite-canvas": "workspace:*",
+    "@infinitecanvas/plugin-selection": "workspace:*",
     "@infinitecanvas/plugin-canvas-controls": "workspace:*"
   },
   "devDependencies": {

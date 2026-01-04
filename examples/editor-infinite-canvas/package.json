@@ -19,7 +19,7 @@
     "@infinitecanvas/editor": "workspace:^",
     "@infinitecanvas/math": "workspace:^",
     "@infinitecanvas/plugin-canvas-controls": "workspace:^",
-    "@infinitecanvas/plugin-infinite-canvas": "workspace:^",
+    "@infinitecanvas/plugin-selection": "workspace:^",
     "@infinitecanvas/store": "workspace:^",
     "idb": "^8.0.3",
     "lodash.throttle": "^4.1.1",

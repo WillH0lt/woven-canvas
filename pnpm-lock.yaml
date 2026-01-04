@@ -234,9 +234,9 @@ importers:
       '@infinitecanvas/plugin-canvas-controls':
         specifier: workspace:*
         version: link:../../packages/plugin-canvas-controls
-      '@infinitecanvas/plugin-infinite-canvas':
+      '@infinitecanvas/plugin-selection':
         specifier: workspace:*
-        version: link:../../packages/plugin-infinite-canvas
+        version: link:../../packages/plugin-selection
       '@infinitecanvas/store':
         specifier: workspace:*
         version: link:../../packages/store
@@ -502,9 +502,9 @@ importers:
       '@infinitecanvas/plugin-canvas-controls':
         specifier: workspace:^
         version: link:../../packages/plugin-canvas-controls
-      '@infinitecanvas/plugin-infinite-canvas':
+      '@infinitecanvas/plugin-selection':
         specifier: workspace:^
-        version: link:../../packages/plugin-infinite-canvas
+        version: link:../../packages/plugin-selection
       '@infinitecanvas/store':
         specifier: workspace:^
         version: link:../../packages/store
@@ -551,9 +551,9 @@ importers:
       '@infinitecanvas/plugin-canvas-controls':
         specifier: workspace:^
         version: link:../../packages/plugin-canvas-controls
-      '@infinitecanvas/plugin-infinite-canvas':
+      '@infinitecanvas/plugin-selection':
         specifier: workspace:^
-        version: link:../../packages/plugin-infinite-canvas
+        version: link:../../packages/plugin-selection
       '@infinitecanvas/store':
         specifier: workspace:^
         version: link:../../packages/store
@@ -597,9 +597,9 @@ importers:
       '@infinitecanvas/plugin-canvas-controls':
         specifier: workspace:^
         version: link:../../packages/plugin-canvas-controls
-      '@infinitecanvas/plugin-infinite-canvas':
+      '@infinitecanvas/plugin-selection':
         specifier: workspace:^
-        version: link:../../packages/plugin-infinite-canvas
+        version: link:../../packages/plugin-selection
       '@infinitecanvas/vue':
         specifier: workspace:^
         version: link:../../packages/vue
@@ -956,7 +956,7 @@ importers:
         specifier: ^4.0.7
         version: 4.0.8(@types/node@24.10.0)(@vitest/ui@4.0.8)(jsdom@27.3.0)(tsx@4.20.6)
 
-  packages/plugin-infinite-canvas:
+  packages/plugin-selection:
     dependencies:
       '@infinitecanvas/editor':
         specifier: workspace:^
@@ -1035,9 +1035,9 @@ importers:
       '@infinitecanvas/plugin-canvas-controls':
         specifier: workspace:*
         version: link:../plugin-canvas-controls
-      '@infinitecanvas/plugin-infinite-canvas':
+      '@infinitecanvas/plugin-selection':
         specifier: workspace:*
-        version: link:../plugin-infinite-canvas
+        version: link:../plugin-selection
       typescript:
         specifier: ^5
         version: 5.9.3

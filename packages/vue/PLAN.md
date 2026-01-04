@@ -36,7 +36,7 @@ import { InfiniteCanvas } from "@infinitecanvas/vue";
 @infinitecanvas/vue
 ├── Editor.ts              (existing - low-level editor wrapper)
 └── InfiniteCanvas.vue     (new - high-level canvas with block rendering)
-    ├── imports InfiniteCanvasPlugin from @infinitecanvas/plugin-infinite-canvas
+    ├── imports InfiniteCanvasPlugin from @infinitecanvas/plugin-selection
     ├── imports CanvasControlsPlugin from @infinitecanvas/plugin-canvas-controls
     ├── subscribes to Block query
     ├── renders blocks with camera transform
@@ -47,10 +47,10 @@ import { InfiniteCanvas } from "@infinitecanvas/vue";
 
 ### Props
 
-| Prop       | Type                  | Default | Description                                         |
-| ---------- | --------------------- | ------- | --------------------------------------------------- |
+| Prop       | Type                  | Default | Description                                               |
+| ---------- | --------------------- | ------- | --------------------------------------------------------- |
 | `controls` | `ControlsOptions`     | `{}`    | Options for CanvasControlsPlugin (minZoom, maxZoom, etc.) |
-| `plugins`  | `EditorPluginInput[]` | `[]`    | Additional plugins to load                          |
+| `plugins`  | `EditorPluginInput[]` | `[]`    | Additional plugins to load                                |
 
 ### Events
 
