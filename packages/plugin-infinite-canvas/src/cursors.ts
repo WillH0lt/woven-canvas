@@ -1,4 +1,19 @@
-import { CursorKind, type CursorDef, type CursorDefMap } from "./types";
+import { type CursorDef, type CursorDefMap } from "../../editor/src/types";
+
+/**
+ * Cursor kinds for transform operations.
+ */
+export enum CursorKind {
+  Drag = "drag",
+  NESW = "nesw",
+  NWSE = "nwse",
+  NS = "ns",
+  EW = "ew",
+  RotateNW = "rotateNW",
+  RotateNE = "rotateNE",
+  RotateSW = "rotateSW",
+  RotateSE = "rotateSE",
+}
 
 // SVG Templates
 
@@ -42,17 +57,11 @@ function makeRotateSvg(rotateZ: number): string {
 </svg>`;
 }
 
-function svgToCursor(svg: string, hotspot: [number, number]): string {
-  return `url("data:image/svg+xml,${encodeURIComponent(svg.trim())}") ${
-    hotspot[0]
-  } ${hotspot[1]}, auto`;
-}
-
 /**
  * Default cursor definitions for all cursor kinds.
  * Users can override these by providing custom cursors in plugin options.
  */
-export const DEFAULT_CURSOR_DEFS: Record<string, CursorDef> = {
+export const CURSORS: Record<string, CursorDef> = {
   [CursorKind.Drag]: {
     makeSvg: () => DRAG_SVG,
     hotspot: [12, 12],
@@ -99,25 +108,3 @@ export const DEFAULT_CURSOR_DEFS: Record<string, CursorDef> = {
     rotationOffset: -Math.PI,
   },
 };
-
-/**
- * Get a cursor CSS value for a given cursor kind and rotation.
- * @param cursors - The cursor definitions map (from resources)
- * @param kind - The cursor kind
- * @param rotateZ - The rotation angle in radians
- * @returns CSS cursor value string
- */
-export function getCursorSvg(
-  cursors: CursorDefMap,
-  kind: string,
-  rotateZ: number
-): string {
-  const def = cursors[kind] ?? DEFAULT_CURSOR_DEFS[kind];
-  if (!def) {
-    console.warn(`No cursor definition found for kind: ${kind}`);
-    return "auto";
-  }
-
-  const svg = def.makeSvg(rotateZ + def.rotationOffset);
-  return svgToCursor(svg, def.hotspot);
-}

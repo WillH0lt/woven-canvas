@@ -4,43 +4,41 @@ import {
   createEntity,
   addComponent,
   hasComponent,
-  type EditorPlugin,
   Camera,
   Controls,
   Synced,
-} from "@infinitecanvas/editor";
-import { Block, Aabb, Hovered } from "../../../src/components";
-import { Intersect, RankBounds } from "../../../src/singletons";
-import { intersectSystem } from "../../../src/systems/preCapture";
+  Block,
+  Aabb,
+  Hovered,
+  Intersect,
+} from "../../../src";
+
 import {
   simulateMouseMove,
   simulateMouseLeave,
   createMockElement,
 } from "../../testUtils";
 
-// Mock DOM element for tests
-const mockDomElement = createMockElement();
-
-// Factory function to create test plugin with fresh system instance
-const testPlugin: EditorPlugin = {
-  name: "test",
-  components: [Block, Aabb, Hovered],
-  singletons: [Intersect, RankBounds],
-  preCaptureSystems: [intersectSystem],
-};
-
 describe("preCaptureIntersect", () => {
   let editor: Editor;
+  let mockDomElement: HTMLElement;
 
   beforeEach(async () => {
-    // Create a fresh plugin instance for each test to ensure isolation
-    editor = new Editor(mockDomElement, { plugins: [testPlugin] });
+    // Create fresh DOM element for each test
+    mockDomElement = createMockElement();
+
+    // CorePlugin already includes intersectSystem, Block, Aabb, etc.
+    editor = new Editor(mockDomElement, { plugins: [] });
     await editor.initialize();
   });
 
   afterEach(async () => {
     if (editor) {
       await editor.dispose();
+    }
+    // Clean up DOM element
+    if (mockDomElement && mockDomElement.parentNode) {
+      mockDomElement.parentNode.removeChild(mockDomElement);
     }
   });
 

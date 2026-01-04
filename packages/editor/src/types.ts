@@ -6,7 +6,6 @@ import type { EditorComponentDef } from "./EditorComponentDef";
 import type { Editor } from "./Editor";
 import type { EditorPluginInput } from "./plugin";
 import type { StoreAdapter } from "./store";
-import { DEFAULT_CURSOR_DEFS } from "./cursors";
 
 // Re-export EntityId for convenience
 export type { EntityId };
@@ -145,29 +144,21 @@ export const EditorOptionsSchema = z.object({
   userId: z.string().max(36).optional(),
 
   /**
-   * Additional custom resources accessible via getResources(ctx).
-   * These are merged with the base EditorResources (which includes domElement and editor).
-   */
-  resources: z.record(z.string(), z.unknown()).default({}),
-
-  /**
    * Custom block definitions.
    */
-  blockDefs: z.record(z.string(), z.custom<BlockDef>()).default({}),
+  customBlockDefs: z.record(z.string(), z.custom<BlockDef>()).default({}),
 
   /**
    * Keybind definitions for keyboard shortcuts.
    * These map key combinations to plugin commands.
    */
-  keybinds: z.array(z.custom<Keybind>()).default([]),
+  customKeybinds: z.array(z.custom<Keybind>()).default([]),
 
   /**
    * Custom cursor definitions.
    * Override default cursors or define new ones for transform operations.
    */
-  cursors: z
-    .record(z.string(), z.custom<CursorDef>())
-    .default(DEFAULT_CURSOR_DEFS),
+  customCursors: z.record(z.string(), z.custom<CursorDef>()).default({}),
 });
 
 export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>;
@@ -191,21 +182,6 @@ export const Keybind = z.object({
 
 export type Keybind = z.infer<typeof Keybind>;
 export type KeybindInput = z.input<typeof Keybind>;
-
-/**
- * Cursor kinds for transform operations.
- */
-export enum CursorKind {
-  Drag = "drag",
-  NESW = "nesw",
-  NWSE = "nwse",
-  NS = "ns",
-  EW = "ew",
-  RotateNW = "rotateNW",
-  RotateNE = "rotateNE",
-  RotateSW = "rotateSW",
-  RotateSE = "rotateSE",
-}
 
 /**
  * Cursor definition schema.
@@ -283,8 +259,3 @@ export type BlockDefInput = z.input<typeof BlockDef>;
  * Normalized block definition type (after parsing with defaults applied).
  */
 export type BlockDef = z.infer<typeof BlockDef>;
-
-/**
- * Map of block tag to normalized block definition.
- */
-export type BlockDefMap = Record<string, BlockDef>;

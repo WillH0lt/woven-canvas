@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   field,
   defineComponent,
+  defineSystem,
   World,
   defineQuery,
   createEntity,
@@ -1857,6 +1858,298 @@ describe("Query", () => {
 
         expect(cache.count).toBe(0);
       });
+    });
+  });
+
+  describe("Query - Tracking with component added same frame as entity", () => {
+    it("should see entity in added() when tracking component is added in same frame as entity creation", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world._getContext();
+
+      // Query with tracking on Velocity - similar to hoverCursorSystem's
+      // defineQuery((q) => q.with(Hovered, TransformHandle).tracking(Hovered))
+      const trackingQuery = defineQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+
+      // Initialize the query
+      nextFrame(ctx);
+      trackingQuery.added(ctx);
+
+      // Create entity and add BOTH components in the same frame
+      // This mimics the failing test scenario
+      const e1 = createEntity(ctx);
+      addComponent(ctx, e1, Position, { x: 10, y: 20 });
+      addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
+
+      // Move to next frame
+      nextFrame(ctx);
+
+      // Entity should appear in added()
+      const added = trackingQuery.added(ctx);
+      expect(added).toHaveLength(1);
+      expect(added).toContain(e1);
+
+      // And in current()
+      const current = trackingQuery.current(ctx);
+      expect(current).toHaveLength(1);
+      expect(current).toContain(e1);
+    });
+
+    it("should see entity in added() when tracking component is added in separate frame", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world._getContext();
+
+      // Query with tracking on Velocity
+      const trackingQuery = defineQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+
+      // Initialize the query
+      nextFrame(ctx);
+      trackingQuery.added(ctx);
+
+      // Create entity with only Position
+      const e1 = createEntity(ctx);
+      addComponent(ctx, e1, Position, { x: 10, y: 20 });
+
+      // Move to next frame
+      nextFrame(ctx);
+
+      // Entity should NOT be in added yet (doesn't match query)
+      let added = trackingQuery.added(ctx);
+      expect(added).toHaveLength(0);
+
+      // Now add Velocity in a separate frame
+      addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
+
+      // Move to next frame
+      nextFrame(ctx);
+
+      // Entity should now appear in added()
+      added = trackingQuery.added(ctx);
+      expect(added).toHaveLength(1);
+      expect(added).toContain(e1);
+    });
+
+    it("should handle multiple entities with tracking component added same frame", () => {
+      const world = new World([Position, Velocity]);
+      const ctx = world._getContext();
+
+      const trackingQuery = defineQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+
+      // Initialize the query
+      nextFrame(ctx);
+      trackingQuery.added(ctx);
+
+      // Create multiple entities with both components in the same frame
+      const e1 = createEntity(ctx);
+      addComponent(ctx, e1, Position, { x: 10, y: 20 });
+      addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
+
+      const e2 = createEntity(ctx);
+      addComponent(ctx, e2, Position, { x: 30, y: 40 });
+      addComponent(ctx, e2, Velocity, { dx: 3, dy: 4 });
+
+      // Move to next frame
+      nextFrame(ctx);
+
+      // Both entities should appear in added()
+      const added = trackingQuery.added(ctx);
+      expect(added).toHaveLength(2);
+      expect(added).toContain(e1);
+      expect(added).toContain(e2);
+    });
+  });
+
+  describe("Query - Tracking with world.execute() (mimics Editor behavior)", () => {
+    it("should see entity in added() when system runs via world.execute after sync creates entity", async () => {
+      const world = new World([Position, Velocity]);
+
+      // Query with tracking on Velocity
+      const trackingQuery = defineQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+
+      // Create a system that checks the query
+      let addedEntities: number[] = [];
+      let currentEntities: Uint32Array | number[] = [];
+      const checkQuerySystem = defineSystem((ctx) => {
+        addedEntities = trackingQuery.added(ctx);
+        currentEntities = trackingQuery.current(ctx);
+      });
+
+      // Schedule entity creation via nextSync (like editor.nextTick)
+      let e1: number;
+      world.nextSync((ctx) => {
+        e1 = createEntity(ctx);
+        addComponent(ctx, e1, Position, { x: 10, y: 20 });
+        addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
+      });
+
+      // First tick: sync + execute
+      world.sync();
+      await world.execute(checkQuerySystem);
+
+      // System should see the entity in added()
+      expect(addedEntities).toHaveLength(1);
+      expect(addedEntities).toContain(e1!);
+      expect(currentEntities).toHaveLength(1);
+      expect(currentEntities).toContain(e1!);
+    });
+
+    it("should see entity in added() when component added in separate sync", async () => {
+      const world = new World([Position, Velocity]);
+
+      // Query with tracking on Velocity
+      const trackingQuery = defineQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+
+      // Create a system that checks the query
+      let addedEntities: number[] = [];
+      const checkQuerySystem = defineSystem((ctx) => {
+        addedEntities = trackingQuery.added(ctx);
+      });
+
+      // Tick 1: Create entity with Position only
+      let e1: number;
+      world.nextSync((ctx) => {
+        e1 = createEntity(ctx);
+        addComponent(ctx, e1, Position, { x: 10, y: 20 });
+      });
+      world.sync();
+      await world.execute(checkQuerySystem);
+
+      // Entity should NOT be in added (doesn't match query)
+      expect(addedEntities).toHaveLength(0);
+
+      // Tick 2: Add Velocity
+      world.nextSync((ctx) => {
+        addComponent(ctx, e1!, Velocity, { dx: 1, dy: 2 });
+      });
+      world.sync();
+      await world.execute(checkQuerySystem);
+
+      // NOW entity should be in added()
+      expect(addedEntities).toHaveLength(1);
+      expect(addedEntities).toContain(e1!);
+    });
+
+    it("should see entity in added() with multiple systems in same execute batch", async () => {
+      const world = new World([Position, Velocity]);
+
+      // Query with tracking on Velocity - like hoverCursorSystem
+      const trackingQuery = defineQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+
+      // Two systems that both check the same query (like CorePlugin + testPlugin systems)
+      let addedEntitiesSystem1: number[] = [];
+      let addedEntitiesSystem2: number[] = [];
+
+      const system1 = defineSystem((ctx) => {
+        addedEntitiesSystem1 = trackingQuery.added(ctx);
+      });
+
+      const system2 = defineSystem((ctx) => {
+        addedEntitiesSystem2 = trackingQuery.added(ctx);
+      });
+
+      // Schedule entity creation via nextSync (like editor.nextTick)
+      let e1: number;
+      world.nextSync((ctx) => {
+        e1 = createEntity(ctx);
+        addComponent(ctx, e1, Position, { x: 10, y: 20 });
+        addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
+      });
+
+      // First tick: sync + execute both systems in same batch
+      world.sync();
+      await world.execute(system1, system2);
+
+      // BOTH systems should see the entity in added()
+      expect(addedEntitiesSystem1).toHaveLength(1);
+      expect(addedEntitiesSystem1).toContain(e1!);
+      expect(addedEntitiesSystem2).toHaveLength(1);
+      expect(addedEntitiesSystem2).toContain(e1!);
+    });
+
+    it("should see entity in added() with systems in separate execute calls (like Editor phases)", async () => {
+      const world = new World([Position, Velocity]);
+
+      // Query with tracking on Velocity - like hoverCursorSystem
+      const trackingQuery = defineQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+
+      // Systems in different "phases" (separate execute calls)
+      let addedEntitiesPhase1: number[] = [];
+      let addedEntitiesPhase2: number[] = [];
+
+      const phase1System = defineSystem((ctx) => {
+        addedEntitiesPhase1 = trackingQuery.added(ctx);
+      });
+
+      const phase2System = defineSystem((ctx) => {
+        addedEntitiesPhase2 = trackingQuery.added(ctx);
+      });
+
+      // Schedule entity creation via nextSync (like editor.nextTick)
+      let e1: number;
+      world.nextSync((ctx) => {
+        e1 = createEntity(ctx);
+        addComponent(ctx, e1, Position, { x: 10, y: 20 });
+        addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
+      });
+
+      // Single "tick": sync, then execute phases separately (like Editor does)
+      world.sync();
+      await world.execute(phase1System);  // Phase 1
+      await world.execute(phase2System);  // Phase 2
+
+      // Both phases should see the entity in added()
+      expect(addedEntitiesPhase1).toHaveLength(1);
+      expect(addedEntitiesPhase1).toContain(e1!);
+      expect(addedEntitiesPhase2).toHaveLength(1);
+      expect(addedEntitiesPhase2).toContain(e1!);
+    });
+
+    it("BUG INVESTIGATION: duplicate component defs in constructor", async () => {
+      // This mimics what happens when Editor registers same component from multiple plugins
+      // e.g., CorePlugin provides Block, Hovered, Cursor
+      // and testPlugin also lists Block, Hovered
+      const world = new World([
+        Position,
+        Velocity,
+        Position,   // Duplicate!
+        Velocity,   // Duplicate!
+      ]);
+
+      const trackingQuery = defineQuery((q) =>
+        q.with(Position, Velocity).tracking(Velocity)
+      );
+
+      let addedEntities: number[] = [];
+      const checkSystem = defineSystem((ctx) => {
+        addedEntities = trackingQuery.added(ctx);
+      });
+
+      let e1: number;
+      world.nextSync((ctx) => {
+        e1 = createEntity(ctx);
+        addComponent(ctx, e1, Position, { x: 10, y: 20 });
+        addComponent(ctx, e1, Velocity, { dx: 1, dy: 2 });
+      });
+
+      world.sync();
+      await world.execute(checkSystem);
+
+      // Should still see the entity in added() despite duplicate defs
+      expect(addedEntities).toHaveLength(1);
+      expect(addedEntities).toContain(e1!);
     });
   });
 });

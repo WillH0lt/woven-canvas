@@ -4,28 +4,24 @@ import {
   createEntity,
   addComponent,
   type EditorPlugin,
-} from "@infinitecanvas/editor";
-import {
   Block,
   Aabb,
   Selected,
-  TransformBox,
-  TransformHandle,
-  DragStart,
-} from "../../../src/components";
+  RankBounds,
+} from "@infinitecanvas/editor";
+import { TransformBox, TransformHandle, DragStart } from "../../../src/components";
 import { DragBlock } from "../../../src/commands";
-import { RankBounds } from "../../../src/singletons";
 import { dragHandlerSystem } from "../../../src/systems/update";
 import { TransformHandleKind } from "../../../src/types";
-import { createBlock, createTestResources } from "../../testUtils";
+import { createBlock } from "../../testUtils";
 import { PLUGIN_NAME } from "../../../src/constants";
-import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin";
+import { CURSORS } from "../../../src/cursors";
 
 // Factory function to create test plugin
 // Note: Only includes UpdateDragHandler to test it in isolation
-const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
-  resources: createTestResources(),
+  cursors: CURSORS,
   components: [Block, Aabb, Selected, TransformBox, TransformHandle, DragStart],
   singletons: [RankBounds],
   updateSystems: [dragHandlerSystem],

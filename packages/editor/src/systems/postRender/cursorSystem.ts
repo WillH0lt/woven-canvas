@@ -1,14 +1,38 @@
-import { type Context, defineSystem, defineQuery } from "@infinitecanvas/ecs";
+import {
+  type Context,
+  defineSystem,
+  defineQuery,
+  getResources,
+} from "@infinitecanvas/ecs";
 
 import { Cursor } from "../../singletons";
-import { getCursorSvg } from "../../cursors";
-import { PLUGIN_NAME } from "../../constants";
-import { type EditorResources, getPluginResources } from "../../types";
-
-// Default cursor when no cursor kind is set
-const DEFAULT_CURSOR = "default";
+import type { CursorDef, EditorResources } from "../../types";
 
 const cursorQuery = defineQuery((q) => q.tracking(Cursor));
+
+/**
+ * Get a cursor CSS value for a given cursor kind and rotation.
+ * @param cursors - The cursor definitions map (from resources)
+ * @param kind - The cursor kind
+ * @param rotateZ - The rotation angle in radians
+ * @returns CSS cursor value string
+ */
+export function getCursorSvg(
+  cursors: Record<string, CursorDef>,
+  kind: string,
+  rotateZ: number
+): string {
+  const def = cursors[kind];
+  if (!def) {
+    console.warn(`No cursor definition found for kind: ${kind}`);
+    return "auto";
+  }
+
+  const svg = def.makeSvg(rotateZ + def.rotationOffset);
+  return `url("data:image/svg+xml,${encodeURIComponent(svg.trim())}") ${
+    def.hotspot[0]
+  } ${def.hotspot[1]}, auto`;
+}
 
 /**
  * Post-render cursor system - applies the current cursor to the DOM.
@@ -33,12 +57,12 @@ export const cursorSystem = defineSystem((ctx: Context) => {
 
   // If no cursor kind set, use default
   if (!cursorKind) {
-    document.body.style.cursor = DEFAULT_CURSOR;
+    document.body.style.cursor = "default";
     return;
   }
 
   // Get cursors from resources and resolve to SVG
-  const { editor } = getPluginResources<EditorResources>(ctx, PLUGIN_NAME);
+  const { editor } = getResources<EditorResources>(ctx);
   const cursorValue = getCursorSvg(editor.cursors, cursorKind, rotation);
 
   // Apply to DOM

@@ -11,13 +11,11 @@ export type {
   CursorDefMap,
   ResizeMode,
   BlockDefInput,
-  BlockDefMap,
 } from "./types";
 
 export {
   getPluginResources,
   Keybind,
-  CursorKind,
   CursorDef,
   TextAlign,
   VerticalAlign,

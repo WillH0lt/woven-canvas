@@ -5,30 +5,28 @@ import {
   addComponent,
   removeComponent,
   type EditorPlugin,
-} from "@infinitecanvas/editor";
-import {
   Block,
   Hovered,
-  TransformHandle,
-  TransformBox,
-} from "../../../src/components";
-import { Cursor } from "../../../src/singletons";
+  Cursor,
+} from "@infinitecanvas/editor";
+import { CursorKind } from "../../../src/cursors";
+import { TransformHandle, TransformBox } from "../../../src/components";
 import { hoverCursorSystem } from "../../../src/systems/capture";
-import { CursorKind, TransformHandleKind } from "../../../src/types";
+import { TransformHandleKind } from "../../../src/types";
 import { PLUGIN_NAME } from "../../../src/constants";
-import { createMockElement, createTestResources } from "../../testUtils";
-import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin";
+import { createMockElement } from "../../testUtils";
+import { CURSORS } from "../../../src/cursors";
 
 // Mock DOM element for tests
 const mockDomElement = createMockElement();
 
 // Test plugin with only CaptureHoverCursor system and its dependencies
-const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+// Note: Block, Hovered, and Cursor are already provided by CorePlugin
+const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
-  components: [Block, Hovered, TransformHandle, TransformBox],
-  singletons: [Cursor],
+  cursors: CURSORS,
+  components: [TransformHandle, TransformBox],
   captureSystems: [hoverCursorSystem],
-  resources: createTestResources(),
 };
 
 describe("CaptureHoverCursor", () => {
@@ -106,7 +104,7 @@ describe("CaptureHoverCursor", () => {
       let contextCursorKindBefore = "";
       let contextCursorKindAfter = "";
 
-      // Create transform box and handle with Hovered
+      // Create transform box and handle
       editor.nextTick((ctx) => {
         transformBoxId = createEntity(ctx);
         addComponent(ctx, transformBoxId, Block, {
@@ -129,7 +127,13 @@ describe("CaptureHoverCursor", () => {
           transformBoxId: transformBoxId,
           cursorKind: CursorKind.NWSE,
         });
-        addComponent(ctx, handleId, Hovered, {});
+      });
+
+      await editor.tick();
+
+      // Add Hovered in a separate tick to ensure query tracking works
+      editor.nextTick((ctx) => {
+        addComponent(ctx, handleId!, Hovered, {});
       });
 
       await editor.tick();
@@ -196,7 +200,13 @@ describe("CaptureHoverCursor", () => {
             transformBoxId: transformBoxId,
             cursorKind: cursorKind,
           });
-          addComponent(ctx, handleId, Hovered, {});
+        });
+
+        await editor.tick();
+
+        // Add Hovered in a separate tick to ensure query tracking works
+        editor.nextTick((ctx) => {
+          addComponent(ctx, handleId!, Hovered, {});
         });
 
         await editor.tick();
@@ -249,7 +259,13 @@ describe("CaptureHoverCursor", () => {
           transformBoxId: transformBoxId,
           cursorKind: CursorKind.NS,
         });
-        addComponent(ctx, handleId, Hovered, {});
+      });
+
+      await editor.tick();
+
+      // Add Hovered in a separate tick to ensure query tracking works
+      editor.nextTick((ctx) => {
+        addComponent(ctx, handleId!, Hovered, {});
       });
 
       await editor.tick();
@@ -296,7 +312,13 @@ describe("CaptureHoverCursor", () => {
           transformBoxId: transformBoxId,
           cursorKind: CursorKind.NS,
         });
-        addComponent(ctx, handleId, Hovered, {});
+      });
+
+      await editor.tick();
+
+      // Add Hovered in a separate tick to ensure query tracking works
+      editor.nextTick((ctx) => {
+        addComponent(ctx, handleId!, Hovered, {});
       });
 
       await editor.tick();
@@ -331,7 +353,7 @@ describe("CaptureHoverCursor", () => {
       let transformBoxId: number;
       let handleId: number;
 
-      // Create and hover
+      // Create entities
       editor.nextTick((ctx) => {
         transformBoxId = createEntity(ctx);
         addComponent(ctx, transformBoxId, Block, {
@@ -354,7 +376,13 @@ describe("CaptureHoverCursor", () => {
           transformBoxId: transformBoxId,
           cursorKind: CursorKind.NS,
         });
-        addComponent(ctx, handleId, Hovered, {});
+      });
+
+      await editor.tick();
+
+      // Add Hovered in a separate tick to ensure query tracking works
+      editor.nextTick((ctx) => {
+        addComponent(ctx, handleId!, Hovered, {});
       });
 
       await editor.tick();
@@ -405,7 +433,6 @@ describe("CaptureHoverCursor", () => {
           transformBoxId: transformBoxId,
           cursorKind: CursorKind.NS,
         });
-        addComponent(ctx, handleId1, Hovered, {});
 
         // Second handle with EW cursor
         handleId2 = createEntity(ctx);
@@ -421,7 +448,14 @@ describe("CaptureHoverCursor", () => {
           transformBoxId: transformBoxId,
           cursorKind: CursorKind.EW,
         });
-        addComponent(ctx, handleId2, Hovered, {});
+      });
+
+      await editor.tick();
+
+      // Add Hovered to both handles in a separate tick to ensure query tracking works
+      editor.nextTick((ctx) => {
+        addComponent(ctx, handleId1!, Hovered, {});
+        addComponent(ctx, handleId2!, Hovered, {});
       });
 
       await editor.tick();

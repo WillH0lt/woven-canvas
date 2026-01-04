@@ -11,13 +11,12 @@ import {
 } from "@infinitecanvas/ecs";
 
 import {
-  type EditorResources,
   type SystemPhase,
   EditorOptionsSchema,
   type EditorOptionsInput,
   CursorDef,
   Keybind,
-  type BlockDefMap,
+  type EditorResources,
   BlockDef,
 } from "./types";
 import type { StoreAdapter } from "./store";
@@ -99,7 +98,7 @@ const PHASE_ORDER: SystemPhase[] = [
 export class Editor {
   public cursors: Record<string, CursorDef> = {};
   public keybinds: Keybind[];
-  public blockDefs: BlockDefMap = {};
+  public blockDefs: Record<string, BlockDef> = {};
 
   private world: World;
   private phases: Map<SystemPhase, System[]>;
@@ -113,12 +112,8 @@ export class Editor {
   private storeEventIndex: number = 0;
 
   constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
-    // Parse options with Zod schema
     const options = EditorOptionsSchema.parse(optionsInput ?? {});
-    const { plugins: pluginInputs, maxEntities, resources, userId } = options;
-    const store = options.store ?? null;
-
-    this.cursors = options.cursors;
+    const { plugins: pluginInputs, maxEntities, userId } = options;
 
     // Generate unique session ID for this editor instance
     const sessionId = crypto.randomUUID();
@@ -144,7 +139,7 @@ export class Editor {
     }
 
     // Setup keybinds
-    const keybinds = options.keybinds.map((kb) => Keybind.parse(kb));
+    const keybinds = options.customKeybinds;
     for (const plugin of sortedPlugins) {
       if (plugin.keybinds) {
         keybinds.push(...plugin.keybinds);
@@ -153,15 +148,24 @@ export class Editor {
     this.keybinds = keybinds;
 
     // Setup block defs
-    const blockDefs: BlockDefMap = {};
+    const blockDefs: Record<string, BlockDef> = {};
+    Object.assign(blockDefs, options.customBlockDefs);
     for (const plugin of sortedPlugins) {
       if (plugin.blockDefs) {
-        for (const [tag, def] of Object.entries(plugin.blockDefs)) {
-          blockDefs[tag] = def;
-        }
+        Object.assign(blockDefs, plugin.blockDefs);
       }
     }
     this.blockDefs = blockDefs;
+
+    // Setup cursors
+    const cursors: Record<string, CursorDef> = {};
+    Object.assign(cursors, options.customCursors);
+    for (const plugin of sortedPlugins) {
+      if (plugin.cursors) {
+        Object.assign(cursors, plugin.cursors);
+      }
+    }
+    this.cursors = cursors;
 
     // Collect plugin resources
     const pluginResources: Record<string, unknown> = {};
@@ -172,11 +176,9 @@ export class Editor {
     }
 
     // Create ECS World with editor resources
-    // Note: We pass a placeholder for 'editor' and update it after construction
-    const allResources: EditorResources & Record<string, unknown> = {
-      ...resources,
+    const allResources: EditorResources = {
       domElement,
-      editor: null as unknown as Editor, // Will be set below
+      editor: this,
       sessionId,
       userId: resolvedUserId,
       pluginResources,
@@ -186,9 +188,6 @@ export class Editor {
       maxEntities,
       resources: allResources,
     });
-
-    // Now set the editor reference in resources
-    allResources.editor = this;
 
     // Initialize phases
     this.phases = new Map();
@@ -236,11 +235,11 @@ export class Editor {
       }
     }
 
-    // Store plugins
+    // Build map of plugins
     this.plugins = new Map(sortedPlugins.map((p) => [p.name, p]));
 
     // Store adapter
-    this.store = store;
+    this.store = options.store ?? null;
 
     // Build maps of all components/singletons
     for (const plugin of sortedPlugins) {

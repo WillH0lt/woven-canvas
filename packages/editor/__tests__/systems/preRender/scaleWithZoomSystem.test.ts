@@ -3,37 +3,32 @@ import {
   Editor,
   createEntity,
   addComponent,
-  removeComponent,
-  type EditorPlugin,
   Camera,
 } from "@infinitecanvas/editor";
 import { Block, ScaleWithZoom } from "../../../src/components";
 import { ScaleWithZoomState } from "../../../src/singletons";
-import { scaleWithZoomSystem } from "../../../src/systems/preRender";
 import { createMockElement } from "../../testUtils";
-
-// Mock DOM element for tests
-const mockDomElement = createMockElement();
-
-// Test plugin with only PreRenderScaleWithZoom system and its dependencies
-const testPlugin: EditorPlugin = {
-  name: "test",
-  components: [Block, ScaleWithZoom],
-  singletons: [ScaleWithZoomState],
-  preRenderSystems: [scaleWithZoomSystem],
-};
 
 describe("PreRenderScaleWithZoom", () => {
   let editor: Editor;
+  let mockDomElement: HTMLElement;
 
   beforeEach(async () => {
-    editor = new Editor(mockDomElement, { plugins: [testPlugin] });
+    // Create fresh DOM element for each test
+    mockDomElement = createMockElement();
+
+    // CorePlugin already includes scaleWithZoomSystem, Block, ScaleWithZoom, etc.
+    editor = new Editor(mockDomElement, { plugins: [] });
     await editor.initialize();
   });
 
   afterEach(async () => {
     if (editor) {
-      await editor.dispose();
+      editor.dispose();
+    }
+    // Clean up DOM element
+    if (mockDomElement && mockDomElement.parentNode) {
+      mockDomElement.parentNode.removeChild(mockDomElement);
     }
   });
 

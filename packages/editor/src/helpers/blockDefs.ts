@@ -1,21 +1,15 @@
-import { type Context } from "@infinitecanvas/ecs";
+import { type Context, getResources } from "@infinitecanvas/ecs";
 
-import { PLUGIN_NAME } from "../constants";
-import {
-  BlockDef,
-  type BlockDefMap,
-  type EditorResources,
-  getPluginResources,
-} from "../types";
+import { BlockDef, type EditorResources } from "../types";
 
 /**
- * Get all block definitions from the plugin resources.
+ * Get all block definitions from the editor resources.
  *
  * @param ctx - The ECS context
  * @returns Map of block tag to normalized block definition
  */
-export function getBlockDefs(ctx: Context): BlockDefMap {
-  const { editor } = getPluginResources<EditorResources>(ctx, PLUGIN_NAME);
+export function getBlockDefs(ctx: Context): Record<string, BlockDef> {
+  const { editor } = getResources<EditorResources>(ctx);
   return editor.blockDefs;
 }
 

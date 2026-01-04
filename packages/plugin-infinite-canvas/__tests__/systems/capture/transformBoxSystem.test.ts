@@ -6,21 +6,17 @@ import {
   removeComponent,
   type EditorPlugin,
   Controls,
-} from "@infinitecanvas/editor";
-import {
   Block,
   Aabb,
   Selected,
   Hovered,
-  TransformBox,
-  TransformHandle,
-} from "../../../src/components";
-import { selectBlock } from "../../../src/helpers";
-import {
   Intersect,
   RankBounds,
-  TransformBoxStateSingleton,
-} from "../../../src/singletons";
+  selectBlock,
+  BlockDef,
+} from "@infinitecanvas/editor";
+import { TransformBox, TransformHandle } from "../../../src/components";
+import { TransformBoxStateSingleton } from "../../../src/singletons";
 import { transformBoxSystem } from "../../../src/systems/capture";
 import {
   AddOrUpdateTransformBox,
@@ -28,31 +24,29 @@ import {
   ShowTransformBox,
   RemoveTransformBox,
 } from "../../../src/commands";
-import { TransformBoxState, BlockDef } from "../../../src/types";
+import { TransformBoxState } from "../../../src/types";
 import { PLUGIN_NAME } from "../../../src/constants";
-import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin";
 import {
   createPointerSimulator,
   simulateMouseMove,
   createBlock,
-  createTestResources,
 } from "../../testUtils";
+import { CURSORS } from "../../../src/cursors";
 
 // Pointer simulator for consistent pointer events
 const pointer = createPointerSimulator();
 
 // Test plugin with only CaptureTransformBox system - no selection flow dependencies
-const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
-  resources: createTestResources({
-    blockDefs: {
-      text: BlockDef.parse({
-        tag: "text",
-        editOptions: { canEdit: true },
-        resizeMode: "text",
-      }),
-    },
-  }),
+  cursors: CURSORS,
+  blockDefs: {
+    text: BlockDef.parse({
+      tag: "text",
+      editOptions: { canEdit: true },
+      resizeMode: "text",
+    }),
+  },
   components: [Block, Aabb, Selected, Hovered, TransformBox, TransformHandle],
   singletons: [Intersect, RankBounds, TransformBoxStateSingleton],
   captureSystems: [transformBoxSystem],

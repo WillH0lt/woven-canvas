@@ -4,8 +4,8 @@ import {
   createEntity,
   addComponent,
   type EditorPlugin,
-} from "@infinitecanvas/editor";
-import { Block } from "../../src/components";
+  Block,
+} from "../../src";
 import { Vec2 } from "@infinitecanvas/math";
 
 // Mock DOM element for tests

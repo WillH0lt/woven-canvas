@@ -1,4 +1,5 @@
 import { field, type Context } from "@infinitecanvas/ecs";
+
 import { EditorSingletonDef } from "../EditorSingletonDef";
 
 const CursorSchema = {

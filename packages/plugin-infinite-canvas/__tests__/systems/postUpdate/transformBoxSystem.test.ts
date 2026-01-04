@@ -5,22 +5,22 @@ import {
   defineQuery,
   type EditorPlugin,
   Controls,
-} from "@infinitecanvas/editor";
-import {
   Block,
   Aabb,
   Selected,
+  Opacity,
+  Edited,
+  ScaleWithZoom,
+  Intersect,
+  RankBounds,
+} from "@infinitecanvas/editor";
+import {
   TransformBox,
   TransformHandle,
   DragStart,
   Locked,
-  Opacity,
-  Edited,
-  ScaleWithZoom,
 } from "../../../src/components";
 import {
-  Intersect,
-  RankBounds,
   TransformBoxStateSingleton,
   SelectionStateSingleton,
 } from "../../../src/singletons";
@@ -33,47 +33,47 @@ import {
   StartTransformBoxEdit,
   EndTransformBoxEdit,
 } from "../../../src/commands";
-import { TransformHandleKind, BlockDef } from "../../../src/types";
+import { TransformHandleKind } from "../../../src/types";
+import { BlockDef } from "@infinitecanvas/editor";
 import { PLUGIN_NAME } from "../../../src/constants";
-import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin";
-import { createBlock, createTestResources } from "../../testUtils";
+import { createBlock } from "../../testUtils";
+import { CURSORS } from "../../../src/cursors";
 
 // Define queries at module level
 const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));
 const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle));
 
 // Test plugin with UpdateTransformBox system
-const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
-  resources: createTestResources({
-    blockDefs: {
-      text: BlockDef.parse({
-        tag: "text",
-        editOptions: { canEdit: true },
-        resizeMode: "text",
-      }),
-      image: BlockDef.parse({
-        tag: "image",
-        resizeMode: "scale",
-        canRotate: true,
-        canScale: true,
-      }),
-      noRotate: BlockDef.parse({
-        tag: "noRotate",
-        canRotate: false,
-        canScale: true,
-      }),
-      noScale: BlockDef.parse({
-        tag: "noScale",
-        canRotate: true,
-        canScale: false,
-      }),
-      groupOnly: BlockDef.parse({
-        tag: "groupOnly",
-        resizeMode: "groupOnly",
-      }),
-    },
-  }),
+  cursors: CURSORS,
+  blockDefs: {
+    text: BlockDef.parse({
+      tag: "text",
+      editOptions: { canEdit: true },
+      resizeMode: "text",
+    }),
+    image: BlockDef.parse({
+      tag: "image",
+      resizeMode: "scale",
+      canRotate: true,
+      canScale: true,
+    }),
+    noRotate: BlockDef.parse({
+      tag: "noRotate",
+      canRotate: false,
+      canScale: true,
+    }),
+    noScale: BlockDef.parse({
+      tag: "noScale",
+      canRotate: true,
+      canScale: false,
+    }),
+    groupOnly: BlockDef.parse({
+      tag: "groupOnly",
+      resizeMode: "groupOnly",
+    }),
+  },
   components: [
     Block,
     Aabb,

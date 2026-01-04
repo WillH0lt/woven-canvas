@@ -11,7 +11,6 @@ import {
   Block,
   getPointerInput,
   Selected,
-  CursorKind,
   type PointerInput,
 } from "@infinitecanvas/editor";
 
@@ -31,6 +30,7 @@ import {
 
 import { SelectionStateSingleton } from "../../singletons";
 import { SelectionState } from "../../types";
+import { CursorKind } from "../../cursors";
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4;

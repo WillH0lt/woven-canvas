@@ -7,9 +7,15 @@ import {
   defineQuery,
   Synced,
   type EditorPlugin,
+  Block,
+  Aabb,
+  Selected,
+  Text,
+  RankBounds,
+  Cursor,
 } from "@infinitecanvas/editor";
-import { Block, Aabb, Selected, Text } from "../../../src/components";
-import { RankBounds, Cursor, Clipboard } from "../../../src/singletons";
+import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
+import { Clipboard } from "../../../src/singletons";
 import { blockSystem } from "../../../src/systems/update";
 import {
   SelectBlock,
@@ -29,18 +35,24 @@ import {
   CloneEntities,
   UncloneEntities,
 } from "../../../src/commands";
-import { createBlock, createTestResources } from "../../testUtils";
+import { createBlock } from "../../testUtils";
 import { PLUGIN_NAME } from "../../../src/constants";
-import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin";
+import { CURSORS } from "../../../src/cursors";
+
+// Generate valid fractional index keys for testing z-order
+// These are pre-generated valid keys that sort in order: RANK_LOW < RANK_MID < RANK_HIGH
+const RANK_LOW = generateJitteredKeyBetween(null, null);
+const RANK_MID = generateJitteredKeyBetween(RANK_LOW, null);
+const RANK_HIGH = generateJitteredKeyBetween(RANK_MID, null);
 
 // Define queries at module level
 const blocksQuery = defineQuery((q) => q.with(Block));
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Factory function to create test plugin
-const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
-  resources: createTestResources(),
+  cursors: CURSORS,
   components: [Block, Aabb, Selected, Text],
   singletons: [RankBounds, Cursor, Clipboard],
   updateSystems: [blockSystem],
@@ -572,12 +584,12 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId1 = createBlock(ctx, {
           position: [0, 0],
-          rank: "a",
+          rank: RANK_LOW,
           selected: true,
         });
         entityId2 = createBlock(ctx, {
           position: [100, 100],
-          rank: "m",
+          rank: RANK_MID,
           selected: false,
         });
       });
@@ -616,7 +628,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [0, 0],
-          rank: "m",
+          rank: RANK_MID,
           selected: false,
         });
       });
@@ -654,12 +666,12 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId1 = createBlock(ctx, {
           position: [0, 0],
-          rank: "m",
+          rank: RANK_MID,
           selected: true,
         });
         entityId2 = createBlock(ctx, {
           position: [100, 100],
-          rank: "a",
+          rank: RANK_LOW,
           selected: false,
         });
       });
@@ -698,7 +710,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [0, 0],
-          rank: "m",
+          rank: RANK_MID,
           selected: false,
         });
       });
@@ -1236,7 +1248,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         originalEntityId = createBlock(ctx, {
           position: [100, 100],
-          rank: "m",
+          rank: RANK_MID,
           selected: true,
           synced: true,
         });
@@ -1262,8 +1274,8 @@ describe("UpdateBlock", () => {
       });
 
       await editor.tick();
-      expect(originalRank).toBe("m");
-      expect(pastedRank).not.toBe("m");
+      expect(originalRank).toBe(RANK_MID);
+      expect(pastedRank).not.toBe(RANK_MID);
       expect(pastedRank).toBeDefined();
     });
 
@@ -1418,7 +1430,7 @@ describe("UpdateBlock", () => {
       editor.nextTick((ctx) => {
         entityId = createBlock(ctx, {
           position: [100, 100],
-          rank: "m",
+          rank: RANK_MID,
           synced: true,
         });
       });
@@ -1445,7 +1457,7 @@ describe("UpdateBlock", () => {
       });
 
       await editor.tick();
-      expect(originalRank).toBe("m");
+      expect(originalRank).toBe(RANK_MID);
       expect(clonedRank).toBeDefined();
       // Clone rank should be before original (lexicographically smaller)
       expect(clonedRank! < originalRank!).toBe(true);

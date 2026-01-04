@@ -4,26 +4,35 @@
 
 import {
   type Context,
+  type BlockDef,
+  type CursorDefMap,
+  type EditorResources,
   createEntity,
   addComponent,
+  getResources,
   Synced,
-  getPluginResources,
+  Block,
+  Aabb,
+  Selected,
+  RankBounds,
 } from "@infinitecanvas/editor";
-import { Block, Aabb, Selected } from "../src/components";
-import { PLUGIN_NAME } from "../src/constants";
-import type { InfiniteCanvasResources } from "../src/InfiniteCanvasPlugin";
-import { DEFAULT_CURSOR_DEFS } from "../../editor/src/cursors";
+import { CURSORS } from "../src/cursors";
+
+/**
+ * Test resources interface for plugin tests.
+ */
+export interface TestResources {
+  blockDefs?: Record<string, BlockDef>;
+  cursors?: CursorDefMap;
+}
 
 /**
  * Default test resources for plugin tests.
  * These can be extended or overridden when creating test plugins.
  */
-export const DEFAULT_TEST_RESOURCES: InfiniteCanvasResources = {
-  sessionId: "test-session-id",
-  userId: "test-user-id",
+export const DEFAULT_TEST_RESOURCES: TestResources = {
   blockDefs: {},
-  keybinds: [],
-  cursors: DEFAULT_CURSOR_DEFS,
+  cursors: CURSORS,
 };
 
 /**
@@ -34,16 +43,15 @@ export const DEFAULT_TEST_RESOURCES: InfiniteCanvasResources = {
  * ```ts
  * const testPlugin = {
  *   name: PLUGIN_NAME,
- *   resources: createTestResources({
- *     blockDefs: { text: BlockDef.parse({ tag: "text" }) },
- *   }),
+ *   blockDefs: { text: BlockDef.parse({ tag: "text" }) },
+ *   cursors: CURSORS,
  *   // ...
  * };
  * ```
  */
 export function createTestResources(
-  overrides: Partial<InfiniteCanvasResources> = {}
-): InfiniteCanvasResources {
+  overrides: Partial<TestResources> = {}
+): TestResources {
   return {
     ...DEFAULT_TEST_RESOURCES,
     ...overrides,
@@ -74,18 +82,21 @@ export function createBlock(
   const {
     position = [100, 100],
     size = [100, 100],
-    rank = "a",
+    rank,
     tag = "text",
     rotateZ = 0,
     synced = true,
     selected = false,
   } = options;
 
+  // Use provided rank or generate a new one using RankBounds
+  const blockRank = rank ?? RankBounds.genNext(ctx);
+
   const entityId = createEntity(ctx);
   addComponent(ctx, entityId, Block, {
     position,
     size,
-    rank,
+    rank: blockRank,
     tag,
     rotateZ,
   });
@@ -98,10 +109,7 @@ export function createBlock(
   }
 
   if (selected) {
-    const { sessionId } = getPluginResources<InfiniteCanvasResources>(
-      ctx,
-      PLUGIN_NAME
-    );
+    const { sessionId } = getResources<EditorResources>(ctx);
     addComponent(ctx, entityId, Selected, { selectedBy: sessionId });
   }
 

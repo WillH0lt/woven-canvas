@@ -7,21 +7,15 @@ import {
   type EditorPlugin,
   Controls,
   Keyboard,
-} from "@infinitecanvas/editor";
-import {
   Block,
   Aabb,
   Selected,
-  Locked,
   Hovered,
-  TransformBox,
-  TransformHandle,
-} from "../../../src/components";
-import {
   Intersect,
   RankBounds,
-  SelectionStateSingleton,
-} from "../../../src/singletons";
+} from "@infinitecanvas/editor";
+import { Locked, TransformBox, TransformHandle } from "../../../src/components";
+import { SelectionStateSingleton } from "../../../src/singletons";
 import { selectSystem } from "../../../src/systems/preCapture";
 import {
   DeselectAll,

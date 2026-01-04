@@ -4,20 +4,20 @@ import {
   createEntity,
   addComponent,
   hasComponent,
+  getResources,
   type EditorPlugin,
+  type EditorResources,
   defineQuery,
   Synced,
-} from "@infinitecanvas/editor";
-import {
   Block,
   Aabb,
   Selected,
-  SelectionBox,
   Hovered,
   Opacity,
-} from "../../../src/components";
-import { Intersect, RankBounds } from "../../../src/singletons";
-import { intersectSystem } from "../../../src/systems/preCapture";
+  Intersect,
+  RankBounds,
+} from "@infinitecanvas/editor";
+import { SelectionBox } from "../../../src/components";
 import { selectSystem } from "../../../src/systems/update";
 import {
   AddSelectionBox,
@@ -25,28 +25,25 @@ import {
   RemoveSelectionBox,
 } from "../../../src/commands";
 import { PLUGIN_NAME } from "../../../src/constants";
-import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin";
-import { createTestResources, DEFAULT_TEST_RESOURCES } from "../../testUtils";
+import { CURSORS } from "../../../src/cursors";
 
 // Query for selection box entities
 const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 
-// Test session ID for consistent selection testing
-const TEST_SESSION_ID = DEFAULT_TEST_RESOURCES.sessionId;
-
 // Factory function to create test plugin
-const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
+// Note: Don't include intersectSystem here - CorePlugin already provides it
+const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
-  resources: createTestResources(),
+  cursors: CURSORS,
   components: [Block, Aabb, Selected, SelectionBox, Hovered, Opacity],
   singletons: [Intersect, RankBounds],
-  preCaptureSystems: [intersectSystem],
   updateSystems: [selectSystem],
 };
 
 describe("UpdateSelectSystem", () => {
   let editor: Editor;
   let domElement: HTMLDivElement;
+  let sessionId: string;
 
   beforeEach(async () => {
     domElement = document.createElement("div");
@@ -54,6 +51,12 @@ describe("UpdateSelectSystem", () => {
 
     editor = new Editor(domElement, { plugins: [testPlugin] });
     await editor.initialize();
+
+    // Get the session ID for selection tests
+    editor.nextTick((ctx) => {
+      sessionId = getResources<EditorResources>(ctx).sessionId;
+    });
+    await editor.tick();
   });
 
   afterEach(async () => {
@@ -232,7 +235,7 @@ describe("UpdateSelectSystem", () => {
           rank: "a",
         });
         addComponent(ctx, entityId1, Synced, {});
-        addComponent(ctx, entityId1, Selected, { selectedBy: TEST_SESSION_ID });
+        addComponent(ctx, entityId1, Selected, { selectedBy: sessionId });
 
         entityId2 = createEntity(ctx);
         addComponent(ctx, entityId2, Block, {
@@ -241,7 +244,7 @@ describe("UpdateSelectSystem", () => {
           rank: "b",
         });
         addComponent(ctx, entityId2, Synced, {});
-        addComponent(ctx, entityId2, Selected, { selectedBy: TEST_SESSION_ID });
+        addComponent(ctx, entityId2, Selected, { selectedBy: sessionId });
       });
 
       // Let preCaptureIntersect compute AABBs
@@ -284,7 +287,7 @@ describe("UpdateSelectSystem", () => {
           rank: "a",
         });
         addComponent(ctx, entityId1, Synced, {});
-        addComponent(ctx, entityId1, Selected, { selectedBy: TEST_SESSION_ID });
+        addComponent(ctx, entityId1, Selected, { selectedBy: sessionId });
 
         entityId2 = createEntity(ctx);
         addComponent(ctx, entityId2, Block, {
@@ -293,7 +296,7 @@ describe("UpdateSelectSystem", () => {
           rank: "b",
         });
         addComponent(ctx, entityId2, Synced, {});
-        addComponent(ctx, entityId2, Selected, { selectedBy: TEST_SESSION_ID });
+        addComponent(ctx, entityId2, Selected, { selectedBy: sessionId });
       });
 
       // Let preCaptureIntersect compute AABBs

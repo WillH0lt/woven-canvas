@@ -22,6 +22,7 @@ import * as singletons from "./singletons";
 import * as systems from "./systems";
 
 import { PLUGIN_NAME } from "./constants";
+import { CURSORS } from "./cursors";
 
 // Helper to filter systems from a phase namespace
 const filterSystems = (ns: object): MainThreadSystem[] =>
@@ -60,11 +61,11 @@ export function createInfiniteCanvasPlugin(): EditorPlugin {
     name: PLUGIN_NAME,
 
     components: Object.values(components).filter(
-      (v): v is EditorComponentDef<any> => v instanceof EditorComponentDef
+      (v) => v instanceof EditorComponentDef
     ),
 
     singletons: Object.values(singletons).filter(
-      (v): v is EditorSingletonDef<any> => v instanceof EditorSingletonDef
+      (v) => v instanceof EditorSingletonDef
     ),
 
     preCaptureSystems: filterSystems(systems.preCapture),
@@ -74,8 +75,6 @@ export function createInfiniteCanvasPlugin(): EditorPlugin {
     updateSystems: filterSystems(systems.update),
 
     postUpdateSystems: filterSystems(systems.postUpdate),
-
-    postRenderSystems: filterSystems(systems.postRender),
 
     keybinds: [
       {
@@ -111,6 +110,8 @@ export function createInfiniteCanvasPlugin(): EditorPlugin {
         key: Key.BracketLeft,
       },
     ],
+
+    cursors: CURSORS,
   };
 }
 

@@ -2,51 +2,7 @@ import type { Context, System } from "@infinitecanvas/ecs";
 
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
-import type { BlockDefMap, Keybind } from "./types";
-
-/**
- * Systems organized by execution phase.
- *
- * Phases execute in order:
- * 1. **preInput** - Before input phase
- * 2. **input** - Convert raw DOM events to ECS state
- * 3. **postInput** - After input phase
- * 4. **preCapture** - Before capture phase
- * 5. **capture** - Detect targets and compute intersections
- * 6. **postCapture** - After capture phase
- * 7. **preUpdate** - Before update phase
- * 8. **update** - Modify document state and process commands
- * 9. **postUpdate** - After update phase
- * 10. **preRender** - Before render phase
- * 11. **render** - Sync ECS state to output
- * 12. **postRender** - After render phase
- */
-export interface PluginSystems {
-  /** Systems that run before input phase */
-  preInputSystems?: System[];
-  /** Systems that convert raw DOM events to ECS state */
-  inputSystems?: System[];
-  /** Systems that run after input phase */
-  postInputSystems?: System[];
-  /** Systems that run before capture phase */
-  preCaptureSystems?: System[];
-  /** Systems that detect targets and compute intersections */
-  captureSystems?: System[];
-  /** Systems that run after capture phase */
-  postCaptureSystems?: System[];
-  /** Systems that run before update phase */
-  preUpdateSystems?: System[];
-  /** Systems that modify document state and process commands */
-  updateSystems?: System[];
-  /** Systems that run after update phase */
-  postUpdateSystems?: System[];
-  /** Systems that run before render phase */
-  preRenderSystems?: System[];
-  /** Systems that sync ECS state to output */
-  renderSystems?: System[];
-  /** Systems that run after render phase */
-  postRenderSystems?: System[];
-}
+import type { CursorDef, Keybind, BlockDef } from "./types";
 
 /**
  * Editor plugin interface.
@@ -113,7 +69,9 @@ export interface EditorPlugin<TResources = unknown> {
   keybinds?: Keybind[];
 
   /** Block definitions provided by the plugin */
-  blockDefs?: BlockDefMap;
+  blockDefs?: Record<string, BlockDef>;
+
+  cursors?: Record<string, CursorDef>;
 
   /**
    * Plugin-specific resources/options.

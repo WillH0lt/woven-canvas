@@ -14,7 +14,6 @@ import {
   Edited,
   ScaleWithZoom,
   Block,
-  CursorKind,
   getBlockDef,
   getLocalSelectedBlocks,
 } from "@infinitecanvas/editor";
@@ -37,6 +36,7 @@ import {
 } from "../../commands";
 import { SelectionStateSingleton } from "../../singletons";
 import { TransformHandleKind, SelectionState } from "../../types";
+import { CursorKind } from "../../cursors";
 
 // Query for transform box entities
 const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));

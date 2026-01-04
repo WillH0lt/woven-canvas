@@ -4,13 +4,13 @@ import {
   Camera,
   removeEntity,
   defineQuery,
+  User,
 } from "@infinitecanvas/editor";
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { Store } from "@infinitecanvas/store";
 import {
   InfiniteCanvasPlugin,
   RemoveSelected,
-  User,
 } from "@infinitecanvas/plugin-infinite-canvas";
 
 import { RendererPlugin, blockQuery, createBlock } from "./ShapesPlugin";

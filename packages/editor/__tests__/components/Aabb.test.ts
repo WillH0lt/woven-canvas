@@ -4,8 +4,9 @@ import {
   createEntity,
   addComponent,
   type EditorPlugin,
-} from "@infinitecanvas/editor";
-import { Aabb, Block } from "../../src/components";
+  Aabb,
+  Block,
+} from "../../src";
 
 // Mock DOM element for tests
 const mockDomElement = document.createElement("div");
@@ -446,7 +447,14 @@ describe("Aabb", () => {
 
   describe("getCorners", () => {
     it("should return four corner points", async () => {
-      let corners: [[number, number], [number, number], [number, number], [number, number]] | undefined;
+      let corners:
+        | [
+            [number, number],
+            [number, number],
+            [number, number],
+            [number, number]
+          ]
+        | undefined;
 
       editor.nextTick((ctx) => {
         const eid = createEntity(ctx);

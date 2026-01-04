@@ -1,38 +1,50 @@
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
-import { Editor, type EditorPlugin } from "@infinitecanvas/editor";
+import { Editor, type CursorDef } from "@infinitecanvas/editor";
 import { Cursor } from "../../../src/singletons";
-import { cursorSystem } from "../../../../editor/src/systems/postRender";
-import { CursorKind } from "../../../src/types";
-import {
-  DEFAULT_CURSOR_DEFS,
-  getCursorSvg,
-} from "../../../../editor/src/cursors";
-import { PLUGIN_NAME } from "../../../src/constants";
-import type { InfiniteCanvasResources } from "../../../src/InfiniteCanvasPlugin";
-import { createMockElement, createTestResources } from "../../testUtils";
+import { getCursorSvg } from "../../../src/systems/postRender/cursorSystem";
+import { createMockElement } from "../../testUtils";
 
-// Mock DOM element for tests
-const mockDomElement = createMockElement();
+// Define test cursor kinds
+const CursorKind = {
+  Drag: "drag",
+  NS: "ns",
+} as const;
 
-// Test plugin with only PostRenderCursor system and resources
-const testPlugin: EditorPlugin<InfiniteCanvasResources> = {
-  name: PLUGIN_NAME,
-  components: [],
-  singletons: [Cursor],
-  postRenderSystems: [cursorSystem],
-  resources: createTestResources(),
+// Simple test cursor definitions
+const DRAG_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>`;
+const NS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>`;
+
+const TEST_CURSOR_DEFS: Record<string, CursorDef> = {
+  [CursorKind.Drag]: {
+    makeSvg: () => DRAG_SVG,
+    hotspot: [12, 12],
+    rotationOffset: 0,
+  },
+  [CursorKind.NS]: {
+    makeSvg: () => NS_SVG,
+    hotspot: [12, 12],
+    rotationOffset: 0,
+  },
 };
 
 describe("PostRenderCursor", () => {
   let editor: Editor;
   let originalBodyCursor: string;
+  let mockDomElement: HTMLElement;
 
   beforeEach(async () => {
     // Save original cursor
     originalBodyCursor = document.body.style.cursor;
     document.body.style.cursor = "";
 
-    editor = new Editor(mockDomElement, { plugins: [testPlugin] });
+    // Create fresh DOM element for each test
+    mockDomElement = createMockElement();
+
+    // Use Editor with custom cursors (CorePlugin already includes cursorSystem)
+    editor = new Editor(mockDomElement, {
+      plugins: [],
+      customCursors: TEST_CURSOR_DEFS,
+    });
     await editor.initialize();
   });
 
@@ -42,6 +54,10 @@ describe("PostRenderCursor", () => {
     }
     // Restore original cursor
     document.body.style.cursor = originalBodyCursor;
+    // Clean up DOM element
+    if (mockDomElement && mockDomElement.parentNode) {
+      mockDomElement.parentNode.removeChild(mockDomElement);
+    }
   });
 
   describe("cursor application", () => {
@@ -53,7 +69,7 @@ describe("PostRenderCursor", () => {
       await editor.tick();
 
       const expectedCursor = getCursorSvg(
-        DEFAULT_CURSOR_DEFS,
+        TEST_CURSOR_DEFS,
         CursorKind.Drag,
         0
       );
@@ -68,7 +84,7 @@ describe("PostRenderCursor", () => {
       await editor.tick();
 
       const expectedCursor = getCursorSvg(
-        DEFAULT_CURSOR_DEFS,
+        TEST_CURSOR_DEFS,
         CursorKind.NS,
         0
       );
@@ -98,7 +114,7 @@ describe("PostRenderCursor", () => {
       await editor.tick();
 
       const expectedCursor = getCursorSvg(
-        DEFAULT_CURSOR_DEFS,
+        TEST_CURSOR_DEFS,
         CursorKind.Drag,
         0
       );
@@ -113,7 +129,7 @@ describe("PostRenderCursor", () => {
       });
 
       await editor.tick();
-      const dragCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      const dragCursor = getCursorSvg(TEST_CURSOR_DEFS, CursorKind.Drag, 0);
       expect(document.body.style.cursor).toBe(dragCursor);
 
       // Clear context cursor
@@ -123,7 +139,7 @@ describe("PostRenderCursor", () => {
 
       await editor.tick();
 
-      const nsCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.NS, 0);
+      const nsCursor = getCursorSvg(TEST_CURSOR_DEFS, CursorKind.NS, 0);
       expect(document.body.style.cursor).toBe(nsCursor);
     });
   });
@@ -136,7 +152,7 @@ describe("PostRenderCursor", () => {
       });
 
       await editor.tick();
-      const dragCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      const dragCursor = getCursorSvg(TEST_CURSOR_DEFS, CursorKind.Drag, 0);
       expect(document.body.style.cursor).toBe(dragCursor);
 
       // Manually change body cursor to something else
@@ -156,7 +172,7 @@ describe("PostRenderCursor", () => {
       });
 
       await editor.tick();
-      const cursor1 = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      const cursor1 = getCursorSvg(TEST_CURSOR_DEFS, CursorKind.Drag, 0);
       expect(document.body.style.cursor).toBe(cursor1);
 
       // Set second cursor
@@ -165,7 +181,7 @@ describe("PostRenderCursor", () => {
       });
 
       await editor.tick();
-      const cursor2 = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.NS, 0);
+      const cursor2 = getCursorSvg(TEST_CURSOR_DEFS, CursorKind.NS, 0);
       expect(document.body.style.cursor).toBe(cursor2);
     });
   });
@@ -178,7 +194,7 @@ describe("PostRenderCursor", () => {
       });
 
       await editor.tick();
-      const dragCursor = getCursorSvg(DEFAULT_CURSOR_DEFS, CursorKind.Drag, 0);
+      const dragCursor = getCursorSvg(TEST_CURSOR_DEFS, CursorKind.Drag, 0);
       expect(document.body.style.cursor).toBe(dragCursor);
 
       // Clear cursor
