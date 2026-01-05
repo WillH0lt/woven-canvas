@@ -13,17 +13,14 @@ import {
   Camera,
   defineQuery,
   hasComponent,
-  type EditorPluginInput,
-  type Context,
-  type EntityId,
-} from "@infinitecanvas/editor";
-import {
-  InfiniteCanvasPlugin,
   Block,
   Selected,
   Hovered,
   Edited,
-} from "@infinitecanvas/plugin-selection";
+  type EditorPluginInput,
+  type EntityId,
+} from "@infinitecanvas/editor";
+import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-selection";
 import {
   CanvasControlsPlugin,
   type CanvasControlsOptions,

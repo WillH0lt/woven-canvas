@@ -1,150 +1,318 @@
-# @infinitecanvas/vue MVP Plan
+# InfiniteCanvas Vue Component - Dynamic Slot Props Plan
 
 ## Goal
 
-Render infinite canvas blocks in Vue with a simple, declarative API.
-
-## Target API
+Enable users to receive component data in slots based on the BlockDef's registered components:
 
 ```vue
-<script setup>
-import { InfiniteCanvas } from "@infinitecanvas/vue";
-</script>
-
-<template>
-  <InfiniteCanvas @ready="(editor) => console.log(editor)">
-    <!-- Slot name matches block tag -->
-    <!-- Props are defined by the BlockDef's components map -->
-    <template #rect="{ block }">
-      <div class="rect" :style="{ background: 'blue' }" />
-    </template>
-
-    <template #arrow="{ block, arrow, color }">
-      <ArrowRenderer :arrow="arrow" :color="color.value" />
-    </template>
-
-    <template #image="{ block, image }">
-      <img :src="image.url" :style="{ width: '100%', height: '100%' }" />
-    </template>
-  </InfiniteCanvas>
-</template>
+<InfiniteCanvas :editor="editor">
+  <template #rect="{ block, rect }">
+    <!-- block: Block component data -->
+    <!-- rect: Rect component data (custom) -->
+    <div :style="{ background: uint32ToHex(rect.color) }">
+      Rectangle
+    </div>
+  </template>
+</InfiniteCanvas>
 ```
 
-## Architecture
+## How It Works
 
-```
-@infinitecanvas/vue
-├── Editor.ts              (existing - low-level editor wrapper)
-└── InfiniteCanvas.vue     (new - high-level canvas with block rendering)
-    ├── imports InfiniteCanvasPlugin from @infinitecanvas/plugin-selection
-    ├── imports CanvasControlsPlugin from @infinitecanvas/plugin-canvas-controls
-    ├── subscribes to Block query
-    ├── renders blocks with camera transform
-    └── exposes slots for custom block rendering
-```
+1. **BlockDef defines which components a block type has:**
+   ```ts
+   const RectBlockDef: BlockDefInput = {
+     tag: 'rect',
+     components: [Rect],  // Custom components for this block type
+   }
+   ```
 
-## InfiniteCanvas Component
+2. **InfiniteCanvas reads BlockDefs from editor:**
+   ```ts
+   const blockDefs = props.editor.blockDefs
+   // { rect: { tag: 'rect', components: [Rect], ... } }
+   ```
 
-### Props
+3. **When rendering a block, look up its BlockDef by tag:**
+   ```ts
+   const blockDef = blockDefs[block.tag]
+   // blockDef.components = [Rect]
+   ```
 
-| Prop       | Type                  | Default | Description                                               |
-| ---------- | --------------------- | ------- | --------------------------------------------------------- |
-| `controls` | `ControlsOptions`     | `{}`    | Options for CanvasControlsPlugin (minZoom, maxZoom, etc.) |
-| `plugins`  | `EditorPluginInput[]` | `[]`    | Additional plugins to load                                |
-
-### Events
-
-| Event   | Payload  | Description                      |
-| ------- | -------- | -------------------------------- |
-| `ready` | `Editor` | Fired when editor is initialized |
-
-### Slots
-
-Slot names match block tags. Props are defined by each BlockDef's `components` map.
-
-| Slot      | Description                                               |
-| --------- | --------------------------------------------------------- |
-| `#${tag}` | Render block with matching tag. Props come from BlockDef. |
-
-### BlockDef System
-
-Plugins define BlockDefs that declare:
-
-1. The block tag (slot name)
-2. Which components to pass as slot props
-
-```ts
-// In plugin-arrows
-import { defineBlockDef } from "@infinitecanvas/editor";
-
-export const ArrowBlockDef = defineBlockDef({
-  tag: "arrow",
-  components: {
-    block: Block, // Always included (required)
-    arrow: Arrow, // Plugin-specific component
-    color: Color, // Optional component
-  },
-});
-
-// Register in plugin
-export const ArrowsPlugin: EditorPlugin = {
-  name: "arrows",
-  blockDefs: [ArrowBlockDef],
-  components: [Arrow, Color],
-  // ...
-};
-```
-
-The slot receives typed props based on the BlockDef:
-
-```ts
-// Auto-generated from ArrowBlockDef.components
-interface ArrowSlotProps {
-  block: {
-    tag: string;
-    position: [number, number];
-    size: [number, number];
-    rotateZ: number;
-    rank: string;
-  };
-  arrow: {
-    start: [number, number];
-    end: [number, number];
-    arrowHeadStyle: string;
-  };
-  color: { value: string };
-}
-```
-
-### How Rendering Works
-
-1. `<InfiniteCanvas>` collects all `blockDefs` from loaded plugins
-2. Subscribes to Block query for all entities
-3. For each entity, looks up BlockDef by `block.tag`
-4. Reads all components declared in BlockDef
-5. Passes them as props to the matching slot
+4. **Read each component and pass to slot:**
+   ```ts
+   const slotProps = {
+     block: Block.snapshot(ctx, entityId),
+     // Dynamic: read each component from blockDef.components
+     rect: Rect.snapshot(ctx, entityId),  // keyed by component name
+   }
+   ```
 
 ## Implementation Steps
 
-1. Add plugin dependencies to package.json
-2. Create InfiniteCanvas.vue component
-   - Mount Editor with InfiniteCanvasPlugin + CanvasControlsPlugin
-   - Subscribe to Block query for reactive updates
-   - Subscribe to Camera for transform calculations
-   - Render positioned block containers
-   - Forward slots for custom block content
-3. Export from index.ts
-4. Test with examples/editor-vue
+### Step 1: Create Rect Component in editor-vue
 
-## Key Decisions
+Create a custom `Rect` component in the editor-vue example:
 
-- **Block positioning**: InfiniteCanvas handles all transform math (camera offset, zoom, rotation). Slot content just fills the container.
-- **Reactivity**: Use `editor.subscribe()` to sync ECS state to Vue refs (coming later)
-- **Default rendering**: If no slot matches, render nothing.
+**File: `examples/editor-vue/src/RectPlugin.ts`**
 
-## Out of Scope (for MVP)
+```ts
+import {
+  defineEditorComponent,
+  field,
+  createEntity,
+  addComponent,
+  Block,
+  Synced,
+  type EditorPlugin,
+  type Context,
+} from '@infinitecanvas/editor'
+import { generateKeyBetween } from 'fractional-indexing-jittered'
 
-- Two-way sync (v-model:blocks)
-- Custom camera controls
-- Multi-select rendering
-- Transform handles UI (handled by plugin internally?)
+// Define the Rect component schema
+export const Rect = defineEditorComponent(
+  'rect',
+  {
+    color: field.uint32().default(0x4a90d9ff),
+  },
+  { sync: 'document' }
+)
+
+// Define the block def for rect blocks
+export const RectBlockDef = {
+  tag: 'rect',
+  components: [Rect],
+}
+
+// Plugin that registers the Rect component and block def
+export const RectPlugin: EditorPlugin = {
+  name: 'rect',
+  components: [Rect],
+  blockDefs: {
+    rect: RectBlockDef,
+  },
+}
+
+// Helper to create rect blocks
+export function createRectBlock(
+  ctx: Context,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: number = 0x4a90d9ff
+): number {
+  const entityId = createEntity(ctx)
+
+  addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() })
+  addComponent(ctx, entityId, Block, {
+    tag: 'rect',
+    position: [x, y],
+    size: [width, height],
+    rank: generateKeyBetween(null, null),
+  })
+  addComponent(ctx, entityId, Rect, { color })
+
+  return entityId
+}
+```
+
+### Step 2: Update InfiniteCanvas to Read BlockDef Components
+
+**File: `packages/vue/src/components/InfiniteCanvas.vue`**
+
+```ts
+import { shallowRef } from "vue"
+import {
+  Editor,
+  Camera,
+  defineQuery,
+  hasComponent,
+  Block,
+  type EntityId,
+} from "@infinitecanvas/editor"
+
+const blockQuery = defineQuery((q) => q.with(Block))
+
+const props = defineProps<{
+  editor: Editor
+}>()
+
+const blocksRef = shallowRef<Array<{ _key: EntityId; [key: string]: unknown }>>([])
+const cameraRef = shallowRef({ left: 0, top: 0, zoom: 1 })
+
+function updateBlocks() {
+  const ctx = props.editor._getContext()
+  const blockDefs = props.editor.blockDefs
+  const blocks: Array<{ _key: EntityId; [key: string]: unknown }> = []
+
+  for (const entityId of blockQuery.current(ctx)) {
+    const blockData = Block.read(ctx, entityId)
+    const blockDef = blockDefs[blockData.tag]
+
+    // Build slot props starting with Block data
+    const slotProps: Record<string, unknown> = {
+      _key: entityId,  // Internal key for v-for, not exposed to user
+      block: {
+        tag: blockData.tag,
+        position: [...blockData.position] as [number, number],
+        size: [...blockData.size] as [number, number],
+        rotateZ: blockData.rotateZ,
+        rank: blockData.rank,
+      },
+    }
+
+    // Add each BlockDef component's data
+    if (blockDef?.components) {
+      for (const componentDef of blockDef.components) {
+        if (hasComponent(ctx, entityId, componentDef)) {
+          // Key by component name (lowercase)
+          const key = componentDef.name.toLowerCase()
+          slotProps[key] = componentDef.snapshot(ctx, entityId)
+        }
+      }
+    }
+
+    blocks.push(slotProps as { _key: EntityId; [key: string]: unknown })
+  }
+
+  // Sort by rank for z-ordering
+  blocks.sort((a, b) => {
+    const aRank = (a.block as { rank: string }).rank
+    const bRank = (b.block as { rank: string }).rank
+    return aRank > bRank ? 1 : -1
+  })
+
+  blocksRef.value = blocks
+}
+```
+
+Template:
+
+```vue
+<template>
+  <div
+    class="infinite-canvas"
+    :style="{
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+      overflow: 'hidden',
+      pointerEvents: 'none',
+    }"
+  >
+    <div
+      v-for="slotProps in blocksRef"
+      :key="slotProps._key"
+      class="infinite-canvas-block"
+      :style="getBlockStyle(slotProps.block)"
+    >
+      <slot :name="slotProps.block.tag" v-bind="slotProps" />
+    </div>
+  </div>
+</template>
+```
+
+### Step 3: Update editor-vue Example
+
+**File: `examples/editor-vue/src/App.vue`**
+
+```vue
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from "vue"
+import { Editor } from "@infinitecanvas/editor"
+import { Store } from "@infinitecanvas/store"
+import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls"
+import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-selection"
+import { InfiniteCanvas } from "@infinitecanvas/vue"
+import { RectPlugin, createRectBlock } from "./RectPlugin"
+
+const containerRef = ref<HTMLDivElement | null>(null)
+const canvasRef = ref<{ tick: () => void } | null>(null)
+const editorRef = ref<Editor | null>(null)
+let store: Store | null = null
+let animationFrameId: number | null = null
+
+function uint32ToHex(color: number): string {
+  return '#' + color.toString(16).padStart(8, '0').slice(0, 6)
+}
+
+function loop() {
+  editorRef.value?.tick()
+  canvasRef.value?.tick()
+  animationFrameId = requestAnimationFrame(loop)
+}
+
+onMounted(async () => {
+  if (!containerRef.value) return
+
+  store = new Store({
+    documentId: "editor-vue-demo",
+    useLocalPersistence: true,
+  })
+
+  const editor = new Editor(containerRef.value, {
+    store,
+    plugins: [
+      CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
+      InfiniteCanvasPlugin,
+      RectPlugin,
+    ],
+  })
+
+  await editor.initialize()
+  editorRef.value = editor
+
+  animationFrameId = requestAnimationFrame(loop)
+})
+
+onUnmounted(() => {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+  }
+  editorRef.value?.dispose()
+  store?.dispose()
+})
+
+function addRect() {
+  editorRef.value?.nextTick((ctx) => {
+    createRectBlock(ctx, 100, 100, 200, 150, 0x4a90d9ff)
+  })
+}
+</script>
+
+<template>
+  <div class="editor" ref="containerRef">
+    <div class="toolbar">
+      <button @click="addRect">Add Rect</button>
+    </div>
+    <InfiniteCanvas v-if="editorRef" ref="canvasRef" :editor="editorRef">
+      <template #rect="{ block, rect }">
+        <div
+          class="rect-block"
+          :style="{
+            width: '100%',
+            height: '100%',
+            background: uint32ToHex(rect.color),
+            borderRadius: '4px',
+          }"
+        />
+      </template>
+    </InfiniteCanvas>
+  </div>
+</template>
+```
+
+## File Changes Summary
+
+| File | Change |
+|------|--------|
+| `examples/editor-vue/src/RectPlugin.ts` | NEW - Rect component, BlockDef, plugin, createRectBlock helper |
+| `packages/vue/src/components/InfiniteCanvas.vue` | Update `updateBlocks()` to read BlockDef components dynamically |
+| `examples/editor-vue/src/App.vue` | Use RectPlugin, access `rect` in slot, add button to create rects |
+
+## Notes
+
+- `entityId` is used internally as `_key` for Vue's `v-for` but not exposed to users
+- Slot props are `{ block, ...componentData }` where component data is keyed by component name
+- No separate `BlockSlotProps` type needed - it's just `block` + whatever components the BlockDef defines
+- `selected`, `hovered`, `editing` removed for MVP simplicity

@@ -12,6 +12,7 @@
     "@infinitecanvas/editor": "workspace:^",
     "@infinitecanvas/plugin-canvas-controls": "workspace:^",
     "@infinitecanvas/plugin-selection": "workspace:^",
+    "@infinitecanvas/store": "workspace:^",
     "@infinitecanvas/vue": "workspace:^",
     "vue": "^3.5.24"
   },

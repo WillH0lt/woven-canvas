@@ -1,50 +1,31 @@
 {
+  "name": "jet-ui",
   "private": true,
-  "name": "@infinitecanvas/vue",
-  "version": "0.1.0",
-  "description": "Vue 3 adapter for Infinite Canvas",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/jet-ui.cjs.js",
+  "module": "dist/jet-ui.es.js",
+  "typings": "dist/types/index.d.ts",
   "files": [
-    "build"
+    "dist"
   ],
-  "main": "./build/index.js",
-  "module": "./build/index.mjs",
-  "types": "./build/index.d.ts",
-  "exports": {
-    ".": {
-      "@infinitecanvas/source": "./src/index.ts",
-      "import": {
-        "types": "./build/index.d.ts",
-        "default": "./build/index.js"
-      },
-      "require": {
-        "types": "./build/index.d.cts",
-        "default": "./build/index.cjs"
-      }
-    },
-    "./package.json": "./package.json"
-  },
+  "style": "dist/style.css",
   "scripts": {
-    "clean": "rimraf build .turbo",
-    "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
-    "build:watch": "pnpm build --watch",
-    "check:exports": "attw --pack .",
-    "test": "vitest --config ../../vitest.config.ts run",
-    "test:watch": "vitest --config ../../vitest.config.ts run --watch"
+    "dev": "vite",
+    "build": "vite build && vue-tsc --declaration --emitDeclarationOnly",
+    "preview": "vite preview",
+    "tsc": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "@infinitecanvas/editor": "workspace:*",
-    "@infinitecanvas/plugin-selection": "workspace:*",
-    "@infinitecanvas/plugin-canvas-controls": "workspace:*"
+    "@infinitecanvas/editor": "workspace:^",
+    "@infinitecanvas/plugin-canvas-controls": "workspace:^",
+    "@infinitecanvas/plugin-selection": "workspace:^",
+    "vue": "^3.5.26"
   },
   "devDependencies": {
-    "@vue/test-utils": "^2.4.0",
-    "resize-observer-polyfill": "^1.5.1",
-    "vitest": "^4.0.7",
-    "vue": "^3.5.0"
-  },
-  "peerDependencies": {
-    "vue": "^3.3.0",
-    "typescript": "^5"
-  },
-  "type": "module"
+    "@vitejs/plugin-vue": "^5.2.4",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vue-tsc": "^2.2.12"
+  }
 }
