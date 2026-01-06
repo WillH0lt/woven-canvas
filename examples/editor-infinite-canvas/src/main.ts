@@ -9,7 +9,7 @@ import {
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { Store } from "@infinitecanvas/store";
 import {
-  InfiniteCanvasPlugin,
+  SelectionPlugin,
   RemoveSelected,
 } from "@infinitecanvas/plugin-selection";
 
@@ -49,7 +49,7 @@ const editor = new Editor(container, {
   store,
   plugins: [
     CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
-    InfiniteCanvasPlugin,
+    SelectionPlugin,
     RendererPlugin({ canvas, ctx2d }),
   ],
 });

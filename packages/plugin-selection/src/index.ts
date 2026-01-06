@@ -1,7 +1,7 @@
 export {
-  InfiniteCanvasPlugin,
-  createInfiniteCanvasPlugin,
-} from "./InfiniteCanvasPlugin";
+  SelectionPlugin,
+  createSelectionPlugin,
+} from "./SelectionPlugin";
 
 // Re-export everything else
 export * from "./components";

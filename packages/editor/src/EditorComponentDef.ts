@@ -16,18 +16,19 @@ export interface EditorComponentOptions {
  * Entity identity is stored in the Synced component's `id` field.
  */
 export class EditorComponentDef<
-  T extends ComponentSchema
+  T extends ComponentSchema,
+  N extends string = string
 > extends ComponentDef<T> {
   /**
    * Stable identifier for storage and sync.
    * Use this instead of `_defId` for persistence keys.
    */
-  readonly name: string;
+  readonly name: N;
 
   /** Editor-specific metadata */
   readonly __editor: EditorComponentMeta;
 
-  constructor(name: string, schema: T, options: EditorComponentOptions = {}) {
+  constructor(name: N, schema: T, options: EditorComponentOptions = {}) {
     super(schema, false);
     this.name = name;
     this.__editor = {
@@ -63,10 +64,9 @@ export type AnyEditorComponentDef = EditorComponentDef<ComponentSchema>;
  * );
  * ```
  */
-export function defineEditorComponent<T extends ComponentSchema>(
-  name: string,
-  schema: T,
-  options: EditorComponentOptions = {}
-): EditorComponentDef<T> {
+export function defineEditorComponent<
+  N extends string,
+  T extends ComponentSchema
+>(name: N, schema: T, options: EditorComponentOptions = {}): EditorComponentDef<T, N> {
   return new EditorComponentDef(name, schema, options);
 }

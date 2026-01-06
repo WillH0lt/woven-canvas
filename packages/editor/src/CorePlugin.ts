@@ -7,7 +7,10 @@ import {
 
 import type { EditorPlugin } from "./plugin";
 import type { EditorResources } from "./types";
-import { EditorComponentDef } from "./EditorComponentDef";
+import {
+  EditorComponentDef,
+  type AnyEditorComponentDef,
+} from "./EditorComponentDef";
 import { EditorSingletonDef } from "./EditorSingletonDef";
 import {
   attachKeyboardListeners,
@@ -51,8 +54,8 @@ export const CorePlugin: EditorPlugin = {
   ),
 
   components: Object.values(components).filter(
-    (v): v is EditorComponentDef<any> => v instanceof EditorComponentDef
-  ),
+    (v) => v instanceof EditorComponentDef
+  ) as AnyEditorComponentDef[],
 
   preInputSystems: filterForMainThreadSystems(preInput),
 

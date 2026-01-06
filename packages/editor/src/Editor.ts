@@ -126,7 +126,7 @@ export class Editor {
     // Sort plugins by dependencies, always including CorePlugin first
     const sortedPlugins = sortPluginsByDependencies([CorePlugin, ...plugins]);
 
-    // Collect all components and singletons from plugins
+    // Collect all components and singletons from plugins and custom options
     // Always include CommandMarker for the command system
     const allDefs: (ComponentDef<any> | SingletonDef<any>)[] = [CommandMarker];
     for (const plugin of sortedPlugins) {
@@ -137,6 +137,9 @@ export class Editor {
         allDefs.push(...plugin.singletons);
       }
     }
+    // Add custom components and singletons
+    allDefs.push(...options.customComponents);
+    allDefs.push(...options.customSingletons);
 
     // Setup keybinds
     const keybinds = options.customKeybinds;
@@ -147,12 +150,18 @@ export class Editor {
     }
     this.keybinds = keybinds;
 
-    // Setup block defs
+    // Setup block defs (parse inputs to apply defaults)
     const blockDefs: Record<string, BlockDef> = {};
-    Object.assign(blockDefs, options.customBlockDefs);
+    for (const input of Object.values(options.customBlockDefs)) {
+      const parsed = BlockDef.parse(input);
+      blockDefs[parsed.tag] = parsed;
+    }
     for (const plugin of sortedPlugins) {
       if (plugin.blockDefs) {
-        Object.assign(blockDefs, plugin.blockDefs);
+        for (const input of plugin.blockDefs) {
+          const parsed = BlockDef.parse(input);
+          blockDefs[parsed.tag] = parsed;
+        }
       }
     }
     this.blockDefs = blockDefs;
@@ -235,6 +244,20 @@ export class Editor {
       }
     }
 
+    // Register custom systems (run after plugin systems)
+    this.phases.get("preInput")!.push(...options.customPreInputSystems);
+    this.phases.get("input")!.push(...options.customInputSystems);
+    this.phases.get("postInput")!.push(...options.customPostInputSystems);
+    this.phases.get("preCapture")!.push(...options.customPreCaptureSystems);
+    this.phases.get("capture")!.push(...options.customCaptureSystems);
+    this.phases.get("postCapture")!.push(...options.customPostCaptureSystems);
+    this.phases.get("preUpdate")!.push(...options.customPreUpdateSystems);
+    this.phases.get("update")!.push(...options.customUpdateSystems);
+    this.phases.get("postUpdate")!.push(...options.customPostUpdateSystems);
+    this.phases.get("preRender")!.push(...options.customPreRenderSystems);
+    this.phases.get("render")!.push(...options.customRenderSystems);
+    this.phases.get("postRender")!.push(...options.customPostRenderSystems);
+
     // Build map of plugins
     this.plugins = new Map(sortedPlugins.map((p) => [p.name, p]));
 
@@ -255,6 +278,15 @@ export class Editor {
           this.singletons.set(componentId, singleton);
         }
       }
+    }
+    // Add custom components and singletons to maps
+    for (const comp of options.customComponents) {
+      const componentId = comp._getComponentId(this.ctx);
+      this.components.set(componentId, comp);
+    }
+    for (const singleton of options.customSingletons) {
+      const componentId = singleton._getComponentId(this.ctx);
+      this.singletons.set(componentId, singleton);
     }
   }
 
@@ -438,8 +470,8 @@ export class Editor {
    * });
    * ```
    */
-  nextTick(callback: (ctx: Context) => void): void {
-    this.world.nextSync((ctx) => {
+  nextTick(callback: (ctx: Context) => void): () => void {
+    return this.world.nextSync((ctx) => {
       callback(ctx);
     });
   }

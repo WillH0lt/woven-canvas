@@ -15,7 +15,7 @@
       "path": "packages/plugin-canvas-controls"
     },
     {
-      "path": "packages/plugin-infinite-canvas"
+      "path": "packages/plugin-selection"
     },
     {
       "path": "packages/extension-arrows"
@@ -42,6 +42,9 @@
       "path": "packages/store"
     },
     {
+      "path": "packages/vue"
+    },
+    {
       "path": "examples/canvas"
     },
     {
@@ -49,6 +52,9 @@
     },
     {
       "path": "examples/asciinotes-com-new"
+    },
+    {
+      "path": "examples/editor-vue"
     }
   ],
   "compilerOptions": {

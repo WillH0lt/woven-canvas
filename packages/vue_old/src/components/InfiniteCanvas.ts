@@ -20,7 +20,7 @@ import {
   type EditorPluginInput,
   type EntityId,
 } from "@infinitecanvas/editor";
-import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-selection";
+import { SelectionPlugin } from "@infinitecanvas/plugin-selection";
 import {
   CanvasControlsPlugin,
   type CanvasControlsOptions,
@@ -120,7 +120,7 @@ export const InfiniteCanvas = defineComponent({
       // Build plugins array
       const allPlugins: EditorPluginInput[] = [
         CanvasControlsPlugin(props.controls),
-        InfiniteCanvasPlugin,
+        SelectionPlugin,
         ...props.plugins,
       ];
 

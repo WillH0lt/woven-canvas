@@ -75,6 +75,7 @@ export {
   getResources,
   defineSystem,
   MainThreadSystem,
+  EventType,
   type Context,
   type EntityId,
   type QueryDef,

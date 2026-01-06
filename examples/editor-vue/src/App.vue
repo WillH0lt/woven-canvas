@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import { Editor } from "@infinitecanvas/editor";
+import { ref, shallowRef, onMounted, onUnmounted } from "vue";
+import { Editor, Camera } from "@infinitecanvas/editor";
 import { Store } from "@infinitecanvas/store";
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
-import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-selection";
+import { SelectionPlugin } from "@infinitecanvas/plugin-selection";
 import { InfiniteCanvas } from "@infinitecanvas/vue";
 
+import { RectPlugin, createRectBlock } from "./RectPlugin";
+import Shape from "./components/Shape.vue";
+
 const containerRef = ref<HTMLDivElement | null>(null);
-const canvasRef = ref<{ tick: () => void } | null>(null);
-const editorRef = ref<Editor | null>(null);
+const editorRef = shallowRef<Editor | null>(null);
 let store: Store | null = null;
 let animationFrameId: number | null = null;
 
 function loop() {
   editorRef.value?.tick();
-  canvasRef.value?.tick();
   animationFrameId = requestAnimationFrame(loop);
 }
 
@@ -32,7 +33,8 @@ onMounted(async () => {
     store,
     plugins: [
       CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
-      InfiniteCanvasPlugin,
+      SelectionPlugin,
+      RectPlugin,
     ],
   });
 
@@ -60,25 +62,31 @@ function handleUndo() {
 function handleRedo() {
   store?.redo();
 }
+
+function addRect() {
+  const editor = editorRef.value;
+  if (!editor) return;
+
+  editor.nextTick((ctx) => {
+    const camera = Camera.read(ctx);
+    // Place block in center of current view
+    const x = camera.left + 400;
+    const y = camera.top + 300;
+    createRectBlock(ctx, x, y, 200, 150, 0x4a90d9ff);
+  });
+}
 </script>
 
 <template>
   <div class="editor" ref="containerRef">
     <div class="toolbar">
+      <button @click="addRect">Add Rect</button>
       <button @click="handleUndo">Undo</button>
       <button @click="handleRedo">Redo</button>
     </div>
-    <InfiniteCanvas v-if="editorRef" ref="canvasRef" :editor="editorRef">
-      <template #rect="{ selected }">
-        <div
-          class="rect-block"
-          :style="{
-            width: '100%',
-            height: '100%',
-            background: selected ? '#2563eb' : '#4a90d9',
-            borderRadius: '4px',
-          }"
-        />
+    <InfiniteCanvas v-if="editorRef" :editor="editorRef">
+      <template #rect="{ entityId }">
+        <Shape class="rect-block" :entityId="entityId" />
       </template>
     </InfiniteCanvas>
   </div>

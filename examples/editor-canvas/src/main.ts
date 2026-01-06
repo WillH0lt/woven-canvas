@@ -7,7 +7,7 @@ import {
 } from "@infinitecanvas/editor";
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { Store } from "@infinitecanvas/store";
-import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-selection";
+import { SelectionPlugin } from "@infinitecanvas/plugin-selection";
 
 import { ShapesPlugin, Shape, shapeQuery, createShape } from "./ShapesPlugin";
 
@@ -53,7 +53,7 @@ const editor = new Editor(container, {
   store,
   plugins: [
     CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
-    InfiniteCanvasPlugin,
+    SelectionPlugin,
     ShapesPlugin,
   ],
 });

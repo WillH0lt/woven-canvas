@@ -358,14 +358,18 @@ export class World {
    * (e.g., from UI event handlers, network callbacks, etc.).
    *
    * @param callback - Function to execute at the next sync, receives the context
+   * @returns A cancel function that removes the callback from the queue
    * @example
    * ```typescript
    * // From a click handler in your UI:
    * function onClick(entityId: number) {
-   *   world.nextSync((ctx) => {
+   *   const cancel = world.nextSync((ctx) => {
    *     const color = Color.write(ctx, entityId);
    *     color.red = 255;
    *   });
+   *
+   *   // If needed, cancel before sync runs:
+   *   cancel();
    * }
    *
    * // In your game loop:
@@ -373,8 +377,14 @@ export class World {
    * await world.execute(renderSystem);
    * ```
    */
-  nextSync(callback: NextSyncCallback): void {
+  nextSync(callback: NextSyncCallback): () => void {
     this.nextSyncCallbacks.push(callback);
+    return () => {
+      const index = this.nextSyncCallbacks.indexOf(callback);
+      if (index !== -1) {
+        this.nextSyncCallbacks.splice(index, 1);
+      }
+    };
   }
 
   /**

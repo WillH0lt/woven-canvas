@@ -38,7 +38,7 @@ const filterSystems = (ns: object): MainThreadSystem[] =>
  *
  * @example
  * ```typescript
- * const plugin = createInfiniteCanvasPlugin({
+ * const plugin = createSelectionPlugin({
  *   customBlocks: [
  *     {
  *       tag: "text",
@@ -56,7 +56,7 @@ const filterSystems = (ns: object): MainThreadSystem[] =>
  * const editor = new Editor(container, { plugins: [plugin] });
  * ```
  */
-export function createInfiniteCanvasPlugin(): EditorPlugin {
+export function createSelectionPlugin(): EditorPlugin {
   return {
     name: PLUGIN_NAME,
 
@@ -130,20 +130,20 @@ export function createInfiniteCanvasPlugin(): EditorPlugin {
  * @example
  * ```typescript
  * import { Editor } from '@infinitecanvas/editor';
- * import { InfiniteCanvasPlugin } from '@infinitecanvas/plugin-selection';
+ * import { SelectionPlugin } from '@infinitecanvas/plugin-selection';
  *
  * // With default options (no parentheses needed)
  * const editor = new Editor(el, {
- *   plugins: [InfiniteCanvasPlugin],
+ *   plugins: [SelectionPlugin],
  * });
  *
  * // With custom options
  * const editor = new Editor(el, {
- *   plugins: [InfiniteCanvasPlugin({
+ *   plugins: [SelectionPlugin({
  *     customBlocks: [{ tag: "text", resizeMode: "text" }],
  *   })],
  * });
  * ```
  */
-export const InfiniteCanvasPlugin: EditorPluginFactory = () =>
-  createInfiniteCanvasPlugin();
+export const SelectionPlugin: EditorPluginFactory = () =>
+  createSelectionPlugin();

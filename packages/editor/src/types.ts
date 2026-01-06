@@ -2,10 +2,12 @@ import type { Context, EntityId } from "@infinitecanvas/ecs";
 export type { Context };
 import { z } from "zod";
 
-import type { EditorComponentDef } from "./EditorComponentDef";
+import type { AnyEditorComponentDef } from "./EditorComponentDef";
+import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 import type { Editor } from "./Editor";
 import type { EditorPluginInput } from "./plugin";
 import type { StoreAdapter } from "./store";
+import type { System } from "@infinitecanvas/ecs";
 
 // Re-export EntityId for convenience
 export type { EntityId };
@@ -159,6 +161,76 @@ export const EditorOptionsSchema = z.object({
    * Override default cursors or define new ones for transform operations.
    */
   customCursors: z.record(z.string(), z.custom<CursorDef>()).default({}),
+
+  /**
+   * Custom components to register without creating a plugin.
+   */
+  customComponents: z.array(z.custom<AnyEditorComponentDef>()).default([]),
+
+  /**
+   * Custom singletons to register without creating a plugin.
+   */
+  customSingletons: z.array(z.custom<AnyEditorSingletonDef>()).default([]),
+
+  /**
+   * Custom systems that run before input phase.
+   */
+  customPreInputSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that convert raw DOM events to ECS state.
+   */
+  customInputSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that run after input phase.
+   */
+  customPostInputSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that run before capture phase.
+   */
+  customPreCaptureSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that detect targets and compute intersections.
+   */
+  customCaptureSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that run after capture phase.
+   */
+  customPostCaptureSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that run before update phase.
+   */
+  customPreUpdateSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that modify document state and process commands.
+   */
+  customUpdateSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that run after update phase.
+   */
+  customPostUpdateSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that run before render phase.
+   */
+  customPreRenderSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that sync ECS state to output.
+   */
+  customRenderSystems: z.array(z.custom<System>()).default([]),
+
+  /**
+   * Custom systems that run after render phase.
+   */
+  customPostRenderSystems: z.array(z.custom<System>()).default([]),
 });
 
 export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>;
@@ -242,7 +314,7 @@ const BlockDefEditOptions = z.object({
 export const BlockDef = z.object({
   tag: z.string(),
   editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
-  components: z.array(z.custom<EditorComponentDef<any>>()).default([]),
+  components: z.array(z.custom<AnyEditorComponentDef>()).default([]),
   resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),

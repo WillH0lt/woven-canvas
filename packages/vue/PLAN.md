@@ -19,22 +19,25 @@ Enable users to receive component data in slots based on the BlockDef's register
 ## How It Works
 
 1. **BlockDef defines which components a block type has:**
+
    ```ts
    const RectBlockDef: BlockDefInput = {
-     tag: 'rect',
-     components: [Rect],  // Custom components for this block type
-   }
+     tag: "rect",
+     components: [Rect], // Custom components for this block type
+   };
    ```
 
 2. **InfiniteCanvas reads BlockDefs from editor:**
+
    ```ts
-   const blockDefs = props.editor.blockDefs
+   const blockDefs = props.editor.blockDefs;
    // { rect: { tag: 'rect', components: [Rect], ... } }
    ```
 
 3. **When rendering a block, look up its BlockDef by tag:**
+
    ```ts
-   const blockDef = blockDefs[block.tag]
+   const blockDef = blockDefs[block.tag];
    // blockDef.components = [Rect]
    ```
 
@@ -43,8 +46,8 @@ Enable users to receive component data in slots based on the BlockDef's register
    const slotProps = {
      block: Block.snapshot(ctx, entityId),
      // Dynamic: read each component from blockDef.components
-     rect: Rect.snapshot(ctx, entityId),  // keyed by component name
-   }
+     rect: Rect.snapshot(ctx, entityId), // keyed by component name
+   };
    ```
 
 ## Implementation Steps
@@ -65,32 +68,32 @@ import {
   Synced,
   type EditorPlugin,
   type Context,
-} from '@infinitecanvas/editor'
-import { generateKeyBetween } from 'fractional-indexing-jittered'
+} from "@infinitecanvas/editor";
+import { generateKeyBetween } from "fractional-indexing-jittered";
 
 // Define the Rect component schema
 export const Rect = defineEditorComponent(
-  'rect',
+  "rect",
   {
     color: field.uint32().default(0x4a90d9ff),
   },
-  { sync: 'document' }
-)
+  { sync: "document" }
+);
 
 // Define the block def for rect blocks
 export const RectBlockDef = {
-  tag: 'rect',
+  tag: "rect",
   components: [Rect],
-}
+};
 
 // Plugin that registers the Rect component and block def
 export const RectPlugin: EditorPlugin = {
-  name: 'rect',
+  name: "rect",
   components: [Rect],
   blockDefs: {
     rect: RectBlockDef,
   },
-}
+};
 
 // Helper to create rect blocks
 export function createRectBlock(
@@ -101,18 +104,18 @@ export function createRectBlock(
   height: number,
   color: number = 0x4a90d9ff
 ): number {
-  const entityId = createEntity(ctx)
+  const entityId = createEntity(ctx);
 
-  addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() })
+  addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() });
   addComponent(ctx, entityId, Block, {
-    tag: 'rect',
+    tag: "rect",
     position: [x, y],
     size: [width, height],
     rank: generateKeyBetween(null, null),
-  })
-  addComponent(ctx, entityId, Rect, { color })
+  });
+  addComponent(ctx, entityId, Rect, { color });
 
-  return entityId
+  return entityId;
 }
 ```
 
@@ -121,7 +124,7 @@ export function createRectBlock(
 **File: `packages/vue/src/components/InfiniteCanvas.vue`**
 
 ```ts
-import { shallowRef } from "vue"
+import { shallowRef } from "vue";
 import {
   Editor,
   Camera,
@@ -129,29 +132,31 @@ import {
   hasComponent,
   Block,
   type EntityId,
-} from "@infinitecanvas/editor"
+} from "@infinitecanvas/editor";
 
-const blockQuery = defineQuery((q) => q.with(Block))
+const blockQuery = defineQuery((q) => q.with(Block));
 
 const props = defineProps<{
-  editor: Editor
-}>()
+  editor: Editor;
+}>();
 
-const blocksRef = shallowRef<Array<{ _key: EntityId; [key: string]: unknown }>>([])
-const cameraRef = shallowRef({ left: 0, top: 0, zoom: 1 })
+const blocksRef = shallowRef<Array<{ _key: EntityId; [key: string]: unknown }>>(
+  []
+);
+const cameraRef = shallowRef({ left: 0, top: 0, zoom: 1 });
 
 function updateBlocks() {
-  const ctx = props.editor._getContext()
-  const blockDefs = props.editor.blockDefs
-  const blocks: Array<{ _key: EntityId; [key: string]: unknown }> = []
+  const ctx = props.editor._getContext();
+  const blockDefs = props.editor.blockDefs;
+  const blocks: Array<{ _key: EntityId; [key: string]: unknown }> = [];
 
   for (const entityId of blockQuery.current(ctx)) {
-    const blockData = Block.read(ctx, entityId)
-    const blockDef = blockDefs[blockData.tag]
+    const blockData = Block.read(ctx, entityId);
+    const blockDef = blockDefs[blockData.tag];
 
     // Build slot props starting with Block data
     const slotProps: Record<string, unknown> = {
-      _key: entityId,  // Internal key for v-for, not exposed to user
+      _key: entityId, // Internal key for v-for, not exposed to user
       block: {
         tag: blockData.tag,
         position: [...blockData.position] as [number, number],
@@ -159,30 +164,30 @@ function updateBlocks() {
         rotateZ: blockData.rotateZ,
         rank: blockData.rank,
       },
-    }
+    };
 
     // Add each BlockDef component's data
     if (blockDef?.components) {
       for (const componentDef of blockDef.components) {
         if (hasComponent(ctx, entityId, componentDef)) {
           // Key by component name (lowercase)
-          const key = componentDef.name.toLowerCase()
-          slotProps[key] = componentDef.snapshot(ctx, entityId)
+          const key = componentDef.name.toLowerCase();
+          slotProps[key] = componentDef.snapshot(ctx, entityId);
         }
       }
     }
 
-    blocks.push(slotProps as { _key: EntityId; [key: string]: unknown })
+    blocks.push(slotProps as { _key: EntityId; [key: string]: unknown });
   }
 
   // Sort by rank for z-ordering
   blocks.sort((a, b) => {
-    const aRank = (a.block as { rank: string }).rank
-    const bRank = (b.block as { rank: string }).rank
-    return aRank > bRank ? 1 : -1
-  })
+    const aRank = (a.block as { rank: string }).rank;
+    const bRank = (b.block as { rank: string }).rank;
+    return aRank > bRank ? 1 : -1;
+  });
 
-  blocksRef.value = blocks
+  blocksRef.value = blocks;
 }
 ```
 
@@ -218,65 +223,63 @@ Template:
 
 ```vue
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue"
-import { Editor } from "@infinitecanvas/editor"
-import { Store } from "@infinitecanvas/store"
-import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls"
-import { InfiniteCanvasPlugin } from "@infinitecanvas/plugin-selection"
-import { InfiniteCanvas } from "@infinitecanvas/vue"
-import { RectPlugin, createRectBlock } from "./RectPlugin"
+import { ref, onMounted, onUnmounted } from "vue";
+import { Editor } from "@infinitecanvas/editor";
+import { Store } from "@infinitecanvas/store";
+import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
+import { SelectionPlugin } from "@infinitecanvas/plugin-selection";
+import { InfiniteCanvas } from "@infinitecanvas/vue";
+import { RectPlugin, createRectBlock } from "./RectPlugin";
 
-const containerRef = ref<HTMLDivElement | null>(null)
-const canvasRef = ref<{ tick: () => void } | null>(null)
-const editorRef = ref<Editor | null>(null)
-let store: Store | null = null
-let animationFrameId: number | null = null
+const containerRef = ref<HTMLDivElement | null>(null);
+const editorRef = shallowRef<Editor | null>(null);
+let store: Store | null = null;
+let animationFrameId: number | null = null;
 
 function uint32ToHex(color: number): string {
-  return '#' + color.toString(16).padStart(8, '0').slice(0, 6)
+  return "#" + color.toString(16).padStart(8, "0").slice(0, 6);
 }
 
 function loop() {
-  editorRef.value?.tick()
-  canvasRef.value?.tick()
-  animationFrameId = requestAnimationFrame(loop)
+  editorRef.value?.tick();
+  animationFrameId = requestAnimationFrame(loop);
 }
 
 onMounted(async () => {
-  if (!containerRef.value) return
+  if (!containerRef.value) return;
 
   store = new Store({
     documentId: "editor-vue-demo",
     useLocalPersistence: true,
-  })
+  });
 
   const editor = new Editor(containerRef.value, {
     store,
     plugins: [
       CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10 }),
-      InfiniteCanvasPlugin,
+      SelectionPlugin,
       RectPlugin,
     ],
-  })
+  });
 
-  await editor.initialize()
-  editorRef.value = editor
+  await editor.initialize();
+  editorRef.value = editor;
 
-  animationFrameId = requestAnimationFrame(loop)
-})
+  animationFrameId = requestAnimationFrame(loop);
+});
 
 onUnmounted(() => {
   if (animationFrameId !== null) {
-    cancelAnimationFrame(animationFrameId)
+    cancelAnimationFrame(animationFrameId);
   }
-  editorRef.value?.dispose()
-  store?.dispose()
-})
+  editorRef.value?.dispose();
+  store?.dispose();
+});
 
 function addRect() {
   editorRef.value?.nextTick((ctx) => {
-    createRectBlock(ctx, 100, 100, 200, 150, 0x4a90d9ff)
-  })
+    createRectBlock(ctx, 100, 100, 200, 150, 0x4a90d9ff);
+  });
 }
 </script>
 
@@ -304,11 +307,11 @@ function addRect() {
 
 ## File Changes Summary
 
-| File | Change |
-|------|--------|
-| `examples/editor-vue/src/RectPlugin.ts` | NEW - Rect component, BlockDef, plugin, createRectBlock helper |
-| `packages/vue/src/components/InfiniteCanvas.vue` | Update `updateBlocks()` to read BlockDef components dynamically |
-| `examples/editor-vue/src/App.vue` | Use RectPlugin, access `rect` in slot, add button to create rects |
+| File                                             | Change                                                            |
+| ------------------------------------------------ | ----------------------------------------------------------------- |
+| `examples/editor-vue/src/RectPlugin.ts`          | NEW - Rect component, BlockDef, plugin, createRectBlock helper    |
+| `packages/vue/src/components/InfiniteCanvas.vue` | Update `updateBlocks()` to read BlockDef components dynamically   |
+| `examples/editor-vue/src/App.vue`                | Use RectPlugin, access `rect` in slot, add button to create rects |
 
 ## Notes
 

@@ -299,7 +299,7 @@ export function createBlock(
 }
 
 /**
- * RendererPlugin - Renders blocks from the InfiniteCanvasPlugin.
+ * RendererPlugin - Renders blocks from the SelectionPlugin.
  *
  * This plugin provides:
  * - Renderer system for drawing grid and blocks
@@ -315,7 +315,7 @@ export function createBlock(
  *
  * const editor = new Editor(container, {
  *   plugins: [
- *     InfiniteCanvasPlugin,
+ *     SelectionPlugin,
  *     RendererPlugin({ canvas, ctx2d }),
  *   ],
  * });

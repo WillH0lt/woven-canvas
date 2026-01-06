@@ -2,7 +2,7 @@ import type { Context, System } from "@infinitecanvas/ecs";
 
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
-import type { CursorDef, Keybind, BlockDef } from "./types";
+import type { CursorDef, Keybind, BlockDefInput } from "./types";
 
 /**
  * Editor plugin interface.
@@ -68,8 +68,8 @@ export interface EditorPlugin<TResources = unknown> {
   /** Keybindings provided by the plugin */
   keybinds?: Keybind[];
 
-  /** Block definitions provided by the plugin */
-  blockDefs?: Record<string, BlockDef>;
+  /** Block definitions provided by the plugin (keyed by tag) */
+  blockDefs?: BlockDefInput[];
 
   cursors?: Record<string, CursorDef>;
 
@@ -133,15 +133,6 @@ export interface EditorPlugin<TResources = unknown> {
 
   /** Systems that run after render phase */
   postRenderSystems?: System[];
-
-  /**
-   * Commands to register.
-   * Each command has a type string and an execute function.
-   */
-  commands?: Array<{
-    type: string;
-    execute: (ctx: Context, payload?: unknown) => void;
-  }>;
 
   /**
    * Called when the plugin is initialized.

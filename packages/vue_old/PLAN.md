@@ -36,7 +36,7 @@ import { InfiniteCanvas } from "@infinitecanvas/vue";
 @infinitecanvas/vue
 ├── Editor.ts              (existing - low-level editor wrapper)
 └── InfiniteCanvas.vue     (new - high-level canvas with block rendering)
-    ├── imports InfiniteCanvasPlugin from @infinitecanvas/plugin-selection
+    ├── imports SelectionPlugin from @infinitecanvas/plugin-selection
     ├── imports CanvasControlsPlugin from @infinitecanvas/plugin-canvas-controls
     ├── subscribes to Block query
     ├── renders blocks with camera transform
@@ -128,7 +128,7 @@ interface ArrowSlotProps {
 
 1. Add plugin dependencies to package.json
 2. Create InfiniteCanvas.vue component
-   - Mount Editor with InfiniteCanvasPlugin + CanvasControlsPlugin
+   - Mount Editor with SelectionPlugin + CanvasControlsPlugin
    - Subscribe to Block query for reactive updates
    - Subscribe to Camera for transform calculations
    - Render positioned block containers

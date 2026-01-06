@@ -1,14 +1,25 @@
 {
-  "name": "jet-ui",
+  "name": "@infinitecanvas/vue",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "main": "dist/jet-ui.cjs.js",
   "module": "dist/jet-ui.es.js",
-  "typings": "dist/types/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "@infinitecanvas/source": "./src/index.ts",
+      "import": {
+        "types": "./build/index.d.ts",
+        "default": "./build/index.js"
+      },
+      "require": {
+        "types": "./build/index.d.cts",
+        "default": "./build/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
   "style": "dist/style.css",
   "scripts": {
     "dev": "vite",
