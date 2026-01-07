@@ -5,7 +5,7 @@ import { Color } from "@infinitecanvas/editor";
 
 import { ENTITY_REFS_KEY } from "../../blockRefs";
 import MenuDropdown from "./MenuDropdown.vue";
-import ColorPicker from "./ColorPicker.vue";
+import ColorBubbles from "./ColorBubbles.vue";
 import ChevronDownIcon from "../../icons/ChevronDownIcon.vue";
 import { useComponents } from "../../composables/useComponents";
 import { rgbToHex } from "../../utils/color";
@@ -79,9 +79,10 @@ function handleColorChange(colorHex: string) {
     </template>
 
     <template #dropdown>
-      <ColorPicker
+      <ColorBubbles
         :currentColor="currentColorHex ?? undefined"
         :hideHighlight="hasMultipleColors"
+        :withPicker="true"
         @change="handleColorChange"
       />
     </template>

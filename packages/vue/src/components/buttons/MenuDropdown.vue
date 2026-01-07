@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, inject, watch, onUnmounted, type Ref } from "vue";
-import { useFloating, offset, flip, shift } from "@floating-ui/vue";
+import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
 import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
 
 const props = withDefaults(
@@ -40,6 +40,7 @@ const dropdownRef = ref<HTMLElement | null>(null);
 const { floatingStyles } = useFloating(buttonRef, dropdownRef, {
   placement: props.placement,
   middleware: [offset(props.offsetPx), flip(), shift({ padding: 8 })],
+  whileElementsMounted: autoUpdate,
 });
 
 function toggle() {
