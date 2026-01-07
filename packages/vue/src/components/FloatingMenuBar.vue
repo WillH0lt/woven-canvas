@@ -1,33 +1,30 @@
 <script setup lang="ts">
-import { computed, type Component } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
+import { computed, useSlots, inject } from "vue";
 
 import ColorButton from "./buttons/ColorButton.vue";
-import Divider from "./buttons/Divider.vue";
 import MenuTooltip from "./buttons/MenuTooltip.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
+import { FLOATING_MENU_KEY } from "../injection";
 
-const props = defineProps<{
-  selectedIds: EntityId[];
-  commonComponents: Set<string>;
-}>();
-
+const slots = useSlots();
 const { reset: resetTooltip } = useTooltipSingleton();
+const context = inject(FLOATING_MENU_KEY)!;
+const { selectedIds, commonComponents } = context;
 
-// Built-in button definitions, ordered by priority
-// Each entry maps a component name to its button
-const builtInButtons: Array<{
-  component: string;
-  order: number;
-  default: Component;
-}> = [{ component: "color", order: 10, default: ColorButton }];
+// Built-in component names (handled in template)
+const builtInComponentNames = new Set(["color"]);
 
-// Filter to only components present in selection, sorted by order
-const activeButtons = computed(() =>
-  builtInButtons
-    .filter((b) => props.commonComponents.has(b.component))
-    .sort((a, b) => a.order - b.order)
-);
+// Custom slots for components not covered by built-ins
+const customButtons = computed(() => {
+  const buttons: string[] = [];
+  for (const component of commonComponents.value) {
+    const slotName = `button:${component}`;
+    if (!builtInComponentNames.has(component) && slots[slotName]) {
+      buttons.push(component);
+    }
+  }
+  return buttons;
+});
 
 function handleMouseLeave() {
   resetTooltip();
@@ -36,14 +33,18 @@ function handleMouseLeave() {
 
 <template>
   <div class="ic-floating-menu-bar" @mouseleave="handleMouseLeave">
-    <template v-for="(button, index) in activeButtons" :key="button.component">
-      <Divider v-if="index > 0" />
-
-      <!-- Allow slot override, fall back to default component -->
-      <slot :name="button.component" :entityIds="selectedIds">
-        <component :is="button.default" :entityIds="selectedIds" />
-      </slot>
+    <!-- Custom buttons via slots -->
+    <template v-for="component in customButtons" :key="component">
+      <slot :name="`button:${component}`" :entityIds="selectedIds" />
     </template>
+
+    <!-- Built-in buttons with slot overrides -->
+    <slot name="button:color" :entityIds="selectedIds">
+      <ColorButton
+        v-if="commonComponents.has('color')"
+        :entityIds="selectedIds"
+      />
+    </slot>
 
     <!-- Singleton tooltip rendered once for all menu items -->
     <MenuTooltip />

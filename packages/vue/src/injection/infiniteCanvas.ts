@@ -1,8 +1,8 @@
 import { type InjectionKey } from "vue";
 import { type EntityId, type Editor } from "@infinitecanvas/editor";
 
-/** Interface for accessing editor and entity state from InfiniteCanvas */
-export interface EntityRefs {
+/** Context provided by InfiniteCanvas */
+export interface InfiniteCanvasContext {
   /** Check if an entity exists */
   hasEntity: (entityId: EntityId) => boolean;
   /** Get the editor instance */
@@ -22,5 +22,6 @@ export interface EntityRefs {
   registerTickCallback: (callback: () => void) => () => void;
 }
 
-/** Injection key for entity refs */
-export const ENTITY_REFS_KEY: InjectionKey<EntityRefs> = Symbol("entityRefs");
+/** Injection key for InfiniteCanvas context */
+export const INFINITE_CANVAS_KEY: InjectionKey<InfiniteCanvasContext> =
+  Symbol("infinite-canvas");

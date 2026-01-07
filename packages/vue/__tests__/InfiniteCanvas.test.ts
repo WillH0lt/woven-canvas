@@ -311,7 +311,7 @@ describe("InfiniteCanvas", () => {
   });
 
   describe("provide/inject", () => {
-    it("should provide entityRefs with getEntity and getEditor functions", async () => {
+    it("should provide canvas context with hasEntity and getEditor functions", async () => {
       // We test this indirectly by verifying the editor instance is created
       // and the component provides the expected interface
       const wrapper = mount(InfiniteCanvas);
@@ -320,19 +320,19 @@ describe("InfiniteCanvas", () => {
       const editorInstance = getLastEditorInstance();
       expect(editorInstance).toBeDefined();
 
-      // The entityRefs object is provided internally
+      // The canvas context is provided internally
       // We verify it exists by checking the editor was created correctly
       expect(editorInstance.container).toBeInstanceOf(HTMLElement);
     });
 
-    it("should expose editor through getEditor in provided entityRefs", async () => {
+    it("should expose editor through getEditor in provided canvas context", async () => {
       // Test by mounting and verifying editor is accessible
       const wrapper = mount(InfiniteCanvas);
       await flushPromises();
 
       const editorInstance = getLastEditorInstance();
 
-      // The provided entityRefs.getEditor() returns the editor
+      // The provided canvasContext.getEditor() returns the editor
       // We verify the editor was created and initialized
       expect(editorInstance.initialize).toHaveBeenCalled();
     });

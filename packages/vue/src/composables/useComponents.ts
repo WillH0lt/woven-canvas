@@ -13,7 +13,7 @@ import {
   type InferComponentType,
   type AnyEditorComponentDef,
 } from "@infinitecanvas/editor";
-import { ENTITY_REFS_KEY } from "../blockRefs";
+import { INFINITE_CANVAS_KEY } from "../injection";
 
 /** Component def with name and schema for type inference */
 type ComponentDefWithSchema = AnyEditorComponentDef & {
@@ -48,8 +48,8 @@ export function useComponents<T extends ComponentDefWithSchema>(
   entityIds: MaybeRefOrGetter<EntityId[]>,
   componentDef: T
 ): ShallowRef<Map<EntityId, Readonly<InferComponentType<T["schema"]>> | null>> {
-  const entityRefs = inject(ENTITY_REFS_KEY);
-  if (!entityRefs) {
+  const canvasContext = inject(INFINITE_CANVAS_KEY);
+  if (!canvasContext) {
     throw new Error(
       "useComponents must be used within an InfiniteCanvas component"
     );
@@ -66,7 +66,7 @@ export function useComponents<T extends ComponentDefWithSchema>(
     if (subscriptions.has(entityId)) return;
 
     // Try to eagerly read the initial value
-    const editor = entityRefs!.getEditor();
+    const editor = canvasContext!.getEditor();
     if (editor) {
       const ctx = editor._getContext();
       if (hasComponent(ctx, entityId, componentDef)) {
@@ -81,7 +81,7 @@ export function useComponents<T extends ComponentDefWithSchema>(
     }
 
     // Subscribe to component changes
-    const unsubscribe = entityRefs!.subscribeComponent(
+    const unsubscribe = canvasContext!.subscribeComponent(
       entityId,
       componentDef.name,
       (value) => {

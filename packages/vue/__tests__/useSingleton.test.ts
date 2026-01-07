@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { provide, createApp, h, defineComponent } from "vue";
 import { useSingleton } from "../src/composables/useSingleton";
-import { ENTITY_REFS_KEY, type EntityRefs } from "../src/blockRefs";
+import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../src/injection";
 import { defineEditorSingleton, field } from "@infinitecanvas/editor";
 
 describe("useSingleton", () => {
@@ -11,14 +11,14 @@ describe("useSingleton", () => {
     name: field.string().max(32).default(""),
   });
 
-  let mockEntityRefs: EntityRefs;
+  let mockCanvasContext: InfiniteCanvasContext;
   let mockSubscriptions: Map<string, Set<(value: unknown) => void>>;
 
   beforeEach(() => {
     mockSubscriptions = new Map();
 
     // Mock editor returns null so we skip the eager snapshot read
-    mockEntityRefs = {
+    mockCanvasContext = {
       hasEntity: () => false,
       getEditor: () => null,
       subscribeComponent: () => () => {},
@@ -52,7 +52,7 @@ describe("useSingleton", () => {
 
     const Provider = defineComponent({
       setup() {
-        provide(ENTITY_REFS_KEY, mockEntityRefs);
+        provide(INFINITE_CANVAS_KEY, mockCanvasContext);
         return () => h(Child);
       },
     });
@@ -161,7 +161,7 @@ describe("useSingleton", () => {
 
       const Provider = defineComponent({
         setup() {
-          provide(ENTITY_REFS_KEY, mockEntityRefs);
+          provide(INFINITE_CANVAS_KEY, mockCanvasContext);
           return () => h(Child);
         },
       });

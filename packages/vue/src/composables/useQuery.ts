@@ -11,7 +11,7 @@ import {
   type InferComponentType,
   type AnyEditorComponentDef,
 } from "@infinitecanvas/editor";
-import { ENTITY_REFS_KEY } from "../blockRefs";
+import { INFINITE_CANVAS_KEY } from "../injection";
 
 /** Component def with name and schema for type inference */
 type ComponentDefWithSchema = AnyEditorComponentDef & {
@@ -61,8 +61,8 @@ export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
 export function useQuery<T extends readonly ComponentDefWithSchema[]>(
   components: T
 ): Ref<QueryResultItem<T>[]> {
-  const entityRefs = inject(ENTITY_REFS_KEY);
-  if (!entityRefs) {
+  const canvasContext = inject(INFINITE_CANVAS_KEY);
+  if (!canvasContext) {
     throw new Error("useQuery must be used within an InfiniteCanvas component");
   }
 
@@ -90,7 +90,7 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(
     refs: Record<string, ShallowRef<unknown>>;
     unsubscribes: (() => void)[];
   } {
-    const editor = entityRefs!.getEditor();
+    const editor = canvasContext!.getEditor();
     if (!editor) {
       return { refs: {}, unsubscribes: [] };
     }
@@ -105,7 +105,7 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(
       refs[componentDef.name] = componentRef;
 
       // Subscribe to changes
-      const unsubscribe = entityRefs!.subscribeComponent(
+      const unsubscribe = canvasContext!.subscribeComponent(
         entityId,
         componentDef.name,
         (value) => {
@@ -145,7 +145,7 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(
 
   // Called on each tick by InfiniteCanvas
   function onTick() {
-    const editor = entityRefs!.getEditor();
+    const editor = canvasContext!.getEditor();
     if (!editor) return;
 
     const ctx = editor._getContext();
@@ -188,7 +188,7 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(
   }
 
   // Register tick callback with InfiniteCanvas
-  const unregisterTick = entityRefs.registerTickCallback(onTick);
+  const unregisterTick = canvasContext.registerTickCallback(onTick);
 
   // Cleanup on unmount
   onUnmounted(() => {

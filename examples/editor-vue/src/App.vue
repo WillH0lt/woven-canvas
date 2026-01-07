@@ -11,10 +11,11 @@ import {
   type Context,
 } from "@infinitecanvas/editor";
 import { Store } from "@infinitecanvas/store";
-import { InfiniteCanvas } from "@infinitecanvas/vue";
+import { InfiniteCanvas, FloatingMenuBar } from "@infinitecanvas/vue";
 
 import { Shape } from "./Shape";
 import ShapeBlock from "./components/Shape.vue";
+import BorderButton from "./components/BorderButton.vue";
 
 // Helper to create shape blocks
 function createShapeBlock(
@@ -33,7 +34,12 @@ function createShapeBlock(
     position: [x, y],
     size: [width, height],
   });
-  addComponent(ctx, entityId, Shape, { color });
+  addComponent(ctx, entityId, Shape, { border: 5 });
+  addComponent(ctx, entityId, Color, {
+    red: (color >> 24) & 0xff,
+    green: (color >> 16) & 0xff,
+    blue: (color >> 8) & 0xff,
+  });
 
   return entityId;
 }
@@ -99,10 +105,18 @@ function addStickyNote() {
       :store="store"
       :controls="{ minZoom: 0.1, maxZoom: 10 }"
       :customComponents="[Shape]"
-      :customBlockDefs="[{ tag: 'shape', components: [Shape] }]"
+      :customBlockDefs="[{ tag: 'shape', components: [Shape, Color] }]"
     >
-      <template #shape="{ entityId }">
+      <template #block:shape="{ entityId }">
         <ShapeBlock class="shape-block" :entityId="entityId" />
+      </template>
+
+      <template #floating-menu>
+        <FloatingMenuBar>
+          <template #button:shape="{ entityIds }">
+            <BorderButton :entityIds="entityIds" />
+          </template>
+        </FloatingMenuBar>
       </template>
     </InfiniteCanvas>
   </div>

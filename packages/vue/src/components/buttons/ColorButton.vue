@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed, inject } from "vue";
+import { computed } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
 import { Color } from "@infinitecanvas/editor";
 
-import { ENTITY_REFS_KEY } from "../../blockRefs";
 import MenuDropdown from "./MenuDropdown.vue";
 import ColorBubbles from "./ColorBubbles.vue";
 import ChevronDownIcon from "../../icons/ChevronDownIcon.vue";
 import { useComponents } from "../../composables/useComponents";
+import { useEditorContext } from "../../composables/useEditorContext";
 import { rgbToHex } from "../../utils/color";
 
 const props = defineProps<{
   entityIds: EntityId[];
 }>();
 
-const entityRefs = inject(ENTITY_REFS_KEY);
+const { nextEditorTick } = useEditorContext();
 
 // Use useComponents at setup level (not inside computed)
 const colorsMap = useComponents(() => props.entityIds, Color);
@@ -57,11 +57,7 @@ const swatchStyle = computed(() => {
 });
 
 function handleColorChange(colorHex: string) {
-  const editor = entityRefs?.getEditor();
-  if (!editor) return;
-
-  // Apply color to all selected entities
-  editor.nextTick((ctx) => {
+  nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       Color.fromHex(ctx, entityId, colorHex);
     }

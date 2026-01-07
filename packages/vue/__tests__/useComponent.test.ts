@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { provide, createApp, h, defineComponent } from "vue";
 import { useComponent } from "../src/composables/useComponent";
-import { ENTITY_REFS_KEY, type EntityRefs } from "../src/blockRefs";
+import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../src/injection";
 import { defineEditorComponent, field } from "@infinitecanvas/editor";
 
 describe("useComponent", () => {
@@ -10,7 +10,7 @@ describe("useComponent", () => {
     value: field.int32(),
   });
 
-  let mockEntityRefs: EntityRefs;
+  let mockCanvasContext: InfiniteCanvasContext;
   let mockSubscriptions: Map<number, Map<string, Set<(value: unknown) => void>>>;
   let mockEntities: Set<number>;
 
@@ -20,7 +20,7 @@ describe("useComponent", () => {
 
     // Mock editor returns null so we skip the eager hasComponent check
     // The initial value comes from subscriptions in our tests
-    mockEntityRefs = {
+    mockCanvasContext = {
       hasEntity: (entityId) => mockEntities.has(entityId),
       getEditor: () => null, // No editor = skip eager read
       subscribeComponent: (entityId, componentName, callback) => {
@@ -62,7 +62,7 @@ describe("useComponent", () => {
     // Create a parent component that provides the context
     const Provider = defineComponent({
       setup() {
-        provide(ENTITY_REFS_KEY, mockEntityRefs);
+        provide(INFINITE_CANVAS_KEY, mockCanvasContext);
         return () => h(Child);
       },
     });
@@ -82,7 +82,7 @@ describe("useComponent", () => {
 
   describe("error handling", () => {
     it("should throw error when used outside InfiniteCanvas", () => {
-      // Run without providing entityRefs
+      // Run without providing canvas context
       expect(() => {
         const app = createApp({
           setup() {
@@ -187,7 +187,7 @@ describe("useComponent", () => {
 
       const Provider = defineComponent({
         setup() {
-          provide(ENTITY_REFS_KEY, mockEntityRefs);
+          provide(INFINITE_CANVAS_KEY, mockCanvasContext);
           return () => h(Child);
         },
       });

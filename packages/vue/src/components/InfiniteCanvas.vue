@@ -33,7 +33,7 @@ import {
 } from "@infinitecanvas/editor";
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { SelectionPlugin } from "@infinitecanvas/plugin-selection";
-import { ENTITY_REFS_KEY, type EntityRefs } from "../blockRefs";
+import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../injection";
 import SelectionBox from "./SelectionBox.vue";
 import TransformBox from "./TransformBox.vue";
 import TransformHandle from "./TransformHandle.vue";
@@ -134,16 +134,12 @@ const emit = defineEmits<{
   ready: [editor: Editor];
 }>();
 
-// Define slots - block slots receive entityId/selected/hovered,
-// floating-menu slot receives selectedIds/commonComponents
+// Define slots - block slots use "block:<tag>" naming, floating-menu slot has no props
 defineSlots<
   {
-    "floating-menu"?: (props: {
-      selectedIds: EntityId[];
-      commonComponents: Set<string>;
-    }) => any;
+    "floating-menu"?: () => any;
   } & {
-    [slotName: string]: (props: { entityId: EntityId }) => any;
+    [slotName: `block:${string}`]: (props: { entityId: EntityId }) => any;
   }
 >();
 
@@ -279,15 +275,15 @@ function registerTickCallback(callback: () => void): () => void {
   };
 }
 
-// Provide refs to composables
-const entityRefs: EntityRefs = {
+// Provide context to composables
+const canvasContext: InfiniteCanvasContext = {
   hasEntity: (entityId: EntityId) => entities.has(entityId),
   getEditor: () => editorRef.value,
   subscribeComponent,
   subscribeSingleton,
   registerTickCallback,
 };
-provide(ENTITY_REFS_KEY, entityRefs);
+provide(INFINITE_CANVAS_KEY, canvasContext);
 
 // Provide container ref for FloatingMenu positioning
 provide("containerRef", containerRef);
@@ -586,7 +582,7 @@ function getBlockStyle(data: BlockData) {
       :data-hovered="itemRef.value.hovered || undefined"
       class="ic-block"
     >
-      <slot :name="itemRef.value.block.tag" :entityId="itemRef.value.entityId">
+      <slot :name="`block:${itemRef.value.block.tag}`" :entityId="itemRef.value.entityId">
         <!-- Default components for selection UI -->
         <SelectionBox v-if="itemRef.value.block.tag === 'selection-box'" />
         <TransformBox v-else-if="itemRef.value.block.tag === 'transform-box'" />

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { EntityId } from "@infinitecanvas/editor";
+import { type EntityId, Color } from "@infinitecanvas/editor";
 import { useComponent } from "@infinitecanvas/vue";
+
 import { Shape } from "../Shape";
 
 const props = defineProps<{
@@ -8,20 +9,19 @@ const props = defineProps<{
 }>();
 
 const shape = useComponent(props.entityId, Shape);
-
-function uint32ToHex(color: number): string {
-  return "#" + color.toString(16).padStart(8, "0").slice(0, 6);
-}
+const color = useComponent(props.entityId, Color);
 </script>
 
 <template>
   <div
-    v-if="shape"
+    v-if="color && shape"
     :style="{
       width: '100%',
       height: '100%',
-      background: uint32ToHex(shape.color),
+      boxSizing: 'border-box',
+      border: shape.border + 'px solid black',
       borderRadius: '4px',
+      backgroundColor: `rgb(${color.red}, ${color.green}, ${color.blue})`,
     }"
   ></div>
 </template>

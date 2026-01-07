@@ -1,27 +1,32 @@
 <script setup lang="ts">
-import { computed, ref, inject } from "vue";
+import { computed, ref, inject, provide } from "vue";
 import { useFloating, offset, flip, shift } from "@floating-ui/vue";
 import {
   Block,
   Selected,
   Camera,
   Screen,
+  Opacity,
   getResources,
   type EntityId,
   type EditorResources,
 } from "@infinitecanvas/editor";
+import { TransformBox } from "@infinitecanvas/plugin-selection";
 import { Aabb, Rect } from "@infinitecanvas/math";
 import { useQuery } from "../composables/useQuery";
 import { useSingleton } from "../composables/useSingleton";
-import { ENTITY_REFS_KEY } from "../blockRefs";
+import { INFINITE_CANVAS_KEY, FLOATING_MENU_KEY } from "../injection";
 import { computeCommonComponents } from "../utils/computeCommonComponents";
 import FloatingMenuBar from "./FloatingMenuBar.vue";
 
 // Get editor from context
-const entityRefs = inject(ENTITY_REFS_KEY);
+const canvasContext = inject(INFINITE_CANVAS_KEY);
 
 // Query all selected blocks
 const selectedItems = useQuery([Block, Selected] as const);
+
+// Query transform box with opacity (hidden when opacity exists and is 0)
+const transformBoxWithOpacity = useQuery([TransformBox, Opacity] as const);
 
 // Get camera and screen for coordinate transforms
 const camera = useSingleton(Camera);
@@ -29,7 +34,7 @@ const screen = useSingleton(Screen);
 
 // Get userId from editor
 const userId = computed(() => {
-  const editor = entityRefs?.getEditor();
+  const editor = canvasContext?.getEditor();
   if (!editor) return "";
 
   const { sessionId } = getResources<EditorResources>(editor._getContext());
@@ -53,7 +58,7 @@ const selectedIds = computed<EntityId[]>(() =>
 
 // Compute common components across selection
 const commonComponents = computed(() => {
-  const editor = entityRefs?.getEditor();
+  const editor = canvasContext?.getEditor();
   if (!editor || mySelectedItems.value.length === 0) return new Set<string>();
 
   const blocks = mySelectedItems.value.map((item) => ({
@@ -61,6 +66,9 @@ const commonComponents = computed(() => {
   }));
   return computeCommonComponents(editor, blocks);
 });
+
+// Provide context for child components
+provide(FLOATING_MENU_KEY, { selectedIds, commonComponents });
 
 // Pre-allocated array for calculations
 const _aabb: Aabb = [0, 0, 0, 0];
@@ -149,9 +157,19 @@ const isOffScreen = computed(() => {
   );
 });
 
+// Check if transform box is hidden (has opacity 0)
+const isTransformBoxHidden = computed(() => {
+  for (const item of transformBoxWithOpacity.value) {
+    if (item.opacity.value.value === 0) {
+      return true;
+    }
+  }
+  return false;
+});
+
 // Should the menu be visible?
 const shouldShow = computed(
-  () => mySelectedItems.value.length > 0 && !isOffScreen.value
+  () => mySelectedItems.value.length > 0 && !isOffScreen.value && !isTransformBoxHidden.value
 );
 </script>
 
@@ -164,11 +182,8 @@ const shouldShow = computed(
       :style="floatingStyles"
     >
       <div class="ic-floating-menu-inner">
-        <slot :selectedIds="selectedIds" :commonComponents="commonComponents">
-          <FloatingMenuBar
-            :selectedIds="selectedIds"
-            :commonComponents="commonComponents"
-          />
+        <slot>
+          <FloatingMenuBar />
         </slot>
       </div>
     </div>
@@ -186,18 +201,15 @@ const shouldShow = computed(
   transition: transform 0.15s ease-out;
 }
 
-.ic-fade-enter-active,
-.ic-fade-leave-active {
+.ic-fade-enter-active {
   transition: opacity 0.15s ease-out;
 }
 
-.ic-fade-enter-from,
-.ic-fade-leave-to {
+.ic-fade-enter-from {
   opacity: 0;
 }
 
-.ic-fade-enter-from .ic-floating-menu-inner,
-.ic-fade-leave-to .ic-floating-menu-inner {
+.ic-fade-enter-from .ic-floating-menu-inner {
   transform: translateY(10px);
 }
 </style>
