@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
 
-defineProps<{
+const props = defineProps<{
   title?: string;
   disabled?: boolean;
 }>();
@@ -11,9 +12,20 @@ const emit = defineEmits<{
 }>();
 
 const buttonRef = ref<HTMLButtonElement | null>(null);
+const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
 
 function handleClick(event: MouseEvent) {
   emit("click", event);
+}
+
+function handleMouseEnter() {
+  if (props.title && buttonRef.value) {
+    showTooltip(props.title, buttonRef.value);
+  }
+}
+
+function handleMouseLeave() {
+  hideTooltip();
 }
 
 defineExpose({ buttonRef });
@@ -23,9 +35,10 @@ defineExpose({ buttonRef });
   <button
     ref="buttonRef"
     class="ic-menu-button"
-    :title="title"
     :disabled="disabled"
     @click="handleClick"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
   >
     <slot />
   </button>

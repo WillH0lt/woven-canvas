@@ -1,0 +1,91 @@
+import { ref, readonly, type Ref } from "vue";
+
+export interface TooltipState {
+  /** The text to display */
+  text: string;
+  /** The element to anchor the tooltip to */
+  anchor: HTMLElement;
+}
+
+// Singleton state shared across all tooltip users
+const activeTooltip = ref<TooltipState | null>(null);
+const isVisible = ref(false);
+const isWarmedUp = ref(false);
+
+// Timing configuration
+const HOVER_DELAY = 500; // ms before tooltip shows on first hover
+const WARMUP_DURATION = 1500; // ms the tooltip stays "warm" after leaving
+
+let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+let warmupTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearTimers() {
+  if (hoverTimer) {
+    clearTimeout(hoverTimer);
+    hoverTimer = null;
+  }
+  if (warmupTimer) {
+    clearTimeout(warmupTimer);
+    warmupTimer = null;
+  }
+}
+
+/**
+ * Shows a tooltip for the given element after the hover delay.
+ * If already warmed up, shows immediately.
+ */
+function show(text: string, anchor: HTMLElement) {
+  clearTimers();
+
+  activeTooltip.value = { text, anchor };
+
+  if (isWarmedUp.value) {
+    // Already warmed up, show immediately
+    isVisible.value = true;
+  } else {
+    // Start hover timer
+    hoverTimer = setTimeout(() => {
+      isVisible.value = true;
+      isWarmedUp.value = true;
+      hoverTimer = null;
+    }, HOVER_DELAY);
+  }
+}
+
+/**
+ * Hides the tooltip and starts the warmup cooldown timer.
+ */
+function hide() {
+  clearTimers();
+  isVisible.value = false;
+  activeTooltip.value = null;
+
+  // Start warmup cooldown timer
+  if (isWarmedUp.value) {
+    warmupTimer = setTimeout(() => {
+      isWarmedUp.value = false;
+      warmupTimer = null;
+    }, WARMUP_DURATION);
+  }
+}
+
+/**
+ * Immediately resets all tooltip state (useful when menu bar loses focus entirely).
+ */
+function reset() {
+  clearTimers();
+  isVisible.value = false;
+  activeTooltip.value = null;
+  isWarmedUp.value = false;
+}
+
+export function useTooltipSingleton() {
+  return {
+    activeTooltip: readonly(activeTooltip) as Readonly<Ref<TooltipState | null>>,
+    isVisible: readonly(isVisible),
+    isWarmedUp: readonly(isWarmedUp),
+    show,
+    hide,
+    reset,
+  };
+}

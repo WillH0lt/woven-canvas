@@ -4,11 +4,15 @@ import type { EntityId } from "@infinitecanvas/editor";
 
 import ColorButton from "./buttons/ColorButton.vue";
 import Divider from "./buttons/Divider.vue";
+import MenuTooltip from "./buttons/MenuTooltip.vue";
+import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 
 const props = defineProps<{
   selectedIds: EntityId[];
   commonComponents: Set<string>;
 }>();
+
+const { reset: resetTooltip } = useTooltipSingleton();
 
 // Built-in button definitions, ordered by priority
 // Each entry maps a component name to its button
@@ -24,10 +28,14 @@ const activeButtons = computed(() =>
     .filter((b) => props.commonComponents.has(b.component))
     .sort((a, b) => a.order - b.order)
 );
+
+function handleMouseLeave() {
+  resetTooltip();
+}
 </script>
 
 <template>
-  <div class="ic-floating-menu-bar">
+  <div class="ic-floating-menu-bar" @mouseleave="handleMouseLeave">
     <template v-for="(button, index) in activeButtons" :key="button.component">
       <Divider v-if="index > 0" />
 
@@ -36,6 +44,9 @@ const activeButtons = computed(() =>
         <component :is="button.default" :entityIds="selectedIds" />
       </slot>
     </template>
+
+    <!-- Singleton tooltip rendered once for all menu items -->
+    <MenuTooltip />
   </div>
 </template>
 

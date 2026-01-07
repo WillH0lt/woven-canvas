@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, inject, type Ref, watch, onUnmounted } from "vue";
-import { useFloating, offset, flip, shift } from "@floating-ui/vue";
+import { computed, inject } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
 import { Color } from "@infinitecanvas/editor";
 
 import { ENTITY_REFS_KEY } from "../../blockRefs";
-import MenuButton from "./MenuButton.vue";
+import MenuDropdown from "./MenuDropdown.vue";
 import ColorPicker from "./ColorPicker.vue";
 import ChevronDownIcon from "../../icons/ChevronDownIcon.vue";
 import { useComponents } from "../../composables/useComponents";
@@ -16,7 +15,6 @@ const props = defineProps<{
 }>();
 
 const entityRefs = inject(ENTITY_REFS_KEY);
-const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
 
 // Use useComponents at setup level (not inside computed)
 const colorsMap = useComponents(() => props.entityIds, Color);
@@ -58,29 +56,6 @@ const swatchStyle = computed(() => {
   return { backgroundColor: selectedColors.value[0] };
 });
 
-// Dropdown state
-const isOpen = ref(false);
-const buttonRef = ref<InstanceType<typeof MenuButton> | null>(null);
-const pickerRef = ref<HTMLElement | null>(null);
-
-// Use floating-ui for dropdown positioning
-const { floatingStyles } = useFloating(
-  computed(() => buttonRef.value?.buttonRef ?? null),
-  pickerRef,
-  {
-    placement: "top",
-    middleware: [offset(8), flip(), shift({ padding: 8 })],
-  }
-);
-
-function togglePicker() {
-  isOpen.value = !isOpen.value;
-}
-
-function closePicker() {
-  isOpen.value = false;
-}
-
 function handleColorChange(colorHex: string) {
   const editor = entityRefs?.getEditor();
   if (!editor) return;
@@ -92,60 +67,25 @@ function handleColorChange(colorHex: string) {
     }
   });
 }
-
-// Close picker when clicking outside
-function handleClickOutside(event: MouseEvent) {
-  const target = event.target as Node;
-  const button = buttonRef.value?.buttonRef;
-  const picker = pickerRef.value;
-
-  if (
-    button &&
-    !button.contains(target) &&
-    picker &&
-    !picker.contains(target)
-  ) {
-    closePicker();
-  }
-}
-
-watch(isOpen, (open) => {
-  if (open) {
-    document.addEventListener("click", handleClickOutside, true);
-  } else {
-    document.removeEventListener("click", handleClickOutside, true);
-  }
-});
-
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside, true);
-});
 </script>
 
 <template>
-  <MenuButton ref="buttonRef" title="Color" @click="togglePicker">
-    <div class="ic-color-button">
-      <div class="ic-color-swatch" :style="swatchStyle" />
-      <ChevronDownIcon class="ic-chevron-down" />
-    </div>
-  </MenuButton>
-
-  <Teleport v-if="containerRef" :to="containerRef">
-    <Transition name="ic-fade">
-      <div
-        v-if="isOpen"
-        ref="pickerRef"
-        class="ic-color-picker-dropdown"
-        :style="floatingStyles"
-      >
-        <ColorPicker
-          :currentColor="currentColorHex ?? undefined"
-          :hideHighlight="hasMultipleColors"
-          @change="handleColorChange"
-        />
+  <MenuDropdown title="Color">
+    <template #button>
+      <div class="ic-color-button">
+        <div class="ic-color-swatch" :style="swatchStyle" />
+        <ChevronDownIcon class="ic-chevron-down" />
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+
+    <template #dropdown>
+      <ColorPicker
+        :currentColor="currentColorHex ?? undefined"
+        :hideHighlight="hasMultipleColors"
+        @change="handleColorChange"
+      />
+    </template>
+  </MenuDropdown>
 </template>
 
 <style>
@@ -156,7 +96,7 @@ onUnmounted(() => {
   justify-content: center;
   height: 100%;
   gap: 8px;
-  margin: 0 4px;
+  margin: 0 8px;
 }
 
 .ic-color-swatch {
@@ -172,20 +112,5 @@ onUnmounted(() => {
   width: 4px;
   margin-bottom: 2px;
   color: var(--ic-gray-300);
-}
-
-.ic-color-picker-dropdown {
-  position: absolute;
-  z-index: 10001;
-}
-
-.ic-fade-enter-active,
-.ic-fade-leave-active {
-  transition: opacity 0.15s ease-out;
-}
-
-.ic-fade-enter-from,
-.ic-fade-leave-to {
-  opacity: 0;
 }
 </style>
