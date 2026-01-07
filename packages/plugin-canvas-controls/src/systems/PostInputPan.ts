@@ -1,5 +1,5 @@
 import {
-  defineSystem,
+  defineEditorSystem,
   Camera,
   Controls,
   Key,
@@ -222,9 +222,12 @@ const panMachine = setup({
  * - Panning: Dragging to pan the canvas
  * - Gliding: Smooth deceleration after releasing a pan with velocity
  *
+ * Runs late in the input phase (priority: -100) to process input after
+ * core input systems have updated singletons.
+ *
  * Active when: A button mapped to the "hand" tool is held and dragged.
  */
-export const PostInputPan = defineSystem((ctx) => {
+export const PostInputPan = defineEditorSystem({ phase: "input", priority: -100 }, (ctx) => {
   const currentState = PanState.read(ctx).state;
 
   // Get pointer events for buttons mapped to the "hand" tool

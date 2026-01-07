@@ -3,11 +3,11 @@ import {
   removeEntity,
   addComponent,
   getResources,
-  defineSystem,
   type Context,
 } from "@infinitecanvas/ecs";
 import type { Vec2 } from "@infinitecanvas/math";
 
+import { defineEditorSystem } from "../../EditorSystem";
 import type { EditorResources } from "../../types";
 import { Pointer, addPointerSample } from "../../components/Pointer";
 import { Screen } from "../../singletons/Screen";
@@ -164,7 +164,7 @@ export function detachPointerListeners(domElement: HTMLElement): void {
  * Creates a Pointer entity on pointerdown and deletes it on pointerup.
  * This allows multiple simultaneous pointers (for touch).
  */
-export const pointerSystem = defineSystem((ctx: Context) => {
+export const pointerSystem = defineEditorSystem({ phase: "input" }, (ctx: Context) => {
   const resources = getResources<EditorResources>(ctx);
   const { domElement } = resources;
   const state = instanceState.get(domElement);

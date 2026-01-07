@@ -18,6 +18,7 @@
         "default": "./build/index.cjs"
       }
     },
+    "./theme.css": "./src/theme.css",
     "./package.json": "./package.json"
   },
   "style": "dist/style.css",
@@ -25,7 +26,9 @@
     "dev": "vite",
     "build": "vite build && vue-tsc --declaration --emitDeclarationOnly",
     "preview": "vite preview",
-    "tsc": "vue-tsc --noEmit"
+    "tsc": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@infinitecanvas/editor": "workspace:^",
@@ -35,8 +38,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
+    "@vue/test-utils": "^2.4.6",
     "typescript": "^5.9.3",
     "vite": "^5.4.21",
+    "vitest": "^4.0.7",
     "vue-tsc": "^2.2.12"
   }
 }

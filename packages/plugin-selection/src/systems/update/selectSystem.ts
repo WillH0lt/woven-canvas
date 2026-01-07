@@ -1,5 +1,5 @@
 import {
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   createEntity,
   removeEntity,
@@ -42,18 +42,17 @@ const SELECTION_BOX_RANK = "z";
  * - UpdateSelectionBox: Updates bounds and selects intersecting blocks
  * - RemoveSelectionBox: Removes the selection box entity
  */
-export const selectSystem = defineSystem((ctx: Context) => {
+export const selectSystem = defineEditorSystem({ phase: "update" }, (ctx: Context) => {
   on(ctx, AddSelectionBox, (ctx) => {
     const entityId = createEntity(ctx);
     addComponent(ctx, entityId, Block, {
-      tag: "selectionBox",
+      tag: "selection-box",
       position: [0, 0],
       size: [0, 0],
       rotateZ: 0,
       rank: SELECTION_BOX_RANK,
     });
     addComponent(ctx, entityId, SelectionBox, {});
-    addComponent(ctx, entityId, Opacity, { value: 77 }); // ~30% opacity
   });
 
   on(ctx, UpdateSelectionBox, (ctx, { bounds, deselectOthers }) => {

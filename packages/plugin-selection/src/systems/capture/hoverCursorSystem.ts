@@ -1,6 +1,6 @@
 import {
   type Context,
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   Block,
   Hovered,
@@ -29,7 +29,7 @@ const transformBoxQuery = defineQuery((q) =>
  *
  * Priority: contextSvg (hover) > svg (tool) > default
  */
-export const hoverCursorSystem = defineSystem((ctx: Context) => {
+export const hoverCursorSystem = defineEditorSystem({ phase: "capture" }, (ctx: Context) => {
   const addedHandles = hoveredHandleQuery.added(ctx);
   const removedHandles = hoveredHandleQuery.removed(ctx);
   const currentHandles = hoveredHandleQuery.current(ctx);

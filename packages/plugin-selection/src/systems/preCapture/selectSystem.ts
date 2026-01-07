@@ -3,7 +3,7 @@ import { Vec2 as Vec2Ns } from "@infinitecanvas/math";
 import {
   type EntityId,
   type InferStateContext,
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   Controls,
   hasComponent,
@@ -412,22 +412,21 @@ const selectionMachine = setup({
 /**
  * Pre-capture selection system - runs the selection state machine.
  *
- * Handles pointer events for:
+ * Runs early in the capture phase (priority: 100) to handle pointer events for:
  * - Clicking to select blocks
  * - Dragging to move blocks
  * - Alt+drag to clone
  * - Shift+click to toggle selection
  * - Selection box (marquee) for multi-select
  */
-export const selectSystem = defineSystem((ctx) => {
+export const selectSystem = defineEditorSystem({ phase: "capture", priority: 100 }, (ctx) => {
   // Get pointer buttons mapped to 'select' tool
   const buttons = Controls.getButtons(ctx, "select");
 
   // Get pointer events with intersection data
   const events = getPointerInput(ctx, buttons);
+  
   if (events.length === 0) return;
-
-  // Run machine through events - SelectionStateSingleton.run() handles
-  // reading current state, running the machine, and writing back
+  
   SelectionStateSingleton.run(ctx, selectionMachine, events);
 });

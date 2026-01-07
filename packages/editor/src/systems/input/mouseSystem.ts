@@ -1,4 +1,5 @@
-import { getResources, type Context, defineSystem } from "@infinitecanvas/ecs";
+import { getResources, type Context } from "@infinitecanvas/ecs";
+import { defineEditorSystem } from "../../EditorSystem";
 import type { EditorResources } from "../../types";
 
 import { Mouse } from "../../singletons/Mouse";
@@ -103,7 +104,7 @@ export function detachMouseListeners(domElement: HTMLElement): void {
  * - Wheel deltas (normalized across browsers)
  * - Triggers for move, wheel, enter, leave events
  */
-export const mouseSystem = defineSystem((ctx: Context) => {
+export const mouseSystem = defineEditorSystem({ phase: "input" }, (ctx: Context) => {
   const resources = getResources<EditorResources>(ctx);
   const state = instanceState.get(resources.domElement);
   if (!state) return;

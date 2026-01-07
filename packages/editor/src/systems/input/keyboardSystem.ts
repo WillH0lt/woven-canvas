@@ -1,4 +1,5 @@
-import { getResources, type Context, defineSystem } from "@infinitecanvas/ecs";
+import { getResources, type Context } from "@infinitecanvas/ecs";
+import { defineEditorSystem } from "../../EditorSystem";
 import type { EditorResources } from "../../types";
 import { Keyboard, setBit, codeToIndex } from "../../singletons/Keyboard";
 
@@ -87,7 +88,7 @@ export function detachKeyboardListeners(domElement: HTMLElement): void {
  * - Sets bits in keysUpTrigger for released keys (1 frame)
  * - Updates modifier booleans (shiftDown, altDown, modDown)
  */
-export const keyboardSystem = defineSystem((ctx: Context) => {
+export const keyboardSystem = defineEditorSystem({ phase: "input" }, (ctx: Context) => {
   const resources = getResources<EditorResources>(ctx);
   const state = instanceState.get(resources.domElement);
   if (!state) return;

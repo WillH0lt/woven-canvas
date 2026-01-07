@@ -221,8 +221,11 @@ export class Store implements StoreAdapter {
         | undefined;
 
       if (!componentMap) {
-        componentMap = new LoroMap();
-        componentsMap.setContainer(componentDef.name, componentMap);
+        const newMap = new LoroMap();
+        componentsMap.setContainer(componentDef.name, newMap);
+        // After setContainer, we must get the attached map from the parent
+        // The local newMap reference is no longer connected to the document
+        componentMap = componentsMap.get(componentDef.name) as LoroMap;
       }
       componentMap.set(id, data);
     } else if (componentDef.__editor.sync === "ephemeral") {

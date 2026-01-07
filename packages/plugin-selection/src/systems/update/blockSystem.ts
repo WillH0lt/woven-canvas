@@ -1,5 +1,5 @@
 import {
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   createEntity,
   removeEntity,
@@ -59,7 +59,7 @@ const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced));
  * - SetCursor
  * - Cut, Copy, Paste
  */
-export const blockSystem = defineSystem((ctx: Context) => {
+export const blockSystem = defineEditorSystem({ phase: "update" }, (ctx: Context) => {
   on(ctx, DragBlock, (ctx, { entityId, position }) => {
     if (!hasComponent(ctx, entityId, Block)) return;
     const block = Block.write(ctx, entityId);

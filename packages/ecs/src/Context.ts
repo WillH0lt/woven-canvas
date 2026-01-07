@@ -129,8 +129,8 @@ export function addComponent<T extends ComponentSchema>(
   }
 
   ctx.entityBuffer.addComponentToEntity(entityId, component.componentId);
-  component.copy(entityId, data as any);
   ctx.eventBuffer.pushComponentAdded(entityId, component.componentId);
+  component.copy(entityId, data as any);
 }
 
 /**

@@ -1,9 +1,4 @@
-import {
-  getResources,
-  MainThreadSystem,
-  createEntity,
-  addComponent,
-} from "@infinitecanvas/ecs";
+import { getResources, createEntity, addComponent } from "@infinitecanvas/ecs";
 
 import type { EditorPlugin } from "./plugin";
 import type { EditorResources } from "./types";
@@ -21,27 +16,23 @@ import {
   detachScreenObserver,
   attachPointerListeners,
   detachPointerListeners,
+  frameSystem,
+  keyboardSystem,
+  mouseSystem,
+  screenSystem,
+  pointerSystem,
 } from "./systems/input";
+import { rankBoundsSystem } from "./systems/preInput";
+import { intersectSystem } from "./systems/preCapture";
+import { keybindSystem } from "./systems/capture";
+import { scaleWithZoomSystem } from "./systems/preRender";
+import { cursorSystem } from "./systems/postRender";
 
 import { Synced, User } from "./components";
 import * as components from "./components";
 import * as singletons from "./singletons";
-import * as input from "./systems/input";
-import * as preInput from "./systems/preInput";
-import * as preCapture from "./systems/preCapture";
-import * as preRender from "./systems/preRender";
-import * as capture from "./systems/capture";
-import * as postRender from "./systems/postRender";
 
 import { PLUGIN_NAME } from "./constants";
-
-function filterForMainThreadSystems(
-  systems: Record<string, unknown>
-): MainThreadSystem[] {
-  return Object.values(systems).filter(
-    (v): v is MainThreadSystem => v instanceof MainThreadSystem
-  );
-}
 
 /**
  * Core plugin - handles core input and camera functionality.
@@ -57,17 +48,23 @@ export const CorePlugin: EditorPlugin = {
     (v) => v instanceof EditorComponentDef
   ) as AnyEditorComponentDef[],
 
-  preInputSystems: filterForMainThreadSystems(preInput),
+  systems: [
+    // Input phase (priority order: 100 = early, 0 = default, -100 = late)
+    frameSystem, // priority: 100 - runs first
+    rankBoundsSystem, // priority: 100 - runs early
+    keyboardSystem, // priority: 0
+    mouseSystem, // priority: 0
+    screenSystem, // priority: 0
+    pointerSystem, // priority: 0
 
-  inputSystems: filterForMainThreadSystems(input),
+    // Capture phase
+    intersectSystem, // priority: 100 - runs early
+    keybindSystem, // priority: 0
 
-  preCaptureSystems: filterForMainThreadSystems(preCapture),
-
-  captureSystems: filterForMainThreadSystems(capture),
-
-  preRenderSystems: filterForMainThreadSystems(preRender),
-
-  postRenderSystems: filterForMainThreadSystems(postRender),
+    // Render phase
+    scaleWithZoomSystem, // priority: 100 - runs early
+    cursorSystem, // priority: -100 - runs late
+  ],
 
   setup(ctx) {
     const { domElement, sessionId, userId } =

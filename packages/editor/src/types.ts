@@ -7,7 +7,7 @@ import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 import type { Editor } from "./Editor";
 import type { EditorPluginInput } from "./plugin";
 import type { StoreAdapter } from "./store";
-import type { System } from "@infinitecanvas/ecs";
+import type { EditorSystem } from "./EditorSystem";
 
 // Re-export EntityId for convenience
 export type { EntityId };
@@ -71,19 +71,19 @@ export interface EditorComponentMeta {
   sync: SyncBehavior;
 }
 
-export type SystemPhase =
-  | "preInput"
-  | "input"
-  | "postInput"
-  | "preCapture"
-  | "capture"
-  | "postCapture"
-  | "preUpdate"
-  | "update"
-  | "postUpdate"
-  | "preRender"
-  | "render"
-  | "postRender";
+/**
+ * System execution phases.
+ *
+ * Systems are grouped into 4 phases that execute in order each frame:
+ * 1. **input** - Convert raw DOM events to ECS state (keyboard, mouse, pointer, screen)
+ * 2. **capture** - Detect targets, compute intersections, process keybinds
+ * 3. **update** - Modify document state, process commands
+ * 4. **render** - Sync ECS state to output (DOM, canvas)
+ *
+ * Within each phase, systems are sorted by priority (higher = runs first).
+ * Ties are broken by registration order.
+ */
+export type SystemPhase = "input" | "capture" | "update" | "render";
 
 /**
  * Get plugin-specific resources from the context.
@@ -147,8 +147,9 @@ export const EditorOptionsSchema = z.object({
 
   /**
    * Custom block definitions.
+   * Accepts partial block definitions - defaults will be applied automatically.
    */
-  customBlockDefs: z.record(z.string(), z.custom<BlockDef>()).default({}),
+  customBlockDefs: z.array(z.custom<BlockDefInput>()).default([]),
 
   /**
    * Keybind definitions for keyboard shortcuts.
@@ -173,64 +174,10 @@ export const EditorOptionsSchema = z.object({
   customSingletons: z.array(z.custom<AnyEditorSingletonDef>()).default([]),
 
   /**
-   * Custom systems that run before input phase.
+   * Custom systems to register without creating a plugin.
+   * Each system specifies its phase and priority.
    */
-  customPreInputSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that convert raw DOM events to ECS state.
-   */
-  customInputSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that run after input phase.
-   */
-  customPostInputSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that run before capture phase.
-   */
-  customPreCaptureSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that detect targets and compute intersections.
-   */
-  customCaptureSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that run after capture phase.
-   */
-  customPostCaptureSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that run before update phase.
-   */
-  customPreUpdateSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that modify document state and process commands.
-   */
-  customUpdateSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that run after update phase.
-   */
-  customPostUpdateSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that run before render phase.
-   */
-  customPreRenderSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that sync ECS state to output.
-   */
-  customRenderSystems: z.array(z.custom<System>()).default([]),
-
-  /**
-   * Custom systems that run after render phase.
-   */
-  customPostRenderSystems: z.array(z.custom<System>()).default([]),
+  customSystems: z.array(z.custom<EditorSystem>()).default([]),
 });
 
 export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>;
@@ -318,7 +265,6 @@ export const BlockDef = z.object({
   resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
-  noHtml: z.boolean().default(false),
 });
 
 /**

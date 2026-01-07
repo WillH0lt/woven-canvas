@@ -1,9 +1,10 @@
 import {
   EditorComponentDef,
   EditorSingletonDef,
-  MainThreadSystem,
   type EditorPlugin,
   type EditorPluginFactory,
+  type EditorSystem,
+  type BlockDefInput,
   Key,
 } from "@infinitecanvas/editor";
 
@@ -24,10 +25,12 @@ import * as systems from "./systems";
 import { PLUGIN_NAME } from "./constants";
 import { CURSORS } from "./cursors";
 
-// Helper to filter systems from a phase namespace
-const filterSystems = (ns: object): MainThreadSystem[] =>
+
+// Helper to filter EditorSystem instances from a namespace
+const filterSystems = (ns: object): EditorSystem[] =>
   Object.values(ns).filter(
-    (v): v is MainThreadSystem => v instanceof MainThreadSystem
+    (v): v is EditorSystem =>
+      typeof v === "object" && v !== null && "_system" in v && "phase" in v
   );
 
 /**
@@ -68,13 +71,45 @@ export function createSelectionPlugin(): EditorPlugin {
       (v) => v instanceof EditorSingletonDef
     ),
 
-    preCaptureSystems: filterSystems(systems.preCapture),
+    blockDefs: [
+      {
+        tag: "selection-box",
+        canRotate: false,
+        canScale: false,
+        components: [components.SelectionBox]
+      },
+      {
+        tag: "transform-box",
+        canRotate: false,
+        canScale: false,
+        components: [components.TransformBox]
+      },
+      {
+        tag: "transform-handle",
+        canRotate: false,
+        canScale: false,
+        components: [components.TransformHandle]
+      },
+      {
+        tag: "transform-edge",
+        canRotate: false,
+        canScale: false,
+        components: [components.TransformHandle]
+      },
+      {
+        tag: "transform-rotate",
+        canRotate: false,
+        canScale: false,
+        components: [components.TransformHandle]
+      },
+    ],
 
-    captureSystems: filterSystems(systems.capture),
-
-    updateSystems: filterSystems(systems.update),
-
-    postUpdateSystems: filterSystems(systems.postUpdate),
+    systems: [
+      ...filterSystems(systems.preCapture),
+      ...filterSystems(systems.capture),
+      ...filterSystems(systems.update),
+      ...filterSystems(systems.postUpdate),
+    ],
 
     keybinds: [
       {

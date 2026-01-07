@@ -1,13 +1,13 @@
-import { defineSystem } from "@infinitecanvas/ecs";
+import { defineEditorSystem } from "../../EditorSystem";
 import { Frame } from "../../singletons";
 
 /**
  * Frame system - updates frame timing at the start of each tick.
  *
- * This system should run first in the input phase to ensure
+ * This system runs first in the input phase (priority: 100) to ensure
  * frame.delta is available to all other systems.
  */
-export const frameSystem = defineSystem((ctx) => {
+export const frameSystem = defineEditorSystem({ phase: "input", priority: 100 }, (ctx) => {
   const now = performance.now();
   const buffer = Frame._getInstance(ctx).buffer;
   const last = buffer.lastTime[0];

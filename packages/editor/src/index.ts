@@ -57,6 +57,14 @@ export {
   parsePlugin,
 } from "./plugin";
 
+// Editor system
+export {
+  defineEditorSystem,
+  type EditorSystem,
+  type EditorSystemOptions,
+  type EditorSystemFunction,
+} from "./EditorSystem";
+
 // Command system
 export { defineCommand, on, type CommandDef, CommandMarker } from "./command";
 
@@ -76,6 +84,7 @@ export {
   defineSystem,
   MainThreadSystem,
   EventType,
+  SINGLETON_ENTITY_ID,
   type Context,
   type EntityId,
   type QueryDef,

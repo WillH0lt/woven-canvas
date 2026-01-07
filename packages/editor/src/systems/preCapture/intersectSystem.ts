@@ -1,5 +1,4 @@
 import {
-  defineSystem,
   defineQuery,
   addComponent,
   removeComponent,
@@ -7,6 +6,7 @@ import {
   type Context,
 } from "@infinitecanvas/ecs";
 
+import { defineEditorSystem } from "../../EditorSystem";
 import { Camera, Mouse, Controls, Intersect } from "../../singletons";
 import { Pointer, Block, Aabb, Hovered } from "../../components";
 import { intersectPoint } from "../../helpers";
@@ -64,15 +64,15 @@ function arraysEqual(a: number[], b: number[]): boolean {
 /**
  * Pre-capture intersect system - computes AABBs and detects mouse-block intersections.
  *
- * Capture phase system that:
- * 1. Updates AABB for blocks that have changed
- * 2. Finds blocks under the mouse cursor
- * 3. Updates the Intersect singleton
- * 4. Manages Hovered component on blocks
+ * Runs early in the capture phase (priority: 100) to:
+ * 1. Update AABB for blocks that have changed
+ * 2. Find blocks under the mouse cursor
+ * 3. Update the Intersect singleton
+ * 4. Manage Hovered component on blocks
  *
  * Note: For test isolation, use createIntersectSystem() instead to get a fresh instance.
  */
-export const intersectSystem = defineSystem((ctx: Context) => {
+export const intersectSystem = defineEditorSystem({ phase: "capture", priority: 100 }, (ctx: Context) => {
   // Update AABBs for changed blocks
   const added = blocksChanged.added(ctx);
   const changed = blocksChanged.changed(ctx);

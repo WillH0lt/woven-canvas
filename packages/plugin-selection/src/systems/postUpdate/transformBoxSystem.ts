@@ -1,5 +1,5 @@
 import {
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   createEntity,
   removeEntity,
@@ -56,10 +56,10 @@ const TRANSFORM_HANDLE_CORNER_RANK = "zd";
 /**
  * Transform box update system - manages transform box and handles.
  *
- * Runs in postUpdate phase so queries see selection changes made by
- * UpdateBlock in the same frame.
+ * Runs late in the update phase (priority: -100) so queries see selection changes made by
+ * other update systems in the same frame.
  */
-export const transformBoxSystem = defineSystem((ctx: Context) => {
+export const transformBoxSystem = defineEditorSystem({ phase: "update", priority: -100 }, (ctx: Context) => {
   // RemoveTransformBox must be first to avoid stale references
   on(ctx, RemoveTransformBox, removeTransformBox);
   on(ctx, AddOrUpdateTransformBox, addOrUpdateTransformBox);
@@ -108,7 +108,7 @@ function addOrUpdateTransformBox(ctx: Context): void {
     // Create new transform box
     transformBoxId = createEntity(ctx);
     addComponent(ctx, transformBoxId, Block, {
-      tag: "transformBox",
+      tag: "transform-box",
       position: [0, 0],
       size: [0, 0],
       rotateZ: 0,
@@ -313,7 +313,7 @@ function addOrUpdateTransformHandles(
       if (canScale) {
         // Corner scale handles
         handles.push({
-          tag: "transformHandle",
+          tag: "transform-handle",
           kind: handleKind,
           vectorX: xi * 2 - 1,
           vectorY: yi * 2 - 1,
@@ -330,7 +330,7 @@ function addOrUpdateTransformHandles(
       if (canRotate) {
         // Corner rotation handles
         handles.push({
-          tag: "div",
+          tag: "transform-rotate",
           kind: TransformHandleKind.Rotate,
           vectorX: xi * 2 - 1,
           vectorY: yi * 2 - 1,
@@ -358,7 +358,7 @@ function addOrUpdateTransformHandles(
   if (canScale) {
     for (let yi = 0; yi < 2; yi++) {
       handles.push({
-        tag: "div",
+        tag: "transform-edge",
         kind: handleKind,
         vectorX: 0,
         vectorY: yi * 2 - 1,
@@ -377,7 +377,7 @@ function addOrUpdateTransformHandles(
   if (canScale || resizeMode === "text") {
     for (let xi = 0; xi < 2; xi++) {
       handles.push({
-        tag: "div",
+        tag: "transform-edge",
         kind: resizeMode === "text" ? TransformHandleKind.Stretch : handleKind,
         vectorX: xi * 2 - 1,
         vectorY: 0,

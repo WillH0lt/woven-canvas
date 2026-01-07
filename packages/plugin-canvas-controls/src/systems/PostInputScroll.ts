@@ -1,6 +1,6 @@
 import {
   type Context,
-  defineSystem,
+  defineEditorSystem,
   Camera,
   Keyboard,
   Controls,
@@ -13,9 +13,12 @@ import {
  * Pans the canvas based on wheel deltas. Only active when
  * the "scroll" tool is active for wheel input.
  *
+ * Runs late in the input phase (priority: -100) to process input after
+ * core input systems have updated singletons.
+ *
  * Active when: Mouse wheel scrolled and "scroll" tool is active.
  */
-export const PostInputScroll = defineSystem((ctx: Context) => {
+export const PostInputScroll = defineEditorSystem({ phase: "input", priority: -100 }, (ctx: Context) => {
   const keyboard = Keyboard.read(ctx);
 
   // Only scroll when the scroll tool is active for wheel input

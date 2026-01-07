@@ -1,11 +1,11 @@
 import {
-  defineSystem,
   type Context,
   createEntity,
   addComponent,
   getResources,
 } from "@infinitecanvas/ecs";
 
+import { defineEditorSystem } from "../../EditorSystem";
 import { Keyboard } from "../../singletons";
 import { CommandMarker } from "../../command";
 import type { EditorResources } from "../../types";
@@ -16,7 +16,7 @@ import type { EditorResources } from "../../types";
  * Listens for keyboard input and spawns commands based on
  * the plugin's keybind configuration.
  */
-export const keybindSystem = defineSystem((ctx: Context) => {
+export const keybindSystem = defineEditorSystem({ phase: "capture" }, (ctx: Context) => {
   const keyboard = Keyboard.read(ctx);
   const { editor } = getResources<EditorResources>(ctx);
 

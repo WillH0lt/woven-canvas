@@ -2,7 +2,7 @@ import { and, not, setup } from "xstate";
 import {
   type Context,
   type EntityId,
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   Controls,
   hasComponent,
@@ -184,7 +184,7 @@ function checkSelectionEditable(ctx: Context): boolean {
  * - Showing/hiding transform box during pointer interactions
  * - Transitioning to edit mode on click
  */
-export const transformBoxSystem = defineSystem((ctx) => {
+export const transformBoxSystem = defineEditorSystem({ phase: "capture" }, (ctx) => {
   const events: TransformBoxEvent[] = [];
 
   // Check for selection changes

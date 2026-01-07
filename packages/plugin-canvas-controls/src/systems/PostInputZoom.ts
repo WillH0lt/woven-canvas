@@ -1,6 +1,6 @@
 import {
   type Context,
-  defineSystem,
+  defineEditorSystem,
   Camera,
   Screen,
   Mouse,
@@ -18,9 +18,12 @@ import type { CanvasControlsOptions } from "../types";
  * Zooms toward the mouse cursor position, maintaining the world point
  * under the cursor. Respects minZoom and maxZoom bounds.
  *
+ * Runs late in the input phase (priority: -100) to process input after
+ * core input systems have updated singletons.
+ *
  * Active when: Mouse wheel scrolled and "zoom" tool is active for wheel input.
  */
-export const PostInputZoom = defineSystem((ctx: Context) => {
+export const PostInputZoom = defineEditorSystem({ phase: "input", priority: -100 }, (ctx: Context) => {
   const options = getPluginResources<CanvasControlsOptions>(ctx, "controls");
   const keyboard = Keyboard.read(ctx);
 

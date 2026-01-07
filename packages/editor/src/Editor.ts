@@ -3,7 +3,6 @@ import {
   type Context,
   type QueryDef,
   ComponentDef,
-  type System,
   type SingletonDef,
   EventType,
   SINGLETON_ENTITY_ID,
@@ -30,6 +29,10 @@ import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 import { Synced } from "./components";
+import {
+  type EditorSystem,
+  sortSystemsByPriority,
+} from "./EditorSystem";
 
 /**
  * Query subscription callback
@@ -46,20 +49,7 @@ export type QueryCallback = (
 /**
  * Order of system execution phases
  */
-const PHASE_ORDER: SystemPhase[] = [
-  "preInput",
-  "input",
-  "postInput",
-  "preCapture",
-  "capture",
-  "postCapture",
-  "preUpdate",
-  "update",
-  "postUpdate",
-  "preRender",
-  "render",
-  "postRender",
-];
+const PHASE_ORDER: SystemPhase[] = ["input", "capture", "update", "render"];
 
 /**
  * Editor is the main entry point for building editor applications.
@@ -101,7 +91,7 @@ export class Editor {
   public blockDefs: Record<string, BlockDef> = {};
 
   private world: World;
-  private phases: Map<SystemPhase, System[]>;
+  private phases: Map<SystemPhase, EditorSystem[]>;
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
 
@@ -152,7 +142,7 @@ export class Editor {
 
     // Setup block defs (parse inputs to apply defaults)
     const blockDefs: Record<string, BlockDef> = {};
-    for (const input of Object.values(options.customBlockDefs)) {
+    for (const input of options.customBlockDefs) {
       const parsed = BlockDef.parse(input);
       blockDefs[parsed.tag] = parsed;
     }
@@ -204,59 +194,25 @@ export class Editor {
       this.phases.set(phase, []);
     }
 
-    // Register systems from plugins
+    // Register systems from plugins (order matters for stable sort tie-breaking)
     for (const plugin of sortedPlugins) {
-      if (plugin.preInputSystems) {
-        this.phases.get("preInput")!.push(...plugin.preInputSystems);
-      }
-      if (plugin.inputSystems) {
-        this.phases.get("input")!.push(...plugin.inputSystems);
-      }
-      if (plugin.postInputSystems) {
-        this.phases.get("postInput")!.push(...plugin.postInputSystems);
-      }
-      if (plugin.preCaptureSystems) {
-        this.phases.get("preCapture")!.push(...plugin.preCaptureSystems);
-      }
-      if (plugin.captureSystems) {
-        this.phases.get("capture")!.push(...plugin.captureSystems);
-      }
-      if (plugin.postCaptureSystems) {
-        this.phases.get("postCapture")!.push(...plugin.postCaptureSystems);
-      }
-      if (plugin.preUpdateSystems) {
-        this.phases.get("preUpdate")!.push(...plugin.preUpdateSystems);
-      }
-      if (plugin.updateSystems) {
-        this.phases.get("update")!.push(...plugin.updateSystems);
-      }
-      if (plugin.postUpdateSystems) {
-        this.phases.get("postUpdate")!.push(...plugin.postUpdateSystems);
-      }
-      if (plugin.preRenderSystems) {
-        this.phases.get("preRender")!.push(...plugin.preRenderSystems);
-      }
-      if (plugin.renderSystems) {
-        this.phases.get("render")!.push(...plugin.renderSystems);
-      }
-      if (plugin.postRenderSystems) {
-        this.phases.get("postRender")!.push(...plugin.postRenderSystems);
+      if (plugin.systems) {
+        for (const system of plugin.systems) {
+          this.phases.get(system.phase)!.push(system);
+        }
       }
     }
 
-    // Register custom systems (run after plugin systems)
-    this.phases.get("preInput")!.push(...options.customPreInputSystems);
-    this.phases.get("input")!.push(...options.customInputSystems);
-    this.phases.get("postInput")!.push(...options.customPostInputSystems);
-    this.phases.get("preCapture")!.push(...options.customPreCaptureSystems);
-    this.phases.get("capture")!.push(...options.customCaptureSystems);
-    this.phases.get("postCapture")!.push(...options.customPostCaptureSystems);
-    this.phases.get("preUpdate")!.push(...options.customPreUpdateSystems);
-    this.phases.get("update")!.push(...options.customUpdateSystems);
-    this.phases.get("postUpdate")!.push(...options.customPostUpdateSystems);
-    this.phases.get("preRender")!.push(...options.customPreRenderSystems);
-    this.phases.get("render")!.push(...options.customRenderSystems);
-    this.phases.get("postRender")!.push(...options.customPostRenderSystems);
+    // Register custom systems
+    for (const system of options.customSystems) {
+      this.phases.get(system.phase)!.push(system);
+    }
+
+    // Sort systems by priority within each phase
+    for (const phase of PHASE_ORDER) {
+      const systems = this.phases.get(phase)!;
+      this.phases.set(phase, sortSystemsByPriority(systems));
+    }
 
     // Build map of plugins
     this.plugins = new Map(sortedPlugins.map((p) => [p.name, p]));
@@ -376,7 +332,7 @@ export class Editor {
       // Check if this is a synced component or singleton
       const componentDef = this.components.get(componentId);
       const singletonDef = this.singletons.get(componentId);
-
+      
       // Skip if not a synced component/singleton (sync === "none")
       const isSyncedComponent =
         componentDef && componentDef.__editor.sync !== "none";
@@ -448,9 +404,11 @@ export class Editor {
    * Execute all systems in a phase
    */
   private async executePhase(phase: SystemPhase): Promise<void> {
-    const systems = this.phases.get(phase);
-    if (!systems || systems.length === 0) return;
+    const editorSystems = this.phases.get(phase);
+    if (!editorSystems || editorSystems.length === 0) return;
 
+    // Extract underlying ECS systems for world.execute()
+    const systems = editorSystems.map((s) => s._system);
     await this.world.execute(...systems);
   }
 

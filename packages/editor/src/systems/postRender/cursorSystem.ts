@@ -1,10 +1,6 @@
-import {
-  type Context,
-  defineSystem,
-  defineQuery,
-  getResources,
-} from "@infinitecanvas/ecs";
+import { type Context, defineQuery, getResources } from "@infinitecanvas/ecs";
 
+import { defineEditorSystem } from "../../EditorSystem";
 import { Cursor } from "../../singletons";
 import type { CursorDef, EditorResources } from "../../types";
 
@@ -37,7 +33,7 @@ export function getCursorSvg(
 /**
  * Post-render cursor system - applies the current cursor to the DOM.
  *
- * Runs after rendering to update document.body.style.cursor based on:
+ * Runs late in the render phase (priority: -100) to update document.body.style.cursor based on:
  * 1. contextCursorKind (hover/drag cursor) - highest priority
  * 2. cursorKind (tool cursor) - medium priority
  * 3. Default cursor - fallback
@@ -45,7 +41,7 @@ export function getCursorSvg(
  * Resolves cursor kind + rotation to SVG using getCursorSvg at render time,
  * allowing cursor definitions to be changed dynamically.
  */
-export const cursorSystem = defineSystem((ctx: Context) => {
+export const cursorSystem = defineEditorSystem({ phase: "render", priority: -100 }, (ctx: Context) => {
   const changedCursors = cursorQuery.changed(ctx);
 
   // If no cursor changes, skip updating DOM

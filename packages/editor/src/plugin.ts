@@ -1,7 +1,8 @@
-import type { Context, System } from "@infinitecanvas/ecs";
+import type { Context } from "@infinitecanvas/ecs";
 
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
+import type { EditorSystem } from "./EditorSystem";
 import type { CursorDef, Keybind, BlockDefInput } from "./types";
 
 /**
@@ -10,15 +11,20 @@ import type { CursorDef, Keybind, BlockDefInput } from "./types";
  * Plugins extend the editor with:
  * - Components (EditorComponentDef instances)
  * - Singletons (EditorSingletonDef instances)
- * - Systems (behavior in specific phases)
+ * - Systems (behavior in specific phases with priority)
  * - Commands (user actions)
  *
  * @example
  * ```typescript
- * import { EditorPlugin, defineEditorComponent, defineEditorSingleton, field } from '@infinitecanvas/editor';
+ * import {
+ *   EditorPlugin,
+ *   defineEditorComponent,
+ *   defineEditorSingleton,
+ *   defineEditorSystem,
+ *   field,
+ * } from '@infinitecanvas/editor';
  *
  * const Selected = defineEditorComponent('selected', {}, { sync: 'ephemeral' });
- *
  * const Hovered = defineEditorComponent('hovered', {}, { sync: 'none' });
  *
  * const CameraState = defineEditorSingleton('camera', {
@@ -27,29 +33,25 @@ import type { CursorDef, Keybind, BlockDefInput } from "./types";
  *   zoom: field.float64().default(1),
  * }, { sync: 'ephemeral' });
  *
+ * const hoverSystem = defineEditorSystem(
+ *   { phase: 'capture' },
+ *   (ctx) => {
+ *     // Detect hover state
+ *   }
+ * );
+ *
+ * const selectionSystem = defineEditorSystem(
+ *   { phase: 'capture', priority: -10 }, // Runs after hoverSystem
+ *   (ctx) => {
+ *     // Handle selection logic
+ *   }
+ * );
+ *
  * const SelectionPlugin: EditorPlugin = {
  *   name: 'selection',
- *
  *   components: [Selected, Hovered],
  *   singletons: [CameraState],
- *
- *   captureSystems: [
- *     (ctx) => {
- *       // Detect hover state
- *     },
- *     (ctx) => {
- *       // Handle selection logic
- *     },
- *   ],
- *
- *   commands: [
- *     {
- *       type: 'selection:select-all',
- *       execute: (ctx, payload) => {
- *         // Select all blocks
- *       }
- *     }
- *   ],
+ *   systems: [hoverSystem, selectionSystem],
  *
  *   setup(ctx) {
  *     console.log('Selection plugin initialized');
@@ -98,41 +100,12 @@ export interface EditorPlugin<TResources = unknown> {
    */
   singletons?: EditorSingletonDef[];
 
-  /** Systems that run before input phase */
-  preInputSystems?: System[];
-
-  /** Systems that convert raw DOM events to ECS state */
-  inputSystems?: System[];
-
-  /** Systems that run after input phase */
-  postInputSystems?: System[];
-
-  /** Systems that run before capture phase */
-  preCaptureSystems?: System[];
-
-  /** Systems that detect targets and compute intersections */
-  captureSystems?: System[];
-
-  /** Systems that run after capture phase */
-  postCaptureSystems?: System[];
-
-  /** Systems that run before update phase */
-  preUpdateSystems?: System[];
-
-  /** Systems that modify document state and process commands */
-  updateSystems?: System[];
-
-  /** Systems that run after update phase */
-  postUpdateSystems?: System[];
-
-  /** Systems that run before render phase */
-  preRenderSystems?: System[];
-
-  /** Systems that sync ECS state to output */
-  renderSystems?: System[];
-
-  /** Systems that run after render phase */
-  postRenderSystems?: System[];
+  /**
+   * Systems to register.
+   * Each system specifies its phase and priority.
+   * Use defineEditorSystem() to create systems.
+   */
+  systems?: EditorSystem[];
 
   /**
    * Called when the plugin is initialized.

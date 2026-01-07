@@ -1,5 +1,5 @@
 import {
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   createEntity,
   addComponent,
@@ -68,7 +68,7 @@ const BLOCK_COLORS = ["#e94560", "#16c79a", "#f9a826", "#6c5ce7", "#fd79a8"];
  * - Rendering all Block entities
  * - Highlighting selected and hovered blocks
  */
-const blockRendererSystem = defineSystem((ctx: Context) => {
+const blockRendererSystem = defineEditorSystem({ phase: "render" }, (ctx: Context) => {
   const resources = getPluginResources<RendererPluginResources>(
     ctx,
     "renderer"
@@ -359,7 +359,7 @@ export function RendererPlugin(
     name: "renderer",
     resources,
     dependencies: ["infiniteCanvas"],
-    renderSystems: [blockRendererSystem],
+    systems: [blockRendererSystem],
   };
 }
 

@@ -1,5 +1,5 @@
 import {
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   hasComponent,
   on,
@@ -28,7 +28,7 @@ const transformBoxQuery = defineQuery((q) =>
  * - When scale handle moves: scale all selected blocks proportionally
  * - When rotate handle moves: rotate all selected blocks around the center
  */
-export const dragHandlerSystem = defineSystem((ctx: Context) => {
+export const dragHandlerSystem = defineEditorSystem({ phase: "update" }, (ctx: Context) => {
   // Listen for DragBlock commands and handle transform box/handle drags
   on(ctx, DragBlock, (ctx, { entityId, position }) => {
     // Check if dragging transform box

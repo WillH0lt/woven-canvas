@@ -23,7 +23,7 @@ function createControlsPlugin(
 
     singletons: [PanState],
 
-    postInputSystems: [PostInputZoom, PostInputScroll, PostInputPan],
+    systems: [PostInputZoom, PostInputScroll, PostInputPan],
   };
 }
 

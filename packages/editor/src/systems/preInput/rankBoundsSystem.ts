@@ -1,5 +1,6 @@
-import { defineSystem, defineQuery, type Context } from "@infinitecanvas/ecs";
+import { defineQuery, type Context } from "@infinitecanvas/ecs";
 
+import { defineEditorSystem } from "../../EditorSystem";
 import { Synced, Block } from "../../components";
 import { RankBounds } from "../../singletons";
 
@@ -9,12 +10,12 @@ const blocksQuery = defineQuery((q) => q.with(Synced, Block));
 /**
  * Pre-input system - synchronizes RankBounds singleton with block ranks.
  *
- * Runs before input processing to ensure RankBounds accurately reflects
- * the current min/max ranks across all blocks. This handles:
+ * Runs early in the input phase (priority: 100) to ensure RankBounds accurately
+ * reflects the current min/max ranks across all blocks. This handles:
  * - Blocks added via sync (multiplayer/persistence)
  * - Blocks with ranks that weren't created through RankBounds.genNext/genPrev
  */
-export const rankBoundsSystem = defineSystem((ctx: Context) => {
+export const rankBoundsSystem = defineEditorSystem({ phase: "input", priority: 100 }, (ctx: Context) => {
   const added = blocksQuery.added(ctx);
 
   // Process newly added blocks

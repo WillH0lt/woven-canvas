@@ -1,11 +1,7 @@
-import {
-  defineSystem,
-  defineQuery,
-  type Context,
-  type EntityId,
-} from "@infinitecanvas/ecs";
+import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
 import { Vec2, Scalar } from "@infinitecanvas/math";
 
+import { defineEditorSystem } from "../../EditorSystem";
 import { Camera, ScaleWithZoomState } from "../../singletons";
 import { Block, ScaleWithZoom } from "../../components";
 
@@ -28,8 +24,11 @@ const _anchorOffset: Vec2 = [0, 0];
  *
  * The scaling pivots around the anchor point specified in the ScaleWithZoom
  * component (default center [0.5, 0.5]).
+ *
+ * Runs early in the render phase (priority: 100) so other render systems
+ * see the correctly scaled entities.
  */
-export const scaleWithZoomSystem = defineSystem((ctx: Context) => {
+export const scaleWithZoomSystem = defineEditorSystem({ phase: "render", priority: 100 }, (ctx: Context) => {
   const camera = Camera.read(ctx);
   const state = ScaleWithZoomState.read(ctx);
 

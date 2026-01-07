@@ -2,7 +2,7 @@ import {
   field,
   defineEditorComponent,
   defineEditorSingleton,
-  defineSystem,
+  defineEditorSystem,
   defineQuery,
   getPointerInput,
   createEntity,
@@ -93,7 +93,7 @@ function hitTestShape(ctx: Context, worldPos: Vec2): EntityId | null {
  * - Updating component data based on user input
  * - Using a singleton to track drag state
  */
-const shapeDragSystem = defineSystem((ctx: Context) => {
+const shapeDragSystem = defineEditorSystem({ phase: "capture" }, (ctx: Context) => {
   // Get left-click pointer events
   const events = getPointerInput(ctx, ["left"]);
 
@@ -194,5 +194,5 @@ export const ShapesPlugin: EditorPlugin = {
   name: "shapes",
   components: [Shape],
   singletons: [DragState],
-  captureSystems: [shapeDragSystem],
+  systems: [shapeDragSystem],
 };
