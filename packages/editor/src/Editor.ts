@@ -332,15 +332,11 @@ export class Editor {
       // Check if this is a synced component or singleton
       const componentDef = this.components.get(componentId);
       const singletonDef = this.singletons.get(componentId);
-      
-      // Skip if not a synced component/singleton (sync === "none")
+
       const isSyncedComponent =
         componentDef && componentDef.__editor.sync !== "none";
       const isSyncedSingleton =
         singletonDef && singletonDef.__editor.sync !== "none";
-      if (!isSyncedComponent && !isSyncedSingleton) {
-        continue;
-      }
 
       // Skip entity events if the entity doesn't have the Synced component
       // (required for stable ID lookup)

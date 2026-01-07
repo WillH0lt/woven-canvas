@@ -37,6 +37,8 @@ import { ENTITY_REFS_KEY, type EntityRefs } from "../blockRefs";
 import SelectionBox from "./SelectionBox.vue";
 import TransformBox from "./TransformBox.vue";
 import TransformHandle from "./TransformHandle.vue";
+import StickyNote from "./StickyNote.vue";
+import { BasicsPlugin } from "../BasicsPlugin";
 
 type BlockComponentData = InferComponentType<typeof Block.schema>;
 type SelectedComponentData = InferComponentType<typeof Selected.schema>;
@@ -316,6 +318,8 @@ onMounted(async () => {
     allPlugins.push(SelectionPlugin);
   }
 
+  allPlugins.push(BasicsPlugin);
+
   // Add user-provided plugins
   allPlugins.push(...props.plugins);
 
@@ -585,6 +589,10 @@ function getBlockStyle(data: BlockData) {
         <TransformBox v-else-if="itemRef.value.block.tag === 'transform-box'" />
         <TransformHandle
           v-else-if="itemRef.value.block.tag === 'transform-handle'"
+        />
+        <StickyNote
+          v-else-if="itemRef.value.block.tag === 'sticky-note'"
+          :entityId="itemRef.value.entityId"
         />
       </slot>
     </div>

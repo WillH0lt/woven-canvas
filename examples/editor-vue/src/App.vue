@@ -7,6 +7,7 @@ import {
   addComponent,
   Block,
   Synced,
+  Color,
   type Context,
 } from "@infinitecanvas/editor";
 import { Store } from "@infinitecanvas/store";
@@ -49,14 +50,6 @@ function handleReady(editor: Editor) {
   editorRef.value = editor;
 }
 
-function handleUndo() {
-  store.undo();
-}
-
-function handleRedo() {
-  store.redo();
-}
-
 function addShape() {
   const editor = editorRef.value;
   if (!editor) return;
@@ -69,14 +62,37 @@ function addShape() {
     createShapeBlock(ctx, x, y, 200, 150, 0x4a90d9ff);
   });
 }
+
+function addStickyNote() {
+  const editor = editorRef.value;
+  if (!editor) return;
+
+  editor.nextTick((ctx) => {
+    const camera = Camera.read(ctx);
+    const x = camera.left + 400;
+    const y = camera.top + 300;
+
+    const entityId = createEntity(ctx);
+    addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() });
+    addComponent(ctx, entityId, Block, {
+      tag: "sticky-note",
+      position: [x, y],
+      size: [195, 195],
+    });
+    addComponent(ctx, entityId, Color, {
+      red: Math.floor(Math.random() * 256),
+      green: Math.floor(Math.random() * 256),
+      blue: Math.floor(Math.random() * 256),
+    });
+  });
+}
 </script>
 
 <template>
   <div class="editor ic-theme-light">
     <div class="toolbar">
       <button @click="addShape">Add Shape</button>
-      <button @click="handleUndo">Undo</button>
-      <button @click="handleRedo">Redo</button>
+      <button @click="addStickyNote">Add Sticky Note</button>
     </div>
     <InfiniteCanvas
       @ready="handleReady"

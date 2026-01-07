@@ -234,7 +234,7 @@ export class Store implements StoreAdapter {
       this.ephemeralStore.set(key, data as Value);
       this.localEphemeralKeys.add(key);
 
-      console.log("adding ephemeral key:", key);
+      // console.log("adding ephemeral key:", key);
     }
   }
 

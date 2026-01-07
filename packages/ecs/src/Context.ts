@@ -92,7 +92,7 @@ export function removeEntity(ctx: Context, entityId: EntityId): void {
   ctx.eventBuffer.pushRemoved(entityId);
 
   // Mark entity as dead but preserve component data
-  // The ID will be reclaimed later when the pool is exhausted
+  // The ID will be reclaimed later
   ctx.entityBuffer.markDead(entityId);
 }
 

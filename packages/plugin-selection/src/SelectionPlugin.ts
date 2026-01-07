@@ -4,7 +4,6 @@ import {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
-  type BlockDefInput,
   Key,
 } from "@infinitecanvas/editor";
 

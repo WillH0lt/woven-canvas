@@ -127,6 +127,7 @@ export {
   textHasContent,
   getTextStringContent,
   Connector,
+  Color,
   User,
 } from "./components";
 

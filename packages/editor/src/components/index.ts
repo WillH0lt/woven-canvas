@@ -19,6 +19,7 @@ export { Edited } from "./Edited";
 // Transform components
 export { ScaleWithZoom } from "./ScaleWithZoom";
 export { Opacity } from "./Opacity";
+export { Color } from "./Color";
 
 // Content components
 export { Text, textHasContent, getTextStringContent } from "./Text";

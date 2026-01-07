@@ -14,6 +14,7 @@ import {
   Edited,
   ScaleWithZoom,
   Block,
+  Selected,
   getBlockDef,
   getLocalSelectedBlocks,
 } from "@infinitecanvas/editor";
@@ -139,7 +140,12 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
     transformBoxId = existingBoxes[0];
   }
 
-  const selectedBlocks = getLocalSelectedBlocks(ctx);
+  // Filter to only blocks that currently have Selected component.
+  // This handles the case where query results are stale (e.g., a block was
+  // deselected this frame via blockSystem call).
+  const selectedBlocks = getLocalSelectedBlocks(ctx).filter(
+    (id) => hasComponent(ctx, id, Selected)
+  );
   if (selectedBlocks.length === 0) return;
 
   // Get common rotation (or 0 if mixed)
