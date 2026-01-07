@@ -31,7 +31,9 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
+    "@floating-ui/vue": "^1.1.6",
     "@infinitecanvas/editor": "workspace:^",
+    "@infinitecanvas/math": "workspace:^",
     "@infinitecanvas/plugin-canvas-controls": "workspace:^",
     "@infinitecanvas/plugin-selection": "workspace:^",
     "vue": "^3.5.26"

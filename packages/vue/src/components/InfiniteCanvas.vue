@@ -38,6 +38,7 @@ import SelectionBox from "./SelectionBox.vue";
 import TransformBox from "./TransformBox.vue";
 import TransformHandle from "./TransformHandle.vue";
 import StickyNote from "./StickyNote.vue";
+import FloatingMenu from "./FloatingMenu.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 
 type BlockComponentData = InferComponentType<typeof Block.schema>;
@@ -133,14 +134,18 @@ const emit = defineEmits<{
   ready: [editor: Editor];
 }>();
 
-// Define slots with entityId and state
-defineSlots<{
-  [slotName: string]: (props: {
-    entityId: EntityId;
-    selected: boolean;
-    hovered: boolean;
-  }) => any;
-}>();
+// Define slots - block slots receive entityId/selected/hovered,
+// floating-menu slot receives selectedIds/commonComponents
+defineSlots<
+  {
+    "floating-menu"?: (props: {
+      selectedIds: EntityId[];
+      commonComponents: Set<string>;
+    }) => any;
+  } & {
+    [slotName: string]: (props: { entityId: EntityId }) => any;
+  }
+>();
 
 // Container ref for editor DOM element
 const containerRef = ref<HTMLDivElement | null>(null);
@@ -283,6 +288,9 @@ const entityRefs: EntityRefs = {
   registerTickCallback,
 };
 provide(ENTITY_REFS_KEY, entityRefs);
+
+// Provide container ref for FloatingMenu positioning
+provide("containerRef", containerRef);
 
 let eventIndex = 0;
 let animationFrameId: number | null = null;
@@ -578,12 +586,7 @@ function getBlockStyle(data: BlockData) {
       :data-hovered="itemRef.value.hovered || undefined"
       class="ic-block"
     >
-      <slot
-        :name="itemRef.value.block.tag"
-        :entityId="itemRef.value.entityId"
-        :selected="itemRef.value.selected !== null"
-        :hovered="itemRef.value.hovered"
-      >
+      <slot :name="itemRef.value.block.tag" :entityId="itemRef.value.entityId">
         <!-- Default components for selection UI -->
         <SelectionBox v-if="itemRef.value.block.tag === 'selection-box'" />
         <TransformBox v-else-if="itemRef.value.block.tag === 'transform-box'" />
@@ -596,5 +599,12 @@ function getBlockStyle(data: BlockData) {
         />
       </slot>
     </div>
+
+    <!-- Floating menu - positioned via floating-ui -->
+    <FloatingMenu v-if="editorRef">
+      <template #default="menuProps">
+        <slot name="floating-menu" v-bind="menuProps" />
+      </template>
+    </FloatingMenu>
   </div>
 </template>

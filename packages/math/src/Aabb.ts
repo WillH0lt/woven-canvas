@@ -180,6 +180,20 @@ export namespace Aabb {
       if (y > out[AABB_BOTTOM]) out[AABB_BOTTOM] = y;
     }
   };
+
+  export const translate = (out: AabbTuple, delta: Vec2): void => {
+    out[AABB_LEFT] += delta[0];
+    out[AABB_TOP] += delta[1];
+    out[AABB_RIGHT] += delta[0];
+    out[AABB_BOTTOM] += delta[1];
+  };
+
+  export const scale = (out: AabbTuple, factor: number): void => {
+    out[AABB_LEFT] *= factor;
+    out[AABB_TOP] *= factor;
+    out[AABB_RIGHT] *= factor;
+    out[AABB_BOTTOM] *= factor;
+  };
 }
 
 // Re-export type with same name for convenience
