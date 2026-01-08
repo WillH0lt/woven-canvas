@@ -17,6 +17,8 @@ export const ScaleWithZoom = defineEditorComponent(
     startPosition: field.tuple(field.float64(), 2).default([0, 0]),
     /** Initial size as [width, height] at zoom=1 */
     startSize: field.tuple(field.float64(), 2).default([0, 0]),
+    /** Scale multiplier per dimension: [x, y] (0 = no zoom effect, 1 = full zoom effect, 0.5 = half effect) */
+    scaleMultiplier: field.tuple(field.float64(), 2).default([1, 1]),
   },
   { sync: "none" }
 );

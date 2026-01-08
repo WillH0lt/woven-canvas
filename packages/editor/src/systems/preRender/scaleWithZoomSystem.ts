@@ -53,16 +53,21 @@ export const scaleWithZoomSystem = defineEditorSystem({ phase: "render", priorit
 /**
  * Scale a block based on the current zoom level.
  * The block maintains its screen-space size by scaling inversely with zoom.
+ * Uses scaleMultiplier to control how much zoom affects each dimension.
  */
 function scaleBlock(ctx: Context, entityId: EntityId, zoom: number): void {
   const block = Block.write(ctx, entityId);
   const swz = ScaleWithZoom.read(ctx, entityId);
 
-  const scale = 1 / zoom;
+  const baseScale = 1 / zoom;
 
-  // Calculate scaled size: startSize * (1/zoom)
-  Vec2.copy(_scaledSize, swz.startSize);
-  Vec2.scale(_scaledSize, scale);
+  // Calculate scaled size per dimension based on scaleMultiplier
+  // multiplier: 0 = no zoom effect (keeps startSize), 1 = full zoom effect, 0.5 = half effect
+  // Interpolate between startSize and fully scaled size based on multiplier
+  const scaleX = 1 + (baseScale - 1) * swz.scaleMultiplier[0];
+  const scaleY = 1 + (baseScale - 1) * swz.scaleMultiplier[1];
+  _scaledSize[0] = swz.startSize[0] * scaleX;
+  _scaledSize[1] = swz.startSize[1] * scaleY;
 
   // Calculate anchor offset: (startSize - scaledSize) * anchor
   Vec2.copy(_anchorOffset, swz.startSize);

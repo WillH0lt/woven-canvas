@@ -60,16 +60,19 @@ const TRANSFORM_HANDLE_CORNER_RANK = "zd";
  * Runs late in the update phase (priority: -100) so queries see selection changes made by
  * other update systems in the same frame.
  */
-export const transformBoxSystem = defineEditorSystem({ phase: "update", priority: -100 }, (ctx: Context) => {
-  // RemoveTransformBox must be first to avoid stale references
-  on(ctx, RemoveTransformBox, removeTransformBox);
-  on(ctx, AddOrUpdateTransformBox, addOrUpdateTransformBox);
-  on(ctx, UpdateTransformBoxCmd, () => updateTransformBox(ctx));
-  on(ctx, HideTransformBox, hideTransformBox);
-  on(ctx, ShowTransformBox, showTransformBox);
-  on(ctx, StartTransformBoxEdit, startTransformBoxEdit);
-  on(ctx, EndTransformBoxEdit, endTransformBoxEdit);
-});
+export const transformBoxSystem = defineEditorSystem(
+  { phase: "update", priority: -100 },
+  (ctx: Context) => {
+    // RemoveTransformBox must be first to avoid stale references
+    on(ctx, RemoveTransformBox, removeTransformBox);
+    on(ctx, AddOrUpdateTransformBox, addOrUpdateTransformBox);
+    on(ctx, UpdateTransformBoxCmd, () => updateTransformBox(ctx));
+    on(ctx, HideTransformBox, hideTransformBox);
+    on(ctx, ShowTransformBox, showTransformBox);
+    on(ctx, StartTransformBoxEdit, startTransformBoxEdit);
+    on(ctx, EndTransformBoxEdit, endTransformBoxEdit);
+  }
+);
 
 /**
  * Remove transform box and all handles.
@@ -143,8 +146,8 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
   // Filter to only blocks that currently have Selected component.
   // This handles the case where query results are stale (e.g., a block was
   // deselected this frame via blockSystem call).
-  const selectedBlocks = getLocalSelectedBlocks(ctx).filter(
-    (id) => hasComponent(ctx, id, Selected)
+  const selectedBlocks = getLocalSelectedBlocks(ctx).filter((id) =>
+    hasComponent(ctx, id, Selected)
   );
   if (selectedBlocks.length === 0) return;
 
@@ -230,6 +233,8 @@ interface TransformHandleDef {
   height: number;
   rotateZ: number;
   rank: string;
+  scaleMultiplier: [number, number];
+  anchor: [number, number];
 }
 
 /**
@@ -249,7 +254,7 @@ function addOrUpdateTransformHandles(
 
   const handleSize = 12;
   const rotationHandleSize = 2 * handleSize;
-  const sideHandleSize = 2 * handleSize;
+  const sideHandleSize = 1.25 * handleSize;
 
   const handles: TransformHandleDef[] = [];
 
@@ -330,6 +335,8 @@ function addOrUpdateTransformHandles(
           rotateZ,
           rank: TRANSFORM_HANDLE_CORNER_RANK,
           cursorKind: xi + yi === 1 ? CursorKind.NESW : CursorKind.NWSE,
+          scaleMultiplier: [1, 1],
+          anchor: [0.5, 0.5],
         });
       }
 
@@ -340,21 +347,15 @@ function addOrUpdateTransformHandles(
           kind: TransformHandleKind.Rotate,
           vectorX: xi * 2 - 1,
           vectorY: yi * 2 - 1,
-          left:
-            left -
-            rotationHandleSize +
-            handleSize / 2 +
-            xi * (width + rotationHandleSize - handleSize),
-          top:
-            top -
-            rotationHandleSize +
-            handleSize / 2 +
-            yi * (height + rotationHandleSize - handleSize),
+          left: left + xi * width - (1 - xi) * rotationHandleSize,
+          top: top + yi * height - (1 - yi) * rotationHandleSize,
           width: rotationHandleSize,
           height: rotationHandleSize,
           rotateZ,
           rank: TRANSFORM_HANDLE_ROTATE_RANK,
           cursorKind: rotateCursorKinds[xi + yi * 2],
+          scaleMultiplier: [0.5, 0.5],
+          anchor: [1 - xi, 1 - yi], // Anchor toward block, expand away
         });
       }
     }
@@ -375,6 +376,8 @@ function addOrUpdateTransformHandles(
         rotateZ,
         rank: TRANSFORM_HANDLE_EDGE_RANK,
         cursorKind: CursorKind.NS,
+        scaleMultiplier: [0, 1],
+        anchor: [0.5, 0.5],
       });
     }
   }
@@ -394,6 +397,8 @@ function addOrUpdateTransformHandles(
         rotateZ,
         rank: TRANSFORM_HANDLE_EDGE_RANK,
         cursorKind: CursorKind.EW,
+        scaleMultiplier: [1, 0],
+        anchor: [0.5, 0.5],
       });
     }
   }
@@ -451,6 +456,8 @@ function addOrUpdateTransformHandles(
       addComponent(ctx, handleId, ScaleWithZoom, {
         startPosition: [finalLeft, finalTop],
         startSize: [def.width, def.height],
+        scaleMultiplier: def.scaleMultiplier,
+        anchor: def.anchor,
       });
     } else {
       // Update existing handle
@@ -479,6 +486,8 @@ function addOrUpdateTransformHandles(
         const swz = ScaleWithZoom.write(ctx, handleId);
         Vec2.copy(swz.startPosition, block.position);
         Vec2.copy(swz.startSize, block.size);
+        Vec2.copy(swz.scaleMultiplier, def.scaleMultiplier);
+        Vec2.copy(swz.anchor, def.anchor);
       }
     }
 
