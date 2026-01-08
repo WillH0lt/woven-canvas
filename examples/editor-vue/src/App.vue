@@ -108,7 +108,7 @@ function addStickyNote() {
       :customBlockDefs="[{ tag: 'shape', components: [Shape, Color] }]"
     >
       <template #block:shape="{ entityId }">
-        <ShapeBlock class="shape-block" :entityId="entityId" />
+        <ShapeBlock :entityId="entityId" />
       </template>
 
       <template #floating-menu>
@@ -128,7 +128,7 @@ function addStickyNote() {
   width: 100vw;
   height: 100vh;
   position: relative;
-  background: cwhite;
+  background: white;
 }
 
 .toolbar {
@@ -151,9 +151,5 @@ function addStickyNote() {
 
 .toolbar button:hover {
   background: #555;
-}
-
-.shape-block {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 </style>

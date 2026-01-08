@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { hexToHsv, hsvToHex, type HSVColor } from "../../utils/color";
+import ColorInput from "./ColorInput.vue";
 
 const props = defineProps<{
   modelValue?: string;
@@ -38,6 +39,12 @@ function initFromColor(color: string | undefined) {
     selectorPosition.value = { x: hsv.s, y: 100 - hsv.v };
     trackPosition.value = { y: (hsv.h / 360) * 100 };
   }
+}
+
+// Handle hex input change
+function handleHexInput(color: string) {
+  initFromColor(color);
+  emit("update:modelValue", color);
 }
 
 // Initialize on mount
@@ -115,44 +122,53 @@ function stopTrackDrag() {
 
 <template>
   <div class="ic-color-picker">
-    <div
-      ref="selectorRef"
-      class="ic-color-picker-selector"
-      :style="{ backgroundColor: trackHueColor }"
-      @pointerdown="startSelectorDrag"
-    >
-      <div class="ic-color-picker-selector-gradient">
+    <ColorInput :modelValue="pickedColor" @update:modelValue="handleHexInput" />
+    <div class="ic-color-picker-area">
+      <div
+        ref="selectorRef"
+        class="ic-color-picker-selector"
+        :style="{ backgroundColor: trackHueColor }"
+        @pointerdown="startSelectorDrag"
+      >
+        <div class="ic-color-picker-selector-gradient">
+          <div
+            class="ic-color-picker-selector-thumb"
+            :style="{
+              left: `${selectorPosition.x}%`,
+              top: `${selectorPosition.y}%`,
+              backgroundColor: pickedColor,
+            }"
+          />
+        </div>
+      </div>
+      <div ref="trackRef" class="ic-color-picker-track" @pointerdown="startTrackDrag">
         <div
-          class="ic-color-picker-selector-thumb"
+          class="ic-color-picker-track-thumb"
           :style="{
-            left: `${selectorPosition.x}%`,
-            top: `${selectorPosition.y}%`,
-            backgroundColor: pickedColor,
+            top: `${trackPosition.y}%`,
+            backgroundColor: trackHueColor,
           }"
         />
       </div>
-    </div>
-    <div ref="trackRef" class="ic-color-picker-track" @pointerdown="startTrackDrag">
-      <div
-        class="ic-color-picker-track-thumb"
-        :style="{
-          top: `${trackPosition.y}%`,
-          backgroundColor: trackHueColor,
-        }"
-      />
     </div>
   </div>
 </template>
 
 <style>
 .ic-color-picker {
-  display: flex;
-  gap: 8px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
   background-color: var(--ic-gray-700);
   border-radius: var(--ic-menu-border-radius);
   box-shadow: 0px 0px 0.5px rgba(0, 0, 0, 0.18), 0px 3px 8px rgba(0, 0, 0, 0.1),
     0px 1px 3px rgba(0, 0, 0, 0.1);
   padding: 8px;
+}
+
+.ic-color-picker-area {
+  display: flex;
+  gap: 8px;
 }
 
 .ic-color-picker-selector {

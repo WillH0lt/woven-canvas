@@ -11,13 +11,12 @@
   border: 2px solid var(--ic-primary);
   border-radius: 2px;
   background-color: var(--ic-gray-100);
-  pointer-events: none;
   transition-property: background-color;
   transition-timing-function: var(--ic-transition-timing-function);
   transition-duration: var(--ic-transition-duration);
 }
 
-.ic-transform-handle:hover {
+.ic-block[data-hovered] > .ic-transform-handle {
   background-color: var(--ic-primary);
 }
 </style>

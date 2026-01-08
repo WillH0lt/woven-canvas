@@ -582,11 +582,15 @@ function getBlockStyle(data: BlockData) {
       :data-hovered="itemRef.value.hovered || undefined"
       class="ic-block"
     >
-      <slot :name="`block:${itemRef.value.block.tag}`" :entityId="itemRef.value.entityId">
+      <slot
+        :name="`block:${itemRef.value.block.tag}`"
+        :entityId="itemRef.value.entityId"
+      >
         <!-- Default components for selection UI -->
         <SelectionBox v-if="itemRef.value.block.tag === 'selection-box'" />
         <TransformBox v-else-if="itemRef.value.block.tag === 'transform-box'" />
         <TransformHandle
+          :entityId="itemRef.value.entityId"
           v-else-if="itemRef.value.block.tag === 'transform-handle'"
         />
         <StickyNote

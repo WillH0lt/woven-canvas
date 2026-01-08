@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
-import { MenuDropdown, useComponents, useEditorContext } from "@infinitecanvas/vue";
+import {
+  MenuDropdown,
+  useComponents,
+  useEditorContext,
+} from "@infinitecanvas/vue";
 import { Shape } from "../Shape";
 
 const props = defineProps<{
@@ -13,17 +17,12 @@ const { nextEditorTick } = useEditorContext();
 // Use useComponents to get Shape component for all selected entities
 const shapesMap = useComponents(() => props.entityIds, Shape);
 
-// Get current border value (use first entity's value or average)
+// Get current border value
 const currentBorder = computed<number>(() => {
-  const values: number[] = [];
-  for (const shape of shapesMap.value.values()) {
-    if (shape) {
-      values.push(shape.border);
-    }
-  }
-  if (values.length === 0) return 5;
-  // Return first value (or could average them)
-  return values[0];
+  const first = shapesMap.value.values().next().value;
+  if (!first) return 5;
+
+  return first.border;
 });
 
 // Check if there are multiple different border values
@@ -64,7 +63,9 @@ function handleBorderChange(event: Event) {
         >
           <rect x="3" y="3" width="18" height="18" rx="2" />
         </svg>
-        <span class="border-value">{{ hasMultipleBorders ? "–" : currentBorder }}</span>
+        <span class="border-value">{{
+          hasMultipleBorders ? "–" : currentBorder
+        }}</span>
       </div>
     </template>
 
