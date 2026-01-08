@@ -36,6 +36,37 @@ const FIELD_REGISTRY: Record<string, new (fieldDef: any) => Field> = {
 };
 
 /**
+ * Get the default value for a field definition.
+ * Uses the FIELD_REGISTRY to instantiate the appropriate Field class
+ * and call its getDefaultValue() method.
+ */
+function getFieldDefault(fieldDef: FieldDef): any {
+  // RefField requires EntityBuffer, but its default is always null
+  if (fieldDef.type === "ref") {
+    return null;
+  }
+
+  if (fieldDef.default !== undefined) {
+    return fieldDef.default;
+  }
+
+  // EnumField.getDefaultValue() returns an index for internal buffer use,
+  // but we need the actual string value for default()
+  if (fieldDef.type === "enum") {
+    const sortedValues = [...fieldDef.values].sort();
+    return sortedValues[0] ?? "";
+  }
+
+  const FieldClass = FIELD_REGISTRY[fieldDef.type];
+  if (!FieldClass) {
+    throw new Error(`Unknown field type: ${fieldDef.type}`);
+  }
+
+  const field = new FieldClass(fieldDef);
+  return field.getDefaultValue();
+}
+
+/**
  * Sentinel entity ID for singleton change events.
  * Uses max u32 value to avoid collision with real entity IDs.
  */
@@ -520,6 +551,31 @@ export class ComponentDef<T extends ComponentSchema> {
   snapshot(ctx: Context, entityId: EntityId): InferComponentType<T> {
     return this._getInstance(ctx).snapshot(entityId);
   }
+
+  /**
+   * Create a plain object with all fields set to their default values.
+   * Useful for initializing component data without needing a context.
+   *
+   * @returns A plain object with default values for all fields
+   *
+   * @example
+   * ```typescript
+   * const Position = defineComponent({
+   *   x: field.float32().default(0),
+   *   y: field.float32().default(0),
+   * });
+   *
+   * const defaults = Position.default(); // { x: 0, y: 0 }
+   * ```
+   */
+  default(): InferComponentType<T> {
+    const result = {} as InferComponentType<T>;
+    for (const [fieldName, fieldOrBuilder] of Object.entries(this.schema)) {
+      const fieldDef = (fieldOrBuilder as any).def || fieldOrBuilder;
+      (result as any)[fieldName] = getFieldDefault(fieldDef);
+    }
+    return result;
+  }
 }
 
 /**
@@ -671,6 +727,32 @@ export class SingletonDef<T extends ComponentSchema> {
    */
   snapshot(ctx: Context): InferComponentType<T> {
     return this._getInstance(ctx).snapshot(SINGLETON_INDEX);
+  }
+
+  /**
+   * Create a plain object with all fields set to their default values.
+   * Useful for initializing singleton data without needing a context.
+   *
+   * @returns A plain object with default values for all fields
+   *
+   * @example
+   * ```typescript
+   * const Mouse = defineSingleton({
+   *   x: field.float32().default(0),
+   *   y: field.float32().default(0),
+   *   pressed: field.boolean().default(false),
+   * });
+   *
+   * const defaults = Mouse.default(); // { x: 0, y: 0, pressed: false }
+   * ```
+   */
+  default(): InferComponentType<T> {
+    const result = {} as InferComponentType<T>;
+    for (const [fieldName, fieldOrBuilder] of Object.entries(this.schema)) {
+      const fieldDef = (fieldOrBuilder as any).def || fieldOrBuilder;
+      (result as any)[fieldName] = getFieldDefault(fieldDef);
+    }
+    return result;
   }
 }
 

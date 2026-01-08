@@ -27,8 +27,6 @@ function handleMouseEnter() {
 function handleMouseLeave() {
   hideTooltip();
 }
-
-defineExpose({ buttonRef });
 </script>
 
 <template>
@@ -56,9 +54,7 @@ defineExpose({ buttonRef });
   border-radius: 6px;
   cursor: pointer;
   color: #374151;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .ic-menu-button:hover:not(:disabled) {

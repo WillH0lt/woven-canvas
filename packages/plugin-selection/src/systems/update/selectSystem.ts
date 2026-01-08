@@ -11,19 +11,16 @@ import {
   type Context,
   Block,
   Aabb,
-  Selected,
-  Opacity,
-  selectBlock,
-  getLocalSelectedBlocks,
   intersectAabb,
 } from "@infinitecanvas/editor";
 
-import { SelectionBox } from "../../components";
+import { SelectionBox, Selected } from "../../components";
 import {
   AddSelectionBox,
   UpdateSelectionBox,
   RemoveSelectionBox,
 } from "../../commands";
+import { selectBlock, getLocalSelectedBlocks } from "../../helpers";
 
 // Query for selection box entities
 const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));

@@ -14,9 +14,7 @@ import {
   Edited,
   ScaleWithZoom,
   Block,
-  Selected,
   getBlockDef,
-  getLocalSelectedBlocks,
 } from "@infinitecanvas/editor";
 import { Vec2, Rect } from "@infinitecanvas/math";
 
@@ -24,6 +22,7 @@ import {
   TransformBox,
   TransformHandle,
   DragStart,
+  Selected,
   Locked,
 } from "../../components";
 import {
@@ -38,6 +37,7 @@ import {
 import { SelectionStateSingleton } from "../../singletons";
 import { TransformHandleKind, SelectionState } from "../../types";
 import { CursorKind } from "../../cursors";
+import { getLocalSelectedBlocks } from "../../helpers";
 
 // Query for transform box entities
 const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));

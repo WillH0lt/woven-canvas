@@ -51,7 +51,7 @@ export function useSingleton<T extends SingletonDefWithSchema>(
 
   // Create our own ref for this singleton
   const singletonRef = shallowRef<InferComponentType<T["schema"]>>(
-    {} as InferComponentType<T["schema"]>
+    singletonDef.default()
   );
 
   // Try to eagerly read the initial value
@@ -69,9 +69,26 @@ export function useSingleton<T extends SingletonDefWithSchema>(
     }
   );
 
+  // Register a one-time tick callback to read the initial value once editor is ready
+  // This handles the case where the singleton already has a value but no CHANGED event fires
+  let unregisterTick: (() => void) | null = null;
+  if (!editor) {
+    unregisterTick = canvasContext.registerTickCallback(() => {
+      const ed = canvasContext.getEditor();
+      if (ed) {
+        const ctx = ed._getContext();
+        singletonRef.value = singletonDef.snapshot(ctx);
+        // Unregister after first successful read
+        unregisterTick?.();
+        unregisterTick = null;
+      }
+    });
+  }
+
   // Cleanup on unmount
   onUnmounted(() => {
     unsubscribe();
+    unregisterTick?.();
   });
 
   return singletonRef;

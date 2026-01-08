@@ -1,14 +1,12 @@
-import {
-  addComponent,
+import { Block, type EditorResources,   addComponent,
   hasComponent,
   getResources,
   defineQuery,
   type Context,
-  type EntityId,
-} from "@infinitecanvas/ecs";
-import type { EditorResources } from "../types";
-import { Block } from "../components/Block";
-import { Selected } from "../components/Selected";
+  type EntityId
+} from "@infinitecanvas/editor";
+
+import { Selected } from "../components";
 
 // Query for selected blocks
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));

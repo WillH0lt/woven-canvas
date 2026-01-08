@@ -6,13 +6,13 @@ import {
   type Context,
   type EntityId,
   Block,
-  getLocalSelectedBlocks,
 } from "@infinitecanvas/editor";
 import { Vec2, Scalar } from "@infinitecanvas/math";
 
 import { TransformBox, TransformHandle, DragStart } from "../../components";
 import { DragBlock } from "../../commands";
 import { TransformHandleKind } from "../../types";
+import { getLocalSelectedBlocks } from "../../helpers";
 
 // Query for transform box
 const transformBoxQuery = defineQuery((q) =>

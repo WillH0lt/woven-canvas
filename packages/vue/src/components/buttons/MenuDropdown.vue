@@ -97,9 +97,6 @@ watch(isOpen, (open) => {
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside, true);
 });
-
-// Expose methods for programmatic control
-defineExpose({ open, close, toggle, isOpen, buttonRef });
 </script>
 
 <template>

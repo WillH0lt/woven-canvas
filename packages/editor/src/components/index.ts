@@ -11,8 +11,7 @@ export { Synced } from "./Synced";
 export { Block } from "./Block";
 export { Aabb } from "./Aabb";
 
-// Selection components
-export { Selected } from "./Selected";
+// State components
 export { Hovered } from "./Hovered";
 export { Edited } from "./Edited";
 

@@ -13,6 +13,3 @@ export {
   intersectAabb,
   getTopmostBlockAtPoint,
 } from "./intersect";
-
-// Selection helpers
-export { selectBlock, getLocalSelectedBlocks } from "./select";

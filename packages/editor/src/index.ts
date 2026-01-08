@@ -118,7 +118,6 @@ export {
   Synced,
   Block,
   Aabb,
-  Selected,
   Hovered,
   Edited,
   ScaleWithZoom,
@@ -157,13 +156,11 @@ export {
   intersectPoint,
   intersectAabb,
   getTopmostBlockAtPoint,
-  selectBlock,
-  getLocalSelectedBlocks,
   canBlockEdit,
   getBlockDef,
 } from "./helpers";
 
 // Systems
-export { intersectSystem } from "./systems/preCapture";
 export { rankBoundsSystem } from "./systems/preInput";
+export { intersectSystem } from "./systems/preCapture";
 export { scaleWithZoomSystem } from "./systems/preRender";

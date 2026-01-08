@@ -3,7 +3,6 @@ import { computed, ref, inject, provide } from "vue";
 import { useFloating, offset, flip, shift } from "@floating-ui/vue";
 import {
   Block,
-  Selected,
   Camera,
   Screen,
   Opacity,
@@ -11,7 +10,7 @@ import {
   type EntityId,
   type EditorResources,
 } from "@infinitecanvas/editor";
-import { TransformBox } from "@infinitecanvas/plugin-selection";
+import { TransformBox, Selected } from "@infinitecanvas/plugin-selection";
 import { Aabb, Rect } from "@infinitecanvas/math";
 import { useQuery } from "../composables/useQuery";
 import { useSingleton } from "../composables/useSingleton";

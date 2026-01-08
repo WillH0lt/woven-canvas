@@ -11,17 +11,17 @@ import {
   Editor,
   Camera,
   Block,
-  Selected,
   Hovered,
   Edited,
   Opacity,
   EventType,
   SINGLETON_ENTITY_ID,
   defineQuery,
-  type Context,
+  getResources,
   type EntityId,
   type InferComponentType,
   type EditorOptionsInput,
+  type EditorResources,
   type StoreAdapter,
   type BlockDefInput,
   type Keybind,
@@ -32,13 +32,14 @@ import {
   type EditorPluginInput,
 } from "@infinitecanvas/editor";
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
-import { SelectionPlugin } from "@infinitecanvas/plugin-selection";
+import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
 import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../injection";
 import SelectionBox from "./SelectionBox.vue";
 import TransformBox from "./TransformBox.vue";
 import TransformHandle from "./TransformHandle.vue";
 import StickyNote from "./StickyNote.vue";
 import FloatingMenu from "./FloatingMenu.vue";
+import Toolbar from "./Toolbar.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 
 type BlockComponentData = InferComponentType<typeof Block.schema>;
@@ -134,10 +135,11 @@ const emit = defineEmits<{
   ready: [editor: Editor];
 }>();
 
-// Define slots - block slots use "block:<tag>" naming, floating-menu slot has no props
+// Define slots - block slots use "block:<tag>" naming, floating-menu and toolbar slots have no props
 defineSlots<
   {
     "floating-menu"?: () => any;
+    toolbar?: () => any;
   } & {
     [slotName: `block:${string}`]: (props: { entityId: EntityId }) => any;
   }
@@ -372,11 +374,15 @@ function processEvents(editor: Editor) {
   const { events, newIndex } = ctx.eventBuffer.readEvents(eventIndex);
   eventIndex = newIndex;
 
+  if (events.length === 0) return;
+
+  const { componentsById, singletonsById } = getResources<EditorResources>(ctx);
+
   for (const { entityId, eventType, componentId } of events) {
     // Handle singleton events (special entity ID)
     if (entityId === SINGLETON_ENTITY_ID) {
       if (eventType === EventType.CHANGED) {
-        const singletonDef = editor.singletons.get(componentId);
+        const singletonDef = singletonsById.get(componentId);
         if (singletonDef) {
           notifySingletonSubscribers(singletonDef);
         }
@@ -395,17 +401,17 @@ function processEvents(editor: Editor) {
       // Ensure entity is tracked
       entities.add(entityId);
 
-      const componentDef = editor.components.get(componentId);
+      const componentDef = componentsById.get(componentId);
       if (componentDef) {
         notifySubscribers(entityId, componentDef);
       }
     } else if (eventType === EventType.COMPONENT_REMOVED) {
-      const componentDef = editor.components.get(componentId);
+      const componentDef = componentsById.get(componentId);
       if (componentDef) {
         notifySubscribers(entityId, componentDef, true);
       }
     } else if (eventType === EventType.CHANGED) {
-      const componentDef = editor.components.get(componentId);
+      const componentDef = componentsById.get(componentId);
       if (componentDef) {
         notifySubscribers(entityId, componentDef);
       }
@@ -533,7 +539,7 @@ function updateBlocks(editor: Editor) {
 }
 
 // Camera ref for internal rendering - updated via subscription
-const cameraRef = shallowRef({ left: 0, top: 0, zoom: 1 });
+const cameraRef = shallowRef(Camera.default());
 
 // Subscribe to Camera singleton for internal rendering
 subscribeSingleton(Camera.name, (value) => {
@@ -600,11 +606,28 @@ function getBlockStyle(data: BlockData) {
       </slot>
     </div>
 
-    <!-- Floating menu - positioned via floating-ui -->
+    <!-- Floating menu -->
     <FloatingMenu v-if="editorRef">
       <template #default="menuProps">
         <slot name="floating-menu" v-bind="menuProps" />
       </template>
     </FloatingMenu>
+
+    <!-- Toolbar -->
+    <slot name="toolbar">
+      <div class="ic-toolbar">
+        <Toolbar />
+      </div>
+    </slot>
   </div>
 </template>
+
+<style>
+.ic-toolbar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+</style>

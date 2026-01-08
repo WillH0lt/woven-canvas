@@ -1,5 +1,4 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "../EditorComponentDef";
+import { field, defineEditorComponent } from "@infinitecanvas/editor";
 
 /**
  * Selected component - marks an entity as selected.

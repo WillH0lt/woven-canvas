@@ -1,16 +1,22 @@
-import {
-  type EditorPlugin,
-  Color
-} from "@infinitecanvas/editor";
+import { type EditorPlugin, Color } from "@infinitecanvas/editor";
 
+import { CURSORS } from "./cursors";
+import { blockPlacementSystem } from "./systems";
 
 export const BasicsPlugin: EditorPlugin = {
-  name: 'basics',
+  name: "basics",
+
+  cursors: CURSORS,
 
   blockDefs: [
     {
       tag: "sticky-note",
-      components: [Color]
+      components: [Color],
     },
+  ],
+
+  systems: [
+    // Update phase
+    blockPlacementSystem,
   ],
 };

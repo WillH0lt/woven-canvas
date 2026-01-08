@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   field,
   defineComponent,
+  defineSingleton,
   World,
   createEntity,
   addComponent,
@@ -1902,6 +1903,311 @@ describe("Component", () => {
       expect(result.position[1]).toBeCloseTo(395.5);
       expect(result.size[0]).toBeCloseTo(60);
       expect(result.size[1]).toBeCloseTo(60);
+    });
+  });
+
+  describe("ComponentDef.default()", () => {
+    it("should return default values for all field types", () => {
+      const AllTypes = defineComponent({
+        str: field.string().max(50).default("hello"),
+        num: field.float32().default(42.5),
+        bool: field.boolean().default(true),
+        u8: field.uint8().default(255),
+        i32: field.int32().default(-100),
+      });
+
+      const defaults = AllTypes.default();
+
+      expect(defaults.str).toBe("hello");
+      expect(defaults.num).toBeCloseTo(42.5);
+      expect(defaults.bool).toBe(true);
+      expect(defaults.u8).toBe(255);
+      expect(defaults.i32).toBe(-100);
+    });
+
+    it("should return type-based fallbacks when no default specified", () => {
+      const NoDefaults = defineComponent({
+        str: field.string().max(50),
+        num: field.float32(),
+        bool: field.boolean(),
+        u8: field.uint8(),
+      });
+
+      const defaults = NoDefaults.default();
+
+      expect(defaults.str).toBe("");
+      expect(defaults.num).toBe(0);
+      expect(defaults.bool).toBe(false);
+      expect(defaults.u8).toBe(0);
+    });
+
+    it("should return null for ref fields", () => {
+      const WithRef = defineComponent({
+        parent: field.ref(),
+        value: field.uint32().default(10),
+      });
+
+      const defaults = WithRef.default();
+
+      expect(defaults.parent).toBe(null);
+      expect(defaults.value).toBe(10);
+    });
+
+    it("should return first enum value as default when not specified", () => {
+      const Status = {
+        Pending: "Pending",
+        Active: "Active",
+        Done: "Done",
+      } as const;
+
+      const WithEnum = defineComponent({
+        status: field.enum(Status),
+      });
+
+      const defaults = WithEnum.default();
+
+      // Enums are sorted alphabetically, so "Active" comes first
+      expect(defaults.status).toBe("Active");
+    });
+
+    it("should use explicit enum default when provided", () => {
+      const Status = {
+        Pending: "Pending",
+        Active: "Active",
+        Done: "Done",
+      } as const;
+
+      const WithEnum = defineComponent({
+        status: field.enum(Status).default("Done"),
+      });
+
+      const defaults = WithEnum.default();
+
+      expect(defaults.status).toBe("Done");
+    });
+
+    it("should return empty array for array fields without default", () => {
+      const WithArray = defineComponent({
+        points: field.array(field.float32(), 100),
+      });
+
+      const defaults = WithArray.default();
+
+      expect(defaults.points).toEqual([]);
+    });
+
+    it("should return specified default for array fields", () => {
+      const WithArray = defineComponent({
+        points: field.array(field.float32(), 100).default([1.0, 2.0, 3.0]),
+      });
+
+      const defaults = WithArray.default();
+
+      expect(defaults.points).toEqual([1.0, 2.0, 3.0]);
+    });
+
+    it("should return zeros for tuple fields without default", () => {
+      const WithTuple = defineComponent({
+        position: field.tuple(field.float32(), 3),
+      });
+
+      const defaults = WithTuple.default();
+
+      expect([...defaults.position]).toEqual([0, 0, 0]);
+    });
+
+    it("should return specified default for tuple fields", () => {
+      const WithTuple = defineComponent({
+        position: field.tuple(field.float32(), 2).default([10, 20]),
+      });
+
+      const defaults = WithTuple.default();
+
+      expect([...defaults.position]).toEqual([10, 20]);
+    });
+
+    it("should return empty Uint8Array for binary fields without default", () => {
+      const WithBinary = defineComponent({
+        data: field.binary().max(128),
+      });
+
+      const defaults = WithBinary.default();
+
+      expect(defaults.data).toBeInstanceOf(Uint8Array);
+      expect(defaults.data.length).toBe(0);
+    });
+
+    it("should return specified default for binary fields", () => {
+      const defaultData = new Uint8Array([1, 2, 3]);
+      const WithBinary = defineComponent({
+        data: field.binary().max(128).default(defaultData),
+      });
+
+      const defaults = WithBinary.default();
+
+      expect(Array.from(defaults.data)).toEqual([1, 2, 3]);
+    });
+
+    it("should work without requiring a World or Context", () => {
+      const Position = defineComponent({
+        x: field.float32().default(100),
+        y: field.float32().default(200),
+      });
+
+      // No World created - default() should still work
+      const defaults = Position.default();
+
+      expect(defaults.x).toBe(100);
+      expect(defaults.y).toBe(200);
+    });
+
+    it("should work when same component is defined multiple times with different defaults", () => {
+      const PositionA = defineComponent({
+        x: field.float32().default(10),
+        y: field.float32().default(20),
+      });
+
+      const PositionB = defineComponent({
+        x: field.float32().default(100),
+        y: field.float32().default(200),
+      });
+
+      const defaultsA = PositionA.default();
+      const defaultsB = PositionB.default();
+
+      expect(defaultsA.x).toBe(10);
+      expect(defaultsA.y).toBe(20);
+      expect(defaultsB.x).toBe(100);
+      expect(defaultsB.y).toBe(200);
+    });
+
+    it("should handle mixed fields with and without defaults", () => {
+      const Mixed = defineComponent({
+        name: field.string().max(50).default("unnamed"),
+        count: field.uint32(), // no default, should be 0
+        active: field.boolean().default(true),
+        score: field.float32(), // no default, should be 0
+      });
+
+      const defaults = Mixed.default();
+
+      expect(defaults.name).toBe("unnamed");
+      expect(defaults.count).toBe(0);
+      expect(defaults.active).toBe(true);
+      expect(defaults.score).toBe(0);
+    });
+
+    it("should handle the same fields with and without defaults", () => {
+      const Mixed = defineComponent({
+        firstName: field.string().default("unnamed"),
+        lastName: field.string(), 
+      }); 
+
+      const defaults = Mixed.default();
+
+      expect(defaults.firstName).toBe("unnamed");
+      expect(defaults.lastName).toBe("");
+    });
+
+
+    it("should return independent objects on each call", () => {
+      const Position = defineComponent({
+        x: field.float32().default(0),
+        y: field.float32().default(0),
+      });
+
+      const defaults1 = Position.default();
+      const defaults2 = Position.default();
+
+      // Should be different object instances
+      expect(defaults1).not.toBe(defaults2);
+
+      // Modifying one should not affect the other
+      defaults1.x = 999;
+      expect(defaults2.x).toBe(0);
+    });
+  });
+
+  describe("SingletonDef.default()", () => {
+    it("should return default values for singleton", () => {
+      const Mouse = defineSingleton({
+        x: field.float32().default(100),
+        y: field.float32().default(200),
+        pressed: field.boolean().default(false),
+      });
+
+      const defaults = Mouse.default();
+
+      expect(defaults.x).toBe(100);
+      expect(defaults.y).toBe(200);
+      expect(defaults.pressed).toBe(false);
+    });
+
+    it("should work without requiring a World or Context", () => {
+      const Time = defineSingleton({
+        delta: field.float32().default(0.016),
+        elapsed: field.float32().default(0),
+      });
+
+      // No World created - default() should still work
+      const defaults = Time.default();
+
+      expect(defaults.delta).toBeCloseTo(0.016);
+      expect(defaults.elapsed).toBe(0);
+    });
+
+    it("should work when same singleton is defined multiple times with different defaults", () => {
+      const TimeA = defineSingleton({
+        delta: field.float32().default(0.016),
+      });
+
+      const TimeB = defineSingleton({
+        delta: field.float32().default(0.033),
+      });
+
+      const defaultsA = TimeA.default();
+      const defaultsB = TimeB.default();
+
+      expect(defaultsA.delta).toBeCloseTo(0.016);
+      expect(defaultsB.delta).toBeCloseTo(0.033);
+    });
+
+    it("should return type-based fallbacks when no default specified", () => {
+      const GameState = defineSingleton({
+        level: field.uint8(),
+        score: field.uint32(),
+        paused: field.boolean(),
+      });
+
+      const defaults = GameState.default();
+
+      expect(defaults.level).toBe(0);
+      expect(defaults.score).toBe(0);
+      expect(defaults.paused).toBe(false);
+    });
+
+    it("should handle all field types", () => {
+      const Status = { Active: "Active", Paused: "Paused" } as const;
+
+      const ComplexSingleton = defineSingleton({
+        name: field.string().max(50).default("Game"),
+        score: field.uint32().default(0),
+        multiplier: field.float32().default(1.0),
+        active: field.boolean().default(true),
+        status: field.enum(Status).default("Active"),
+        highScores: field.array(field.uint32(), 10).default([100, 50, 25]),
+        position: field.tuple(field.float32(), 2).default([0, 0]),
+      });
+
+      const defaults = ComplexSingleton.default();
+
+      expect(defaults.name).toBe("Game");
+      expect(defaults.score).toBe(0);
+      expect(defaults.multiplier).toBe(1.0);
+      expect(defaults.active).toBe(true);
+      expect(defaults.status).toBe("Active");
+      expect(defaults.highScores).toEqual([100, 50, 25]);
+      expect([...defaults.position]).toEqual([0, 0]);
     });
   });
 });

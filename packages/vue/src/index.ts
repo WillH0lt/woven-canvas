@@ -5,10 +5,15 @@ export type {
 } from "./components/InfiniteCanvas.vue";
 
 // Floating Menu Components
-export {
-  default as FloatingMenu,
-} from "./components/FloatingMenu.vue";
+export { default as FloatingMenu } from "./components/FloatingMenu.vue";
 export { default as FloatingMenuBar } from "./components/FloatingMenuBar.vue";
+
+// Toolbar Components
+export { default as Toolbar } from "./components/Toolbar.vue";
+export { default as ToolbarButton } from "./components/ToolbarButton.vue";
+export { default as SelectTool } from "./components/tools/SelectTool.vue";
+export { default as HandTool } from "./components/tools/HandTool.vue";
+export { default as StickyNoteTool } from "./components/tools/StickyNoteTool.vue";
 
 // Menu Button Components
 export { default as MenuDropdown } from "./components/buttons/MenuDropdown.vue";
@@ -23,6 +28,7 @@ export { useComponent } from "./composables/useComponent";
 export { useComponents } from "./composables/useComponents";
 export { useSingleton } from "./composables/useSingleton";
 export { useTooltipSingleton } from "./composables/useTooltipSingleton";
+export { useToolbar } from "./composables/useToolbar";
 export {
   useEditorContext,
   type EditorContext,
@@ -30,3 +36,6 @@ export {
 
 // Utilities
 export { computeCommonComponents } from "./utils/computeCommonComponents";
+
+// Cursors
+export { CursorKind, CURSORS } from "./cursors";

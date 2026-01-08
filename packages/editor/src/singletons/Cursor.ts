@@ -4,7 +4,7 @@ import { EditorSingletonDef } from "../EditorSingletonDef";
 
 const CursorSchema = {
   /** Base cursor kind (from current tool) */
-  cursorKind: field.string().max(64).default(""),
+  cursorKind: field.string().max(64).default("select"),
   /** Base cursor rotation in radians */
   rotation: field.float64().default(0),
   /** Context-specific cursor kind (overrides cursorKind when set, e.g., during drag/hover) */

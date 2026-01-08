@@ -33,12 +33,15 @@ import * as components from "./components";
 import * as singletons from "./singletons";
 
 import { PLUGIN_NAME } from "./constants";
+import { cursors } from "./cursors";
 
 /**
  * Core plugin - handles core input and camera functionality.
  */
 export const CorePlugin: EditorPlugin = {
   name: PLUGIN_NAME,
+
+  cursors,
 
   singletons: Object.values(singletons).filter(
     (v): v is EditorSingletonDef<any> => v instanceof EditorSingletonDef
@@ -49,21 +52,21 @@ export const CorePlugin: EditorPlugin = {
   ) as AnyEditorComponentDef[],
 
   systems: [
-    // Input phase (priority order: 100 = early, 0 = default, -100 = late)
-    frameSystem, // priority: 100 - runs first
-    rankBoundsSystem, // priority: 100 - runs early
-    keyboardSystem, // priority: 0
-    mouseSystem, // priority: 0
-    screenSystem, // priority: 0
-    pointerSystem, // priority: 0
+    // Input phase
+    frameSystem, // priority: 100
+    rankBoundsSystem, // priority: 100
+    keyboardSystem,
+    mouseSystem,
+    screenSystem,
+    pointerSystem,
 
     // Capture phase
-    intersectSystem, // priority: 100 - runs early
-    keybindSystem, // priority: 0
+    intersectSystem, // priority: 100
+    keybindSystem,
 
     // Render phase
-    scaleWithZoomSystem, // priority: 100 - runs early
-    cursorSystem, // priority: -100 - runs late
+    scaleWithZoomSystem, // priority: 100
+    cursorSystem, // priority: -100
   ],
 
   setup(ctx) {

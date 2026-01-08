@@ -54,6 +54,30 @@ export interface EditorResources {
    * @internal Populated automatically from plugin.resources
    */
   pluginResources: Record<string, unknown>;
+
+  /**
+   * All registered components keyed by name.
+   * Use this for fast component lookup by name (e.g., from snapshots).
+   */
+  componentsByName: Map<string, AnyEditorComponentDef>;
+
+  /**
+   * All registered singletons keyed by name.
+   * Use this for fast singleton lookup by name.
+   */
+  singletonsByName: Map<string, AnyEditorSingletonDef>;
+
+  /**
+   * All registered components keyed by componentId.
+   * Use this for component lookup by runtime id (e.g., from events).
+   */
+  componentsById: Map<number, AnyEditorComponentDef>;
+
+  /**
+   * All registered singletons keyed by componentId.
+   * Use this for singleton lookup by runtime id (e.g., from events).
+   */
+  singletonsById: Map<number, AnyEditorSingletonDef>;
 }
 
 /**

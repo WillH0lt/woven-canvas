@@ -1,7 +1,7 @@
 import { type Context, defineQuery, getResources } from "@infinitecanvas/ecs";
 
 import { defineEditorSystem } from "../../EditorSystem";
-import { Cursor } from "../../singletons";
+import { Cursor, Frame } from "../../singletons";
 import type { CursorDef, EditorResources } from "../../types";
 
 const cursorQuery = defineQuery((q) => q.tracking(Cursor));
@@ -41,26 +41,31 @@ export function getCursorSvg(
  * Resolves cursor kind + rotation to SVG using getCursorSvg at render time,
  * allowing cursor definitions to be changed dynamically.
  */
-export const cursorSystem = defineEditorSystem({ phase: "render", priority: -100 }, (ctx: Context) => {
-  const changedCursors = cursorQuery.changed(ctx);
+export const cursorSystem = defineEditorSystem(
+  { phase: "render", priority: -100 },
+  (ctx: Context) => {
+    const changedCursors = cursorQuery.changed(ctx);
 
-  // If no cursor changes, skip updating DOM
-  if (changedCursors.length === 0) {
-    return;
+    const frame = Frame.read(ctx);
+
+    // If no cursor changes, skip updating DOM
+    if (changedCursors.length === 0 && frame.number !== 1) {
+      return;
+    }
+
+    const { cursorKind, rotation } = Cursor.getEffective(ctx);
+
+    // If no cursor kind set, use default
+    if (!cursorKind) {
+      document.body.style.cursor = "default";
+      return;
+    }
+
+    // Get cursors from resources and resolve to SVG
+    const { editor } = getResources<EditorResources>(ctx);
+    const cursorValue = getCursorSvg(editor.cursors, cursorKind, rotation);
+
+    // Apply to DOM
+    document.body.style.cursor = cursorValue;
   }
-
-  const { cursorKind, rotation } = Cursor.getEffective(ctx);
-
-  // If no cursor kind set, use default
-  if (!cursorKind) {
-    document.body.style.cursor = "default";
-    return;
-  }
-
-  // Get cursors from resources and resolve to SVG
-  const { editor } = getResources<EditorResources>(ctx);
-  const cursorValue = getCursorSvg(editor.cursors, cursorKind, rotation);
-
-  // Apply to DOM
-  document.body.style.cursor = cursorValue;
-});
+);

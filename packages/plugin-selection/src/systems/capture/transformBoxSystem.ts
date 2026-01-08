@@ -7,15 +7,13 @@ import {
   Controls,
   hasComponent,
   Block,
-  Selected,
   getPointerInput,
   canBlockEdit,
   getBlockDef,
-  getLocalSelectedBlocks,
   type PointerInput,
 } from "@infinitecanvas/editor";
 
-import { TransformBox, TransformHandle } from "../../components";
+import { TransformBox, TransformHandle, Selected } from "../../components";
 import {
   AddOrUpdateTransformBox,
   UpdateTransformBox,
@@ -26,6 +24,7 @@ import {
 } from "../../commands";
 import { TransformBoxStateSingleton } from "../../singletons";
 import { TransformBoxState } from "../../types";
+import { getLocalSelectedBlocks } from "../../helpers";
 
 /**
  * Selection changed event for transform box state machine.

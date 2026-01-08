@@ -15,11 +15,8 @@ import {
   type EntityId,
   Aabb,
   Block,
-  Selected,
   RankBounds,
   Cursor,
-  selectBlock,
-  getLocalSelectedBlocks,
 } from "@infinitecanvas/editor";
 
 import { Aabb as AabbNs, Vec2 } from "@infinitecanvas/math";
@@ -41,9 +38,14 @@ import {
   CloneEntities,
   UncloneEntities,
 } from "../../commands";
+import { Selected } from "../../components";
 import { Clipboard } from "../../singletons";
 import type { ClipboardEntityData } from "../../singletons/Clipboard";
-import { generateUuidBySeed } from "../../helpers";
+import {
+  generateUuidBySeed,
+  selectBlock,
+  getLocalSelectedBlocks,
+} from "../../helpers";
 
 // Query for synced blocks
 const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced));
@@ -222,9 +224,9 @@ function copySelectedBlocks(ctx: Context): void {
   const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
 
-  const { editor } = getResources<EditorResources>(ctx);
+  const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...editor.components].filter(([, def]) => def.__editor.sync === "document")
+    [...componentsById].filter(([, def]) => def.__editor.sync === "document")
   );
 
   const clipboardEntities: ClipboardEntityData[] = [];
@@ -275,9 +277,9 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
   const clipboardEntities = Clipboard.getEntities(ctx);
   if (clipboardEntities.length === 0) return;
 
-  const { editor } = getResources<EditorResources>(ctx);
+  const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...editor.components].filter(([, def]) => def.__editor.sync === "document")
+    [...componentsById].filter(([, def]) => def.__editor.sync === "document")
   );
 
   const clipboard = Clipboard.read(ctx);
@@ -357,9 +359,9 @@ function cloneEntities(
   offset: Vec2,
   seed: string
 ): void {
-  const { editor } = getResources<EditorResources>(ctx);
+  const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...editor.components].filter(([, def]) => def.__editor.sync === "document")
+    [...componentsById].filter(([, def]) => def.__editor.sync === "document")
   );
   const syncedComponentId = Synced._getComponentId(ctx);
   const blockComponentId = Block._getComponentId(ctx);

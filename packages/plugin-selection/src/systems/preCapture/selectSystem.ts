@@ -10,11 +10,15 @@ import {
   Synced,
   Block,
   getPointerInput,
-  Selected,
   type PointerInput,
 } from "@infinitecanvas/editor";
 
-import { Locked, TransformBox, TransformHandle } from "../../components";
+import {
+  Locked,
+  TransformBox,
+  TransformHandle,
+  Selected,
+} from "../../components";
 import {
   SelectBlock,
   DeselectAll,
@@ -74,6 +78,7 @@ const selectionMachine = setup({
     },
     isOverSyncedBlock: ({ event }) => {
       const ctx = event.ctx;
+
       for (const entityId of event.intersects) {
         if (hasComponent(ctx, entityId, Synced)) {
           return true;
@@ -419,14 +424,17 @@ const selectionMachine = setup({
  * - Shift+click to toggle selection
  * - Selection box (marquee) for multi-select
  */
-export const selectSystem = defineEditorSystem({ phase: "capture", priority: 100 }, (ctx) => {
-  // Get pointer buttons mapped to 'select' tool
-  const buttons = Controls.getButtons(ctx, "select");
+export const selectSystem = defineEditorSystem(
+  { phase: "capture", priority: 100 },
+  (ctx) => {
+    // Get pointer buttons mapped to 'select' tool
+    const buttons = Controls.getButtons(ctx, "select");
 
-  // Get pointer events with intersection data
-  const events = getPointerInput(ctx, buttons);
-  
-  if (events.length === 0) return;
-  
-  SelectionStateSingleton.run(ctx, selectionMachine, events);
-});
+    // Get pointer events with intersection data
+    const events = getPointerInput(ctx, buttons);
+
+    if (events.length === 0) return;
+
+    SelectionStateSingleton.run(ctx, selectionMachine, events);
+  }
+);

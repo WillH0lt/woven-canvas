@@ -1,5 +1,6 @@
 // State
 export { Locked } from "./Locked";
+export { Selected } from "./Selected";
 
 // Transform components
 export { DragStart } from "./DragStart";
