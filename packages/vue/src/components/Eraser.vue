@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
+import { Block, type EntityId } from "@infinitecanvas/editor";
 import { useComponent } from "../composables/useComponent";
 import { EraserStroke, POINTS_CAPACITY } from "@infinitecanvas/plugin-eraser";
 import { getStroke } from "perfect-freehand";
@@ -10,6 +10,7 @@ const props = defineProps<{
 }>();
 
 const eraserStroke = useComponent(props.entityId, EraserStroke);
+const block = useComponent(props.entityId, Block);
 const path = shallowRef("");
 
 function average(a: number, b: number) {
@@ -20,19 +21,24 @@ function getSvgPathFromStroke(
   pointCount: number,
   firstPointIndex: number,
   points: Float32Array,
-  thickness: number
+  thickness: number,
+  left: number,
+  top: number
 ): string {
   if (pointCount <= 4) {
     return "";
   }
 
-  // Build input points from circular buffer
+  // Build input points from circular buffer, shifted by block position
   const inputPoints: [number, number][] = [];
   const effectiveCount = Math.min(pointCount, POINTS_CAPACITY);
 
   for (let i = 0; i < effectiveCount; i++) {
     const bufferIndex = ((firstPointIndex + i) % POINTS_CAPACITY) * 2;
-    inputPoints.push([points[bufferIndex], points[bufferIndex + 1]]);
+    inputPoints.push([
+      points[bufferIndex] - left,
+      points[bufferIndex + 1] - top,
+    ]);
   }
 
   const outlinePoints = getStroke(inputPoints, {
@@ -74,22 +80,22 @@ function getSvgPathFromStroke(
 
 // Watch for changes and regenerate path
 watch(
-  eraserStroke,
-  (stroke) => {
-
-    console.log("Eraser stroke changed:", stroke);
-
-    if (!stroke) {
+  [eraserStroke, block],
+  ([stroke, blockData]) => {
+    if (!stroke || !blockData) {
       path.value = "";
       return;
     }
 
     const radius = stroke.radius ?? 8;
+    const [left, top] = blockData.position;
     path.value = getSvgPathFromStroke(
       stroke.pointCount,
       stroke.firstPointIndex,
       stroke.points,
-      2 * radius
+      2 * radius,
+      left,
+      top
     );
   },
   { immediate: true }

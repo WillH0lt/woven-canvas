@@ -4,7 +4,7 @@ import { field, defineEditorComponent } from "@infinitecanvas/editor";
  * Maximum number of points that can be stored in the stroke.
  * Points are stored as [x, y] pairs, so actual capacity is POINTS_CAPACITY * 2 floats.
  */
-export const POINTS_CAPACITY = 100;
+export const POINTS_CAPACITY = 10;
 
 /**
  * EraserStroke component - stores the geometry of an eraser stroke.

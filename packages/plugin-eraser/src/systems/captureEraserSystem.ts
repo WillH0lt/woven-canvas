@@ -44,8 +44,10 @@ const eraserMachine = setup({
     },
 
     addPoint: assign({
-      lastWorldPosition: ({ event }): [number, number] => {
+      lastWorldPosition: ({ event, context }): [number, number] => {
+        if (!context.activeStroke) return context.lastWorldPosition;
         AddEraserStrokePoint.spawn(event.ctx, {
+          strokeId: context.activeStroke,
           worldPosition: event.worldPosition,
         });
         return [event.worldPosition[0], event.worldPosition[1]];

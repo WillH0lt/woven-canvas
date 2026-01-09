@@ -12,11 +12,12 @@ import {
   Aabb,
   Block,
   Opacity,
+  RankBounds,
   type Context,
   type EntityId,
   getBackrefs,
 } from "@infinitecanvas/editor";
-import { Capsule } from "@infinitecanvas/math";
+import { Capsule, Vec2, Aabb as AabbNs } from "@infinitecanvas/math";
 
 import {
   StartEraserStroke,
@@ -50,8 +51,8 @@ export const updateEraserSystem = defineEditorSystem(
       startStroke(ctx, worldPosition);
     });
 
-    on(ctx, AddEraserStrokePoint, (ctx, { worldPosition }) => {
-      addStrokePoint(ctx, worldPosition);
+    on(ctx, AddEraserStrokePoint, (ctx, { strokeId, worldPosition }) => {
+      addStrokePoint(ctx, strokeId, worldPosition);
     });
 
     on(ctx, CompleteEraserStroke, (ctx, { strokeId }) => {
@@ -71,6 +72,14 @@ function startStroke(ctx: Context, position: [number, number]): void {
   // Create stroke entity
   const strokeId = createEntity(ctx);
 
+  // Add Block component so the stroke can be rendered
+  addComponent(ctx, strokeId, Block, {
+    tag: "eraser",
+    rank: RankBounds.genNext(ctx),
+    position: [position[0] - STROKE_RADIUS, position[1] - STROKE_RADIUS],
+    size: [STROKE_RADIUS * 2, STROKE_RADIUS * 2],
+  });
+
   addComponent(ctx, strokeId, EraserStroke, {
     points: position,
     pointCount: 1,
@@ -87,13 +96,11 @@ function startStroke(ctx: Context, position: [number, number]): void {
 /**
  * Add a point to the active eraser stroke and check for intersections.
  */
-function addStrokePoint(ctx: Context, point: [number, number]): void {
-  const state = EraserStateSingleton.read(ctx);
-  const strokeId = state.activeStroke;
-
-  if (strokeId === null) return;
-  if (!hasComponent(ctx, strokeId, EraserStroke)) return;
-
+function addStrokePoint(
+  ctx: Context,
+  strokeId: EntityId,
+  point: [number, number]
+): void {
   const stroke = EraserStroke.write(ctx, strokeId);
 
   // Get previous point for capsule creation
@@ -112,6 +119,17 @@ function addStrokePoint(ctx: Context, point: [number, number]): void {
   if (stroke.pointCount > POINTS_CAPACITY) {
     stroke.firstPointIndex =
       (stroke.pointCount - POINTS_CAPACITY) % POINTS_CAPACITY;
+  }
+
+  // Update block bounds if Aabb doesn't contain the new point
+  if (!Aabb.containsPoint(ctx, strokeId, point)) {
+    Aabb.expandByPoint(ctx, strokeId, point);
+
+    // Update block to match the expanded Aabb
+    const { value: aabb } = Aabb.read(ctx, strokeId);
+    const block = Block.write(ctx, strokeId);
+    Vec2.set(block.position, AabbNs.left(aabb), AabbNs.top(aabb));
+    Vec2.set(block.size, AabbNs.width(aabb), AabbNs.height(aabb));
   }
 
   // Skip intersection check if the point hasn't moved much

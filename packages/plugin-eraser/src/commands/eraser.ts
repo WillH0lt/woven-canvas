@@ -14,6 +14,7 @@ export const StartEraserStroke = defineCommand<{
  * Updates the stroke geometry and checks for new intersections.
  */
 export const AddEraserStrokePoint = defineCommand<{
+  strokeId: EntityId;
   worldPosition: Vec2;
 }>("add-eraser-stroke-point");
 

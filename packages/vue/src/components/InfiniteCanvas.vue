@@ -41,6 +41,7 @@ import TransformHandle from "./TransformHandle.vue";
 import StickyNote from "./StickyNote.vue";
 import FloatingMenu from "./FloatingMenu.vue";
 import Toolbar from "./Toolbar.vue";
+import Eraser from "./Eraser.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 
 type BlockComponentData = InferComponentType<typeof Block.schema>;
@@ -601,7 +602,7 @@ function getBlockStyle(data: BlockData) {
         :name="`block:${itemRef.value.block.tag}`"
         :entityId="itemRef.value.entityId"
       >
-        <!-- Default components for selection UI -->
+        <!-- Default blocks -->
         <SelectionBox v-if="itemRef.value.block.tag === 'selection-box'" />
         <TransformBox v-else-if="itemRef.value.block.tag === 'transform-box'" />
         <TransformHandle
@@ -611,6 +612,10 @@ function getBlockStyle(data: BlockData) {
         <StickyNote
           v-else-if="itemRef.value.block.tag === 'sticky-note'"
           :entityId="itemRef.value.entityId"
+        />
+        <Eraser
+          v-else-if="itemRef.value.block.tag === 'eraser'"
+          :entity-id="itemRef.value.entityId"
         />
       </slot>
     </div>
