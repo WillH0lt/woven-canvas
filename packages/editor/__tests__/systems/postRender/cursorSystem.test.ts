@@ -43,7 +43,7 @@ describe("PostRenderCursor", () => {
     // Use Editor with custom cursors (CorePlugin already includes cursorSystem)
     editor = new Editor(mockDomElement, {
       plugins: [],
-      customCursors: TEST_CURSOR_DEFS,
+      cursors: TEST_CURSOR_DEFS,
     });
     await editor.initialize();
   });

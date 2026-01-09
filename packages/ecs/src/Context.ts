@@ -1,6 +1,9 @@
 import type { Context, EntityId } from "./types";
 import type { Component, ComponentDef } from "./Component";
-import type { ComponentSchema, InferComponentType } from "./Component/types";
+import type {
+  ComponentSchema,
+  InferComponentInput,
+} from "./Component/types";
 import { NULL_REF } from "./Component/fields/ref";
 
 const ENTITY_ID_MASK = 0x01ffffff;
@@ -113,7 +116,7 @@ export function addComponent<T extends ComponentSchema>(
   ctx: Context,
   entityId: EntityId,
   componentDef: ComponentDef<T>,
-  data: Partial<InferComponentType<T>> = {} as any,
+  data: Partial<InferComponentInput<T>> = {} as any,
   checkExistence = true
 ): void {
   if (checkExistence && !ctx.entityBuffer.has(entityId)) {

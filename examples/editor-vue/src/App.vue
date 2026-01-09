@@ -28,7 +28,7 @@ function handleReady(editor: Editor) {
       @ready="handleReady"
       :store="store"
       :controls="{ minZoom: 0.1, maxZoom: 10 }"
-      :customComponents="[Shape]"
+      :components="[Shape]"
       :customBlockDefs="[{ tag: 'shape', components: [Shape, Color] }]"
     >
       <template #block:shape="{ entityId }">

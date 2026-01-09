@@ -82,6 +82,7 @@ export {
   defineQuery,
   getResources,
   defineSystem,
+  getBackrefs,
   MainThreadSystem,
   EventType,
   SINGLETON_ENTITY_ID,
@@ -128,6 +129,9 @@ export {
   Connector,
   Color,
   User,
+  HitGeometry,
+  MAX_HIT_CAPSULES,
+  FLOATS_PER_CAPSULE,
 } from "./components";
 
 // Events
@@ -155,6 +159,7 @@ export { runMachine, type MachineResult } from "./machine";
 export {
   intersectPoint,
   intersectAabb,
+  intersectCapsule,
   getTopmostBlockAtPoint,
   canBlockEdit,
   getBlockDef,

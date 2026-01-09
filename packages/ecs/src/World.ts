@@ -221,7 +221,9 @@ export class World {
 
     const { entities } = ctx.eventBuffer.collectEntitiesInRange(
       fromIndex,
-      EventType.REMOVED
+      EventType.REMOVED,
+      undefined,
+      toIndex
     );
 
     for (const entityId of entities) {

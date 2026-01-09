@@ -2,7 +2,7 @@ import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
 import { Vec2 } from "@infinitecanvas/math";
 
 import { Pointer, type PointerButton } from "../components";
-import { Camera, Frame, Keyboard, Intersect } from "../singletons";
+import { Camera, Frame, Keyboard, Intersect, Key } from "../singletons";
 import type { PointerInput, PointerInputOptions } from "./types";
 
 // Default thresholds for click detection
@@ -158,7 +158,7 @@ export function getPointerInput(
   const matchingCurrent = Array.from(currentPointers).filter(matchesButtons);
 
   // Check for cancel conditions
-  const escapePressed = Keyboard.isKeyDownTrigger(ctx, 27); // Escape key
+  const escapePressed = Keyboard.isKeyDownTrigger(ctx, Key.Escape);
   const multiTouch = matchingCurrent.length > 1 && matchingAdded.length > 0;
 
   if ((escapePressed || multiTouch) && matchingCurrent.length > 0) {

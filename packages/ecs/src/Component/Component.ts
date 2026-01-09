@@ -4,6 +4,7 @@ import type { EntityBuffer } from "../EntityBuffer";
 import type {
   ComponentSchema,
   InferComponentType,
+  InferComponentInput,
   ComponentBuffer,
   FieldDef,
 } from "./types";
@@ -14,6 +15,7 @@ import {
   BinaryField,
   ArrayField,
   TupleField,
+  BufferField,
   EnumField,
   RefField,
   Field,
@@ -32,6 +34,7 @@ const FIELD_REGISTRY: Record<string, new (fieldDef: any) => Field> = {
   binary: BinaryField,
   array: ArrayField,
   tuple: TupleField,
+  buffer: BufferField,
   enum: EnumField,
 };
 
@@ -524,7 +527,7 @@ export class ComponentDef<T extends ComponentSchema> {
   copy(
     ctx: Context,
     entityId: EntityId,
-    data: Partial<InferComponentType<T>>
+    data: Partial<InferComponentInput<T>>
   ): void {
     this._getInstance(ctx).copy(entityId, data);
   }
@@ -706,7 +709,7 @@ export class SingletonDef<T extends ComponentSchema> {
    * Mouse.copy(ctx, { x: 0, y: 0, pressed: false });
    * ```
    */
-  copy(ctx: Context, data: Partial<InferComponentType<T>>): void {
+  copy(ctx: Context, data: Partial<InferComponentInput<T>>): void {
     this._getInstance(ctx).copy(SINGLETON_INDEX, data);
   }
 

@@ -1,22 +1,25 @@
 import { field, type Context } from "@infinitecanvas/ecs";
 import { EditorSingletonDef } from "../EditorSingletonDef";
 
-/** Binary size for key states (32 bytes = 256 bits = covers all keycodes) */
-const KEY_BINARY_SIZE = 32;
-
-/** Default empty binary buffer for key states */
-const EMPTY_KEY_BUFFER = new Uint8Array(KEY_BINARY_SIZE);
+/** Buffer size for key states (32 bytes = 256 bits = covers all keycodes) */
+const KEY_BUFFER_SIZE = 32;
 
 const KeyboardSchema = {
-  /** Binary field where each bit represents whether a key is currently pressed. */
-  keysDown: field.binary().max(KEY_BINARY_SIZE).default(EMPTY_KEY_BUFFER),
-  /** Binary field for key-down triggers (true for exactly 1 frame when key is pressed). */
-  keysDownTrigger: field
-    .binary()
-    .max(KEY_BINARY_SIZE)
-    .default(EMPTY_KEY_BUFFER),
-  /** Binary field for key-up triggers (true for exactly 1 frame when key is released). */
-  keysUpTrigger: field.binary().max(KEY_BINARY_SIZE).default(EMPTY_KEY_BUFFER),
+  /**
+   * Buffer where each bit represents whether a key is currently pressed.
+   * Uses field.buffer for zero-allocation subarray views.
+   */
+  keysDown: field.buffer(field.uint8()).size(KEY_BUFFER_SIZE),
+  /**
+   * Buffer for key-down triggers (true for exactly 1 frame when key is pressed).
+   * Uses field.buffer for zero-allocation subarray views.
+   */
+  keysDownTrigger: field.buffer(field.uint8()).size(KEY_BUFFER_SIZE),
+  /**
+   * Buffer for key-up triggers (true for exactly 1 frame when key is released).
+   * Uses field.buffer for zero-allocation subarray views.
+   */
+  keysUpTrigger: field.buffer(field.uint8()).size(KEY_BUFFER_SIZE),
   /** Common modifier - Shift key is down */
   shiftDown: field.boolean().default(false),
   /** Common modifier - Alt/Option key is down */
@@ -26,10 +29,10 @@ const KeyboardSchema = {
 };
 
 /**
- * Get a bit from a binary field.
+ * Get a bit from a buffer field.
  * @internal
  */
-function getBit(buffer: Uint8Array, bitIndex: number): boolean {
+function getBit(buffer: ArrayLike<number>, bitIndex: number): boolean {
   if (bitIndex < 0 || bitIndex >= buffer.length * 8) return false;
   const byteIndex = Math.floor(bitIndex / 8);
   const bitOffset = bitIndex % 8;
@@ -79,11 +82,11 @@ class KeyboardDef extends EditorSingletonDef<typeof KeyboardSchema> {
 export const Keyboard = new KeyboardDef();
 
 /**
- * Set a bit in a binary field.
+ * Set a bit in a buffer field.
  * @internal
  */
 export function setBit(
-  buffer: Uint8Array,
+  buffer: { [index: number]: number; length: number },
   bitIndex: number,
   value: boolean
 ): void {
@@ -98,11 +101,13 @@ export function setBit(
 }
 
 /**
- * Clear all bits in a binary field.
+ * Clear all bits in a buffer field.
  * @internal
  */
-export function clearBits(buffer: Uint8Array): void {
-  buffer.fill(0);
+export function clearBits(buffer: { [index: number]: number; length: number }): void {
+  for (let i = 0; i < buffer.length; i++) {
+    buffer[i] = 0;
+  }
 }
 
 /**

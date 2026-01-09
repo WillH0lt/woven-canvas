@@ -185,23 +185,23 @@ export const EditorOptionsSchema = z.object({
    * Custom cursor definitions.
    * Override default cursors or define new ones for transform operations.
    */
-  customCursors: z.record(z.string(), z.custom<CursorDef>()).default({}),
+  cursors: z.record(z.string(), z.custom<CursorDef>()).default({}),
 
   /**
    * Custom components to register without creating a plugin.
    */
-  customComponents: z.array(z.custom<AnyEditorComponentDef>()).default([]),
+  components: z.array(z.custom<AnyEditorComponentDef>()).default([]),
 
   /**
    * Custom singletons to register without creating a plugin.
    */
-  customSingletons: z.array(z.custom<AnyEditorSingletonDef>()).default([]),
+  singletons: z.array(z.custom<AnyEditorSingletonDef>()).default([]),
 
   /**
    * Custom systems to register without creating a plugin.
    * Each system specifies its phase and priority.
    */
-  customSystems: z.array(z.custom<EditorSystem>()).default([]),
+  systems: z.array(z.custom<EditorSystem>()).default([]),
 });
 
 export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>;

@@ -30,10 +30,7 @@ import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 import { Synced } from "./components";
-import {
-  type EditorSystem,
-  sortSystemsByPriority,
-} from "./EditorSystem";
+import { type EditorSystem, sortSystemsByPriority } from "./EditorSystem";
 
 /**
  * Query subscription callback
@@ -124,8 +121,8 @@ export class Editor {
       }
     }
     // Add custom components and singletons
-    allDefs.push(...options.customComponents);
-    allDefs.push(...options.customSingletons);
+    allDefs.push(...options.components);
+    allDefs.push(...options.singletons);
 
     // Setup keybinds
     const keybinds = options.customKeybinds;
@@ -154,7 +151,7 @@ export class Editor {
 
     // Setup cursors
     const cursors: Record<string, CursorDef> = {};
-    Object.assign(cursors, options.customCursors);
+    Object.assign(cursors, options.cursors);
     for (const plugin of sortedPlugins) {
       if (plugin.cursors) {
         Object.assign(cursors, plugin.cursors);
@@ -210,7 +207,7 @@ export class Editor {
     }
 
     // Register custom systems
-    for (const system of options.customSystems) {
+    for (const system of options.systems) {
       this.phases.get(system.phase)!.push(system);
     }
 
@@ -244,12 +241,12 @@ export class Editor {
       }
     }
     // Add custom components and singletons to maps
-    for (const comp of options.customComponents) {
+    for (const comp of options.components) {
       const componentId = comp._getComponentId(this.ctx);
       componentsById.set(componentId, comp);
       componentsByName.set(comp.name, comp);
     }
-    for (const singleton of options.customSingletons) {
+    for (const singleton of options.singletons) {
       const componentId = singleton._getComponentId(this.ctx);
       singletonsById.set(componentId, singleton);
       singletonsByName.set(singleton.name, singleton);
@@ -271,8 +268,9 @@ export class Editor {
   async initialize(): Promise<void> {
     // Initialize store with synced component/singleton defs
     if (this.store) {
-      const { componentsById, singletonsById } =
-        getResources<EditorResources>(this.ctx);
+      const { componentsById, singletonsById } = getResources<EditorResources>(
+        this.ctx
+      );
       const syncedComponents = [...componentsById.values()].filter(
         (def) => def.__editor.sync !== "none"
       );

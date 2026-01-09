@@ -146,7 +146,10 @@ export class History {
     }
 
     // Only return watermark if it's past where we last reclaimed
-    if (watermark !== null && this.isNewerThan(watermark, this.lastReclaimIndex)) {
+    if (
+      watermark !== null &&
+      this.isNewerThan(watermark, this.lastReclaimIndex)
+    ) {
       return watermark;
     }
 

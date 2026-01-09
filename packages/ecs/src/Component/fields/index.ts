@@ -4,6 +4,7 @@ export { StringField } from "./string";
 export { BinaryField } from "./binary";
 export { ArrayField } from "./array";
 export { TupleField } from "./tuple";
+export { BufferField } from "./buffer";
 export { EnumField } from "./enum";
 export { RefField, NULL_REF } from "./ref";
 export { Field } from "./field";

@@ -2,6 +2,7 @@ import type { StringBufferView } from "./fields/string";
 import type { BinaryBufferView } from "./fields/binary";
 import type { ArrayBufferView } from "./fields/array";
 import type { TupleBufferView } from "./fields/tuple";
+import type { BufferBufferView } from "./fields/buffer";
 
 // Field type definitions
 export type FieldType =
@@ -11,6 +12,7 @@ export type FieldType =
   | "binary"
   | "array"
   | "tuple"
+  | "buffer"
   | "enum"
   | "ref";
 
@@ -94,6 +96,16 @@ export interface TupleFieldDef<
   default?: any[];
 }
 
+export interface BufferFieldDef<
+  TElementDef extends NumberFieldDef = NumberFieldDef,
+  TSize extends number = number
+> extends BaseField<any[]> {
+  type: "buffer";
+  elementDef: TElementDef;
+  size: TSize;
+  default?: any[];
+}
+
 export interface RefFieldDef extends BaseField<number | null> {
   type: "ref";
 }
@@ -106,6 +118,7 @@ export type FieldDef =
   | EnumFieldDef<any>
   | ArrayFieldDef
   | TupleFieldDef
+  | BufferFieldDef
   | RefFieldDef;
 
 // TypedArray union type
@@ -137,6 +150,25 @@ type CreateTuple<
   R extends T[] = []
 > = R["length"] extends N ? R : CreateTuple<T, N, [...R, T]>;
 
+// Helper type to map NumberSubtype to TypedArray
+type NumberSubtypeToTypedArray<T extends NumberSubtype> = T extends "uint8"
+  ? Uint8Array
+  : T extends "uint16"
+  ? Uint16Array
+  : T extends "uint32"
+  ? Uint32Array
+  : T extends "int8"
+  ? Int8Array
+  : T extends "int16"
+  ? Int16Array
+  : T extends "int32"
+  ? Int32Array
+  : T extends "float32"
+  ? Float32Array
+  : T extends "float64"
+  ? Float64Array
+  : TypedArray;
+
 // Component schema and inference types
 export type ComponentSchema = Record<
   string,
@@ -149,6 +181,7 @@ export type ComponentSchema = Record<
       | EnumFieldDef<any>
       | ArrayFieldDef
       | TupleFieldDef
+      | BufferFieldDef
       | RefFieldDef;
   }
 >;
@@ -168,6 +201,33 @@ export type InferComponentType<T extends ComponentSchema> = {
     ? InferArrayElementType<TElementDef>[]
     : T[K]["def"] extends TupleFieldDef<infer TElementDef, infer TLength>
     ? CreateTuple<InferArrayElementType<TElementDef>, TLength>
+    : T[K]["def"] extends BufferFieldDef<infer TElementDef>
+    ? TElementDef extends { btype: infer TBtype extends NumberSubtype }
+      ? NumberSubtypeToTypedArray<TBtype>
+      : TypedArray
+    : T[K]["def"] extends RefFieldDef
+    ? number | null
+    : never;
+};
+
+// Input type for component data - accepts ArrayLike<number> for Buffer fields
+export type InferComponentInput<T extends ComponentSchema> = {
+  [K in keyof T]: T[K]["def"] extends EnumFieldDef<infer TEnum>
+    ? TEnum
+    : T[K]["def"] extends StringFieldDef
+    ? string
+    : T[K]["def"] extends NumberFieldDef
+    ? number
+    : T[K]["def"] extends BooleanFieldDef
+    ? boolean
+    : T[K]["def"] extends BinaryFieldDef
+    ? Uint8Array
+    : T[K]["def"] extends ArrayFieldDef<infer TElementDef>
+    ? InferArrayElementType<TElementDef>[]
+    : T[K]["def"] extends TupleFieldDef<infer TElementDef, infer TLength>
+    ? CreateTuple<InferArrayElementType<TElementDef>, TLength>
+    : T[K]["def"] extends BufferFieldDef
+    ? ArrayLike<number>
     : T[K]["def"] extends RefFieldDef
     ? number | null
     : never;
@@ -189,6 +249,8 @@ export type ComponentBuffer<T extends ComponentSchema> = {
     ? ArrayBufferView
     : T[K]["def"] extends TupleFieldDef
     ? TupleBufferView
+    : T[K]["def"] extends BufferFieldDef
+    ? BufferBufferView
     : T[K]["def"] extends RefFieldDef
     ? Uint32Array
     : never;

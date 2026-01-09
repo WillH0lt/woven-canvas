@@ -2210,4 +2210,303 @@ describe("Component", () => {
       expect([...defaults.position]).toEqual([0, 0]);
     });
   });
+
+  describe("Buffer Field Handling", () => {
+    it("should store and retrieve buffer data", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(5),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      const points = [1.5, 2.5, 3.5, 4.5, 5.5];
+      addComponent(ctx, entityId, Path, { points });
+
+      const result = Path.read(ctx, entityId);
+      // Buffer returns a typed array view for zero allocation
+      expect(result.points.length).toBe(5);
+      expect(result.points[0]).toBeCloseTo(1.5);
+      expect(result.points[1]).toBeCloseTo(2.5);
+      expect(result.points[2]).toBeCloseTo(3.5);
+      expect(result.points[3]).toBeCloseTo(4.5);
+      expect(result.points[4]).toBeCloseTo(5.5);
+    });
+
+    it("should default to zeros when not provided", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(3),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Path, {});
+
+      const result = Path.read(ctx, entityId);
+      // Fixed size buffer always has the specified length
+      expect(result.points.length).toBe(3);
+      expect([...result.points]).toEqual([0, 0, 0]);
+    });
+
+    it("should use default buffer value when provided", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(5).default([1.0, 2.0, 3.0]),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Path, {});
+
+      const result = Path.read(ctx, entityId);
+      expect(result.points.length).toBe(5);
+      expect(result.points[0]).toBeCloseTo(1.0);
+      expect(result.points[1]).toBeCloseTo(2.0);
+      expect(result.points[2]).toBeCloseTo(3.0);
+      // Remaining are zeros
+      expect(result.points[3]).toBe(0);
+      expect(result.points[4]).toBe(0);
+    });
+
+    it("should allow updating buffer data", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(5),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Path, { points: [1.0, 2.0] });
+
+      const path = Path.write(ctx, entityId);
+      path.points = Float32Array.from([10.0, 20.0, 30.0]);
+
+      const result = Path.read(ctx, entityId);
+      // Still fixed size
+      expect(result.points.length).toBe(5);
+      expect(result.points[0]).toBeCloseTo(10.0);
+      expect(result.points[1]).toBeCloseTo(20.0);
+      expect(result.points[2]).toBeCloseTo(30.0);
+      expect(result.points[3]).toBe(0);
+      expect(result.points[4]).toBe(0);
+    });
+
+    it("should handle multiple entities with different buffer contents", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(3),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const e1 = createEntity(ctx);
+      const e2 = createEntity(ctx);
+
+      addComponent(ctx, e1, Path, { points: [1.0, 2.0] });
+      addComponent(ctx, e2, Path, { points: [3.0, 4.0, 5.0] });
+
+      const r1 = Path.read(ctx, e1);
+      const r2 = Path.read(ctx, e2);
+      // Both have fixed size
+      expect(r1.points.length).toBe(3);
+      expect(r2.points.length).toBe(3);
+      expect([...r1.points]).toEqual([1.0, 2.0, 0]);
+      expect([...r2.points]).toEqual([3.0, 4.0, 5.0]);
+    });
+
+    it("should truncate input that exceeds buffer size", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(5),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      const largeBuffer = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+      addComponent(ctx, entityId, Path, { points: largeBuffer });
+
+      const result = Path.read(ctx, entityId);
+      expect(result.points.length).toBe(5);
+      expect([...result.points]).toEqual([1.0, 2.0, 3.0, 4.0, 5.0]);
+    });
+
+    it("should support different numeric buffer types", () => {
+      const MixedBuffers = defineComponent({
+        floats: field.buffer(field.float32()).size(3),
+        ints: field.buffer(field.int32()).size(3),
+        bytes: field.buffer(field.uint8()).size(3),
+      });
+      const world = new World([MixedBuffers]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, MixedBuffers, {
+        floats: [1.5, 2.5, 3.5],
+        ints: [-10, 0, 10],
+        bytes: [255, 128, 0],
+      });
+
+      const result = MixedBuffers.read(ctx, entityId);
+      expect([...result.floats]).toEqual([1.5, 2.5, 3.5]);
+      expect([...result.ints]).toEqual([-10, 0, 10]);
+      expect([...result.bytes]).toEqual([255, 128, 0]);
+    });
+
+    it("should handle buffers in mixed components", () => {
+      const Shape = defineComponent({
+        id: field.uint32(),
+        name: field.string().max(50),
+        vertices: field.buffer(field.float32()).size(6),
+        visible: field.boolean(),
+      });
+      const world = new World([Shape]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Shape, {
+        id: 42,
+        name: "triangle",
+        vertices: [0.0, 0.0, 1.0, 0.0, 0.5, 1.0],
+        visible: true,
+      });
+
+      const result = Shape.read(ctx, entityId);
+      expect(result.id).toBe(42);
+      expect(result.name).toBe("triangle");
+      expect([...result.vertices]).toEqual([0.0, 0.0, 1.0, 0.0, 0.5, 1.0]);
+      expect(result.visible).toBe(true);
+    });
+
+    it("should return a typed array subarray view (zero allocation)", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(3),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Path, { points: [1.0, 2.0, 3.0] });
+
+      const result1 = Path.read(ctx, entityId);
+      const result2 = Path.read(ctx, entityId);
+
+      // Both reads should return views of the same underlying buffer
+      expect(result1.points).toBeInstanceOf(Float32Array);
+      expect(result2.points).toBeInstanceOf(Float32Array);
+    });
+
+    it("should allow direct mutation of buffer elements via typed array", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(4),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Path, { points: [1.0, 2.0, 3.0, 4.0] });
+
+      // Get write view and mutate via typed array index
+      const path = Path.write(ctx, entityId);
+      path.points[0] = 10.0;
+      path.points[1] = 20.0;
+
+      const result = Path.read(ctx, entityId);
+      expect([...result.points]).toEqual([10.0, 20.0, 3.0, 4.0]);
+    });
+
+    it("should isolate buffer modifications between entities", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(2),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const e1 = createEntity(ctx);
+      const e2 = createEntity(ctx);
+      addComponent(ctx, e1, Path, { points: [100, 200] });
+      addComponent(ctx, e2, Path, { points: [300, 400] });
+
+      // Modify only e1
+      Path.write(ctx, e1).points = Float32Array.from([999, 888]);
+
+      // e2 should be unchanged
+      expect([...Path.read(ctx, e1).points]).toEqual([999, 888]);
+      expect([...Path.read(ctx, e2).points]).toEqual([300, 400]);
+    });
+
+    it("should zero-fill when assigning shorter array", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(5),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Path, { points: Float32Array.from([1.0, 2.0, 3.0, 4.0, 5.0]) });
+
+      // Assign shorter array
+      Path.write(ctx, entityId).points = Float32Array.from([10.0, 20.0]);
+
+      const result = Path.read(ctx, entityId);
+      expect(result.points.length).toBe(5);
+      expect([...result.points]).toEqual([10.0, 20.0, 0, 0, 0]);
+    });
+
+    it("should handle object with numeric keys (CRDT/Loro format)", () => {
+      const Path = defineComponent({
+        points: field.buffer(field.float32()).size(5),
+      });
+      const world = new World([Path]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Path, {});
+
+      // Simulate data from Loro/CRDT store which uses objects with numeric keys
+      const loroData = {
+        points: { "0": 10.5, "1": 20.5, "2": 30.5 },
+      };
+
+      Path.copy(ctx, entityId, loroData as any);
+
+      const result = Path.read(ctx, entityId);
+      expect(result.points.length).toBe(5);
+      expect(result.points[0]).toBeCloseTo(10.5);
+      expect(result.points[1]).toBeCloseTo(20.5);
+      expect(result.points[2]).toBeCloseTo(30.5);
+      expect(result.points[3]).toBe(0);
+      expect(result.points[4]).toBe(0);
+    });
+
+    it("should return correct typed array type based on element type", () => {
+      const Buffers = defineComponent({
+        f32: field.buffer(field.float32()).size(1),
+        f64: field.buffer(field.float64()).size(1),
+        i32: field.buffer(field.int32()).size(1),
+        u8: field.buffer(field.uint8()).size(1),
+        u16: field.buffer(field.uint16()).size(1),
+        u32: field.buffer(field.uint32()).size(1),
+      });
+      const world = new World([Buffers]);
+      const ctx = world._getContext();
+
+      const entityId = createEntity(ctx);
+      addComponent(ctx, entityId, Buffers, {
+        f32: [1.0],
+        f64: [2.0],
+        i32: [-1],
+        u8: [255],
+        u16: [65535],
+        u32: [4294967295],
+      });
+
+      const result = Buffers.read(ctx, entityId);
+      expect(result.f32).toBeInstanceOf(Float32Array);
+      expect(result.f64).toBeInstanceOf(Float64Array);
+      expect(result.i32).toBeInstanceOf(Int32Array);
+      expect(result.u8).toBeInstanceOf(Uint8Array);
+      expect(result.u16).toBeInstanceOf(Uint16Array);
+      expect(result.u32).toBeInstanceOf(Uint32Array);
+    });
+  });
 });

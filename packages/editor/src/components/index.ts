@@ -26,3 +26,6 @@ export { Connector } from "./Connector";
 
 // User presence
 export { User } from "./User";
+
+// Hit geometry for collision detection
+export { HitGeometry, MAX_HIT_CAPSULES, FLOATS_PER_CAPSULE } from "./HitGeometry";

@@ -1,0 +1,1 @@
+export { EraserStateSingleton } from "./EraserStateSingleton";

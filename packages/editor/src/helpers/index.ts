@@ -13,3 +13,5 @@ export {
   intersectAabb,
   getTopmostBlockAtPoint,
 } from "./intersect";
+
+export { intersectCapsule } from "./intersectCapsule";

@@ -6,11 +6,11 @@ import MenuTooltip from "./buttons/MenuTooltip.vue";
 import SelectTool from "./tools/SelectTool.vue";
 import HandTool from "./tools/HandTool.vue";
 import StickyNoteTool from "./tools/StickyNoteTool.vue";
+import EraserTool from "./tools/EraserTool.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { TOOLBAR_KEY, type ToolbarContext } from "../injection";
 import { useSingleton } from "../composables/useSingleton";
 import { useEditorContext } from "../composables/useEditorContext";
-import { CursorKind } from "../cursors";
 
 const slots = useSlots();
 const { reset: resetTooltip } = useTooltipSingleton();
@@ -83,7 +83,7 @@ const toolbarContext: ToolbarContext = {
 provide(TOOLBAR_KEY, toolbarContext);
 
 // Built-in tool names
-const builtInToolNames = new Set(["select", "hand", "sticky-note"]);
+const builtInToolNames = new Set(["select", "hand", "sticky-note", "eraser"]);
 
 // Get custom tool slots
 const customTools = computed(() => {
@@ -115,6 +115,11 @@ const customTools = computed(() => {
     <!-- Sticky note tool (built-in with override) -->
     <slot name="tool:sticky-note">
       <StickyNoteTool />
+    </slot>
+
+    <!-- Eraser tool (built-in with override) -->
+    <slot name="tool:eraser">
+      <EraserTool />
     </slot>
 
     <!-- Custom tools via slots -->

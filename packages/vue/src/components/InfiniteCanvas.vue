@@ -33,6 +33,7 @@ import {
 } from "@infinitecanvas/editor";
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
+import { EraserPlugin } from "@infinitecanvas/plugin-eraser";
 import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../injection";
 import SelectionBox from "./SelectionBox.vue";
 import TransformBox from "./TransformBox.vue";
@@ -94,16 +95,16 @@ export interface InfiniteCanvasProps {
   customKeybinds?: Keybind[];
 
   // Custom cursor definitions
-  customCursors?: Record<string, CursorDef>;
+  cursors?: Record<string, CursorDef>;
 
   // Custom components to register
-  customComponents?: AnyEditorComponentDef[];
+  components?: AnyEditorComponentDef[];
 
   // Custom singletons to register
-  customSingletons?: AnyEditorSingletonDef[];
+  singletons?: AnyEditorSingletonDef[];
 
   // Custom systems to register
-  customSystems?: EditorSystem[];
+  systems?: EditorSystem[];
 
   // Additional plugins (controls and selection are applied automatically)
   plugins?: EditorPluginInput[];
@@ -116,16 +117,19 @@ export interface InfiniteCanvasProps {
 
   // Disable the built-in selection plugin
   disableSelection?: boolean;
+
+  // Disable the built-in eraser plugin
+  disableEraser?: boolean;
 }
 
 const props = withDefaults(defineProps<InfiniteCanvasProps>(), {
   maxEntities: 10_000,
   customBlockDefs: () => [],
   customKeybinds: () => [],
-  customCursors: () => ({}),
-  customComponents: () => [],
-  customSingletons: () => [],
-  customSystems: () => [],
+  cursors: () => ({}),
+  components: () => [],
+  singletons: () => [],
+  systems: () => [],
   plugins: () => [],
   disableControls: false,
   disableSelection: false,
@@ -324,6 +328,11 @@ onMounted(async () => {
     allPlugins.push(SelectionPlugin);
   }
 
+  // Add eraser plugin unless disabled
+  if (!props.disableEraser) {
+    allPlugins.push(EraserPlugin);
+  }
+
   allPlugins.push(BasicsPlugin);
 
   // Add user-provided plugins
@@ -336,10 +345,10 @@ onMounted(async () => {
     userId: props.userId,
     customBlockDefs: props.customBlockDefs,
     customKeybinds: props.customKeybinds,
-    customCursors: props.customCursors,
-    customComponents: props.customComponents,
-    customSingletons: props.customSingletons,
-    customSystems: props.customSystems,
+    cursors: props.cursors,
+    components: props.components,
+    singletons: props.singletons,
+    systems: props.systems,
     plugins: allPlugins,
   };
 

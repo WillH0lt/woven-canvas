@@ -211,14 +211,16 @@ export class EventBuffer {
    * @param lastIndex - Previous read position
    * @param eventTypes - Bitmask of event types to include
    * @param componentMask - Optional component bitmask for CHANGED event filtering
+   * @param endIndex - Optional end position (defaults to current write index)
    * @returns Object with entities Set and updated read position
    */
   collectEntitiesInRange(
     lastIndex: number,
     eventTypes: number,
-    componentMask?: Uint8Array
+    componentMask?: Uint8Array,
+    endIndex?: number
   ): { entities: Set<number>; newIndex: number } {
-    const currentWriteIndex = this.getWriteIndex();
+    const currentWriteIndex = endIndex ?? this.getWriteIndex();
 
     // Handle buffer overflow - if we're too far behind, skip to oldest available event
     if (currentWriteIndex - lastIndex > this.maxEvents) {

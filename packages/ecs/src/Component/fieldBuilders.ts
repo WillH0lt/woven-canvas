@@ -5,6 +5,7 @@ import type {
   BinaryFieldDef,
   ArrayFieldDef,
   TupleFieldDef,
+  BufferFieldDef,
   EnumFieldDef,
   NumberSubtype,
   RefFieldDef,
@@ -75,14 +76,16 @@ export class StringFieldBuilder extends FieldBuilder<StringFieldDef> {
   }
 }
 
-export class NumberFieldBuilder extends FieldBuilder<NumberFieldDef> {
-  def: NumberFieldDef;
+export class NumberFieldBuilder<
+  TBtype extends NumberSubtype = NumberSubtype
+> extends FieldBuilder<NumberFieldDef> {
+  def: NumberFieldDef & { btype: TBtype };
 
   /**
    * Create a number field builder with the specified binary type
    * @param btype - The binary type for the number field
    */
-  constructor(btype: NumberSubtype) {
+  constructor(btype: TBtype) {
     super();
     this.def = {
       type: "number",
@@ -243,6 +246,45 @@ export class TupleFieldBuilder<
   }
 }
 
+export class BufferFieldBuilder<
+  TBtype extends NumberSubtype = NumberSubtype
+> extends FieldBuilder<BufferFieldDef> {
+  def: BufferFieldDef<NumberFieldDef & { btype: TBtype }>;
+
+  /**
+   * Create a buffer field builder with the specified element type
+   * @param elementBuilder - A number field builder specifying the element type
+   */
+  constructor(elementBuilder: NumberFieldBuilder<TBtype>) {
+    super();
+    this.def = {
+      type: "buffer",
+      elementDef: elementBuilder.def,
+      size: 0, // must be set via size()
+    };
+  }
+
+  /**
+   * Set the fixed size of the buffer
+   * @param length - The fixed number of elements
+   * @returns This builder for chaining
+   */
+  size(length: number): this {
+    this.def.size = length;
+    return this;
+  }
+
+  /**
+   * Set the default value for the buffer field
+   * @param value - The default value (array of numbers)
+   * @returns This builder for chaining
+   */
+  default(value: number[]): this {
+    this.def.default = value;
+    return this;
+  }
+}
+
 /** Helper type to extract string values from an enum-like const object */
 type EnumValues<T extends Record<string, string>> = T[keyof T];
 
@@ -388,6 +430,37 @@ export const field = {
     elementBuilder: T,
     length: L
   ) => new TupleFieldBuilder(elementBuilder, length),
+  /**
+   * Create a buffer field builder for fixed-size numeric arrays.
+   * Buffers are more efficient than arrays for numeric data because they
+   * return subarray views instead of copying data (zero allocation).
+   *
+   * Like tuples but with configurable size - ideal for large fixed-size numeric data.
+   *
+   * @param elementBuilder - A number field builder specifying the element type
+   * @returns A buffer field builder with chainable size() method
+   * @example
+   * ```typescript
+   * // Path points as float32 buffer (1024 elements)
+   * const Path = defineComponent({
+   *   points: field.buffer(field.float32()).size(1024),
+   * });
+   *
+   * // Indices as uint16 buffer
+   * const Mesh = defineComponent({
+   *   indices: field.buffer(field.uint16()).size(65536),
+   * });
+   *
+   * // Usage: returns a typed array subarray view (zero allocation)
+   * const path = Path.read(ctx, entityId);
+   * for (let i = 0; i < path.points.length; i++) {
+   *   console.log(path.points[i]);
+   * }
+   * ```
+   */
+  buffer: <TBtype extends NumberSubtype>(
+    elementBuilder: NumberFieldBuilder<TBtype>
+  ) => new BufferFieldBuilder(elementBuilder),
   /**
    * Create an entity reference field builder.
    * Refs store an entity ID (or null) and support automatic cleanup on deletion.

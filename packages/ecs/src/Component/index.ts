@@ -15,12 +15,14 @@ export {
   BinaryFieldBuilder,
   ArrayFieldBuilder,
   TupleFieldBuilder,
+  BufferFieldBuilder,
   EnumFieldBuilder,
   RefFieldBuilder,
 } from "./fieldBuilders";
 export type {
   ComponentSchema,
   InferComponentType,
+  InferComponentInput,
   ComponentBuffer,
   FieldDef,
   StringFieldDef,
@@ -29,6 +31,7 @@ export type {
   BinaryFieldDef,
   ArrayFieldDef,
   TupleFieldDef,
+  BufferFieldDef,
   RefFieldDef,
   NumberSubtype,
   FieldType,
