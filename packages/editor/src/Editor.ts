@@ -125,7 +125,7 @@ export class Editor {
     allDefs.push(...options.singletons);
 
     // Setup keybinds
-    const keybinds = options.customKeybinds;
+    const keybinds = options.keybinds;
     for (const plugin of sortedPlugins) {
       if (plugin.keybinds) {
         keybinds.push(...plugin.keybinds);
@@ -135,7 +135,7 @@ export class Editor {
 
     // Setup block defs (parse inputs to apply defaults)
     const blockDefs: Record<string, BlockDef> = {};
-    for (const input of options.customBlockDefs) {
+    for (const input of options.blockDefs) {
       const parsed = BlockDef.parse(input);
       blockDefs[parsed.tag] = parsed;
     }

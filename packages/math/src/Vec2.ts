@@ -77,6 +77,14 @@ export namespace Vec2 {
     out[1] += v[1];
   };
 
+  /**
+   * Add a scalar to both components of a vector.
+   */
+  export const addScalar = (out: Vec2Tuple, s: number): void => {
+    out[0] += s;
+    out[1] += s;
+  };
+
   export const sub = (out: Vec2Tuple, v: Vec2Tuple): void => {
     out[0] -= v[0];
     out[1] -= v[1];
@@ -93,6 +101,18 @@ export namespace Vec2 {
   export const multiply = (out: Vec2Tuple, v: Vec2Tuple): void => {
     out[0] *= v[0];
     out[1] *= v[1];
+  };
+
+  /**
+   * Component-wise division of two vectors.
+   * Warns and divides by 1 if divisor component is 0.
+   */
+  export const divide = (out: Vec2Tuple, v: Vec2Tuple): void => {
+    if (v[0] === 0 || v[1] === 0) {
+      console.warn("Vec2.divide: division by zero, using 1 as divisor");
+    }
+    out[0] /= v[0] || 1;
+    out[1] /= v[1] || 1;
   };
 
   export const negate = (out: Vec2Tuple): void => {

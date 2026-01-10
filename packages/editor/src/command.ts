@@ -119,6 +119,8 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
       const eid = createEntity(ctx);
       addComponent(ctx, eid, CommandMarker, { name });
       getPayloadMap(ctx).set(eid, payload);
+
+      // console.log(`Spawned command "${name}" with eid ${eid} and payload:`, payload);
       return eid;
     },
 

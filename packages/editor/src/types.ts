@@ -159,9 +159,9 @@ export const EditorOptionsSchema = z.object({
 
   /**
    * Maximum number of entities.
-   * @default 10_000
+   * @default 5_000
    */
-  maxEntities: z.number().default(10_000),
+  maxEntities: z.number().default(5_000),
 
   /**
    * User ID for presence tracking.
@@ -173,13 +173,13 @@ export const EditorOptionsSchema = z.object({
    * Custom block definitions.
    * Accepts partial block definitions - defaults will be applied automatically.
    */
-  customBlockDefs: z.array(z.custom<BlockDefInput>()).default([]),
+  blockDefs: z.array(z.custom<BlockDefInput>()).default([]),
 
   /**
    * Keybind definitions for keyboard shortcuts.
    * These map key combinations to plugin commands.
    */
-  customKeybinds: z.array(z.custom<Keybind>()).default([]),
+  keybinds: z.array(z.custom<Keybind>()).default([]),
 
   /**
    * Custom cursor definitions.

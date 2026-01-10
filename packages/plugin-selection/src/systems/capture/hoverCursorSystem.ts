@@ -47,10 +47,10 @@ export const hoverCursorSystem = defineEditorSystem({ phase: "capture" }, (ctx: 
     // Use the first currently hovered handle
     const entityId = currentHandles[0];
     const handle = TransformHandle.read(ctx, entityId);
+    if (handle.transformBox === null) return
 
     // Get rotation from the transform box, not the handle
-    const transformBoxId = handle.transformBoxId;
-    const transformBoxBlock = Block.read(ctx, transformBoxId);
+    const transformBoxBlock = Block.read(ctx, handle.transformBox);
 
     // Only update if cursor kind or rotation changed
     const currentCursor = Cursor.read(ctx);

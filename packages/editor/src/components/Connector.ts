@@ -16,17 +16,13 @@ export const Connector = defineEditorComponent(
   "connector",
   {
     startBlockId: field.string().max(36).default(""),
-    startBlockUvX: field.float64().default(0),
-    startBlockUvY: field.float64().default(0),
-    startUvX: field.float64().default(0),
-    startUvY: field.float64().default(0),
+    startBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
+    startUv: field.tuple(field.float64(), 2).default([0, 0]),
     startNeedsUpdate: field.boolean().default(false),
 
     endBlockId: field.string().max(36).default(""),
-    endBlockUvX: field.float64().default(0),
-    endBlockUvY: field.float64().default(0),
-    endUvX: field.float64().default(1),
-    endUvY: field.float64().default(1),
+    endBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
+    endUv: field.tuple(field.float64(), 2).default([1, 1]),
     endNeedsUpdate: field.boolean().default(false),
   },
   { sync: "document" }

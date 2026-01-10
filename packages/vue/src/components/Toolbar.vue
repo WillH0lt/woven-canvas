@@ -7,6 +7,8 @@ import SelectTool from "./tools/SelectTool.vue";
 import HandTool from "./tools/HandTool.vue";
 import StickyNoteTool from "./tools/StickyNoteTool.vue";
 import EraserTool from "./tools/EraserTool.vue";
+import ArcArrowTool from "./tools/ArcArrowTool.vue";
+import ElbowArrowTool from "./tools/ElbowArrowTool.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { TOOLBAR_KEY, type ToolbarContext } from "../injection";
 import { useSingleton } from "../composables/useSingleton";
@@ -83,7 +85,14 @@ const toolbarContext: ToolbarContext = {
 provide(TOOLBAR_KEY, toolbarContext);
 
 // Built-in tool names
-const builtInToolNames = new Set(["select", "hand", "sticky-note", "eraser"]);
+const builtInToolNames = new Set([
+  "select",
+  "hand",
+  "sticky-note",
+  "eraser",
+  "arc-arrow",
+  "elbow-arrow",
+]);
 
 // Get custom tool slots
 const customTools = computed(() => {
@@ -120,6 +129,16 @@ const customTools = computed(() => {
     <!-- Eraser tool (built-in with override) -->
     <slot name="tool:eraser">
       <EraserTool />
+    </slot>
+
+    <!-- Arc Arrow tool (built-in with override) -->
+    <slot name="tool:arc-arrow">
+      <ArcArrowTool />
+    </slot>
+
+    <!-- Elbow Arrow tool (built-in with override) -->
+    <slot name="tool:elbow-arrow">
+      <ElbowArrowTool />
     </slot>
 
     <!-- Custom tools via slots -->

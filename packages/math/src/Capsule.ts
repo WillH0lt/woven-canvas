@@ -311,6 +311,33 @@ export namespace Capsule {
     out[CAPSULE_BX] += delta[0];
     out[CAPSULE_BY] += delta[1];
   };
+
+  /**
+   * Trim the capsule to a portion between two parametric values (0 to 1).
+   * Modifies the capsule in place.
+   * @param out - The capsule to trim
+   * @param tStart - Start parameter (0 = point A, 1 = point B)
+   * @param tEnd - End parameter (0 = point A, 1 = point B)
+   */
+  export const trim = (
+    out: CapsuleTuple,
+    tStart: number,
+    tEnd: number
+  ): void => {
+    const ax = out[CAPSULE_AX];
+    const ay = out[CAPSULE_AY];
+    const bx = out[CAPSULE_BX];
+    const by = out[CAPSULE_BY];
+
+    const dx = bx - ax;
+    const dy = by - ay;
+
+    // Calculate new endpoints based on parametric values
+    out[CAPSULE_AX] = ax + tStart * dx;
+    out[CAPSULE_AY] = ay + tStart * dy;
+    out[CAPSULE_BX] = ax + tEnd * dx;
+    out[CAPSULE_BY] = ay + tEnd * dy;
+  };
 }
 
 // Re-export type with same name for convenience

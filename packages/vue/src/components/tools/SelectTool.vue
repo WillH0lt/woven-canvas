@@ -20,7 +20,10 @@ watch(activeTool, (_, oldTool) => {
 
 <template>
   <ToolbarButton name="select" tooltip="Select" :cursor="CursorKind.Select">
-    <svg viewBox="0 0 20 20" style="fill-rule: evenodd; clip-rule: evenodd; stroke-miterlimit: 10">
+    <svg
+      viewBox="0 0 20 20"
+      style="fill-rule: evenodd; clip-rule: evenodd; stroke-miterlimit: 10"
+    >
       <g transform="matrix(4.21053,0,0,4.21053,0.842105,0)">
         <path
           fill="none"

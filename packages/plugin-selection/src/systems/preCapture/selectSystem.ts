@@ -106,10 +106,14 @@ const selectionMachine = setup({
       // (not the hover state, which might be stale if mouse moved quickly)
       if (hasComponent(event.ctx, context.draggedEntity, TransformHandle)) {
         const handle = TransformHandle.read(event.ctx, context.draggedEntity);
-        const transformBoxBlock = Block.read(event.ctx, handle.transformBoxId);
+
+        let transformBoxBlock
+        if (handle.transformBox !== null) {
+          transformBoxBlock = Block.read(event.ctx, handle.transformBox);
+        }  
         SetCursor.spawn(event.ctx, {
           contextCursorKind: handle.cursorKind,
-          contextRotation: transformBoxBlock.rotateZ,
+          contextRotation: transformBoxBlock?.rotateZ ?? 0,
         });
       } else {
         // For other entities (blocks, transform box), use drag cursor

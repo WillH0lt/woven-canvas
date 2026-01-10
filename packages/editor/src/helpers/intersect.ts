@@ -1,15 +1,20 @@
-import { type Context, type EntityId, defineQuery } from "@infinitecanvas/ecs";
 import {
-  Aabb as AabbNs,
-  type Aabb as AabbTuple,
+  type Context,
+  type EntityId,
+  defineQuery,
+  hasComponent,
+} from "@infinitecanvas/ecs";
+import {
+  Aabb,
   type Vec2,
 } from "@infinitecanvas/math";
 
 import { Block } from "../components/Block";
-import { Aabb } from "../components/Aabb";
+import { Aabb as AabbComp } from "../components/Aabb";
+import { HitGeometry } from "../components/HitGeometry";
 
 // Query for all blocks with Aabb
-const blocksWithAabb = defineQuery((q) => q.with(Block, Aabb));
+const blocksWithAabb = defineQuery((q) => q.with(Block, AabbComp));
 
 /**
  * Find all blocks that contain a point, sorted by z-order (topmost first).
@@ -31,13 +36,20 @@ export function intersectPoint(
 
   for (const entityId of entities) {
     // Fast AABB rejection
-    if (!Aabb.containsPoint(ctx, entityId, point)) {
+    if (!AabbComp.containsPoint(ctx, entityId, point)) {
       continue;
     }
 
-    // Precise rotated block intersection
-    if (!Block.containsPoint(ctx, entityId, point)) {
-      continue;
+    // Check HitGeometry if present, otherwise use block intersection
+    if (hasComponent(ctx, entityId, HitGeometry)) {
+      if (!HitGeometry.containsPoint(ctx, entityId, point)) {
+        continue;
+      }
+    } else {
+      // Precise rotated block intersection
+      if (!Block.containsPoint(ctx, entityId, point)) {
+        continue;
+      }
     }
 
     intersects.push(entityId);
@@ -62,29 +74,36 @@ export function intersectPoint(
  */
 export function intersectAabb(
   ctx: Context,
-  bounds: AabbTuple,
+  bounds: Aabb,
   entityIds?: Iterable<EntityId>
 ): EntityId[] {
   const intersecting: EntityId[] = [];
   const entities = entityIds ?? blocksWithAabb.current(ctx);
 
   for (const entityId of entities) {
-    const { value: entityAabb } = Aabb.read(ctx, entityId);
+    const { value: entityAabb } = AabbComp.read(ctx, entityId);
 
     // Fast AABB-AABB rejection
-    if (!AabbNs.intersects(bounds, entityAabb)) {
+    if (!Aabb.intersects(bounds, entityAabb)) {
       continue;
     }
 
     // If selection box fully contains block AABB, it's definitely intersecting
-    if (AabbNs.contains(bounds, entityAabb)) {
+    if (Aabb.contains(bounds, entityAabb)) {
       intersecting.push(entityId);
       continue;
     }
 
-    // Use SAT for precise AABB-to-oriented-block intersection
-    if (Block.intersectsAabb(ctx, entityId, bounds)) {
-      intersecting.push(entityId);
+    // Check HitGeometry if present, otherwise use block intersection
+    if (hasComponent(ctx, entityId, HitGeometry)) {
+      if (HitGeometry.intersectsAabb(ctx, entityId, bounds)) {
+        intersecting.push(entityId);
+      }
+    } else {
+      // Use SAT for precise AABB-to-oriented-block intersection
+      if (Block.intersectsAabb(ctx, entityId, bounds)) {
+        intersecting.push(entityId);
+      }
     }
   }
 

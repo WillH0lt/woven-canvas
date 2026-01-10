@@ -14,6 +14,7 @@ import {
   Edited,
   ScaleWithZoom,
   Block,
+  getBackrefs,
   getBlockDef,
 } from "@infinitecanvas/editor";
 import { Vec2, Rect } from "@infinitecanvas/math";
@@ -404,7 +405,13 @@ function addOrUpdateTransformHandles(
   }
 
   // Get existing handles and build a map for reuse
-  const existingHandles = Array.from(transformHandleQuery.current(ctx));
+  const existingHandles = getBackrefs(
+    ctx,
+    transformBoxId,
+    TransformHandle,
+    "transformBox"
+  );
+  // const existingHandles = transformHandleQuery.current(ctx);
   const handleMap = new Map<string, EntityId>();
   for (const handleId of existingHandles) {
     const handle = TransformHandle.read(ctx, handleId);
@@ -431,69 +438,42 @@ function addOrUpdateTransformHandles(
     const finalTop = rotatedCenter[1] - def.height / 2;
 
     if (!handleId) {
-      // Create new handle
       handleId = createEntity(ctx);
-      addComponent(ctx, handleId, Block, {
-        tag: def.tag,
-        position: [finalLeft, finalTop],
-        size: [def.width, def.height],
-        rotateZ: def.rotateZ,
-        rank: def.rank,
-      });
-      addComponent(ctx, handleId, TransformHandle, {
-        kind: def.kind,
-        vectorX: def.vectorX,
-        vectorY: def.vectorY,
-        transformBoxId,
-        cursorKind: def.cursorKind,
-      });
-      addComponent(ctx, handleId, DragStart, {
-        position: [finalLeft, finalTop],
-        size: [def.width, def.height],
-        rotateZ: def.rotateZ,
-        fontSize: 16,
-      });
-      addComponent(ctx, handleId, ScaleWithZoom, {
-        startPosition: [finalLeft, finalTop],
-        startSize: [def.width, def.height],
-        scaleMultiplier: def.scaleMultiplier,
-        anchor: def.anchor,
-      });
-    } else {
-      // Update existing handle
-      const block = Block.write(ctx, handleId);
-      block.position = [finalLeft, finalTop];
-      block.size = [def.width, def.height];
-      block.rotateZ = def.rotateZ;
-      block.rank = def.rank;
-
-      const handle = TransformHandle.write(ctx, handleId);
-      handle.transformBoxId = transformBoxId;
-      handle.kind = def.kind;
-      handle.vectorX = def.vectorX;
-      handle.vectorY = def.vectorY;
-      handle.cursorKind = def.cursorKind;
-
-      if (hasComponent(ctx, handleId, DragStart)) {
-        const dragStart = DragStart.write(ctx, handleId);
-        dragStart.position = [finalLeft, finalTop];
-        dragStart.size = [def.width, def.height];
-        dragStart.rotateZ = def.rotateZ;
-      }
-
-      // Update ScaleWithZoom base values so handles scale correctly from new position
-      if (hasComponent(ctx, handleId, ScaleWithZoom)) {
-        const swz = ScaleWithZoom.write(ctx, handleId);
-        Vec2.copy(swz.startPosition, block.position);
-        Vec2.copy(swz.startSize, block.size);
-        Vec2.copy(swz.scaleMultiplier, def.scaleMultiplier);
-        Vec2.copy(swz.anchor, def.anchor);
-      }
+      addComponent(ctx, handleId, Block);
+      addComponent(ctx, handleId, TransformHandle);
+      addComponent(ctx, handleId, DragStart);
+      addComponent(ctx, handleId, ScaleWithZoom);
     }
+
+    // Set handle parameters from definition
+    const block = Block.write(ctx, handleId);
+    block.tag = def.tag;
+    block.position = [finalLeft, finalTop];
+    block.size = [def.width, def.height];
+    block.rotateZ = def.rotateZ;
+    block.rank = def.rank;
+
+    const handle = TransformHandle.write(ctx, handleId);
+    handle.transformBox = transformBoxId;
+    handle.kind = def.kind;
+    handle.vectorX = def.vectorX;
+    handle.vectorY = def.vectorY;
+    handle.cursorKind = def.cursorKind;
+
+    const dragStart = DragStart.write(ctx, handleId);
+    dragStart.position = [finalLeft, finalTop];
+    dragStart.size = [def.width, def.height];
+    dragStart.rotateZ = def.rotateZ;
+
+    const swz = ScaleWithZoom.write(ctx, handleId);
+    swz.startPosition = [finalLeft, finalTop];
+    swz.startSize = [def.width, def.height];
+    Vec2.copy(swz.scaleMultiplier, def.scaleMultiplier);
+    Vec2.copy(swz.anchor, def.anchor);
 
     usedHandleIds.add(handleId);
   }
-
+  
   // Remove unused handles
   for (const handleId of existingHandles) {
     if (!usedHandleIds.has(handleId)) {

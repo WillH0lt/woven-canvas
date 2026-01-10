@@ -34,14 +34,18 @@ import {
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
 import { EraserPlugin } from "@infinitecanvas/plugin-eraser";
+import { ArrowsPlugin } from "@infinitecanvas/plugin-arrows";
 import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../injection";
-import SelectionBox from "./SelectionBox.vue";
-import TransformBox from "./TransformBox.vue";
-import TransformHandle from "./TransformHandle.vue";
-import StickyNote from "./StickyNote.vue";
+import SelectionBox from "./blocks/SelectionBox.vue";
+import TransformBox from "./blocks/TransformBox.vue";
+import TransformHandle from "./blocks/TransformHandle.vue";
+import StickyNote from "./blocks/StickyNote.vue";
 import FloatingMenu from "./FloatingMenu.vue";
 import Toolbar from "./Toolbar.vue";
-import Eraser from "./Eraser.vue";
+import Eraser from "./blocks/Eraser.vue";
+import ArcArrowBlock from "./blocks/ArcArrowBlock.vue";
+import ElbowArrowBlock from "./blocks/ElbowArrowBlock.vue";
+import ArrowHandle from "./blocks/ArrowHandle.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 
 type BlockComponentData = InferComponentType<typeof Block.schema>;
@@ -90,10 +94,10 @@ export interface InfiniteCanvasProps {
   userId?: string;
 
   // Custom block definitions
-  customBlockDefs?: BlockDefInput[];
+  blockDefs?: BlockDefInput[];
 
   // Keybind definitions for keyboard shortcuts
-  customKeybinds?: Keybind[];
+  keybinds?: Keybind[];
 
   // Custom cursor definitions
   cursors?: Record<string, CursorDef>;
@@ -112,21 +116,12 @@ export interface InfiniteCanvasProps {
 
   // Controls plugin options
   controls?: ControlsOptions;
-
-  // Disable the built-in controls plugin
-  disableControls?: boolean;
-
-  // Disable the built-in selection plugin
-  disableSelection?: boolean;
-
-  // Disable the built-in eraser plugin
-  disableEraser?: boolean;
 }
 
 const props = withDefaults(defineProps<InfiniteCanvasProps>(), {
   maxEntities: 10_000,
-  customBlockDefs: () => [],
-  customKeybinds: () => [],
+  blockDefs: () => [],
+  keybinds: () => [],
   cursors: () => ({}),
   components: () => [],
   singletons: () => [],
@@ -320,19 +315,10 @@ onMounted(async () => {
   const allPlugins: EditorPluginInput[] = [];
 
   // Add controls plugin unless disabled
-  if (!props.disableControls) {
-    allPlugins.push(CanvasControlsPlugin(props.controls ?? {}));
-  }
-
-  // Add selection plugin unless disabled
-  if (!props.disableSelection) {
-    allPlugins.push(SelectionPlugin);
-  }
-
-  // Add eraser plugin unless disabled
-  if (!props.disableEraser) {
-    allPlugins.push(EraserPlugin);
-  }
+  allPlugins.push(CanvasControlsPlugin(props.controls ?? {}));
+  allPlugins.push(SelectionPlugin);
+  allPlugins.push(EraserPlugin);
+  allPlugins.push(ArrowsPlugin);
 
   allPlugins.push(BasicsPlugin);
 
@@ -344,8 +330,8 @@ onMounted(async () => {
     store: props.store,
     maxEntities: props.maxEntities,
     userId: props.userId,
-    customBlockDefs: props.customBlockDefs,
-    customKeybinds: props.customKeybinds,
+    blockDefs: props.blockDefs,
+    keybinds: props.keybinds,
     cursors: props.cursors,
     components: props.components,
     singletons: props.singletons,
@@ -606,8 +592,11 @@ function getBlockStyle(data: BlockData) {
         <SelectionBox v-if="itemRef.value.block.tag === 'selection-box'" />
         <TransformBox v-else-if="itemRef.value.block.tag === 'transform-box'" />
         <TransformHandle
-          :entityId="itemRef.value.entityId"
-          v-else-if="itemRef.value.block.tag === 'transform-handle'"
+        v-else-if="itemRef.value.block.tag === 'transform-handle'"
+        :entityId="itemRef.value.entityId"
+        />
+        <ArrowHandle
+          v-else-if="itemRef.value.block.tag === 'arrow-handle'"
         />
         <StickyNote
           v-else-if="itemRef.value.block.tag === 'sticky-note'"
@@ -615,6 +604,14 @@ function getBlockStyle(data: BlockData) {
         />
         <Eraser
           v-else-if="itemRef.value.block.tag === 'eraser'"
+          :entity-id="itemRef.value.entityId"
+        />
+        <ArcArrowBlock
+          v-else-if="itemRef.value.block.tag === 'arc-arrow'"
+          :entity-id="itemRef.value.entityId"
+        />
+        <ElbowArrowBlock
+          v-else-if="itemRef.value.block.tag === 'elbow-arrow'"
           :entity-id="itemRef.value.entityId"
         />
       </slot>

@@ -3,11 +3,11 @@ import {
   Capsule,
   type Capsule as CapsuleTuple,
   Aabb as AabbNs,
+  Arc,
 } from "@infinitecanvas/math";
 
-import { Block } from "../components/Block";
 import { Aabb } from "../components/Aabb";
-import { HitGeometry, FLOATS_PER_CAPSULE } from "../components/HitGeometry";
+import { HitGeometry } from "../components/HitGeometry";
 
 /**
  * Find all blocks that intersect with a capsule.
@@ -70,7 +70,7 @@ export function intersectCapsule(
  * @param ctx - ECS context
  * @param entityId - Entity with HitGeometry component
  * @param capsule - Capsule to test
- * @returns True if the capsule intersects any of the entity's hit capsules
+ * @returns True if the capsule intersects any of the entity's hit capsules or arc
  */
 function intersectsCapsuleHitGeometry(
   ctx: Context,
@@ -79,15 +79,18 @@ function intersectsCapsuleHitGeometry(
 ): boolean {
   const hitGeometry = HitGeometry.read(ctx, entityId);
 
+  // Check arc intersection
+  if (hitGeometry.hasArc) {
+    const capsuleA = Capsule.pointA(capsule);
+    const capsuleB = Capsule.pointB(capsule);
+    if (Arc.intersectsCapsule(hitGeometry.hitArc, capsuleA, capsuleB, Capsule.radius(capsule))) {
+      return true;
+    }
+  }
+
+  // Check capsule intersections
   for (let i = 0; i < hitGeometry.capsuleCount; i++) {
-    const offset = i * FLOATS_PER_CAPSULE;
-    const hitCapsule = Capsule.create(
-      hitGeometry.hitCapsules[offset],
-      hitGeometry.hitCapsules[offset + 1],
-      hitGeometry.hitCapsules[offset + 2],
-      hitGeometry.hitCapsules[offset + 3],
-      hitGeometry.hitCapsules[offset + 4]
-    );
+    const hitCapsule = HitGeometry.getCapsuleAt(ctx, entityId, i);
 
     if (Capsule.intersectsCapsule(capsule, hitCapsule)) {
       return true;

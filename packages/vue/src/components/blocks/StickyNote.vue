@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
-import { useComponent } from "../composables/useComponent";
+import { useComponent } from "../../composables/useComponent";
 import { Color } from "@infinitecanvas/editor";
 
 const props = defineProps<{

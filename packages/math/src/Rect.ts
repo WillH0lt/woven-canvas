@@ -1,4 +1,4 @@
-import type { Vec2 } from "./Vec2";
+import { Vec2 } from "./Vec2";
 import type { Aabb } from "./Aabb";
 
 /**
@@ -117,6 +117,69 @@ export namespace Rect {
     out[1] = Math.min(tlY, trY, brY, blY); // top
     out[2] = Math.max(tlX, trX, brX, blX); // right
     out[3] = Math.max(tlY, trY, brY, blY); // bottom
+  };
+
+  // ============================================
+  // UV coordinate conversions
+  // ============================================
+
+  /**
+   * Convert UV coordinates (0-1) to world coordinates.
+   * UV (0,0) is top-left, (1,1) is bottom-right of the unrotated rectangle.
+   * Accounts for rotation around center.
+   *
+   * @param position - Rectangle position [x, y]
+   * @param size - Rectangle size [width, height]
+   * @param rotateZ - Rotation around center in radians
+   * @param uv - UV coordinates [u, v] where 0-1 maps to rectangle bounds
+   * @returns World coordinates [x, y]
+   */
+  export const uvToWorld = (
+    position: Vec2,
+    size: Vec2,
+    rotateZ: number,
+    uv: Vec2
+  ): Vec2 => {
+    // Convert UV to local coordinates (relative to center)
+    const result: Vec2 = [(uv[X] - 0.5) * size[X], (uv[Y] - 0.5) * size[Y]];
+
+    // Rotate and translate to world center
+    Vec2.rotate(result, rotateZ);
+    const center: Vec2 = [0, 0];
+    getCenter(position, size, center);
+    Vec2.add(result, center);
+
+    return result;
+  };
+
+  /**
+   * Convert world coordinates to UV coordinates (0-1).
+   * Accounts for rotation around center.
+   *
+   * @param position - Rectangle position [x, y]
+   * @param size - Rectangle size [width, height]
+   * @param rotateZ - Rotation around center in radians
+   * @param world - World coordinates [x, y]
+   * @returns UV coordinates [u, v] where 0-1 maps to rectangle bounds
+   */
+  export const worldToUv = (
+    position: Vec2,
+    size: Vec2,
+    rotateZ: number,
+    world: Vec2
+  ): Vec2 => {
+    // Translate relative to center
+    const center: Vec2 = [0, 0];
+    getCenter(position, size, center);
+    const result: Vec2 = Vec2.clone(world);
+    Vec2.sub(result, center);
+
+    // Rotate by inverse to get local coordinates, divide by size, offset to UV
+    Vec2.rotate(result, -rotateZ);
+    Vec2.divide(result, size);
+    Vec2.addScalar(result, 0.5);
+
+    return result;
   };
 
   // ============================================

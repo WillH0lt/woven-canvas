@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
 import { Block, type EntityId } from "@infinitecanvas/editor";
-import { useComponent } from "../composables/useComponent";
+import { useComponent } from "../../composables/useComponent";
 import { EraserStroke, POINTS_CAPACITY } from "@infinitecanvas/plugin-eraser";
 import { getStroke } from "perfect-freehand";
 

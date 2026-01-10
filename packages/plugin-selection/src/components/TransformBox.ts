@@ -8,7 +8,7 @@ import { defineEditorComponent } from "@infinitecanvas/editor";
  * Block component for its position/size.
  *
  * Transform handles reference their parent transform box via the
- * TransformHandle component's transformBoxId field.
+ * TransformHandle component's transformBox field.
  */
 export const TransformBox = defineEditorComponent(
   "transformBox",
