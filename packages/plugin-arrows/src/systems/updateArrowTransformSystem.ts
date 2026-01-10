@@ -14,6 +14,7 @@ import {
   Opacity,
   ScaleWithZoom,
   RankBounds,
+  getBackrefs,
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
@@ -53,7 +54,7 @@ import {
 const arrowHandlesQuery = defineQuery((q) => q.with(ArrowHandle, Block));
 
 // Query for synced blocks (for connector attachment)
-const blocksQuery = defineQuery((q) => q.with(Block, Synced, Aabb));
+const blocksQuery = defineQuery((q) => q.with(Synced, Aabb).tracking(Block));
 
 /**
  * Update arrow transform system - handles arrow commands and geometry updates.
@@ -63,6 +64,7 @@ const blocksQuery = defineQuery((q) => q.with(Block, Synced, Aabb));
  * - DrawArrow: Update arrow geometry during drawing
  * - RemoveArrow: Delete arrow entity
  * - Transform handle operations
+ * - Auto-update arrows when connected blocks change
  */
 export const updateArrowTransformSystem = defineEditorSystem(
   { phase: "update" },
@@ -98,8 +100,102 @@ export const updateArrowTransformSystem = defineEditorSystem(
     on(ctx, DragBlock, (ctx, { entityId, position }) => {
       onBlockDrag(ctx, entityId, position);
     });
+
+    // Update arrows when connected blocks change
+    updateArrowsForChangedBlocks(ctx);
   }
 );
+
+/**
+ * Check for changed blocks and update any arrows connected to them.
+ */
+function updateArrowsForChangedBlocks(ctx: Context): void {
+  const changedBlocks = blocksQuery.changed(ctx);
+  if (changedBlocks.length === 0) return;
+
+  // Track which arrows we've already updated to avoid duplicates
+  const updatedArrows = new Set<EntityId>();
+
+  for (const blockId of changedBlocks) {
+    // Skip arrows themselves - we only care about blocks that arrows connect to
+    if (
+      hasComponent(ctx, blockId, ArcArrow) ||
+      hasComponent(ctx, blockId, ElbowArrow)
+    ) {
+      continue;
+    }
+
+    // Find arrows connected to this block via startBlock
+    const startArrows = getBackrefs(ctx, blockId, Connector, "startBlock");
+    for (const arrowId of startArrows) {
+      if (updatedArrows.has(arrowId)) continue;
+      updatedArrows.add(arrowId);
+      updateArrowForConnectedBlock(ctx, arrowId);
+    }
+
+    // Find arrows connected to this block via endBlock
+    const endArrows = getBackrefs(ctx, blockId, Connector, "endBlock");
+    for (const arrowId of endArrows) {
+      if (updatedArrows.has(arrowId)) continue;
+      updatedArrows.add(arrowId);
+      updateArrowForConnectedBlock(ctx, arrowId);
+    }
+  }
+}
+
+/**
+ * Update an arrow's geometry based on its connected blocks' current positions.
+ */
+function updateArrowForConnectedBlock(ctx: Context, arrowId: EntityId): void {
+  const connector = Connector.read(ctx, arrowId);
+
+  if (hasComponent(ctx, arrowId, ArcArrow)) {
+    // Get current arrow endpoints
+    const { a, c } = ArcArrow.getWorldPoints(ctx, arrowId);
+    let newStart = a;
+    let newEnd = c;
+
+    // Update start position if connected
+    if (connector.startBlock !== null) {
+      const block = Block.read(ctx, connector.startBlock);
+      newStart = [
+        block.position[0] + connector.startBlockUv[0] * block.size[0],
+        block.position[1] + connector.startBlockUv[1] * block.size[1],
+      ];
+      updateArcArrow(ctx, arrowId, ArrowHandleKind.Start, newStart);
+    }
+
+    // Update end position if connected
+    if (connector.endBlock !== null) {
+      const block = Block.read(ctx, connector.endBlock);
+      newEnd = [
+        block.position[0] + connector.endBlockUv[0] * block.size[0],
+        block.position[1] + connector.endBlockUv[1] * block.size[1],
+      ];
+      updateArcArrow(ctx, arrowId, ArrowHandleKind.End, newEnd);
+    }
+  } else if (hasComponent(ctx, arrowId, ElbowArrow)) {
+    // Update start position if connected
+    if (connector.startBlock !== null) {
+      const block = Block.read(ctx, connector.startBlock);
+      const newStart: Vec2 = [
+        block.position[0] + connector.startBlockUv[0] * block.size[0],
+        block.position[1] + connector.startBlockUv[1] * block.size[1],
+      ];
+      updateElbowArrow(ctx, arrowId, ArrowHandleKind.Start, newStart);
+    }
+
+    // Update end position if connected
+    if (connector.endBlock !== null) {
+      const block = Block.read(ctx, connector.endBlock);
+      const newEnd: Vec2 = [
+        block.position[0] + connector.endBlockUv[0] * block.size[0],
+        block.position[1] + connector.endBlockUv[1] * block.size[1],
+      ];
+      updateElbowArrow(ctx, arrowId, ArrowHandleKind.End, newEnd);
+    }
+  }
+}
 
 /**
  * Add a new arrow entity at the given position.

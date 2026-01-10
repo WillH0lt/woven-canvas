@@ -73,15 +73,6 @@ export class EnumField extends Field<EnumFieldDef> {
     });
   }
 
-  getDefaultValue() {
-    // Return index of default value, or 0 if not specified
-    if (this.fieldDef.default !== undefined) {
-      const index = this.sortedValues.indexOf(this.fieldDef.default);
-      return index >= 0 ? index : 0;
-    }
-    return 0;
-  }
-
   setValue(array: Uint16Array, entityId: EntityId, value: string | number) {
     if (typeof value === "string") {
       const index = this.valueToIndex.get(value);

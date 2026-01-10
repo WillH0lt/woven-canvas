@@ -18,12 +18,10 @@ export const Connector = defineEditorComponent(
     startBlock: field.ref(),
     startBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
     startUv: field.tuple(field.float64(), 2).default([0, 0]),
-    startNeedsUpdate: field.boolean().default(false),
 
     endBlock: field.ref(),
     endBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
     endUv: field.tuple(field.float64(), 2).default([1, 1]),
-    endNeedsUpdate: field.boolean().default(false),
   },
   { sync: "document" }
 );

@@ -54,10 +54,13 @@ export abstract class Field<TFieldDef extends FieldDef = FieldDef> {
   ): void;
 
   /**
-   * Get the default value for this field type
+   * Get the default value for this field type.
+   * Reads from the schemaDefault computed by the field builder.
    * @returns The default value
    */
-  abstract getDefaultValue(): any;
+  getDefaultValue(): any {
+    return this.fieldDef.schemaDefault;
+  }
 
   /**
    * Set a value in the storage

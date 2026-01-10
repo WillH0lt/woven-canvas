@@ -1,12 +1,11 @@
 import type { Context, EntityId } from "./types";
-import type { Component, ComponentDef } from "./Component";
+import type { ComponentDef } from "./Component";
 import type {
   ComponentSchema,
   InferComponentInput,
 } from "./Component/types";
-import { NULL_REF } from "./Component/fields/ref";
-
-const ENTITY_ID_MASK = 0x01ffffff;
+import { readRef } from "./Component/fields/ref";
+import { getComponentCurrentQuery } from "./Query/CurrentQuery";
 
 /**
  * Create a new entity
@@ -51,24 +50,16 @@ export function getBackrefs<T extends ComponentSchema>(
   fieldName: keyof T & string
 ): EntityId[] {
   const component = componentDef._getInstance(ctx);
-
-  const results: EntityId[] = [];
+  const query = getComponentCurrentQuery(componentDef);
   const buffer = component.buffer[fieldName] as Uint32Array;
 
-  // Scan all alive entities that have this component
-  for (let eid = 0; eid < ctx.maxEntities; eid++) {
-    if (
-      ctx.entityBuffer.has(eid) &&
-      ctx.entityBuffer.hasComponent(eid, component.componentId)
-    ) {
-      const packedRef = buffer[eid];
-      if (packedRef !== NULL_REF) {
-        // Unpack the entity ID from the ref
-        const refEntityId = packedRef & ENTITY_ID_MASK;
-        if (refEntityId === targetEntity) {
-          results.push(eid);
-        }
-      }
+  const results: EntityId[] = [];
+
+  // Iterate only entities with this component (cached query)
+  for (const eid of query.current(ctx)) {
+    const refValue = readRef(buffer[eid], ctx.entityBuffer);
+    if (refValue === targetEntity) {
+      results.push(eid);
     }
   }
 

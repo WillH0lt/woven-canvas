@@ -376,15 +376,6 @@ export class TupleField extends Field<TupleFieldDef> {
     });
   }
 
-  getDefaultValue() {
-    if (this.fieldDef.default !== undefined) {
-      return this.fieldDef.default;
-    }
-    // Return an array filled with default values for the element type
-    const elementDefault = getElementDefault(this.fieldDef.elementDef);
-    return Array(this.fieldDef.length).fill(elementDefault);
-  }
-
   setValue(tuple: any, entityId: EntityId, value: any) {
     // Handle object with numeric keys (e.g., {"0": 60, "1": 60} from Loro/CRDT stores)
     // by converting to an array
@@ -399,20 +390,3 @@ export class TupleField extends Field<TupleFieldDef> {
   }
 }
 
-/**
- * Get the default value for an element type
- */
-function getElementDefault(
-  elementDef: StringFieldDef | NumberFieldDef | BooleanFieldDef | BinaryFieldDef
-): any {
-  switch (elementDef.type) {
-    case "number":
-      return 0;
-    case "boolean":
-      return false;
-    case "string":
-      return "";
-    case "binary":
-      return new Uint8Array(0);
-  }
-}

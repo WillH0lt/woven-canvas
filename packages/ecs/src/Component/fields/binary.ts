@@ -137,12 +137,6 @@ export class BinaryField extends Field<BinaryFieldDef> {
     });
   }
 
-  getDefaultValue() {
-    return this.fieldDef.default !== undefined
-      ? this.fieldDef.default
-      : new Uint8Array(0);
-  }
-
   setValue(array: any, entityId: EntityId, value: any) {
     array.set(entityId, value);
   }

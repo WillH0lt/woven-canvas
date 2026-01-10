@@ -30,6 +30,7 @@ export type NumberSubtype =
 export interface BaseField<T> {
   type: FieldType;
   default?: T;
+  schemaDefault?: any;
 }
 
 export interface StringFieldDef extends BaseField<string> {

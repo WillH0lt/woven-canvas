@@ -30,7 +30,7 @@ import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 import { Synced } from "./components";
-import { type EditorSystem, sortSystemsByPriority } from "./EditorSystem";
+import type { EditorSystem } from "./EditorSystem";
 
 /**
  * Query subscription callback
@@ -48,6 +48,46 @@ export type QueryCallback = (
  * Order of system execution phases
  */
 const PHASE_ORDER: SystemPhase[] = ["input", "capture", "update", "render"];
+
+/**
+ * Batch systems by phase and priority.
+ *
+ * Returns an array of system batches, sorted by phase order then priority (descending).
+ * Systems at the same phase and priority are kept in registration order within their batch.
+ *
+ * This batching allows systems with lower priority to see `.changed()` and `.added()`
+ * query results from systems that ran earlier in the same phase.
+ */
+function batchSystems(systems: EditorSystem[]): EditorSystem[][] {
+  // Group by phase first
+  const byPhase = new Map<SystemPhase, EditorSystem[]>();
+  for (const phase of PHASE_ORDER) {
+    byPhase.set(phase, []);
+  }
+  for (const system of systems) {
+    byPhase.get(system.phase)!.push(system);
+  }
+
+  // Then batch each phase by priority and flatten
+  const result: EditorSystem[][] = [];
+  for (const phase of PHASE_ORDER) {
+    const phaseSystems = byPhase.get(phase)!;
+    const byPriority = new Map<number, EditorSystem[]>();
+    for (const system of phaseSystems) {
+      const group = byPriority.get(system.priority) ?? [];
+      group.push(system);
+      byPriority.set(system.priority, group);
+    }
+
+    // Sort priorities descending (higher runs first)
+    const priorities = [...byPriority.keys()].sort((a, b) => b - a);
+    for (const p of priorities) {
+      result.push(byPriority.get(p)!);
+    }
+  }
+
+  return result;
+}
 
 /**
  * Editor is the main entry point for building editor applications.
@@ -89,7 +129,7 @@ export class Editor {
   public blockDefs: Record<string, BlockDef> = {};
 
   private world: World;
-  private phases: Map<SystemPhase, EditorSystem[]>;
+  private systemBatches: EditorSystem[][];
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
   private storeEventIndex: number = 0;
@@ -191,31 +231,21 @@ export class Editor {
       resources: allResources,
     });
 
-    // Initialize phases
-    this.phases = new Map();
-    for (const phase of PHASE_ORDER) {
-      this.phases.set(phase, []);
-    }
+    // Collect all systems
+    const allSystems: EditorSystem[] = [];
 
-    // Register systems from plugins (order matters for stable sort tie-breaking)
+    // Register systems from plugins (order matters for stable tie-breaking)
     for (const plugin of sortedPlugins) {
       if (plugin.systems) {
-        for (const system of plugin.systems) {
-          this.phases.get(system.phase)!.push(system);
-        }
+        allSystems.push(...plugin.systems);
       }
     }
 
     // Register custom systems
-    for (const system of options.systems) {
-      this.phases.get(system.phase)!.push(system);
-    }
+    allSystems.push(...options.systems);
 
-    // Sort systems by priority within each phase
-    for (const phase of PHASE_ORDER) {
-      const systems = this.phases.get(phase)!;
-      this.phases.set(phase, sortSystemsByPriority(systems));
-    }
+    // Batch systems by phase and priority
+    this.systemBatches = batchSystems(allSystems);
 
     // Build map of plugins
     this.plugins = new Map(sortedPlugins.map((p) => [p.name, p]));
@@ -304,9 +334,10 @@ export class Editor {
     // Process scheduled callbacks (including command spawns)
     this.world.sync();
 
-    // Execute phases in order
-    for (const phase of PHASE_ORDER) {
-      await this.executePhase(phase);
+    // Execute system batches in order (already sorted by phase then priority)
+    for (const batch of this.systemBatches) {
+      const systems = batch.map((s) => s._system);
+      await this.world.execute(...systems);
     }
 
     // Clean up command entities at end of frame
@@ -410,18 +441,6 @@ export class Editor {
   }
 
   /**
-   * Execute all systems in a phase
-   */
-  private async executePhase(phase: SystemPhase): Promise<void> {
-    const editorSystems = this.phases.get(phase);
-    if (!editorSystems || editorSystems.length === 0) return;
-
-    // Extract underlying ECS systems for world.execute()
-    const systems = editorSystems.map((s) => s._system);
-    await this.world.execute(...systems);
-  }
-
-  /**
    * Schedule work for the next tick.
    * Use this from event handlers to safely modify ECS state.
    *
@@ -515,6 +534,6 @@ export class Editor {
 
     // Clear state
     this.plugins.clear();
-    this.phases.clear();
+    this.systemBatches = [];
   }
 }

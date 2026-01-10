@@ -144,12 +144,7 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
     transformBoxId = existingBoxes[0];
   }
 
-  // Filter to only blocks that currently have Selected component.
-  // This handles the case where query results are stale (e.g., a block was
-  // deselected this frame via blockSystem call).
-  const selectedBlocks = getLocalSelectedBlocks(ctx).filter((id) =>
-    hasComponent(ctx, id, Selected)
-  );
+  const selectedBlocks = getLocalSelectedBlocks(ctx)
   if (selectedBlocks.length === 0) return;
 
   // Get common rotation (or 0 if mixed)

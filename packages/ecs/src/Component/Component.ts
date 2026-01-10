@@ -20,12 +20,14 @@ import {
   RefField,
   Field,
 } from "./fields";
+import { FieldBuilder, schemaDefault } from "./fieldBuilders";
 
 const BufferConstructor: new (byteLength: number) => ArrayBufferLike =
   typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 
 /**
- * Field type registry. RefField requires EntityBuffer so it's instantiated separately.
+ * Field type registry for creating Field instances during component initialization.
+ * RefField requires EntityBuffer so it's instantiated separately in createFieldInstance.
  */
 const FIELD_REGISTRY: Record<string, new (fieldDef: any) => Field> = {
   string: StringField,
@@ -37,37 +39,6 @@ const FIELD_REGISTRY: Record<string, new (fieldDef: any) => Field> = {
   buffer: BufferField,
   enum: EnumField,
 };
-
-/**
- * Get the default value for a field definition.
- * Uses the FIELD_REGISTRY to instantiate the appropriate Field class
- * and call its getDefaultValue() method.
- */
-function getFieldDefault(fieldDef: FieldDef): any {
-  // RefField requires EntityBuffer, but its default is always null
-  if (fieldDef.type === "ref") {
-    return null;
-  }
-
-  if (fieldDef.default !== undefined) {
-    return fieldDef.default;
-  }
-
-  // EnumField.getDefaultValue() returns an index for internal buffer use,
-  // but we need the actual string value for default()
-  if (fieldDef.type === "enum") {
-    const sortedValues = [...fieldDef.values].sort();
-    return sortedValues[0] ?? "";
-  }
-
-  const FieldClass = FIELD_REGISTRY[fieldDef.type];
-  if (!FieldClass) {
-    throw new Error(`Unknown field type: ${fieldDef.type}`);
-  }
-
-  const field = new FieldClass(fieldDef);
-  return field.getDefaultValue();
-}
 
 /**
  * Sentinel entity ID for singleton change events.
@@ -177,7 +148,12 @@ export class Component<T extends ComponentSchema> {
     this.fieldNames = [];
 
     for (const [fieldName, fieldOrBuilder] of Object.entries(schema)) {
-      const fieldDef = (fieldOrBuilder as any).def || fieldOrBuilder;
+      const builder = fieldOrBuilder as FieldBuilder;
+      const fieldDef = builder.def || (fieldOrBuilder as FieldDef);
+      // Compute and store schemaDefault if it's a builder (not already set from transfer)
+      if (builder[schemaDefault] && fieldDef.schemaDefault === undefined) {
+        fieldDef.schemaDefault = builder[schemaDefault]();
+      }
       this.schema[fieldName] = fieldDef;
       this.fieldNames.push(fieldName);
     }
@@ -574,8 +550,9 @@ export class ComponentDef<T extends ComponentSchema> {
   default(): InferComponentType<T> {
     const result = {} as InferComponentType<T>;
     for (const [fieldName, fieldOrBuilder] of Object.entries(this.schema)) {
-      const fieldDef = (fieldOrBuilder as any).def || fieldOrBuilder;
-      (result as any)[fieldName] = getFieldDefault(fieldDef);
+      (result as any)[fieldName] = (fieldOrBuilder as FieldBuilder)[
+        schemaDefault
+      ]();
     }
     return result;
   }
@@ -752,8 +729,9 @@ export class SingletonDef<T extends ComponentSchema> {
   default(): InferComponentType<T> {
     const result = {} as InferComponentType<T>;
     for (const [fieldName, fieldOrBuilder] of Object.entries(this.schema)) {
-      const fieldDef = (fieldOrBuilder as any).def || fieldOrBuilder;
-      (result as any)[fieldName] = getFieldDefault(fieldDef);
+      (result as any)[fieldName] = (fieldOrBuilder as FieldBuilder)[
+        schemaDefault
+      ]();
     }
     return result;
   }

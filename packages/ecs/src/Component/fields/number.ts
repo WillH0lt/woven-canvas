@@ -136,10 +136,6 @@ export class NumberField extends Field<NumberFieldDef> {
     });
   }
 
-  getDefaultValue() {
-    return this.fieldDef.default !== undefined ? this.fieldDef.default : 0;
-  }
-
   setValue(array: any, entityId: EntityId, value: any) {
     if (this.useAtomics) {
       Atomics.store(array, entityId, value);

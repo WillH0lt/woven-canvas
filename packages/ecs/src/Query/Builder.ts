@@ -3,6 +3,12 @@ import type { Context } from "../types";
 import { QueryMasks } from "./Masks";
 import type { ComponentSchema } from "../Component/types";
 
+/**
+ * Symbol for building query masks.
+ * Hidden from users to keep the QueryBuilder API clean.
+ */
+export const buildQuery = Symbol("buildQuery");
+
 function createEmptyMask(bytes: number): Uint8Array {
   return new Uint8Array(bytes);
 }
@@ -156,7 +162,7 @@ export class QueryBuilder {
    * Build query masks
    * @internal
    */
-  _build(): QueryMasks {
+  [buildQuery](): QueryMasks {
     // Pre-compute whether masks have non-zero values for fast-path skipping
     const hasTracking = !this.trackingMask.every((byte) => byte === 0);
     const hasWith = !this.withMask.every((byte) => byte === 0);

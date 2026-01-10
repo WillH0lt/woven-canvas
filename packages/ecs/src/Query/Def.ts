@@ -1,6 +1,6 @@
 import type { Context } from "../types";
 import type { QueryMasks } from "./Masks";
-import { QueryBuilder } from "./Builder";
+import { QueryBuilder, buildQuery } from "./Builder";
 import { QueryInstance } from "./Instance";
 import type { QueryOptions } from "./types";
 
@@ -61,7 +61,7 @@ export class QueryDef {
   _getMasks(ctx: Context): QueryMasks {
     const queryBuilder = new QueryBuilder(ctx.componentCount, ctx);
     const configuredBuilder = this.builder(queryBuilder);
-    return configuredBuilder._build();
+    return configuredBuilder[buildQuery]();
   }
 
   /**

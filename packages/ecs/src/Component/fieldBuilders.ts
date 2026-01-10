@@ -13,11 +13,18 @@ import type {
 } from "./types";
 
 /**
+ * Symbol for accessing schema default value.
+ * Hidden from users to keep the builder API clean.
+ */
+export const schemaDefault = Symbol("schemaDefault");
+
+/**
  * Abstract base class for all field builders.
  * Provides a common interface and type constraint for field definitions.
  */
 export abstract class FieldBuilder<D extends FieldDef = FieldDef> {
   abstract readonly def: D;
+  abstract [schemaDefault](): unknown;
 }
 
 /** Valid element types for array and tuple fields */
@@ -74,6 +81,10 @@ export class StringFieldBuilder extends FieldBuilder<StringFieldDef> {
     this.def.default = value;
     return this;
   }
+
+  [schemaDefault](): string {
+    return this.def.default ?? "";
+  }
 }
 
 export class NumberFieldBuilder<
@@ -102,6 +113,10 @@ export class NumberFieldBuilder<
     this.def.default = value;
     return this;
   }
+
+  [schemaDefault](): number {
+    return this.def.default ?? 0;
+  }
 }
 
 export class BooleanFieldBuilder extends FieldBuilder<BooleanFieldDef> {
@@ -117,6 +132,10 @@ export class BooleanFieldBuilder extends FieldBuilder<BooleanFieldDef> {
   default(value: boolean): this {
     this.def.default = value;
     return this;
+  }
+
+  [schemaDefault](): boolean {
+    return this.def.default ?? false;
   }
 }
 
@@ -143,6 +162,10 @@ export class BinaryFieldBuilder extends FieldBuilder<BinaryFieldDef> {
   default(value: Uint8Array): this {
     this.def.default = value;
     return this;
+  }
+
+  [schemaDefault](): Uint8Array {
+    return this.def.default ?? new Uint8Array(0);
   }
 }
 
@@ -184,6 +207,10 @@ export class ArrayFieldBuilder<
     this.def.default = value;
     return this;
   }
+
+  [schemaDefault](): any[] {
+    return this.def.default ?? [];
+  }
 }
 
 // Helper type to create a fixed-length tuple type
@@ -219,6 +246,8 @@ export class TupleFieldBuilder<
     ? TupleFieldDef<BinaryFieldDef, L>
     : TupleFieldDef<any, L>;
 
+  private elementBuilder: T;
+
   /**
    * Create a tuple field builder with the specified element type and length
    * @param elementBuilder - A field builder specifying the element type
@@ -228,6 +257,7 @@ export class TupleFieldBuilder<
   constructor(elementBuilder: T, length: L) {
     super();
     validateElementBuilder(elementBuilder, "tuple");
+    this.elementBuilder = elementBuilder;
     this.def = {
       type: "tuple",
       elementDef: elementBuilder.def,
@@ -243,6 +273,12 @@ export class TupleFieldBuilder<
   default(value: CreateTuple<InferElementType<T>, L>): this {
     this.def.default = value as any[];
     return this;
+  }
+
+  [schemaDefault](): any[] {
+    if (this.def.default) return this.def.default;
+    const elementDefault = this.elementBuilder[schemaDefault]();
+    return new Array(this.def.length).fill(elementDefault);
   }
 }
 
@@ -283,6 +319,10 @@ export class BufferFieldBuilder<
     this.def.default = value;
     return this;
   }
+
+  [schemaDefault](): number[] {
+    return this.def.default ?? new Array(this.def.size).fill(0);
+  }
 }
 
 /** Helper type to extract string values from an enum-like const object */
@@ -314,6 +354,11 @@ export class EnumFieldBuilder<T extends string = string> extends FieldBuilder<
     this.def.default = value;
     return this;
   }
+
+  [schemaDefault](): T {
+    if (this.def.default !== undefined) return this.def.default;
+    return [...this.def.values].sort()[0] as T;
+  }
 }
 
 /**
@@ -327,6 +372,10 @@ export class RefFieldBuilder extends FieldBuilder<RefFieldDef> {
   def: RefFieldDef = {
     type: "ref",
   };
+
+  [schemaDefault](): null {
+    return null;
+  }
 }
 
 /**

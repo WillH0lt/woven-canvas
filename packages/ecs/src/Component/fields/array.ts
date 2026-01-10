@@ -660,10 +660,6 @@ export class ArrayField extends Field<ArrayFieldDef> {
     });
   }
 
-  getDefaultValue() {
-    return this.fieldDef.default !== undefined ? this.fieldDef.default : [];
-  }
-
   setValue(array: any, entityId: EntityId, value: any) {
     array.set(entityId, value);
   }

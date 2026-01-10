@@ -39,6 +39,36 @@ function unpackGeneration(ref: number): number {
 }
 
 /**
+ * Validate a packed ref and return the entity ID if valid, null otherwise.
+ * Checks that the referenced entity is alive and the generation matches.
+ *
+ * @param packedRef - The packed ref value from the buffer
+ * @param entityBuffer - The entity buffer to validate against
+ * @returns The entity ID if valid, null if the ref is null or stale
+ */
+export function readRef(
+  packedRef: number,
+  entityBuffer: EntityBuffer
+): EntityId | null {
+  if (packedRef === NULL_REF) {
+    return null;
+  }
+
+  const refEntityId = unpackEntityId(packedRef);
+  const refGeneration = unpackGeneration(packedRef);
+
+  // Check if ref is still valid (alive + generation matches)
+  if (
+    !entityBuffer.has(refEntityId) ||
+    entityBuffer.getGeneration(refEntityId) !== refGeneration
+  ) {
+    return null;
+  }
+
+  return refEntityId;
+}
+
+/**
  * RefField handler for entity reference fields.
  * Uses 4 bytes per entity storing packed (entityId + generation).
  * NULL_REF (0xFFFFFFFF) represents null/no reference.
@@ -78,22 +108,13 @@ export class RefField extends Field<RefFieldDef> {
         const array = buffer[fieldName] as Uint32Array;
         const entityId = getEntityId();
         const packedRef = Atomics.load(array, entityId);
-        if (packedRef === NULL_REF) {
-          return null;
-        }
+        const refEntityId = readRef(packedRef, entityBuffer);
 
-        const refEntityId = unpackEntityId(packedRef);
-        const refGeneration = unpackGeneration(packedRef);
-
-        // Lazy validation: check if ref is still valid (alive + generation matches)
-        if (
-          !entityBuffer.has(refEntityId) ||
-          entityBuffer.getGeneration(refEntityId) !== refGeneration
-        ) {
-          // Auto-nullify the stale reference using atomic store for thread safety
+        // Auto-nullify stale references
+        if (packedRef !== NULL_REF && refEntityId === null) {
           Atomics.store(array, entityId, NULL_REF);
-          return null;
         }
+
         return refEntityId;
       },
     });
@@ -114,22 +135,13 @@ export class RefField extends Field<RefFieldDef> {
         const array = buffer[fieldName] as Uint32Array;
         const entityId = getEntityId();
         const packedRef = Atomics.load(array, entityId);
-        if (packedRef === NULL_REF) {
-          return null;
-        }
+        const refEntityId = readRef(packedRef, entityBuffer);
 
-        const refEntityId = unpackEntityId(packedRef);
-        const refGeneration = unpackGeneration(packedRef);
-
-        // Lazy validation: check if ref is still valid (alive + generation matches)
-        if (
-          !entityBuffer.has(refEntityId) ||
-          entityBuffer.getGeneration(refEntityId) !== refGeneration
-        ) {
-          // Auto-nullify the stale reference using atomic store for thread safety
+        // Auto-nullify stale references
+        if (packedRef !== NULL_REF && refEntityId === null) {
           Atomics.store(array, entityId, NULL_REF);
-          return null;
         }
+
         return refEntityId;
       },
       set: (value: EntityId | null) => {
@@ -144,11 +156,6 @@ export class RefField extends Field<RefFieldDef> {
         }
       },
     });
-  }
-
-  getDefaultValue() {
-    // Refs default to null (stored as NULL_REF)
-    return NULL_REF;
   }
 
   setValue(array: Uint32Array, entityId: EntityId, value: EntityId | null) {

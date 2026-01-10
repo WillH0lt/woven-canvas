@@ -88,11 +88,3 @@ export function defineEditorSystem(
     priority: options.priority ?? DEFAULT_PRIORITY,
   };
 }
-
-/**
- * Sort systems by priority (descending) with stable ordering for ties.
- * Systems with higher priority run first.
- */
-export function sortSystemsByPriority(systems: EditorSystem[]): EditorSystem[] {
-  return [...systems].sort((a, b) => b.priority - a.priority);
-}

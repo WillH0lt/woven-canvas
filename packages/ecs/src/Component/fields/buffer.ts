@@ -205,14 +205,6 @@ export class BufferField extends Field<BufferFieldDef> {
     });
   }
 
-  getDefaultValue(): number[] {
-    if (this.fieldDef.default !== undefined) {
-      return this.fieldDef.default;
-    }
-    // Return an array of zeros with the buffer size
-    return new Array(this.fieldDef.size).fill(0);
-  }
-
   setValue(bufferView: BufferBufferView, entityId: EntityId, value: any): void {
     // Handle object with numeric keys (e.g., {"0": 1, "1": 2} from Loro/CRDT stores)
     if (

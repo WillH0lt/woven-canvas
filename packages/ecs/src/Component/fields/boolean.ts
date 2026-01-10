@@ -48,10 +48,6 @@ export class BooleanField extends Field<BooleanFieldDef> {
     });
   }
 
-  getDefaultValue() {
-    return this.fieldDef.default !== undefined ? this.fieldDef.default : false;
-  }
-
   setValue(array: any, entityId: EntityId, value: any) {
     Atomics.store(array, entityId, value ? 1 : 0);
   }
