@@ -4,7 +4,6 @@ import {
   UndoManager,
   EphemeralStore,
   type LoroEventBatch,
-  type MapDiff,
   type EphemeralStoreEvent,
   type Value,
 } from "loro-crdt";
@@ -22,6 +21,7 @@ import {
   type StoreAdapter,
   type AnyEditorComponentDef,
   type AnyEditorSingletonDef,
+  type ComponentSchema,
 } from "@infinitecanvas/editor";
 import { LocalDB } from "./LocalDB";
 
@@ -204,7 +204,7 @@ export class Store implements StoreAdapter {
     componentDef: AnyEditorComponentDef,
     id: string,
     entityId: number,
-    data: unknown
+    data: Record<string, unknown>
   ): void {
     // Register UUID -> entityId mapping for locally-created entities
     // This allows flushChanges to find the entity when remote deletions arrive
@@ -212,6 +212,12 @@ export class Store implements StoreAdapter {
       this.idToEntityId.set(id, entityId);
       this.entityIdToId.set(entityId, id);
     }
+
+    // Translate refs from entityIds to syncedIds before storing
+    const translatedData = this.translateRefsOutbound(
+      componentDef,
+      data
+    );
 
     if (componentDef.__editor.sync === "document") {
       // Store in Loro document for persistence
@@ -227,11 +233,11 @@ export class Store implements StoreAdapter {
         // The local newMap reference is no longer connected to the document
         componentMap = componentsMap.get(componentDef.name) as LoroMap;
       }
-      componentMap.set(id, data);
+      componentMap.set(id, translatedData);
     } else if (componentDef.__editor.sync === "ephemeral") {
       // Store in EphemeralStore for transient sync
       const key = `${componentDef.name}:${id}`;
-      this.ephemeralStore.set(key, data as Value);
+      this.ephemeralStore.set(key, translatedData as Value);
       this.localEphemeralKeys.add(key);
 
       // console.log("adding ephemeral key:", key);
@@ -249,19 +255,25 @@ export class Store implements StoreAdapter {
   onComponentUpdated(
     componentDef: AnyEditorComponentDef,
     id: string,
-    data: unknown
+    data: Record<string, unknown>
   ): void {
+    // Translate refs from entityIds to syncedIds before storing
+    const translatedData = this.translateRefsOutbound(
+      componentDef,
+      data
+    );
+
     if (componentDef.__editor.sync === "document") {
       const componentsMap = this.doc.getMap("components");
       const componentMap = componentsMap.get(componentDef.name) as
         | LoroMap
         | undefined;
       if (componentMap) {
-        componentMap.set(id, data);
+        componentMap.set(id, translatedData);
       }
     } else if (componentDef.__editor.sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
-      this.ephemeralStore.set(key, data as Value);
+      this.ephemeralStore.set(key, translatedData as Value);
       this.localEphemeralKeys.add(key);
     }
   }
@@ -361,23 +373,100 @@ export class Store implements StoreAdapter {
    * Flush pending external changes (undo/redo, network sync) to the ECS world.
    * Called by the Editor each frame.
    *
+   * Uses a two-pass approach to handle ref fields:
+   * 1. First pass: Create entities and register syncedId -> entityId mappings
+   * 2. Second pass: Apply component data with refs now resolvable
+   *
    * Processes cached events from doc.subscribe() that came from external sources
    * (undo/redo, network sync). Local changes are skipped since they already
    * went through the ECS.
    */
   flushChanges(ctx: Context): void {
-    // Process document events
+    // Process document events with two-pass approach
     if (this.pendingEvents.length > 0) {
+      // Collect all component changes for two-pass processing
+      const componentChanges: Array<{
+        componentName: string;
+        id: string;
+        value: unknown;
+      }> = [];
+      const componentRemovals: Array<{
+        componentName: string;
+        id: string;
+      }> = [];
+      const singletonChanges: Array<{
+        singletonName: string;
+        value: unknown;
+      }> = [];
+
+      // Parse events and collect changes
       for (const eventBatch of this.pendingEvents) {
         for (const event of eventBatch.events) {
-          // Event path tells us the container hierarchy: ["components", "Block", entityId]
-          // or ["singletons", "Camera"]
-          if (event.diff.type === "map") {
-            this.applyDocumentEvent(ctx, event.path, event.diff);
+          if (event.diff.type !== "map") continue;
+
+          const path = event.path;
+          if (path.length === 0) continue;
+
+          const rootKey = path[0];
+          const diff = event.diff;
+
+          if (rootKey === "components" && path.length >= 2) {
+            const componentName = path[1] as string;
+            for (const [id, value] of Object.entries(diff.updated)) {
+              if (value === undefined) {
+                componentRemovals.push({ componentName, id });
+              } else {
+                componentChanges.push({ componentName, id, value });
+              }
+            }
+          } else if (rootKey === "singletons") {
+            for (const [singletonName, value] of Object.entries(diff.updated)) {
+              if (value !== undefined) {
+                singletonChanges.push({ singletonName, value });
+              }
+            }
           }
         }
       }
       this.pendingEvents = [];
+
+      // Pass 1: Create entities and register mappings (no component data yet)
+      for (const { id } of componentChanges) {
+        if (!this.idToEntityId.has(id)) {
+          const ecsEntityId = createEntity(ctx);
+          this.idToEntityId.set(id, ecsEntityId);
+          this.entityIdToId.set(ecsEntityId, id);
+          addComponent(ctx, ecsEntityId, Synced, { id });
+        }
+      }
+
+      // Pass 2: Apply component data (refs can now resolve)
+      for (const { componentName, id, value } of componentChanges) {
+        const componentDef = this.componentDefsByName.get(componentName);
+        if (!componentDef) continue;
+
+        const entityId = this.idToEntityId.get(id)!;
+        const translatedValue = this.translateRefsInbound(
+          componentDef,
+          value as Record<string, unknown>
+        );
+
+        if (hasComponent(ctx, entityId, componentDef)) {
+          componentDef.copy(ctx, entityId, translatedValue as any);
+        } else {
+          addComponent(ctx, entityId, componentDef, translatedValue as any);
+        }
+      }
+
+      // Process removals
+      for (const { componentName, id } of componentRemovals) {
+        this.removeComponentFromEntity(ctx, componentName, id);
+      }
+
+      // Process singleton changes
+      for (const { singletonName, value } of singletonChanges) {
+        this.updateSingleton(ctx, singletonName, value);
+      }
     }
 
     // Process ephemeral events
@@ -389,16 +478,87 @@ export class Store implements StoreAdapter {
     }
   }
 
+  // ─── Ref Translation ─────────────────────────────────────────────────────────
+
+  /**
+   * Translate ref fields from entityIds to syncedIds for outbound storage.
+   * Returns a new object with refs converted to UUIDs (or null if not synced).
+   */
+  private translateRefsOutbound(
+    componentDef: AnyEditorComponentDef,
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
+    const schema = componentDef.schema as ComponentSchema;
+    let hasRefs = false;
+
+    // Quick check if any ref fields exist
+    for (const fieldName in schema) {
+      if (schema[fieldName].def.type === "ref") {
+        hasRefs = true;
+        break;
+      }
+    }
+
+    if (!hasRefs) return data;
+
+    const result = { ...data };
+    for (const fieldName in schema) {
+      const fieldDef = schema[fieldName].def;
+      if (fieldDef.type === "ref" && result[fieldName] !== null) {
+        const entityId = result[fieldName] as number;
+        const syncedId = this.entityIdToId.get(entityId);
+        // Convert to syncedId, or null if the referenced entity isn't synced
+        result[fieldName] = syncedId ?? null;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Translate ref fields from syncedIds to entityIds for inbound data.
+   * Returns a new object with refs converted to entityIds (or null if not found).
+   */
+  private translateRefsInbound(
+    componentDef: AnyEditorComponentDef,
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
+    const schema = componentDef.schema as ComponentSchema;
+    let hasRefs = false;
+
+    // Quick check if any ref fields exist
+    for (const fieldName in schema) {
+      if (schema[fieldName].def.type === "ref") {
+        hasRefs = true;
+        break;
+      }
+    }
+
+    if (!hasRefs) return data;
+
+    const result = { ...data };
+    for (const fieldName in schema) {
+      const fieldDef = schema[fieldName].def;
+      if (fieldDef.type === "ref" && result[fieldName] !== null) {
+        const syncedId = result[fieldName] as string;
+        const entityId = this.idToEntityId.get(syncedId);
+        // Convert to entityId, or null if not found
+        result[fieldName] = entityId ?? null;
+      }
+    }
+    return result;
+  }
+
   // ─── Helpers for applying external changes to ECS ───────────────────────────
 
   /**
    * Add a component to an entity, creating the entity if it doesn't exist.
+   * Translates ref fields from syncedIds to entityIds.
    */
   private addComponentToEntity(
     ctx: Context,
     componentName: string,
     id: string,
-    value: unknown
+    value: Record<string, unknown>
   ): void {
     const componentDef = this.componentDefsByName.get(componentName);
     if (!componentDef) return;
@@ -406,10 +566,14 @@ export class Store implements StoreAdapter {
     const existingEntityId = this.idToEntityId.get(id);
     if (existingEntityId !== undefined) {
       // Entity exists - add or update component
+      const translatedValue = this.translateRefsInbound(
+        componentDef,
+        value
+      );
       if (hasComponent(ctx, existingEntityId, componentDef)) {
-        componentDef.copy(ctx, existingEntityId, value as any);
+        componentDef.copy(ctx, existingEntityId, translatedValue as any);
       } else {
-        addComponent(ctx, existingEntityId, componentDef, value as any);
+        addComponent(ctx, existingEntityId, componentDef, translatedValue as any);
       }
     } else {
       // Create new entity
@@ -418,28 +582,38 @@ export class Store implements StoreAdapter {
       this.entityIdToId.set(ecsEntityId, id);
       // Add Synced component with the entity's stable ID
       addComponent(ctx, ecsEntityId, Synced, { id });
-      addComponent(ctx, ecsEntityId, componentDef, value as any);
+      // Translate refs after entity is registered
+      const translatedValue = this.translateRefsInbound(
+        componentDef,
+        value as Record<string, unknown>
+      );
+      addComponent(ctx, ecsEntityId, componentDef, translatedValue as any);
     }
   }
 
   /**
    * Update a component on an existing entity.
+   * Translates ref fields from syncedIds to entityIds.
    */
   private updateComponentOnEntity(
     ctx: Context,
     componentName: string,
     id: string,
-    value: unknown
+    value: Record<string, unknown>
   ): void {
     const componentDef = this.componentDefsByName.get(componentName);
     if (!componentDef) return;
 
     const existingEntityId = this.idToEntityId.get(id);
     if (existingEntityId !== undefined) {
+      const translatedValue = this.translateRefsInbound(
+        componentDef,
+        value
+      );
       if (hasComponent(ctx, existingEntityId, componentDef)) {
-        componentDef.copy(ctx, existingEntityId, value as any);
+        componentDef.copy(ctx, existingEntityId, translatedValue as any);
       } else {
-        addComponent(ctx, existingEntityId, componentDef, value as any);
+        addComponent(ctx, existingEntityId, componentDef, translatedValue as any);
       }
     }
   }
@@ -511,7 +685,7 @@ export class Store implements StoreAdapter {
         ctx,
         key.slice(0, colonIndex),
         key.slice(colonIndex + 1),
-        value
+        value as Record<string, unknown>
       );
     }
 
@@ -526,7 +700,7 @@ export class Store implements StoreAdapter {
         ctx,
         key.slice(0, colonIndex),
         key.slice(colonIndex + 1),
-        value
+        value as Record<string, unknown>
       );
     }
 
@@ -539,42 +713,6 @@ export class Store implements StoreAdapter {
         key.slice(0, colonIndex),
         key.slice(colonIndex + 1)
       );
-    }
-  }
-
-  /**
-   * Apply a MapDiff from an event to the ECS world.
-   * Uses the event path to determine what type of data changed.
-   *
-   * @param ctx - ECS context
-   * @param path - Event path like ["components", "Block"] or ["singletons"]
-   * @param diff - The MapDiff containing updated keys
-   */
-  private applyDocumentEvent(
-    ctx: Context,
-    path: (string | number)[],
-    diff: MapDiff
-  ): void {
-    if (path.length === 0) return;
-
-    const rootKey = path[0];
-
-    if (rootKey === "components" && path.length >= 2) {
-      const componentName = path[1] as string;
-
-      for (const [id, value] of Object.entries(diff.updated)) {
-        if (value === undefined) {
-          this.removeComponentFromEntity(ctx, componentName, id);
-        } else {
-          this.addComponentToEntity(ctx, componentName, id, value);
-        }
-      }
-    } else if (rootKey === "singletons") {
-      for (const [singletonName, value] of Object.entries(diff.updated)) {
-        if (value !== undefined) {
-          this.updateSingleton(ctx, singletonName, value);
-        }
-      }
     }
   }
 

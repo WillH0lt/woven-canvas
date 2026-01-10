@@ -215,13 +215,13 @@ function onArcArrowDrag(ctx: Context, arrowEntityId: EntityId): void {
   const connector = Connector.read(ctx, arrowEntityId);
 
   // Update start connector if attached
-  if (connector.startBlockId) {
+  if (connector.startBlock !== null) {
     const { a } = ArcArrow.getWorldPoints(ctx, arrowEntityId);
     updateConnector(ctx, arrowEntityId, ArrowHandleKind.Start, a);
   }
 
   // Update end connector if attached
-  if (connector.endBlockId) {
+  if (connector.endBlock !== null) {
     const { c } = ArcArrow.getWorldPoints(ctx, arrowEntityId);
     updateConnector(ctx, arrowEntityId, ArrowHandleKind.End, c);
   }
@@ -234,13 +234,13 @@ function onElbowArrowDrag(ctx: Context, arrowEntityId: EntityId): void {
   const connector = Connector.read(ctx, arrowEntityId);
 
   // Update start connector if attached
-  if (connector.startBlockId) {
+  if (connector.startBlock !== null) {
     const start = ElbowArrow.getStartWorld(ctx, arrowEntityId);
     updateConnector(ctx, arrowEntityId, ArrowHandleKind.Start, start);
   }
 
   // Update end connector if attached
-  if (connector.endBlockId) {
+  if (connector.endBlock !== null) {
     const end = ElbowArrow.getEndWorld(ctx, arrowEntityId);
     updateConnector(ctx, arrowEntityId, ArrowHandleKind.End, end);
   }
@@ -495,27 +495,13 @@ function updateElbowArrow(
   // Get connector for routing
   const connector = Connector.read(ctx, entityId);
 
-  // Find connected blocks
-  let startBlockId: EntityId | null = null;
-  let endBlockId: EntityId | null = null;
-
-  for (const blockId of blocksQuery.current(ctx)) {
-    const synced = Synced.read(ctx, blockId);
-    if (synced.id === connector.startBlockId) {
-      startBlockId = blockId;
-    }
-    if (synced.id === connector.endBlockId) {
-      endBlockId = blockId;
-    }
-  }
-
-  // Calculate new path
+  // Calculate new path using refs directly
   const path = calculateElbowPath(
     ctx,
     start,
     end,
-    startBlockId,
-    endBlockId,
+    connector.startBlock,
+    connector.endBlock,
     ELBOW_ARROW_PADDING
   );
 
@@ -551,7 +537,6 @@ function updateConnector(
 ): void {
   // Find block at position (excluding arrows and handles)
   let attachmentBlockId: EntityId | null = null;
-  let attachmentSyncedId = "";
 
   for (const blockId of blocksQuery.current(ctx)) {
     // Skip arrows and handles
@@ -563,7 +548,6 @@ function updateConnector(
       continue;
     }
 
-    const aabb = Aabb.read(ctx, blockId);
     const block = Block.read(ctx, blockId);
 
     // Check if point is inside block
@@ -574,7 +558,6 @@ function updateConnector(
       handlePosition[1] <= block.position[1] + block.size[1]
     ) {
       attachmentBlockId = blockId;
-      attachmentSyncedId = Synced.read(ctx, blockId).id;
       break;
     }
   }
@@ -582,8 +565,8 @@ function updateConnector(
   const connector = Connector.write(ctx, entityId);
 
   if (handleKind === ArrowHandleKind.Start) {
-    connector.startBlockId = attachmentSyncedId;
-    if (attachmentBlockId) {
+    connector.startBlock = attachmentBlockId;
+    if (attachmentBlockId !== null) {
       const block = Block.read(ctx, attachmentBlockId);
       connector.startBlockUv[0] =
         (handlePosition[0] - block.position[0]) / (block.size[0] || 1);
@@ -594,8 +577,8 @@ function updateConnector(
       connector.startBlockUv[1] = 0;
     }
   } else {
-    connector.endBlockId = attachmentSyncedId;
-    if (attachmentBlockId) {
+    connector.endBlock = attachmentBlockId;
+    if (attachmentBlockId !== null) {
       const block = Block.read(ctx, attachmentBlockId);
       connector.endBlockUv[0] =
         (handlePosition[0] - block.position[0]) / (block.size[0] || 1);

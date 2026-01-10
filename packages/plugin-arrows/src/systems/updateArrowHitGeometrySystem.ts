@@ -4,9 +4,7 @@ import {
   hasComponent,
   addComponent,
   Block,
-  Synced,
   Connector,
-  Aabb,
   HitGeometry,
   MAX_HIT_CAPSULES,
   type Context,
@@ -22,7 +20,6 @@ const arcArrowsQuery = defineQuery((q) => q.tracking(ArcArrow, Block, Connector)
 const elbowArrowsQuery = defineQuery((q) =>
   q.tracking(ElbowArrow, Block, Connector)
 );
-const blocksQuery = defineQuery((q) => q.with(Block, Synced, Aabb));
 
 const MIN_HIT_THICKNESS = 20;
 
@@ -118,25 +115,11 @@ function updateArcArrowTrim(ctx: Context, entityId: EntityId): void {
   const connector = Connector.read(ctx, entityId);
   const { a, c } = ArcArrow.getWorldPoints(ctx, entityId);
 
-  // Find connected blocks
-  let startBlockId: EntityId | null = null;
-  let endBlockId: EntityId | null = null;
-
-  for (const blockId of blocksQuery.current(ctx)) {
-    const synced = Synced.read(ctx, blockId);
-    if (synced.id === connector.startBlockId) {
-      startBlockId = blockId;
-    }
-    if (synced.id === connector.endBlockId) {
-      endBlockId = blockId;
-    }
-  }
-
   const trim = ArrowTrim.write(ctx, entityId);
 
-  // Calculate trim values
-  const startTrim = calculateLineTrim(ctx, startBlockId, a, c, 0);
-  const endTrim = calculateLineTrim(ctx, endBlockId, c, a, 1);
+  // Calculate trim values using refs directly
+  const startTrim = calculateLineTrim(ctx, connector.startBlock, a, c, 0);
+  const endTrim = calculateLineTrim(ctx, connector.endBlock, c, a, 1);
 
   trim.tStart = startTrim;
   trim.tEnd = endTrim;
@@ -164,30 +147,16 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
 
   if (segmentCount < 1) return;
 
-  // Find connected blocks
-  let startBlockId: EntityId | null = null;
-  let endBlockId: EntityId | null = null;
-
-  for (const blockId of blocksQuery.current(ctx)) {
-    const synced = Synced.read(ctx, blockId);
-    if (synced.id === connector.startBlockId) {
-      startBlockId = blockId;
-    }
-    if (synced.id === connector.endBlockId) {
-      endBlockId = blockId;
-    }
-  }
-
   const trim = ArrowTrim.write(ctx, entityId);
 
-  // Calculate trim for first and last segments
+  // Calculate trim for first and last segments using refs directly
   const start = points[0];
   const end = points[points.length - 1];
   const firstSegmentEnd = points[1];
   const lastSegmentStart = points[points.length - 2];
 
-  const startTrim = calculateLineTrim(ctx, startBlockId, start, firstSegmentEnd, 0);
-  const endTrim = calculateLineTrim(ctx, endBlockId, end, lastSegmentStart, 1);
+  const startTrim = calculateLineTrim(ctx, connector.startBlock, start, firstSegmentEnd, 0);
+  const endTrim = calculateLineTrim(ctx, connector.endBlock, end, lastSegmentStart, 1);
 
   trim.tStart = startTrim;
   trim.tEnd = endTrim;

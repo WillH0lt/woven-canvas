@@ -91,6 +91,7 @@ export {
   type QueryDef,
   type System,
   type InferComponentType,
+  type ComponentSchema,
 } from "@infinitecanvas/ecs";
 
 // Plugin
