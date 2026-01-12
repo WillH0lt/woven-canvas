@@ -47,20 +47,7 @@ import ArcArrowBlock from "./blocks/ArcArrowBlock.vue";
 import ElbowArrowBlock from "./blocks/ElbowArrowBlock.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
-
-type BlockComponentData = InferComponentType<typeof Block.schema>;
-type SelectedComponentData = InferComponentType<typeof Selected.schema>;
-type OpacityComponentData = InferComponentType<typeof Opacity.schema>;
-
-// Extended block data with state for rendering
-interface BlockData {
-  entityId: EntityId;
-  block: BlockComponentData;
-  selected: SelectedComponentData | null;
-  hovered: boolean;
-  edited: boolean;
-  opacity: OpacityComponentData | null;
-}
+import type { BlockData } from "../types";
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block));
@@ -577,42 +564,49 @@ function getBlockStyle(data: BlockData) {
     }"
   >
     <div
-      v-for="itemRef in sortedBlocks"
-      :key="itemRef.value.entityId"
-      :style="getBlockStyle(itemRef.value)"
-      :data-selected="itemRef.value.selected !== null || undefined"
-      :data-hovered="itemRef.value.hovered || undefined"
+      v-for="blockData in sortedBlocks"
+      :key="blockData.value.entityId"
+      :style="getBlockStyle(blockData.value)"
+      :data-selected="blockData.value.selected !== null || undefined"
+      :data-hovered="blockData.value.hovered || undefined"
       class="ic-block"
     >
       <slot
-        :name="`block:${itemRef.value.block.tag}`"
-        :entityId="itemRef.value.entityId"
+        :name="`block:${blockData.value.block.tag}`"
+        :entityId="blockData.value.entityId"
       >
         <!-- Default blocks -->
-        <SelectionBox v-if="itemRef.value.block.tag === 'selection-box'" />
-        <TransformBox v-else-if="itemRef.value.block.tag === 'transform-box'" />
+        <SelectionBox 
+          v-if="blockData.value.block.tag === 'selection-box'"
+          v-bind="blockData.value"
+        />
+        <TransformBox 
+          v-else-if="blockData.value.block.tag === 'transform-box'" 
+          v-bind="blockData.value" 
+        />
         <TransformHandle
-        v-else-if="itemRef.value.block.tag === 'transform-handle'"
-        :entityId="itemRef.value.entityId"
+          v-else-if="blockData.value.block.tag === 'transform-handle'"
+          v-bind="blockData.value"
         />
         <ArrowHandle
-          v-else-if="itemRef.value.block.tag === 'arrow-handle'"
+          v-else-if="blockData.value.block.tag === 'arrow-handle'"
+          v-bind="blockData.value"
         />
         <StickyNote
-          v-else-if="itemRef.value.block.tag === 'sticky-note'"
-          :entityId="itemRef.value.entityId"
+          v-else-if="blockData.value.block.tag === 'sticky-note'"
+          v-bind="blockData.value"
         />
         <Eraser
-          v-else-if="itemRef.value.block.tag === 'eraser'"
-          :entity-id="itemRef.value.entityId"
+          v-else-if="blockData.value.block.tag === 'eraser'"
+          v-bind="blockData.value"
         />
         <ArcArrowBlock
-          v-else-if="itemRef.value.block.tag === 'arc-arrow'"
-          :entity-id="itemRef.value.entityId"
+          v-else-if="blockData.value.block.tag === 'arc-arrow'"
+          v-bind="blockData.value"
         />
         <ElbowArrowBlock
-          v-else-if="itemRef.value.block.tag === 'elbow-arrow'"
-          :entity-id="itemRef.value.entityId"
+          v-else-if="blockData.value.block.tag === 'elbow-arrow'"
+          v-bind="blockData.value"
         />
       </slot>
     </div>

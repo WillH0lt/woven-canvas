@@ -83,17 +83,20 @@ export namespace Aabb {
 
   // Tests
 
-  export const containsPoint = (a: AabbTuple, point: Vec2): boolean =>
-    point[0] >= a[AABB_LEFT] &&
-    point[0] <= a[AABB_RIGHT] &&
-    point[1] >= a[AABB_TOP] &&
-    point[1] <= a[AABB_BOTTOM];
-
-  export const containsPointExclusive = (a: AabbTuple, point: Vec2): boolean =>
-    point[0] > a[AABB_LEFT] &&
-    point[0] < a[AABB_RIGHT] &&
-    point[1] > a[AABB_TOP] &&
-    point[1] < a[AABB_BOTTOM];
+  export const containsPoint = (
+    a: AabbTuple,
+    point: Vec2,
+    inclusive = true
+  ): boolean =>
+    inclusive
+      ? point[0] >= a[AABB_LEFT] &&
+        point[0] <= a[AABB_RIGHT] &&
+        point[1] >= a[AABB_TOP] &&
+        point[1] <= a[AABB_BOTTOM]
+      : point[0] > a[AABB_LEFT] &&
+        point[0] < a[AABB_RIGHT] &&
+        point[1] > a[AABB_TOP] &&
+        point[1] < a[AABB_BOTTOM];
 
   export const intersects = (a: AabbTuple, b: AabbTuple): boolean =>
     !(
@@ -149,6 +152,13 @@ export namespace Aabb {
     out[AABB_TOP] = Math.min(out[AABB_TOP], b[AABB_TOP]);
     out[AABB_RIGHT] = Math.max(out[AABB_RIGHT], b[AABB_RIGHT]);
     out[AABB_BOTTOM] = Math.max(out[AABB_BOTTOM], b[AABB_BOTTOM]);
+  };
+
+  export const intersection = (out: AabbTuple, b: AabbTuple): void => {
+    out[AABB_LEFT] = Math.max(out[AABB_LEFT], b[AABB_LEFT]);
+    out[AABB_TOP] = Math.max(out[AABB_TOP], b[AABB_TOP]);
+    out[AABB_RIGHT] = Math.min(out[AABB_RIGHT], b[AABB_RIGHT]);
+    out[AABB_BOTTOM] = Math.min(out[AABB_BOTTOM], b[AABB_BOTTOM]);
   };
 
   export const pad = (out: AabbTuple, padding: number): void => {

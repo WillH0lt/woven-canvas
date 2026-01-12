@@ -7,12 +7,11 @@ import { ElbowArrow, ArrowTrim } from "@infinitecanvas/plugin-arrows";
 import { Selected } from "@infinitecanvas/plugin-selection";
 import { useComponent } from "../../composables/useComponent";
 import ArrowHead from "./ArrowHead.vue";
+import type { BlockData } from "../../types";
 
 const ARROW_HEAD_GAP = 15;
 
-const props = defineProps<{
-  entityId: EntityId;
-}>();
+const props = defineProps<BlockData>();
 
 const containerRef = ref<HTMLElement | null>(null);
 const clientWidth = ref(0);
@@ -21,10 +20,8 @@ const clientHeight = ref(0);
 const color = useComponent(props.entityId, Color);
 const elbowArrow = useComponent(props.entityId, ElbowArrow);
 const arrowTrim = useComponent(props.entityId, ArrowTrim);
-const hovered = useComponent(props.entityId, Hovered);
-const selected = useComponent(props.entityId, Selected);
 
-const isEmphasized = computed(() => hovered.value !== null || selected.value !== null);
+const isEmphasized = computed(() => props.hovered || props.selected !== null);
 
 // Watch for resize
 let resizeObserver: ResizeObserver | null = null;
@@ -122,7 +119,7 @@ const pathData = computed(() => {
     if (tEnd !== 1 && endHead !== "none") {
       const len = Math.hypot(endVec[0], endVec[1]);
       const gap = len > 0 ? ARROW_HEAD_GAP / len : 0;
-      tEnd -= gap;
+      tEnd += gap; // Add because we use (1 - tEnd) below
     }
 
     // Trim start point
@@ -131,13 +128,13 @@ const pathData = computed(() => {
       points[0][1] + (points[1][1] - points[0][1]) * tStart,
     ];
 
-    // Trim end point
+    // Trim end point (tEnd is measured from end toward prev, so invert it)
     const lastIdx = points.length - 1;
     points[lastIdx] = [
       points[lastIdx - 1][0] +
-        (points[lastIdx][0] - points[lastIdx - 1][0]) * tEnd,
+        (points[lastIdx][0] - points[lastIdx - 1][0]) * (1 - tEnd),
       points[lastIdx - 1][1] +
-        (points[lastIdx][1] - points[lastIdx - 1][1]) * tEnd,
+        (points[lastIdx][1] - points[lastIdx - 1][1]) * (1 - tEnd),
     ];
   }
 

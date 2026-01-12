@@ -1,6 +1,6 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
 import { EditorComponentDef } from "../EditorComponentDef";
-import { Vec2, Rect, type Aabb as AabbTuple } from "@infinitecanvas/math";
+import { Vec2, Rect, Aabb } from "@infinitecanvas/math";
 
 // Pre-allocated arrays for SAT intersection to avoid allocations
 const _aabbCorners: [Vec2, Vec2, Vec2, Vec2] = [
@@ -170,7 +170,7 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
    * the middle of a rotated block without touching any corners.
    * Optimized to avoid allocations for hot path usage.
    */
-  intersectsAabb(ctx: Context, entityId: EntityId, aabb: AabbTuple): boolean {
+  intersectsAabb(ctx: Context, entityId: EntityId, aabb: Aabb): boolean {
     const { position, size, rotateZ } = this.read(ctx, entityId);
     return Rect.intersectsAabb(
       position,

@@ -1,5 +1,6 @@
 import type { Vec2 } from "./Vec2";
 import type { Aabb } from "./Aabb";
+import { Rect } from "./Rect";
 
 /**
  * A 2D ray represented as a tuple [originX, originY, directionX, directionY].
@@ -209,29 +210,33 @@ export namespace Ray {
     return intersections;
   };
 
+  // Pre-allocated corners for intersectRect to avoid allocation
+  const _rectCorners: [Vec2, Vec2, Vec2, Vec2] = [
+    [0, 0],
+    [0, 0],
+    [0, 0],
+    [0, 0],
+  ];
+
   /**
-   * Intersect ray with a rectangle defined by position and size.
+   * Intersect ray with a rectangle defined by position, size, and rotation.
    * Returns all intersections sorted by distance.
    */
   export const intersectRect = (
     ray: RayTuple,
     position: Vec2,
-    size: Vec2
+    size: Vec2,
+    rotateZ: number = 0
   ): RayIntersection[] => {
-    const corners: Vec2[] = [
-      [position[0], position[1]],
-      [position[0] + size[0], position[1]],
-      [position[0] + size[0], position[1] + size[1]],
-      [position[0], position[1] + size[1]],
-    ];
+    Rect.getCorners(position, size, rotateZ, _rectCorners);
 
     const intersections: RayIntersection[] = [];
 
     for (let i = 0; i < 4; i++) {
       const intersection = intersectSegment(
         ray,
-        corners[i],
-        corners[(i + 1) % 4]
+        _rectCorners[i],
+        _rectCorners[(i + 1) % 4]
       );
       if (intersection) {
         intersections.push(intersection);

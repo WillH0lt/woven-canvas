@@ -107,14 +107,17 @@ const pathData = computed(() => {
 
     tEnd = trim.tEnd;
     if (tEnd !== 1 && endHead !== "none") {
-      tEnd -= gap;
+      tEnd += gap; // Add because we use (1 - tEnd) below
     }
   }
 
+  // tEnd is measured from end toward start, so invert it for arc parametric
+  const actualTEnd = 1 - tEnd;
+
   const start = Arc.parametricToPoint(arc, tStart);
-  const end = Arc.parametricToPoint(arc, tEnd);
+  const end = Arc.parametricToPoint(arc, actualTEnd);
   const startDir = flipDirection(Arc.directionAt(arc, tStart));
-  const endDir = Arc.directionAt(arc, tEnd);
+  const endDir = Arc.directionAt(arc, actualTEnd);
 
   return {
     start,
@@ -122,7 +125,7 @@ const pathData = computed(() => {
     startDir,
     endDir,
     tStart,
-    tEnd,
+    tEnd: actualTEnd,
     startHead,
     endHead,
   };

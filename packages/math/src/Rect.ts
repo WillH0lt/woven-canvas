@@ -15,22 +15,6 @@ const Y = 1;
 
 export namespace Rect {
   // ============================================
-  // Getters (non-mutating, return scalars)
-  // ============================================
-
-  export const centerX = (position: Vec2, size: Vec2): number =>
-    position[X] + size[X] / 2;
-
-  export const centerY = (position: Vec2, size: Vec2): number =>
-    position[Y] + size[Y] / 2;
-
-  export const right = (position: Vec2, size: Vec2): number =>
-    position[X] + size[X];
-
-  export const bottom = (position: Vec2, size: Vec2): number =>
-    position[Y] + size[Y];
-
-  // ============================================
   // Output methods (write to out parameter)
   // ============================================
 
