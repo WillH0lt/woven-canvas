@@ -187,8 +187,8 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
     // Update DragStart for transform box
     if (hasComponent(ctx, transformBoxId, DragStart)) {
       const dragStart = DragStart.write(ctx, transformBoxId);
-      dragStart.position = [boxBlock.position[0], boxBlock.position[1]];
-      dragStart.size = [boxBlock.size[0], boxBlock.size[1]];
+      dragStart.position = boxBlock.position;
+      dragStart.size = boxBlock.size;
       dragStart.rotateZ = rotateZ;
     }
 
@@ -198,16 +198,18 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
 
       if (!hasComponent(ctx, entityId, DragStart)) {
         addComponent(ctx, entityId, DragStart, {
-          position: [block.position[0], block.position[1]],
-          size: [block.size[0], block.size[1]],
+          position: block.position,
+          size: block.size,
           rotateZ: block.rotateZ,
+          flip: block.flip,
           fontSize: 16,
         });
       } else {
         const dragStart = DragStart.write(ctx, entityId);
-        dragStart.position = [block.position[0], block.position[1]];
-        dragStart.size = [block.size[0], block.size[1]];
+        dragStart.position = block.position;
+        dragStart.size = block.size;
         dragStart.rotateZ = block.rotateZ;
+        dragStart.flip = block.flip;
       }
     }
   }
@@ -271,6 +273,14 @@ function addOrUpdateTransformHandles(
     const block = Block.read(ctx, selectedBlocks[0]);
     const blockDef = getBlockDef(ctx, block.tag);
     resizeMode = blockDef.resizeMode;
+  } else if (selectedBlocks.length > 1) {
+    // If all blocks are "free" resize mode, use "free" for the transform box
+    const allFree = selectedBlocks.every((id) => {
+      const block = Block.read(ctx, id);
+      const blockDef = getBlockDef(ctx, block.tag);
+      return blockDef.resizeMode === "free";
+    });
+    if (allFree) resizeMode = "free";
   }
 
   // Check if all selected blocks can rotate/scale
@@ -512,6 +522,15 @@ function hideTransformBox(ctx: Context): void {
  * Show transform box and handles.
  */
 function showTransformBox(ctx: Context): void {
+  // Don't show if current selection is not transformable
+  const selectedBlocks = getLocalSelectedBlocks(ctx);
+  if (selectedBlocks.length === 0) return;
+  if (selectedBlocks.length === 1) {
+    const block = Block.read(ctx, selectedBlocks[0]);
+    const blockDef = getBlockDef(ctx, block.tag);
+    if (blockDef.resizeMode === "groupOnly") return;
+  }
+
   for (const boxId of transformBoxQuery.current(ctx)) {
     if (hasComponent(ctx, boxId, Locked)) continue;
     if (hasComponent(ctx, boxId, Opacity)) {

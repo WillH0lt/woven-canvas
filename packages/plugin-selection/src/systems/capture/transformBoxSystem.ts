@@ -137,6 +137,9 @@ const transformBoxMachine = setup({
         pointerDown: {
           actions: "hideTransformBox",
         },
+        pointerUp: {
+          actions: "showTransformBox",
+        },
         click: {
           guard: and(["isOverTransformBox", "isSelectionEditable"]),
           target: TransformBoxState.Editing,

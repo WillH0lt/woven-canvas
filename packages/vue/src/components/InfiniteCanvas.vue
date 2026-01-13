@@ -34,6 +34,7 @@ import {
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
 import { EraserPlugin } from "@infinitecanvas/plugin-eraser";
+import { PenPlugin } from "@infinitecanvas/plugin-pen";
 import { ArrowsPlugin } from "@infinitecanvas/plugin-arrows";
 import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../injection";
 import SelectionBox from "./blocks/SelectionBox.vue";
@@ -43,6 +44,7 @@ import StickyNote from "./blocks/StickyNote.vue";
 import FloatingMenu from "./FloatingMenu.vue";
 import Toolbar from "./Toolbar.vue";
 import Eraser from "./blocks/Eraser.vue";
+import PenStrokeBlock from "./blocks/PenStroke.vue";
 import ArcArrowBlock from "./blocks/ArcArrowBlock.vue";
 import ElbowArrowBlock from "./blocks/ElbowArrowBlock.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
@@ -306,6 +308,7 @@ onMounted(async () => {
   allPlugins.push(CanvasControlsPlugin(props.controls ?? {}));
   allPlugins.push(SelectionPlugin);
   allPlugins.push(EraserPlugin);
+  allPlugins.push(PenPlugin);
   allPlugins.push(ArrowsPlugin);
 
   allPlugins.push(BasicsPlugin);
@@ -581,6 +584,23 @@ subscribeSingleton(Camera.name, (value) => {
   }
 });
 
+function getBlockTransform(block: BlockData["block"]): string | undefined {
+  const hasRotation = block.rotateZ !== 0;
+  const hasFlipX = block.flip[0];
+  const hasFlipY = block.flip[1];
+
+  if (!hasRotation && !hasFlipX && !hasFlipY) {
+    return undefined;
+  }
+
+  const parts: string[] = [];
+  if (hasRotation) parts.push(`rotate(${block.rotateZ}rad)`);
+  if (hasFlipX) parts.push("scaleX(-1)");
+  if (hasFlipY) parts.push("scaleY(-1)");
+
+  return parts.join(" ");
+}
+
 function getBlockStyle(data: BlockData) {
   const camera = cameraRef.value;
   const { block, opacity } = data;
@@ -595,7 +615,7 @@ function getBlockStyle(data: BlockData) {
     top: `${screenY}px`,
     width: `${screenWidth}px`,
     height: `${screenHeight}px`,
-    transform: block.rotateZ !== 0 ? `rotate(${block.rotateZ}rad)` : undefined,
+    transform: getBlockTransform(block),
     opacity: opacity !== null ? opacity.value / 255 : undefined,
     pointerEvents: "none" as const,
   };
@@ -648,6 +668,10 @@ function getBlockStyle(data: BlockData) {
         />
         <Eraser
           v-else-if="blockData.value.block.tag === 'eraser'"
+          v-bind="blockData.value"
+        />
+        <PenStrokeBlock
+          v-else-if="blockData.value.block.tag === 'pen-stroke'"
           v-bind="blockData.value"
         />
         <ArcArrowBlock

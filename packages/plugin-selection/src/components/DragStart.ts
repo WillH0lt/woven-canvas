@@ -15,6 +15,8 @@ export const DragStart = defineEditorComponent(
     size: field.tuple(field.float64(), 2).default([0, 0]),
     /** Initial rotation in radians */
     rotateZ: field.float64().default(0),
+    /** Initial flip state as [flipX, flipY] */
+    flip: field.tuple(field.boolean(), 2).default([false, false]),
     /** Initial font size */
     fontSize: field.float64().default(16),
   },

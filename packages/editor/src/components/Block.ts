@@ -29,6 +29,8 @@ const BlockSchema = {
   size: field.tuple(field.float64(), 2).default([100, 100]),
   /** Rotation around center in radians */
   rotateZ: field.float64().default(0),
+  /** Flip state as [flipX, flipY] */
+  flip: field.tuple(field.boolean(), 2).default([false, false]),
   /** Z-order rank (LexoRank string) */
   rank: field.string().max(36).default(""),
 };
@@ -184,27 +186,50 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
   }
 
   worldToUv(ctx: Context, entityId: EntityId, worldPos: Vec2): Vec2 {
-    const { position, size, rotateZ } = this.read(ctx, entityId);
-    return Rect.worldToUv(position, size, rotateZ, worldPos);
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
+    const uv = Rect.worldToUv(position, size, rotateZ, worldPos);
+    // Apply flip to UV coordinates
+    if (flip[0]) uv[0] = 1 - uv[0];
+    if (flip[1]) uv[1] = 1 - uv[1];
+    return uv;
   }
 
   uvToWorld(ctx: Context, entityId: EntityId, uv: Vec2): Vec2 {
-    const { position, size, rotateZ } = this.read(ctx, entityId);
-    return Rect.uvToWorld(position, size, rotateZ, uv);
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
+    // Apply flip to UV coordinates before converting to world
+    const flippedUv: Vec2 = [
+      flip[0] ? 1 - uv[0] : uv[0],
+      flip[1] ? 1 - uv[1] : uv[1],
+    ];
+    return Rect.uvToWorld(position, size, rotateZ, flippedUv);
   }
 
   /**
    * Get the UV-to-world transformation matrix for a block.
    * More efficient than multiple uvToWorld() calls since sin/cos is computed once.
    * Use with Mat2.transformPoint() to transform UV coordinates to world.
+   * Note: This matrix does NOT account for flip - use uvToWorld() for flipped blocks.
    *
    * @param ctx - ECS context
    * @param entityId - Entity ID
    * @param out - Output matrix to write to [a, b, c, d, tx, ty]
    */
   getUvToWorldMatrix(ctx: Context, entityId: EntityId, out: Mat2): void {
-    const { position, size, rotateZ } = this.read(ctx, entityId);
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
     Rect.getUvToWorldMatrix(position, size, rotateZ, out);
+    // Apply flip by negating scale and adjusting translation
+    if (flip[0]) {
+      out[0] = -out[0]; // Negate scaleX
+      out[2] = -out[2]; // Negate shearX
+      out[4] += size[0] * Math.cos(rotateZ); // Adjust tx
+      out[5] += size[0] * Math.sin(rotateZ); // Adjust ty
+    }
+    if (flip[1]) {
+      out[1] = -out[1]; // Negate shearY
+      out[3] = -out[3]; // Negate scaleY
+      out[4] -= size[1] * Math.sin(rotateZ); // Adjust tx
+      out[5] += size[1] * Math.cos(rotateZ); // Adjust ty
+    }
   }
 }
 

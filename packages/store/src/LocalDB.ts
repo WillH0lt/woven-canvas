@@ -64,7 +64,10 @@ export class LocalDB {
         this.nextUpdateIndex++;
       } else {
         // First save is always a snapshot
-        const snapshot = doc.export({ mode: "snapshot" });
+        const snapshot = doc.export({
+          mode: "shallow-snapshot",
+          frontiers: doc.frontiers(),
+        });
         store.put(snapshot, SNAPSHOT_KEY);
       }
 
@@ -152,7 +155,10 @@ export class LocalDB {
 
     try {
       // Create a new snapshot with current state
-      const snapshot = doc.export({ mode: "snapshot" });
+      const snapshot = doc.export({
+        mode: "shallow-snapshot",
+        frontiers: doc.frontiers(),
+      });
       const version = doc.version();
 
       // Use a transaction to ensure all operations succeed or fail together

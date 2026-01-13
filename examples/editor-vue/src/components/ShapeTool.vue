@@ -17,7 +17,12 @@ const snapshot = JSON.stringify({
 </script>
 
 <template>
-  <ToolbarButton name="shape" tooltip="Shape" :snapshot="snapshot">
+  <ToolbarButton
+    name="shape"
+    tooltip="Shape"
+    :drag-out-snapshot="snapshot"
+    :placement-snapshot="snapshot"
+  >
     <svg
       viewBox="0 0 20 20"
       fill="none"

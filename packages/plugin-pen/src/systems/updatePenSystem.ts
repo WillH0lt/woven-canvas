@@ -1,0 +1,231 @@
+import {
+  defineEditorSystem,
+  createEntity,
+  removeEntity,
+  addComponent,
+  hasComponent,
+  on,
+  Synced,
+  Aabb,
+  Block,
+  Color,
+  HitGeometry,
+  RankBounds,
+  MAX_HIT_CAPSULES,
+  type Context,
+  type EntityId,
+} from "@infinitecanvas/editor";
+import { Vec2, Aabb as AabbNs } from "@infinitecanvas/math";
+import simplify from "simplify-js";
+
+import {
+  StartPenStroke,
+  AddPenStrokePoint,
+  CompletePenStroke,
+  RemovePenStroke,
+} from "../commands";
+import { PenStroke, POINTS_CAPACITY } from "../components";
+import { PenStateSingleton } from "../singletons";
+import { STROKE_THICKNESS } from "../constants";
+
+/**
+ * Update pen system - handles pen commands and stroke management.
+ *
+ * Processes:
+ * - StartPenStroke: Create new stroke entity
+ * - AddPenStrokePoint: Add point to stroke with pressure, expand bounds
+ * - CompletePenStroke: Mark complete and generate hit geometry
+ * - RemovePenStroke: Delete stroke entity
+ */
+export const updatePenSystem = defineEditorSystem(
+  { phase: "update" },
+  (ctx: Context) => {
+    on(ctx, StartPenStroke, (ctx, { worldPosition, pressure }) => {
+      startStroke(ctx, worldPosition, pressure);
+    });
+
+    on(ctx, AddPenStrokePoint, (ctx, { strokeId, worldPosition, pressure }) => {
+      addStrokePoint(ctx, strokeId, worldPosition, pressure);
+    });
+
+    on(ctx, CompletePenStroke, (ctx, { strokeId }) => {
+      completeStroke(ctx, strokeId);
+    });
+
+    on(ctx, RemovePenStroke, (ctx, { strokeId }) => {
+      removeStroke(ctx, strokeId);
+    });
+  }
+);
+
+/**
+ * Start a new pen stroke at the given position.
+ */
+function startStroke(
+  ctx: Context,
+  position: [number, number],
+  pressure: number | null
+): void {
+  const radius = STROKE_THICKNESS / 2;
+
+  // Create stroke entity
+  const strokeId = createEntity(ctx);
+
+  // Add Synced component for persistence
+  addComponent(ctx, strokeId, Synced, {
+    id: crypto.randomUUID(),
+  });
+
+  // Add Block component so the stroke can be rendered
+  addComponent(ctx, strokeId, Block, {
+    tag: "pen-stroke",
+    rank: RankBounds.genNext(ctx),
+    position: [position[0] - radius, position[1] - radius],
+    size: [radius * 2, radius * 2],
+  });
+
+  // Add Color component for stroke color
+  addComponent(ctx, strokeId, Color, {});
+
+  // Determine if we have pressure data
+  const hasPressure = pressure !== null;
+  const initialPressure = hasPressure ? pressure : 0.5;
+
+  addComponent(ctx, strokeId, PenStroke, {
+    points: position,
+    pressures: [initialPressure],
+    pointCount: 1,
+    thickness: STROKE_THICKNESS,
+    originalLeft: position[0] - radius,
+    originalTop: position[1] - radius,
+    originalWidth: radius * 2,
+    originalHeight: radius * 2,
+    isComplete: false,
+    hasPressure,
+  });
+
+  // Store reference to active stroke in state singleton
+  const state = PenStateSingleton.write(ctx);
+  state.activeStroke = strokeId;
+  state.lastWorldPosition = position;
+}
+
+/**
+ * Add a point to the active pen stroke.
+ */
+function addStrokePoint(
+  ctx: Context,
+  strokeId: EntityId,
+  point: [number, number],
+  pressure: number | null
+): void {
+  const stroke = PenStroke.write(ctx, strokeId);
+
+  const nextIndex = stroke.pointCount;
+
+  // Check if we've exceeded capacity
+  if (nextIndex >= POINTS_CAPACITY) return;
+
+  // Add point to buffer
+  stroke.points[nextIndex * 2] = point[0];
+  stroke.points[nextIndex * 2 + 1] = point[1];
+
+  // Add pressure (use 0.5 as default if no pressure data)
+  if (pressure !== null) {
+    stroke.pressures[nextIndex] = pressure;
+  } else {
+    stroke.pressures[nextIndex] = 0.5;
+  }
+
+  stroke.pointCount++;
+
+  // Update bounds if point is outside current Aabb
+  if (!Aabb.containsPoint(ctx, strokeId, point)) {
+    Aabb.expandByPoint(ctx, strokeId, point);
+
+    // Update block to match the expanded Aabb
+    const { value: aabb } = Aabb.read(ctx, strokeId);
+    const block = Block.write(ctx, strokeId);
+    Vec2.set(block.position, AabbNs.left(aabb), AabbNs.top(aabb));
+    Vec2.set(block.size, AabbNs.width(aabb), AabbNs.height(aabb));
+
+    // Update original bounds for affine transform calculations
+    stroke.originalLeft = block.position[0];
+    stroke.originalTop = block.position[1];
+    stroke.originalWidth = block.size[0];
+    stroke.originalHeight = block.size[1];
+  }
+}
+
+/**
+ * Complete the stroke - mark as finished and generate hit geometry.
+ */
+function completeStroke(ctx: Context, strokeId: EntityId): void {
+  const stroke = PenStroke.write(ctx, strokeId);
+  stroke.isComplete = true;
+
+  // Generate hit geometry for collision detection
+  generateHitGeometry(ctx, strokeId);
+}
+
+/**
+ * Remove the stroke entity.
+ */
+function removeStroke(ctx: Context, strokeId: EntityId): void {
+  removeEntity(ctx, strokeId);
+}
+
+/**
+ * Generate hit geometry for the completed stroke.
+ *
+ * Simplifies the stroke points and creates capsules for collision detection.
+ * Iteratively increases tolerance until the result fits within MAX_HIT_CAPSULES.
+ */
+function generateHitGeometry(ctx: Context, strokeId: EntityId): void {
+  const stroke = PenStroke.read(ctx, strokeId);
+
+  // Build array of points for simplification
+  const points: { x: number; y: number }[] = [];
+  for (let i = 0; i < stroke.pointCount; i++) {
+    points.push({
+      x: stroke.points[i * 2],
+      y: stroke.points[i * 2 + 1],
+    });
+  }
+
+  // Simplify points, doubling tolerance until we fit within MAX_HIT_CAPSULES
+  let tolerance = stroke.thickness;
+  let simplifiedPoints = simplify(points, tolerance, false);
+
+  while (simplifiedPoints.length - 1 > MAX_HIT_CAPSULES) {
+    tolerance *= 2;
+    simplifiedPoints = simplify(points, tolerance, false);
+  }
+
+  // Ensure we have at least 2 points for a capsule
+  if (simplifiedPoints.length === 1) {
+    const pt = simplifiedPoints[0];
+    simplifiedPoints.push({ x: pt.x, y: pt.y });
+  }
+
+  // Add HitGeometry component if not present
+  if (!hasComponent(ctx, strokeId, HitGeometry)) {
+    addComponent(ctx, strokeId, HitGeometry, {});
+  } else {
+    HitGeometry.clear(ctx, strokeId);
+  }
+
+  // Create capsules from simplified points in world coordinates
+  for (let i = 0; i < simplifiedPoints.length - 1; i++) {
+    const p0 = simplifiedPoints[i];
+    const p1 = simplifiedPoints[i + 1];
+
+    HitGeometry.addCapsuleWorld(
+      ctx,
+      strokeId,
+      [p0.x, p0.y],
+      [p1.x, p1.y],
+      stroke.thickness
+    );
+  }
+}

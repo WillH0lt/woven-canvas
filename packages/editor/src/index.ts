@@ -66,7 +66,14 @@ export {
 } from "./EditorSystem";
 
 // Command system
-export { defineCommand, on, type CommandDef, CommandMarker } from "./command";
+export {
+  defineCommand,
+  on,
+  type CommandDef,
+  CommandMarker,
+  Undo,
+  Redo,
+} from "./command";
 
 // Editor class
 export { Editor, type QueryCallback } from "./Editor";
@@ -171,4 +178,5 @@ export {
 // Systems
 export { rankBoundsSystem } from "./systems/preInput";
 export { intersectSystem } from "./systems/preCapture";
+export { undoRedoSystem } from "./systems/update";
 export { scaleWithZoomSystem } from "./systems/preRender";

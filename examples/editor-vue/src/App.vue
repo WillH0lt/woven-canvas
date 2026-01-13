@@ -29,7 +29,13 @@ function handleReady(editor: Editor) {
       :store="store"
       :controls="{ minZoom: 0.1, maxZoom: 10 }"
       :components="[Shape]"
-      :blockDefs="[{ tag: 'shape', components: [Shape, Color] }]"
+      :blockDefs="[
+        {
+          tag: 'shape',
+          components: [Shape, Color],
+          resizeMode: 'free',
+        },
+      ]"
     >
       <template #block:shape="{ entityId }">
         <ShapeBlock :entityId="entityId" />

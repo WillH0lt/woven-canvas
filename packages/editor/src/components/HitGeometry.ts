@@ -10,7 +10,7 @@ const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0];
  * Maximum number of capsules that can be stored in the hitCapsules array.
  * Each capsule takes 5 floats: ax, ay, bx, by, radius
  */
-export const MAX_HIT_CAPSULES = 32;
+export const MAX_HIT_CAPSULES = 64;
 
 /**
  * Number of floats per capsule in the hitCapsules array.

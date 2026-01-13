@@ -219,11 +219,15 @@ function onScaleHandleDrag(
   // Flip handle vectors when crossing over (dragging past the opposite corner)
   let vectorX = handle.vectorX;
   let vectorY = handle.vectorY;
+  let flippedX = false;
+  let flippedY = false;
   if (Math.sign(localDiff[0]) !== vectorX && vectorX !== 0) {
     vectorX = -vectorX;
+    flippedX = true;
   }
   if (Math.sign(localDiff[1]) !== vectorY && vectorY !== 0) {
     vectorY = -vectorY;
+    flippedY = true;
   }
 
   // Calculate new dimensions in local space
@@ -282,9 +286,12 @@ function onScaleHandleDrag(
     const offsetFromBoxCenter: Vec2 = Vec2.clone(blockStartCenter);
     Vec2.sub(offsetFromBoxCenter, boxStartCenter);
 
-    // Transform to local space, scale, transform back to world space
+    // Transform to local space, scale, flip if needed, transform back to world space
     Vec2.rotate(offsetFromBoxCenter, -boxRotateZ);
     Vec2.multiply(offsetFromBoxCenter, scaleFactor);
+    // Mirror block positions when handles cross over
+    if (flippedX) offsetFromBoxCenter[0] = -offsetFromBoxCenter[0];
+    if (flippedY) offsetFromBoxCenter[1] = -offsetFromBoxCenter[1];
     Vec2.rotate(offsetFromBoxCenter, boxRotateZ);
 
     // Add scaled offset to new box center
@@ -299,5 +306,12 @@ function onScaleHandleDrag(
     Vec2.copy(block.position, newBlockCenter);
     Vec2.sub(block.position, [newBlockSize[0] / 2, newBlockSize[1] / 2]);
     Vec2.copy(block.size, newBlockSize);
+
+    // Toggle flip state when handles cross over
+    // XOR with start flip state to toggle when flipped
+    block.flip = [
+      flippedX !== blockStart.flip[0],
+      flippedY !== blockStart.flip[1],
+    ];
   }
 }

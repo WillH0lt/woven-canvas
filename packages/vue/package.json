@@ -37,6 +37,7 @@
     "@infinitecanvas/plugin-arrows": "workspace:^",
     "@infinitecanvas/plugin-canvas-controls": "workspace:^",
     "@infinitecanvas/plugin-eraser": "workspace:^",
+    "@infinitecanvas/plugin-pen": "workspace:^",
     "@infinitecanvas/plugin-selection": "workspace:^",
     "perfect-freehand": "^1.2.2",
     "vue": "^3.5.26"

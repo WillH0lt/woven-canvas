@@ -196,3 +196,15 @@ export function on<T>(
     handler(ctx, payload);
   }
 }
+
+/**
+ * Undo command - triggers an undo operation on the store.
+ * Only executes if the store supports undo and canUndo() returns true.
+ */
+export const Undo = defineCommand<void>("undo");
+
+/**
+ * Redo command - triggers a redo operation on the store.
+ * Only executes if the store supports redo and canRedo() returns true.
+ */
+export const Redo = defineCommand<void>("redo");

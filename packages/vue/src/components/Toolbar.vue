@@ -7,6 +7,7 @@ import SelectTool from "./tools/SelectTool.vue";
 import HandTool from "./tools/HandTool.vue";
 import StickyNoteTool from "./tools/StickyNoteTool.vue";
 import EraserTool from "./tools/EraserTool.vue";
+import PenTool from "./tools/PenTool.vue";
 import ArcArrowTool from "./tools/ArcArrowTool.vue";
 import ElbowArrowTool from "./tools/ElbowArrowTool.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
@@ -89,6 +90,7 @@ const builtInToolNames = new Set([
   "select",
   "hand",
   "sticky-note",
+  "pen",
   "eraser",
   "arc-arrow",
   "elbow-arrow",
@@ -124,6 +126,11 @@ const customTools = computed(() => {
     <!-- Sticky note tool (built-in with override) -->
     <slot name="tool:sticky-note">
       <StickyNoteTool />
+    </slot>
+
+    <!-- Pen tool (built-in with override) -->
+    <slot name="tool:pen">
+      <PenTool />
     </slot>
 
     <!-- Eraser tool (built-in with override) -->

@@ -25,12 +25,15 @@ import {
 import { rankBoundsSystem } from "./systems/preInput";
 import { intersectSystem } from "./systems/preCapture";
 import { keybindSystem } from "./systems/capture";
+import { undoRedoSystem } from "./systems/update";
 import { scaleWithZoomSystem } from "./systems/preRender";
 import { cursorSystem } from "./systems/postRender";
 
 import { Synced, User } from "./components";
 import * as components from "./components";
 import * as singletons from "./singletons";
+import { Key } from "./singletons/Keyboard";
+import { Undo, Redo } from "./command";
 
 import { PLUGIN_NAME } from "./constants";
 import { cursors } from "./cursors";
@@ -51,6 +54,12 @@ export const CorePlugin: EditorPlugin = {
     (v) => v instanceof EditorComponentDef
   ) as AnyEditorComponentDef[],
 
+  keybinds: [
+    { command: Undo.name, key: Key.Z, mod: true },
+    { command: Redo.name, key: Key.Y, mod: true },
+    { command: Redo.name, key: Key.Z, mod: true, shift: true },
+  ],
+
   systems: [
     // Input phase
     frameSystem, // priority: 100
@@ -63,6 +72,9 @@ export const CorePlugin: EditorPlugin = {
     // Capture phase
     intersectSystem, // priority: 100
     keybindSystem,
+
+    // Update phase
+    undoRedoSystem,
 
     // Render phase
     scaleWithZoomSystem, // priority: 100

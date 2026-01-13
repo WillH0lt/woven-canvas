@@ -213,6 +213,9 @@ export class Editor {
     const componentsById = new Map<number, AnyEditorComponentDef>();
     const singletonsById = new Map<number, AnyEditorSingletonDef>();
 
+    // Store adapter
+    this.store = options.store ?? null;
+
     // Create ECS World with editor resources
     const allResources: EditorResources = {
       domElement,
@@ -224,6 +227,7 @@ export class Editor {
       singletonsByName,
       componentsById,
       singletonsById,
+      store: this.store,
     };
 
     this.world = new World(allDefs, {
@@ -249,9 +253,6 @@ export class Editor {
 
     // Build map of plugins
     this.plugins = new Map(sortedPlugins.map((p) => [p.name, p]));
-
-    // Store adapter
-    this.store = options.store ?? null;
 
     // Build maps of all components/singletons (by id and by name)
     for (const plugin of sortedPlugins) {

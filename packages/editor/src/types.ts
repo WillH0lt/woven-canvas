@@ -9,6 +9,8 @@ import type { EditorPluginInput } from "./plugin";
 import type { StoreAdapter } from "./store";
 import type { EditorSystem } from "./EditorSystem";
 
+export type { StoreAdapter };
+
 // Re-export EntityId for convenience
 export type { EntityId };
 
@@ -78,6 +80,12 @@ export interface EditorResources {
    * Use this for singleton lookup by runtime id (e.g., from events).
    */
   singletonsById: Map<number, AnyEditorSingletonDef>;
+
+  /**
+   * Store adapter for persistence and sync.
+   * May be null if no store was provided.
+   */
+  store: StoreAdapter | null;
 }
 
 /**

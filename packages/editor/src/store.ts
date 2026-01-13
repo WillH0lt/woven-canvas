@@ -126,4 +126,28 @@ export interface StoreAdapter {
    * @param ctx - The ECS context for applying changes
    */
   flushChanges(ctx: Context): void;
+
+  /**
+   * Undo the last operation.
+   * Optional - implement if your store supports undo/redo.
+   */
+  undo?(): void;
+
+  /**
+   * Redo the previously undone operation.
+   * Optional - implement if your store supports undo/redo.
+   */
+  redo?(): void;
+
+  /**
+   * Check if undo is available.
+   * Optional - implement if your store supports undo/redo.
+   */
+  canUndo?(): boolean;
+
+  /**
+   * Check if redo is available.
+   * Optional - implement if your store supports undo/redo.
+   */
+  canRedo?(): boolean;
 }

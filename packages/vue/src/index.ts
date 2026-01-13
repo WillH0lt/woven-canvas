@@ -15,9 +15,11 @@ export { default as SelectTool } from "./components/tools/SelectTool.vue";
 export { default as HandTool } from "./components/tools/HandTool.vue";
 export { default as StickyNoteTool } from "./components/tools/StickyNoteTool.vue";
 export { default as EraserTool } from "./components/tools/EraserTool.vue";
+export { default as PenTool } from "./components/tools/PenTool.vue";
 export { default as ArcArrowTool } from "./components/tools/ArcArrowTool.vue";
 export { default as ElbowArrowTool } from "./components/tools/ElbowArrowTool.vue";
 export { default as Eraser } from "./components/blocks/Eraser.vue";
+export { default as PenStroke } from "./components/blocks/PenStroke.vue";
 
 // Arrow Components
 export { default as ArcArrowBlock } from "./components/blocks/ArcArrowBlock.vue";
