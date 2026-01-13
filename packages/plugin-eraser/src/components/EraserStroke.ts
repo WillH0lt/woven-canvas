@@ -16,7 +16,7 @@ export const POINTS_CAPACITY = 10;
  * consecutive points, with the specified radius.
  */
 export const EraserStroke = defineEditorComponent(
-  "eraser-stroke",
+  "eraserStroke",
   {
     /**
      * Flat buffer of point coordinates [x0, y0, x1, y1, ...]

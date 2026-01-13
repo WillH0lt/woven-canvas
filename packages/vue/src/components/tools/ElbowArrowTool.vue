@@ -1,9 +1,29 @@
 <script setup lang="ts">
 import ToolbarButton from "../ToolbarButton.vue";
+import { ArrowHeadKind } from "@infinitecanvas/plugin-arrows";
+
+const snapshot = JSON.stringify({
+  block: {
+    tag: "elbow-arrow",
+    size: [195, 195],
+  },
+  elbowArrow: {
+    points: [0, 0, 0.5, 0, 0.5, 1, 1, 1],
+    pointCount: 4,
+    startArrowHead: ArrowHeadKind.None,
+    endArrowHead: ArrowHeadKind.V,
+  },
+  connector: {},
+});
 </script>
 
 <template>
-  <ToolbarButton name="elbow-arrow" tooltip="Elbow Arrow" cursor="crosshair">
+  <ToolbarButton
+    name="elbow-arrow"
+    tooltip="Elbow Arrow"
+    cursor="crosshair"
+    :drag-out-snapshot="snapshot"
+  >
     <svg
       viewBox="0 0 20 20"
       fill="none"

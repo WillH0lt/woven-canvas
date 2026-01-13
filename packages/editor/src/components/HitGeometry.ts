@@ -59,7 +59,7 @@ const HitGeometrySchema = {
  */
 class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
   constructor() {
-    super("hit-geometry", HitGeometrySchema, { sync: "document" });
+    super("hitHeometry", HitGeometrySchema, { sync: "document" });
   }
 
   /**

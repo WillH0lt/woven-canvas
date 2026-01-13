@@ -9,8 +9,10 @@ const props = withDefaults(
     name: string;
     /** Tooltip text shown on hover */
     tooltip?: string;
-    /** JSON snapshot of the block to create when this tool is used */
-    snapshot?: string;
+    /** JSON snapshot of the block to create when dragging out from toolbar */
+    dragOutSnapshot?: string;
+    /** JSON snapshot of the block to create when placing on canvas */
+    placementSnapshot?: string;
     /** Cursor kind to use when this tool is active */
     cursor?: string;
   }>(),
@@ -33,11 +35,11 @@ const isSelected = computed(
 );
 
 function handleClick() {
-  toolbarContext.setTool(props.name, props.snapshot, props.cursor);
+  toolbarContext.setTool(props.name, props.placementSnapshot, props.cursor);
 }
 
 function handlePointerDown() {
-  toolbarContext.onToolPointerDown(props.name, props.snapshot);
+  toolbarContext.onToolPointerDown(props.name, props.dragOutSnapshot);
 }
 
 function handlePointerUp() {
