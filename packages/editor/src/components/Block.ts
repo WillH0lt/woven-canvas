@@ -182,6 +182,16 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
       _blockAxes
     );
   }
+
+  worldToUv(ctx: Context, entityId: EntityId, worldPos: Vec2): Vec2 {
+    const { position, size, rotateZ } = this.read(ctx, entityId);
+    return Rect.worldToUv(position, size, rotateZ, worldPos);
+  }
+
+  uvToWorld(ctx: Context, entityId: EntityId, uv: Vec2): Vec2 {
+    const { position, size, rotateZ } = this.read(ctx, entityId);
+    return Rect.uvToWorld(position, size, rotateZ, uv);
+  }
 }
 
 export const Block = new BlockDef();

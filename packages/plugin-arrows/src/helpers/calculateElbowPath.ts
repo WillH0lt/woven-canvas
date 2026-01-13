@@ -1,11 +1,7 @@
 import type { RayIntersection } from "@infinitecanvas/math";
-import { Aabb, Ray, Vec2 } from "@infinitecanvas/math";
+import { Aabb, Mat2, Ray, Rect, Vec2 } from "@infinitecanvas/math";
 import type { Context, EntityId } from "@infinitecanvas/editor";
-import {
-  Block,
-  Aabb as AabbComponent,
-  hasComponent,
-} from "@infinitecanvas/editor";
+import { Block } from "@infinitecanvas/editor";
 import { MinHeap } from "./MinHeap";
 
 interface Node {
@@ -20,6 +16,9 @@ type TurnDirection = "left" | "right";
 /**
  * Calculate the path for an elbow arrow between two points,
  * optionally routing around connected blocks.
+ *
+ * @param rotation - Arrow rotation in radians. When non-zero, the algorithm
+ * computes paths aligned to the arrow's rotation axis instead of world XY.
  */
 export function calculateElbowPath(
   ctx: Context,
@@ -27,163 +26,356 @@ export function calculateElbowPath(
   end: Vec2,
   startBlockId: EntityId | null,
   endBlockId: EntityId | null,
-  padding: number
+  padding: number,
+  rotation: number
 ): Vec2[] {
-  const startRay = calculateRay(ctx, start, end, startBlockId);
-  const endRay = calculateRay(ctx, end, start, endBlockId);
-
-  let path: Vec2[];
-
-  if (startBlockId && endBlockId) {
-    path = routeBlockToBlock(
-      ctx,
-      startBlockId,
-      endBlockId,
-      startRay,
-      endRay,
-      padding
-    );
-  } else if (startBlockId && !endBlockId) {
-    path = routeBlockToPoint(ctx, startBlockId, startRay, end, padding);
-  } else if (!startBlockId && endBlockId) {
-    path = routeBlockToPoint(ctx, endBlockId, endRay, start, padding).reverse();
-  } else {
-    path = routePointToPoint(Ray.origin(startRay), end);
-  }
-
-  console.log("Calculated elbow path:", path);
-
-  return path;
-}
-
-function getBlockAabb(ctx: Context, entityId: EntityId): Aabb {
-  if (hasComponent(ctx, entityId, AabbComponent)) {
-    const aabb = AabbComponent.read(ctx, entityId);
-    return Aabb.clone(aabb.value);
-  }
-
-  const block = Block.read(ctx, entityId);
-  return Aabb.fromPositionSize(
-    block.position[0],
-    block.position[1],
-    block.size[0],
-    block.size[1]
+  const calculator = new ElbowPathCalculator(
+    ctx,
+    start,
+    end,
+    padding,
+    rotation
   );
+  return calculator.calculate(startBlockId, endBlockId);
 }
 
-function routeBlockToBlock(
-  ctx: Context,
-  startBlockId: EntityId,
-  endBlockId: EntityId,
-  startRay: Ray,
-  endRay: Ray,
-  padding: number
-): Vec2[] {
-  const startAabb = getBlockAabb(ctx, startBlockId);
-  const endAabb = getBlockAabb(ctx, endBlockId);
+/**
+ * Handles elbow path calculation with coordinate space transformations.
+ */
+class ElbowPathCalculator {
+  private readonly ctx: Context;
+  private readonly padding: number;
+  private readonly rotation: number;
+  private readonly toLocal: Mat2;
+  private readonly toWorld: Mat2;
+  private readonly localStart: Vec2;
+  private readonly localEnd: Vec2;
 
-  Aabb.pad(startAabb, padding);
-  Aabb.pad(endAabb, padding);
+  constructor(
+    ctx: Context,
+    start: Vec2,
+    end: Vec2,
+    padding: number,
+    rotation: number
+  ) {
+    this.ctx = ctx;
+    this.padding = padding;
+    this.rotation = rotation;
 
-  extendAabbsToMeet(startAabb, endAabb);
+    // Create transform matrices for coordinate space conversion
+    const pivot = Vec2.midPoint(start, end);
 
-  const nodes = getNodes(startAabb, endAabb);
+    // World to local: translate(-pivot), then rotate(-rotation)
+    this.toLocal = Mat2.fromTranslation(-pivot[0], -pivot[1]);
+    Mat2.rotate(this.toLocal, -rotation);
 
-  const startId = intersectRayAndAddNode(startRay, nodes);
-  const endId = intersectRayAndAddNode(endRay, nodes);
+    // Local to world: rotate(rotation), then translate(pivot)
+    this.toWorld = Mat2.fromRotation(rotation);
+    Mat2.translate(this.toWorld, pivot[0], pivot[1]);
 
-  const startOrigin = Ray.origin(startRay);
-  const endOrigin = Ray.origin(endRay);
+    // Transform start/end to local space
+    this.localStart = this.transformToLocal(start);
+    this.localEnd = this.transformToLocal(end);
+  }
 
-  if (startId === null || endId === null) {
-    console.warn(
-      "[routeBlockToBlock] Failed to add start or end node to graph"
+  private transformToLocal(point: Vec2): Vec2 {
+    const result = Vec2.clone(point);
+    Mat2.transformPoint(this.toLocal, result);
+    return result;
+  }
+
+  private transformToWorld(point: Vec2): Vec2 {
+    const result = Vec2.clone(point);
+    Mat2.transformPoint(this.toWorld, result);
+    return result;
+  }
+
+  calculate(
+    startBlockId: EntityId | null,
+    endBlockId: EntityId | null
+  ): Vec2[] {
+    const startRay = this.calculateRay(
+      this.localStart,
+      this.localEnd,
+      startBlockId
+    );
+    const endRay = this.calculateRay(
+      this.localEnd,
+      this.localStart,
+      endBlockId
     );
 
-    return [startOrigin, endOrigin];
-  }
+    let path: Vec2[];
 
-  const nodePath = shortestPathInGraph(nodes, startId, endId);
-  if (nodePath === null) {
-    return [startOrigin, endOrigin];
-  }
-
-  const path: Vec2[] = [startOrigin];
-  for (const nodeId of nodePath) {
-    const node = nodes.find((n) => n.id === nodeId);
-    if (node) {
-      path.push(node.coords);
+    if (startBlockId && endBlockId) {
+      path = this.routeBlockToBlock(startBlockId, endBlockId, startRay, endRay);
+    } else if (startBlockId && !endBlockId) {
+      path = this.routeBlockToPoint(startBlockId, startRay, this.localEnd);
+    } else if (!startBlockId && endBlockId) {
+      path = this.routeBlockToPoint(
+        endBlockId,
+        endRay,
+        this.localStart
+      ).reverse();
+    } else {
+      path = routePointToPoint(Ray.origin(startRay), this.localEnd);
     }
-  }
-  path.push(endOrigin);
 
-  removeDuplicates(path);
-  removeStraightLinePoints(path);
-  removeZigZagPoints(path);
-
-  return path;
-}
-
-function routeBlockToPoint(
-  ctx: Context,
-  blockId: EntityId,
-  ray: Ray,
-  endPoint: Vec2,
-  padding: number
-): Vec2[] {
-  const rayOrigin = Ray.origin(ray);
-  const rayDir = Ray.direction(ray);
-  const dominantDirection = getDominantDirection(rayOrigin, endPoint);
-  if (
-    rayDir[0] === dominantDirection[0] &&
-    rayDir[1] === dominantDirection[1]
-  ) {
-    return routePointToPoint(rayOrigin, endPoint);
-  }
-
-  const aabb = getBlockAabb(ctx, blockId);
-  Aabb.pad(aabb, padding);
-
-  const endRay = Ray.fromPoints(endPoint, [
-    -dominantDirection[0],
-    -dominantDirection[1],
-  ]);
-
-  const intersects = Ray.intersectAabb(endRay, aabb);
-  if (intersects.length === 0) {
-    Aabb.expand(aabb, endPoint);
-  }
-
-  const perimeter = Aabb.corners(aabb);
-  const nodes = perimeterToNodes(perimeter);
-
-  const endId = intersectRayAndAddNode(endRay, nodes);
-  const startId = intersectRayAndAddNode(ray, nodes);
-
-  if (startId === null || endId === null) {
-    return [rayOrigin, endPoint];
-  }
-
-  const nodePath = shortestPathInGraph(nodes, startId, endId);
-  if (nodePath === null) {
-    return [rayOrigin, endPoint];
-  }
-
-  const path: Vec2[] = [rayOrigin];
-  for (const nodeId of nodePath) {
-    const node = nodes.find((n) => n.id === nodeId);
-    if (node) {
-      path.push(node.coords);
+    // Transform path back to world space
+    for (let i = 0; i < path.length; i++) {
+      path[i] = this.transformToWorld(path[i]);
     }
+
+    return path;
   }
 
-  if (intersects.length > 0) {
-    path.push(endPoint);
+  /**
+   * Get block AABB in local (arrow-aligned) coordinate space.
+   */
+  private getBlockAabb(entityId: EntityId): Aabb {
+    const block = Block.read(this.ctx, entityId);
+
+    // Transform center to local space
+    const center: Vec2 = [
+      block.position[0] + block.size[0] / 2,
+      block.position[1] + block.size[1] / 2,
+    ];
+    const localCenter = this.transformToLocal(center);
+
+    // The relative rotation is block rotation minus arrow rotation
+    const relativeRotation = (block.rotateZ || 0) - this.rotation;
+
+    const localPosition: Vec2 = [
+      localCenter[0] - block.size[0] / 2,
+      localCenter[1] - block.size[1] / 2,
+    ];
+
+    const out: Aabb = [0, 0, 0, 0];
+    Rect.getAabb(localPosition, block.size, relativeRotation, out);
+    return out;
   }
 
-  removeStraightLinePoints(path);
+  private routeBlockToBlock(
+    startBlockId: EntityId,
+    endBlockId: EntityId,
+    startRay: Ray,
+    endRay: Ray
+  ): Vec2[] {
+    const startAabb = this.getBlockAabb(startBlockId);
+    const endAabb = this.getBlockAabb(endBlockId);
 
-  return path;
+    Aabb.pad(startAabb, this.padding);
+    Aabb.pad(endAabb, this.padding);
+
+    extendAabbsToMeet(startAabb, endAabb);
+
+    const nodes = getNodes(startAabb, endAabb);
+
+    const startId = intersectRayAndAddNode(startRay, nodes);
+    const endId = intersectRayAndAddNode(endRay, nodes);
+
+    const startOrigin = Ray.origin(startRay);
+    const endOrigin = Ray.origin(endRay);
+
+    if (startId === null || endId === null) {
+      console.warn(
+        "[routeBlockToBlock] Failed to add start or end node to graph"
+      );
+
+      return [startOrigin, endOrigin];
+    }
+
+    const nodePath = shortestPathInGraph(nodes, startId, endId);
+
+    if (nodePath === null) {
+      return [startOrigin, endOrigin];
+    }
+
+    const path: Vec2[] = [startOrigin];
+    for (const nodeId of nodePath) {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (node) {
+        path.push(node.coords);
+      }
+    }
+    path.push(endOrigin);
+
+    removeDuplicates(path);
+    removeStraightLinePoints(path);
+    removeZigZagPoints(path);
+
+    return path;
+  }
+
+  private routeBlockToPoint(
+    blockId: EntityId,
+    ray: Ray,
+    endPoint: Vec2
+  ): Vec2[] {
+    const rayOrigin = Ray.origin(ray);
+    const rayDir = Ray.direction(ray);
+    const dominantDirection = getDominantDirection(rayOrigin, endPoint);
+    if (
+      rayDir[0] === dominantDirection[0] &&
+      rayDir[1] === dominantDirection[1]
+    ) {
+      return routePointToPoint(rayOrigin, endPoint);
+    }
+
+    const aabb = this.getBlockAabb(blockId);
+    Aabb.pad(aabb, this.padding);
+
+    const endRay = Ray.fromPoints(endPoint, [
+      -dominantDirection[0],
+      -dominantDirection[1],
+    ]);
+
+    const intersects = Ray.intersectAabb(endRay, aabb);
+    if (intersects.length === 0) {
+      Aabb.expand(aabb, endPoint);
+    }
+
+    const perimeter = Aabb.corners(aabb);
+    const nodes = perimeterToNodes(perimeter);
+
+    const endId = intersectRayAndAddNode(endRay, nodes);
+    const startId = intersectRayAndAddNode(ray, nodes);
+
+    if (startId === null || endId === null) {
+      return [rayOrigin, endPoint];
+    }
+
+    const nodePath = shortestPathInGraph(nodes, startId, endId);
+    if (nodePath === null) {
+      return [rayOrigin, endPoint];
+    }
+
+    const path: Vec2[] = [rayOrigin];
+    for (const nodeId of nodePath) {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (node) {
+        path.push(node.coords);
+      }
+    }
+
+    if (intersects.length > 0) {
+      path.push(endPoint);
+    }
+
+    removeStraightLinePoints(path);
+
+    return path;
+  }
+
+  private calculateRay(
+    point: Vec2,
+    target: Vec2,
+    blockId: EntityId | null
+  ): Ray {
+    let direction: Vec2;
+
+    if (blockId) {
+      const result = this.exitClosestSide(point, blockId);
+      direction = result.direction;
+    } else {
+      direction = getDominantDirection(point, target);
+    }
+
+    return Ray.fromPoints(point, direction);
+  }
+
+  private exitClosestSide(
+    point: Vec2,
+    blockId: EntityId
+  ): { direction: Vec2; distance: number } {
+    const block = Block.read(this.ctx, blockId);
+    const center = Block.getCenter(this.ctx, blockId);
+
+    // Transform point to world space for geometry tests
+    // (point is in local/arrow-aligned space)
+    const worldPoint = this.transformToWorld(point);
+
+    const nudgedPoint = Vec2.clone(worldPoint);
+    const offset = Vec2.clone(center);
+    Vec2.sub(offset, worldPoint);
+    Vec2.scale(offset, 0.01);
+    Vec2.add(nudgedPoint, offset);
+
+    // Base directions aligned to arrow's rotation axis (local space)
+    const baseDirections: Vec2[] = [
+      [0, -1], // up
+      [1, 0], // right
+      [0, 1], // down
+      [-1, 0], // left
+    ];
+
+    // Rotate directions to world space for intersection testing
+    const worldDirections: Vec2[] = baseDirections.map((dir) => {
+      const worldDir = Vec2.clone(dir);
+      Vec2.rotate(worldDir, this.rotation);
+      return worldDir;
+    });
+
+    // Track all valid exit directions and their distances
+    const exits: { direction: Vec2; distance: number }[] = [];
+
+    for (let i = 0; i < worldDirections.length; i++) {
+      const worldDir = worldDirections[i];
+      const ray = Ray.fromPoints(nudgedPoint, worldDir);
+      const intersections = Ray.intersectRect(
+        ray,
+        block.position,
+        block.size,
+        block.rotateZ
+      );
+      if (intersections.length === 0) {
+        continue;
+      }
+
+      exits.push({
+        direction: baseDirections[i],
+        distance: intersections[0].distance,
+      });
+    }
+
+    if (exits.length === 0) {
+      console.error("[exitClosestSide] No valid exit direction found!", {
+        point,
+        nudgedPoint,
+        blockPosition: block.position,
+        blockSize: block.size,
+        blockRotateZ: block.rotateZ,
+        center,
+      });
+      return { direction: [0, -1], distance: 0 };
+    }
+
+    // Sort by distance to find closest
+    exits.sort((a, b) => a.distance - b.distance);
+    const closest = exits[0];
+
+    // Calculate UV of point within block to check if near center
+    const u = (worldPoint[0] - block.position[0]) / block.size[0];
+    const v = (worldPoint[1] - block.position[1]) / block.size[1];
+
+    // If point is close to center (UV near 0.5, 0.5), use dominant direction
+    const CENTER_THRESHOLD = 0.2;
+    if (
+      Math.abs(u - 0.5) < CENTER_THRESHOLD &&
+      Math.abs(v - 0.5) < CENTER_THRESHOLD
+    ) {
+      const dominantDir = getDominantDirection(point, this.localEnd);
+      const dominantExit = exits.find(
+        (e) =>
+          e.direction[0] === dominantDir[0] && e.direction[1] === dominantDir[1]
+      );
+      if (dominantExit) {
+        return dominantExit;
+      }
+    }
+
+    return closest;
+  }
 }
 
 function routePointToPoint(start: Vec2, end: Vec2): Vec2[] {
@@ -284,12 +476,19 @@ function removeZigZagPoints(path: Vec2[]): void {
       (prev === "left" && current === "right" && next === "left") ||
       (prev === "right" && current === "left" && next === "right")
     ) {
-      if (path[i + 1][0] === path[i][0]) {
+      const EPSILON = 1e-6;
+      const sameX = Math.abs(path[i + 1][0] - path[i][0]) < EPSILON;
+      const sameY = Math.abs(path[i + 1][1] - path[i][1]) < EPSILON;
+
+      if (sameX) {
         path[i + 1][0] = path[i + 2][0];
         path[i + 1][1] = path[i][1];
-      } else if (path[i + 1][1] === path[i][1]) {
+      } else if (sameY) {
         path[i + 1][0] = path[i][0];
         path[i + 1][1] = path[i + 2][1];
+      } else {
+        // Neither axis aligned - skip this zigzag removal to avoid creating diagonals
+        continue;
       }
 
       pathIndicesToRemove.push(i);
@@ -467,7 +666,7 @@ function intersectRayAndAddNode(ray: Ray, nodes: Node[]): number | null {
     intersectedNodeId === -1 ||
     intersectedNeighborId === -1
   ) {
-    console.log(
+    console.warn(
       "[intersectRayAndAddNode] No intersection found for ray",
       ray,
       nearestIntersection,
@@ -589,84 +788,4 @@ function getDominantDirection(start: Vec2, end: Vec2): Vec2 {
   }
 
   return [0, Math.sign(dy)];
-}
-
-function calculateRay(
-  ctx: Context,
-  point: Vec2,
-  target: Vec2,
-  blockId: EntityId | null
-): Ray {
-  let direction: Vec2;
-
-  if (blockId) {
-    const result = exitClosestSide(ctx, point, blockId);
-    direction = result.direction;
-  } else {
-    direction = getDominantDirection(point, target);
-  }
-
-  return Ray.fromPoints(point, direction);
-}
-
-function exitClosestSide(
-  ctx: Context,
-  point: Vec2,
-  blockId: EntityId
-): { direction: Vec2; distance: number } {
-  const block = Block.read(ctx, blockId);
-  const center = Block.getCenter(ctx, blockId);
-
-  const nudgedPoint = Vec2.clone(point);
-  const offset = Vec2.clone(center);
-  Vec2.sub(offset, point);
-  Vec2.scale(offset, 0.01);
-  Vec2.add(nudgedPoint, offset);
-
-  const directions: Vec2[] = [
-    [0, -1], // up
-    [1, 0], // right
-    [0, 1], // down
-    [-1, 0], // left
-  ];
-
-  let bestDirection: Vec2 = [0, 0];
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  for (const direction of directions) {
-    const ray = Ray.fromPoints(nudgedPoint, direction);
-    const intersections = Ray.intersectRect(
-      ray,
-      block.position,
-      block.size,
-      block.rotateZ
-    );
-    if (intersections.length === 0) {
-      continue;
-    }
-
-    const intersection = intersections[0];
-
-    if (intersection.distance < bestDistance) {
-      bestDistance = intersection.distance;
-      bestDirection = direction;
-    }
-  }
-
-  if (bestDirection[0] === 0 && bestDirection[1] === 0) {
-    console.warn("[exitClosestSide] No valid exit direction found!", {
-      point,
-      nudgedPoint,
-      blockPosition: block.position,
-      blockSize: block.size,
-      blockRotateZ: block.rotateZ,
-      center,
-    });
-    // Fallback: use direction from point toward target (dominant direction)
-    bestDirection = getDominantDirection(point, center);
-    // Flip direction to point away from center
-    bestDirection = [-bestDirection[0], -bestDirection[1]];
-  }
-
-  return { direction: bestDirection, distance: bestDistance };
 }

@@ -14,7 +14,7 @@ export const ArrowHandle = defineEditorComponent(
     kind: field.enum(ArrowHandleKind).default(ArrowHandleKind.Start),
 
     /** Reference to the arrow entity this handle controls */
-    arrowEntityId: field.ref(),
+    arrowEntity: field.ref(),
   },
   { sync: "none" }
 );

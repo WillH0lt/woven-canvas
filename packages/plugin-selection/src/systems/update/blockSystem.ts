@@ -10,6 +10,9 @@ import {
   on,
   Synced,
   Camera,
+  Connector,
+  getBackrefs,
+  ComponentDef,
   type Context,
   type EditorResources,
   type EntityId,
@@ -45,6 +48,9 @@ import {
   generateUuidBySeed,
   selectBlock,
   getLocalSelectedBlocks,
+  convertRefsToUuids,
+  getRefFieldNames,
+  resolveRefFields,
 } from "../../helpers";
 
 // Query for synced blocks
@@ -61,96 +67,99 @@ const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced));
  * - SetCursor
  * - Cut, Copy, Paste
  */
-export const blockSystem = defineEditorSystem({ phase: "update" }, (ctx: Context) => {
-  on(ctx, DragBlock, (ctx, { entityId, position }) => {
-    if (!hasComponent(ctx, entityId, Block)) return;
-    const block = Block.write(ctx, entityId);
-    block.position = position;
-  });
+export const blockSystem = defineEditorSystem(
+  { phase: "update" },
+  (ctx: Context) => {
+    on(ctx, DragBlock, (ctx, { entityId, position }) => {
+      if (!hasComponent(ctx, entityId, Block)) return;
+      const block = Block.write(ctx, entityId);
+      block.position = position;
+    });
 
-  on(ctx, SelectBlock, (ctx, { entityId, deselectOthers }) => {
-    if (deselectOthers) {
-      deselectAllBlocks(ctx);
-    }
-    selectBlock(ctx, entityId);
-  });
-
-  on(ctx, DeselectBlock, (ctx, { entityId }) => {
-    if (hasComponent(ctx, entityId, Selected)) {
-      removeComponent(ctx, entityId, Selected);
-    }
-  });
-
-  on(ctx, ToggleSelect, (ctx, { entityId }) => {
-    if (hasComponent(ctx, entityId, Selected)) {
-      removeComponent(ctx, entityId, Selected);
-    } else {
+    on(ctx, SelectBlock, (ctx, { entityId, deselectOthers }) => {
+      if (deselectOthers) {
+        deselectAllBlocks(ctx);
+      }
       selectBlock(ctx, entityId);
-    }
-  });
+    });
 
-  on(ctx, DeselectAll, deselectAllBlocks);
+    on(ctx, DeselectBlock, (ctx, { entityId }) => {
+      if (hasComponent(ctx, entityId, Selected)) {
+        removeComponent(ctx, entityId, Selected);
+      }
+    });
 
-  on(ctx, SelectAll, (ctx) => {
-    for (const entityId of syncedBlocksQuery.current(ctx)) {
-      selectBlock(ctx, entityId);
-    }
-  });
+    on(ctx, ToggleSelect, (ctx, { entityId }) => {
+      if (hasComponent(ctx, entityId, Selected)) {
+        removeComponent(ctx, entityId, Selected);
+      } else {
+        selectBlock(ctx, entityId);
+      }
+    });
 
-  on(ctx, RemoveBlock, (ctx, { entityId }) => {
-    removeEntity(ctx, entityId);
-  });
+    on(ctx, DeselectAll, deselectAllBlocks);
 
-  on(ctx, RemoveSelected, (ctx) => {
-    for (const entityId of getLocalSelectedBlocks(ctx)) {
+    on(ctx, SelectAll, (ctx) => {
+      for (const entityId of syncedBlocksQuery.current(ctx)) {
+        selectBlock(ctx, entityId);
+      }
+    });
+
+    on(ctx, RemoveBlock, (ctx, { entityId }) => {
       removeEntity(ctx, entityId);
-    }
-  });
+    });
 
-  on(ctx, BringForwardSelected, bringForwardSelected);
-  on(ctx, SendBackwardSelected, sendBackwardSelected);
+    on(ctx, RemoveSelected, (ctx) => {
+      for (const entityId of getLocalSelectedBlocks(ctx)) {
+        removeEntity(ctx, entityId);
+      }
+    });
 
-  on(ctx, SetCursor, (ctx, payload) => {
-    if (payload.cursorKind !== undefined) {
-      Cursor.setCursor(ctx, payload.cursorKind, payload.rotation ?? 0);
-    }
-    if (payload.contextCursorKind !== undefined) {
-      Cursor.setContextCursor(
-        ctx,
-        payload.contextCursorKind,
-        payload.contextRotation ?? 0
-      );
-    }
-    // Allow clearing context cursor by passing empty string
-    if (payload.contextCursorKind === "") {
-      Cursor.clearContextCursor(ctx);
-    }
-  });
+    on(ctx, BringForwardSelected, bringForwardSelected);
+    on(ctx, SendBackwardSelected, sendBackwardSelected);
 
-  on(ctx, Copy, (ctx) => {
-    copySelectedBlocks(ctx);
-  });
+    on(ctx, SetCursor, (ctx, payload) => {
+      if (payload.cursorKind !== undefined) {
+        Cursor.setCursor(ctx, payload.cursorKind, payload.rotation ?? 0);
+      }
+      if (payload.contextCursorKind !== undefined) {
+        Cursor.setContextCursor(
+          ctx,
+          payload.contextCursorKind,
+          payload.contextRotation ?? 0
+        );
+      }
+      // Allow clearing context cursor by passing empty string
+      if (payload.contextCursorKind === "") {
+        Cursor.clearContextCursor(ctx);
+      }
+    });
 
-  on(ctx, Cut, (ctx) => {
-    copySelectedBlocks(ctx);
-    // Remove selected blocks after copying
-    for (const entityId of getLocalSelectedBlocks(ctx)) {
-      removeEntity(ctx, entityId);
-    }
-  });
+    on(ctx, Copy, (ctx) => {
+      copySelectedBlocks(ctx);
+    });
 
-  on(ctx, Paste, (ctx, payload) => {
-    pasteBlocks(ctx, payload?.position);
-  });
+    on(ctx, Cut, (ctx) => {
+      copySelectedBlocks(ctx);
+      // Remove selected blocks after copying
+      for (const entityId of getLocalSelectedBlocks(ctx)) {
+        removeEntity(ctx, entityId);
+      }
+    });
 
-  on(ctx, CloneEntities, (ctx, { entityIds, offset, seed }) => {
-    cloneEntities(ctx, entityIds, offset, seed);
-  });
+    on(ctx, Paste, (ctx, payload) => {
+      pasteBlocks(ctx, payload?.position);
+    });
 
-  on(ctx, UncloneEntities, (ctx, { entityIds, seed }) => {
-    uncloneEntities(ctx, entityIds, seed);
-  });
-});
+    on(ctx, CloneEntities, (ctx, { entityIds, offset, seed }) => {
+      cloneEntities(ctx, entityIds, offset, seed);
+    });
+
+    on(ctx, UncloneEntities, (ctx, { entityIds, seed }) => {
+      uncloneEntities(ctx, entityIds, seed);
+    });
+  }
+);
 
 /**
  * Deselect all blocks selected by the current session.
@@ -218,6 +227,7 @@ function sendBackwardSelected(ctx: Context): void {
 /**
  * Copy selected blocks to clipboard.
  * Serializes all document-synced components for each selected entity.
+ * Ref fields are serialized as UUIDs (Synced.id) instead of EntityIds.
  * Only copies blocks selected by the current session.
  */
 function copySelectedBlocks(ctx: Context): void {
@@ -235,15 +245,33 @@ function copySelectedBlocks(ctx: Context): void {
   const unionAabb = AabbNs.zero();
   let hasAabb = false;
 
+  const syncedComponentId = Synced._getComponentId(ctx);
+
   // Serialize each selected entity
   for (const entityId of selectedBlocks) {
     const entityData: ClipboardEntityData = new Map();
 
+    // Always include Synced component (even though sync: "none") for UUID mapping
+    if (hasComponent(ctx, entityId, Synced)) {
+      entityData.set(syncedComponentId, Synced.snapshot(ctx, entityId));
+    }
+
     // Iterate through entity's components and serialize document-synced ones
     for (const componentId of ctx.entityBuffer.getComponentIds(entityId)) {
+      // Skip Synced - already handled above
+      if (componentId === syncedComponentId) continue;
+
       const componentDef = documentComponents.get(componentId);
       if (componentDef) {
-        entityData.set(componentId, componentDef.snapshot(ctx, entityId));
+        const snapshot = componentDef.snapshot(ctx, entityId);
+
+        // Convert ref fields from EntityId to UUID
+        const converted = convertRefsToUuids(
+          ctx,
+          componentDef.schema,
+          snapshot
+        );
+        entityData.set(componentId, converted);
       }
     }
 
@@ -271,6 +299,8 @@ function copySelectedBlocks(ctx: Context): void {
 /**
  * Paste entities from clipboard.
  * Restores all document-synced components for each entity.
+ * Ref fields (stored as UUIDs) are resolved to pasted EntityIds,
+ * or set to null if the referenced block wasn't copied.
  * @param position - Optional position to paste at. If not provided, pastes at screen center.
  */
 function pasteBlocks(ctx: Context, position?: Vec2): void {
@@ -313,9 +343,27 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
   // Deselect current selection
   deselectAllBlocks(ctx);
 
-  // Create new entities from clipboard data
+  // Maps original Synced.id (UUID) -> new pasted EntityId
+  const uuidToNewEntityId = new Map<string, EntityId>();
+
+  // Track components with ref fields for deferred resolution
+  const pendingRefs: Array<{
+    entityId: EntityId;
+    componentDef: ComponentDef<any>;
+    componentData: Record<string, unknown>;
+  }> = [];
+
+  // First pass: create new entities from clipboard data
   for (const entityData of sortedEntities) {
     const entityId = createEntity(ctx);
+
+    // Get original Synced.id from clipboard and map to new EntityId
+    const syncedData = entityData.get(syncedComponentId) as
+      | { id: string }
+      | undefined;
+    if (syncedData?.id) {
+      uuidToNewEntityId.set(syncedData.id, entityId);
+    }
 
     // Add Synced component with new UUID
     addComponent(ctx, entityId, Synced, {
@@ -341,11 +389,36 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
         data.rank = RankBounds.genNext(ctx);
       }
 
+      // Check if component has ref fields - defer resolution
+      const refFields = getRefFieldNames(componentDef.schema);
+      if (refFields.length > 0) {
+        // Remove ref fields - they default to null, we resolve them in second pass
+        for (const fieldName of refFields) {
+          delete data[fieldName];
+        }
+        pendingRefs.push({
+          entityId,
+          componentDef,
+          componentData: componentData as Record<string, unknown>,
+        });
+      }
+
       addComponent(ctx, entityId, componentDef, data as any);
     }
 
     // Select the pasted entity
     selectBlock(ctx, entityId);
+  }
+
+  // Second pass: resolve ref fields from UUIDs to EntityIds
+  for (const { entityId, componentDef, componentData } of pendingRefs) {
+    resolveRefFields(
+      ctx,
+      entityId,
+      componentDef,
+      componentData,
+      uuidToNewEntityId
+    );
   }
 }
 
@@ -366,6 +439,9 @@ function cloneEntities(
   const syncedComponentId = Synced._getComponentId(ctx);
   const blockComponentId = Block._getComponentId(ctx);
 
+  // Build map during clone creation: original EntityId -> clone EntityId
+  const originalToClone = new Map<EntityId, EntityId>();
+
   for (const entityId of entityIds) {
     if (!hasComponent(ctx, entityId, Synced)) continue;
 
@@ -374,6 +450,7 @@ function cloneEntities(
 
     // Create new entity for the clone
     const cloneEntityId = createEntity(ctx);
+    originalToClone.set(entityId, cloneEntityId);
 
     // Add Synced with deterministic UUID
     addComponent(ctx, cloneEntityId, Synced, { id: cloneId });
@@ -401,6 +478,9 @@ function cloneEntities(
       addComponent(ctx, cloneEntityId, componentDef, data as any);
     }
   }
+
+  // Swap connectors to point to clones (which stay in place)
+  swapConnectorRefs(ctx, originalToClone);
 }
 
 /**
@@ -411,25 +491,73 @@ function uncloneEntities(
   entityIds: EntityId[],
   seed: string
 ): void {
-  // Collect expected clone IDs first
-  const expectedCloneIds = new Set<string>();
+  // Step 1: Calculate expected clone UUIDs
+  const expectedCloneUuids = new Set<string>();
   for (const entityId of entityIds) {
     if (!hasComponent(ctx, entityId, Synced)) continue;
     const synced = Synced.read(ctx, entityId);
-    expectedCloneIds.add(generateUuidBySeed(synced.id, seed));
+    expectedCloneUuids.add(generateUuidBySeed(synced.id, seed));
   }
 
-  // Find and collect entities to remove (avoid modifying during iteration)
-  const entitiesToRemove: EntityId[] = [];
-  for (const candidateId of syncedBlocksQuery.current(ctx)) {
-    const candidateSynced = Synced.read(ctx, candidateId);
-    if (expectedCloneIds.has(candidateSynced.id)) {
-      entitiesToRemove.push(candidateId);
+  // Step 2: Find clone entities
+  const clonesToRemove: EntityId[] = [];
+  for (const entityId of syncedBlocksQuery.current(ctx)) {
+    const synced = Synced.read(ctx, entityId);
+    if (expectedCloneUuids.has(synced.id)) {
+      clonesToRemove.push(entityId);
     }
   }
 
-  // Remove collected entities
-  for (const entityId of entitiesToRemove) {
-    removeEntity(ctx, entityId);
+  // Step 3: Build swap map (clone -> original) and swap connector refs
+  const cloneToOriginal = new Map<EntityId, EntityId>();
+  for (const cloneId of clonesToRemove) {
+    const cloneUuid = Synced.read(ctx, cloneId).id;
+    // Find the original that generated this clone
+    for (const originalId of entityIds) {
+      if (!hasComponent(ctx, originalId, Synced)) continue;
+      const originalUuid = Synced.read(ctx, originalId).id;
+      if (generateUuidBySeed(originalUuid, seed) === cloneUuid) {
+        cloneToOriginal.set(cloneId, originalId);
+        break;
+      }
+    }
+  }
+  swapConnectorRefs(ctx, cloneToOriginal);
+
+  // Step 4: Remove clones
+  for (const cloneId of clonesToRemove) {
+    removeEntity(ctx, cloneId);
+  }
+}
+
+/**
+ * Swap connector references from one set of entities to another.
+ *
+ * Updates connector startBlock/endBlock refs: any connector pointing to
+ * a key in the map will be updated to point to the corresponding value.
+ *
+ * Used for:
+ * - cloneEntities: connectors pointing to originals -> point to clones
+ * - uncloneEntities: connectors pointing to clones -> point back to originals
+ */
+function swapConnectorRefs(
+  ctx: Context,
+  fromTo: Map<EntityId, EntityId>
+): void {
+  for (const [fromId, toId] of fromTo) {
+    // Find connectors where this entity is the startBlock
+    for (const connectorId of getBackrefs(
+      ctx,
+      fromId,
+      Connector,
+      "startBlock"
+    )) {
+      Connector.write(ctx, connectorId).startBlock = toId;
+    }
+
+    // Find connectors where this entity is the endBlock
+    for (const connectorId of getBackrefs(ctx, fromId, Connector, "endBlock")) {
+      Connector.write(ctx, connectorId).endBlock = toId;
+    }
   }
 }

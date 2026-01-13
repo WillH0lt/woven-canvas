@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
-import { Color } from "@infinitecanvas/editor";
+import { Camera, Color } from "@infinitecanvas/editor";
 import { Arc, type ArcComputed, type Vec2 } from "@infinitecanvas/math";
 import { ArcArrow, ArrowTrim } from "@infinitecanvas/plugin-arrows";
 
 import { useComponent } from "../../composables/useComponent";
+import { useSingleton } from "../../composables/useSingleton";
 import ArrowHead from "./ArrowHead.vue";
 
-const ARROW_HEAD_GAP = 15;
+const BASE_ARROW_HEAD_GAP = 15;
 
 const props = defineProps<{
   entityId: EntityId;
@@ -18,9 +19,12 @@ const containerRef = ref<HTMLElement | null>(null);
 const clientWidth = ref(0);
 const clientHeight = ref(0);
 
+const camera = useSingleton(Camera);
 const color = useComponent(props.entityId, Color);
 const arcArrow = useComponent(props.entityId, ArcArrow);
 const arrowTrim = useComponent(props.entityId, ArrowTrim);
+
+const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP * camera.value.zoom);
 
 // Watch for resize
 let resizeObserver: ResizeObserver | null = null;
@@ -50,7 +54,10 @@ const hex = computed(() => {
   return `#${r}${g}${b}`;
 });
 
-const thickness = computed(() => arcArrow.value?.value[6] ?? 2);
+const baseThickness = computed(() => arcArrow.value?.value[6] ?? 2);
+const thickness = computed(
+  () => `calc(${baseThickness.value}px * var(--ic-zoom))`
+);
 
 // Check if the arc is curved (points are not collinear)
 const isCurved = computed(() => {
@@ -98,7 +105,7 @@ const pathData = computed(() => {
 
   if (trim) {
     const arcLength = Arc.length(arc);
-    const gap = arcLength > 0 ? ARROW_HEAD_GAP / arcLength : 0;
+    const gap = arcLength > 0 ? arrowHeadGap.value / arcLength : 0;
 
     tStart = trim.tStart;
     if (tStart !== 0 && startHead !== "none") {
@@ -106,7 +113,7 @@ const pathData = computed(() => {
     }
 
     tEnd = trim.tEnd;
-    if (tEnd !== 1 && endHead !== "none") {
+    if (tEnd !== 0 && endHead !== "none") {
       tEnd += gap; // Add because we use (1 - tEnd) below
     }
   }

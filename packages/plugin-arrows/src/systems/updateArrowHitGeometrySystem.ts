@@ -118,22 +118,22 @@ function updateArcArrowTrim(ctx: Context, entityId: EntityId): void {
   const trim = ArrowTrim.write(ctx, entityId);
 
   // Calculate trim values using refs directly
-  const startTrim = calculateLineTrim(ctx, connector.startBlock, a, c, 0);
-  const endTrim = calculateLineTrim(ctx, connector.endBlock, c, a, 1);
+  const startTrim = calculateLineTrim(ctx, connector.startBlock, a, c);
+  const endTrim = calculateLineTrim(ctx, connector.endBlock, c, a);
 
   trim.tStart = startTrim;
   trim.tEnd = endTrim;
 
-  // Reset if trim is too small
-  if (endTrim - startTrim < 0.1) {
+  // Reset if visible portion is too small
+  if ((1 - endTrim) - startTrim < 0.1) {
     trim.tStart = 0;
-    trim.tEnd = 1;
+    trim.tEnd = 0;
   }
 
   // Trim the hit arc geometry
   const hitGeometry = HitGeometry.write(ctx, entityId);
   if (hitGeometry.hasArc) {
-    Arc.trim(hitGeometry.hitArc, trim.tStart, trim.tEnd);
+    Arc.trim(hitGeometry.hitArc, trim.tStart, 1 - trim.tEnd);
   }
 }
 
@@ -155,8 +155,8 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
   const firstSegmentEnd = points[1];
   const lastSegmentStart = points[points.length - 2];
 
-  const startTrim = calculateLineTrim(ctx, connector.startBlock, start, firstSegmentEnd, 0);
-  const endTrim = calculateLineTrim(ctx, connector.endBlock, end, lastSegmentStart, 1);
+  const startTrim = calculateLineTrim(ctx, connector.startBlock, start, firstSegmentEnd);
+  const endTrim = calculateLineTrim(ctx, connector.endBlock, end, lastSegmentStart);
 
   trim.tStart = startTrim;
   trim.tEnd = endTrim;
@@ -166,10 +166,10 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
   Capsule.trim(startCapsule, startTrim, 1);
   HitGeometry.setCapsuleAt(ctx, entityId, 0, startCapsule);
 
-  // Trim the last capsule from 0 to endTrim
+  // Trim the last capsule from 0 to (1 - endTrim)
   const lastIndex = segmentCount - 1;
   const endCapsule = HitGeometry.getCapsuleAt(ctx, entityId, lastIndex);
-  Capsule.trim(endCapsule, 0, endTrim);
+  Capsule.trim(endCapsule, 0, 1 - endTrim);
   HitGeometry.setCapsuleAt(ctx, entityId, lastIndex, endCapsule);
 }
 
@@ -180,10 +180,9 @@ function calculateLineTrim(
   ctx: Context,
   blockId: EntityId | null,
   lineStart: Vec2,
-  lineEnd: Vec2,
-  defaultValue: number
+  lineEnd: Vec2
 ): number {
-  if (!blockId) return defaultValue;
+  if (!blockId) return 0;
 
   const corners = Block.getCorners(ctx, blockId);
 
@@ -204,20 +203,19 @@ function calculateLineTrim(
     }
   }
 
-  if (intersections.length === 0) return defaultValue;
+  if (intersections.length === 0) return 0;
 
-  // Find closest intersection to reference point
-  const referencePoint = defaultValue === 0 ? lineStart : lineEnd;
-  const closest = closestPointToPoint(intersections, referencePoint);
+  // Find closest intersection to line start
+  const closest = closestPointToPoint(intersections, lineStart);
 
-  if (!closest) return defaultValue;
+  if (!closest) return 0;
 
   // Calculate parametric position along line
   const dx = lineEnd[0] - lineStart[0];
   const dy = lineEnd[1] - lineStart[1];
   const length = Math.hypot(dx, dy);
 
-  if (length < 0.001) return defaultValue;
+  if (length < 0.001) return 0;
 
   const t =
     ((closest[0] - lineStart[0]) * dx + (closest[1] - lineStart[1]) * dy) /

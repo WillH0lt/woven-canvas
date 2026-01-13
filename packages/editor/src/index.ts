@@ -86,6 +86,7 @@ export {
   MainThreadSystem,
   EventType,
   SINGLETON_ENTITY_ID,
+  ComponentDef,
   type Context,
   type EntityId,
   type QueryDef,

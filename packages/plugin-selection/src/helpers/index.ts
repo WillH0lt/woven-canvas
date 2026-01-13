@@ -9,3 +9,11 @@ export {
   getAddedLocalSelectedBlocks,
   getRemovedLocalSelectedBlocks,
 } from "./select";
+
+// Ref field helpers
+export {
+  convertRefsToUuids,
+  getEntityUuid,
+  getRefFieldNames,
+  resolveRefFields,
+} from "./ref";

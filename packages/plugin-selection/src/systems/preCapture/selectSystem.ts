@@ -107,10 +107,10 @@ const selectionMachine = setup({
       if (hasComponent(event.ctx, context.draggedEntity, TransformHandle)) {
         const handle = TransformHandle.read(event.ctx, context.draggedEntity);
 
-        let transformBoxBlock
+        let transformBoxBlock;
         if (handle.transformBox !== null) {
           transformBoxBlock = Block.read(event.ctx, handle.transformBox);
-        }  
+        }
         SetCursor.spawn(event.ctx, {
           contextCursorKind: handle.cursorKind,
           contextRotation: transformBoxBlock?.rotateZ ?? 0,
@@ -205,9 +205,11 @@ const selectionMachine = setup({
         // Alt+drag to clone
         let isCloning = context.isCloning;
         if (event.altDown && draggingSynced && !context.isCloning) {
-          const block = Block.read(ctx, context.draggedEntity);
-          const dx = context.draggedEntityStart[0] - block.position[0];
-          const dy = context.draggedEntityStart[1] - block.position[1];
+          // Use the new position being set this frame (left, top), not the stale
+          // block.position from the previous frame. This ensures the clone is
+          // placed at the original start position, not offset by one frame of drag.
+          const dx = context.draggedEntityStart[0] - left;
+          const dy = context.draggedEntityStart[1] - top;
 
           isCloning = true;
 
@@ -432,7 +434,13 @@ export const selectSystem = defineEditorSystem(
   { phase: "capture", priority: 100 },
   (ctx) => {
     // Get pointer buttons mapped to 'select' tool
-    const buttons = Controls.getButtons(ctx, "select");
+    let buttons = Controls.getButtons(ctx, "select");
+
+    // If already dragging, continue handling events regardless of tool
+    const state = SelectionStateSingleton.read(ctx);
+    if (state.state === SelectionState.Dragging && buttons.length === 0) {
+      buttons = ["left"];
+    }
 
     // Get pointer events with intersection data
     const events = getPointerInput(ctx, buttons);

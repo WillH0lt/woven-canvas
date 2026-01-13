@@ -5,6 +5,7 @@ import {
   Controls,
   Cursor,
   getPointerInput,
+  createEntity,
   type PointerInput,
   type EntityId,
 } from "@infinitecanvas/editor";
@@ -13,7 +14,7 @@ import { DeselectAll } from "@infinitecanvas/plugin-selection";
 
 import { ArrowDrawState } from "../singletons";
 import { ArrowDrawStateEnum, ArrowKind } from "../types";
-import { AddArrow, DrawArrow, RemoveArrow } from "../commands";
+import { AddArrow, RemoveArrow } from "../commands";
 import { POINTING_THRESHOLD } from "../constants";
 
 /**
@@ -63,17 +64,16 @@ const arrowDrawMachine = setup({
     }),
 
     addArrow: assign({
-      activeArrow: ({ context, event }): EntityId | null => {
+      activeArrow: ({ context, event }): EntityId => {
         const kind = context.kind as ArrowKind;
         const startWorld = context.pointingStartWorld as [number, number];
+        const entityId = createEntity(event.ctx);
         AddArrow.spawn(event.ctx, {
-          entityId: null as unknown as EntityId, // Will be created by handler
+          entityId,
           position: startWorld,
           kind,
         });
-        // Note: The actual entity ID will be set by the update system
-        // For now we return null and handle it in the update system
-        return null;
+        return entityId;
       },
     }),
 
@@ -84,16 +84,6 @@ const arrowDrawMachine = setup({
         return null;
       },
     }),
-
-    drawArrow: ({ context, event }) => {
-      if (!context.activeArrow) return;
-      const startWorld = context.pointingStartWorld as [number, number];
-      DrawArrow.spawn(event.ctx, {
-        entityId: context.activeArrow,
-        start: startWorld,
-        end: event.worldPosition,
-      });
-    },
 
     exitArrowControl: ({ event }) => {
       const controls = Controls.write(event.ctx);
@@ -144,12 +134,11 @@ const arrowDrawMachine = setup({
       },
     },
     [ArrowDrawStateEnum.Dragging]: {
+      // Create arrow and hand off drag to selection system
       entry: "addArrow",
-      exit: ["exitArrowControl"],
+      // Exit arrow control when done
+      exit: "exitArrowControl",
       on: {
-        pointerMove: {
-          actions: "drawArrow",
-        },
         pointerUp: {
           target: ArrowDrawStateEnum.Idle,
         },

@@ -34,6 +34,11 @@ export namespace Vec2 {
     return dx * dx + dy * dy;
   };
 
+  export const midPoint = (a: Vec2Tuple, b: Vec2Tuple): Vec2Tuple => [
+    (a[0] + b[0]) / 2,
+    (a[1] + b[1]) / 2,
+  ];
+
   /**
    * Get the angle from point `from` to point `to` in radians.
    * Returns angle in range [-π, π].

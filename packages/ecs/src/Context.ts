@@ -33,6 +33,8 @@ export function createEntity(ctx: Context): EntityId {
  * @param targetEntity - Entity being referenced
  * @param componentDef - Component containing the ref field
  * @param fieldName - Name of the ref field
+ * @param checkExistence - If false, skips the existence check (but still validates generation).
+ *                         Useful for finding refs to recently deleted entities.
  * @returns Array of entity IDs that reference the target
  * @example
  * ```typescript
@@ -47,7 +49,8 @@ export function getBackrefs<T extends ComponentSchema>(
   ctx: Context,
   targetEntity: EntityId,
   componentDef: ComponentDef<T>,
-  fieldName: keyof T & string
+  fieldName: keyof T & string,
+  checkExistence = true
 ): EntityId[] {
   const component = componentDef._getInstance(ctx);
   const query = getComponentCurrentQuery(componentDef);
@@ -57,7 +60,7 @@ export function getBackrefs<T extends ComponentSchema>(
 
   // Iterate only entities with this component (cached query)
   for (const eid of query.current(ctx)) {
-    const refValue = readRef(buffer[eid], ctx.entityBuffer);
+    const refValue = readRef(buffer[eid], ctx.entityBuffer, checkExistence);
     if (refValue === targetEntity) {
       results.push(eid);
     }

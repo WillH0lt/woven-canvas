@@ -80,7 +80,6 @@ const arrowTransformMachine = setup({
     },
 
     removeTransformHandles: ({ event }) => {
-      console.log("Removing transform handles");
       RemoveTransformHandles.spawn(event.ctx, {});
     },
 
@@ -164,7 +163,6 @@ function getSelectionEvents(ctx: Context): SelectionEvent[] {
     // Get blocks selected by the current session only
     const selectedEntities = getLocalSelectedBlocks(ctx);
 
-    console.log("Selection changed, selected entities:", selectedEntities);
     events.push({
       type: "selectionChanged",
       ctx,

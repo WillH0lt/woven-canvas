@@ -11,6 +11,7 @@ import {
   Editor,
   Camera,
   Block,
+  Connector,
   Hovered,
   Edited,
   Opacity,
@@ -19,7 +20,6 @@ import {
   defineQuery,
   getResources,
   type EntityId,
-  type InferComponentType,
   type EditorOptionsInput,
   type EditorResources,
   type StoreAdapter,
@@ -51,6 +51,7 @@ import type { BlockData } from "../types";
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block));
+const connectorQuery = defineQuery((q) => q.with(Block).tracking(Connector));
 const selectedQuery = defineQuery((q) => q.with(Block).tracking(Selected));
 const hoveredQuery = defineQuery((q) => q.with(Block).tracking(Hovered));
 const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited));
@@ -402,6 +403,28 @@ function processEvents(editor: Editor) {
   }
 }
 
+// /**
+//  * Get effective rank for sorting - connectors render just above their connected blocks
+//  */
+// function getEffectiveRank(entityId: EntityId, rank: string): string {
+//   const blockRef = blockMap.get(entityId);
+//   const connector = blockRef?.value.connector;
+//   if (!connector) return rank;
+
+//   let maxRank = rank;
+
+//   for (const blockId of [connector.startBlock, connector.endBlock]) {
+//     if (blockId === null) continue;
+//     const connectedBlockRef = blockMap.get(blockId);
+//     if (connectedBlockRef && connectedBlockRef.value.block.rank > maxRank) {
+//       maxRank = connectedBlockRef.value.block.rank;
+//     }
+//   }
+
+//   // Generate a rank just above the max connected block rank
+//   return maxRank + "a";
+// }
+
 /**
  * Update block state using ECS queries and rebuild sorted array if needed.
  */
@@ -422,6 +445,7 @@ function updateBlocks(editor: Editor) {
         hovered: false,
         edited: false,
         opacity: null,
+        connector: null,
       })
     );
     needsResort = true;
@@ -513,10 +537,36 @@ function updateBlocks(editor: Editor) {
     }
   }
 
+  // Update connector state
+  for (const entityId of connectorQuery.added(ctx)) {
+    const blockRef = blockMap.get(entityId);
+    if (blockRef) {
+      blockRef.value.connector = Connector.snapshot(ctx, entityId);
+    }
+  }
+  for (const entityId of connectorQuery.removed(ctx)) {
+    const blockRef = blockMap.get(entityId);
+    if (blockRef && blockRef.value.connector !== null) {
+      blockRef.value.connector = null;
+    }
+  }
+  for (const entityId of connectorQuery.changed(ctx)) {
+    const blockRef = blockMap.get(entityId);
+    if (blockRef) {
+      blockRef.value.connector = Connector.snapshot(ctx, entityId);
+    }
+  }
+
   // Rebuild sorted array only when blocks added/removed or rank changed
   if (needsResort) {
     const blocks = Array.from(blockMap.values());
-    blocks.sort((a, b) => (a.value.block.rank > b.value.block.rank ? 1 : -1));
+
+    blocks.sort((a, b) => {
+      // const aRank = getEffectiveRank(a.value.entityId, a.value.block.rank);
+      // const bRank = getEffectiveRank(b.value.entityId, b.value.block.rank);
+      return a.value.block.rank > b.value.block.rank ? 1 : -1;
+    });
+
     sortedBlocks.value = blocks;
   }
 }
@@ -576,13 +626,13 @@ function getBlockStyle(data: BlockData) {
         :entityId="blockData.value.entityId"
       >
         <!-- Default blocks -->
-        <SelectionBox 
+        <SelectionBox
           v-if="blockData.value.block.tag === 'selection-box'"
           v-bind="blockData.value"
         />
-        <TransformBox 
-          v-else-if="blockData.value.block.tag === 'transform-box'" 
-          v-bind="blockData.value" 
+        <TransformBox
+          v-else-if="blockData.value.block.tag === 'transform-box'"
+          v-bind="blockData.value"
         />
         <TransformHandle
           v-else-if="blockData.value.block.tag === 'transform-handle'"

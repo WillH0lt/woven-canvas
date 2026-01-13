@@ -957,6 +957,9 @@ importers:
       '@infinitecanvas/plugin-selection':
         specifier: workspace:*
         version: link:../plugin-selection
+      fractional-indexing-jittered:
+        specifier: ^1.0.0
+        version: 1.0.0
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -13741,7 +13744,7 @@ packages:
       '@swc/core': 1.15.5
       '@swc/wasm': 1.15.5
       uuid: 10.0.0
-      vite: 7.3.0(@types/node@24.10.2)(tsx@4.20.6)
+      vite: 7.3.0(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)
     transitivePeerDependencies:
       - '@swc/helpers'
       - rollup
@@ -13767,7 +13770,7 @@ packages:
     peerDependencies:
       vite: ^2 || ^3 || ^4 || ^5 || ^6 || ^7
     dependencies:
-      vite: 7.3.0(@types/node@24.10.2)(tsx@4.20.6)
+      vite: 7.3.0(@types/node@24.10.0)(jiti@2.6.1)(tsx@4.20.6)
     dev: true
 
   /vite@5.4.21(@types/node@24.10.0):

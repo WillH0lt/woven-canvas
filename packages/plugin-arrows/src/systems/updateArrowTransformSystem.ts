@@ -15,23 +15,29 @@ import {
   ScaleWithZoom,
   RankBounds,
   getBackrefs,
+  Intersect,
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
-import type { Vec2 } from "@infinitecanvas/math";
+import { Rect, type Vec2 } from "@infinitecanvas/math";
+import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
 
 import {
   AddArrow,
-  DrawArrow,
   RemoveArrow,
   AddOrUpdateTransformHandles,
   RemoveTransformHandles,
   HideTransformHandles,
   ShowTransformHandles,
 } from "../commands";
-import { DragBlock, TransformHandle } from "@infinitecanvas/plugin-selection";
+import {
+  DragBlock,
+  selectBlock,
+  TransformHandle,
+  SelectionStateSingleton,
+  SelectionState,
+} from "@infinitecanvas/plugin-selection";
 import { ArcArrow, ElbowArrow, ArrowHandle } from "../components";
-import { ArrowDrawState } from "../singletons";
 import {
   ArrowKind,
   ArrowHandleKind,
@@ -44,11 +50,7 @@ import {
   DEFAULT_ARROW_THICKNESS,
   ELBOW_ARROW_PADDING,
 } from "../constants";
-import {
-  polarDelta,
-  applyPolarDelta,
-  calculateElbowPath,
-} from "../helpers";
+import { polarDelta, applyPolarDelta, calculateElbowPath } from "../helpers";
 
 // Query for arrow handles
 const arrowHandlesQuery = defineQuery((q) => q.with(ArrowHandle, Block));
@@ -69,12 +71,8 @@ const blocksQuery = defineQuery((q) => q.with(Synced, Aabb).tracking(Block));
 export const updateArrowTransformSystem = defineEditorSystem(
   { phase: "update" },
   (ctx: Context) => {
-    on(ctx, AddArrow, (ctx, { position, kind }) => {
-      addArrow(ctx, position, kind);
-    });
-
-    on(ctx, DrawArrow, (ctx, { entityId, start, end }) => {
-      drawArrow(ctx, entityId, start, end);
+    on(ctx, AddArrow, (ctx, { entityId, position, kind }) => {
+      addArrow(ctx, entityId, position, kind);
     });
 
     on(ctx, RemoveArrow, (ctx, { entityId }) => {
@@ -107,26 +105,26 @@ export const updateArrowTransformSystem = defineEditorSystem(
 );
 
 /**
- * Check for changed blocks and update any arrows connected to them.
+ * Check for changed or removed blocks and update any arrows connected to them.
  */
 function updateArrowsForChangedBlocks(ctx: Context): void {
-  const changedBlocks = blocksQuery.changed(ctx);
+  const changedBlocks = blocksQuery.addedOrChangedOrRemoved(ctx);
+
   if (changedBlocks.length === 0) return;
 
   // Track which arrows we've already updated to avoid duplicates
   const updatedArrows = new Set<EntityId>();
 
   for (const blockId of changedBlocks) {
-    // Skip arrows themselves - we only care about blocks that arrows connect to
-    if (
-      hasComponent(ctx, blockId, ArcArrow) ||
-      hasComponent(ctx, blockId, ElbowArrow)
-    ) {
-      continue;
-    }
-
     // Find arrows connected to this block via startBlock
-    const startArrows = getBackrefs(ctx, blockId, Connector, "startBlock");
+    // Use checkExistence=false to find refs to deleted blocks
+    const startArrows = getBackrefs(
+      ctx,
+      blockId,
+      Connector,
+      "startBlock",
+      false
+    );
     for (const arrowId of startArrows) {
       if (updatedArrows.has(arrowId)) continue;
       updatedArrows.add(arrowId);
@@ -134,7 +132,7 @@ function updateArrowsForChangedBlocks(ctx: Context): void {
     }
 
     // Find arrows connected to this block via endBlock
-    const endArrows = getBackrefs(ctx, blockId, Connector, "endBlock");
+    const endArrows = getBackrefs(ctx, blockId, Connector, "endBlock", false);
     for (const arrowId of endArrows) {
       if (updatedArrows.has(arrowId)) continue;
       updatedArrows.add(arrowId);
@@ -157,41 +155,37 @@ function updateArrowForConnectedBlock(ctx: Context, arrowId: EntityId): void {
 
     // Update start position if connected
     if (connector.startBlock !== null) {
-      const block = Block.read(ctx, connector.startBlock);
-      newStart = [
-        block.position[0] + connector.startBlockUv[0] * block.size[0],
-        block.position[1] + connector.startBlockUv[1] * block.size[1],
-      ];
+      newStart = Block.uvToWorld(
+        ctx,
+        connector.startBlock,
+        connector.startBlockUv
+      );
       updateArcArrow(ctx, arrowId, ArrowHandleKind.Start, newStart);
     }
 
     // Update end position if connected
     if (connector.endBlock !== null) {
-      const block = Block.read(ctx, connector.endBlock);
-      newEnd = [
-        block.position[0] + connector.endBlockUv[0] * block.size[0],
-        block.position[1] + connector.endBlockUv[1] * block.size[1],
-      ];
+      newEnd = Block.uvToWorld(ctx, connector.endBlock, connector.endBlockUv);
       updateArcArrow(ctx, arrowId, ArrowHandleKind.End, newEnd);
     }
   } else if (hasComponent(ctx, arrowId, ElbowArrow)) {
     // Update start position if connected
     if (connector.startBlock !== null) {
-      const block = Block.read(ctx, connector.startBlock);
-      const newStart: Vec2 = [
-        block.position[0] + connector.startBlockUv[0] * block.size[0],
-        block.position[1] + connector.startBlockUv[1] * block.size[1],
-      ];
+      const newStart = Block.uvToWorld(
+        ctx,
+        connector.startBlock,
+        connector.startBlockUv
+      );
       updateElbowArrow(ctx, arrowId, ArrowHandleKind.Start, newStart);
     }
 
     // Update end position if connected
     if (connector.endBlock !== null) {
-      const block = Block.read(ctx, connector.endBlock);
-      const newEnd: Vec2 = [
-        block.position[0] + connector.endBlockUv[0] * block.size[0],
-        block.position[1] + connector.endBlockUv[1] * block.size[1],
-      ];
+      const newEnd = Block.uvToWorld(
+        ctx,
+        connector.endBlock,
+        connector.endBlockUv
+      );
       updateElbowArrow(ctx, arrowId, ArrowHandleKind.End, newEnd);
     }
   }
@@ -200,19 +194,32 @@ function updateArrowForConnectedBlock(ctx: Context, arrowId: EntityId): void {
 /**
  * Add a new arrow entity at the given position.
  */
-function addArrow(ctx: Context, position: Vec2, kind: ArrowKind): void {
+function addArrow(
+  ctx: Context,
+  entityId: EntityId,
+  position: Vec2,
+  kind: ArrowKind
+): void {
   const thickness = DEFAULT_ARROW_THICKNESS;
 
   const arrowTag = kind === ArrowKind.Elbow ? "elbow-arrow" : "arc-arrow";
 
-  // Create arrow entity
-  const entityId = createEntity(ctx);
+  // Check if there's a block under the cursor to connect to
+  const intersects = Intersect.getAll(ctx);
+  const startBlockId =
+    intersects.find((eid) => hasComponent(ctx, eid, Synced)) ?? null;
+
+  // If starting on a block, snap to its center
+  let startPosition = position;
+  if (startBlockId !== null) {
+    startPosition = Block.uvToWorld(ctx, startBlockId, [0.5, 0.5]);
+  }
 
   // Add Block component
   addComponent(ctx, entityId, Block, {
     tag: arrowTag,
     rank: RankBounds.genNext(ctx),
-    position: [position[0] - thickness / 2, position[1] - thickness / 2],
+    position: startPosition,
     size: [thickness, thickness],
   });
 
@@ -237,51 +244,34 @@ function addArrow(ctx: Context, position: Vec2, kind: ArrowKind): void {
     });
   }
 
-  // Add Connector component
-  addComponent(ctx, entityId, Connector, {});
+  addComponent(ctx, entityId, Connector, {
+    startBlock: startBlockId,
+    startBlockUv: startBlockId
+      ? Block.worldToUv(ctx, startBlockId, startPosition)
+      : [0, 0],
+  });
 
-  // Update connector for start position
-  updateConnector(ctx, entityId, ArrowHandleKind.Start, position);
+  // Select the arrow and set up for handle dragging
+  selectBlock(ctx, entityId);
 
-  // Store reference to active arrow in state singleton
-  const state = ArrowDrawState.write(ctx);
-  state.activeArrow = entityId;
-}
+  // Create transform handles
+  const handles = addOrUpdateTransformHandles(ctx, entityId);
+  const endHandle = handles.find((handleId) => {
+    const handle = ArrowHandle.read(ctx, handleId);
+    return handle.kind === ArrowHandleKind.End;
+  });
 
-/**
- * Update arrow geometry during drawing.
- */
-function drawArrow(
-  ctx: Context,
-  entityId: EntityId,
-  start: Vec2,
-  end: Vec2
-): void {
-  if (hasComponent(ctx, entityId, ArcArrow)) {
-    const block = Block.write(ctx, entityId);
-    block.position = [
-      Math.min(start[0], end[0]),
-      Math.min(start[1], end[1]),
+  if (endHandle) {
+    const handleBlock = Block.read(ctx, endHandle);
+    const selectionState = SelectionStateSingleton.write(ctx);
+    selectionState.state = SelectionState.Dragging;
+    selectionState.draggedEntity = endHandle;
+    selectionState.dragStart = startPosition;
+    selectionState.draggedEntityStart = [
+      handleBlock.position[0],
+      handleBlock.position[1],
     ];
-    block.size = [
-      Math.abs(start[0] - end[0]) || 1,
-      Math.abs(start[1] - end[1]) || 1,
-    ];
-
-    const { value } = ArcArrow.write(ctx, entityId);
-    const ax = start[0] < end[0] ? 0 : 1;
-    const ay = start[1] < end[1] ? 0 : 1;
-    value[0] = ax; // aX
-    value[1] = ay; // aY
-    value[2] = 0.5; // bX
-    value[3] = 0.5; // bY
-    value[4] = 1 - ax; // cX
-    value[5] = 1 - ay; // cY
-  } else if (hasComponent(ctx, entityId, ElbowArrow)) {
-    updateElbowArrow(ctx, entityId, ArrowHandleKind.End, end);
   }
-
-  updateConnector(ctx, entityId, ArrowHandleKind.End, end);
 }
 
 /**
@@ -345,9 +335,13 @@ function onElbowArrowDrag(ctx: Context, arrowEntityId: EntityId): void {
 /**
  * Handle arrow handle drag - updates arrow geometry when handle is dragged.
  */
-function onArrowHandleDrag(ctx: Context, handleId: EntityId, position: Vec2): void {
+function onArrowHandleDrag(
+  ctx: Context,
+  handleId: EntityId,
+  position: Vec2
+): void {
   const handle = ArrowHandle.read(ctx, handleId);
-  const arrowEntityId = handle.arrowEntityId;
+  const arrowEntityId = handle.arrowEntity;
   if (!arrowEntityId) return;
 
   const handleBlock = Block.read(ctx, handleId);
@@ -357,13 +351,28 @@ function onArrowHandleDrag(ctx: Context, handleId: EntityId, position: Vec2): vo
   ];
 
   if (hasComponent(ctx, arrowEntityId, ArcArrow)) {
-    updateArcArrow(ctx, arrowEntityId, handle.kind as ArrowHandleKindType, handlePosition);
+    updateArcArrow(
+      ctx,
+      arrowEntityId,
+      handle.kind as ArrowHandleKindType,
+      handlePosition
+    );
   } else if (hasComponent(ctx, arrowEntityId, ElbowArrow)) {
-    updateElbowArrow(ctx, arrowEntityId, handle.kind as ArrowHandleKindType, handlePosition);
+    updateElbowArrow(
+      ctx,
+      arrowEntityId,
+      handle.kind as ArrowHandleKindType,
+      handlePosition
+    );
   }
 
   if (handle.kind !== ArrowHandleKind.Middle) {
-    updateConnector(ctx, arrowEntityId, handle.kind as ArrowHandleKindType, handlePosition);
+    updateConnector(
+      ctx,
+      arrowEntityId,
+      handle.kind as ArrowHandleKindType,
+      handlePosition
+    );
   }
 }
 
@@ -371,7 +380,10 @@ function onArrowHandleDrag(ctx: Context, handleId: EntityId, position: Vec2): vo
  * Add or update transform handles for an arrow.
  * Creates handles if they don't exist, updates existing ones, and removes unused ones.
  */
-function addOrUpdateTransformHandles(ctx: Context, arrowEntityId: EntityId): void {
+function addOrUpdateTransformHandles(
+  ctx: Context,
+  arrowEntityId: EntityId
+): EntityId[] {
   const handleSize = TRANSFORM_HANDLE_SIZE;
 
   // Determine which handle kinds are needed
@@ -409,12 +421,12 @@ function addOrUpdateTransformHandles(ctx: Context, arrowEntityId: EntityId): voi
       addComponent(ctx, handleId, ArrowHandle);
       addComponent(ctx, handleId, Block);
       addComponent(ctx, handleId, ScaleWithZoom);
-      addComponent(ctx, handleId, TransformHandle, { kind: 'arrow' });
+      addComponent(ctx, handleId, TransformHandle, { kind: "arrow" });
     }
 
     const handle = ArrowHandle.write(ctx, handleId);
     handle.kind = handleKind;
-    handle.arrowEntityId = arrowEntityId;
+    handle.arrowEntity = arrowEntityId;
 
     const handleBlock = Block.write(ctx, handleId);
     handleBlock.tag = "arrow-handle";
@@ -435,6 +447,8 @@ function addOrUpdateTransformHandles(ctx: Context, arrowEntityId: EntityId): voi
       removeEntity(ctx, handleId);
     }
   }
+
+  return Array.from(usedHandleIds);
 }
 
 /**
@@ -475,9 +489,8 @@ function showTransformHandles(ctx: Context): void {
   // Update handle positions
   if (handles.length > 0) {
     const handle = ArrowHandle.read(ctx, handles[0]);
-    if (handle.arrowEntityId) {
-      console.log("Updating handle positions for arrow", handle.arrowEntityId);
-      addOrUpdateTransformHandles(ctx, handle.arrowEntityId);
+    if (handle.arrowEntity) {
+      addOrUpdateTransformHandles(ctx, handle.arrowEntity);
     }
   }
 }
@@ -525,7 +538,11 @@ function updateArcArrow(
   handlePosition: Vec2
 ): void {
   // Get current world positions
-  const { a: aWorld, b: bWorld, c: cWorld } = ArcArrow.getWorldPoints(ctx, entityId);
+  const {
+    a: aWorld,
+    b: bWorld,
+    c: cWorld,
+  } = ArcArrow.getWorldPoints(ctx, entityId);
 
   let newAWorld = aWorld;
   let newBWorld = bWorld;
@@ -563,9 +580,9 @@ function updateArcArrow(
   blockWrite.size = [maxX - minX || 1, maxY - minY || 1];
 
   // Update UV coordinates
-  ArcArrow.setA(ctx, entityId, ArcArrow.worldToUv(ctx, entityId, newAWorld));
-  ArcArrow.setB(ctx, entityId, ArcArrow.worldToUv(ctx, entityId, newBWorld));
-  ArcArrow.setC(ctx, entityId, ArcArrow.worldToUv(ctx, entityId, newCWorld));
+  ArcArrow.setA(ctx, entityId, Block.worldToUv(ctx, entityId, newAWorld));
+  ArcArrow.setB(ctx, entityId, Block.worldToUv(ctx, entityId, newBWorld));
+  ArcArrow.setC(ctx, entityId, Block.worldToUv(ctx, entityId, newCWorld));
 }
 
 /**
@@ -577,19 +594,37 @@ function updateElbowArrow(
   handleKind: ArrowHandleKindType,
   handlePosition: Vec2
 ): void {
+  // Get connector for routing and live positions
+  const connector = Connector.read(ctx, entityId);
+
   let start: Vec2;
   let end: Vec2;
 
   if (handleKind === ArrowHandleKind.Start) {
     start = handlePosition;
-    end = ElbowArrow.getEndWorld(ctx, entityId);
+    // Get live end position from connector if connected, otherwise use arrow geometry
+    if (connector.endBlock !== null) {
+      end = Block.uvToWorld(ctx, connector.endBlock, connector.endBlockUv);
+    } else {
+      end = ElbowArrow.getEndWorld(ctx, entityId);
+    }
   } else {
-    start = ElbowArrow.getStartWorld(ctx, entityId);
+    // Get live start position from connector if connected, otherwise use arrow geometry
+    if (connector.startBlock !== null) {
+      start = Block.uvToWorld(
+        ctx,
+        connector.startBlock,
+        connector.startBlockUv
+      );
+    } else {
+      start = ElbowArrow.getStartWorld(ctx, entityId);
+    }
     end = handlePosition;
   }
 
-  // Get connector for routing
-  const connector = Connector.read(ctx, entityId);
+  // Get arrow rotation for path calculation
+  const block = Block.read(ctx, entityId);
+  const rotation = block.rotateZ || 0;
 
   // Calculate new path using refs directly
   const path = calculateElbowPath(
@@ -598,27 +633,20 @@ function updateElbowArrow(
     end,
     connector.startBlock,
     connector.endBlock,
-    ELBOW_ARROW_PADDING
+    ELBOW_ARROW_PADDING,
+    rotation
   );
 
-  // Update block bounds
+  // Update block bounds (accounting for rotation)
   const blockWrite = Block.write(ctx, entityId);
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
-  for (const point of path) {
-    minX = Math.min(minX, point[0]);
-    minY = Math.min(minY, point[1]);
-    maxX = Math.max(maxX, point[0]);
-    maxY = Math.max(maxY, point[1]);
-  }
-
-  blockWrite.position = [minX, minY];
-  blockWrite.size = [maxX - minX || 1, maxY - minY || 1];
+  const position: Vec2 = [0, 0];
+  const size: Vec2 = [1, 1];
+  Rect.boundPoints(position, size, rotation, path);
+  blockWrite.position = position;
+  blockWrite.size = size;
 
   // Convert path to UV and store
-  const uvPath = path.map((p) => ElbowArrow.worldToUv(ctx, entityId, p));
+  const uvPath = path.map((p) => Block.worldToUv(ctx, entityId, p));
   ElbowArrow.setPoints(ctx, entityId, uvPath);
 }
 
@@ -631,58 +659,61 @@ function updateConnector(
   handleKind: ArrowHandleKindType,
   handlePosition: Vec2
 ): void {
-  // Find block at position (excluding arrows and handles)
-  let attachmentBlockId: EntityId | null = null;
-
-  for (const blockId of blocksQuery.current(ctx)) {
-    // Skip arrows and handles
-    if (
-      hasComponent(ctx, blockId, ArcArrow) ||
-      hasComponent(ctx, blockId, ElbowArrow) ||
-      hasComponent(ctx, blockId, ArrowHandle)
-    ) {
-      continue;
-    }
-
-    const block = Block.read(ctx, blockId);
-
-    // Check if point is inside block
-    if (
-      handlePosition[0] >= block.position[0] &&
-      handlePosition[0] <= block.position[0] + block.size[0] &&
-      handlePosition[1] >= block.position[1] &&
-      handlePosition[1] <= block.position[1] + block.size[1]
-    ) {
-      attachmentBlockId = blockId;
-      break;
-    }
-  }
+  const intersects = Intersect.getAll(ctx);
+  let attachmentBlockId =
+    intersects.find(
+      (eid) =>
+        eid !== entityId &&
+        hasComponent(ctx, eid, Synced) &&
+        !hasComponent(ctx, eid, Connector)
+    ) ?? null;
 
   const connector = Connector.write(ctx, entityId);
 
+  // Don't allow connecting both ends to the same block
+  if (attachmentBlockId !== null) {
+    const otherEnd =
+      handleKind === ArrowHandleKind.Start
+        ? connector.endBlock
+        : connector.startBlock;
+    if (attachmentBlockId === otherEnd) {
+      attachmentBlockId = null;
+    }
+  }
+
+  let uv: Vec2 = [0, 0];
+  if (attachmentBlockId !== null) {
+    uv = Block.worldToUv(ctx, attachmentBlockId, handlePosition);
+  }
+
   if (handleKind === ArrowHandleKind.Start) {
     connector.startBlock = attachmentBlockId;
-    if (attachmentBlockId !== null) {
-      const block = Block.read(ctx, attachmentBlockId);
-      connector.startBlockUv[0] =
-        (handlePosition[0] - block.position[0]) / (block.size[0] || 1);
-      connector.startBlockUv[1] =
-        (handlePosition[1] - block.position[1]) / (block.size[1] || 1);
-    } else {
-      connector.startBlockUv[0] = 0;
-      connector.startBlockUv[1] = 0;
-    }
+    connector.startBlockUv = uv;
   } else {
     connector.endBlock = attachmentBlockId;
-    if (attachmentBlockId !== null) {
-      const block = Block.read(ctx, attachmentBlockId);
-      connector.endBlockUv[0] =
-        (handlePosition[0] - block.position[0]) / (block.size[0] || 1);
-      connector.endBlockUv[1] =
-        (handlePosition[1] - block.position[1]) / (block.size[1] || 1);
-    } else {
-      connector.endBlockUv[0] = 0;
-      connector.endBlockUv[1] = 0;
+    connector.endBlockUv = uv;
+  }
+
+  updateConnectorRank(ctx, entityId);
+}
+
+function updateConnectorRank(ctx: Context, entityId: EntityId): void {
+  const connector = Connector.read(ctx, entityId);
+
+  // connectors always have high rank than their connected blocks
+  let maxRank: string | null = null;
+  for (const connectedBlockId of [connector.startBlock, connector.endBlock]) {
+    if (connectedBlockId === null) continue;
+
+    const rank = Block.read(ctx, connectedBlockId).rank;
+    if (maxRank === null || rank > maxRank) {
+      maxRank = rank;
     }
+  }
+
+  const blockRank = Block.read(ctx, entityId).rank;
+  if (maxRank !== null && blockRank < maxRank) {
+    const block = Block.write(ctx, entityId);
+    block.rank = generateJitteredKeyBetween(maxRank, null);
   }
 }

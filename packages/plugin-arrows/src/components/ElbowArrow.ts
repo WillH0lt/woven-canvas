@@ -5,7 +5,7 @@ import {
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
-import { Rect, type Vec2 } from "@infinitecanvas/math";
+import type { Vec2 } from "@infinitecanvas/math";
 import { ArrowHeadKind } from "../types";
 import { DEFAULT_ARROW_THICKNESS, ELBOW_ARROW_CAPACITY } from "../constants";
 
@@ -94,29 +94,11 @@ class ElbowArrowDef extends EditorComponentDef<typeof ElbowArrowSchema> {
   }
 
   /**
-   * Convert UV coordinates to world coordinates using the entity's Block.
-   * Accounts for block rotation.
-   */
-  uvToWorld(ctx: Context, entityId: EntityId, uv: Vec2): Vec2 {
-    const { position, size, rotateZ } = Block.read(ctx, entityId);
-    return Rect.uvToWorld(position, size, rotateZ, uv);
-  }
-
-  /**
-   * Convert world coordinates to UV coordinates using the entity's Block.
-   * Accounts for block rotation.
-   */
-  worldToUv(ctx: Context, entityId: EntityId, world: Vec2): Vec2 {
-    const { position, size, rotateZ } = Block.read(ctx, entityId);
-    return Rect.worldToUv(position, size, rotateZ, world);
-  }
-
-  /**
    * Get start point in world coordinates.
    */
   getStartWorld(ctx: Context, entityId: EntityId): Vec2 {
     const startUv = this.getPoint(ctx, entityId, 0);
-    return this.uvToWorld(ctx, entityId, startUv);
+    return Block.uvToWorld(ctx, entityId, startUv);
   }
 
   /**
@@ -125,7 +107,7 @@ class ElbowArrowDef extends EditorComponentDef<typeof ElbowArrowSchema> {
   getEndWorld(ctx: Context, entityId: EntityId): Vec2 {
     const { pointCount } = this.read(ctx, entityId);
     const endUv = this.getPoint(ctx, entityId, pointCount - 1);
-    return this.uvToWorld(ctx, entityId, endUv);
+    return Block.uvToWorld(ctx, entityId, endUv);
   }
 
   /**
@@ -133,7 +115,7 @@ class ElbowArrowDef extends EditorComponentDef<typeof ElbowArrowSchema> {
    */
   getWorldPoints(ctx: Context, entityId: EntityId): Vec2[] {
     const uvPoints = this.getPoints(ctx, entityId);
-    return uvPoints.map((uv) => this.uvToWorld(ctx, entityId, uv));
+    return uvPoints.map((uv) => Block.uvToWorld(ctx, entityId, uv));
   }
 
   /**

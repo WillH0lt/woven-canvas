@@ -132,9 +132,10 @@ const customTools = computed(() => {
     </slot>
 
     <!-- Arc Arrow tool (built-in with override) -->
+    <!-- 
     <slot name="tool:arc-arrow">
       <ArcArrowTool />
-    </slot>
+    </slot> -->
 
     <!-- Elbow Arrow tool (built-in with override) -->
     <slot name="tool:elbow-arrow">

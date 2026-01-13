@@ -4,9 +4,9 @@
 export const ArrowDrawStateEnum = {
   /** Idle - waiting for user to start drawing */
   Idle: "idle",
-  /** Pointing - pointer down but not yet dragging */
+  /** Pointing - pointer down, waiting for drag threshold */
   Pointing: "pointing",
-  /** Dragging - actively drawing an arrow */
+  /** Dragging - arrow created, selection system handling drag */
   Dragging: "dragging",
 } as const;
 

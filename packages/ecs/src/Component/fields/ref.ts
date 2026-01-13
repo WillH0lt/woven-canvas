@@ -44,11 +44,14 @@ function unpackGeneration(ref: number): number {
  *
  * @param packedRef - The packed ref value from the buffer
  * @param entityBuffer - The entity buffer to validate against
+ * @param checkExistence - If false, skips the existence check but still validates generation.
+ *                         Useful for finding refs to recently deleted entities.
  * @returns The entity ID if valid, null if the ref is null or stale
  */
 export function readRef(
   packedRef: number,
-  entityBuffer: EntityBuffer
+  entityBuffer: EntityBuffer,
+  checkExistence = true
 ): EntityId | null {
   if (packedRef === NULL_REF) {
     return null;
@@ -57,9 +60,9 @@ export function readRef(
   const refEntityId = unpackEntityId(packedRef);
   const refGeneration = unpackGeneration(packedRef);
 
-  // Check if ref is still valid (alive + generation matches)
+  // Check if ref is still valid (generation matches, and alive if checking existence)
   if (
-    !entityBuffer.has(refEntityId) ||
+    (checkExistence && !entityBuffer.has(refEntityId)) ||
     entityBuffer.getGeneration(refEntityId) !== refGeneration
   ) {
     return null;

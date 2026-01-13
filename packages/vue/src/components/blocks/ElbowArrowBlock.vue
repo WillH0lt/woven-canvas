@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
-import { Color, Hovered } from "@infinitecanvas/editor";
+import { computed, ref, onMounted, onUnmounted, watch } from "vue";
+import { Camera, Color } from "@infinitecanvas/editor";
 import { Vec2 } from "@infinitecanvas/math";
 import { ElbowArrow, ArrowTrim } from "@infinitecanvas/plugin-arrows";
-import { Selected } from "@infinitecanvas/plugin-selection";
 import { useComponent } from "../../composables/useComponent";
+import { useSingleton } from "../../composables/useSingleton";
 import ArrowHead from "./ArrowHead.vue";
 import type { BlockData } from "../../types";
 
-const ARROW_HEAD_GAP = 15;
+const BASE_ARROW_HEAD_GAP = 15;
 
 const props = defineProps<BlockData>();
 
@@ -17,9 +16,12 @@ const containerRef = ref<HTMLElement | null>(null);
 const clientWidth = ref(0);
 const clientHeight = ref(0);
 
+const camera = useSingleton(Camera);
 const color = useComponent(props.entityId, Color);
 const elbowArrow = useComponent(props.entityId, ElbowArrow);
 const arrowTrim = useComponent(props.entityId, ArrowTrim);
+
+const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP * camera.value.zoom);
 
 const isEmphasized = computed(() => props.hovered || props.selected !== null);
 
@@ -51,7 +53,10 @@ const hex = computed(() => {
   return `#${r}${g}${b}`;
 });
 
-const thickness = computed(() => elbowArrow.value?.thickness ?? 2);
+const baseThickness = computed(() => elbowArrow.value?.thickness ?? 2);
+const thickness = computed(
+  () => `calc(${baseThickness.value}px * var(--ic-zoom))`
+);
 
 // Get points from the elbow arrow buffer
 const worldPoints = computed((): Vec2[] => {
@@ -105,21 +110,21 @@ const pathData = computed(() => {
   ];
 
   let tStart = 0;
-  let tEnd = 1;
+  let tEnd = 0;
 
   if (trim) {
     tStart = trim.tStart;
     if (tStart !== 0 && startHead !== "none") {
       const len = Math.hypot(startVec[0], startVec[1]);
-      const gap = len > 0 ? ARROW_HEAD_GAP / len : 0;
+      const gap = len > 0 ? arrowHeadGap.value / len : 0;
       tStart += gap;
     }
 
     tEnd = trim.tEnd;
-    if (tEnd !== 1 && endHead !== "none") {
+    if (tEnd !== 0 && endHead !== "none") {
       const len = Math.hypot(endVec[0], endVec[1]);
-      const gap = len > 0 ? ARROW_HEAD_GAP / len : 0;
-      tEnd += gap; // Add because we use (1 - tEnd) below
+      const gap = len > 0 ? arrowHeadGap.value / len : 0;
+      tEnd += gap;
     }
 
     // Trim start point
@@ -128,7 +133,7 @@ const pathData = computed(() => {
       points[0][1] + (points[1][1] - points[0][1]) * tStart,
     ];
 
-    // Trim end point (tEnd is measured from end toward prev, so invert it)
+    // Trim end point
     const lastIdx = points.length - 1;
     points[lastIdx] = [
       points[lastIdx - 1][0] +
@@ -145,7 +150,7 @@ const pathData = computed(() => {
   }
 
   // Flip start direction for arrow head
-  Vec2.scale(startVec, -1)
+  Vec2.scale(startVec, -1);
 
   return {
     points,
@@ -174,9 +179,8 @@ const pathData = computed(() => {
           :y2="line.end[1]"
           class="highlight-bg"
           fill="none"
-          stroke-width="2"
+          style="stroke-width: calc(2px * var(--ic-zoom)); stroke-dasharray: calc(12px * var(--ic-zoom))"
           stroke-linecap="round"
-          stroke-dasharray="12"
         />
       </template>
 
@@ -222,21 +226,21 @@ const pathData = computed(() => {
             :y2="line.end[1]"
             class="highlight-overlay"
             fill="none"
-            stroke-width="2"
+            style="stroke-width: calc(2px * var(--ic-zoom))"
             stroke-linecap="round"
           />
           <ArrowHead
             v-if="pathData.startHead !== 'none'"
             :position="pathData.startPos"
             :direction="pathData.startDir"
-            :thickness="2"
+            thickness="calc(2px * var(--ic-zoom))"
             color="var(--ic-highlighted-block-outline-color)"
           />
           <ArrowHead
             v-if="pathData.endHead !== 'none'"
             :position="pathData.endPos"
             :direction="pathData.endDir"
-            :thickness="2"
+            thickness="calc(2px * var(--ic-zoom))"
             color="var(--ic-highlighted-block-outline-color)"
           />
         </template>

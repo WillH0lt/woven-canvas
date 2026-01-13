@@ -1,20 +1,28 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { Camera } from "@infinitecanvas/editor";
 import type { Vec2 } from "@infinitecanvas/math";
+import { useSingleton } from "../../composables/useSingleton";
 
 const props = defineProps<{
   position: Vec2;
   direction: Vec2;
-  thickness: number;
+  thickness: number | string;
   color: string;
 }>();
 
-const ARROW_HEAD_LENGTH = 15;
-const ARROW_HEAD_WIDTH = 20;
+const BASE_ARROW_HEAD_LENGTH = 15;
+const BASE_ARROW_HEAD_WIDTH = 20;
+
+const camera = useSingleton(Camera);
 
 const points = computed(() => {
   const dirLen = Math.hypot(props.direction[0], props.direction[1]);
   if (dirLen === 0) return null;
+
+  const zoom = camera.value.zoom;
+  const headLength = BASE_ARROW_HEAD_LENGTH * zoom;
+  const headWidth = BASE_ARROW_HEAD_WIDTH * zoom;
 
   const unitDir: Vec2 = [
     props.direction[0] / dirLen,
@@ -23,12 +31,12 @@ const points = computed(() => {
   const perpDir: Vec2 = [-unitDir[1], unitDir[0]];
 
   const p1: Vec2 = [
-    props.position[0] - unitDir[0] * ARROW_HEAD_LENGTH + perpDir[0] * (ARROW_HEAD_WIDTH / 2),
-    props.position[1] - unitDir[1] * ARROW_HEAD_LENGTH + perpDir[1] * (ARROW_HEAD_WIDTH / 2),
+    props.position[0] - unitDir[0] * headLength + perpDir[0] * (headWidth / 2),
+    props.position[1] - unitDir[1] * headLength + perpDir[1] * (headWidth / 2),
   ];
   const p2: Vec2 = [
-    props.position[0] - unitDir[0] * ARROW_HEAD_LENGTH - perpDir[0] * (ARROW_HEAD_WIDTH / 2),
-    props.position[1] - unitDir[1] * ARROW_HEAD_LENGTH - perpDir[1] * (ARROW_HEAD_WIDTH / 2),
+    props.position[0] - unitDir[0] * headLength - perpDir[0] * (headWidth / 2),
+    props.position[1] - unitDir[1] * headLength - perpDir[1] * (headWidth / 2),
   ];
 
   return { p1, p2 };

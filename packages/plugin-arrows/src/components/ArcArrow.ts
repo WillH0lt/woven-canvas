@@ -5,7 +5,7 @@ import {
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
-import { Arc, Rect, Vec2 } from "@infinitecanvas/math";
+import { Arc, Vec2 } from "@infinitecanvas/math";
 import { ArrowHeadKind } from "../types";
 import { DEFAULT_ARROW_THICKNESS } from "../constants";
 
@@ -122,33 +122,15 @@ class ArcArrowDef extends EditorComponentDef<typeof ArcArrowSchema> {
   }
 
   /**
-   * Convert UV coordinates to world coordinates using the entity's Block.
-   * Accounts for block rotation.
-   */
-  uvToWorld(ctx: Context, entityId: EntityId, uv: Vec2): Vec2 {
-    const { position, size, rotateZ } = Block.read(ctx, entityId);
-    return Rect.uvToWorld(position, size, rotateZ, uv);
-  }
-
-  /**
-   * Convert world coordinates to UV coordinates using the entity's Block.
-   * Accounts for block rotation.
-   */
-  worldToUv(ctx: Context, entityId: EntityId, world: Vec2): Vec2 {
-    const { position, size, rotateZ } = Block.read(ctx, entityId);
-    return Rect.worldToUv(position, size, rotateZ, world);
-  }
-
-  /**
    * Get the arc as a world-space Arc tuple (for use with math library).
    * Accounts for block rotation.
    */
   getWorldArc(ctx: Context, entityId: EntityId): Arc {
     const { value } = this.read(ctx, entityId);
 
-    const a = this.uvToWorld(ctx, entityId, [value[AX], value[AY]]);
-    const b = this.uvToWorld(ctx, entityId, [value[BX], value[BY]]);
-    const c = this.uvToWorld(ctx, entityId, [value[CX], value[CY]]);
+    const a = Block.uvToWorld(ctx, entityId, [value[AX], value[AY]]);
+    const b = Block.uvToWorld(ctx, entityId, [value[BX], value[BY]]);
+    const c = Block.uvToWorld(ctx, entityId, [value[CX], value[CY]]);
 
     return [a[0], a[1], b[0], b[1], c[0], c[1], value[THICKNESS]];
   }
@@ -164,9 +146,9 @@ class ArcArrowDef extends EditorComponentDef<typeof ArcArrowSchema> {
     const { value } = this.read(ctx, entityId);
 
     return {
-      a: this.uvToWorld(ctx, entityId, [value[AX], value[AY]]),
-      b: this.uvToWorld(ctx, entityId, [value[BX], value[BY]]),
-      c: this.uvToWorld(ctx, entityId, [value[CX], value[CY]]),
+      a: Block.uvToWorld(ctx, entityId, [value[AX], value[AY]]),
+      b: Block.uvToWorld(ctx, entityId, [value[BX], value[BY]]),
+      c: Block.uvToWorld(ctx, entityId, [value[CX], value[CY]]),
     };
   }
 
