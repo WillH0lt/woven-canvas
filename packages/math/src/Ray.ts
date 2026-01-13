@@ -5,7 +5,7 @@ import { Rect } from "./Rect";
 /**
  * A 2D ray represented as a tuple [originX, originY, directionX, directionY].
  */
-export type RayTuple = [
+export type Ray = [
   originX: number,
   originY: number,
   directionX: number,
@@ -35,18 +35,18 @@ export namespace Ray {
     originY: number,
     directionX: number,
     directionY: number
-  ): RayTuple => [originX, originY, directionX, directionY];
+  ): Ray => [originX, originY, directionX, directionY];
 
-  export const fromPoints = (origin: Vec2, direction: Vec2): RayTuple => [
+  export const fromPoints = (origin: Vec2, direction: Vec2): Ray => [
     origin[0],
     origin[1],
     direction[0],
     direction[1],
   ];
 
-  export const zero = (): RayTuple => [0, 0, 0, 0];
+  export const zero = (): Ray => [0, 0, 0, 0];
 
-  export const clone = (ray: RayTuple): RayTuple => [
+  export const clone = (ray: Ray): Ray => [
     ray[0],
     ray[1],
     ray[2],
@@ -55,12 +55,12 @@ export namespace Ray {
 
   // Getters
 
-  export const origin = (ray: RayTuple): Vec2 => [
+  export const origin = (ray: Ray): Vec2 => [
     ray[ORIGIN_X],
     ray[ORIGIN_Y],
   ];
 
-  export const direction = (ray: RayTuple): Vec2 => [
+  export const direction = (ray: Ray): Vec2 => [
     ray[DIR_X],
     ray[DIR_Y],
   ];
@@ -68,7 +68,7 @@ export namespace Ray {
   // Operations (mutating)
 
   export const set = (
-    out: RayTuple,
+    out: Ray,
     originX: number,
     originY: number,
     directionX: number,
@@ -80,19 +80,19 @@ export namespace Ray {
     out[DIR_Y] = directionY;
   };
 
-  export const copy = (out: RayTuple, ray: RayTuple): void => {
+  export const copy = (out: Ray, ray: Ray): void => {
     out[0] = ray[0];
     out[1] = ray[1];
     out[2] = ray[2];
     out[3] = ray[3];
   };
 
-  export const setOrigin = (out: RayTuple, origin: Vec2): void => {
+  export const setOrigin = (out: Ray, origin: Vec2): void => {
     out[ORIGIN_X] = origin[0];
     out[ORIGIN_Y] = origin[1];
   };
 
-  export const setDirection = (out: RayTuple, direction: Vec2): void => {
+  export const setDirection = (out: Ray, direction: Vec2): void => {
     out[DIR_X] = direction[0];
     out[DIR_Y] = direction[1];
   };
@@ -100,7 +100,7 @@ export namespace Ray {
   /**
    * Get a point along the ray at distance t.
    */
-  export const pointAt = (ray: RayTuple, t: number): Vec2 => [
+  export const pointAt = (ray: Ray, t: number): Vec2 => [
     ray[ORIGIN_X] + ray[DIR_X] * t,
     ray[ORIGIN_Y] + ray[DIR_Y] * t,
   ];
@@ -110,7 +110,7 @@ export namespace Ray {
    * Returns intersection point and distance, or null if no intersection.
    */
   export const intersectSegment = (
-    ray: RayTuple,
+    ray: Ray,
     a: Vec2,
     b: Vec2
   ): RayIntersection | null => {
@@ -156,7 +156,7 @@ export namespace Ray {
    * Returns all intersections sorted by distance.
    */
   export const intersectAabb = (
-    ray: RayTuple,
+    ray: Ray,
     aabb: Aabb
   ): RayIntersection[] => {
     const intersections: RayIntersection[] = [];
@@ -223,7 +223,7 @@ export namespace Ray {
    * Returns all intersections sorted by distance.
    */
   export const intersectRect = (
-    ray: RayTuple,
+    ray: Ray,
     position: Vec2,
     size: Vec2,
     rotateZ: number = 0
@@ -250,7 +250,7 @@ export namespace Ray {
 
 // Helper for collinear ray-segment intersection
 function intersectCollinear(
-  ray: RayTuple,
+  ray: Ray,
   a: Vec2,
   b: Vec2
 ): RayIntersection | null {
@@ -281,7 +281,7 @@ function intersectCollinear(
 }
 
 function intersectAligned(
-  ray: RayTuple,
+  ray: Ray,
   a: Vec2,
   b: Vec2,
   dimension: 0 | 1
@@ -322,6 +322,3 @@ function intersectAligned(
     current.distance < nearest.distance ? current : nearest
   );
 }
-
-// Re-export type with same name for convenience
-export type Ray = RayTuple;

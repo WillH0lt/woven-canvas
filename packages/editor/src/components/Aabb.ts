@@ -1,8 +1,7 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
 import { EditorComponentDef } from "../EditorComponentDef";
 import {
-  Aabb as AabbNs,
-  type Aabb as AabbTuple,
+  Aabb as AabbMath,
   type Vec2,
 } from "@infinitecanvas/math";
 import { Block } from "./Block";
@@ -41,7 +40,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
   ): boolean {
     const { value } = this.read(ctx, entityId);
 
-    return AabbNs.containsPoint(value, point, inclusive);
+    return AabbMath.containsPoint(value, point, inclusive);
   }
 
   /**
@@ -49,7 +48,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
    */
   expandByPoint(ctx: Context, entityId: EntityId, point: Vec2): void {
     const { value } = this.write(ctx, entityId);
-    AabbNs.expand(value, point);
+    AabbMath.expand(value, point);
   }
 
   /**
@@ -63,16 +62,16 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
     const corners = Block.getCorners(ctx, blockEntityId);
     const { value } = this.write(ctx, entityId);
     for (const corner of corners) {
-      AabbNs.expand(value, corner);
+      AabbMath.expand(value, corner);
     }
   }
 
   /**
    * Expand AABB to include another AABB.
    */
-  expandByAabb(ctx: Context, entityId: EntityId, other: AabbTuple): void {
+  expandByAabb(ctx: Context, entityId: EntityId, other: AabbMath): void {
     const { value } = this.write(ctx, entityId);
-    AabbNs.union(value, other);
+    AabbMath.union(value, other);
   }
 
   /**
@@ -81,7 +80,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
   copyFrom(ctx: Context, entityId: EntityId, otherEntityId: EntityId): void {
     const { value: src } = this.read(ctx, otherEntityId);
     const { value: dst } = this.write(ctx, entityId);
-    AabbNs.copy(dst, src);
+    AabbMath.copy(dst, src);
   }
 
   /**
@@ -90,7 +89,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
   setByPoints(ctx: Context, entityId: EntityId, points: Vec2[]): void {
     if (points.length === 0) return;
     const { value } = this.write(ctx, entityId);
-    AabbNs.setFromPoints(value, points);
+    AabbMath.setFromPoints(value, points);
   }
 
   /**
@@ -98,7 +97,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
    */
   getCenter(ctx: Context, entityId: EntityId): Vec2 {
     const { value } = this.read(ctx, entityId);
-    return AabbNs.center(value);
+    return AabbMath.center(value);
   }
 
   /**
@@ -106,7 +105,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
    */
   getWidth(ctx: Context, entityId: EntityId): number {
     const { value } = this.read(ctx, entityId);
-    return AabbNs.width(value);
+    return AabbMath.width(value);
   }
 
   /**
@@ -114,7 +113,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
    */
   getHeight(ctx: Context, entityId: EntityId): number {
     const { value } = this.read(ctx, entityId);
-    return AabbNs.height(value);
+    return AabbMath.height(value);
   }
 
   /**
@@ -122,7 +121,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
    */
   distanceToPoint(ctx: Context, entityId: EntityId, point: Vec2): number {
     const { value } = this.read(ctx, entityId);
-    return AabbNs.distanceToPoint(value, point);
+    return AabbMath.distanceToPoint(value, point);
   }
 
   /**
@@ -135,7 +134,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
   ): boolean {
     const { value: a } = this.read(ctx, entityIdA);
     const { value: b } = this.read(ctx, entityIdB);
-    return AabbNs.intersects(a, b);
+    return AabbMath.intersects(a, b);
   }
 
   /**
@@ -148,7 +147,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
   ): boolean {
     const { value: a } = this.read(ctx, entityIdA);
     const { value: b } = this.read(ctx, entityIdB);
-    return AabbNs.contains(a, b);
+    return AabbMath.contains(a, b);
   }
 
   /**
@@ -188,7 +187,7 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
    */
   applyPadding(ctx: Context, entityId: EntityId, padding: number): void {
     const { value } = this.write(ctx, entityId);
-    AabbNs.pad(value, padding);
+    AabbMath.pad(value, padding);
   }
 }
 

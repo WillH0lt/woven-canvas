@@ -3,7 +3,7 @@ import type { Vec2 } from "./Vec2";
 /**
  * An axis-aligned bounding box represented as a tuple [left, top, right, bottom].
  */
-export type AabbTuple = [
+export type Aabb = [
   left: number,
   top: number,
   right: number,
@@ -25,13 +25,13 @@ export namespace Aabb {
     top: number,
     right: number,
     bottom: number
-  ): AabbTuple => [left, top, right, bottom];
+  ): Aabb => [left, top, right, bottom];
 
-  export const zero = (): AabbTuple => [0, 0, 0, 0];
+  export const zero = (): Aabb => [0, 0, 0, 0];
 
-  export const clone = (a: AabbTuple): AabbTuple => [a[0], a[1], a[2], a[3]];
+  export const clone = (a: Aabb): Aabb => [a[0], a[1], a[2], a[3]];
 
-  export const fromPoints = (points: Vec2[]): AabbTuple => {
+  export const fromPoints = (points: Vec2[]): Aabb => {
     if (points.length === 0) return zero();
 
     let left = points[0][0];
@@ -55,26 +55,26 @@ export namespace Aabb {
     top: number,
     width: number,
     height: number
-  ): AabbTuple => [left, top, left + width, top + height];
+  ): Aabb => [left, top, left + width, top + height];
 
   // Getters
 
-  export const left = (a: AabbTuple): number => a[AABB_LEFT];
-  export const top = (a: AabbTuple): number => a[AABB_TOP];
-  export const right = (a: AabbTuple): number => a[AABB_RIGHT];
-  export const bottom = (a: AabbTuple): number => a[AABB_BOTTOM];
+  export const left = (a: Aabb): number => a[AABB_LEFT];
+  export const top = (a: Aabb): number => a[AABB_TOP];
+  export const right = (a: Aabb): number => a[AABB_RIGHT];
+  export const bottom = (a: Aabb): number => a[AABB_BOTTOM];
 
-  export const width = (a: AabbTuple): number => a[AABB_RIGHT] - a[AABB_LEFT];
-  export const height = (a: AabbTuple): number => a[AABB_BOTTOM] - a[AABB_TOP];
+  export const width = (a: Aabb): number => a[AABB_RIGHT] - a[AABB_LEFT];
+  export const height = (a: Aabb): number => a[AABB_BOTTOM] - a[AABB_TOP];
 
-  export const center = (a: AabbTuple): Vec2 => [
+  export const center = (a: Aabb): Vec2 => [
     (a[AABB_LEFT] + a[AABB_RIGHT]) / 2,
     (a[AABB_TOP] + a[AABB_BOTTOM]) / 2,
   ];
 
-  export const size = (a: AabbTuple): Vec2 => [width(a), height(a)];
+  export const size = (a: Aabb): Vec2 => [width(a), height(a)];
 
-  export const corners = (a: AabbTuple): [Vec2, Vec2, Vec2, Vec2] => [
+  export const corners = (a: Aabb): [Vec2, Vec2, Vec2, Vec2] => [
     [a[AABB_LEFT], a[AABB_TOP]],
     [a[AABB_RIGHT], a[AABB_TOP]],
     [a[AABB_RIGHT], a[AABB_BOTTOM]],
@@ -84,7 +84,7 @@ export namespace Aabb {
   // Tests
 
   export const containsPoint = (
-    a: AabbTuple,
+    a: Aabb,
     point: Vec2,
     inclusive = true
   ): boolean =>
@@ -98,7 +98,7 @@ export namespace Aabb {
         point[1] > a[AABB_TOP] &&
         point[1] < a[AABB_BOTTOM];
 
-  export const intersects = (a: AabbTuple, b: AabbTuple): boolean =>
+  export const intersects = (a: Aabb, b: Aabb): boolean =>
     !(
       a[AABB_RIGHT] < b[AABB_LEFT] ||
       a[AABB_LEFT] > b[AABB_RIGHT] ||
@@ -106,13 +106,13 @@ export namespace Aabb {
       a[AABB_TOP] > b[AABB_BOTTOM]
     );
 
-  export const contains = (outer: AabbTuple, inner: AabbTuple): boolean =>
+  export const contains = (outer: Aabb, inner: Aabb): boolean =>
     outer[AABB_LEFT] <= inner[AABB_LEFT] &&
     outer[AABB_TOP] <= inner[AABB_TOP] &&
     outer[AABB_RIGHT] >= inner[AABB_RIGHT] &&
     outer[AABB_BOTTOM] >= inner[AABB_BOTTOM];
 
-  export const distanceToPoint = (a: AabbTuple, point: Vec2): number => {
+  export const distanceToPoint = (a: Aabb, point: Vec2): number => {
     const dx = Math.max(a[AABB_LEFT] - point[0], 0, point[0] - a[AABB_RIGHT]);
     const dy = Math.max(a[AABB_TOP] - point[1], 0, point[1] - a[AABB_BOTTOM]);
     return Math.hypot(dx, dy);
@@ -121,7 +121,7 @@ export namespace Aabb {
   // Operations (mutating) - modify first argument in-place, return void
 
   export const set = (
-    out: AabbTuple,
+    out: Aabb,
     left: number,
     top: number,
     right: number,
@@ -133,42 +133,42 @@ export namespace Aabb {
     out[AABB_BOTTOM] = bottom;
   };
 
-  export const copy = (out: AabbTuple, a: AabbTuple): void => {
+  export const copy = (out: Aabb, a: Aabb): void => {
     out[AABB_LEFT] = a[AABB_LEFT];
     out[AABB_TOP] = a[AABB_TOP];
     out[AABB_RIGHT] = a[AABB_RIGHT];
     out[AABB_BOTTOM] = a[AABB_BOTTOM];
   };
 
-  export const expand = (out: AabbTuple, point: Vec2): void => {
+  export const expand = (out: Aabb, point: Vec2): void => {
     out[AABB_LEFT] = Math.min(out[AABB_LEFT], point[0]);
     out[AABB_TOP] = Math.min(out[AABB_TOP], point[1]);
     out[AABB_RIGHT] = Math.max(out[AABB_RIGHT], point[0]);
     out[AABB_BOTTOM] = Math.max(out[AABB_BOTTOM], point[1]);
   };
 
-  export const union = (out: AabbTuple, b: AabbTuple): void => {
+  export const union = (out: Aabb, b: Aabb): void => {
     out[AABB_LEFT] = Math.min(out[AABB_LEFT], b[AABB_LEFT]);
     out[AABB_TOP] = Math.min(out[AABB_TOP], b[AABB_TOP]);
     out[AABB_RIGHT] = Math.max(out[AABB_RIGHT], b[AABB_RIGHT]);
     out[AABB_BOTTOM] = Math.max(out[AABB_BOTTOM], b[AABB_BOTTOM]);
   };
 
-  export const intersection = (out: AabbTuple, b: AabbTuple): void => {
+  export const intersection = (out: Aabb, b: Aabb): void => {
     out[AABB_LEFT] = Math.max(out[AABB_LEFT], b[AABB_LEFT]);
     out[AABB_TOP] = Math.max(out[AABB_TOP], b[AABB_TOP]);
     out[AABB_RIGHT] = Math.min(out[AABB_RIGHT], b[AABB_RIGHT]);
     out[AABB_BOTTOM] = Math.min(out[AABB_BOTTOM], b[AABB_BOTTOM]);
   };
 
-  export const pad = (out: AabbTuple, padding: number): void => {
+  export const pad = (out: Aabb, padding: number): void => {
     out[AABB_LEFT] -= padding;
     out[AABB_TOP] -= padding;
     out[AABB_RIGHT] += padding;
     out[AABB_BOTTOM] += padding;
   };
 
-  export const setFromPoints = (out: AabbTuple, points: Vec2[]): void => {
+  export const setFromPoints = (out: Aabb, points: Vec2[]): void => {
     if (points.length === 0) {
       out[AABB_LEFT] = 0;
       out[AABB_TOP] = 0;
@@ -191,20 +191,17 @@ export namespace Aabb {
     }
   };
 
-  export const translate = (out: AabbTuple, delta: Vec2): void => {
+  export const translate = (out: Aabb, delta: Vec2): void => {
     out[AABB_LEFT] += delta[0];
     out[AABB_TOP] += delta[1];
     out[AABB_RIGHT] += delta[0];
     out[AABB_BOTTOM] += delta[1];
   };
 
-  export const scale = (out: AabbTuple, factor: number): void => {
+  export const scale = (out: Aabb, factor: number): void => {
     out[AABB_LEFT] *= factor;
     out[AABB_TOP] *= factor;
     out[AABB_RIGHT] *= factor;
     out[AABB_BOTTOM] *= factor;
   };
 }
-
-// Re-export type with same name for convenience
-export type Aabb = AabbTuple;

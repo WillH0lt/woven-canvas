@@ -1,4 +1,4 @@
-import type { Vec2Tuple } from "./Vec2";
+import type { Vec2 } from "./Vec2";
 
 /**
  * A 2D affine transformation matrix represented as a tuple [a, b, c, d, tx, ty].
@@ -17,7 +17,7 @@ import type { Vec2Tuple } from "./Vec2";
  *
  * This matches the CSS matrix() function: matrix(a, b, c, d, tx, ty)
  */
-export type Mat2Tuple = [number, number, number, number, number, number];
+export type Mat2 = [number, number, number, number, number, number];
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Mat2 {
@@ -38,11 +38,11 @@ export namespace Mat2 {
     d: number,
     tx: number,
     ty: number
-  ): Mat2Tuple => [a, b, c, d, tx, ty];
+  ): Mat2 => [a, b, c, d, tx, ty];
 
-  export const identity = (): Mat2Tuple => [1, 0, 0, 1, 0, 0];
+  export const identity = (): Mat2 => [1, 0, 0, 1, 0, 0];
 
-  export const clone = (m: Mat2Tuple): Mat2Tuple => [
+  export const clone = (m: Mat2): Mat2 => [
     m[A],
     m[B],
     m[C],
@@ -54,7 +54,7 @@ export namespace Mat2 {
   /**
    * Create a translation matrix.
    */
-  export const fromTranslation = (tx: number, ty: number): Mat2Tuple => [
+  export const fromTranslation = (tx: number, ty: number): Mat2 => [
     1,
     0,
     0,
@@ -67,7 +67,7 @@ export namespace Mat2 {
    * Create a scaling matrix.
    * If sy is not provided, uniform scaling is applied.
    */
-  export const fromScale = (sx: number, sy?: number): Mat2Tuple => [
+  export const fromScale = (sx: number, sy?: number): Mat2 => [
     sx,
     0,
     0,
@@ -80,7 +80,7 @@ export namespace Mat2 {
    * Create a rotation matrix.
    * @param angle - Rotation angle in radians.
    */
-  export const fromRotation = (angle: number): Mat2Tuple => {
+  export const fromRotation = (angle: number): Mat2 => {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
     return [cos, sin, -sin, cos, 0, 0];
@@ -91,7 +91,7 @@ export namespace Mat2 {
    * @param skewX - Skew angle along x-axis in radians.
    * @param skewY - Skew angle along y-axis in radians.
    */
-  export const fromSkew = (skewX: number, skewY: number): Mat2Tuple => [
+  export const fromSkew = (skewX: number, skewY: number): Mat2 => [
     1,
     Math.tan(skewY),
     Math.tan(skewX),
@@ -102,26 +102,26 @@ export namespace Mat2 {
 
   // Getters (non-mutating, return scalars)
 
-  export const getTranslation = (m: Mat2Tuple): Vec2Tuple => [m[TX], m[TY]];
+  export const getTranslation = (m: Mat2): Vec2 => [m[TX], m[TY]];
 
-  export const getScale = (m: Mat2Tuple): Vec2Tuple => {
+  export const getScale = (m: Mat2): Vec2 => {
     const sx = Math.sqrt(m[A] * m[A] + m[B] * m[B]);
     const sy = Math.sqrt(m[C] * m[C] + m[D] * m[D]);
     return [sx, sy];
   };
 
-  export const getRotation = (m: Mat2Tuple): number => Math.atan2(m[B], m[A]);
+  export const getRotation = (m: Mat2): number => Math.atan2(m[B], m[A]);
 
   /**
    * Calculate the determinant of the matrix.
    */
-  export const determinant = (m: Mat2Tuple): number =>
+  export const determinant = (m: Mat2): number =>
     m[A] * m[D] - m[B] * m[C];
 
   // Operations (mutating) - modify first argument in-place, return void
 
   export const set = (
-    out: Mat2Tuple,
+    out: Mat2,
     a: number,
     b: number,
     c: number,
@@ -137,7 +137,7 @@ export namespace Mat2 {
     out[TY] = ty;
   };
 
-  export const copy = (out: Mat2Tuple, m: Mat2Tuple): void => {
+  export const copy = (out: Mat2, m: Mat2): void => {
     out[A] = m[A];
     out[B] = m[B];
     out[C] = m[C];
@@ -146,7 +146,7 @@ export namespace Mat2 {
     out[TY] = m[TY];
   };
 
-  export const setIdentity = (out: Mat2Tuple): void => {
+  export const setIdentity = (out: Mat2): void => {
     out[A] = 1;
     out[B] = 0;
     out[C] = 0;
@@ -158,7 +158,7 @@ export namespace Mat2 {
   /**
    * Multiply matrix by another matrix: out = out * m
    */
-  export const multiply = (out: Mat2Tuple, m: Mat2Tuple): void => {
+  export const multiply = (out: Mat2, m: Mat2): void => {
     const a = out[A] * m[A] + out[C] * m[B];
     const b = out[B] * m[A] + out[D] * m[B];
     const c = out[A] * m[C] + out[C] * m[D];
@@ -176,7 +176,7 @@ export namespace Mat2 {
   /**
    * Premultiply matrix by another matrix: out = m * out
    */
-  export const premultiply = (out: Mat2Tuple, m: Mat2Tuple): void => {
+  export const premultiply = (out: Mat2, m: Mat2): void => {
     const a = m[A] * out[A] + m[C] * out[B];
     const b = m[B] * out[A] + m[D] * out[B];
     const c = m[A] * out[C] + m[C] * out[D];
@@ -195,7 +195,7 @@ export namespace Mat2 {
    * Invert the matrix in place.
    * Returns false if the matrix is not invertible (determinant is 0).
    */
-  export const invert = (out: Mat2Tuple): boolean => {
+  export const invert = (out: Mat2): boolean => {
     const det = determinant(out);
     if (det === 0) {
       return false;
@@ -219,7 +219,7 @@ export namespace Mat2 {
   /**
    * Apply a translation to the matrix.
    */
-  export const translate = (out: Mat2Tuple, tx: number, ty: number): void => {
+  export const translate = (out: Mat2, tx: number, ty: number): void => {
     out[TX] += out[A] * tx + out[C] * ty;
     out[TY] += out[B] * tx + out[D] * ty;
   };
@@ -227,7 +227,7 @@ export namespace Mat2 {
   /**
    * Apply a scale to the matrix.
    */
-  export const scale = (out: Mat2Tuple, sx: number, sy?: number): void => {
+  export const scale = (out: Mat2, sx: number, sy?: number): void => {
     const scaleY = sy ?? sx;
     out[A] *= sx;
     out[B] *= sx;
@@ -239,7 +239,7 @@ export namespace Mat2 {
    * Apply a rotation to the matrix.
    * @param angle - Rotation angle in radians.
    */
-  export const rotate = (out: Mat2Tuple, angle: number): void => {
+  export const rotate = (out: Mat2, angle: number): void => {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
     const a = out[A] * cos + out[C] * sin;
@@ -257,7 +257,7 @@ export namespace Mat2 {
    * @param skewX - Skew angle along x-axis in radians.
    * @param skewY - Skew angle along y-axis in radians.
    */
-  export const skew = (out: Mat2Tuple, skewX: number, skewY: number): void => {
+  export const skew = (out: Mat2, skewX: number, skewY: number): void => {
     const tanX = Math.tan(skewX);
     const tanY = Math.tan(skewY);
     const a = out[A] + out[C] * tanY;
@@ -275,7 +275,7 @@ export namespace Mat2 {
   /**
    * Transform a point by the matrix (applies full transform including translation).
    */
-  export const transformPoint = (m: Mat2Tuple, out: Vec2Tuple): void => {
+  export const transformPoint = (m: Mat2, out: Vec2): void => {
     const x = m[A] * out[0] + m[C] * out[1] + m[TX];
     const y = m[B] * out[0] + m[D] * out[1] + m[TY];
     out[0] = x;
@@ -285,7 +285,7 @@ export namespace Mat2 {
   /**
    * Transform a vector by the matrix (applies rotation/scale only, no translation).
    */
-  export const transformVector = (m: Mat2Tuple, out: Vec2Tuple): void => {
+  export const transformVector = (m: Mat2, out: Vec2): void => {
     const x = m[A] * out[0] + m[C] * out[1];
     const y = m[B] * out[0] + m[D] * out[1];
     out[0] = x;
@@ -297,8 +297,8 @@ export namespace Mat2 {
    * Returns false if the matrix is not invertible.
    */
   export const inverseTransformPoint = (
-    m: Mat2Tuple,
-    out: Vec2Tuple
+    m: Mat2,
+    out: Vec2
   ): boolean => {
     const det = determinant(m);
     if (det === 0) {
@@ -317,7 +317,7 @@ export namespace Mat2 {
   /**
    * Check if two matrices are approximately equal.
    */
-  export const equals = (a: Mat2Tuple, b: Mat2Tuple, epsilon = 1e-6): boolean =>
+  export const equals = (a: Mat2, b: Mat2, epsilon = 1e-6): boolean =>
     Math.abs(a[A] - b[A]) < epsilon &&
     Math.abs(a[B] - b[B]) < epsilon &&
     Math.abs(a[C] - b[C]) < epsilon &&
@@ -328,7 +328,7 @@ export namespace Mat2 {
   /**
    * Check if matrix is the identity matrix.
    */
-  export const isIdentity = (m: Mat2Tuple, epsilon = 1e-6): boolean =>
+  export const isIdentity = (m: Mat2, epsilon = 1e-6): boolean =>
     Math.abs(m[A] - 1) < epsilon &&
     Math.abs(m[B]) < epsilon &&
     Math.abs(m[C]) < epsilon &&
@@ -339,14 +339,14 @@ export namespace Mat2 {
   /**
    * Convert to CSS matrix() string.
    */
-  export const toCssMatrix = (m: Mat2Tuple): string =>
+  export const toCssMatrix = (m: Mat2): string =>
     `matrix(${m[A]}, ${m[B]}, ${m[C]}, ${m[D]}, ${m[TX]}, ${m[TY]})`;
 
   /**
    * Parse a CSS matrix() or matrix3d() string.
    * Returns null if parsing fails.
    */
-  export const fromCssMatrix = (css: string): Mat2Tuple | null => {
+  export const fromCssMatrix = (css: string): Mat2 | null => {
     const match = css.match(
       /matrix\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/
     );
@@ -357,9 +357,6 @@ export namespace Mat2 {
     if (values.some(isNaN)) {
       return null;
     }
-    return values as Mat2Tuple;
+    return values as Mat2;
   };
 }
-
-// Re-export type with same name for convenience
-export type Mat2 = Mat2Tuple;

@@ -42,7 +42,7 @@ export function intersectPoint(
 
     // Check HitGeometry if present, otherwise use block intersection
     if (hasComponent(ctx, entityId, HitGeometry)) {
-      if (!HitGeometry.containsPoint(ctx, entityId, point)) {
+      if (!HitGeometry.containsPointWorld(ctx, entityId, point)) {
         continue;
       }
     } else {
@@ -96,7 +96,7 @@ export function intersectAabb(
 
     // Check HitGeometry if present, otherwise use block intersection
     if (hasComponent(ctx, entityId, HitGeometry)) {
-      if (HitGeometry.intersectsAabb(ctx, entityId, bounds)) {
+      if (HitGeometry.intersectsAabbWorld(ctx, entityId, bounds)) {
         intersecting.push(entityId);
       }
     } else {

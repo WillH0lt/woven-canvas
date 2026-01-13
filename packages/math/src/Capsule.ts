@@ -1,6 +1,4 @@
-import type { Vec2 } from "./Vec2";
-import { Vec2 as Vec2Ns } from "./Vec2";
-import type { AabbTuple } from "./Aabb";
+import { Vec2 } from "./Vec2";
 import { Aabb } from "./Aabb";
 
 /**
@@ -10,7 +8,7 @@ import { Aabb } from "./Aabb";
  *
  * Tuple format: [ax, ay, bx, by, radius]
  */
-export type CapsuleTuple = [
+export type Capsule = [
   ax: number,
   ay: number,
   bx: number,
@@ -35,12 +33,12 @@ export namespace Capsule {
     bx: number,
     by: number,
     radius: number
-  ): CapsuleTuple => [ax, ay, bx, by, radius];
+  ): Capsule => [ax, ay, bx, by, radius];
 
-  export const fromPoints = (a: Vec2, b: Vec2, radius: number): CapsuleTuple =>
+  export const fromPoints = (a: Vec2, b: Vec2, radius: number): Capsule =>
     [a[0], a[1], b[0], b[1], radius];
 
-  export const clone = (c: CapsuleTuple): CapsuleTuple => [
+  export const clone = (c: Capsule): Capsule => [
     c[0],
     c[1],
     c[2],
@@ -50,16 +48,16 @@ export namespace Capsule {
 
   // Getters
 
-  export const pointA = (c: CapsuleTuple): Vec2 => [c[CAPSULE_AX], c[CAPSULE_AY]];
-  export const pointB = (c: CapsuleTuple): Vec2 => [c[CAPSULE_BX], c[CAPSULE_BY]];
-  export const radius = (c: CapsuleTuple): number => c[CAPSULE_RADIUS];
+  export const pointA = (c: Capsule): Vec2 => [c[CAPSULE_AX], c[CAPSULE_AY]];
+  export const pointB = (c: Capsule): Vec2 => [c[CAPSULE_BX], c[CAPSULE_BY]];
+  export const radius = (c: Capsule): number => c[CAPSULE_RADIUS];
 
-  export const center = (c: CapsuleTuple): Vec2 => [
+  export const center = (c: Capsule): Vec2 => [
     (c[CAPSULE_AX] + c[CAPSULE_BX]) / 2,
     (c[CAPSULE_AY] + c[CAPSULE_BY]) / 2,
   ];
 
-  export const length = (c: CapsuleTuple): number => {
+  export const length = (c: Capsule): number => {
     const dx = c[CAPSULE_BX] - c[CAPSULE_AX];
     const dy = c[CAPSULE_BY] - c[CAPSULE_AY];
     return Math.hypot(dx, dy);
@@ -68,7 +66,7 @@ export namespace Capsule {
   /**
    * Get the axis-aligned bounding box of the capsule.
    */
-  export const bounds = (c: CapsuleTuple): AabbTuple => {
+  export const bounds = (c: Capsule): Aabb => {
     const r = c[CAPSULE_RADIUS];
     return [
       Math.min(c[CAPSULE_AX], c[CAPSULE_BX]) - r,
@@ -82,7 +80,7 @@ export namespace Capsule {
    * Get extrema points of the capsule for AABB computation.
    * Returns the corners of the bounding box around each endpoint circle.
    */
-  export const getExtrema = (c: CapsuleTuple): Vec2[] => {
+  export const getExtrema = (c: Capsule): Vec2[] => {
     const ax = c[CAPSULE_AX];
     const ay = c[CAPSULE_AY];
     const bx = c[CAPSULE_BX];
@@ -129,7 +127,7 @@ export namespace Capsule {
    * Get the closest point on the capsule's center line to a given point.
    */
   export const closestPointOnCenterLine = (
-    c: CapsuleTuple,
+    c: Capsule,
     point: Vec2
   ): Vec2 => {
     const t = closestPointOnSegmentParam(
@@ -149,15 +147,15 @@ export namespace Capsule {
   /**
    * Get the distance from a point to the capsule's center line.
    */
-  export const distanceToPoint = (c: CapsuleTuple, point: Vec2): number => {
+  export const distanceToPoint = (c: Capsule, point: Vec2): number => {
     const closest = closestPointOnCenterLine(c, point);
-    return Vec2Ns.distance(closest, point);
+    return Vec2.distance(closest, point);
   };
 
   /**
    * Check if a point is inside the capsule (within radius of center line).
    */
-  export const containsPoint = (c: CapsuleTuple, point: Vec2): boolean => {
+  export const containsPoint = (c: Capsule, point: Vec2): boolean => {
     return distanceToPoint(c, point) <= c[CAPSULE_RADIUS];
   };
 
@@ -165,7 +163,7 @@ export namespace Capsule {
    * Check if the capsule intersects an axis-aligned bounding box.
    * Uses separating axis theorem with the capsule approximated as an OBB + end caps.
    */
-  export const intersectsAabb = (c: CapsuleTuple, aabb: AabbTuple): boolean => {
+  export const intersectsAabb = (c: Capsule, aabb: Aabb): boolean => {
     const r = c[CAPSULE_RADIUS];
 
     // First do a quick AABB vs AABB check using capsule bounds
@@ -219,8 +217,8 @@ export namespace Capsule {
    * Check if two capsules intersect.
    */
   export const intersectsCapsule = (
-    c1: CapsuleTuple,
-    c2: CapsuleTuple
+    c1: Capsule,
+    c2: Capsule
   ): boolean => {
     // Two capsules intersect if the distance between their center lines
     // is less than the sum of their radii
@@ -306,7 +304,7 @@ export namespace Capsule {
   // Operations (mutating)
 
   export const set = (
-    out: CapsuleTuple,
+    out: Capsule,
     ax: number,
     ay: number,
     bx: number,
@@ -320,7 +318,7 @@ export namespace Capsule {
     out[CAPSULE_RADIUS] = radius;
   };
 
-  export const copy = (out: CapsuleTuple, c: CapsuleTuple): void => {
+  export const copy = (out: Capsule, c: Capsule): void => {
     out[CAPSULE_AX] = c[CAPSULE_AX];
     out[CAPSULE_AY] = c[CAPSULE_AY];
     out[CAPSULE_BX] = c[CAPSULE_BX];
@@ -328,7 +326,7 @@ export namespace Capsule {
     out[CAPSULE_RADIUS] = c[CAPSULE_RADIUS];
   };
 
-  export const translate = (out: CapsuleTuple, delta: Vec2): void => {
+  export const translate = (out: Capsule, delta: Vec2): void => {
     out[CAPSULE_AX] += delta[0];
     out[CAPSULE_AY] += delta[1];
     out[CAPSULE_BX] += delta[0];
@@ -343,7 +341,7 @@ export namespace Capsule {
    * @param tEnd - End parameter (0 = point A, 1 = point B)
    */
   export const trim = (
-    out: CapsuleTuple,
+    out: Capsule,
     tStart: number,
     tEnd: number
   ): void => {
@@ -362,6 +360,3 @@ export namespace Capsule {
     out[CAPSULE_BY] = ay + tEnd * dy;
   };
 }
-
-// Re-export type with same name for convenience
-export type Capsule = CapsuleTuple;

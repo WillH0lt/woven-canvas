@@ -1,5 +1,5 @@
 import { hasComponent, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { Aabb as AabbNs, type Aabb as AabbTuple } from "@infinitecanvas/math";
+import { Aabb } from "@infinitecanvas/math";
 import { Block } from "../components/Block";
 import { HitGeometry } from "../components/HitGeometry";
 
@@ -15,13 +15,13 @@ import { HitGeometry } from "../components/HitGeometry";
 export function computeAabb(
   ctx: Context,
   entityId: EntityId,
-  out: AabbTuple
+  out: Aabb
 ): void {
   if (hasComponent(ctx, entityId, HitGeometry)) {
-    const pts = HitGeometry.getExtrema(ctx, entityId);
-    AabbNs.setFromPoints(out, pts);
+    const pts = HitGeometry.getExtremaWorld(ctx, entityId);
+    Aabb.setFromPoints(out, pts);
   } else {
     const corners = Block.getCorners(ctx, entityId);
-    AabbNs.setFromPoints(out, corners);
+    Aabb.setFromPoints(out, corners);
   }
 }

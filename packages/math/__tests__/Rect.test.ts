@@ -1,14 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { Rect } from "../src/Rect";
 import { Vec2 } from "../src/Vec2";
+import { Mat2 } from "../src/Mat2";
 
 describe("Rect UV conversions", () => {
-  const EPSILON = 1e-10;
-
-  const approxEqual = (a: Vec2, b: Vec2) => {
-    return Math.abs(a[0] - b[0]) < EPSILON && Math.abs(a[1] - b[1]) < EPSILON;
-  };
-
   describe("uvToWorld", () => {
     it("should map UV (0,0) to top-left corner for unrotated rect", () => {
       const position: Vec2 = [100, 200];
@@ -503,6 +498,172 @@ describe("Rect UV conversions", () => {
 
       const outside4 = Rect.uvToWorld(position, size, rotateZ, [0.5, 1.5]);
       expect(Rect.containsPoint(position, size, rotateZ, outside4)).toBe(false);
+    });
+  });
+
+  describe("getUvToWorldMatrix", () => {
+    it("should produce same results as uvToWorld for unrotated rect", () => {
+      const position: Vec2 = [100, 200];
+      const size: Vec2 = [50, 30];
+      const rotateZ = 0;
+      const matrix: Mat2 = [1, 0, 0, 1, 0, 0];
+
+      Rect.getUvToWorldMatrix(position, size, rotateZ, matrix);
+
+      // Test multiple UV points
+      const uvPoints: Vec2[] = [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1],
+        [0.5, 0.5],
+        [0.25, 0.75],
+      ];
+
+      for (const uv of uvPoints) {
+        const expected = Rect.uvToWorld(position, size, rotateZ, uv);
+        const point: Vec2 = [uv[0], uv[1]];
+        Mat2.transformPoint(matrix, point);
+
+        expect(point[0]).toBeCloseTo(expected[0], 10);
+        expect(point[1]).toBeCloseTo(expected[1], 10);
+      }
+    });
+
+    it("should produce same results as uvToWorld for 45-degree rotated rect", () => {
+      const position: Vec2 = [100, 200];
+      const size: Vec2 = [50, 30];
+      const rotateZ = Math.PI / 4;
+      const matrix: Mat2 = [1, 0, 0, 1, 0, 0];
+
+      Rect.getUvToWorldMatrix(position, size, rotateZ, matrix);
+
+      const uvPoints: Vec2[] = [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1],
+        [0.5, 0.5],
+        [0.25, 0.75],
+      ];
+
+      for (const uv of uvPoints) {
+        const expected = Rect.uvToWorld(position, size, rotateZ, uv);
+        const point: Vec2 = [uv[0], uv[1]];
+        Mat2.transformPoint(matrix, point);
+
+        expect(point[0]).toBeCloseTo(expected[0], 10);
+        expect(point[1]).toBeCloseTo(expected[1], 10);
+      }
+    });
+
+    it("should produce same results as uvToWorld for 90-degree rotated rect", () => {
+      const position: Vec2 = [100, 200];
+      const size: Vec2 = [50, 30];
+      const rotateZ = Math.PI / 2;
+      const matrix: Mat2 = [1, 0, 0, 1, 0, 0];
+
+      Rect.getUvToWorldMatrix(position, size, rotateZ, matrix);
+
+      const uvPoints: Vec2[] = [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1],
+        [0.5, 0.5],
+      ];
+
+      for (const uv of uvPoints) {
+        const expected = Rect.uvToWorld(position, size, rotateZ, uv);
+        const point: Vec2 = [uv[0], uv[1]];
+        Mat2.transformPoint(matrix, point);
+
+        expect(point[0]).toBeCloseTo(expected[0], 10);
+        expect(point[1]).toBeCloseTo(expected[1], 10);
+      }
+    });
+
+    it("should handle non-square rect with rotation", () => {
+      const position: Vec2 = [0, 0];
+      const size: Vec2 = [200, 50]; // wide rect
+      const rotateZ = Math.PI / 6; // 30 degrees
+      const matrix: Mat2 = [1, 0, 0, 1, 0, 0];
+
+      Rect.getUvToWorldMatrix(position, size, rotateZ, matrix);
+
+      const uvPoints: Vec2[] = [
+        [0, 0],
+        [1, 1],
+        [0.2, 0.8],
+      ];
+
+      for (const uv of uvPoints) {
+        const expected = Rect.uvToWorld(position, size, rotateZ, uv);
+        const point: Vec2 = [uv[0], uv[1]];
+        Mat2.transformPoint(matrix, point);
+
+        expect(point[0]).toBeCloseTo(expected[0], 10);
+        expect(point[1]).toBeCloseTo(expected[1], 10);
+      }
+    });
+
+    it("should map corners correctly", () => {
+      const position: Vec2 = [100, 200];
+      const size: Vec2 = [50, 30];
+      const rotateZ = Math.PI / 4;
+      const matrix: Mat2 = [1, 0, 0, 1, 0, 0];
+
+      Rect.getUvToWorldMatrix(position, size, rotateZ, matrix);
+
+      const corners: [Vec2, Vec2, Vec2, Vec2] = [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+      ];
+      Rect.getCorners(position, size, rotateZ, corners);
+
+      // UV (0,0) should map to top-left corner
+      const tl: Vec2 = [0, 0];
+      Mat2.transformPoint(matrix, tl);
+      expect(tl[0]).toBeCloseTo(corners[0][0], 10);
+      expect(tl[1]).toBeCloseTo(corners[0][1], 10);
+
+      // UV (1,0) should map to top-right corner
+      const tr: Vec2 = [1, 0];
+      Mat2.transformPoint(matrix, tr);
+      expect(tr[0]).toBeCloseTo(corners[1][0], 10);
+      expect(tr[1]).toBeCloseTo(corners[1][1], 10);
+
+      // UV (1,1) should map to bottom-right corner
+      const br: Vec2 = [1, 1];
+      Mat2.transformPoint(matrix, br);
+      expect(br[0]).toBeCloseTo(corners[2][0], 10);
+      expect(br[1]).toBeCloseTo(corners[2][1], 10);
+
+      // UV (0,1) should map to bottom-left corner
+      const bl: Vec2 = [0, 1];
+      Mat2.transformPoint(matrix, bl);
+      expect(bl[0]).toBeCloseTo(corners[3][0], 10);
+      expect(bl[1]).toBeCloseTo(corners[3][1], 10);
+    });
+
+    it("should not mutate position or size", () => {
+      const position: Vec2 = [100, 200];
+      const size: Vec2 = [50, 30];
+      const rotateZ = Math.PI / 4;
+      const matrix: Mat2 = [1, 0, 0, 1, 0, 0];
+      const origPosX = position[0];
+      const origPosY = position[1];
+      const origSizeX = size[0];
+      const origSizeY = size[1];
+
+      Rect.getUvToWorldMatrix(position, size, rotateZ, matrix);
+
+      expect(position[0]).toBe(origPosX);
+      expect(position[1]).toBe(origPosY);
+      expect(size[0]).toBe(origSizeX);
+      expect(size[1]).toBe(origSizeY);
     });
   });
 });

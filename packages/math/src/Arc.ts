@@ -10,7 +10,7 @@ import type { Aabb } from "./Aabb";
  * - c (indices 4-5): End point
  * - thickness (index 6): Line thickness
  */
-export type ArcTuple = [
+export type Arc = [
   aX: number,
   aY: number,
   bX: number,
@@ -54,11 +54,11 @@ export namespace Arc {
     cX: number,
     cY: number,
     thickness: number
-  ): ArcTuple => [aX, aY, bX, bY, cX, cY, thickness];
+  ): Arc => [aX, aY, bX, bY, cX, cY, thickness];
 
-  export const zero = (): ArcTuple => [0, 0, 0, 0, 0, 0, 0];
+  export const zero = (): Arc => [0, 0, 0, 0, 0, 0, 0];
 
-  export const clone = (arc: ArcTuple): ArcTuple => [
+  export const clone = (arc: Arc): Arc => [
     arc[0],
     arc[1],
     arc[2],
@@ -70,17 +70,17 @@ export namespace Arc {
 
   // Getters
 
-  export const a = (arc: ArcTuple): Vec2 => [arc[AX], arc[AY]];
-  export const b = (arc: ArcTuple): Vec2 => [arc[BX], arc[BY]];
-  export const c = (arc: ArcTuple): Vec2 => [arc[CX], arc[CY]];
-  export const thickness = (arc: ArcTuple): number => arc[THICKNESS];
+  export const a = (arc: Arc): Vec2 => [arc[AX], arc[AY]];
+  export const b = (arc: Arc): Vec2 => [arc[BX], arc[BY]];
+  export const c = (arc: Arc): Vec2 => [arc[CX], arc[CY]];
+  export const thickness = (arc: Arc): number => arc[THICKNESS];
 
   // Computed properties
 
   /**
    * Check if three points are collinear (no valid circle can be formed).
    */
-  export const isCollinear = (arc: ArcTuple): boolean => {
+  export const isCollinear = (arc: Arc): boolean => {
     const det =
       (arc[AX] - arc[CX]) * (arc[BY] - arc[CY]) -
       (arc[BX] - arc[CX]) * (arc[AY] - arc[CY]);
@@ -91,7 +91,7 @@ export namespace Arc {
    * Compute the center of the circle passing through points a, b, c.
    * Returns null if points are collinear.
    */
-  export const computeCenter = (arc: ArcTuple): Vec2 | null => {
+  export const computeCenter = (arc: Arc): Vec2 | null => {
     const x1 = arc[AX],
       y1 = arc[AY];
     const x2 = arc[BX],
@@ -123,7 +123,7 @@ export namespace Arc {
    * Compute all derived properties of an arc.
    * Returns null if points are collinear.
    */
-  export const compute = (arc: ArcTuple): ArcComputed | null => {
+  export const compute = (arc: Arc): ArcComputed | null => {
     const center = computeCenter(arc);
     if (!center) return null;
 
@@ -176,7 +176,7 @@ export namespace Arc {
   /**
    * Check if a point lies on the arc (within thickness).
    */
-  export const containsPoint = (arc: ArcTuple, point: Vec2): boolean => {
+  export const containsPoint = (arc: Arc, point: Vec2): boolean => {
     const computed = compute(arc);
     if (!computed) return false;
 
@@ -197,7 +197,7 @@ export namespace Arc {
   /**
    * Check if the arc intersects an AABB.
    */
-  export const intersectsAabb = (arc: ArcTuple, aabb: Aabb): boolean => {
+  export const intersectsAabb = (arc: Arc, aabb: Aabb): boolean => {
     const computed = compute(arc);
     if (!computed) return false;
 
@@ -249,7 +249,7 @@ export namespace Arc {
    * Check if the arc intersects a capsule (line segment with radius).
    */
   export const intersectsCapsule = (
-    arc: ArcTuple,
+    arc: Arc,
     capsuleA: Vec2,
     capsuleB: Vec2,
     capsuleRadius: number
@@ -283,7 +283,7 @@ export namespace Arc {
    * Find intersection points between the arc and a line segment.
    */
   export const intersectSegment = (
-    arc: ArcTuple,
+    arc: Arc,
     p1: Vec2,
     p2: Vec2
   ): Vec2[] => {
@@ -303,7 +303,7 @@ export namespace Arc {
    * Convert a point on the arc to a parametric value (0 = start, 1 = end).
    * Returns null if the point is not on the arc.
    */
-  export const pointToParametric = (arc: ArcTuple, point: Vec2): number | null => {
+  export const pointToParametric = (arc: Arc, point: Vec2): number | null => {
     const computed = compute(arc);
     if (!computed) return null;
 
@@ -329,7 +329,7 @@ export namespace Arc {
   /**
    * Convert a parametric value to a point on the arc.
    */
-  export const parametricToPoint = (arc: ArcTuple, t: number): Vec2 => {
+  export const parametricToPoint = (arc: Arc, t: number): Vec2 => {
     const computed = compute(arc);
     if (!computed) {
       // Fallback to linear interpolation for collinear points
@@ -348,7 +348,7 @@ export namespace Arc {
   /**
    * Get the arc length.
    */
-  export const length = (arc: ArcTuple): number => {
+  export const length = (arc: Arc): number => {
     const computed = compute(arc);
     if (!computed) {
       // Fallback to straight-line distance for collinear points
@@ -360,7 +360,7 @@ export namespace Arc {
   /**
    * Get the tangent direction at a parametric position on the arc.
    */
-  export const directionAt = (arc: ArcTuple, t: number): Vec2 => {
+  export const directionAt = (arc: Arc, t: number): Vec2 => {
     const computed = compute(arc);
     if (!computed) {
       // Fallback to line direction for collinear points
@@ -387,7 +387,7 @@ export namespace Arc {
   /**
    * Get extrema points of the arc (endpoints plus any cardinal direction points).
    */
-  export const extremaPoints = (arc: ArcTuple, rotation = 0): Vec2[] => {
+  export const extremaPoints = (arc: Arc, rotation = 0): Vec2[] => {
     const computed = compute(arc);
     const points: Vec2[] = [a(arc), c(arc)];
 
@@ -412,7 +412,7 @@ export namespace Arc {
    * Get extrema points of the arc expanded by thickness for AABB computation.
    * Returns corner points around each extrema point.
    */
-  export const getExtrema = (arc: ArcTuple): Vec2[] => {
+  export const getExtrema = (arc: Arc): Vec2[] => {
     const extrema = extremaPoints(arc);
     const r = arc[THICKNESS] / 2;
     const result: Vec2[] = [];
@@ -430,7 +430,7 @@ export namespace Arc {
   // Operations (mutating)
 
   export const set = (
-    out: ArcTuple,
+    out: Arc,
     aX: number,
     aY: number,
     bX: number,
@@ -448,7 +448,7 @@ export namespace Arc {
     out[THICKNESS] = thickness;
   };
 
-  export const copy = (out: ArcTuple, arc: ArcTuple): void => {
+  export const copy = (out: Arc, arc: Arc): void => {
     out[0] = arc[0];
     out[1] = arc[1];
     out[2] = arc[2];
@@ -458,22 +458,22 @@ export namespace Arc {
     out[6] = arc[6];
   };
 
-  export const setA = (out: ArcTuple, x: number, y: number): void => {
+  export const setA = (out: Arc, x: number, y: number): void => {
     out[AX] = x;
     out[AY] = y;
   };
 
-  export const setB = (out: ArcTuple, x: number, y: number): void => {
+  export const setB = (out: Arc, x: number, y: number): void => {
     out[BX] = x;
     out[BY] = y;
   };
 
-  export const setC = (out: ArcTuple, x: number, y: number): void => {
+  export const setC = (out: Arc, x: number, y: number): void => {
     out[CX] = x;
     out[CY] = y;
   };
 
-  export const setThickness = (out: ArcTuple, value: number): void => {
+  export const setThickness = (out: Arc, value: number): void => {
     out[THICKNESS] = value;
   };
 
@@ -481,7 +481,7 @@ export namespace Arc {
    * Set arc from three Vec2 points and thickness.
    */
   export const setFromPoints = (
-    out: ArcTuple,
+    out: Arc,
     a: Vec2,
     b: Vec2,
     c: Vec2,
@@ -499,7 +499,7 @@ export namespace Arc {
   /**
    * Trim the arc to a portion between two parametric values.
    */
-  export const trim = (out: ArcTuple, tStart: number, tEnd: number): void => {
+  export const trim = (out: Arc, tStart: number, tEnd: number): void => {
     const newA = parametricToPoint(out, tStart);
     const newB = parametricToPoint(out, (tStart + tEnd) / 2);
     const newC = parametricToPoint(out, tEnd);
@@ -523,7 +523,7 @@ function normalizeAngle(angle: number): number {
   return angle;
 }
 
-function computeArcAngle(arc: ArcTuple, center: Vec2): number {
+function computeArcAngle(arc: Arc, center: Vec2): number {
   const ax = arc[AX],
     ay = arc[AY];
   const bx = arc[BX],
@@ -620,6 +620,3 @@ function segmentCircleIntersections(
 
   return points;
 }
-
-// Re-export type with same name for convenience
-export type Arc = ArcTuple;

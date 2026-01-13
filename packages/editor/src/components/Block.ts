@@ -1,6 +1,6 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
 import { EditorComponentDef } from "../EditorComponentDef";
-import { Vec2, Rect, Aabb } from "@infinitecanvas/math";
+import { Vec2, Rect, Aabb, Mat2 } from "@infinitecanvas/math";
 
 // Pre-allocated arrays for SAT intersection to avoid allocations
 const _aabbCorners: [Vec2, Vec2, Vec2, Vec2] = [
@@ -191,6 +191,20 @@ class BlockDef extends EditorComponentDef<typeof BlockSchema> {
   uvToWorld(ctx: Context, entityId: EntityId, uv: Vec2): Vec2 {
     const { position, size, rotateZ } = this.read(ctx, entityId);
     return Rect.uvToWorld(position, size, rotateZ, uv);
+  }
+
+  /**
+   * Get the UV-to-world transformation matrix for a block.
+   * More efficient than multiple uvToWorld() calls since sin/cos is computed once.
+   * Use with Mat2.transformPoint() to transform UV coordinates to world.
+   *
+   * @param ctx - ECS context
+   * @param entityId - Entity ID
+   * @param out - Output matrix to write to [a, b, c, d, tx, ty]
+   */
+  getUvToWorldMatrix(ctx: Context, entityId: EntityId, out: Mat2): void {
+    const { position, size, rotateZ } = this.read(ctx, entityId);
+    Rect.getUvToWorldMatrix(position, size, rotateZ, out);
   }
 }
 

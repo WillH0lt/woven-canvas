@@ -1,5 +1,6 @@
 import { Vec2 } from "./Vec2";
 import type { Aabb } from "./Aabb";
+import type { Mat2 } from "./Mat2";
 
 /**
  * A rectangle defined by position [x, y] and size [width, height].
@@ -164,6 +165,43 @@ export namespace Rect {
     Vec2.addScalar(result, 0.5);
 
     return result;
+  };
+
+  /**
+   * Get the transformation matrix that converts UV coordinates to world coordinates.
+   * This is more efficient than calling uvToWorld() multiple times because
+   * it computes sin/cos only once.
+   *
+   * The transform is: Translate(center) * Rotate(rotateZ) * Scale(size) * Translate(-0.5, -0.5)
+   *
+   * @param position - Rectangle position [x, y]
+   * @param size - Rectangle size [width, height]
+   * @param rotateZ - Rotation around center in radians
+   * @param out - Output matrix to write to
+   */
+  export const getUvToWorldMatrix = (
+    position: Vec2,
+    size: Vec2,
+    rotateZ: number,
+    out: Mat2
+  ): void => {
+    const cos = Math.cos(rotateZ);
+    const sin = Math.sin(rotateZ);
+    const w = size[X];
+    const h = size[Y];
+    const cx = position[X] + w / 2;
+    const cy = position[Y] + h / 2;
+
+    // Combined matrix: T(center) * R(rotateZ) * S(size) * T(-0.5, -0.5)
+    // a = w * cos, b = w * sin, c = -h * sin, d = h * cos
+    // tx = cx + (-0.5 * w * cos) + (0.5 * h * sin) = cx - 0.5 * (w * cos - h * sin)
+    // ty = cy + (-0.5 * w * sin) + (-0.5 * h * cos) = cy - 0.5 * (w * sin + h * cos)
+    out[0] = w * cos; // a
+    out[1] = w * sin; // b
+    out[2] = -h * sin; // c
+    out[3] = h * cos; // d
+    out[4] = cx - 0.5 * (w * cos - h * sin); // tx
+    out[5] = cy - 0.5 * (w * sin + h * cos); // ty
   };
 
   // ============================================

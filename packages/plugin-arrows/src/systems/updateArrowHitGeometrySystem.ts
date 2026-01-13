@@ -15,13 +15,11 @@ import { Arc, Capsule, type Vec2 } from "@infinitecanvas/math";
 import { ArcArrow, ElbowArrow, ArrowTrim } from "../components";
 import { closestPointToPoint } from "../helpers";
 
-// Query for arrows that need hit geometry updates
-const arcArrowsQuery = defineQuery((q) => q.tracking(ArcArrow, Block, Connector));
-const elbowArrowsQuery = defineQuery((q) =>
-  q.tracking(ElbowArrow, Block, Connector)
-);
-
 const MIN_HIT_THICKNESS = 20;
+
+// Query for arrows that need hit geometry updates
+const arcArrowsQuery = defineQuery((q) => q.tracking(ArcArrow, Connector));
+const elbowArrowsQuery = defineQuery((q) => q.tracking(ElbowArrow, Connector));
 
 /**
  * Update arrow hit geometry system.
@@ -46,6 +44,7 @@ export const updateArrowHitGeometrySystem = defineEditorSystem(
 
 /**
  * Update hit geometry for an arc arrow.
+ * Writes UV coordinates directly to HitGeometry (positions in UV, thickness in world units).
  */
 function updateArcArrowHitGeometry(ctx: Context, entityId: EntityId): void {
   // Ensure HitGeometry component exists
@@ -58,14 +57,14 @@ function updateArcArrowHitGeometry(ctx: Context, entityId: EntityId): void {
     addComponent(ctx, entityId, ArrowTrim, {});
   }
 
-  const { a, b, c } = ArcArrow.getWorldPoints(ctx, entityId);
-  const thickness = Math.max(ArcArrow.getThickness(ctx, entityId), MIN_HIT_THICKNESS);
+  // Copy arc directly from ArcArrow to HitGeometry (both use same UV format)
+  const arcArrow = ArcArrow.read(ctx, entityId);
+  const arc = Arc.clone(arcArrow.value);
+  // Ensure minimum hit thickness for easier selection
+  arc[6] = Math.max(arc[6], MIN_HIT_THICKNESS);
 
-  // Use arc hit geometry for proper curved collision detection
-  const hitGeometry = HitGeometry.write(ctx, entityId);
-  hitGeometry.capsuleCount = 0;
-  hitGeometry.hasArc = true;
-  Arc.setFromPoints(hitGeometry.hitArc, a, b, c, thickness);
+  HitGeometry.clear(ctx, entityId);
+  HitGeometry.addArc(ctx, entityId, arc);
 
   // Update trim based on connected blocks
   updateArcArrowTrim(ctx, entityId);
@@ -73,6 +72,7 @@ function updateArcArrowHitGeometry(ctx: Context, entityId: EntityId): void {
 
 /**
  * Update hit geometry for an elbow arrow.
+ * Writes UV coordinates directly to HitGeometry (positions in UV, radius in world units).
  */
 function updateElbowArrowHitGeometry(ctx: Context, entityId: EntityId): void {
   // Ensure HitGeometry component exists
@@ -86,20 +86,23 @@ function updateElbowArrowHitGeometry(ctx: Context, entityId: EntityId): void {
   }
 
   const arrow = ElbowArrow.read(ctx, entityId);
-  const points = ElbowArrow.getWorldPoints(ctx, entityId);
-
+  // Ensure minimum hit thickness for easier selection
   const thickness = Math.max(arrow.thickness, MIN_HIT_THICKNESS);
+  // Get UV points directly (no world transform)
+  const uvPoints = ElbowArrow.getPoints(ctx, entityId);
 
-  // Create a capsule for each line segment
+  // Create a capsule for each line segment using UV coordinates
   const hitGeometry = HitGeometry.write(ctx, entityId);
 
-  const segmentCount = Math.min(points.length - 1, MAX_HIT_CAPSULES);
+  const segmentCount = Math.min(uvPoints.length - 1, MAX_HIT_CAPSULES);
   hitGeometry.capsuleCount = segmentCount;
+  hitGeometry.arcCount = 0;
 
   for (let i = 0; i < segmentCount; i++) {
-    const p0 = points[i];
-    const p1 = points[i + 1];
+    const p0 = uvPoints[i];
+    const p1 = uvPoints[i + 1];
 
+    // Positions in UV, radius in world units
     const capsule = Capsule.create(p0[0], p0[1], p1[0], p1[1], thickness / 2);
     HitGeometry.setCapsuleAt(ctx, entityId, i, capsule);
   }
@@ -125,15 +128,17 @@ function updateArcArrowTrim(ctx: Context, entityId: EntityId): void {
   trim.tEnd = endTrim;
 
   // Reset if visible portion is too small
-  if ((1 - endTrim) - startTrim < 0.1) {
+  if (1 - endTrim - startTrim < 0.1) {
     trim.tStart = 0;
     trim.tEnd = 0;
   }
 
   // Trim the hit arc geometry
-  const hitGeometry = HitGeometry.write(ctx, entityId);
-  if (hitGeometry.hasArc) {
-    Arc.trim(hitGeometry.hitArc, trim.tStart, 1 - trim.tEnd);
+  const hitGeometry = HitGeometry.read(ctx, entityId);
+  for (let i = 0; i < hitGeometry.arcCount; i++) {
+    const arc = HitGeometry.getArcAt(ctx, entityId, i);
+    Arc.trim(arc, trim.tStart, 1 - trim.tEnd);
+    HitGeometry.setArcAt(ctx, entityId, i, arc);
   }
 }
 
@@ -155,8 +160,18 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
   const firstSegmentEnd = points[1];
   const lastSegmentStart = points[points.length - 2];
 
-  const startTrim = calculateLineTrim(ctx, connector.startBlock, start, firstSegmentEnd);
-  const endTrim = calculateLineTrim(ctx, connector.endBlock, end, lastSegmentStart);
+  const startTrim = calculateLineTrim(
+    ctx,
+    connector.startBlock,
+    start,
+    firstSegmentEnd
+  );
+  const endTrim = calculateLineTrim(
+    ctx,
+    connector.endBlock,
+    end,
+    lastSegmentStart
+  );
 
   trim.tStart = startTrim;
   trim.tEnd = endTrim;
