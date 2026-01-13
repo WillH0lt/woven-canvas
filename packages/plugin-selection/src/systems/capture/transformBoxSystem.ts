@@ -127,14 +127,15 @@ const transformBoxMachine = setup({
             target: TransformBoxState.None,
           },
           {
+            guard: "selectionIsTransformable",
+            actions: "showTransformBox",
+          },
+          {
             actions: "updateTransformBox",
           },
         ],
         pointerDown: {
           actions: "hideTransformBox",
-        },
-        pointerUp: {
-          actions: "showTransformBox",
         },
         click: {
           guard: and(["isOverTransformBox", "isSelectionEditable"]),
@@ -183,33 +184,36 @@ function checkSelectionEditable(ctx: Context): boolean {
  * - Showing/hiding transform box during pointer interactions
  * - Transitioning to edit mode on click
  */
-export const transformBoxSystem = defineEditorSystem({ phase: "capture" }, (ctx) => {
-  const events: TransformBoxEvent[] = [];
+export const transformBoxSystem = defineEditorSystem(
+  { phase: "capture" },
+  (ctx) => {
+    const events: TransformBoxEvent[] = [];
 
-  // Check for selection changes
-  const added = selectedBlocksQuery.added(ctx);
-  const removed = selectedBlocksQuery.removed(ctx);
+    // Check for selection changes
+    const added = selectedBlocksQuery.added(ctx);
+    const removed = selectedBlocksQuery.removed(ctx);
 
-  if (added.length > 0 || removed.length > 0) {
-    // Only include blocks selected by the current session
-    const selectedEntityIds = getLocalSelectedBlocks(ctx);
+    if (added.length > 0 || removed.length > 0) {
+      // Only include blocks selected by the current session
+      const selectedEntityIds = getLocalSelectedBlocks(ctx);
 
-    const selectionEvent: SelectionChangedEvent = {
-      type: "selectionChanged",
-      ctx,
-      selectedEntityIds,
-    };
-    events.push(selectionEvent);
+      const selectionEvent: SelectionChangedEvent = {
+        type: "selectionChanged",
+        ctx,
+        selectedEntityIds,
+      };
+      events.push(selectionEvent);
+    }
+
+    // Get pointer events with intersection data for select tool
+    const buttons = Controls.getButtons(ctx, "select");
+    const pointerEvents = getPointerInput(ctx, buttons);
+    events.push(...pointerEvents);
+
+    if (events.length === 0) return;
+
+    // Run machine through events - TransformBoxStateSingleton.run() handles
+    // reading current state, running the machine, and writing back
+    TransformBoxStateSingleton.run(ctx, transformBoxMachine, events);
   }
-
-  // Get pointer events with intersection data for select tool
-  const buttons = Controls.getButtons(ctx, "select");
-  const pointerEvents = getPointerInput(ctx, buttons);
-  events.push(...pointerEvents);
-
-  if (events.length === 0) return;
-
-  // Run machine through events - TransformBoxStateSingleton.run() handles
-  // reading current state, running the machine, and writing back
-  TransformBoxStateSingleton.run(ctx, transformBoxMachine, events);
-});
+);

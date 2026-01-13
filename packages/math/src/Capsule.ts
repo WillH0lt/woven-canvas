@@ -78,6 +78,29 @@ export namespace Capsule {
     ];
   };
 
+  /**
+   * Get extrema points of the capsule for AABB computation.
+   * Returns the corners of the bounding box around each endpoint circle.
+   */
+  export const getExtrema = (c: CapsuleTuple): Vec2[] => {
+    const ax = c[CAPSULE_AX];
+    const ay = c[CAPSULE_AY];
+    const bx = c[CAPSULE_BX];
+    const by = c[CAPSULE_BY];
+    const r = c[CAPSULE_RADIUS];
+
+    return [
+      [ax - r, ay - r],
+      [ax - r, ay + r],
+      [ax + r, ay - r],
+      [ax + r, ay + r],
+      [bx - r, by - r],
+      [bx - r, by + r],
+      [bx + r, by - r],
+      [bx + r, by + r],
+    ];
+  };
+
   // Collision detection
 
   /**

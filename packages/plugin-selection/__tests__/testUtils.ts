@@ -13,10 +13,11 @@ import {
   Synced,
   Block,
   Aabb,
-  Selected,
   RankBounds,
 } from "@infinitecanvas/editor";
+
 import { CURSORS } from "../src/cursors";
+import { Selected } from "../src/components";
 
 /**
  * Test resources interface for plugin tests.

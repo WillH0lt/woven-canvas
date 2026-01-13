@@ -144,6 +144,31 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
 
     return false;
   }
+
+  /**
+   * Get all extrema points of the hit geometry for AABB computation.
+   * Returns corner points expanded by radius/thickness for each capsule and arc.
+   * @param ctx - ECS context
+   * @param entityId - Entity ID
+   * @returns Array of extrema points
+   */
+  getExtrema(ctx: Context, entityId: EntityId): Vec2[] {
+    const hitGeometry = this.read(ctx, entityId);
+    const pts: Vec2[] = [];
+
+    // Add extrema from capsules
+    for (let i = 0; i < hitGeometry.capsuleCount; i++) {
+      const capsule = this.getCapsuleAt(ctx, entityId, i);
+      pts.push(...Capsule.getExtrema(capsule));
+    }
+
+    // Add extrema from arc
+    if (hitGeometry.hasArc) {
+      pts.push(...Arc.getExtrema(hitGeometry.hitArc));
+    }
+
+    return pts;
+  }
 }
 
 export const HitGeometry = new HitGeometryDef();

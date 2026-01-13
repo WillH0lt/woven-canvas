@@ -15,3 +15,6 @@ export {
 } from "./intersect";
 
 export { intersectCapsule } from "./intersectCapsule";
+
+// AABB computation
+export { computeAabb } from "./computeAabb";

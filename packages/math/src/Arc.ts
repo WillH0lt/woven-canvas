@@ -408,6 +408,25 @@ export namespace Arc {
     return points;
   };
 
+  /**
+   * Get extrema points of the arc expanded by thickness for AABB computation.
+   * Returns corner points around each extrema point.
+   */
+  export const getExtrema = (arc: ArcTuple): Vec2[] => {
+    const extrema = extremaPoints(arc);
+    const r = arc[THICKNESS] / 2;
+    const result: Vec2[] = [];
+
+    for (const pt of extrema) {
+      result.push([pt[0] - r, pt[1] - r]);
+      result.push([pt[0] - r, pt[1] + r]);
+      result.push([pt[0] + r, pt[1] - r]);
+      result.push([pt[0] + r, pt[1] + r]);
+    }
+
+    return result;
+  };
+
   // Operations (mutating)
 
   export const set = (

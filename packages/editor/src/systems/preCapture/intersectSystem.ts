@@ -8,11 +8,13 @@ import {
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Camera, Mouse, Controls, Intersect } from "../../singletons";
-import { Pointer, Block, Aabb, Hovered } from "../../components";
-import { intersectPoint } from "../../helpers";
+import { Pointer, Block, Aabb, Hovered, HitGeometry } from "../../components";
+import { computeAabb, intersectPoint } from "../../helpers";
 
 // Query for blocks that have changed (need AABB recalculation)
 const blocksChanged = defineQuery((q) => q.tracking(Block));
+
+const hitGeometryChanged = defineQuery((q) => q.tracking(HitGeometry));
 
 // Query for currently hovered entities
 const hoveredQuery = defineQuery((q) => q.with(Hovered));
@@ -61,6 +63,9 @@ function arraysEqual(a: number[], b: number[]): boolean {
   return true;
 }
 
+const added = new Set<number>();
+const changed = new Set<number>();
+
 /**
  * Pre-capture intersect system - computes AABBs and detects mouse-block intersections.
  *
@@ -76,28 +81,44 @@ export const intersectSystem = defineEditorSystem(
   { phase: "capture", priority: 100 },
   (ctx: Context) => {
     // Update AABBs for changed blocks
-    const added = blocksChanged.added(ctx);
-    const changed = blocksChanged.changed(ctx);
+    added.clear();
+    for (const entityId of blocksChanged.added(ctx)) {
+      added.add(entityId);
+    }
+    for (const entityId of hitGeometryChanged.added(ctx)) {
+      added.add(entityId);
+    }
+
+    changed.clear();
+    for (const entityId of blocksChanged.changed(ctx)) {
+      changed.add(entityId);
+    }
+    for (const entityId of hitGeometryChanged.changed(ctx)) {
+      changed.add(entityId);
+    }
 
     for (const entityId of added) {
       // Ensure block has Aabb component
       if (!hasComponent(ctx, entityId, Aabb)) {
         addComponent(ctx, entityId, Aabb, { value: [0, 0, 0, 0] });
       }
-      Aabb.computeFromBlock(ctx, entityId);
+
+      const aabb = Aabb.write(ctx, entityId);
+      computeAabb(ctx, entityId, aabb.value);
     }
 
     for (const entityId of changed) {
-      Aabb.computeFromBlock(ctx, entityId);
+      const aabb = Aabb.write(ctx, entityId);
+      computeAabb(ctx, entityId, aabb.value);
     }
 
     // Check if we need to update intersections
     const mouseDidMove = Mouse.didMove(ctx);
     const mouseDidLeave = Mouse.didLeave(ctx);
     const mouseDidScroll = Mouse.didScroll(ctx);
-    const blocksHaveChanged = added.length > 0 || changed.length > 0;
+    const blocksHaveChanged = added.size > 0 || changed.size > 0;
 
-    // Only update if mouse moved, left, scrolled, or blocks changed
+    // Only update if mouse moved, left, scrolled, or blocks/hit geometries changed
     if (
       !mouseDidMove &&
       !mouseDidLeave &&

@@ -23,7 +23,6 @@ import {
   TransformBox,
   TransformHandle,
   DragStart,
-  Selected,
   Locked,
 } from "../../components";
 import {
@@ -42,9 +41,6 @@ import { getLocalSelectedBlocks } from "../../helpers";
 
 // Query for transform box entities
 const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));
-
-// Query for transform handle entities
-const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle));
 
 // Query for edited blocks
 const editedBlocksQuery = defineQuery((q) => q.with(Block, Edited));
@@ -79,13 +75,19 @@ export const transformBoxSystem = defineEditorSystem(
  * Remove transform box and all handles.
  */
 function removeTransformBox(ctx: Context): void {
-  // Remove all handles
-  for (const handleId of transformHandleQuery.current(ctx)) {
-    removeEntity(ctx, handleId);
-  }
-
   // Remove transform box
   for (const boxId of transformBoxQuery.current(ctx)) {
+    const handles = getBackrefs(
+      ctx,
+      transformBoxQuery.current(ctx)[0],
+      TransformHandle,
+      "transformBox"
+    );
+
+    for (const handleId of handles) {
+      removeEntity(ctx, handleId);
+    }
+
     removeEntity(ctx, boxId);
   }
 
@@ -144,7 +146,7 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
     transformBoxId = existingBoxes[0];
   }
 
-  const selectedBlocks = getLocalSelectedBlocks(ctx)
+  const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
 
   // Get common rotation (or 0 if mixed)
@@ -406,7 +408,6 @@ function addOrUpdateTransformHandles(
     TransformHandle,
     "transformBox"
   );
-  // const existingHandles = transformHandleQuery.current(ctx);
   const handleMap = new Map<string, EntityId>();
   for (const handleId of existingHandles) {
     const handle = TransformHandle.read(ctx, handleId);
@@ -468,7 +469,7 @@ function addOrUpdateTransformHandles(
 
     usedHandleIds.add(handleId);
   }
-  
+
   // Remove unused handles
   for (const handleId of existingHandles) {
     if (!usedHandleIds.has(handleId)) {
@@ -488,14 +489,21 @@ function hideTransformBox(ctx: Context): void {
       const opacity = Opacity.write(ctx, boxId);
       opacity.value = 0;
     }
-  }
 
-  for (const handleId of transformHandleQuery.current(ctx)) {
-    if (!hasComponent(ctx, handleId, Opacity)) {
-      addComponent(ctx, handleId, Opacity, { value: 0 });
-    } else {
-      const opacity = Opacity.write(ctx, handleId);
-      opacity.value = 0;
+    const handles = getBackrefs(
+      ctx,
+      transformBoxQuery.current(ctx)[0],
+      TransformHandle,
+      "transformBox"
+    );
+
+    for (const handleId of handles) {
+      if (!hasComponent(ctx, handleId, Opacity)) {
+        addComponent(ctx, handleId, Opacity, { value: 0 });
+      } else {
+        const opacity = Opacity.write(ctx, handleId);
+        opacity.value = 0;
+      }
     }
   }
 }
@@ -509,11 +517,19 @@ function showTransformBox(ctx: Context): void {
     if (hasComponent(ctx, boxId, Opacity)) {
       removeComponent(ctx, boxId, Opacity);
     }
-  }
 
-  for (const handleId of transformHandleQuery.current(ctx)) {
-    if (hasComponent(ctx, handleId, Opacity)) {
-      removeComponent(ctx, handleId, Opacity);
+    const handles = getBackrefs(
+      ctx,
+      transformBoxQuery.current(ctx)[0],
+      TransformHandle,
+      "transformBox"
+    );
+
+    for (const handleId of handles) {
+      if (hasComponent(ctx, handleId, Locked)) continue;
+      if (hasComponent(ctx, handleId, Opacity)) {
+        removeComponent(ctx, handleId, Opacity);
+      }
     }
   }
 
@@ -529,6 +545,17 @@ function startTransformBoxEdit(ctx: Context): void {
     if (!hasComponent(ctx, boxId, Locked)) {
       addComponent(ctx, boxId, Locked, {});
     }
+
+    const handles = getBackrefs(
+      ctx,
+      transformBoxQuery.current(ctx)[0],
+      TransformHandle,
+      "transformBox"
+    );
+
+    for (const handleId of handles) {
+      removeEntity(ctx, handleId);
+    }
   }
 
   // Mark selected blocks as edited
@@ -536,11 +563,6 @@ function startTransformBoxEdit(ctx: Context): void {
     if (!hasComponent(ctx, blockId, Edited)) {
       addComponent(ctx, blockId, Edited, {});
     }
-  }
-
-  // Remove handles during edit
-  for (const handleId of transformHandleQuery.current(ctx)) {
-    removeEntity(ctx, handleId);
   }
 }
 

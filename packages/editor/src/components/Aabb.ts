@@ -13,7 +13,6 @@ const TOP = 1;
 const RIGHT = 2;
 const BOTTOM = 3;
 
-
 const AabbSchema = {
   /** Bounds as [left, top, right, bottom] */
   value: field.tuple(field.float32(), 4).default([0, 0, 0, 0]),
@@ -41,9 +40,8 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
     inclusive = true
   ): boolean {
     const { value } = this.read(ctx, entityId);
-    return inclusive
-      ? AabbNs.containsPoint(value, point)
-      : AabbNs.containsPointExclusive(value, point);
+
+    return AabbNs.containsPoint(value, point, inclusive);
   }
 
   /**
@@ -191,15 +189,6 @@ class AabbDef extends EditorComponentDef<typeof AabbSchema> {
   applyPadding(ctx: Context, entityId: EntityId, padding: number): void {
     const { value } = this.write(ctx, entityId);
     AabbNs.pad(value, padding);
-  }
-
-  /**
-   * Compute AABB from block corners and update the component.
-   */
-  computeFromBlock(ctx: Context, entityId: EntityId): void {
-    const corners = Block.getCorners(ctx, entityId);
-    const { value } = this.write(ctx, entityId);
-    AabbNs.setFromPoints(value, corners);
   }
 }
 
