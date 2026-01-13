@@ -17,6 +17,7 @@ import {
   removeEntity,
   hasComponent,
   Synced,
+  isAlive,
   type Context,
   type StoreAdapter,
   type AnyEditorComponentDef,
@@ -214,10 +215,7 @@ export class Store implements StoreAdapter {
     }
 
     // Translate refs from entityIds to syncedIds before storing
-    const translatedData = this.translateRefsOutbound(
-      componentDef,
-      data
-    );
+    const translatedData = this.translateRefsOutbound(componentDef, data);
 
     if (componentDef.__editor.sync === "document") {
       // Store in Loro document for persistence
@@ -258,10 +256,7 @@ export class Store implements StoreAdapter {
     data: Record<string, unknown>
   ): void {
     // Translate refs from entityIds to syncedIds before storing
-    const translatedData = this.translateRefsOutbound(
-      componentDef,
-      data
-    );
+    const translatedData = this.translateRefsOutbound(componentDef, data);
 
     if (componentDef.__editor.sync === "document") {
       const componentsMap = this.doc.getMap("components");
@@ -446,6 +441,8 @@ export class Store implements StoreAdapter {
         if (!componentDef) continue;
 
         const entityId = this.idToEntityId.get(id)!;
+        if (!isAlive(ctx, entityId)) continue;
+
         const translatedValue = this.translateRefsInbound(
           componentDef,
           value as Record<string, unknown>
@@ -564,16 +561,18 @@ export class Store implements StoreAdapter {
     if (!componentDef) return;
 
     const existingEntityId = this.idToEntityId.get(id);
-    if (existingEntityId !== undefined) {
+    if (existingEntityId !== undefined && isAlive(ctx, existingEntityId)) {
       // Entity exists - add or update component
-      const translatedValue = this.translateRefsInbound(
-        componentDef,
-        value
-      );
+      const translatedValue = this.translateRefsInbound(componentDef, value);
       if (hasComponent(ctx, existingEntityId, componentDef)) {
         componentDef.copy(ctx, existingEntityId, translatedValue as any);
       } else {
-        addComponent(ctx, existingEntityId, componentDef, translatedValue as any);
+        addComponent(
+          ctx,
+          existingEntityId,
+          componentDef,
+          translatedValue as any
+        );
       }
     } else {
       // Create new entity
@@ -605,15 +604,17 @@ export class Store implements StoreAdapter {
     if (!componentDef) return;
 
     const existingEntityId = this.idToEntityId.get(id);
-    if (existingEntityId !== undefined) {
-      const translatedValue = this.translateRefsInbound(
-        componentDef,
-        value
-      );
+    if (existingEntityId !== undefined && isAlive(ctx, existingEntityId)) {
+      const translatedValue = this.translateRefsInbound(componentDef, value);
       if (hasComponent(ctx, existingEntityId, componentDef)) {
         componentDef.copy(ctx, existingEntityId, translatedValue as any);
       } else {
-        addComponent(ctx, existingEntityId, componentDef, translatedValue as any);
+        addComponent(
+          ctx,
+          existingEntityId,
+          componentDef,
+          translatedValue as any
+        );
       }
     }
   }
@@ -632,7 +633,11 @@ export class Store implements StoreAdapter {
     if (!componentDef) return;
 
     const entityId = this.idToEntityId.get(id);
-    if (entityId !== undefined && hasComponent(ctx, entityId, componentDef)) {
+    if (
+      entityId !== undefined &&
+      isAlive(ctx, entityId) &&
+      hasComponent(ctx, entityId, componentDef)
+    ) {
       removeComponent(ctx, entityId, componentDef);
 
       // Check if only Synced remains - if so, clean up the entity

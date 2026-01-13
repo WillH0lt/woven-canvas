@@ -28,6 +28,7 @@ export {
   hasComponent,
   getBackrefs,
   getResources,
+  isAlive,
 } from "./Context";
 export {
   defineSystem,

@@ -1,9 +1,6 @@
 import type { Context, EntityId } from "./types";
 import type { ComponentDef } from "./Component";
-import type {
-  ComponentSchema,
-  InferComponentInput,
-} from "./Component/types";
+import type { ComponentSchema, InferComponentInput } from "./Component/types";
 import { readRef } from "./Component/fields/ref";
 import { getComponentCurrentQuery } from "./Query/CurrentQuery";
 
@@ -211,6 +208,22 @@ export function hasComponent<T extends ComponentSchema>(
  */
 export function getResources<R>(ctx: Context): R {
   return ctx.resources as R;
+}
+
+/**
+ * Check if an entity is alive (not removed)
+ * @param ctx - The context
+ * @param entityId - Entity ID to check
+ * @returns True if the entity is alive
+ * @example
+ * ```typescript
+ * if (isAlive(ctx, entityId)) {
+ *   // Entity is alive
+ * }
+ * ```
+ */
+export function isAlive(ctx: Context, entityId: EntityId): boolean {
+  return ctx.entityBuffer.has(entityId);
 }
 
 /**

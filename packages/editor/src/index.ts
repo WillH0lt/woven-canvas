@@ -87,6 +87,7 @@ export {
   EventType,
   SINGLETON_ENTITY_ID,
   ComponentDef,
+  isAlive,
   type Context,
   type EntityId,
   type QueryDef,
