@@ -9,6 +9,7 @@ import StickyNoteTool from "./tools/StickyNoteTool.vue";
 import EraserTool from "./tools/EraserTool.vue";
 import PenTool from "./tools/PenTool.vue";
 import ArcArrowTool from "./tools/ArcArrowTool.vue";
+import TextTool from "./tools/TextTool.vue";
 import ElbowArrowTool from "./tools/ElbowArrowTool.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { TOOLBAR_KEY, type ToolbarContext } from "../injection";
@@ -85,26 +86,13 @@ const toolbarContext: ToolbarContext = {
 };
 provide(TOOLBAR_KEY, toolbarContext);
 
-// Built-in tool names
-const builtInToolNames = new Set([
-  "select",
-  "hand",
-  "sticky-note",
-  "pen",
-  "eraser",
-  "arc-arrow",
-  "elbow-arrow",
-]);
-
 // Get custom tool slots
 const customTools = computed(() => {
   const tools: string[] = [];
   for (const slotName of Object.keys(slots)) {
     if (slotName.startsWith("tool:")) {
       const toolName = slotName.slice(5);
-      if (!builtInToolNames.has(toolName)) {
-        tools.push(toolName);
-      }
+      tools.push(toolName);
     }
   }
   return tools;
@@ -113,38 +101,37 @@ const customTools = computed(() => {
 
 <template>
   <div class="ic-toolbar" @mouseleave="handleMouseLeave">
-    <!-- Select tool (built-in with override) -->
+    <!-- Select tool -->
     <slot name="tool:select">
       <SelectTool />
     </slot>
 
-    <!-- Hand tool (built-in with override) -->
+    <!-- Hand tool -->
     <slot name="tool:hand">
       <HandTool />
     </slot>
 
-    <!-- Sticky note tool (built-in with override) -->
+    <!-- Text tool -->
+    <slot name="tool:text">
+      <TextTool />
+    </slot>
+
+    <!-- Sticky note tool -->
     <slot name="tool:sticky-note">
       <StickyNoteTool />
     </slot>
 
-    <!-- Pen tool (built-in with override) -->
+    <!-- Pen tool -->
     <slot name="tool:pen">
       <PenTool />
     </slot>
 
-    <!-- Eraser tool (built-in with override) -->
+    <!-- Eraser tool -->
     <slot name="tool:eraser">
       <EraserTool />
     </slot>
 
-    <!-- Arc Arrow tool (built-in with override) -->
-    <!-- 
-    <slot name="tool:arc-arrow">
-      <ArcArrowTool />
-    </slot> -->
-
-    <!-- Elbow Arrow tool (built-in with override) -->
+    <!-- Elbow Arrow tool  -->
     <slot name="tool:elbow-arrow">
       <ElbowArrowTool />
     </slot>

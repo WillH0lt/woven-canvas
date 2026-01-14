@@ -21,11 +21,11 @@ export { Opacity } from "./Opacity";
 export { Color } from "./Color";
 
 // Content components
-export { Text, textHasContent, getTextStringContent } from "./Text";
+export { Text } from "./Text";
 export { Connector } from "./Connector";
 
 // User presence
 export { User } from "./User";
 
 // Hit geometry for collision detection
-export { HitGeometry, MAX_HIT_CAPSULES, FLOATS_PER_CAPSULE } from "./HitGeometry";
+export { HitGeometry, MAX_HIT_CAPSULES, MAX_HIT_ARCS } from "./HitGeometry";

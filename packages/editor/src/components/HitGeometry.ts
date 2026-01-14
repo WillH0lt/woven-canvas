@@ -15,7 +15,7 @@ export const MAX_HIT_CAPSULES = 64;
 /**
  * Number of floats per capsule in the hitCapsules array.
  */
-export const FLOATS_PER_CAPSULE = 5;
+const FLOATS_PER_CAPSULE = 5;
 
 /**
  * Maximum number of arcs that can be stored in the hitArcs array.
@@ -26,7 +26,7 @@ export const MAX_HIT_ARCS = 2;
 /**
  * Number of floats per arc in the hitArcs array.
  */
-export const FLOATS_PER_ARC = 7;
+const FLOATS_PER_ARC = 7;
 
 const HitGeometrySchema = {
   hitCapsules: field

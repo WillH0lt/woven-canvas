@@ -134,14 +134,12 @@ export {
   ScaleWithZoom,
   Opacity,
   Text,
-  textHasContent,
-  getTextStringContent,
   Connector,
   Color,
   User,
   HitGeometry,
   MAX_HIT_CAPSULES,
-  FLOATS_PER_CAPSULE,
+  MAX_HIT_ARCS,
 } from "./components";
 
 // Events

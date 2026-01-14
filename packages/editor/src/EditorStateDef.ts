@@ -31,7 +31,7 @@ type InferMachineContext<T extends StateSchema> = Omit<
  *
  * @example
  * ```typescript
- * const DragState = defineEditorState({
+ * const DragState = defineEditorState("dragState", {
  *   state: field.string().max(16).default("idle"),
  *   startX: field.float64().default(0),
  *   startY: field.float64().default(0),
@@ -56,7 +56,7 @@ export type InferStateContext<T> = T extends EditorStateDef<infer S>
  *
  * @example
  * ```typescript
- * export const PanState = defineEditorState({
+ * export const PanState = defineEditorState("panState", {
  *   state: field.string().max(16).default("idle"),
  *   panStartX: field.float64().default(0),
  *   panStartY: field.float64().default(0),
@@ -72,9 +72,9 @@ export type InferStateContext<T> = T extends EditorStateDef<infer S>
 export class EditorStateDef<
   T extends StateSchema
 > extends EditorSingletonDef<T> {
-  constructor(schema: T) {
+  constructor(name: string, schema: T) {
     // State machine state is never synced - it's ephemeral runtime state
-    super("__state__", schema, { sync: "none" });
+    super(name, schema, { sync: "none" });
   }
 
   /**
@@ -171,12 +171,13 @@ export class EditorStateDef<
  * State machine state is ephemeral runtime state that is never persisted or synced.
  * Use this for UI state machines like pan, drag, selection, etc.
  *
+ * @param name - Stable identifier for the state (e.g., "panState", "dragState")
  * @param schema - The singleton schema (must include 'state' field)
  * @returns EditorStateDef instance
  *
  * @example
  * ```typescript
- * export const DragState = defineEditorState({
+ * export const DragState = defineEditorState("dragState", {
  *   state: field.string().max(16).default("idle"),
  *   startX: field.float64().default(0),
  *   startY: field.float64().default(0),
@@ -184,7 +185,8 @@ export class EditorStateDef<
  * ```
  */
 export function defineEditorState<T extends StateSchema>(
+  name: string,
   schema: T
 ): EditorStateDef<T> {
-  return new EditorStateDef(schema);
+  return new EditorStateDef(name, schema);
 }

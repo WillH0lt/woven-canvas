@@ -643,7 +643,7 @@ function updateElbowArrow(
   const size: Vec2 = [1, 1];
   Rect.boundPoints(position, size, rotation, path);
   blockWrite.position = position;
-  blockWrite.size = size;
+  blockWrite.size = [Math.max(size[0], 1), Math.max(size[1], 1)];
 
   // Convert path to UV and store
   const uvPath = path.map((p) => Block.worldToUv(ctx, entityId, p));

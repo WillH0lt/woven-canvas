@@ -15,7 +15,7 @@ import { PenState } from "../types";
  * }
  * ```
  */
-export const PenStateSingleton = defineEditorState({
+export const PenStateSingleton = defineEditorState("penState", {
   /** Current state machine state */
   state: field.string().max(16).default(PenState.Idle),
 

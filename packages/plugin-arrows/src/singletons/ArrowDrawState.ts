@@ -15,7 +15,7 @@ import { ArrowDrawStateEnum, ArrowKind } from "../types";
  * }
  * ```
  */
-export const ArrowDrawState = defineEditorState({
+export const ArrowDrawState = defineEditorState("arrowDrawState", {
   /** Current state machine state */
   state: field.string().max(16).default(ArrowDrawStateEnum.Idle),
 

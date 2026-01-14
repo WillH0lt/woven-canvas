@@ -1,5 +1,5 @@
 import type { RayIntersection } from "@infinitecanvas/math";
-import { Aabb, Mat2, Ray, Rect, Vec2 } from "@infinitecanvas/math";
+import { Aabb, Mat2, Ray, Rect, Scalar, Vec2 } from "@infinitecanvas/math";
 import type { Context, EntityId } from "@infinitecanvas/editor";
 import { Block } from "@infinitecanvas/editor";
 import { MinHeap } from "./MinHeap";
@@ -385,6 +385,20 @@ function routePointToPoint(start: Vec2, end: Vec2): Vec2[] {
 
   const dx = end[0] - start[0];
   const dy = end[1] - start[1];
+
+  // When points are nearly collinear (horizontal or vertical line),
+  // return a direct path without intermediate elbow points
+  if (Scalar.approxEqual(dy, 0)) {
+    // Horizontal line - just start and end
+    path.push(end);
+    return path;
+  }
+  if (Scalar.approxEqual(dx, 0)) {
+    // Vertical line - just start and end
+    path.push(end);
+    return path;
+  }
+
   const dominantDirection = getDominantDirection(start, end);
 
   let distance: number;
@@ -422,7 +436,9 @@ function removeDuplicates(path: Vec2[]): void {
   for (let i = 1; i < path.length; i++) {
     const prev = uniquePath[uniquePath.length - 1];
     const current = path[i];
-    if (prev[0] !== current[0] || prev[1] !== current[1]) {
+    const sameX = Scalar.approxEqual(prev[0], current[0]);
+    const sameY = Scalar.approxEqual(prev[1], current[1]);
+    if (!sameX || !sameY) {
       uniquePath.push(current);
     }
   }
@@ -440,10 +456,14 @@ function removeStraightLinePoints(path: Vec2[]): void {
     const current = path[i];
     const next = path[i + 1];
 
-    if (
-      (prev[0] === current[0] && current[0] === next[0]) ||
-      (prev[1] === current[1] && current[1] === next[1])
-    ) {
+    const collinearX =
+      Scalar.approxEqual(prev[0], current[0]) &&
+      Scalar.approxEqual(current[0], next[0]);
+    const collinearY =
+      Scalar.approxEqual(prev[1], current[1]) &&
+      Scalar.approxEqual(current[1], next[1]);
+
+    if (collinearX || collinearY) {
       pathIndicesToRemove.push(i);
     }
   }

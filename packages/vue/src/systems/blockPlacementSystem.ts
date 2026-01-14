@@ -3,7 +3,6 @@ import {
   type EntityId,
   createEntity,
   addComponent,
-  getResources,
   defineEditorSystem,
   Controls,
   RankBounds,
@@ -12,7 +11,8 @@ import {
   PointerButton,
   getPointerInput,
   Cursor,
-  type EditorResources,
+  getBlockDef,
+  Edited,
 } from "@infinitecanvas/editor";
 import {
   SelectionStateSingleton,
@@ -58,7 +58,12 @@ function createBlockFromSnapshot(
   snapshot: BlockSnapshot,
   position: [number, number]
 ): EntityId {
-  const { componentsByName } = getResources<EditorResources>(ctx);
+  const blockDef = getBlockDef(ctx, snapshot.block.tag);
+  if (!blockDef) {
+    throw new Error(
+      `Block placement: block definition for tag "${snapshot.block.tag}" not found`
+    );
+  }
 
   // Get size from snapshot or use defaults
   const size: [number, number] = snapshot.block.size ?? [100, 100];
@@ -88,19 +93,17 @@ function createBlockFromSnapshot(
   });
   addComponent(ctx, entityId, Block, blockData);
 
-  // Iterate through snapshot and add other components
-  for (const [componentName, componentData] of Object.entries(snapshot)) {
-    if (componentName === "block") continue;
-
-    const componentDef = componentsByName.get(componentName);
-    if (!componentDef) {
-      console.warn(
-        `Block placement: component "${componentName}" not found in registry`
-      );
-      continue;
+  for (const Comp of blockDef.components) {
+    if (!(Comp.name in snapshot)) {
+      addComponent(ctx, entityId, Comp);
+    } else {
+      const componentData = snapshot[Comp.name] as object;
+      addComponent(ctx, entityId, Comp, componentData);
     }
+  }
 
-    addComponent(ctx, entityId, componentDef, componentData as object);
+  if (blockDef.editOptions.canEdit) {
+    addComponent(ctx, entityId, Edited);
   }
 
   return entityId;

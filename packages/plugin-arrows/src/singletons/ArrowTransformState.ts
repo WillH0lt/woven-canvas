@@ -15,7 +15,7 @@ import { ArrowTransformStateEnum } from "../types";
  * }
  * ```
  */
-export const ArrowTransformState = defineEditorState({
+export const ArrowTransformState = defineEditorState("arrowTransformState", {
   /** Current state machine state */
   state: field.string().max(16).default(ArrowTransformStateEnum.None),
 

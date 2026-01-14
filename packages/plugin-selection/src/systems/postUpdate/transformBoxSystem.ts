@@ -14,6 +14,7 @@ import {
   Edited,
   ScaleWithZoom,
   Block,
+  Text,
   getBackrefs,
   getBlockDef,
 } from "@infinitecanvas/editor";
@@ -91,15 +92,7 @@ function removeTransformBox(ctx: Context): void {
     removeEntity(ctx, boxId);
   }
 
-  // End editing if in edit mode
-  const selectedBlocks = getLocalSelectedBlocks(ctx);
-  const isEditing =
-    selectedBlocks.length &&
-    selectedBlocks.every((id) => hasComponent(ctx, id, Edited));
-
-  if (isEditing) {
-    endTransformBoxEdit(ctx);
-  }
+  endTransformBoxEdit(ctx);
 }
 
 /**
@@ -195,6 +188,9 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
     // Update DragStart for selected blocks
     for (const entityId of selectedBlocks) {
       const block = Block.read(ctx, entityId);
+      const fontSize = hasComponent(ctx, entityId, Text)
+        ? Text.read(ctx, entityId).fontSizePx
+        : 16;
 
       if (!hasComponent(ctx, entityId, DragStart)) {
         addComponent(ctx, entityId, DragStart, {
@@ -202,7 +198,7 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
           size: block.size,
           rotateZ: block.rotateZ,
           flip: block.flip,
-          fontSize: 16,
+          fontSize,
         });
       } else {
         const dragStart = DragStart.write(ctx, entityId);
@@ -210,6 +206,7 @@ function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
         dragStart.size = block.size;
         dragStart.rotateZ = block.rotateZ;
         dragStart.flip = block.flip;
+        dragStart.fontSize = fontSize;
       }
     }
   }
@@ -589,12 +586,6 @@ function startTransformBoxEdit(ctx: Context): void {
  * End transform box edit mode.
  */
 function endTransformBoxEdit(ctx: Context): void {
-  for (const boxId of transformBoxQuery.current(ctx)) {
-    if (hasComponent(ctx, boxId, Locked)) {
-      removeComponent(ctx, boxId, Locked);
-    }
-  }
-
   // Remove edited from blocks
   for (const blockId of editedBlocksQuery.current(ctx)) {
     if (hasComponent(ctx, blockId, Edited)) {

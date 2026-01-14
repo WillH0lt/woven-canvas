@@ -6,6 +6,7 @@ import {
   type Context,
   type EntityId,
   Block,
+  Text,
 } from "@infinitecanvas/editor";
 import { Vec2, Scalar } from "@infinitecanvas/math";
 
@@ -28,22 +29,25 @@ const transformBoxQuery = defineQuery((q) =>
  * - When scale handle moves: scale all selected blocks proportionally
  * - When rotate handle moves: rotate all selected blocks around the center
  */
-export const dragHandlerSystem = defineEditorSystem({ phase: "update" }, (ctx: Context) => {
-  // Listen for DragBlock commands and handle transform box/handle drags
-  on(ctx, DragBlock, (ctx, { entityId, position }) => {
-    // Check if dragging transform box
-    if (hasComponent(ctx, entityId, TransformBox)) {
-      onTransformBoxDrag(ctx, entityId, position);
-      return;
-    }
+export const dragHandlerSystem = defineEditorSystem(
+  { phase: "update" },
+  (ctx: Context) => {
+    // Listen for DragBlock commands and handle transform box/handle drags
+    on(ctx, DragBlock, (ctx, { entityId, position }) => {
+      // Check if dragging transform box
+      if (hasComponent(ctx, entityId, TransformBox)) {
+        onTransformBoxDrag(ctx, entityId, position);
+        return;
+      }
 
-    // Check if dragging transform handle
-    if (hasComponent(ctx, entityId, TransformHandle)) {
-      onTransformHandleDrag(ctx, entityId, position);
-      return;
-    }
-  });
-});
+      // Check if dragging transform handle
+      if (hasComponent(ctx, entityId, TransformHandle)) {
+        onTransformHandleDrag(ctx, entityId, position);
+        return;
+      }
+    });
+  }
+);
 
 /**
  * Handle transform box drag - move all selected blocks by the same delta.
@@ -305,7 +309,28 @@ function onScaleHandleDrag(
     // Convert center back to top-left position
     Vec2.copy(block.position, newBlockCenter);
     Vec2.sub(block.position, [newBlockSize[0] / 2, newBlockSize[1] / 2]);
-    Vec2.copy(block.size, newBlockSize);
+
+    if (!maintainAspectRatio && handle.vectorY === 0) {
+      // Horizontal stretch - only update width
+      block.size[0] = newBlockSize[0];
+    } else if (!maintainAspectRatio && handle.vectorX === 0) {
+      // Vertical stretch - only update height
+      block.size[1] = newBlockSize[1];
+    } else {
+      Vec2.copy(block.size, newBlockSize);
+    }
+
+    if (hasComponent(ctx, blockId, Text)) {
+      const didStretch = handle.kind === TransformHandleKind.Stretch;
+      const text = Text.write(ctx, blockId);
+      if (didStretch) {
+        // constrain width so the text wraps within the new width
+        text.constrainWidth = true;
+      } else {
+        // Scale font size for text entities
+        text.fontSizePx = blockStart.fontSize * scaleY;
+      }
+    }
 
     // Toggle flip state when handles cross over
     // XOR with start flip state to toggle when flipped

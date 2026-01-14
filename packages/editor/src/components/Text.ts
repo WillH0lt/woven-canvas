@@ -48,9 +48,3 @@ class TextDef extends EditorComponentDef<typeof TextSchema> {
 }
 
 export const Text = new TextDef();
-
-// Legacy function exports for backwards compatibility
-export const textHasContent = (ctx: Context, entityId: EntityId): boolean =>
-  Text.hasContent(ctx, entityId);
-export const getTextStringContent = (ctx: Context, entityId: EntityId): string =>
-  Text.getStringContent(ctx, entityId);

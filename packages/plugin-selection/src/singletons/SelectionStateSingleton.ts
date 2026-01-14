@@ -1,5 +1,5 @@
 import { field, defineEditorState } from "@infinitecanvas/editor";
-import { SelectionState } from "../types";
+import { SelectionState, TransformHandleKind } from "../types";
 
 /**
  * Selection state singleton - stores the current state of the selection state machine.
@@ -17,16 +17,9 @@ import { SelectionState } from "../types";
  * - cloneGeneratorSeed: Seed for deterministic UUIDs when cloning
  * - isCloning: Whether in cloning mode (Alt+drag)
  *
- * @example
- * ```typescript
- * // In a capture system:
- * const events = getPointerInput(ctx, ["left"]);
- * if (events.length > 0) {
- *   SelectionStateSingleton.run(ctx, selectionMachine, events);
- * }
  * ```
  */
-export const SelectionStateSingleton = defineEditorState({
+export const SelectionStateSingleton = defineEditorState("selectionState", {
   state: field.string().max(32).default(SelectionState.Idle),
   dragStart: field.tuple(field.float64(), 2).default([0, 0]),
   pointingStartClient: field.tuple(field.float64(), 2).default([0, 0]),

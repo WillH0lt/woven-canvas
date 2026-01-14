@@ -36,11 +36,13 @@ import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
 import { EraserPlugin } from "@infinitecanvas/plugin-eraser";
 import { PenPlugin } from "@infinitecanvas/plugin-pen";
 import { ArrowsPlugin } from "@infinitecanvas/plugin-arrows";
+
 import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../injection";
 import SelectionBox from "./blocks/SelectionBox.vue";
 import TransformBox from "./blocks/TransformBox.vue";
 import TransformHandle from "./blocks/TransformHandle.vue";
 import StickyNote from "./blocks/StickyNote.vue";
+import TextBlock from "./blocks/TextBlock.vue";
 import FloatingMenu from "./FloatingMenu.vue";
 import Toolbar from "./Toolbar.vue";
 import Eraser from "./blocks/Eraser.vue";
@@ -406,28 +408,6 @@ function processEvents(editor: Editor) {
   }
 }
 
-// /**
-//  * Get effective rank for sorting - connectors render just above their connected blocks
-//  */
-// function getEffectiveRank(entityId: EntityId, rank: string): string {
-//   const blockRef = blockMap.get(entityId);
-//   const connector = blockRef?.value.connector;
-//   if (!connector) return rank;
-
-//   let maxRank = rank;
-
-//   for (const blockId of [connector.startBlock, connector.endBlock]) {
-//     if (blockId === null) continue;
-//     const connectedBlockRef = blockMap.get(blockId);
-//     if (connectedBlockRef && connectedBlockRef.value.block.rank > maxRank) {
-//       maxRank = connectedBlockRef.value.block.rank;
-//     }
-//   }
-
-//   // Generate a rank just above the max connected block rank
-//   return maxRank + "a";
-// }
-
 /**
  * Update block state using ECS queries and rebuild sorted array if needed.
  */
@@ -680,6 +660,10 @@ function getBlockStyle(data: BlockData) {
         />
         <ElbowArrowBlock
           v-else-if="blockData.value.block.tag === 'elbow-arrow'"
+          v-bind="blockData.value"
+        />
+        <TextBlock
+          v-else-if="blockData.value.block.tag === 'text'"
           v-bind="blockData.value"
         />
       </slot>

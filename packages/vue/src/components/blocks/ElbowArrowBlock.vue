@@ -179,7 +179,10 @@ const pathData = computed(() => {
           :y2="line.end[1]"
           class="highlight-bg"
           fill="none"
-          style="stroke-width: calc(2px * var(--ic-zoom)); stroke-dasharray: calc(12px * var(--ic-zoom))"
+          style="
+            stroke-width: calc(2px * var(--ic-zoom));
+            stroke-dasharray: calc(12px * var(--ic-zoom));
+          "
           stroke-linecap="round"
         />
       </template>

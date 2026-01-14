@@ -7,7 +7,7 @@ import { PanStateValue } from "../types";
  *
  * Uses defineEditorState to simplify XState machine integration.
  */
-export const PanState = defineEditorState({
+export const PanState = defineEditorState("panState", {
   /** Current state of the pan state machine */
   state: field.string().max(16).default(PanStateValue.Idle),
   /** World X coordinate where pan started */

@@ -15,7 +15,7 @@ import { EraserState } from "../types";
  * }
  * ```
  */
-export const EraserStateSingleton = defineEditorState({
+export const EraserStateSingleton = defineEditorState("eraserState", {
   /** Current state machine state */
   state: field.string().max(16).default(EraserState.Idle),
 
