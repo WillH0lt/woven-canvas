@@ -29,6 +29,9 @@ export { default as ElbowArrowBlock } from "./components/blocks/ElbowArrowBlock.
 export { default as ArrowHead } from "./components/blocks/ArrowHead.vue";
 export { default as ArrowHandle } from "./components/blocks/ArrowHandle.vue";
 
+// Text Components
+export { default as EditableText } from "./components/EditableText.vue";
+
 // Menu Button Components
 export { default as MenuDropdown } from "./components/buttons/MenuDropdown.vue";
 export { default as MenuButton } from "./components/buttons/MenuButton.vue";
@@ -47,9 +50,18 @@ export {
   useEditorContext,
   type EditorContext,
 } from "./composables/useEditorContext";
+export {
+  useTextStretchBehavior,
+  type TextStretchBehavior,
+  type TextStretchBehaviorOptions,
+  type TextStretchBehaviorResult,
+} from "./composables/useTextStretchBehavior";
 
 // Utilities
 export { computeCommonComponents } from "./utils/computeCommonComponents";
 
 // Cursors
 export { CursorKind, CURSORS } from "./cursors";
+
+// Types
+export type { BlockData } from "./types";

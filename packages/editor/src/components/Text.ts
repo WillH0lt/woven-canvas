@@ -13,7 +13,7 @@ const TextSchema = {
   /** Letter spacing in em units */
   letterSpacingEm: field.float64().default(0),
   /** Whether width is constrained (text wraps) */
-  constrainWidth: field.boolean().default(false),
+  constrainWidth: field.boolean().default(true),
 };
 
 /**

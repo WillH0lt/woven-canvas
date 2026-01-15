@@ -133,7 +133,7 @@ defineSlots<
     "floating-menu"?: () => any;
     toolbar?: () => any;
   } & {
-    [slotName: `block:${string}`]: (props: { entityId: EntityId }) => any;
+    [slotName: `block:${string}`]: (props: BlockData) => any;
   }
 >();
 
@@ -623,7 +623,7 @@ function getBlockStyle(data: BlockData) {
     >
       <slot
         :name="`block:${blockData.value.block.tag}`"
-        :entityId="blockData.value.entityId"
+        v-bind="blockData.value"
       >
         <!-- Default blocks -->
         <SelectionBox

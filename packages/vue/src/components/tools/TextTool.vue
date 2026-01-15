@@ -6,7 +6,9 @@ const placementSnapshot = JSON.stringify({
     tag: "text",
     size: [200, 32],
   },
-  text: {},
+  text: {
+    constrainWidth: false,
+  },
 });
 
 const dragOutSnapshot = JSON.stringify({
@@ -16,6 +18,7 @@ const dragOutSnapshot = JSON.stringify({
   },
   text: {
     content: "text",
+    constrainWidth: false,
   },
 });
 </script>

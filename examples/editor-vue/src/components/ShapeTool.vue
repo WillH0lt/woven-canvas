@@ -13,6 +13,7 @@ const snapshot = JSON.stringify({
     green: 144,
     blue: 217,
   },
+  text: {},
 });
 </script>
 

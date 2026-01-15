@@ -11,12 +11,15 @@ export const BasicsPlugin: EditorPlugin = {
   blockDefs: [
     {
       tag: "sticky-note",
-      components: [Color],
+      components: [Color, Text],
+      editOptions: {
+        canEdit: true,
+      },
     },
     {
       tag: "text",
       components: [Text],
-      resizeMode: 'text',
+      resizeMode: "text",
       editOptions: {
         canEdit: true,
         removeWhenTextEmpty: true,

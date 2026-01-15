@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
-import { Editor, Color } from "@infinitecanvas/editor";
+import { Editor, Color, Text } from "@infinitecanvas/editor";
 import { Store } from "@infinitecanvas/store";
 import { InfiniteCanvas, FloatingMenuBar, Toolbar } from "@infinitecanvas/vue";
 
@@ -32,27 +32,30 @@ function handleReady(editor: Editor) {
       :blockDefs="[
         {
           tag: 'shape',
-          components: [Shape, Color],
+          components: [Shape, Color, Text],
           resizeMode: 'free',
+          editOptions: {
+            canEdit: true,
+          },
         },
       ]"
     >
-      <template #block:shape="{ entityId }">
-        <ShapeBlock :entityId="entityId" />
+      <template #block:shape="blockData">
+        <ShapeBlock v-bind="blockData" />
       </template>
 
       <template #floating-menu>
         <FloatingMenuBar>
-          <template #button:shape="{ entityIds }">
-            <BorderButton :entityIds="entityIds" />
+          <template #button:shape="buttonData">
+            <BorderButton v-bind="buttonData" />
           </template>
         </FloatingMenuBar>
       </template>
 
       <template #toolbar>
         <Toolbar>
-          <template #tool:shape>
-            <ShapeTool />
+          <template #tool:shape="toolData">
+            <ShapeTool v-bind="toolData" />
           </template>
         </Toolbar>
       </template>

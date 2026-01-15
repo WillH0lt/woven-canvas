@@ -5,3 +5,9 @@ export { useQuery, type QueryResultItem } from './useQuery'
 export { useSingleton } from './useSingleton'
 export { useToolbar } from './useToolbar'
 export { useTooltipSingleton, type TooltipState } from './useTooltipSingleton'
+export {
+  useTextStretchBehavior,
+  type TextStretchBehavior,
+  type TextStretchBehaviorOptions,
+  type TextStretchBehaviorResult,
+} from './useTextStretchBehavior'
