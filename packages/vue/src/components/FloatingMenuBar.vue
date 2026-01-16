@@ -3,6 +3,13 @@ import { computed, useSlots, inject } from "vue";
 
 import ColorButton from "./buttons/ColorButton.vue";
 import MenuTooltip from "./buttons/MenuTooltip.vue";
+import TextBoldButton from "./buttons/text/TextBoldButton.vue";
+import TextItalicButton from "./buttons/text/TextItalicButton.vue";
+import TextUnderlineButton from "./buttons/text/TextUnderlineButton.vue";
+import TextAlignmentButton from "./buttons/text/TextAlignmentButton.vue";
+import TextFontSizeButton from "./buttons/text/TextFontSizeButton.vue";
+import TextFontFamilyButton from "./buttons/text/TextFontFamilyButton.vue";
+import TextColorButton from "./buttons/text/TextColorButton.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { FLOATING_MENU_KEY } from "../injection";
 
@@ -12,7 +19,7 @@ const context = inject(FLOATING_MENU_KEY)!;
 const { selectedIds, commonComponents } = context;
 
 // Built-in component names (handled in template)
-const builtInComponentNames = new Set(["color"]);
+const builtInComponentNames = new Set(["color", "text"]);
 
 // Custom slots for components not covered by built-ins
 const customButtons = computed(() => {
@@ -44,6 +51,21 @@ function handleMouseLeave() {
         v-if="commonComponents.has('color')"
         :entityIds="selectedIds"
       />
+    </slot>
+
+    <!-- Text formatting buttons -->
+    <slot name="button:text" :entityIds="selectedIds">
+      <template v-if="commonComponents.has('text')">
+        <TextFontFamilyButton :entityIds="selectedIds" />
+        <TextFontSizeButton :entityIds="selectedIds" />
+        <div divider class="ic-divider" />
+        <TextBoldButton :entityIds="selectedIds" />
+        <TextItalicButton :entityIds="selectedIds" />
+        <TextUnderlineButton :entityIds="selectedIds" />
+        <div divider class="ic-divider" />
+        <TextColorButton :entityIds="selectedIds" />
+        <TextAlignmentButton :entityIds="selectedIds" />
+      </template>
     </slot>
 
     <!-- Singleton tooltip rendered once for all menu items -->
@@ -88,5 +110,17 @@ function handleMouseLeave() {
 
 .ic-floating-menu-bar > *[menu-open] {
   background-color: var(--ic-gray-600);
+}
+
+.ic-floating-menu-bar > .ic-active:hover {
+  background: var(--ic-primary-light);
+}
+
+.ic-divider {
+  width: 1px !important;
+  height: 24px !important;
+  margin: auto 0;
+  background-color: var(--ic-gray-600);
+  flex-shrink: 0;
 }
 </style>

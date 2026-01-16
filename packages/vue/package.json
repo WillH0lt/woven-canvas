@@ -33,6 +33,7 @@
   "dependencies": {
     "@floating-ui/vue": "^1.1.6",
     "@infinitecanvas/editor": "workspace:^",
+    "@tiptap/core": "^3.15.3",
     "@infinitecanvas/math": "workspace:^",
     "@infinitecanvas/plugin-arrows": "workspace:^",
     "@infinitecanvas/plugin-canvas-controls": "workspace:^",
@@ -40,6 +41,7 @@
     "@infinitecanvas/plugin-pen": "workspace:^",
     "@infinitecanvas/plugin-selection": "workspace:^",
     "@tiptap/extension-bold": "^3.15.3",
+    "@tiptap/extension-color": "^3.10.1",
     "@tiptap/extension-document": "^3.15.3",
     "@tiptap/extension-italic": "^3.15.3",
     "@tiptap/extension-paragraph": "^3.15.3",

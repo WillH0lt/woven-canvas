@@ -39,6 +39,18 @@ export { default as MenuTooltip } from "./components/buttons/MenuTooltip.vue";
 export { default as ColorButton } from "./components/buttons/ColorButton.vue";
 export { default as ColorPicker } from "./components/buttons/ColorPicker.vue";
 
+// Text Formatting Button Components
+export {
+  TextBoldButton,
+  TextItalicButton,
+  TextUnderlineButton,
+  TextAlignmentButton,
+  TextFontSizeButton,
+  TextFontFamilyButton,
+  TextColorButton,
+  type FontOption,
+} from "./components/buttons/text";
+
 // Composables
 export { useQuery, type QueryResultItem } from "./composables/useQuery";
 export { useComponent } from "./composables/useComponent";
@@ -56,6 +68,25 @@ export {
   type TextStretchBehaviorOptions,
   type TextStretchBehaviorResult,
 } from "./composables/useTextStretchBehavior";
+export {
+  useTextEditorController,
+  type TextEditorController,
+  type TextEditorState,
+  type TextEditorCommands,
+  type TextAlignment,
+} from "./composables/useTextEditorController";
+export {
+  useTextBatchController,
+  type TextBatchController,
+  type TextBatchState,
+  type TextBatchCommands,
+} from "./composables/useTextBatchController";
+export {
+  useTextFormatting,
+  type TextFormattingController,
+  type TextFormattingState,
+  type TextFormattingCommands,
+} from "./composables/useTextFormatting";
 
 // Utilities
 export { computeCommonComponents } from "./utils/computeCommonComponents";

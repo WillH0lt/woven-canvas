@@ -10,10 +10,12 @@ import Italic from "@tiptap/extension-italic";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
 import { UndoRedo } from "@tiptap/extensions";
 
 import type { BlockData } from "../types";
 import { useComponent } from "../composables";
+import { useTextEditorController } from "../composables/useTextEditorController";
 
 const props = defineProps<BlockData>();
 
@@ -22,6 +24,7 @@ const emit = defineEmits<{
 }>();
 
 const text = useComponent(props.entityId, Text);
+const textEditorController = useTextEditorController();
 
 // Template ref for measuring text dimensions
 const editableTextRef = ref<HTMLElement | null>(null);
@@ -42,6 +45,7 @@ function createEditor(): Editor {
       Paragraph,
       TiptapText,
       TextStyle,
+      Color,
       Bold,
       Italic,
       Underline,
@@ -83,9 +87,11 @@ watch(
     if (isEdited) {
       // Create editor when entering edit mode
       editor.value = createEditor();
+      textEditorController.register(editor.value);
       await handleEditStart(editor.value);
     } else if (editor.value) {
       // Save content and destroy editor when exiting edit mode
+      textEditorController.unregister();
       handleEditEnd(editor.value);
       editor.value.destroy();
       editor.value = null;
@@ -187,6 +193,7 @@ function handlePointerEvent(event: PointerEvent) {
 
 onUnmounted(() => {
   if (editor.value) {
+    textEditorController.unregister();
     editor.value.destroy();
     editor.value = null;
   }

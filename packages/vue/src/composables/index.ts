@@ -11,3 +11,22 @@ export {
   type TextStretchBehaviorOptions,
   type TextStretchBehaviorResult,
 } from './useTextStretchBehavior'
+export {
+  useTextEditorController,
+  type TextEditorController,
+  type TextEditorState,
+  type TextEditorCommands,
+  type TextAlignment,
+} from './useTextEditorController'
+export {
+  useTextBatchController,
+  type TextBatchController,
+  type TextBatchState,
+  type TextBatchCommands,
+} from './useTextBatchController'
+export {
+  useTextFormatting,
+  type TextFormattingController,
+  type TextFormattingState,
+  type TextFormattingCommands,
+} from './useTextFormatting'

@@ -2,6 +2,29 @@ import { Color, type InferComponentType } from "@infinitecanvas/editor";
 
 type ColorData = InferComponentType<typeof Color.schema>;
 
+/**
+ * Normalize a color string to uppercase hex format for consistent comparison.
+ * Handles hex colors (with or without #) and rgb/rgba formats.
+ */
+export function normalizeColor(color: string): string {
+  // Already hex format - just uppercase it
+  if (color.startsWith("#")) {
+    return color.toUpperCase();
+  }
+
+  // Handle rgb/rgba format
+  const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1], 10).toString(16).padStart(2, "0");
+    const g = parseInt(rgbMatch[2], 10).toString(16).padStart(2, "0");
+    const b = parseInt(rgbMatch[3], 10).toString(16).padStart(2, "0");
+    return `#${r}${g}${b}`.toUpperCase();
+  }
+
+  // Return as-is if we can't parse
+  return color;
+}
+
 export function rgbToHex(color: ColorData): string {
   const r = Math.round(color.red);
   const g = Math.round(color.green);
