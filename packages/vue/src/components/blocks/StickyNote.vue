@@ -1,15 +1,21 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useComponent } from "../../composables/useComponent";
+import { useSingleton } from "../../composables/useSingleton";
 import { useEditorContext } from "../../composables/useEditorContext";
-import { Color, Block, Text } from "@infinitecanvas/editor";
+import { Color, Block, Text, Camera, Screen } from "@infinitecanvas/editor";
 import type { BlockData } from "../../types";
 import EditableText from "../EditableText.vue";
+import { computeBlockDimensions } from "../../utils/blockDimensions";
 
 const props = defineProps<BlockData>();
 
 const { nextEditorTick } = useEditorContext();
+
 const color = useComponent(props.entityId, Color);
+const camera = useSingleton(Camera);
+const screen = useSingleton(Screen);
+
 const containerRef = ref<HTMLElement | null>(null);
 
 const containerStyle = computed(() => ({
@@ -24,33 +30,36 @@ function handleEditEnd(data: {
   content: string;
   width: number;
   height: number;
+  left: number;
+  top: number;
 }) {
   if (!containerRef.value) return;
 
-  // Get container width (constrained by block)
-  const containerWidth = containerRef.value.offsetWidth;
+  // Compute dimensions from the container
+  const containerDimensions = computeBlockDimensions(
+    containerRef.value,
+    camera,
+    screen
+  );
 
   // Calculate content height including padding (8% top + 8% bottom = 16% of width)
-  const padding = containerWidth * 0.08;
+  const padding = containerDimensions.width * 0.08;
   const contentHeight = data.height + padding * 2;
 
   // Height should be at least square (containerWidth), but can grow taller
-  const finalHeight = Math.max(containerWidth, contentHeight);
+  const finalHeight = Math.max(containerDimensions.width, contentHeight);
 
   nextEditorTick((ctx) => {
     // Save text content
-    const textComponent = Text.write(ctx, props.entityId);
-    textComponent.content = data.content;
+    const text = Text.read(ctx, props.entityId);
+    if (text.content === data.content) return;
 
-    // Update block size - width stays same, height may grow
-    if (containerWidth === 0 || finalHeight === 0) return;
+    const writableText = Text.write(ctx, props.entityId);
+    writableText.content = data.content;
 
-    const block = Block.read(ctx, props.entityId);
-    if (block.size[0] === containerWidth && block.size[1] === finalHeight)
-      return;
-
-    const writableBlock = Block.write(ctx, props.entityId);
-    writableBlock.size = [containerWidth, finalHeight];
+    const block = Block.write(ctx, props.entityId);
+    block.size = [containerDimensions.width, finalHeight];
+    block.position = [containerDimensions.left, containerDimensions.top];
   });
 }
 </script>

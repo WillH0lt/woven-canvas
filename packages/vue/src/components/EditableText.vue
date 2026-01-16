@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch, onUnmounted, nextTick } from "vue";
-import { Text, type EntityId } from "@infinitecanvas/editor";
+import { Text, Camera, Screen } from "@infinitecanvas/editor";
 import { Editor, EditorContent } from "@tiptap/vue-3";
 import Document from "@tiptap/extension-document";
 import Paragraph from "@tiptap/extension-paragraph";
@@ -14,16 +14,27 @@ import Color from "@tiptap/extension-color";
 import { UndoRedo } from "@tiptap/extensions";
 
 import type { BlockData } from "../types";
-import { useComponent } from "../composables";
+import { useComponent, useSingleton } from "../composables";
 import { useTextEditorController } from "../composables/useTextEditorController";
+import { computeBlockDimensions } from "../utils/blockDimensions";
 
 const props = defineProps<BlockData>();
 
 const emit = defineEmits<{
-  editEnd: [data: { content: string; width: number; height: number }];
+  editEnd: [
+    data: {
+      content: string;
+      width: number;
+      height: number;
+      left: number;
+      top: number;
+    }
+  ];
 }>();
 
 const text = useComponent(props.entityId, Text);
+const camera = useSingleton(Camera);
+const screen = useSingleton(Screen);
 const textEditorController = useTextEditorController();
 
 // Template ref for measuring text dimensions
@@ -128,19 +139,19 @@ function handleEditEnd(editor: Editor): void {
   // Update display content immediately to avoid flash
   displayContent.value = content;
 
-  let measuredWidth: number = 0;
-  let measuredHeight: number = 0;
-
-  if (editableTextRef.value) {
-    const proseMirror = editableTextRef.value.querySelector(".ProseMirror");
-    if (proseMirror) {
-      measuredWidth = (proseMirror as HTMLElement).offsetWidth;
-      measuredHeight = (proseMirror as HTMLElement).offsetHeight;
-    }
+  if (!editableTextRef.value) {
+    console.warn("EditableText: element not found");
+    return;
   }
 
+  const dimensions = computeBlockDimensions(
+    editableTextRef.value,
+    camera,
+    screen
+  );
+
   // Emit event for parent components to handle content and sizing
-  emit("editEnd", { content, width: measuredWidth, height: measuredHeight });
+  emit("editEnd", { content, ...dimensions });
 }
 
 // Watch for external text content changes (e.g., from undo/redo or sync)

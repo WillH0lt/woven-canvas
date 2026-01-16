@@ -46,6 +46,8 @@ export interface TextStretchBehaviorResult {
     content: string;
     width: number;
     height: number;
+    left: number;
+    top: number;
   }) => void;
 }
 
@@ -187,23 +189,28 @@ export function useTextStretchBehavior(
     content: string;
     width: number;
     height: number;
+    left: number;
+    top: number;
   }): void {
-    const { content, width, height } = data;
+    const { content, width, height, left, top } = data;
 
     nextEditorTick((ctx) => {
       const { entityId } = toValue(options.blockData);
 
       // Save text content
-      const textComponent = Text.write(ctx, entityId);
-      textComponent.content = content;
 
-      // Skip if dimensions are invalid
-      if (width === 0 || height === 0) return;
+      const text = Text.read(ctx, entityId);
+      if (text.content === content) return;
 
-      const block = Block.read(ctx, entityId);
+      const writableText = Text.write(ctx, entityId);
+      writableText.content = content;
+
+      const block = Block.write(ctx, entityId);
 
       let finalWidth = width;
       let finalHeight = height;
+      let finalLeft = left;
+      let finalTop = top;
 
       if (behavior === "growBlock") {
         // Don't shrink below starting height
@@ -211,13 +218,13 @@ export function useTextStretchBehavior(
         finalHeight = Math.max(height, minHeight);
         // Width stays unchanged for growBlock
         finalWidth = block.size[0];
+        // Position stays unchanged for growBlock
+        finalLeft = block.position[0];
+        finalTop = block.position[1];
       }
 
-      // Skip update if nothing changed
-      if (block.size[0] === finalWidth && block.size[1] === finalHeight) return;
-
-      const writableBlock = Block.write(ctx, entityId);
-      writableBlock.size = [finalWidth, finalHeight];
+      block.size = [finalWidth, finalHeight];
+      block.position = [finalLeft, finalTop];
     });
   }
 
