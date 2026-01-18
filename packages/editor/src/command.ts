@@ -122,7 +122,7 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
 
       // console.log(
       //   `Spawned command "${name}" with eid ${eid} and payload:`,
-      //   payload
+      //   payload,
       // );
       return eid;
     },
@@ -190,7 +190,7 @@ export function cleanupCommands(ctx: Context): void {
 export function on<T>(
   ctx: Context,
   def: CommandDef<T>,
-  handler: (ctx: Context, payload: T) => void
+  handler: (ctx: Context, payload: T) => void,
 ): void {
   for (const { payload } of def.iter(ctx)) {
     handler(ctx, payload);

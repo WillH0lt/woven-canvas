@@ -12,11 +12,12 @@ import {
   getPointerInput,
   Cursor,
   getBlockDef,
-  Edited,
+  canBlockEdit,
 } from "@infinitecanvas/editor";
 import {
   SelectionStateSingleton,
   SelectionState,
+  EditAfterPlacing,
 } from "@infinitecanvas/plugin-selection";
 
 /**
@@ -56,12 +57,12 @@ function parseSnapshot(heldSnapshot: string): BlockSnapshot | null {
 function createBlockFromSnapshot(
   ctx: Context,
   snapshot: BlockSnapshot,
-  position: [number, number]
+  position: [number, number],
 ): EntityId {
   const blockDef = getBlockDef(ctx, snapshot.block.tag);
   if (!blockDef) {
     throw new Error(
-      `Block placement: block definition for tag "${snapshot.block.tag}" not found`
+      `Block placement: block definition for tag "${snapshot.block.tag}" not found`,
     );
   }
 
@@ -102,10 +103,6 @@ function createBlockFromSnapshot(
     }
   }
 
-  if (blockDef.editOptions.canEdit) {
-    addComponent(ctx, entityId, Edited);
-  }
-
   return entityId;
 }
 
@@ -117,25 +114,28 @@ function placeBlockAndSetupSelection(
   ctx: Context,
   snapshot: BlockSnapshot,
   worldPosition: [number, number],
-  screenPosition: [number, number]
+  screenPosition: [number, number],
+  mode: "dragOut" | "placement",
 ): void {
   // Create the block at the position
   const entityId = createBlockFromSnapshot(ctx, snapshot, worldPosition);
 
   // Get the block's position for draggedEntityStart
   const block = Block.read(ctx, entityId);
-  const blockPosition: [number, number] = [
-    block.position[0],
-    block.position[1],
-  ];
+
+  // Mark block for editing after placement if it's editable
+  if (canBlockEdit(ctx, snapshot.block.tag)) {
+    addComponent(ctx, entityId, EditAfterPlacing, {});
+  }
 
   // Set SelectionStateSingleton to Pointing state
   // selectSystem will handle: threshold check -> Dragging transition -> cursor + deselect
   const selectionState = SelectionStateSingleton.write(ctx);
-  selectionState.state = SelectionState.Pointing;
+  selectionState.state =
+    mode === "dragOut" ? SelectionState.Dragging : SelectionState.Pointing;
   selectionState.dragStart = worldPosition;
   selectionState.draggedEntity = entityId;
-  selectionState.draggedEntityStart = blockPosition;
+  selectionState.draggedEntityStart = block.position;
   selectionState.pointingStartClient = screenPosition;
   selectionState.pointingStartWorld = worldPosition;
   selectionState.isCloning = false;
@@ -185,7 +185,7 @@ export const blockPlacementSystem = defineEditorSystem(
       // Drag-out mode: Look for pointerMove (user dragged from toolbar onto canvas)
       // The pointer is already down from the toolbar, so we trigger on first move
       const pointerMoveEvent = events.find(
-        (e) => e.type === "pointerMove" && !e.obscured
+        (e) => e.type === "pointerMove" && !e.obscured,
       );
       if (!pointerMoveEvent) return;
 
@@ -193,12 +193,13 @@ export const blockPlacementSystem = defineEditorSystem(
         ctx,
         snapshot,
         pointerMoveEvent.worldPosition,
-        pointerMoveEvent.screenPosition
+        pointerMoveEvent.screenPosition,
+        "dragOut",
       );
     } else {
       // Click-to-place mode: Look for pointerDown
       const pointerDownEvent = events.find(
-        (e) => e.type === "pointerDown" && !e.obscured
+        (e) => e.type === "pointerDown" && !e.obscured,
       );
       if (!pointerDownEvent) return;
 
@@ -206,8 +207,9 @@ export const blockPlacementSystem = defineEditorSystem(
         ctx,
         snapshot,
         pointerDownEvent.worldPosition,
-        pointerDownEvent.screenPosition
+        pointerDownEvent.screenPosition,
+        "placement",
       );
     }
-  }
+  },
 );

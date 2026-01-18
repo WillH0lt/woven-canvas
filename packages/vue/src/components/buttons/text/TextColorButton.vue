@@ -4,7 +4,7 @@ import type { EntityId } from "@infinitecanvas/editor";
 
 import MenuDropdown from "../MenuDropdown.vue";
 import ColorBubbles from "../ColorBubbles.vue";
-import IconChevronDown from "../../../icons/IconChevronDown.vue";
+import IconChevronDown from "../../icons/IconChevronDown.vue";
 import { useTextFormatting } from "../../../composables/useTextFormatting";
 
 const props = defineProps<{

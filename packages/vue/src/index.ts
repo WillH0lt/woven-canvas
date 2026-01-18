@@ -64,7 +64,6 @@ export {
 } from "./composables/useEditorContext";
 export {
   useTextStretchBehavior,
-  type TextStretchBehavior,
   type TextStretchBehaviorOptions,
   type TextStretchBehaviorResult,
 } from "./composables/useTextStretchBehavior";

@@ -7,18 +7,19 @@ import {
   Controls,
   Block,
   Aabb,
-  Selected,
   Opacity,
   Edited,
   ScaleWithZoom,
   Intersect,
   RankBounds,
+  createEntity,
+  type EntityId,
 } from "@infinitecanvas/editor";
 import {
   TransformBox,
   TransformHandle,
   DragStart,
-  Locked,
+  Selected,
 } from "../../../src/components";
 import {
   TransformBoxStateSingleton,
@@ -26,7 +27,7 @@ import {
 } from "../../../src/singletons";
 import { transformBoxSystem } from "../../../src/systems/postUpdate";
 import {
-  AddOrUpdateTransformBox,
+  AddTransformBox,
   HideTransformBox,
   ShowTransformBox,
   RemoveTransformBox,
@@ -34,7 +35,6 @@ import {
   EndTransformBoxEdit,
 } from "../../../src/commands";
 import { TransformHandleKind } from "../../../src/types";
-import { BlockDef } from "@infinitecanvas/editor";
 import { PLUGIN_NAME } from "../../../src/constants";
 import { createBlock } from "../../testUtils";
 import { CURSORS } from "../../../src/cursors";
@@ -47,33 +47,33 @@ const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle));
 const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
   cursors: CURSORS,
-  blockDefs: {
-    text: BlockDef.parse({
+  blockDefs: [
+    {
       tag: "text",
       editOptions: { canEdit: true },
       resizeMode: "text",
-    }),
-    image: BlockDef.parse({
+    },
+    {
       tag: "image",
       resizeMode: "scale",
       canRotate: true,
       canScale: true,
-    }),
-    noRotate: BlockDef.parse({
+    },
+    {
       tag: "noRotate",
       canRotate: false,
       canScale: true,
-    }),
-    noScale: BlockDef.parse({
+    },
+    {
       tag: "noScale",
       canRotate: true,
       canScale: false,
-    }),
-    groupOnly: BlockDef.parse({
+    },
+    {
       tag: "groupOnly",
       resizeMode: "groupOnly",
-    }),
-  },
+    },
+  ],
   components: [
     Block,
     Aabb,
@@ -81,7 +81,6 @@ const testPlugin: EditorPlugin = {
     TransformBox,
     TransformHandle,
     DragStart,
-    Locked,
     Opacity,
     Edited,
     ScaleWithZoom,
@@ -120,20 +119,23 @@ describe("PostUpdateTransformBox", () => {
     }
   });
 
-  describe("AddOrUpdateTransformBox command", () => {
+  describe("AddTransformBox command", () => {
     it("should create a transform box when command is spawned", async () => {
       let transformBoxCount = 0;
+      let transformBoxId: EntityId = 0;
 
       // Create and select a block
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true });
+        // Create entity for transform box (like capture system does)
+        transformBoxId = createEntity(ctx);
       });
 
       await editor.tick();
 
       // Spawn the command
       editor.nextTick((ctx) => {
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -150,17 +152,19 @@ describe("PostUpdateTransformBox", () => {
 
     it("should create transform handles for selected block", async () => {
       let handleCount = 0;
+      let transformBoxId: EntityId = 0;
 
       // Create and select a block
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true, tag: "image" });
+        transformBoxId = createEntity(ctx);
       });
 
       await editor.tick();
 
       // Spawn the command
       editor.nextTick((ctx) => {
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -179,6 +183,7 @@ describe("PostUpdateTransformBox", () => {
     it("should size transform box to match selected block bounds", async () => {
       let boxPosition: [number, number] = [0, 0];
       let boxSize: [number, number] = [0, 0];
+      let transformBoxId: EntityId = 0;
 
       // Create and select a block with specific position/size
       editor.nextTick((ctx) => {
@@ -187,13 +192,14 @@ describe("PostUpdateTransformBox", () => {
           size: [200, 150],
           selected: true,
         });
+        transformBoxId = createEntity(ctx);
       });
 
       await editor.tick();
 
       // Spawn the command
       editor.nextTick((ctx) => {
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -216,6 +222,7 @@ describe("PostUpdateTransformBox", () => {
     it("should encompass multiple selected blocks", async () => {
       let boxPosition: [number, number] = [0, 0];
       let boxSize: [number, number] = [0, 0];
+      let transformBoxId: EntityId = 0;
 
       // Create and select two blocks
       editor.nextTick((ctx) => {
@@ -229,13 +236,14 @@ describe("PostUpdateTransformBox", () => {
           size: [100, 100],
           selected: true,
         });
+        transformBoxId = createEntity(ctx);
       });
 
       await editor.tick();
 
       // Spawn the command
       editor.nextTick((ctx) => {
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -261,18 +269,20 @@ describe("PostUpdateTransformBox", () => {
     it("should remove transform box and handles", async () => {
       let transformBoxCount = 0;
       let handleCount = 0;
+      let transformBoxId: EntityId = 0;
 
       // Create block, select it, and create transform box
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
 
       // Remove transform box
       editor.nextTick((ctx) => {
-        RemoveTransformBox.spawn(ctx, undefined);
+        RemoveTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -295,18 +305,20 @@ describe("PostUpdateTransformBox", () => {
     it("should add Opacity component with value 0 to transform box", async () => {
       let hasOpacity = false;
       let opacityValue = 1;
+      let transformBoxId: EntityId = 0;
 
       // Create transform box
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
 
       // Hide transform box
       editor.nextTick((ctx) => {
-        HideTransformBox.spawn(ctx, undefined);
+        HideTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -329,18 +341,20 @@ describe("PostUpdateTransformBox", () => {
 
     it("should hide all handles", async () => {
       let allHandlesHidden = false;
+      let transformBoxId: EntityId = 0;
 
       // Create transform box
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true, tag: "image" });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
 
       // Hide transform box
       editor.nextTick((ctx) => {
-        HideTransformBox.spawn(ctx, undefined);
+        HideTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -364,24 +378,26 @@ describe("PostUpdateTransformBox", () => {
   describe("ShowTransformBox command", () => {
     it("should remove Opacity component from transform box", async () => {
       let hasOpacity = true;
+      let transformBoxId: EntityId = 0;
 
       // Create and hide transform box
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        HideTransformBox.spawn(ctx, undefined);
+        HideTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
 
       // Show transform box
       editor.nextTick((ctx) => {
-        ShowTransformBox.spawn(ctx, undefined);
+        ShowTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -400,51 +416,23 @@ describe("PostUpdateTransformBox", () => {
   });
 
   describe("StartTransformBoxEdit command", () => {
-    it("should add Locked component to transform box", async () => {
-      let hasLocked = false;
-
-      // Create transform box
-      editor.nextTick((ctx) => {
-        createBlock(ctx, { selected: true });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
-      });
-
-      await editor.tick();
-
-      // Start edit
-      editor.nextTick((ctx) => {
-        StartTransformBoxEdit.spawn(ctx, undefined);
-      });
-
-      await editor.tick();
-
-      // Check locked
-      editor.nextTick((ctx) => {
-        const transformBoxes = transformBoxQuery.current(ctx);
-        if (transformBoxes.length > 0) {
-          hasLocked = hasComponent(ctx, transformBoxes[0], Locked);
-        }
-      });
-
-      await editor.tick();
-      expect(hasLocked).toBe(true);
-    });
-
     it("should add Edited component to selected blocks", async () => {
       let blockId: number | undefined;
       let hasEdited = false;
+      let transformBoxId: EntityId = 0;
 
       // Create and select block
       editor.nextTick((ctx) => {
         blockId = createBlock(ctx, { selected: true });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
 
       // Start edit
       editor.nextTick((ctx) => {
-        StartTransformBoxEdit.spawn(ctx, undefined);
+        StartTransformBoxEdit.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -462,18 +450,20 @@ describe("PostUpdateTransformBox", () => {
 
     it("should remove handles during edit", async () => {
       let handleCount = 0;
+      let transformBoxId: EntityId = 0;
 
       // Create transform box
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true, tag: "image" });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
 
       // Start edit
       editor.nextTick((ctx) => {
-        StartTransformBoxEdit.spawn(ctx, undefined);
+        StartTransformBoxEdit.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -490,56 +480,22 @@ describe("PostUpdateTransformBox", () => {
   });
 
   describe("EndTransformBoxEdit command", () => {
-    it("should remove Locked component from transform box", async () => {
-      let hasLocked = true;
-
-      // Create transform box and start edit
-      editor.nextTick((ctx) => {
-        createBlock(ctx, { selected: true });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
-      });
-
-      await editor.tick();
-
-      editor.nextTick((ctx) => {
-        StartTransformBoxEdit.spawn(ctx, undefined);
-      });
-
-      await editor.tick();
-
-      // End edit
-      editor.nextTick((ctx) => {
-        EndTransformBoxEdit.spawn(ctx, undefined);
-      });
-
-      await editor.tick();
-
-      // Check locked removed
-      editor.nextTick((ctx) => {
-        const transformBoxes = transformBoxQuery.current(ctx);
-        if (transformBoxes.length > 0) {
-          hasLocked = hasComponent(ctx, transformBoxes[0], Locked);
-        }
-      });
-
-      await editor.tick();
-      expect(hasLocked).toBe(false);
-    });
-
     it("should remove Edited component from blocks", async () => {
       let blockId: number | undefined;
       let hasEdited = true;
+      let transformBoxId: EntityId = 0;
 
       // Create, edit, then end edit
       editor.nextTick((ctx) => {
         blockId = createBlock(ctx, { selected: true });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        StartTransformBoxEdit.spawn(ctx, undefined);
+        StartTransformBoxEdit.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -565,11 +521,13 @@ describe("PostUpdateTransformBox", () => {
   describe("handle creation based on blockDefs", () => {
     it("should not create rotation handles when canRotate is false", async () => {
       let rotationHandleCount = 0;
+      let transformBoxId: EntityId = 0;
 
       // Create block with canRotate: false
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true, tag: "noRotate" });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -589,11 +547,13 @@ describe("PostUpdateTransformBox", () => {
 
     it("should not create scale handles when canScale is false", async () => {
       let scaleHandleCount = 0;
+      let transformBoxId: EntityId = 0;
 
       // Create block with canScale: false
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true, tag: "noScale" });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -613,11 +573,13 @@ describe("PostUpdateTransformBox", () => {
 
     it("should create stretch handles for left/right edges when resizeMode is text", async () => {
       let stretchHandleCount = 0;
+      let transformBoxId: EntityId = 0;
 
       // Create block with resizeMode: text
       editor.nextTick((ctx) => {
         createBlock(ctx, { selected: true, tag: "text" });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -643,11 +605,13 @@ describe("PostUpdateTransformBox", () => {
     it("should add DragStart to selected blocks", async () => {
       let blockId: number | undefined;
       let hasDragStart = false;
+      let transformBoxId: EntityId = 0;
 
       // Create and select block
       editor.nextTick((ctx) => {
         blockId = createBlock(ctx, { selected: true });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();
@@ -666,6 +630,7 @@ describe("PostUpdateTransformBox", () => {
     it("should set DragStart position to match block position", async () => {
       let blockId: number | undefined;
       let dragStartPosition: [number, number] = [0, 0];
+      let transformBoxId: EntityId = 0;
 
       // Create block at specific position
       editor.nextTick((ctx) => {
@@ -673,7 +638,8 @@ describe("PostUpdateTransformBox", () => {
           position: [123, 456],
           selected: true,
         });
-        AddOrUpdateTransformBox.spawn(ctx, undefined);
+        transformBoxId = createEntity(ctx);
+        AddTransformBox.spawn(ctx, { transformBoxId });
       });
 
       await editor.tick();

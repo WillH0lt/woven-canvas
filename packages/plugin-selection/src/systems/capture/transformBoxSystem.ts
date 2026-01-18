@@ -1,11 +1,14 @@
-import { and, not, setup } from "xstate";
+import { assign, and, not, setup } from "xstate";
 import {
   type Context,
   type EntityId,
+  type InferStateContext,
   defineEditorSystem,
   defineQuery,
   Controls,
   hasComponent,
+  removeComponent,
+  createEntity,
   Block,
   getPointerInput,
   canBlockEdit,
@@ -13,9 +16,14 @@ import {
   type PointerInput,
 } from "@infinitecanvas/editor";
 
-import { TransformBox, TransformHandle, Selected } from "../../components";
 import {
-  AddOrUpdateTransformBox,
+  TransformBox,
+  TransformHandle,
+  Selected,
+  EditAfterPlacing,
+} from "../../components";
+import {
+  AddTransformBox,
   UpdateTransformBox,
   HideTransformBox,
   ShowTransformBox,
@@ -41,6 +49,11 @@ interface SelectionChangedEvent {
 type TransformBoxEvent = SelectionChangedEvent | PointerInput;
 
 /**
+ * Transform box state machine context - derived from TransformBoxStateSingleton schema.
+ */
+type TransformBoxContext = InferStateContext<typeof TransformBoxStateSingleton>;
+
+/**
  * Transform box state machine - created once at module level.
  *
  * The ECS context is available on events (ctx property) so actions
@@ -53,6 +66,7 @@ type TransformBoxEvent = SelectionChangedEvent | PointerInput;
  */
 const transformBoxMachine = setup({
   types: {
+    context: {} as TransformBoxContext,
     events: {} as TransformBoxEvent,
   },
   guards: {
@@ -82,35 +96,99 @@ const transformBoxMachine = setup({
       const blockDef = getBlockDef(event.ctx, block.tag);
       return blockDef.resizeMode !== "groupOnly";
     },
+    hasEditAfterPlacing: ({ event }) => {
+      if (event.type !== "selectionChanged") return false;
+      if (event.selectedEntityIds.length !== 1) return false;
+      return hasComponent(
+        event.ctx,
+        event.selectedEntityIds[0],
+        EditAfterPlacing,
+      );
+    },
   },
   actions: {
-    addOrUpdateTransformBox: ({ event }) => {
-      AddOrUpdateTransformBox.spawn(event.ctx);
+    addTransformBox: assign(
+      ({ context, event }, params?: { skipHandles?: boolean }) => {
+        // If we already have a transform box, reuse it
+        if (context.transformBoxId !== null) {
+          return { transformBoxId: context.transformBoxId };
+        }
+
+        // Create a new entity for the transform box
+        const transformBoxId = createEntity(event.ctx);
+
+        AddTransformBox.spawn(event.ctx, {
+          transformBoxId,
+          skipHandles: params?.skipHandles,
+        });
+
+        return { transformBoxId };
+      },
+    ),
+    updateTransformBox: ({ context, event }) => {
+      if (context.transformBoxId === null) return;
+      UpdateTransformBox.spawn(event.ctx, {
+        transformBoxId: context.transformBoxId,
+      });
     },
-    updateTransformBox: ({ event }) => {
-      UpdateTransformBox.spawn(event.ctx);
+    hideTransformBox: ({ context, event }) => {
+      if (context.transformBoxId === null) return;
+      HideTransformBox.spawn(event.ctx, {
+        transformBoxId: context.transformBoxId,
+      });
     },
-    hideTransformBox: ({ event }) => {
-      HideTransformBox.spawn(event.ctx);
+    showTransformBox: ({ context, event }) => {
+      if (context.transformBoxId === null) return;
+      ShowTransformBox.spawn(event.ctx, {
+        transformBoxId: context.transformBoxId,
+      });
     },
-    showTransformBox: ({ event }) => {
-      ShowTransformBox.spawn(event.ctx);
+    removeTransformBox: ({ context, event }) => {
+      if (context.transformBoxId === null) return;
+      RemoveTransformBox.spawn(event.ctx, {
+        transformBoxId: context.transformBoxId,
+      });
     },
-    removeTransformBox: ({ event }) => {
-      RemoveTransformBox.spawn(event.ctx);
+    clearTransformBoxId: assign({
+      transformBoxId: () => null,
+    }),
+    startTransformBoxEdit: ({ context, event }) => {
+      if (context.transformBoxId === null) return;
+      StartTransformBoxEdit.spawn(event.ctx, {
+        transformBoxId: context.transformBoxId,
+      });
     },
-    startTransformBoxEdit: ({ event }) => {
-      StartTransformBoxEdit.spawn(event.ctx);
+    removeEditAfterPlacing: ({ event }) => {
+      for (const entityId of getLocalSelectedBlocks(event.ctx)) {
+        if (hasComponent(event.ctx, entityId, EditAfterPlacing)) {
+          removeComponent(event.ctx, entityId, EditAfterPlacing);
+        }
+      }
     },
   },
 }).createMachine({
   id: "transformBox",
   initial: TransformBoxState.None,
+  context: {
+    transformBoxId: null,
+  },
   states: {
     [TransformBoxState.None]: {
-      entry: "removeTransformBox",
+      entry: ["removeTransformBox", "clearTransformBoxId"],
       on: {
         selectionChanged: [
+          {
+            guard: and([
+              "hasEditAfterPlacing",
+              "selectionIsTransformable",
+              "isSelectionEditable",
+            ]),
+            actions: [
+              { type: "addTransformBox", params: { skipHandles: true } },
+              "removeEditAfterPlacing",
+            ],
+            target: TransformBoxState.Editing,
+          },
           {
             guard: "selectionIsTransformable",
             target: TransformBoxState.Idle,
@@ -119,7 +197,7 @@ const transformBoxMachine = setup({
       },
     },
     [TransformBoxState.Idle]: {
-      entry: "addOrUpdateTransformBox",
+      entry: ["addTransformBox"],
       on: {
         selectionChanged: [
           {
@@ -147,7 +225,7 @@ const transformBoxMachine = setup({
       },
     },
     [TransformBoxState.Editing]: {
-      entry: ["startTransformBoxEdit", "hideTransformBox"],
+      entry: ["hideTransformBox", "startTransformBoxEdit"],
       on: {
         pointerDown: {
           guard: and([not("isOverTransformBox"), not("isOverTransformHandle")]),
@@ -160,7 +238,7 @@ const transformBoxMachine = setup({
 
 // Query for selected blocks with change tracking
 const selectedBlocksQuery = defineQuery((q) =>
-  q.with(Block).tracking(Selected)
+  q.with(Block).tracking(Selected),
 );
 
 /**
@@ -218,5 +296,5 @@ export const transformBoxSystem = defineEditorSystem(
     // Run machine through events - TransformBoxStateSingleton.run() handles
     // reading current state, running the machine, and writing back
     TransformBoxStateSingleton.run(ctx, transformBoxMachine, events);
-  }
+  },
 );

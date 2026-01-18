@@ -17,6 +17,7 @@ export {
   type EnumFieldBuilder,
   type RefFieldBuilder,
   type StringFieldDef,
+  type EnumFieldDef,
 } from "./Component";
 export { World } from "./World";
 export { setupWorker } from "./Worker";

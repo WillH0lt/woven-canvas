@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Color } from "@infinitecanvas/editor";
+import { Color, Text } from "@infinitecanvas/editor";
 import {
   useComponent,
   useTextStretchBehavior,
   type BlockData,
+  useEditorContext,
   EditableText,
 } from "@infinitecanvas/vue";
 
@@ -15,32 +16,41 @@ const props = defineProps<BlockData>();
 const shape = useComponent(props.entityId, Shape);
 const color = useComponent(props.entityId, Color);
 
-// Ref to EditableText component for accessing its element
-const editableTextRef = ref<InstanceType<typeof EditableText> | null>(null);
+const { nextEditorTick } = useEditorContext();
 
-// Use the text stretch behavior composable with 'growBlock' mode
-// This allows the block to grow in height to fit text, but not shrink
-// smaller than the starting dimensions
-const { handleEditEnd } = useTextStretchBehavior({
-  blockData: () => props,
-  behavior: "growBlock",
-  editableTextRef,
-});
+function handleEditEnd(data: { content: string }) {
+  nextEditorTick((ctx) => {
+    const entityId = props.entityId;
+    const text = Text.read(ctx, entityId);
+
+    if (text.content === data.content) return;
+
+    const writableText = Text.write(ctx, entityId);
+    writableText.content = data.content;
+  });
+}
 </script>
 
 <template>
   <div
+    class="shape-block"
     :style="{
-      width: '100%',
-      height: '100%',
-      boxSizing: 'border-box',
-      border: shape?.border + 'px solid black',
-      borderRadius: '4px',
       backgroundColor: `rgb(${color?.red}, ${color?.green}, ${color?.blue})`,
-      display: 'flex',
-      padding: '8px',
+      border: shape?.border + 'px solid black',
+      overflow: props.edited ? 'visible' : 'hidden',
     }"
   >
-    <EditableText ref="editableTextRef" v-bind="props" @edit-end="handleEditEnd" />
+    <EditableText v-bind="props" @edit-end="handleEditEnd" />
   </div>
 </template>
+
+<style>
+.shape-block {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 4px;
+  display: flex;
+  padding: 8px;
+}
+</style>

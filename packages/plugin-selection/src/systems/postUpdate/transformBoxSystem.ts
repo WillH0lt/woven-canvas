@@ -18,17 +18,13 @@ import {
   getBackrefs,
   getBlockDef,
 } from "@infinitecanvas/editor";
+// Note: createEntity is still used for creating transform handles
 import { Vec2, Rect } from "@infinitecanvas/math";
 
+import { TransformBox, TransformHandle, DragStart } from "../../components";
 import {
-  TransformBox,
-  TransformHandle,
-  DragStart,
-  Locked,
-} from "../../components";
-import {
-  AddOrUpdateTransformBox,
-  UpdateTransformBox as UpdateTransformBoxCmd,
+  AddTransformBox,
+  UpdateTransformBox,
   HideTransformBox,
   ShowTransformBox,
   RemoveTransformBox,
@@ -40,10 +36,6 @@ import { TransformHandleKind, SelectionState } from "../../types";
 import { CursorKind } from "../../cursors";
 import { getLocalSelectedBlocks } from "../../helpers";
 
-// Query for transform box entities
-const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox));
-
-// Query for edited blocks
 const editedBlocksQuery = defineQuery((q) => q.with(Block, Edited));
 
 // Transform box z-order rank
@@ -62,83 +54,91 @@ export const transformBoxSystem = defineEditorSystem(
   { phase: "update", priority: -100 },
   (ctx: Context) => {
     // RemoveTransformBox must be first to avoid stale references
-    on(ctx, RemoveTransformBox, removeTransformBox);
-    on(ctx, AddOrUpdateTransformBox, addOrUpdateTransformBox);
-    on(ctx, UpdateTransformBoxCmd, () => updateTransformBox(ctx));
-    on(ctx, HideTransformBox, hideTransformBox);
-    on(ctx, ShowTransformBox, showTransformBox);
-    on(ctx, StartTransformBoxEdit, startTransformBoxEdit);
+    on(ctx, RemoveTransformBox, (ctx, { transformBoxId }) => {
+      removeTransformBox(ctx, transformBoxId);
+    });
+    on(ctx, AddTransformBox, (ctx, { transformBoxId, skipHandles }) => {
+      addTransformBox(ctx, transformBoxId, skipHandles);
+    });
+    on(ctx, UpdateTransformBox, (ctx, { transformBoxId }) => {
+      updateTransformBox(ctx, transformBoxId);
+    });
+    on(ctx, HideTransformBox, (ctx, { transformBoxId }) => {
+      hideTransformBox(ctx, transformBoxId);
+    });
+    on(ctx, ShowTransformBox, (ctx, { transformBoxId }) => {
+      showTransformBox(ctx, transformBoxId);
+    });
+    on(ctx, StartTransformBoxEdit, (ctx, { transformBoxId }) => {
+      startTransformBoxEdit(ctx, transformBoxId);
+    });
     on(ctx, EndTransformBoxEdit, endTransformBoxEdit);
-  }
+  },
 );
 
 /**
  * Remove transform box and all handles.
  */
-function removeTransformBox(ctx: Context): void {
-  // Remove transform box
-  for (const boxId of transformBoxQuery.current(ctx)) {
-    const handles = getBackrefs(
-      ctx,
-      transformBoxQuery.current(ctx)[0],
-      TransformHandle,
-      "transformBox"
-    );
-
-    for (const handleId of handles) {
-      removeEntity(ctx, handleId);
-    }
-
-    removeEntity(ctx, boxId);
+function removeTransformBox(ctx: Context, transformBoxId: EntityId): void {
+  // Check if entity exists and has TransformBox component
+  if (!hasComponent(ctx, transformBoxId, TransformBox)) {
+    endTransformBoxEdit(ctx);
+    return;
   }
+
+  // Remove all handles
+  const handles = getBackrefs(
+    ctx,
+    transformBoxId,
+    TransformHandle,
+    "transformBox",
+  );
+
+  for (const handleId of handles) {
+    removeEntity(ctx, handleId);
+  }
+
+  // Remove transform box entity
+  removeEntity(ctx, transformBoxId);
 
   endTransformBoxEdit(ctx);
 }
 
 /**
- * Add or update transform box.
+ * Add transform box components to an entity.
+ * The entity is created in the capture phase; this adds components and updates bounds.
+ * @param skipHandles - If true, skip creating transform handles (used when entering edit mode directly)
  */
-function addOrUpdateTransformBox(ctx: Context): void {
-  let transformBoxId: EntityId;
+function addTransformBox(
+  ctx: Context,
+  transformBoxId: EntityId,
+  skipHandles?: boolean,
+): void {
+  // Add components to the newly created entity
+  addComponent(ctx, transformBoxId, Block, {
+    tag: "transform-box",
+    position: [0, 0],
+    size: [0, 0],
+    rotateZ: 0,
+    rank: TRANSFORM_BOX_RANK,
+  });
+  addComponent(ctx, transformBoxId, TransformBox, {});
+  addComponent(ctx, transformBoxId, DragStart, {
+    position: [0, 0],
+    size: [0, 0],
+    rotateZ: 0,
+    fontSize: 16,
+  });
 
-  const existingBoxes = transformBoxQuery.current(ctx);
-  if (existingBoxes.length > 0) {
-    transformBoxId = existingBoxes[0];
-  } else {
-    // Create new transform box
-    transformBoxId = createEntity(ctx);
-    addComponent(ctx, transformBoxId, Block, {
-      tag: "transform-box",
-      position: [0, 0],
-      size: [0, 0],
-      rotateZ: 0,
-      rank: TRANSFORM_BOX_RANK,
-    });
-    addComponent(ctx, transformBoxId, TransformBox, {});
-    addComponent(ctx, transformBoxId, DragStart, {
-      position: [0, 0],
-      size: [0, 0],
-      rotateZ: 0,
-      fontSize: 16,
-    });
+  if (!skipHandles) {
+    updateTransformBox(ctx, transformBoxId);
   }
-
-  updateTransformBox(ctx, transformBoxId);
 }
 
 /**
  * Update transform box bounds to match selection.
  */
-function updateTransformBox(ctx: Context, transformBoxId?: EntityId): void {
-  if (!transformBoxId) {
-    const existingBoxes = transformBoxQuery.current(ctx);
-    if (existingBoxes.length === 0) {
-      console.warn("No transform box to update");
-      return;
-    }
-    transformBoxId = existingBoxes[0];
-  }
-
+function updateTransformBox(ctx: Context, transformBoxId: EntityId): void {
   const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
 
@@ -239,7 +239,7 @@ interface TransformHandleDef {
  */
 function addOrUpdateTransformHandles(
   ctx: Context,
-  transformBoxId: EntityId
+  transformBoxId: EntityId,
 ): void {
   const boxBlock = Block.read(ctx, transformBoxId);
   const { position, size, rotateZ } = boxBlock;
@@ -413,7 +413,7 @@ function addOrUpdateTransformHandles(
     ctx,
     transformBoxId,
     TransformHandle,
-    "transformBox"
+    "transformBox",
   );
   const handleMap = new Map<string, EntityId>();
   for (const handleId of existingHandles) {
@@ -488,29 +488,29 @@ function addOrUpdateTransformHandles(
 /**
  * Hide transform box and handles.
  */
-function hideTransformBox(ctx: Context): void {
-  for (const boxId of transformBoxQuery.current(ctx)) {
-    if (!hasComponent(ctx, boxId, Opacity)) {
-      addComponent(ctx, boxId, Opacity, { value: 0 });
+function hideTransformBox(ctx: Context, transformBoxId: EntityId): void {
+  if (!hasComponent(ctx, transformBoxId, TransformBox)) return;
+
+  if (!hasComponent(ctx, transformBoxId, Opacity)) {
+    addComponent(ctx, transformBoxId, Opacity, { value: 0 });
+  } else {
+    const opacity = Opacity.write(ctx, transformBoxId);
+    opacity.value = 0;
+  }
+
+  const handles = getBackrefs(
+    ctx,
+    transformBoxId,
+    TransformHandle,
+    "transformBox",
+  );
+
+  for (const handleId of handles) {
+    if (!hasComponent(ctx, handleId, Opacity)) {
+      addComponent(ctx, handleId, Opacity, { value: 0 });
     } else {
-      const opacity = Opacity.write(ctx, boxId);
+      const opacity = Opacity.write(ctx, handleId);
       opacity.value = 0;
-    }
-
-    const handles = getBackrefs(
-      ctx,
-      transformBoxQuery.current(ctx)[0],
-      TransformHandle,
-      "transformBox"
-    );
-
-    for (const handleId of handles) {
-      if (!hasComponent(ctx, handleId, Opacity)) {
-        addComponent(ctx, handleId, Opacity, { value: 0 });
-      } else {
-        const opacity = Opacity.write(ctx, handleId);
-        opacity.value = 0;
-      }
     }
   }
 }
@@ -518,7 +518,9 @@ function hideTransformBox(ctx: Context): void {
 /**
  * Show transform box and handles.
  */
-function showTransformBox(ctx: Context): void {
+function showTransformBox(ctx: Context, transformBoxId: EntityId): void {
+  if (!hasComponent(ctx, transformBoxId, TransformBox)) return;
+
   // Don't show if current selection is not transformable
   const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
@@ -528,47 +530,38 @@ function showTransformBox(ctx: Context): void {
     if (blockDef.resizeMode === "groupOnly") return;
   }
 
-  for (const boxId of transformBoxQuery.current(ctx)) {
-    if (hasComponent(ctx, boxId, Locked)) continue;
-    if (hasComponent(ctx, boxId, Opacity)) {
-      removeComponent(ctx, boxId, Opacity);
-    }
+  if (hasComponent(ctx, transformBoxId, Opacity)) {
+    removeComponent(ctx, transformBoxId, Opacity);
+  }
 
-    const handles = getBackrefs(
-      ctx,
-      transformBoxQuery.current(ctx)[0],
-      TransformHandle,
-      "transformBox"
-    );
+  const handles = getBackrefs(
+    ctx,
+    transformBoxId,
+    TransformHandle,
+    "transformBox",
+  );
 
-    for (const handleId of handles) {
-      if (hasComponent(ctx, handleId, Locked)) continue;
-      if (hasComponent(ctx, handleId, Opacity)) {
-        removeComponent(ctx, handleId, Opacity);
-      }
+  for (const handleId of handles) {
+    if (hasComponent(ctx, handleId, Opacity)) {
+      removeComponent(ctx, handleId, Opacity);
     }
   }
 
   // Update transform box to reflect any changes
-  updateTransformBox(ctx);
+  updateTransformBox(ctx, transformBoxId);
 }
 
 /**
  * Start transform box edit mode.
  */
-function startTransformBoxEdit(ctx: Context): void {
-  for (const boxId of transformBoxQuery.current(ctx)) {
-    if (!hasComponent(ctx, boxId, Locked)) {
-      addComponent(ctx, boxId, Locked, {});
-    }
-
+function startTransformBoxEdit(ctx: Context, transformBoxId: EntityId): void {
+  if (hasComponent(ctx, transformBoxId, TransformBox)) {
     const handles = getBackrefs(
       ctx,
-      transformBoxQuery.current(ctx)[0],
+      transformBoxId,
       TransformHandle,
-      "transformBox"
+      "transformBox",
     );
-
     for (const handleId of handles) {
       removeEntity(ctx, handleId);
     }

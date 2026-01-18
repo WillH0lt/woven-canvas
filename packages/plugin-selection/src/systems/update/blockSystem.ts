@@ -126,7 +126,7 @@ export const blockSystem = defineEditorSystem(
         Cursor.setContextCursor(
           ctx,
           payload.contextCursorKind,
-          payload.contextRotation ?? 0
+          payload.contextRotation ?? 0,
         );
       }
       // Allow clearing context cursor by passing empty string
@@ -158,7 +158,7 @@ export const blockSystem = defineEditorSystem(
     on(ctx, UncloneEntities, (ctx, { entityIds, seed }) => {
       uncloneEntities(ctx, entityIds, seed);
     });
-  }
+  },
 );
 
 /**
@@ -236,7 +236,7 @@ function copySelectedBlocks(ctx: Context): void {
 
   const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...componentsById].filter(([, def]) => def.__editor.sync === "document")
+    [...componentsById].filter(([, def]) => def.__editor.sync === "document"),
   );
 
   const clipboardEntities: ClipboardEntityData[] = [];
@@ -269,7 +269,7 @@ function copySelectedBlocks(ctx: Context): void {
         const converted = convertRefsToUuids(
           ctx,
           componentDef.schema,
-          snapshot
+          snapshot,
         );
         entityData.set(componentId, converted);
       }
@@ -309,7 +309,7 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
 
   const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...componentsById].filter(([, def]) => def.__editor.sync === "document")
+    [...componentsById].filter(([, def]) => def.__editor.sync === "document"),
   );
 
   const clipboard = Clipboard.read(ctx);
@@ -417,7 +417,7 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
       entityId,
       componentDef,
       componentData,
-      uuidToNewEntityId
+      uuidToNewEntityId,
     );
   }
 }
@@ -430,11 +430,11 @@ function cloneEntities(
   ctx: Context,
   entityIds: EntityId[],
   offset: Vec2,
-  seed: string
+  seed: string,
 ): void {
   const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...componentsById].filter(([, def]) => def.__editor.sync === "document")
+    [...componentsById].filter(([, def]) => def.__editor.sync === "document"),
   );
   const syncedComponentId = Synced._getComponentId(ctx);
   const blockComponentId = Block._getComponentId(ctx);
@@ -489,7 +489,7 @@ function cloneEntities(
 function uncloneEntities(
   ctx: Context,
   entityIds: EntityId[],
-  seed: string
+  seed: string,
 ): void {
   // Step 1: Calculate expected clone UUIDs
   const expectedCloneUuids = new Set<string>();
@@ -542,7 +542,7 @@ function uncloneEntities(
  */
 function swapConnectorRefs(
   ctx: Context,
-  fromTo: Map<EntityId, EntityId>
+  fromTo: Map<EntityId, EntityId>,
 ): void {
   for (const [fromId, toId] of fromTo) {
     // Find connectors where this entity is the startBlock
@@ -550,7 +550,7 @@ function swapConnectorRefs(
       ctx,
       fromId,
       Connector,
-      "startBlock"
+      "startBlock",
     )) {
       Connector.write(ctx, connectorId).startBlock = toId;
     }

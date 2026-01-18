@@ -168,7 +168,7 @@ const sortedBlocks = shallowRef<Ref<BlockData>[]>([]);
 function subscribeComponent(
   entityId: EntityId,
   componentName: string,
-  callback: (value: unknown) => void
+  callback: (value: unknown) => void,
 ): () => void {
   let entitySubs = componentSubscriptions.get(entityId);
   if (!entitySubs) {
@@ -200,7 +200,7 @@ function subscribeComponent(
 function notifySubscribers(
   entityId: EntityId,
   componentDef: AnyEditorComponentDef,
-  removed = false
+  removed = false,
 ): void {
   const entitySubs = componentSubscriptions.get(entityId);
   if (!entitySubs) return;
@@ -224,7 +224,7 @@ function notifySubscribers(
 // Subscribe to singleton changes
 function subscribeSingleton(
   singletonName: string,
-  callback: (value: unknown) => void
+  callback: (value: unknown) => void,
 ): () => void {
   let callbacks = singletonSubscriptions.get(singletonName);
   if (!callbacks) {
@@ -429,7 +429,7 @@ function updateBlocks(editor: Editor) {
         edited: false,
         opacity: null,
         connector: null,
-      })
+      }),
     );
     needsResort = true;
   }
@@ -598,6 +598,7 @@ function getBlockStyle(data: BlockData) {
     transform: getBlockTransform(block),
     opacity: opacity !== null ? opacity.value / 255 : undefined,
     pointerEvents: "none" as const,
+    userSelect: "none" as const,
   };
 }
 </script>

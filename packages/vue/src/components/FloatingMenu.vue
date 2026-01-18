@@ -5,12 +5,15 @@ import {
   Block,
   Camera,
   Screen,
-  Opacity,
   getResources,
   type EntityId,
   type EditorResources,
 } from "@infinitecanvas/editor";
-import { TransformBox, Selected } from "@infinitecanvas/plugin-selection";
+import {
+  Selected,
+  SelectionStateSingleton,
+  SelectionState,
+} from "@infinitecanvas/plugin-selection";
 import { Aabb, Rect } from "@infinitecanvas/math";
 import { useQuery } from "../composables/useQuery";
 import { useSingleton } from "../composables/useSingleton";
@@ -24,12 +27,10 @@ const canvasContext = inject(INFINITE_CANVAS_KEY);
 // Query all selected blocks
 const selectedItems = useQuery([Block, Selected] as const);
 
-// Query transform box with opacity (hidden when opacity exists and is 0)
-const transformBoxWithOpacity = useQuery([TransformBox, Opacity] as const);
-
 // Get camera and screen for coordinate transforms
 const camera = useSingleton(Camera);
 const screen = useSingleton(Screen);
+const selectionState = useSingleton(SelectionStateSingleton);
 
 // Get userId from editor
 const userId = computed(() => {
@@ -46,13 +47,13 @@ const mySelectedItems = computed(() => {
   if (!uid) return [];
 
   return selectedItems.value.filter(
-    (item) => item.selected.value?.selectedBy === uid
+    (item) => item.selected.value?.selectedBy === uid,
   );
 });
 
 // Selected entity IDs
 const selectedIds = computed<EntityId[]>(() =>
-  mySelectedItems.value.map((item) => item.entityId)
+  mySelectedItems.value.map((item) => item.entityId),
 );
 
 // Compute common components across selection
@@ -156,19 +157,17 @@ const isOffScreen = computed(() => {
   );
 });
 
-// Check if transform box is hidden (has opacity 0)
-const isTransformBoxHidden = computed(() => {
-  for (const item of transformBoxWithOpacity.value) {
-    if (item.opacity.value.value === 0) {
-      return true;
-    }
-  }
-  return false;
-});
+const hiddenSelectionStates: SelectionState[] = [
+  SelectionState.Dragging,
+  SelectionState.SelectionBoxDragging,
+];
 
 // Should the menu be visible?
 const shouldShow = computed(
-  () => mySelectedItems.value.length > 0 && !isOffScreen.value && !isTransformBoxHidden.value
+  () =>
+    mySelectedItems.value.length > 0 &&
+    !isOffScreen.value &&
+    !hiddenSelectionStates.includes(selectionState.value.state),
 );
 </script>
 

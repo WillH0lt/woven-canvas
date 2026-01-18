@@ -9,16 +9,12 @@ import {
   hasComponent,
   Synced,
   Block,
+  Edited,
   getPointerInput,
   type PointerInput,
 } from "@infinitecanvas/editor";
 
-import {
-  Locked,
-  TransformBox,
-  TransformHandle,
-  Selected,
-} from "../../components";
+import { TransformBox, TransformHandle, Selected } from "../../components";
 import {
   SelectBlock,
   DeselectAll,
@@ -41,6 +37,9 @@ const POINTING_THRESHOLD = 4;
 
 // Query for selected synced blocks (for cloning)
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected, Synced));
+
+// Query for edited blocks (to prevent dragging during edit mode)
+const editedBlocksQuery = defineQuery((q) => q.with(Block, Edited));
 
 /**
  * Selection state machine context - derived from SelectionStateSingleton schema.
@@ -69,7 +68,7 @@ const selectionMachine = setup({
     isThresholdReached: ({ context, event }) => {
       const dist = Vec2Ns.distance(
         context.pointingStartClient,
-        event.screenPosition
+        event.screenPosition,
       );
       return dist >= POINTING_THRESHOLD;
     },
@@ -86,9 +85,8 @@ const selectionMachine = setup({
       }
       return false;
     },
-    draggedEntityIsLocked: ({ context, event }) => {
-      if (context.draggedEntity === null) return false;
-      return hasComponent(event.ctx, context.draggedEntity, Locked);
+    hasEditedBlocks: ({ event }) => {
+      return editedBlocksQuery.current(event.ctx).length > 0;
     },
   },
   actions: {
@@ -218,7 +216,7 @@ const selectionMachine = setup({
           const isTransformBox = hasComponent(
             ctx,
             context.draggedEntity,
-            TransformBox
+            TransformBox,
           );
           const entityIds = isTransformBox
             ? Array.from(selectedBlocksQuery.current(ctx))
@@ -234,7 +232,7 @@ const selectionMachine = setup({
           const isTransformBox = hasComponent(
             ctx,
             context.draggedEntity,
-            TransformBox
+            TransformBox,
           );
           const entityIds = isTransformBox
             ? Array.from(selectedBlocksQuery.current(ctx))
@@ -253,19 +251,19 @@ const selectionMachine = setup({
     resizeSelectionBox: ({ context, event }) => {
       const left = Math.min(
         context.pointingStartWorld[0],
-        event.worldPosition[0]
+        event.worldPosition[0],
       );
       const top = Math.min(
         context.pointingStartWorld[1],
-        event.worldPosition[1]
+        event.worldPosition[1],
       );
       const right = Math.max(
         context.pointingStartWorld[0],
-        event.worldPosition[0]
+        event.worldPosition[0],
       );
       const bottom = Math.max(
         context.pointingStartWorld[1],
-        event.worldPosition[1]
+        event.worldPosition[1],
       );
 
       UpdateSelectionBox.spawn(event.ctx, {
@@ -289,12 +287,16 @@ const selectionMachine = setup({
       if (event.shiftDown) {
         ToggleSelect.spawn(ctx, { entityId: intersectId });
       } else {
-        SelectBlock.spawn(ctx, { entityId: intersectId, deselectOthers: true });
+        SelectBlock.spawn(ctx, {
+          entityId: intersectId,
+          deselectOthers: true,
+        });
       }
     },
     selectDragged: ({ context, event }) => {
       if (context.draggedEntity === null) return;
       if (!hasComponent(event.ctx, context.draggedEntity, Synced)) return;
+
       SelectBlock.spawn(event.ctx, {
         entityId: context.draggedEntity,
         deselectOthers: true,
@@ -347,7 +349,7 @@ const selectionMachine = setup({
       entry: ["setPointingStart", "setDraggedEntity"],
       on: {
         pointerMove: {
-          guard: and(["isThresholdReached", not("draggedEntityIsLocked")]),
+          guard: and(["isThresholdReached", not("hasEditedBlocks")]),
           target: SelectionState.Dragging,
         },
         pointerUp: [
@@ -378,7 +380,7 @@ const selectionMachine = setup({
           actions: "updateDragged",
         },
         pointerUp: {
-          actions: ["selectDragged"],
+          actions: "selectDragged",
           target: SelectionState.Idle,
         },
         cancel: {
@@ -448,5 +450,5 @@ export const selectSystem = defineEditorSystem(
     if (events.length === 0) return;
 
     SelectionStateSingleton.run(ctx, selectionMachine, events);
-  }
+  },
 );

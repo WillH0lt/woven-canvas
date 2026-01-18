@@ -25,7 +25,7 @@ export {
 
 // Transform box commands
 export {
-  AddOrUpdateTransformBox,
+  AddTransformBox,
   UpdateTransformBox,
   HideTransformBox,
   ShowTransformBox,

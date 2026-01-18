@@ -5,7 +5,7 @@ import { Color } from "@infinitecanvas/editor";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import ColorBubbles from "./ColorBubbles.vue";
-import IconChevronDown from "../../icons/IconChevronDown.vue";
+import IconChevronDown from "../icons/IconChevronDown.vue";
 import { useComponents } from "../../composables/useComponents";
 import { useEditorContext } from "../../composables/useEditorContext";
 import { rgbToHex } from "../../utils/color";

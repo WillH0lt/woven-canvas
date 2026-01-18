@@ -4,7 +4,7 @@ import type { EntityId } from "@infinitecanvas/editor";
 import { Text } from "@infinitecanvas/editor";
 
 import MenuDropdown from "../MenuDropdown.vue";
-import IconChevronDown from "../../../icons/IconChevronDown.vue";
+import IconChevronDown from "../../icons/IconChevronDown.vue";
 import { useComponents } from "../../../composables/useComponents";
 import { useEditorContext } from "../../../composables/useEditorContext";
 
@@ -32,7 +32,7 @@ const props = withDefaults(
       { name: "Merriweather", displayName: "Merriweather" },
     ],
     showSearch: false,
-  }
+  },
 );
 
 const { nextEditorTick } = useEditorContext();
@@ -75,7 +75,7 @@ const filteredFonts = computed(() => {
   return props.fonts.filter(
     (f) =>
       f.name.toLowerCase().includes(search) ||
-      f.displayName.toLowerCase().includes(search)
+      f.displayName.toLowerCase().includes(search),
   );
 });
 
@@ -115,7 +115,10 @@ function handleWheelStop(e: Event) {
             :key="font.name"
             class="ic-font-item"
             :class="{ active: currentFontFamily === font.name }"
-            @click="setFontFamily(font.name); close()"
+            @click="
+              setFontFamily(font.name);
+              close();
+            "
           >
             <img
               v-if="font.previewImage"
@@ -123,7 +126,11 @@ function handleWheelStop(e: Event) {
               :src="font.previewImage"
               :alt="font.name"
             />
-            <span v-else class="ic-font-name" :style="{ fontFamily: font.name }">
+            <span
+              v-else
+              class="ic-font-name"
+              :style="{ fontFamily: font.name }"
+            >
               {{ font.displayName }}
             </span>
           </div>
@@ -186,7 +193,9 @@ function handleWheelStop(e: Event) {
 
 .ic-font-family-menu {
   background-color: var(--ic-gray-700);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
   border-radius: 8px;
   cursor: default;
   width: 200px;

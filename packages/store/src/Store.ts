@@ -85,6 +85,9 @@ export class Store implements StoreAdapter {
 
   private initialized: boolean = false;
 
+  // Beforeunload handler reference for cleanup
+  private beforeUnload: (() => void) | null = null;
+
   // Bidirectional sync state for document-synced components
   /** Map of component name -> component def for applying changes */
   private componentDefsByName: Map<string, AnyEditorComponentDef> = new Map();
@@ -94,6 +97,8 @@ export class Store implements StoreAdapter {
   private idToEntityId: Map<string, number> = new Map();
   /** Map of entityId -> _id for reverse lookup */
   private entityIdToId: Map<number, string> = new Map();
+  /** Map of entityId -> set of synced component names for cleanup tracking */
+  private entityIdToSyncedComponents: Map<number, Set<string>> = new Map();
   /** Cached events from external changes (undo/redo, network sync) */
   private pendingEvents: LoroEventBatch[] = [];
   /** Cached ephemeral events from remote peers */
@@ -189,6 +194,15 @@ export class Store implements StoreAdapter {
     // Start ephemeral data refresh to keep local data alive
     this.startEphemeralRefresh();
 
+    // Register beforeunload handler to flush pending saves
+    if (typeof window !== "undefined") {
+      this.beforeUnload = () => {
+        this.commit.flush();
+        this.localDB?.saveDoc.flush();
+      };
+      window.addEventListener("beforeunload", this.beforeUnload);
+    }
+
     this.initialized = true;
   }
 
@@ -213,6 +227,14 @@ export class Store implements StoreAdapter {
       this.idToEntityId.set(id, entityId);
       this.entityIdToId.set(entityId, id);
     }
+
+    // Track which synced components this entity has for cleanup
+    let components = this.entityIdToSyncedComponents.get(entityId);
+    if (!components) {
+      components = new Set();
+      this.entityIdToSyncedComponents.set(entityId, components);
+    }
+    components.add(componentDef.name);
 
     // Translate refs from entityIds to syncedIds before storing
     const translatedData = this.translateRefsOutbound(componentDef, data);
@@ -295,13 +317,19 @@ export class Store implements StoreAdapter {
       this.localEphemeralKeys.delete(key);
     }
 
-    // TODO check if entity has any other components, and if not, remove entity
-    // // Clean up UUID -> entityId mapping when entity is removed
-    // const entityId = this.idToEntityId.get(id);
-    // if (entityId !== undefined) {
-    //   this.idToEntityId.delete(id);
-    //   this.entityIdToId.delete(entityId);
-    // }
+    // Clean up UUID -> entityId mapping when entity has no more synced components
+    const entityId = this.idToEntityId.get(id);
+    if (entityId !== undefined) {
+      const components = this.entityIdToSyncedComponents.get(entityId);
+      if (components) {
+        components.delete(componentDef.name);
+        if (components.size === 0) {
+          this.entityIdToSyncedComponents.delete(entityId);
+          this.idToEntityId.delete(id);
+          this.entityIdToId.delete(entityId);
+        }
+      }
+    }
   }
 
   /**
@@ -726,6 +754,7 @@ export class Store implements StoreAdapter {
    */
   undo(): void {
     if (this.undoManager.canUndo()) {
+      console.log("Performing undo");
       this.undoManager.undo();
     }
   }
@@ -757,6 +786,12 @@ export class Store implements StoreAdapter {
    * Disconnect and cleanup resources.
    */
   dispose(): void {
+    // Remove beforeunload handler
+    if (this.beforeUnload && typeof window !== "undefined") {
+      window.removeEventListener("beforeunload", this.beforeUnload);
+      this.beforeUnload = null;
+    }
+
     // Stop ephemeral refresh interval
     this.stopEphemeralRefresh();
 

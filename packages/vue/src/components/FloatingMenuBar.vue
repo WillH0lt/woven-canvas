@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useSlots, inject } from "vue";
+import { computed, useSlots, inject, onUnmounted } from "vue";
 
 import ColorButton from "./buttons/ColorButton.vue";
 import MenuTooltip from "./buttons/MenuTooltip.vue";
@@ -36,6 +36,10 @@ const customButtons = computed(() => {
 function handleMouseLeave() {
   resetTooltip();
 }
+
+onUnmounted(() => {
+  resetTooltip();
+});
 </script>
 
 <template>
@@ -82,7 +86,9 @@ function handleMouseLeave() {
   color: var(--ic-gray-100);
   background-color: var(--ic-gray-700);
   border-radius: var(--ic-menu-border-radius);
-  box-shadow: 0px 0px 0.5px rgba(0, 0, 0, 0.18), 0px 3px 8px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0px 0px 0.5px rgba(0, 0, 0, 0.18),
+    0px 3px 8px rgba(0, 0, 0, 0.1),
     0px 1px 3px rgba(0, 0, 0, 0.1);
 }
 

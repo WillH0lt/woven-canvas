@@ -28,7 +28,7 @@ const emit = defineEmits<{
       height: number;
       left: number;
       top: number;
-    }
+    },
   ];
 }>();
 
@@ -108,7 +108,7 @@ watch(
       editor.value = null;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 async function handleEditStart(editor: Editor): Promise<void> {
@@ -147,7 +147,7 @@ function handleEditEnd(editor: Editor): void {
   const dimensions = computeBlockDimensions(
     editableTextRef.value,
     camera,
-    screen
+    screen,
   );
 
   // Emit event for parent components to handle content and sizing
@@ -224,7 +224,9 @@ onUnmounted(() => {
     <!-- Tiptap editor when actively editing -->
     <EditorContent v-if="editor" :editor="editor" />
     <!-- Static HTML render when not editing (no editor overhead) -->
-    <div v-else class="tiptap ProseMirror" v-html="displayContent" />
+    <div v-else>
+      <div class="tiptap ProseMirror" v-html="displayContent" />
+    </div>
   </div>
 </template>
 
@@ -246,6 +248,8 @@ onUnmounted(() => {
 
 .ic-editable-text .ProseMirror {
   outline: none;
+  white-space: inherit;
+  word-wrap: break-word;
 }
 
 .ic-editable-text .ProseMirror-focused {

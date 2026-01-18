@@ -91,9 +91,7 @@ class CurrentQueryInstance {
     const toSlot = currentIndex % maxEvents;
 
     let eventsToScan =
-      toSlot >= fromSlot
-        ? toSlot - fromSlot
-        : maxEvents - fromSlot + toSlot;
+      toSlot >= fromSlot ? toSlot - fromSlot : maxEvents - fromSlot + toSlot;
 
     for (let i = 0; i < eventsToScan; i++) {
       const slot = (fromSlot + i) % maxEvents;
@@ -181,7 +179,7 @@ export class CurrentQueryDef {
  * @internal - Not exported from the package. Used internally by getBackrefs.
  */
 export function defineCurrentQuery(
-  builder: (q: QueryBuilder) => QueryBuilder
+  builder: (q: QueryBuilder) => QueryBuilder,
 ): CurrentQueryDef {
   return new CurrentQueryDef(builder);
 }
@@ -195,7 +193,7 @@ export function defineCurrentQuery(
 const componentCurrentQueries = new Map<number, CurrentQueryDef>();
 
 export function getComponentCurrentQuery<T extends ComponentSchema>(
-  componentDef: ComponentDef<T>
+  componentDef: ComponentDef<T>,
 ): CurrentQueryDef {
   const defId = componentDef._defId;
 

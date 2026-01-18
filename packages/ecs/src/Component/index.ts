@@ -32,6 +32,7 @@ export type {
   ArrayFieldDef,
   TupleFieldDef,
   BufferFieldDef,
+  EnumFieldDef,
   RefFieldDef,
   NumberSubtype,
   FieldType,

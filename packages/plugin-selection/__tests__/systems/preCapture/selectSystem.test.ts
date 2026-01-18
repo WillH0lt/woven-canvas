@@ -14,7 +14,7 @@ import {
   Intersect,
   RankBounds,
 } from "@infinitecanvas/editor";
-import { Locked, TransformBox, TransformHandle } from "../../../src/components";
+import { TransformBox, TransformHandle } from "../../../src/components";
 import { SelectionStateSingleton } from "../../../src/singletons";
 import { selectSystem } from "../../../src/systems/preCapture";
 import {
@@ -40,7 +40,6 @@ const testPlugin: EditorPlugin = {
     Block,
     Aabb,
     Selected,
-    Locked,
     Hovered,
     TransformBox,
     TransformHandle,

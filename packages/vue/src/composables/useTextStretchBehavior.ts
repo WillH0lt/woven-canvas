@@ -1,237 +1,161 @@
 import {
-  ref,
   watch,
   onUnmounted,
   toValue,
   type Ref,
   type MaybeRefOrGetter,
 } from "vue";
+import { Block, Text, Camera, Screen } from "@infinitecanvas/editor";
 import {
-  Block,
-  Text,
-  hasComponent,
-  type Context,
-} from "@infinitecanvas/editor";
-import {
-  SelectionStateSingleton,
-  TransformHandleKind,
-  TransformHandle,
+  UpdateTransformBox,
+  TransformBoxStateSingleton,
 } from "@infinitecanvas/plugin-selection";
 
 import { useSingleton } from "./useSingleton";
 import { useEditorContext } from "./useEditorContext";
+import { computeBlockDimensions } from "../utils/blockDimensions";
 import type { BlockData } from "../types";
-
-/**
- * Text stretch behavior options.
- * - 'growAndShrinkBlock': Block resizes to fit text content (both grow and shrink)
- * - 'growBlock': Block can grow but not shrink smaller than starting dimensions
- * - 'none': No automatic text-based resizing (custom handling required)
- */
-export type TextStretchBehavior = "growAndShrinkBlock" | "growBlock";
 
 export interface TextStretchBehaviorOptions {
   blockData: MaybeRefOrGetter<BlockData>;
-  behavior: TextStretchBehavior;
-  editableTextRef: Ref<{ editableTextRef: HTMLElement | null } | null>;
+  /**
+   * Container ref to observe for size changes.
+   */
+  containerRef: Ref<HTMLElement | null>;
+  /**
+   * Minimum width constraint. Width will not shrink below this value.
+   */
+  minWidth?: MaybeRefOrGetter<number>;
+  /**
+   * Minimum height constraint. Height will not shrink below this value.
+   */
+  minHeight?: MaybeRefOrGetter<number>;
 }
 
 export interface TextStretchBehaviorResult {
   /**
    * Call this when text editing ends.
    * Handles saving the text content and updating block dimensions
-   * based on the configured behavior mode.
+   * by measuring the container.
    */
-  handleEditEnd: (data: {
-    content: string;
-    width: number;
-    height: number;
-    left: number;
-    top: number;
-  }) => void;
+  handleEditEnd: (data: { content: string }) => void;
 }
 
 /**
  * Composable for handling text stretch behavior on blocks.
  *
- * Supports three modes:
- * - 'growAndShrinkBlock': Block resizes to fit text content (both grow and shrink)
- * - 'growBlock': Block can grow but not shrink smaller than starting dimensions
- * - 'none': No automatic text-based resizing (only saves text content)
+ * Observes the element for size changes and updates block dimensions,
+ * respecting minWidth/minHeight constraints.
  */
 export function useTextStretchBehavior(
-  options: TextStretchBehaviorOptions
+  options: TextStretchBehaviorOptions,
 ): TextStretchBehaviorResult {
-  const { behavior, editableTextRef } = options;
-
-  const selectionState = useSingleton(SelectionStateSingleton);
+  const camera = useSingleton(Camera);
+  const screen = useSingleton(Screen);
+  const TransformBoxState = useSingleton(TransformBoxStateSingleton);
   const { nextEditorTick } = useEditorContext();
 
-  // Cache starting dimensions for 'growBlock' mode
-  // Set when stretch starts or editing starts
-  const cachedStartWidth = ref<number | null>(null);
-  const cachedStartHeight = ref<number | null>(null);
-
-  // ResizeObserver for stretch operations
+  // ResizeObserver for content-driven resizes
   let resizeObserver: ResizeObserver | null = null;
 
-  function startStretchObserver(ctx: Context) {
-    const element = editableTextRef.value?.editableTextRef;
+  function startResizeObserver() {
+    if (resizeObserver) return; // Already observing
+
+    const element = options.containerRef.value;
     if (!element) return;
 
-    const proseMirror = element.querySelector(".ProseMirror");
-    if (!proseMirror) return;
-
-    const { entityId } = toValue(options.blockData);
-
-    // Cache starting width for 'growBlock' mode
-    if (behavior === "growBlock") {
-      const block = Block.read(ctx, entityId);
-      cachedStartWidth.value = block.size[0];
-    }
-
     resizeObserver = new ResizeObserver(() => {
-      if (!proseMirror) return;
-
       nextEditorTick((ctx) => {
-        const newHeight = (proseMirror as HTMLElement).offsetHeight;
         const { entityId } = toValue(options.blockData);
         const block = Block.read(ctx, entityId);
 
-        let finalHeight = newHeight;
+        // Compute new dimensions from DOM
+        const dimensions = computeBlockDimensions(element, camera, screen);
 
-        // For 'growBlock' mode, don't shrink below cached starting width
-        if (behavior === "growBlock" && cachedStartWidth.value !== null) {
-          finalHeight = Math.max(newHeight, cachedStartWidth.value);
-        }
+        // Apply min constraints
+        const minW = toValue(options.minWidth) ?? 0;
+        const minH = toValue(options.minHeight) ?? 0;
+        const finalWidth = Math.max(dimensions.width, minW);
+        const finalHeight = Math.max(dimensions.height, minH);
 
-        if (block.size[1] === finalHeight) return;
+        // Only write if dimensions actually changed
+        const widthChanged = Math.abs(block.size[0] - finalWidth) > 0.5;
+        const heightChanged = Math.abs(block.size[1] - finalHeight) > 0.5;
+
+        if (!widthChanged && !heightChanged) return;
 
         const writableBlock = Block.write(ctx, entityId);
-        writableBlock.size[1] = finalHeight;
+        writableBlock.size = [finalWidth, finalHeight];
+        writableBlock.position = [dimensions.left, dimensions.top];
+
+        if (TransformBoxState.value.transformBoxId !== null) {
+          UpdateTransformBox.spawn(ctx, {
+            transformBoxId: TransformBoxState.value.transformBoxId,
+          });
+        }
       });
     });
     resizeObserver.observe(element);
   }
 
-  function stopStretchObserver() {
+  function stopResizeObserver() {
     if (resizeObserver) {
       resizeObserver.disconnect();
       resizeObserver = null;
     }
-    // Reset cached width when stretch ends
-    cachedStartWidth.value = null;
   }
 
-  // Watch for stretch handle drags
+  // Watch for selection state changes
   watch(
-    selectionState,
     () => {
-      nextEditorTick((ctx) => {
-        const { selected } = toValue(options.blockData);
-        if (!selected) {
-          stopStretchObserver();
-          return;
-        }
-
-        const draggedEntity = selectionState.value?.draggedEntity;
-
-        // Clean up if no longer dragging
-        if (draggedEntity === null) {
-          stopStretchObserver();
-          return;
-        }
-
-        // Check if this is a stretch handle drag
-        if (!hasComponent(ctx, draggedEntity, TransformHandle)) {
-          stopStretchObserver();
-          return;
-        }
-
-        const kind = TransformHandle.read(ctx, draggedEntity).kind;
-        if (kind === TransformHandleKind.Stretch) {
-          if (!resizeObserver) {
-            startStretchObserver(ctx);
-          }
-        } else {
-          stopStretchObserver();
-        }
-      });
+      const blockData = toValue(options.blockData);
+      return [blockData.selected, blockData.edited] as const;
     },
-    { immediate: true }
-  );
-
-  // Watch for edit mode changes to cache starting height
-  watch(
-    () => toValue(options.blockData).edited,
-    (isEdited) => {
-      if (behavior !== "growBlock") return;
-
-      if (isEdited) {
-        // Cache starting height when edit mode starts
-        nextEditorTick((ctx) => {
-          const { entityId } = toValue(options.blockData);
-          const block = Block.read(ctx, entityId);
-          cachedStartHeight.value = block.size[1];
-        });
+    ([selected, edited]) => {
+      if (selected && !edited) {
+        startResizeObserver();
       } else {
-        // Reset cached height when edit mode ends
-        cachedStartHeight.value = null;
+        stopResizeObserver();
       }
     },
-    { immediate: true }
+    { immediate: true },
   );
 
   /**
    * Handle edit end - saves text content and updates block dimensions.
    */
-  function handleEditEnd(data: {
-    content: string;
-    width: number;
-    height: number;
-    left: number;
-    top: number;
-  }): void {
-    const { content, width, height, left, top } = data;
+  function handleEditEnd(data: { content: string }): void {
+    const { content } = data;
+    const element = options.containerRef.value;
+    if (!element) return;
 
     nextEditorTick((ctx) => {
       const { entityId } = toValue(options.blockData);
 
       // Save text content
-
       const text = Text.read(ctx, entityId);
       if (text.content === content) return;
 
       const writableText = Text.write(ctx, entityId);
       writableText.content = content;
 
+      // Measure container (includes padding, etc.)
+      const dimensions = computeBlockDimensions(element, camera, screen);
+
+      // Apply min constraints
+      const minW = toValue(options.minWidth) ?? 0;
+      const minH = toValue(options.minHeight) ?? 0;
+      const finalWidth = Math.max(dimensions.width, minW);
+      const finalHeight = Math.max(dimensions.height, minH);
+
       const block = Block.write(ctx, entityId);
-
-      let finalWidth = width;
-      let finalHeight = height;
-      let finalLeft = left;
-      let finalTop = top;
-
-      if (behavior === "growBlock") {
-        // Don't shrink below starting height
-        const minHeight = cachedStartHeight.value ?? block.size[1];
-        finalHeight = Math.max(height, minHeight);
-        // Width stays unchanged for growBlock
-        finalWidth = block.size[0];
-        // Position stays unchanged for growBlock
-        finalLeft = block.position[0];
-        finalTop = block.position[1];
-      }
-
       block.size = [finalWidth, finalHeight];
-      block.position = [finalLeft, finalTop];
+      block.position = [dimensions.left, dimensions.top];
     });
   }
 
   onUnmounted(() => {
-    stopStretchObserver();
-    cachedStartHeight.value = null;
-    cachedStartWidth.value = null;
+    stopResizeObserver();
   });
 
   return {

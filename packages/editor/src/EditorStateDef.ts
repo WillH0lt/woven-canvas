@@ -2,6 +2,8 @@ import type {
   Context,
   ComponentSchema,
   InferComponentType,
+  StringFieldDef,
+  EnumFieldDef,
 } from "@infinitecanvas/ecs";
 import type { AnyStateMachine } from "xstate";
 
@@ -13,8 +15,8 @@ import { runMachine } from "./machine";
  * Must include a 'state' field that stores the current state value.
  */
 export interface StateSchema extends ComponentSchema {
-  /** The current state machine state value */
-  state: { def: { type: "string" } };
+  /** The current state machine state value (can be string or enum) */
+  state: { def: StringFieldDef | EnumFieldDef<any> };
 }
 
 /**

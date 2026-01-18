@@ -4,7 +4,7 @@ import type { EntityId } from "@infinitecanvas/editor";
 import { Text } from "@infinitecanvas/editor";
 
 import MenuDropdown from "../MenuDropdown.vue";
-import IconChevronDown from "../../../icons/IconChevronDown.vue";
+import IconChevronDown from "../../icons/IconChevronDown.vue";
 import { useComponents } from "../../../composables/useComponents";
 import { useEditorContext } from "../../../composables/useEditorContext";
 
@@ -101,7 +101,10 @@ function handleWheelStop(e: Event) {
           :key="option.value"
           class="ic-font-size-option"
           :class="{ active: currentFontSize === option.value }"
-          @click="setFontSize(option.value); close()"
+          @click="
+            setFontSize(option.value);
+            close();
+          "
         >
           <svg
             v-if="currentFontSize === option.value"
@@ -114,7 +117,10 @@ function handleWheelStop(e: Event) {
               d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"
             />
           </svg>
-          <span class="ic-option-label" :style="{ fontSize: `${option.displayValue}px` }">
+          <span
+            class="ic-option-label"
+            :style="{ fontSize: `${option.displayValue}px` }"
+          >
             {{ option.label }}
           </span>
         </div>
@@ -160,7 +166,9 @@ function handleWheelStop(e: Event) {
 
 .ic-font-size-menu {
   background-color: var(--ic-gray-700);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
   border-radius: 8px;
   cursor: pointer;
   width: 150px;
