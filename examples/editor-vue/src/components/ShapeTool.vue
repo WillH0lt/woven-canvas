@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { VerticalAlignment, TextAlignment } from "@infinitecanvas/editor";
 import { ToolbarButton } from "@infinitecanvas/vue";
 
 // Create a snapshot for a shape block that can be placed or dragged
@@ -13,7 +14,12 @@ const snapshot = JSON.stringify({
     green: 144,
     blue: 217,
   },
-  text: {},
+  text: {
+    defaultAlignment: TextAlignment.Center,
+  },
+  verticalAlign: {
+    value: VerticalAlignment.Center,
+  },
 });
 </script>
 

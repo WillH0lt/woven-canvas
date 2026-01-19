@@ -1,5 +1,6 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
 import { EditorComponentDef } from "../EditorComponentDef";
+import { TextAlignment } from "../types";
 
 const TextSchema = {
   /** HTML content (supports rich text formatting) */
@@ -14,6 +15,8 @@ const TextSchema = {
   letterSpacingEm: field.float64().default(0),
   /** Whether width is constrained (text wraps) */
   constrainWidth: field.boolean().default(true),
+  /** Default text alignment for new paragraphs */
+  defaultAlignment: field.enum(TextAlignment).default(TextAlignment.Left),
 };
 
 /**

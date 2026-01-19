@@ -15,7 +15,6 @@ export {
   type TextEditorController,
   type TextEditorState,
   type TextEditorCommands,
-  type TextAlignment,
 } from './useTextEditorController'
 export {
   useTextBatchController,

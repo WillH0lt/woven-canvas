@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
+import { TextAlignment, type TextAlignment as TextAlignmentType, type EntityId } from "@infinitecanvas/editor";
 
 import MenuButton from "../MenuButton.vue";
 import { useTextFormatting } from "../../../composables/useTextFormatting";
-import type { TextAlignment } from "../../../composables/useTextEditorController";
 
 const props = defineProps<{
   entityIds: EntityId[];
@@ -12,25 +10,25 @@ const props = defineProps<{
 
 const { state, commands } = useTextFormatting(() => props.entityIds);
 
-const alignments: TextAlignment[] = ["left", "center", "right", "justify"];
+const alignments: TextAlignmentType[] = [
+  TextAlignment.Left,
+  TextAlignment.Center,
+  TextAlignment.Right,
+  TextAlignment.Justify,
+];
 
 function cycleAlignment() {
   const currentIndex = alignments.indexOf(state.alignment.value);
   const nextAlignment = alignments[(currentIndex + 1) % alignments.length];
   commands.setAlignment(nextAlignment);
 }
-
-const tooltipText = computed(() => {
-  const align = state.alignment.value;
-  return `Align ${align.charAt(0).toUpperCase() + align.slice(1)}`;
-});
 </script>
 
 <template>
-  <MenuButton :title="tooltipText" @click="cycleAlignment">
+  <MenuButton title="Text Align" @click="cycleAlignment">
     <!-- Left align -->
     <svg
-      v-if="state.alignment.value === 'left'"
+      v-if="state.alignment.value === TextAlignment.Left"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 448 512"
       fill="currentColor"
@@ -41,7 +39,7 @@ const tooltipText = computed(() => {
     </svg>
     <!-- Center align -->
     <svg
-      v-else-if="state.alignment.value === 'center'"
+      v-else-if="state.alignment.value === TextAlignment.Center"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 448 512"
       fill="currentColor"
@@ -52,7 +50,7 @@ const tooltipText = computed(() => {
     </svg>
     <!-- Right align -->
     <svg
-      v-else-if="state.alignment.value === 'right'"
+      v-else-if="state.alignment.value === TextAlignment.Right"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 448 512"
       fill="currentColor"

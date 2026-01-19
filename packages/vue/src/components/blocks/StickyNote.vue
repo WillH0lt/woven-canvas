@@ -2,15 +2,26 @@
 import { computed, ref } from "vue";
 import { useComponent } from "../../composables/useComponent";
 import { useTextStretchBehavior } from "../../composables/useTextStretchBehavior";
-import { Color } from "@infinitecanvas/editor";
+import {
+  Color,
+  VerticalAlign,
+  VerticalAlignment,
+} from "@infinitecanvas/editor";
 import type { BlockData } from "../../types";
 import EditableText from "../EditableText.vue";
 
 const props = defineProps<BlockData>();
 
 const color = useComponent(props.entityId, Color);
+const verticalAlign = useComponent(props.entityId, VerticalAlign);
 
 const containerRef = ref<HTMLElement | null>(null);
+
+const alignItemsMap: Record<string, string> = {
+  [VerticalAlignment.Top]: "flex-start",
+  [VerticalAlignment.Center]: "center",
+  [VerticalAlignment.Bottom]: "flex-end",
+};
 
 const containerStyle = computed(() => ({
   backgroundColor: color.value
@@ -18,6 +29,8 @@ const containerStyle = computed(() => ({
     : undefined,
   // Min-height = block width * zoom to maintain square minimum
   minHeight: `calc(${props.block.size[0]}px * var(--ic-zoom))`,
+  alignItems:
+    alignItemsMap[verticalAlign.value?.value ?? VerticalAlignment.Top],
 }));
 
 // Use composable for text stretch behavior with square minimum height

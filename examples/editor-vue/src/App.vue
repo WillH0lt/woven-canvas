@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
-import { Editor, Color, Text } from "@infinitecanvas/editor";
+import { Editor, Color, Text, VerticalAlign } from "@infinitecanvas/editor";
 import { Store } from "@infinitecanvas/store";
 import { InfiniteCanvas, FloatingMenuBar, Toolbar } from "@infinitecanvas/vue";
 
@@ -32,7 +32,7 @@ function handleReady(editor: Editor) {
       :blockDefs="[
         {
           tag: 'shape',
-          components: [Shape, Color, Text],
+          components: [Shape, Color, Text, VerticalAlign],
           resizeMode: 'free',
           editOptions: {
             canEdit: true,

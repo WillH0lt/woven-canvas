@@ -3,6 +3,7 @@ import {
   type FontFamilyInput,
   Color,
   Text,
+  VerticalAlign,
 } from "@infinitecanvas/editor";
 
 import { CURSORS } from "./cursors";
@@ -49,7 +50,7 @@ export const BasicsPlugin: EditorPlugin = {
   blockDefs: [
     {
       tag: "sticky-note",
-      components: [Color, Text],
+      components: [Color, Text, VerticalAlign],
       editOptions: {
         canEdit: true,
       },

@@ -72,8 +72,8 @@ export {
   type TextEditorController,
   type TextEditorState,
   type TextEditorCommands,
-  type TextAlignment,
 } from "./composables/useTextEditorController";
+export { TextAlignment } from "@infinitecanvas/editor";
 export {
   useTextBatchController,
   type TextBatchController,

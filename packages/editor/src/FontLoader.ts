@@ -15,6 +15,18 @@ export const FontFamily = z.object({
   previewImage: z.string().optional(),
   /** Whether this font appears in the font selector (default: true) */
   selectable: z.boolean().default(true),
+  /**
+   * Font weights to load (e.g., [400, 700] for regular and bold).
+   * Only applies to Google Fonts URLs - will auto-construct the variant URL.
+   * Default: [400, 700]
+   */
+  weights: z.array(z.number()).default([400, 700]),
+  /**
+   * Whether to also load italic variants for each weight.
+   * Only applies to Google Fonts URLs.
+   * Default: true
+   */
+  italics: z.boolean().default(true),
 });
 
 export type FontFamily = z.infer<typeof FontFamily>;
@@ -49,6 +61,58 @@ export class FontLoader {
   }
 
   /**
+   * Build a Google Fonts URL with weight and italic variants.
+   * Format: https://fonts.googleapis.com/css2?family=FontName:ital,wght@0,400;0,700;1,400;1,700
+   *
+   * @param family - Font family configuration
+   * @returns The constructed URL with variants
+   */
+  private buildGoogleFontsUrl(family: FontFamily): string {
+    const baseUrl = family.url;
+
+    // Check if this is a Google Fonts URL
+    if (!baseUrl.includes("fonts.googleapis.com")) {
+      return baseUrl;
+    }
+
+    // Extract the font family name from the URL
+    const urlObj = new URL(baseUrl);
+    const familyParam = urlObj.searchParams.get("family");
+    if (!familyParam) {
+      return baseUrl;
+    }
+
+    // Get the base family name (remove any existing weight/style specifiers)
+    const baseFamilyName = familyParam.split(":")[0];
+
+    // Build the variant specifier
+    const weights = family.weights;
+    const variants: string[] = [];
+
+    if (family.italics) {
+      // Format: ital,wght@0,400;0,700;1,400;1,700
+      for (const weight of weights) {
+        variants.push(`0,${weight}`); // Normal
+      }
+      for (const weight of weights) {
+        variants.push(`1,${weight}`); // Italic
+      }
+      urlObj.searchParams.set(
+        "family",
+        `${baseFamilyName}:ital,wght@${variants.join(";")}`
+      );
+    } else {
+      // Format: wght@400;700
+      urlObj.searchParams.set(
+        "family",
+        `${baseFamilyName}:wght@${weights.join(";")}`
+      );
+    }
+
+    return urlObj.toString();
+  }
+
+  /**
    * Load a single font family.
    * Adds a link element to the document head and waits for the font to be ready.
    *
@@ -60,11 +124,12 @@ export class FontLoader {
     return new Promise((resolve, reject) => {
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = family.url;
+      link.href = this.buildGoogleFontsUrl(family);
       link.onload = async () => {
         try {
-          // Wait for the font to be actually loaded and ready to use
-          await document.fonts.load(`12px "${family.name}"`);
+          // Wait for all font variants to be loaded
+          const loadPromises = this.getFontLoadPromises(family);
+          await Promise.all(loadPromises);
           // Ensure all fonts are ready
           await document.fonts.ready;
           resolve();
@@ -79,6 +144,29 @@ export class FontLoader {
       };
       document.head.appendChild(link);
     });
+  }
+
+  /**
+   * Get promises for loading all font variants (weights and italics).
+   *
+   * @param family - Font family configuration
+   * @returns Array of promises for loading each font variant
+   */
+  private getFontLoadPromises(family: FontFamily): Promise<FontFace[]>[] {
+    const promises: Promise<FontFace[]>[] = [];
+    const fontName = family.name;
+
+    for (const weight of family.weights) {
+      // Load normal variant
+      promises.push(document.fonts.load(`${weight} 12px "${fontName}"`));
+
+      // Load italic variant if enabled
+      if (family.italics) {
+        promises.push(document.fonts.load(`italic ${weight} 12px "${fontName}"`));
+      }
+    }
+
+    return promises;
   }
 
   /**

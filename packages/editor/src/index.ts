@@ -17,17 +17,13 @@ export {
   getPluginResources,
   Keybind,
   CursorDef,
-  TextAlign,
-  VerticalAlign,
+  VerticalAlignment,
+  TextAlignment,
   BlockDef,
 } from "./types";
 
 // Font loading
-export {
-  FontLoader,
-  FontFamily,
-  type FontFamilyInput,
-} from "./FontLoader";
+export { FontLoader, FontFamily, type FontFamilyInput } from "./FontLoader";
 export type { FontFamily as FontFamilyType } from "./FontLoader";
 
 // Singleton base class
@@ -144,6 +140,7 @@ export {
   Text,
   Connector,
   Color,
+  VerticalAlign,
   User,
   HitGeometry,
   MAX_HIT_CAPSULES,

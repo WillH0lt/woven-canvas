@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
 import { Text } from "@infinitecanvas/editor";
 
@@ -52,8 +52,12 @@ const buttonLabel = computed(() => {
   return `${+size.toFixed(1)} px`;
 });
 
-// Custom input value
-const customInputValue = ref("");
+// Display value for the input (shows current font size)
+const inputDisplayValue = computed(() => {
+  const size = currentFontSize.value;
+  if (size === null) return "";
+  return String(+size.toFixed(1));
+});
 
 function setFontSize(value: number) {
   nextEditorTick((ctx) => {
@@ -66,8 +70,6 @@ function setFontSize(value: number) {
 
 function handleInputChange(e: Event) {
   const input = e.target as HTMLInputElement;
-  customInputValue.value = input.value;
-
   const value = Number.parseFloat(input.value);
   if (!Number.isNaN(value) && value > 0) {
     setFontSize(value);
@@ -94,17 +96,14 @@ function handleWheelStop(e: Event) {
       </div>
     </template>
 
-    <template #dropdown="{ close }">
+    <template #dropdown>
       <div class="ic-font-size-menu" @wheel="handleWheelStop" @click.stop>
         <div
           v-for="option in FONT_SIZE_OPTIONS"
           :key="option.value"
           class="ic-font-size-option"
           :class="{ active: currentFontSize === option.value }"
-          @click="
-            setFontSize(option.value);
-            close();
-          "
+          @click="setFontSize(option.value)"
         >
           <svg
             v-if="currentFontSize === option.value"
@@ -130,7 +129,7 @@ function handleWheelStop(e: Event) {
         <div class="ic-input-container">
           <input
             class="ic-custom-input"
-            :value="customInputValue"
+            :value="inputDisplayValue"
             @input="handleInputChange"
             @keydown="handleInputKeyDown"
             placeholder="Custom size"

@@ -2,8 +2,7 @@ import { shallowRef, computed, type ShallowRef, type ComputedRef } from "vue";
 import type { Editor } from "@tiptap/vue-3";
 
 import { normalizeColor } from "../utils/color";
-
-export type TextAlignment = "left" | "center" | "right" | "justify";
+import { type TextAlignment } from "@infinitecanvas/editor";
 
 export interface TextEditorState {
   /** Whether there is an active text editor */

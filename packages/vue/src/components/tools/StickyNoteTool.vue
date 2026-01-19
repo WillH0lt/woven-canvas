@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { VerticalAlignment, TextAlignment } from "@infinitecanvas/editor";
 import ToolbarButton from "../ToolbarButton.vue";
 
 const snapshot = JSON.stringify({
@@ -11,7 +12,12 @@ const snapshot = JSON.stringify({
     green: 242,
     blue: 117,
   },
-  text: {},
+  text: {
+    defaultAlignment: TextAlignment.Center,
+  },
+  verticalAlign: {
+    value: VerticalAlignment.Center,
+  },
 });
 </script>
 

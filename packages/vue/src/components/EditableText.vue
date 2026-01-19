@@ -67,7 +67,7 @@ function createEditor(): Editor {
       TextAlign.configure({
         types: ["paragraph"],
         alignments: ["left", "center", "right", "justify"],
-        defaultAlignment: "left",
+        defaultAlignment: text.value?.defaultAlignment ?? "left",
       }),
       UndoRedo,
     ],

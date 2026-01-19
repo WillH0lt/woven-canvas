@@ -284,24 +284,20 @@ export type CursorDefMap = Partial<Record<string, CursorDef>>;
  */
 export type ResizeMode = "scale" | "text" | "free" | "groupOnly";
 
-/**
- * Text alignment options.
- */
-export enum TextAlign {
-  Left = "left",
-  Center = "center",
-  Right = "right",
-  Justify = "justify",
-}
+export const VerticalAlignment = {
+  Top: "top",
+  Center: "center",
+  Bottom: "bottom",
+} as const;
 
-/**
- * Vertical alignment options.
- */
-export enum VerticalAlign {
-  Top = "top",
-  Center = "center",
-  Bottom = "bottom",
-}
+export const TextAlignment = {
+  Left: "left",
+  Center: "center",
+  Right: "right",
+  Justify: "justify",
+} as const;
+
+export type TextAlignment = (typeof TextAlignment)[keyof typeof TextAlignment];
 
 /**
  * Block definition edit options schema.

@@ -23,6 +23,7 @@ export { Color } from "./Color";
 // Content components
 export { Text } from "./Text";
 export { Connector } from "./Connector";
+export { VerticalAlign } from "./VerticalAlign";
 
 // User presence
 export { User } from "./User";

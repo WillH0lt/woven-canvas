@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { Color, Text } from "@infinitecanvas/editor";
+import { ref, computed } from "vue";
+import {
+  Color,
+  Text,
+  VerticalAlign,
+  VerticalAlignment,
+} from "@infinitecanvas/editor";
 import {
   useComponent,
   type BlockData,
@@ -14,9 +19,24 @@ const props = defineProps<BlockData>();
 
 const shape = useComponent(props.entityId, Shape);
 const color = useComponent(props.entityId, Color);
+const verticalAlign = useComponent(props.entityId, VerticalAlign);
 
 const containerRef = ref<HTMLElement | null>(null);
 const { nextEditorTick } = useEditorContext();
+
+const alignItemsMap: Record<string, string> = {
+  [VerticalAlignment.Top]: "flex-start",
+  [VerticalAlignment.Center]: "center",
+  [VerticalAlignment.Bottom]: "flex-end",
+};
+
+const containerStyle = computed(() => ({
+  backgroundColor: `rgb(${color?.value?.red ?? 0}, ${color?.value?.green ?? 0}, ${color?.value?.blue ?? 0})`,
+  border: (shape?.value?.border ?? 0) + "px solid black",
+  overflow: props.edited ? "visible" : "hidden",
+  alignItems:
+    alignItemsMap[verticalAlign.value?.value ?? VerticalAlignment.Top],
+}));
 
 function handleEditEnd(data: { content: string }) {
   nextEditorTick((ctx) => {
@@ -32,15 +52,7 @@ function handleEditEnd(data: { content: string }) {
 </script>
 
 <template>
-  <div
-    ref="containerRef"
-    class="shape-block"
-    :style="{
-      backgroundColor: `rgb(${color?.red}, ${color?.green}, ${color?.blue})`,
-      border: shape?.border + 'px solid black',
-      overflow: props.edited ? 'visible' : 'hidden',
-    }"
-  >
+  <div ref="containerRef" class="shape-block" :style="containerStyle">
     <EditableText
       v-bind="props"
       :block-element="containerRef"

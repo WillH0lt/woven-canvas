@@ -10,6 +10,7 @@ import TextAlignmentButton from "./buttons/text/TextAlignmentButton.vue";
 import TextFontSizeButton from "./buttons/text/TextFontSizeButton.vue";
 import TextFontFamilyButton from "./buttons/text/TextFontFamilyButton.vue";
 import TextColorButton from "./buttons/text/TextColorButton.vue";
+import VerticalAlignButton from "./buttons/text/VerticalAlignButton.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { FLOATING_MENU_KEY } from "../injection";
 
@@ -19,7 +20,7 @@ const context = inject(FLOATING_MENU_KEY)!;
 const { selectedIds, commonComponents } = context;
 
 // Built-in component names (handled in template)
-const builtInComponentNames = new Set(["color", "text"]);
+const builtInComponentNames = new Set(["color", "text", "verticalAlign"]);
 
 // Custom slots for components not covered by built-ins
 const customButtons = computed(() => {
@@ -69,6 +70,10 @@ onUnmounted(() => {
         <div divider class="ic-divider" />
         <TextColorButton :entityIds="selectedIds" />
         <TextAlignmentButton :entityIds="selectedIds" />
+        <VerticalAlignButton
+          v-if="commonComponents.has('verticalAlign')"
+          :entityIds="selectedIds"
+        />
       </template>
     </slot>
 

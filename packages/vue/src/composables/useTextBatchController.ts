@@ -15,7 +15,7 @@ import Color from "@tiptap/extension-color";
 import { useComponents } from "./useComponents";
 import { useEditorContext } from "./useEditorContext";
 import { normalizeColor } from "../utils/color";
-import type { TextAlignment } from "./useTextEditorController";
+import { type TextAlignment } from "@infinitecanvas/editor";
 
 // Extensions used for parsing - must match EditableText
 const extensions = [
