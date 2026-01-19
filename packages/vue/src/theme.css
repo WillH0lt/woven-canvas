@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap");
+
 :root {
   /* Light mode base values */
   --ic-light-primary: #6a58f2;
@@ -43,6 +45,7 @@
   --ic-text-color: var(--ic-light-text-color);
 
   /* UI settings */
+  --ic-font-family: "Figtree", sans-serif;
   --ic-menu-border-radius: 12px;
   --ic-menu-tooltip-border-radius: 6px;
   --ic-transition-duration: 150ms;
@@ -54,6 +57,7 @@
   --ic-highlighted-block-outline-offset: -1px;
   --ic-highlighted-block-border-radius: 2px;
   --ic-selection-box-bg: #5865f222;
+  --ic-text-selection-color: var(--ic-primary-light);
 
   color-scheme: light;
 }
@@ -118,3 +122,12 @@
   outline-offset: var(--ic-highlighted-block-outline-offset);
   border-radius: var(--ic-highlighted-block-border-radius);
 }
+
+.ic-root {
+  font-family: var(--ic-font-family);
+}
+
+.ic-root ::selection {
+  background-color: var(--ic-text-selection-color);
+}
+

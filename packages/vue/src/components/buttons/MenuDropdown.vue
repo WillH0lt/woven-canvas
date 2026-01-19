@@ -105,6 +105,7 @@ onUnmounted(() => {
     class="ic-menu-dropdown-trigger"
     :class="{ 'is-open': isOpen }"
     :menu-open="isOpen || undefined"
+    @mousedown.prevent
     @click="toggle"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"

@@ -94,12 +94,14 @@ function onPickerChange(color: string) {
         class="ic-color-bubble"
         :class="{ selected: isSelected(color) }"
         :style="{ backgroundColor: color }"
+        @mousedown.prevent
         @click="selectColor(color)"
       />
       <div
         v-if="withPicker"
         class="ic-color-bubble ic-rainbow-bubble"
         :class="{ selected: isRainbowSelected() }"
+        @mousedown.prevent
         @click="togglePicker"
       />
     </div>

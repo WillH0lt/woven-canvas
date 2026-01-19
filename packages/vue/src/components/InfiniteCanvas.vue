@@ -606,6 +606,7 @@ function getBlockStyle(data: BlockData) {
 <template>
   <div
     ref="containerRef"
+    class="ic-root"
     :style="{
       position: 'relative',
       width: '100%',

@@ -128,7 +128,7 @@ function stopTrackDrag() {
         ref="selectorRef"
         class="ic-color-picker-selector"
         :style="{ backgroundColor: trackHueColor }"
-        @pointerdown="startSelectorDrag"
+        @pointerdown.prevent="startSelectorDrag"
       >
         <div class="ic-color-picker-selector-gradient">
           <div
@@ -141,7 +141,7 @@ function stopTrackDrag() {
           />
         </div>
       </div>
-      <div ref="trackRef" class="ic-color-picker-track" @pointerdown="startTrackDrag">
+      <div ref="trackRef" class="ic-color-picker-track" @pointerdown.prevent="startTrackDrag">
         <div
           class="ic-color-picker-track-thumb"
           :style="{
