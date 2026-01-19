@@ -18,7 +18,7 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  border: 2px solid var(--ic-primary);
+  border: calc(2px / var(--ic-zoom)) solid var(--ic-primary);
   pointer-events: none;
 }
 </style>

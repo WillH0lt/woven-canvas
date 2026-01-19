@@ -5,21 +5,22 @@ import {
 
 import { PanState } from "./components";
 import { PostInputZoom, PostInputScroll, PostInputPan } from "./systems";
-import { DEFAULT_CONTROLS_OPTIONS, type CanvasControlsOptions } from "./types";
+import {
+  CanvasControlsOptionsSchema,
+  type CanvasControlsOptions,
+  type CanvasControlsOptionsInput,
+} from "./types";
 
 /**
  * Create a controls plugin with the given options.
  */
 function createControlsPlugin(
-  options: Partial<CanvasControlsOptions> = {}
+  options: CanvasControlsOptionsInput = {}
 ): EditorPlugin<CanvasControlsOptions> {
   return {
     name: "controls",
 
-    resources: {
-      ...DEFAULT_CONTROLS_OPTIONS,
-      ...options,
-    },
+    resources: CanvasControlsOptionsSchema.parse(options),
 
     singletons: [PanState],
 
@@ -54,6 +55,6 @@ function createControlsPlugin(
  * ```
  */
 export const CanvasControlsPlugin: EditorPluginFactory<
-  Partial<CanvasControlsOptions>,
+  CanvasControlsOptionsInput,
   CanvasControlsOptions
 > = (options = {}) => createControlsPlugin(options);

@@ -27,8 +27,8 @@ const containerStyle = computed(() => ({
   backgroundColor: color.value
     ? `rgb(${color.value.red}, ${color.value.green}, ${color.value.blue})`
     : undefined,
-  // Min-height = block width * zoom to maintain square minimum
-  minHeight: `calc(${props.block.size[0]}px * var(--ic-zoom))`,
+  // Min-height = block width to maintain square minimum
+  minHeight: `${props.block.size[0]}px`,
   alignItems:
     alignItemsMap[verticalAlign.value?.value ?? VerticalAlignment.Top],
 }));

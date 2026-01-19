@@ -31,8 +31,12 @@ import {
   type EditorSystem,
   type EditorPluginInput,
   type FontFamilyInput,
+  type InferComponentType,
 } from "@infinitecanvas/editor";
-import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
+import {
+  CanvasControlsPlugin,
+  type CanvasControlsOptionsInput,
+} from "@infinitecanvas/plugin-canvas-controls";
 import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
 import { EraserPlugin } from "@infinitecanvas/plugin-eraser";
 import { PenPlugin } from "@infinitecanvas/plugin-pen";
@@ -62,15 +66,7 @@ const hoveredQuery = defineQuery((q) => q.with(Block).tracking(Hovered));
 const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited));
 const opacityQuery = defineQuery((q) => q.with(Block).tracking(Opacity));
 
-/**
- * Controls plugin options exposed as props
- */
-export interface ControlsOptions {
-  /** Minimum zoom level (default: 0.05 = 5%) */
-  minZoom?: number;
-  /** Maximum zoom level (default: 4 = 400%) */
-  maxZoom?: number;
-}
+type BlockDef = InferComponentType<typeof Block.schema>;
 
 /**
  * InfiniteCanvas component props
@@ -108,7 +104,7 @@ export interface InfiniteCanvasProps {
   plugins?: EditorPluginInput[];
 
   // Controls plugin options
-  controls?: ControlsOptions;
+  controls?: CanvasControlsOptionsInput;
 
   // Custom fonts to load and make available in the font selector
   fonts?: FontFamilyInput[];
@@ -342,9 +338,6 @@ onMounted(async () => {
 
   editorRef.value = editor;
 
-  // // Initialize camera with current value
-  // cameraRef.value = Camera.snapshot(editor._getContext());
-
   // Start the render loop
   animationFrameId = requestAnimationFrame(tick);
 
@@ -568,7 +561,7 @@ subscribeSingleton(Camera.name, (value) => {
   }
 });
 
-function getBlockTransform(block: BlockData["block"]): string | undefined {
+function getBlockTransform(block: BlockDef): string | undefined {
   const hasRotation = block.rotateZ !== 0;
   const hasFlipX = block.flip[0];
   const hasFlipY = block.flip[1];
@@ -586,19 +579,14 @@ function getBlockTransform(block: BlockData["block"]): string | undefined {
 }
 
 function getBlockStyle(data: BlockData) {
-  const camera = cameraRef.value;
   const { block, opacity } = data;
-  const screenX = (block.position[0] - camera.left) * camera.zoom;
-  const screenY = (block.position[1] - camera.top) * camera.zoom;
-  const screenWidth = block.size[0] * camera.zoom;
-  const screenHeight = block.size[1] * camera.zoom;
 
   return {
     position: "absolute" as const,
-    left: `${screenX}px`,
-    top: `${screenY}px`,
-    width: `${screenWidth}px`,
-    height: `${screenHeight}px`,
+    left: `${block.position[0]}px`,
+    top: `${block.position[1]}px`,
+    width: `${block.size[0]}px`,
+    height: `${block.size[1]}px`,
     transform: getBlockTransform(block),
     opacity: opacity !== null ? opacity.value / 255 : undefined,
     pointerEvents: "none" as const,
@@ -616,63 +604,72 @@ function getBlockStyle(data: BlockData) {
       width: '100%',
       height: '100%',
       overflow: 'hidden',
-      '--ic-zoom': cameraRef.zoom,
     }"
   >
     <div
-      v-for="blockData in sortedBlocks"
-      :key="blockData.value.entityId"
-      :style="getBlockStyle(blockData.value)"
-      :data-selected="blockData.value.selected !== null || undefined"
-      :data-hovered="blockData.value.hovered || undefined"
-      class="ic-block"
+      class="ic-canvas"
+      :style="{
+        position: 'absolute',
+        transformOrigin: '0 0',
+        transform: `scale(${cameraRef.zoom}) translate(${-cameraRef.left}px, ${-cameraRef.top}px)`,
+        '--ic-zoom': cameraRef.zoom,
+      }"
     >
-      <slot
-        :name="`block:${blockData.value.block.tag}`"
-        v-bind="blockData.value"
+      <div
+        v-for="blockData in sortedBlocks"
+        :key="blockData.value.entityId"
+        :style="getBlockStyle(blockData.value)"
+        :data-selected="blockData.value.selected !== null || undefined"
+        :data-hovered="blockData.value.hovered || undefined"
+        class="ic-block"
       >
-        <!-- Default blocks -->
-        <SelectionBox
-          v-if="blockData.value.block.tag === 'selection-box'"
+        <slot
+          :name="`block:${blockData.value.block.tag}`"
           v-bind="blockData.value"
-        />
-        <TransformBox
-          v-else-if="blockData.value.block.tag === 'transform-box'"
-          v-bind="blockData.value"
-        />
-        <TransformHandle
-          v-else-if="blockData.value.block.tag === 'transform-handle'"
-          v-bind="blockData.value"
-        />
-        <ArrowHandle
-          v-else-if="blockData.value.block.tag === 'arrow-handle'"
-          v-bind="blockData.value"
-        />
-        <StickyNote
-          v-else-if="blockData.value.block.tag === 'sticky-note'"
-          v-bind="blockData.value"
-        />
-        <Eraser
-          v-else-if="blockData.value.block.tag === 'eraser'"
-          v-bind="blockData.value"
-        />
-        <PenStrokeBlock
-          v-else-if="blockData.value.block.tag === 'pen-stroke'"
-          v-bind="blockData.value"
-        />
-        <ArcArrowBlock
-          v-else-if="blockData.value.block.tag === 'arc-arrow'"
-          v-bind="blockData.value"
-        />
-        <ElbowArrowBlock
-          v-else-if="blockData.value.block.tag === 'elbow-arrow'"
-          v-bind="blockData.value"
-        />
-        <TextBlock
-          v-else-if="blockData.value.block.tag === 'text'"
-          v-bind="blockData.value"
-        />
-      </slot>
+        >
+          <!-- Default blocks -->
+          <SelectionBox
+            v-if="blockData.value.block.tag === 'selection-box'"
+            v-bind="blockData.value"
+          />
+          <TransformBox
+            v-else-if="blockData.value.block.tag === 'transform-box'"
+            v-bind="blockData.value"
+          />
+          <TransformHandle
+            v-else-if="blockData.value.block.tag === 'transform-handle'"
+            v-bind="blockData.value"
+          />
+          <ArrowHandle
+            v-else-if="blockData.value.block.tag === 'arrow-handle'"
+            v-bind="blockData.value"
+          />
+          <StickyNote
+            v-else-if="blockData.value.block.tag === 'sticky-note'"
+            v-bind="blockData.value"
+          />
+          <Eraser
+            v-else-if="blockData.value.block.tag === 'eraser'"
+            v-bind="blockData.value"
+          />
+          <PenStrokeBlock
+            v-else-if="blockData.value.block.tag === 'pen-stroke'"
+            v-bind="blockData.value"
+          />
+          <ArcArrowBlock
+            v-else-if="blockData.value.block.tag === 'arc-arrow'"
+            v-bind="blockData.value"
+          />
+          <ElbowArrowBlock
+            v-else-if="blockData.value.block.tag === 'elbow-arrow'"
+            v-bind="blockData.value"
+          />
+          <TextBlock
+            v-else-if="blockData.value.block.tag === 'text'"
+            v-bind="blockData.value"
+          />
+        </slot>
+      </div>
     </div>
 
     <!-- Floating menu -->

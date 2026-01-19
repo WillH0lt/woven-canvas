@@ -33,6 +33,8 @@ export { CanvasControlsPlugin } from "./CanvasControlsPlugin";
 // Types
 export {
   type CanvasControlsOptions,
+  type CanvasControlsOptionsInput,
+  CanvasControlsOptionsSchema,
   DEFAULT_CONTROLS_OPTIONS,
   PanStateValue,
 } from "./types";

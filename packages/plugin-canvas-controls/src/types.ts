@@ -1,20 +1,34 @@
+import { z } from "zod";
+
 /**
- * Options for the canvas controls plugin.
+ * Schema for the canvas controls plugin options.
  */
-export interface CanvasControlsOptions {
+export const CanvasControlsOptionsSchema = z.object({
   /** Minimum zoom level (default: 0.05 = 5%) */
-  minZoom: number;
-  /** Maximum zoom level (default: 4 = 400%) */
-  maxZoom: number;
-}
+  minZoom: z.number().default(0.05),
+  /** Maximum zoom level (default: 2.7 = 270%) */
+  maxZoom: z.number().default(2.7),
+});
+
+/**
+ * Options for the canvas controls plugin (with defaults applied).
+ */
+export type CanvasControlsOptions = z.output<
+  typeof CanvasControlsOptionsSchema
+>;
+
+/**
+ * Input options for the canvas controls plugin (all fields optional).
+ */
+export type CanvasControlsOptionsInput = z.input<
+  typeof CanvasControlsOptionsSchema
+>;
 
 /**
  * Default control options.
  */
-export const DEFAULT_CONTROLS_OPTIONS: CanvasControlsOptions = {
-  minZoom: 0.05,
-  maxZoom: 4,
-};
+export const DEFAULT_CONTROLS_OPTIONS: CanvasControlsOptions =
+  CanvasControlsOptionsSchema.parse({});
 
 /**
  * Pan state machine states.

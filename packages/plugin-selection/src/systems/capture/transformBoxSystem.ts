@@ -1,4 +1,4 @@
-import { assign, and, not, setup } from "xstate";
+import { assign, and, not, setup, raise } from "xstate";
 import {
   type Context,
   type EntityId,
@@ -109,9 +109,10 @@ const transformBoxMachine = setup({
   actions: {
     addTransformBox: assign(
       ({ context, event }, params?: { skipHandles?: boolean }) => {
-        // If we already have a transform box, reuse it
         if (context.transformBoxId !== null) {
-          return { transformBoxId: context.transformBoxId };
+          RemoveTransformBox.spawn(event.ctx, {
+            transformBoxId: context.transformBoxId,
+          });
         }
 
         // Create a new entity for the transform box
@@ -230,6 +231,10 @@ const transformBoxMachine = setup({
         pointerDown: {
           guard: and([not("isOverTransformBox"), not("isOverTransformHandle")]),
           target: TransformBoxState.None,
+        },
+        selectionChanged: {
+          target: TransformBoxState.None,
+          actions: raise(({ event }) => event),
         },
       },
     },

@@ -117,10 +117,14 @@
 /* Block highlight styles for hovered/selected state */
 .ic-block[data-hovered] > *,
 .ic-block[data-selected] > * {
-  outline: var(--ic-highlighted-block-outline-width) solid
-    var(--ic-highlighted-block-outline-color);
-  outline-offset: var(--ic-highlighted-block-outline-offset);
-  border-radius: var(--ic-highlighted-block-border-radius);
+  outline: calc(var(--ic-highlighted-block-outline-width) / var(--ic-zoom, 1))
+    solid var(--ic-highlighted-block-outline-color);
+  outline-offset: calc(
+    var(--ic-highlighted-block-outline-offset) / var(--ic-zoom, 1)
+  );
+  border-radius: calc(
+    var(--ic-highlighted-block-border-radius) / var(--ic-zoom, 1)
+  );
 }
 
 .ic-root {

@@ -50,7 +50,7 @@
   height: 50%;
   border-radius: 50%;
   box-sizing: border-box;
-  border: 2px solid var(--ic-primary);
+  border: calc(2px / var(--ic-zoom)) solid var(--ic-primary);
   background-color: var(--ic-gray-100);
   transform: translate(-50%, -50%);
   transform-origin: center center;

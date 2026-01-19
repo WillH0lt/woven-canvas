@@ -147,6 +147,7 @@ function handleWheelStop(e: Event) {
   cursor: pointer;
   align-items: center;
   justify-content: center;
+  user-select: none;
   height: 100%;
   gap: 8px;
   padding: 0 12px;

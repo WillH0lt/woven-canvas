@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
-import { Camera, Color } from "@infinitecanvas/editor";
+import { Color } from "@infinitecanvas/editor";
 import { Arc, type ArcComputed, type Vec2 } from "@infinitecanvas/math";
 import { ArcArrow, ArrowTrim } from "@infinitecanvas/plugin-arrows";
 
 import { useComponent } from "../../composables/useComponent";
-import { useSingleton } from "../../composables/useSingleton";
 import ArrowHead from "./ArrowHead.vue";
 
 const BASE_ARROW_HEAD_GAP = 15;
@@ -19,12 +18,11 @@ const containerRef = ref<HTMLElement | null>(null);
 const clientWidth = ref(0);
 const clientHeight = ref(0);
 
-const camera = useSingleton(Camera);
 const color = useComponent(props.entityId, Color);
 const arcArrow = useComponent(props.entityId, ArcArrow);
 const arrowTrim = useComponent(props.entityId, ArrowTrim);
 
-const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP * camera.value.zoom);
+const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP);
 
 // Watch for resize
 let resizeObserver: ResizeObserver | null = null;
@@ -55,9 +53,7 @@ const hex = computed(() => {
 });
 
 const baseThickness = computed(() => arcArrow.value?.value[6] ?? 2);
-const thickness = computed(
-  () => `calc(${baseThickness.value}px * var(--ic-zoom))`
-);
+const thickness = computed(() => `${baseThickness.value}px`);
 
 // Check if the arc is curved (points are not collinear)
 const isCurved = computed(() => {

@@ -46,6 +46,13 @@ watch(textEditorController.blockElement, () => {
   editingBounds.update();
 });
 
+// Update editing bounds when camera changes (scroll/zoom) while editing
+watch(camera, () => {
+  if (textEditorController.blockElement.value) {
+    editingBounds.update();
+  }
+});
+
 // Get userId from editor
 const userId = computed(() => {
   const editor = canvasContext?.getEditor();
@@ -120,6 +127,8 @@ const containerRef = inject<{ value: HTMLElement | null }>("containerRef");
 const virtualReference = computed(() => {
   const container = containerRef?.value;
   if (!container) return null;
+
+  void camera.value;
 
   // Use live element bounds if editing (text element may have changed size)
   // Only use if bounds are valid (non-zero) - otherwise fall through to ECS bounds

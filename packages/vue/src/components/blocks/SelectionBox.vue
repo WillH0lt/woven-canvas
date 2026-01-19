@@ -20,7 +20,7 @@
   height: 100%;
   background-color: var(--ic-selection-box-bg);
   border-style: solid;
-  border-width: 3px;
+  border-width: calc(3px / var(--ic-zoom));
   border-color: var(--ic-primary);
 }
 </style>

@@ -29,7 +29,7 @@ import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
-import { Synced } from "./components";
+import { Synced, Edited } from "./components";
 import type { EditorSystem } from "./EditorSystem";
 import { FontLoader, FontFamily } from "./FontLoader";
 
@@ -42,7 +42,7 @@ export type QueryCallback = (
     added: number[];
     changed: number[];
     removed: number[];
-  }
+  },
 ) => void;
 
 /**
@@ -319,13 +319,13 @@ export class Editor {
     // Initialize store with synced component/singleton defs
     if (this.store) {
       const { componentsById, singletonsById } = getResources<EditorResources>(
-        this.ctx
+        this.ctx,
       );
       const syncedComponents = [...componentsById.values()].filter(
-        (def) => def.__editor.sync !== "none"
+        (def) => def.__editor.sync !== "none",
       );
       const syncedSingletons = [...singletonsById.values()].filter(
-        (def) => def.__editor.sync !== "none"
+        (def) => def.__editor.sync !== "none",
       );
       await this.store.initialize(syncedComponents, syncedSingletons);
     }
@@ -413,6 +413,17 @@ export class Editor {
         entityId !== SINGLETON_ENTITY_ID &&
         !hasComponent(ctx, entityId, Synced, false)
       ) {
+        continue;
+      }
+
+      // Skip syncing entities that are currently being edited.
+      // This prevents incomplete/empty content from entering the undo history.
+      // Changes will sync after editing ends (and validation like removeWhenTextEmpty runs).
+      if (
+        entityId !== SINGLETON_ENTITY_ID &&
+        hasComponent(ctx, entityId, Edited, false)
+      ) {
+        console.log("Skipping sync for edited entity", entityId);
         continue;
       }
 

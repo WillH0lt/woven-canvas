@@ -8,8 +8,8 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  border: 2px solid var(--ic-primary);
-  border-radius: 2px;
+  border: calc(2px / var(--ic-zoom)) solid var(--ic-primary);
+  border-radius: calc(2px / var(--ic-zoom));
   background-color: var(--ic-gray-100);
   transition-property: background-color;
   transition-timing-function: var(--ic-transition-timing-function);

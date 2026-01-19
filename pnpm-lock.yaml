@@ -991,6 +991,9 @@ importers:
       xstate:
         specifier: ^5.24.0
         version: 5.24.0
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
       '@types/bun':
         specifier: latest

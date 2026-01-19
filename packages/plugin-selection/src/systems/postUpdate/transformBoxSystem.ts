@@ -17,6 +17,7 @@ import {
   Text,
   getBackrefs,
   getBlockDef,
+  isAlive,
 } from "@infinitecanvas/editor";
 // Note: createEntity is still used for creating transform handles
 import { Vec2, Rect } from "@infinitecanvas/math";
@@ -139,6 +140,8 @@ function addTransformBox(
  * Update transform box bounds to match selection.
  */
 function updateTransformBox(ctx: Context, transformBoxId: EntityId): void {
+  if (!isAlive(ctx, transformBoxId)) return;
+
   const selectedBlocks = getLocalSelectedBlocks(ctx);
   if (selectedBlocks.length === 0) return;
 

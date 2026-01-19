@@ -142,7 +142,7 @@ const isEmphasized = computed(() => props.selected !== null || props.hovered);
       <path
         :d="highlightPath"
         stroke="var(--ic-highlighted-block-outline-color)"
-        stroke-width="1"
+        style="stroke-width: calc(1px / var(--ic-zoom))"
         fill="none"
         stroke-linecap="round"
         stroke-linejoin="round"

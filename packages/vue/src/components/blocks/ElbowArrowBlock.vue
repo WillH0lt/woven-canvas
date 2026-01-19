@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
-import { Camera, Color } from "@infinitecanvas/editor";
+import { computed, ref, onMounted, onUnmounted } from "vue";
+import { Color } from "@infinitecanvas/editor";
 import { Vec2 } from "@infinitecanvas/math";
 import { ElbowArrow, ArrowTrim } from "@infinitecanvas/plugin-arrows";
 import { useComponent } from "../../composables/useComponent";
-import { useSingleton } from "../../composables/useSingleton";
 import ArrowHead from "./ArrowHead.vue";
 import type { BlockData } from "../../types";
 
@@ -16,12 +15,11 @@ const containerRef = ref<HTMLElement | null>(null);
 const clientWidth = ref(0);
 const clientHeight = ref(0);
 
-const camera = useSingleton(Camera);
 const color = useComponent(props.entityId, Color);
 const elbowArrow = useComponent(props.entityId, ElbowArrow);
 const arrowTrim = useComponent(props.entityId, ArrowTrim);
 
-const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP * camera.value.zoom);
+const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP);
 
 const isEmphasized = computed(() => props.hovered || props.selected !== null);
 
@@ -54,9 +52,7 @@ const hex = computed(() => {
 });
 
 const baseThickness = computed(() => elbowArrow.value?.thickness ?? 2);
-const thickness = computed(
-  () => `calc(${baseThickness.value}px * var(--ic-zoom))`
-);
+const thickness = computed(() => `${baseThickness.value}px`);
 
 // Get points from the elbow arrow buffer
 const worldPoints = computed((): Vec2[] => {
@@ -180,8 +176,8 @@ const pathData = computed(() => {
           class="highlight-bg"
           fill="none"
           style="
-            stroke-width: calc(2px * var(--ic-zoom));
-            stroke-dasharray: calc(12px * var(--ic-zoom));
+            stroke-width: calc(2px / var(--ic-zoom));
+            stroke-dasharray: calc(12px / var(--ic-zoom));
           "
           stroke-linecap="round"
         />
@@ -229,21 +225,21 @@ const pathData = computed(() => {
             :y2="line.end[1]"
             class="highlight-overlay"
             fill="none"
-            style="stroke-width: calc(2px * var(--ic-zoom))"
+            style="stroke-width: calc(2px / var(--ic-zoom))"
             stroke-linecap="round"
           />
           <ArrowHead
             v-if="pathData.startHead !== 'none'"
             :position="pathData.startPos"
             :direction="pathData.startDir"
-            thickness="calc(2px * var(--ic-zoom))"
+            thickness="calc(2px / var(--ic-zoom))"
             color="var(--ic-highlighted-block-outline-color)"
           />
           <ArrowHead
             v-if="pathData.endHead !== 'none'"
             :position="pathData.endPos"
             :direction="pathData.endDir"
-            thickness="calc(2px * var(--ic-zoom))"
+            thickness="calc(2px / var(--ic-zoom))"
             color="var(--ic-highlighted-block-outline-color)"
           />
         </template>

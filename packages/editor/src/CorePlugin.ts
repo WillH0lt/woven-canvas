@@ -25,7 +25,7 @@ import {
 import { rankBoundsSystem } from "./systems/preInput";
 import { intersectSystem } from "./systems/preCapture";
 import { keybindSystem } from "./systems/capture";
-import { undoRedoSystem } from "./systems/update";
+import { undoRedoSystem, removeEmptyTextSystem } from "./systems/update";
 import { scaleWithZoomSystem } from "./systems/preRender";
 import { cursorSystem } from "./systems/postRender";
 
@@ -75,6 +75,7 @@ export const CorePlugin: EditorPlugin = {
 
     // Update phase
     undoRedoSystem,
+    removeEmptyTextSystem,
 
     // Render phase
     scaleWithZoomSystem, // priority: 100

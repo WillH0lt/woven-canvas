@@ -181,5 +181,5 @@ export {
 // Systems
 export { rankBoundsSystem } from "./systems/preInput";
 export { intersectSystem } from "./systems/preCapture";
-export { undoRedoSystem } from "./systems/update";
+export { undoRedoSystem, removeEmptyTextSystem } from "./systems/update";
 export { scaleWithZoomSystem } from "./systems/preRender";

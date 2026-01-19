@@ -7,7 +7,7 @@ import { Block, ScaleWithZoom } from "../../components";
 
 // Query for entities with ScaleWithZoom
 const scaleWithZoomQuery = defineQuery((q) =>
-  q.with(Block).tracking(ScaleWithZoom)
+  q.with(Block).tracking(ScaleWithZoom),
 );
 
 // Pre-allocated vectors to avoid allocations in hot path
@@ -28,27 +28,30 @@ const _anchorOffset: Vec2 = [0, 0];
  * Runs early in the render phase (priority: 100) so other render systems
  * see the correctly scaled entities.
  */
-export const scaleWithZoomSystem = defineEditorSystem({ phase: "render", priority: 100 }, (ctx: Context) => {
-  const camera = Camera.read(ctx);
-  const state = ScaleWithZoomState.read(ctx);
+export const scaleWithZoomSystem = defineEditorSystem(
+  { phase: "render", priority: 100 },
+  (ctx: Context) => {
+    const camera = Camera.read(ctx);
+    const state = ScaleWithZoomState.read(ctx);
 
-  // Check if zoom changed
-  const zoomChanged = !Scalar.approxEqual(camera.zoom, state.lastZoom);
+    // Check if zoom changed
+    const zoomChanged = !Scalar.approxEqual(camera.zoom, state.lastZoom);
 
-  if (zoomChanged) {
-    // Zoom changed - update all ScaleWithZoom entities
-    for (const entityId of scaleWithZoomQuery.current(ctx)) {
+    if (zoomChanged) {
+      // Zoom changed - update all ScaleWithZoom entities
+      for (const entityId of scaleWithZoomQuery.current(ctx)) {
+        scaleBlock(ctx, entityId, camera.zoom);
+      }
+      ScaleWithZoomState.write(ctx).lastZoom = camera.zoom;
+    }
+
+    // Always process newly added entities - they need to be scaled
+    // even if zoom hasn't changed
+    for (const entityId of scaleWithZoomQuery.addedOrChanged(ctx)) {
       scaleBlock(ctx, entityId, camera.zoom);
     }
-    ScaleWithZoomState.write(ctx).lastZoom = camera.zoom;
-  }
-
-  // Always process newly added entities - they need to be scaled
-  // even if zoom hasn't changed
-  for (const entityId of scaleWithZoomQuery.addedOrChanged(ctx)) {
-    scaleBlock(ctx, entityId, camera.zoom);
-  }
-});
+  },
+);
 
 /**
  * Scale a block based on the current zoom level.
