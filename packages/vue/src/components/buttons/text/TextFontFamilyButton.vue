@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
 import { Text } from "@infinitecanvas/editor";
 
@@ -7,6 +7,7 @@ import MenuDropdown from "../MenuDropdown.vue";
 import IconChevronDown from "../../icons/IconChevronDown.vue";
 import { useComponents } from "../../../composables/useComponents";
 import { useEditorContext } from "../../../composables/useEditorContext";
+import { useFonts } from "../../../composables/useFonts";
 
 export interface FontOption {
   name: string;
@@ -14,28 +15,23 @@ export interface FontOption {
   previewImage?: string;
 }
 
-const props = withDefaults(
-  defineProps<{
-    entityIds: EntityId[];
-    fonts?: FontOption[];
-    showSearch?: boolean;
-  }>(),
-  {
-    fonts: () => [
-      { name: "Figtree", displayName: "Figtree" },
-      { name: "Inter", displayName: "Inter" },
-      { name: "Roboto", displayName: "Roboto" },
-      { name: "Open Sans", displayName: "Open Sans" },
-      { name: "Lato", displayName: "Lato" },
-      { name: "Montserrat", displayName: "Montserrat" },
-      { name: "Playfair Display", displayName: "Playfair Display" },
-      { name: "Merriweather", displayName: "Merriweather" },
-    ],
-    showSearch: false,
-  },
-);
+const props = defineProps<{
+  entityIds: EntityId[];
+}>();
 
 const { nextEditorTick } = useEditorContext();
+
+// Get fonts from editor (filtered to selectable only)
+const editorFonts = useFonts();
+
+// Map editor fonts to FontOption format, use props.fonts as override
+const resolvedFonts = computed<FontOption[]>(() => {
+  return editorFonts.value.map((font) => ({
+    name: font.name,
+    displayName: font.displayName,
+    previewImage: font.previewImage,
+  }));
+});
 
 // Get Text components for all selected entities
 const textsMap = useComponents(() => props.entityIds, Text);
@@ -62,21 +58,8 @@ const buttonLabel = computed(() => {
   const family = currentFontFamily.value;
   if (family === null) return "Mixed";
 
-  const font = props.fonts.find((f) => f.name === family);
+  const font = resolvedFonts.value.find((f) => f.name === family);
   return font?.displayName ?? family;
-});
-
-// Search
-const searchText = ref("");
-
-const filteredFonts = computed(() => {
-  if (!searchText.value) return props.fonts;
-  const search = searchText.value.toLowerCase();
-  return props.fonts.filter(
-    (f) =>
-      f.name.toLowerCase().includes(search) ||
-      f.displayName.toLowerCase().includes(search),
-  );
 });
 
 function setFontFamily(fontName: string) {
@@ -86,11 +69,6 @@ function setFontFamily(fontName: string) {
       text.fontFamily = fontName;
     }
   });
-}
-
-function handleSearchInput(e: Event) {
-  const input = e.target as HTMLInputElement;
-  searchText.value = input.value;
 }
 
 function handleWheelStop(e: Event) {
@@ -107,18 +85,15 @@ function handleWheelStop(e: Event) {
       </div>
     </template>
 
-    <template #dropdown="{ close }">
+    <template #dropdown>
       <div class="ic-font-family-menu" @wheel="handleWheelStop" @click.stop>
         <div class="ic-font-list">
           <div
-            v-for="font in filteredFonts"
+            v-for="font in resolvedFonts"
             :key="font.name"
             class="ic-font-item"
             :class="{ active: currentFontFamily === font.name }"
-            @click="
-              setFontFamily(font.name);
-              close();
-            "
+            @click="setFontFamily(font.name)"
           >
             <img
               v-if="font.previewImage"
@@ -135,32 +110,6 @@ function handleWheelStop(e: Event) {
             </span>
           </div>
         </div>
-
-        <template v-if="showSearch">
-          <div class="ic-separator" />
-
-          <div class="ic-search-container">
-            <svg
-              class="ic-search-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <input
-              class="ic-search-input"
-              :value="searchText"
-              @input="handleSearchInput"
-              placeholder="Search"
-            />
-          </div>
-        </template>
       </div>
     </template>
   </MenuDropdown>
@@ -223,7 +172,7 @@ function handleWheelStop(e: Event) {
   display: flex;
   align-items: center;
   height: 32px;
-  padding: 8px 12px;
+  padding: 0px 12px;
   width: 100%;
   transition: background-color 0.2s;
   cursor: pointer;
@@ -239,7 +188,7 @@ function handleWheelStop(e: Event) {
 
 .ic-font-preview {
   filter: invert(1);
-  height: 100%;
+  height: 50%;
   overflow: hidden;
   object-fit: cover;
   object-position: left;
@@ -247,50 +196,5 @@ function handleWheelStop(e: Event) {
 
 .ic-font-name {
   font-size: 14px;
-}
-
-.ic-separator {
-  margin: 4px 0;
-  width: 100%;
-  height: 0.75px;
-  background-color: var(--ic-gray-600);
-}
-
-.ic-search-container {
-  display: flex;
-  position: relative;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  color: white;
-}
-
-.ic-search-icon {
-  position: absolute;
-  left: 16px;
-  width: 16px;
-  height: 16px;
-  color: var(--ic-gray-300);
-}
-
-.ic-search-input {
-  background-color: var(--ic-gray-700);
-  width: 100%;
-  padding-left: 32px;
-  margin: 8px;
-  border-radius: 6px;
-  border: none;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  color: white;
-  outline: 1px solid var(--ic-gray-600);
-}
-
-.ic-search-input:hover {
-  outline: 1px solid var(--ic-gray-500);
-}
-
-.ic-search-input:focus {
-  outline: 2px solid var(--ic-primary);
 }
 </style>

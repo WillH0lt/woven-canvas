@@ -30,6 +30,7 @@ import {
   type AnyEditorSingletonDef,
   type EditorSystem,
   type EditorPluginInput,
+  type FontFamilyInput,
 } from "@infinitecanvas/editor";
 import { CanvasControlsPlugin } from "@infinitecanvas/plugin-canvas-controls";
 import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
@@ -108,6 +109,9 @@ export interface InfiniteCanvasProps {
 
   // Controls plugin options
   controls?: ControlsOptions;
+
+  // Custom fonts to load and make available in the font selector
+  fonts?: FontFamilyInput[];
 }
 
 const props = withDefaults(defineProps<InfiniteCanvasProps>(), {
@@ -119,8 +123,7 @@ const props = withDefaults(defineProps<InfiniteCanvasProps>(), {
   singletons: () => [],
   systems: () => [],
   plugins: () => [],
-  disableControls: false,
-  disableSelection: false,
+  fonts: () => [],
 });
 
 const emit = defineEmits<{
@@ -330,6 +333,7 @@ onMounted(async () => {
     singletons: props.singletons,
     systems: props.systems,
     plugins: allPlugins,
+    fonts: props.fonts,
   };
 
   // Create and initialize editor

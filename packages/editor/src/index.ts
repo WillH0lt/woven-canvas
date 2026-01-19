@@ -22,6 +22,14 @@ export {
   BlockDef,
 } from "./types";
 
+// Font loading
+export {
+  FontLoader,
+  FontFamily,
+  type FontFamilyInput,
+} from "./FontLoader";
+export type { FontFamily as FontFamilyType } from "./FontLoader";
+
 // Singleton base class
 export {
   EditorSingletonDef,

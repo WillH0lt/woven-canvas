@@ -8,6 +8,7 @@ import type { Editor } from "./Editor";
 import type { EditorPluginInput } from "./plugin";
 import type { StoreAdapter } from "./store";
 import type { EditorSystem } from "./EditorSystem";
+import type { FontFamilyInput } from "./FontLoader";
 
 export type { StoreAdapter };
 
@@ -210,6 +211,30 @@ export const EditorOptionsSchema = z.object({
    * Each system specifies its phase and priority.
    */
   systems: z.array(z.custom<EditorSystem>()).default([]),
+
+  /**
+   * Custom font families to load and make available in the font selector.
+   * Fonts will be loaded automatically during editor initialization.
+   */
+  fonts: z.array(z.custom<FontFamilyInput>()).default([]),
+
+  /**
+   * If true, keybinds from plugins will be ignored.
+   * Use this when you want full control over keybinds.
+   */
+  omitPluginKeybinds: z.boolean().default(false),
+
+  /**
+   * If true, cursors from plugins will be ignored.
+   * Use this when you want full control over cursors.
+   */
+  omitPluginCursors: z.boolean().default(false),
+
+  /**
+   * If true, fonts from plugins will be ignored.
+   * Use this when you want full control over fonts.
+   */
+  omitPluginFonts: z.boolean().default(false),
 });
 
 export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>;

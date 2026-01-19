@@ -31,6 +31,7 @@ import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 import { Synced } from "./components";
 import type { EditorSystem } from "./EditorSystem";
+import { FontLoader, FontFamily } from "./FontLoader";
 
 /**
  * Query subscription callback
@@ -127,12 +128,14 @@ export class Editor {
   public cursors: Record<string, CursorDef> = {};
   public keybinds: Keybind[];
   public blockDefs: Record<string, BlockDef> = {};
+  public fonts: FontFamily[] = [];
 
   private world: World;
   private systemBatches: EditorSystem[][];
   private plugins: Map<string, EditorPlugin>;
   private store: StoreAdapter | null;
   private storeEventIndex: number = 0;
+  private fontLoader: FontLoader;
 
   constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
     const options = EditorOptionsSchema.parse(optionsInput ?? {});
@@ -166,9 +169,11 @@ export class Editor {
 
     // Setup keybinds
     const keybinds = options.keybinds;
-    for (const plugin of sortedPlugins) {
-      if (plugin.keybinds) {
-        keybinds.push(...plugin.keybinds);
+    if (!options.omitPluginKeybinds) {
+      for (const plugin of sortedPlugins) {
+        if (plugin.keybinds) {
+          keybinds.push(...plugin.keybinds);
+        }
       }
     }
     this.keybinds = keybinds;
@@ -192,12 +197,26 @@ export class Editor {
     // Setup cursors
     const cursors: Record<string, CursorDef> = {};
     Object.assign(cursors, options.cursors);
-    for (const plugin of sortedPlugins) {
-      if (plugin.cursors) {
-        Object.assign(cursors, plugin.cursors);
+    if (!options.omitPluginCursors) {
+      for (const plugin of sortedPlugins) {
+        if (plugin.cursors) {
+          Object.assign(cursors, plugin.cursors);
+        }
       }
     }
     this.cursors = cursors;
+
+    // Setup fonts (parse inputs to apply defaults, merge from plugins)
+    this.fontLoader = new FontLoader();
+    const fontInputs = [...options.fonts];
+    if (!options.omitPluginFonts) {
+      for (const plugin of sortedPlugins) {
+        if (plugin.fonts) {
+          fontInputs.push(...plugin.fonts);
+        }
+      }
+    }
+    this.fonts = fontInputs.map((input) => FontFamily.parse(input));
 
     // Collect plugin resources
     const pluginResources: Record<string, unknown> = {};
@@ -309,6 +328,11 @@ export class Editor {
         (def) => def.__editor.sync !== "none"
       );
       await this.store.initialize(syncedComponents, syncedSingletons);
+    }
+
+    // Load custom fonts
+    if (this.fonts.length > 0) {
+      await this.fontLoader.loadFonts(this.fonts);
     }
 
     // Run plugin setup

@@ -86,6 +86,7 @@ export {
   type TextFormattingState,
   type TextFormattingCommands,
 } from "./composables/useTextFormatting";
+export { useFonts } from "./composables/useFonts";
 
 // Utilities
 export { computeCommonComponents } from "./utils/computeCommonComponents";

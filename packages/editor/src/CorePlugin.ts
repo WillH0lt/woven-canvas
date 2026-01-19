@@ -47,11 +47,11 @@ export const CorePlugin: EditorPlugin = {
   cursors,
 
   singletons: Object.values(singletons).filter(
-    (v): v is EditorSingletonDef<any> => v instanceof EditorSingletonDef
+    (v): v is EditorSingletonDef<any> => v instanceof EditorSingletonDef,
   ),
 
   components: Object.values(components).filter(
-    (v) => v instanceof EditorComponentDef
+    (v) => v instanceof EditorComponentDef,
   ) as AnyEditorComponentDef[],
 
   keybinds: [

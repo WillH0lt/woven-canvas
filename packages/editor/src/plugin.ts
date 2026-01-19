@@ -4,6 +4,7 @@ import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
 import type { EditorSystem } from "./EditorSystem";
 import type { CursorDef, Keybind, BlockDefInput } from "./types";
+import type { FontFamilyInput } from "./FontLoader";
 
 /**
  * Editor plugin interface.
@@ -74,6 +75,12 @@ export interface EditorPlugin<TResources = unknown> {
   blockDefs?: BlockDefInput[];
 
   cursors?: Record<string, CursorDef>;
+
+  /**
+   * Font families provided by the plugin.
+   * Fonts will be loaded automatically during editor initialization.
+   */
+  fonts?: FontFamilyInput[];
 
   /**
    * Plugin-specific resources/options.
