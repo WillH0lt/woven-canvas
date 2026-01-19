@@ -36,18 +36,21 @@ export interface TextEditorCommands {
 export interface TextEditorController {
   /** Reference to the active editor (null if none) */
   editor: ShallowRef<Editor | null>;
+  /** Reference to the active editing element (null if none) */
+  blockElement: ShallowRef<HTMLElement | null>;
   /** Reactive state computed from the active editor */
   state: TextEditorState;
   /** Commands to manipulate the active editor */
   commands: TextEditorCommands;
-  /** Register an editor as the active text editor (called by EditableText) */
-  register(editor: Editor): void;
-  /** Unregister the active editor (called by EditableText) */
+  /** Register an editor and element as active (called by EditableText) */
+  register(editor: Editor, blockElement: HTMLElement): void;
+  /** Unregister the active editor and element (called by EditableText) */
   unregister(): void;
 }
 
 // Module-level singleton state
 const activeEditor = shallowRef<Editor | null>(null);
+const activeBlockElement = shallowRef<HTMLElement | null>(null);
 
 // Track selection/transaction updates to trigger reactivity
 const updateCounter = shallowRef(0);
@@ -195,15 +198,22 @@ export function useTextEditorController(): TextEditorController {
       const { from, to } = editor.state.selection;
 
       if (from === to) {
-        editor.chain().focus().selectAll().setColor(color).setTextSelection(to).run();
+        editor
+          .chain()
+          .focus()
+          .selectAll()
+          .setColor(color)
+          .setTextSelection(to)
+          .run();
       } else {
         editor.chain().focus().setColor(color).run();
       }
     },
   };
 
-  function register(editor: Editor): void {
+  function register(editor: Editor, blockElement: HTMLElement): void {
     activeEditor.value = editor;
+    activeBlockElement.value = blockElement;
 
     // Listen for selection/transaction updates to trigger reactivity
     editor.on("selectionUpdate", () => {
@@ -216,10 +226,12 @@ export function useTextEditorController(): TextEditorController {
 
   function unregister(): void {
     activeEditor.value = null;
+    activeBlockElement.value = null;
   }
 
   return {
     editor: activeEditor,
+    blockElement: activeBlockElement,
     state,
     commands,
     register,

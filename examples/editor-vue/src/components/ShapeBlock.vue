@@ -3,7 +3,6 @@ import { ref } from "vue";
 import { Color, Text } from "@infinitecanvas/editor";
 import {
   useComponent,
-  useTextStretchBehavior,
   type BlockData,
   useEditorContext,
   EditableText,
@@ -16,6 +15,7 @@ const props = defineProps<BlockData>();
 const shape = useComponent(props.entityId, Shape);
 const color = useComponent(props.entityId, Color);
 
+const containerRef = ref<HTMLElement | null>(null);
 const { nextEditorTick } = useEditorContext();
 
 function handleEditEnd(data: { content: string }) {
@@ -33,6 +33,7 @@ function handleEditEnd(data: { content: string }) {
 
 <template>
   <div
+    ref="containerRef"
     class="shape-block"
     :style="{
       backgroundColor: `rgb(${color?.red}, ${color?.green}, ${color?.blue})`,
@@ -40,7 +41,11 @@ function handleEditEnd(data: { content: string }) {
       overflow: props.edited ? 'visible' : 'hidden',
     }"
   >
-    <EditableText v-bind="props" @edit-end="handleEditEnd" />
+    <EditableText
+      v-bind="props"
+      :block-element="containerRef"
+      @edit-end="handleEditEnd"
+    />
   </div>
 </template>
 

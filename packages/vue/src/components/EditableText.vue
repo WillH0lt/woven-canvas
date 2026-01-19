@@ -18,7 +18,11 @@ import { useComponent, useSingleton } from "../composables";
 import { useTextEditorController } from "../composables/useTextEditorController";
 import { computeBlockDimensions } from "../utils/blockDimensions";
 
-const props = defineProps<BlockData>();
+interface Props extends BlockData {
+  blockElement: HTMLElement | null;
+}
+
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   editEnd: [
@@ -95,11 +99,15 @@ function handlePointerEnter(event: PointerEvent): void {
 watch(
   () => props.edited,
   async (isEdited) => {
-    if (isEdited) {
+    if (isEdited && editableTextRef.value) {
       // Create editor when entering edit mode
       editor.value = createEditor();
-      textEditorController.register(editor.value);
       await handleEditStart(editor.value);
+
+      // Register editor and element (used by FloatingMenu for bounds)
+      if (props.blockElement) {
+        textEditorController.register(editor.value, props.blockElement);
+      }
     } else if (editor.value) {
       // Save content and destroy editor when exiting edit mode
       textEditorController.unregister();

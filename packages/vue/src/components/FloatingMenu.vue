@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, inject, provide } from "vue";
+import { computed, ref, inject, provide, watch } from "vue";
 import { useFloating, offset, flip, shift } from "@floating-ui/vue";
 import {
   Block,
@@ -15,8 +15,11 @@ import {
   SelectionState,
 } from "@infinitecanvas/plugin-selection";
 import { Aabb, Rect } from "@infinitecanvas/math";
+import { useElementBounding } from "@vueuse/core";
+
 import { useQuery } from "../composables/useQuery";
 import { useSingleton } from "../composables/useSingleton";
+import { useTextEditorController } from "../composables/useTextEditorController";
 import { INFINITE_CANVAS_KEY, FLOATING_MENU_KEY } from "../injection";
 import { computeCommonComponents } from "../utils/computeCommonComponents";
 import FloatingMenuBar from "./FloatingMenuBar.vue";
@@ -31,6 +34,17 @@ const selectedItems = useQuery([Block, Selected] as const);
 const camera = useSingleton(Camera);
 const screen = useSingleton(Screen);
 const selectionState = useSingleton(SelectionStateSingleton);
+
+// Get text editor controller for live editing bounds
+const textEditorController = useTextEditorController();
+
+// Reactive bounds for the editing element (updates on resize)
+const editingBounds = useElementBounding(textEditorController.blockElement);
+
+// Force bounds update when element changes (fixes initial position)
+watch(textEditorController.blockElement, () => {
+  editingBounds.update();
+});
 
 // Get userId from editor
 const userId = computed(() => {
@@ -104,9 +118,33 @@ const containerRef = inject<{ value: HTMLElement | null }>("containerRef");
 // Virtual reference element for floating-ui
 // Represents the selection bounding box in screen coordinates
 const virtualReference = computed(() => {
-  const bounds = selectionBounds.value;
   const container = containerRef?.value;
-  if (!bounds || !container) return null;
+  if (!container) return null;
+
+  // Use live element bounds if editing (text element may have changed size)
+  // Only use if bounds are valid (non-zero) - otherwise fall through to ECS bounds
+  if (
+    textEditorController.blockElement.value &&
+    editingBounds.width.value > 0
+  ) {
+    const rect = {
+      x: editingBounds.x.value,
+      y: editingBounds.y.value,
+      width: editingBounds.width.value,
+      height: editingBounds.height.value,
+      top: editingBounds.top.value,
+      left: editingBounds.left.value,
+      right: editingBounds.right.value,
+      bottom: editingBounds.bottom.value,
+    };
+    return {
+      getBoundingClientRect: () => rect,
+    };
+  }
+
+  // Fall back to ECS-based selection bounds
+  const bounds = selectionBounds.value;
+  if (!bounds) return null;
 
   // Get container offset in viewport
   const containerRect = container.getBoundingClientRect();

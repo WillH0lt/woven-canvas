@@ -14,18 +14,15 @@ const { handleEditEnd } = useTextStretchBehavior({
   blockData: props,
   containerRef,
 });
-
-watch(
-  () => props.selected,
-  () => {
-    console.log("SELCTED");
-  },
-);
 </script>
 
 <template>
   <div ref="containerRef" class="ic-text-block">
-    <EditableText v-bind="props" @edit-end="handleEditEnd" />
+    <EditableText
+      v-bind="props"
+      :block-element="containerRef"
+      @edit-end="handleEditEnd"
+    />
   </div>
 </template>
 

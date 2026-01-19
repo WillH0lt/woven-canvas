@@ -1185,6 +1185,9 @@ importers:
       '@tiptap/vue-3':
         specifier: ^3.15.3
         version: 3.15.3(@floating-ui/dom@1.7.4)(@tiptap/core@3.15.3)(@tiptap/pm@3.15.3)(vue@3.5.26)
+      '@vueuse/core':
+        specifier: ^14.0.0
+        version: 14.0.0(vue@3.5.26)
       perfect-freehand:
         specifier: ^1.2.2
         version: 1.2.2

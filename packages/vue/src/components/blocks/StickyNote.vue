@@ -31,7 +31,11 @@ const { handleEditEnd } = useTextStretchBehavior({
 
 <template>
   <div ref="containerRef" class="ic-sticky-note" :style="containerStyle">
-    <EditableText v-bind="props" @edit-end="handleEditEnd" />
+    <EditableText
+      v-bind="props"
+      :block-element="containerRef"
+      @edit-end="handleEditEnd"
+    />
   </div>
 </template>
 
