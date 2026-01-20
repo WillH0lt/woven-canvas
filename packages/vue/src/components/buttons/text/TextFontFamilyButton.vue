@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
-import { Text } from "@infinitecanvas/editor";
 
 import MenuDropdown from "../MenuDropdown.vue";
 import IconChevronDown from "../../icons/IconChevronDown.vue";
-import { useComponents } from "../../../composables/useComponents";
-import { useEditorContext } from "../../../composables/useEditorContext";
+import { useTextFormatting } from "../../../composables/useTextFormatting";
 import { useFonts } from "../../../composables/useFonts";
 
 export interface FontOption {
@@ -19,7 +17,7 @@ const props = defineProps<{
   entityIds: EntityId[];
 }>();
 
-const { nextEditorTick } = useEditorContext();
+const { state, commands } = useTextFormatting(() => props.entityIds);
 
 // Get fonts from editor (filtered to selectable only)
 const editorFonts = useFonts();
@@ -33,25 +31,8 @@ const resolvedFonts = computed<FontOption[]>(() => {
   }));
 });
 
-// Get Text components for all selected entities
-const textsMap = useComponents(() => props.entityIds, Text);
-
 // Get current font family (null if mixed)
-const currentFontFamily = computed<string | null>(() => {
-  let fontFamily: string | null = null;
-
-  for (const text of textsMap.value.values()) {
-    if (!text) continue;
-
-    if (fontFamily === null) {
-      fontFamily = text.fontFamily;
-    } else if (fontFamily !== text.fontFamily) {
-      return null; // Mixed fonts
-    }
-  }
-
-  return fontFamily;
-});
+const currentFontFamily = computed<string | null>(() => state.fontFamily.value);
 
 // Label for the button
 const buttonLabel = computed(() => {
@@ -63,12 +44,7 @@ const buttonLabel = computed(() => {
 });
 
 function setFontFamily(fontName: string) {
-  nextEditorTick((ctx) => {
-    for (const entityId of props.entityIds) {
-      const text = Text.write(ctx, entityId);
-      text.fontFamily = fontName;
-    }
-  });
+  commands.setFontFamily(fontName);
 }
 
 function handleWheelStop(e: Event) {

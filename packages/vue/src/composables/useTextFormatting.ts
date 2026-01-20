@@ -18,6 +18,10 @@ export interface TextFormattingState {
   alignment: ComputedRef<TextAlignment>;
   /** Current text color (null if mixed or none) */
   color: ComputedRef<string | null>;
+  /** Current font size (null if mixed) */
+  fontSize: ComputedRef<number | null>;
+  /** Current font family (null if mixed) */
+  fontFamily: ComputedRef<string | null>;
 }
 
 export interface TextFormattingCommands {
@@ -31,6 +35,10 @@ export interface TextFormattingCommands {
   setAlignment(alignment: TextAlignment): void;
   /** Set text color */
   setColor(color: string): void;
+  /** Set font size */
+  setFontSize(size: number): void;
+  /** Set font family */
+  setFontFamily(family: string): void;
 }
 
 export interface TextFormattingController {
@@ -109,6 +117,11 @@ export function useTextFormatting(
       }
       return batchController.state.color.value;
     }),
+
+    // fontSize and fontFamily are component-level properties, always use batchController
+    fontSize: computed(() => batchController.state.fontSize.value),
+
+    fontFamily: computed(() => batchController.state.fontFamily.value),
   };
 
   const commands: TextFormattingCommands = {
@@ -150,6 +163,15 @@ export function useTextFormatting(
       } else {
         batchController.commands.setColor(color);
       }
+    },
+
+    // fontSize and fontFamily are component-level properties, always use batchController
+    setFontSize(size: number) {
+      batchController.commands.setFontSize(size);
+    },
+
+    setFontFamily(family: string) {
+      batchController.commands.setFontFamily(family);
     },
   };
 

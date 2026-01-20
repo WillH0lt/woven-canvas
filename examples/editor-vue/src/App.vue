@@ -27,6 +27,7 @@ function handleReady(editor: Editor) {
     <InfiniteCanvas
       @ready="handleReady"
       :store="store"
+      :controls="{ maxZoom: 3 }"
       :components="[Shape]"
       :blockDefs="[
         {

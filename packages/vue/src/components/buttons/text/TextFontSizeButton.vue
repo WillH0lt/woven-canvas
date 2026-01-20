@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
-import { Text } from "@infinitecanvas/editor";
 
 import MenuDropdown from "../MenuDropdown.vue";
 import IconChevronDown from "../../icons/IconChevronDown.vue";
-import { useComponents } from "../../../composables/useComponents";
-import { useEditorContext } from "../../../composables/useEditorContext";
+import { useTextFormatting } from "../../../composables/useTextFormatting";
 
 const props = defineProps<{
   entityIds: EntityId[];
 }>();
 
-const { nextEditorTick } = useEditorContext();
+const { state, commands } = useTextFormatting(() => props.entityIds);
 
 const FONT_SIZE_OPTIONS = [
   { label: "Small", value: 16, displayValue: 10 },
@@ -21,25 +19,8 @@ const FONT_SIZE_OPTIONS = [
   { label: "Huge", value: 96, displayValue: 20 },
 ];
 
-// Get Text components for all selected entities
-const textsMap = useComponents(() => props.entityIds, Text);
-
 // Get current font size (null if mixed)
-const currentFontSize = computed<number | null>(() => {
-  let fontSize: number | null = null;
-
-  for (const text of textsMap.value.values()) {
-    if (!text) continue;
-
-    if (fontSize === null) {
-      fontSize = text.fontSizePx;
-    } else if (fontSize !== text.fontSizePx) {
-      return null; // Mixed sizes
-    }
-  }
-
-  return fontSize;
-});
+const currentFontSize = computed<number | null>(() => state.fontSize.value);
 
 // Label for the button
 const buttonLabel = computed(() => {
@@ -60,12 +41,7 @@ const inputDisplayValue = computed(() => {
 });
 
 function setFontSize(value: number) {
-  nextEditorTick((ctx) => {
-    for (const entityId of props.entityIds) {
-      const text = Text.write(ctx, entityId);
-      text.fontSizePx = value;
-    }
-  });
+  commands.setFontSize(value);
 }
 
 function handleInputChange(e: Event) {

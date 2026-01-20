@@ -47,6 +47,10 @@ export interface TextBatchState {
   alignment: ComputedRef<TextAlignment | null>;
   /** Current color if all same (null if mixed or no color) */
   color: ComputedRef<string | null>;
+  /** Current font size if all same (null if mixed) */
+  fontSize: ComputedRef<number | null>;
+  /** Current font family if all same (null if mixed) */
+  fontFamily: ComputedRef<string | null>;
 }
 
 export interface TextBatchCommands {
@@ -60,6 +64,10 @@ export interface TextBatchCommands {
   setAlignment(alignment: TextAlignment): void;
   /** Set color on all selected text entities */
   setColor(color: string): void;
+  /** Set font size on all selected text entities */
+  setFontSize(size: number): void;
+  /** Set font family on all selected text entities */
+  setFontFamily(family: string): void;
 }
 
 export interface TextBatchController {
@@ -377,6 +385,42 @@ export function useTextBatchController(
 
       return color;
     }),
+
+    fontSize: computed(() => {
+      let fontSize: number | null = null;
+      let foundAny = false;
+
+      for (const text of textsMap.value.values()) {
+        if (!text) continue;
+
+        if (!foundAny) {
+          fontSize = text.fontSizePx;
+          foundAny = true;
+        } else if (fontSize !== text.fontSizePx) {
+          return null; // mixed
+        }
+      }
+
+      return fontSize;
+    }),
+
+    fontFamily: computed(() => {
+      let fontFamily: string | null = null;
+      let foundAny = false;
+
+      for (const text of textsMap.value.values()) {
+        if (!text) continue;
+
+        if (!foundAny) {
+          fontFamily = text.fontFamily;
+          foundAny = true;
+        } else if (fontFamily !== text.fontFamily) {
+          return null; // mixed
+        }
+      }
+
+      return fontFamily;
+    }),
   };
 
   function computeMarkState(markType: MarkType): boolean | null {
@@ -428,6 +472,28 @@ export function useTextBatchController(
 
     setColor(color: string) {
       applyToAll((content) => setColorInHtml(content, color));
+    },
+
+    setFontSize(size: number) {
+      const ids = toValue(entityIds);
+
+      nextEditorTick((ctx) => {
+        for (const entityId of ids) {
+          const text = Text.write(ctx, entityId);
+          text.fontSizePx = size;
+        }
+      });
+    },
+
+    setFontFamily(family: string) {
+      const ids = toValue(entityIds);
+
+      nextEditorTick((ctx) => {
+        for (const entityId of ids) {
+          const text = Text.write(ctx, entityId);
+          text.fontFamily = family;
+        }
+      });
     },
   };
 

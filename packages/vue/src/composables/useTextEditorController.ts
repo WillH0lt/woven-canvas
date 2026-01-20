@@ -1,8 +1,8 @@
 import { shallowRef, computed, type ShallowRef, type ComputedRef } from "vue";
 import type { Editor } from "@tiptap/vue-3";
+import { type TextAlignment } from "@infinitecanvas/editor";
 
 import { normalizeColor } from "../utils/color";
-import { type TextAlignment } from "@infinitecanvas/editor";
 
 export interface TextEditorState {
   /** Whether there is an active text editor */

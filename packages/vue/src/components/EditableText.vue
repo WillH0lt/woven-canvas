@@ -163,20 +163,25 @@ function handleEditEnd(editor: Editor): void {
 }
 
 // Watch for external text content changes (e.g., from undo/redo or sync)
-watch(text, (newText) => {
-  if (!newText) return;
+// Only watch the content property specifically, not the entire text object,
+// so font size/family changes don't trigger a content sync while editing
+watch(
+  () => text.value?.content,
+  (newContent) => {
+    if (newContent === undefined) return;
 
-  if (editor.value) {
-    // Sync to active editor
-    const currentContent = editor.value.getHTML();
-    if (currentContent !== newText.content) {
-      editor.value.commands.setContent(newText.content, { emitUpdate: false });
+    if (editor.value) {
+      // Sync to active editor
+      const currentContent = editor.value.getHTML();
+      if (currentContent !== newContent) {
+        editor.value.commands.setContent(newContent, { emitUpdate: false });
+      }
+    } else {
+      // Sync to static display
+      displayContent.value = newContent;
     }
-  } else {
-    // Sync to static display
-    displayContent.value = newText.content;
-  }
-});
+  },
+);
 
 // Computed styles for the text container
 const containerStyle = computed(() => {
