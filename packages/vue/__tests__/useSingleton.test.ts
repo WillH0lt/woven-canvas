@@ -21,6 +21,8 @@ describe("useSingleton", () => {
     mockCanvasContext = {
       hasEntity: () => false,
       getEditor: () => null,
+      getSessionId: () => null,
+      getUserBySessionId: () => null,
       subscribeComponent: () => () => {},
       registerTickCallback: () => () => {},
       subscribeSingleton: (singletonName, callback) => {

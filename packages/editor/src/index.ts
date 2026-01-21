@@ -11,6 +11,7 @@ export type {
   CursorDefMap,
   ResizeMode,
   BlockDefInput,
+  UserDataInput,
 } from "./types";
 
 export {
@@ -20,6 +21,7 @@ export {
   VerticalAlignment,
   TextAlignment,
   BlockDef,
+  UserData,
 } from "./types";
 
 // Font loading

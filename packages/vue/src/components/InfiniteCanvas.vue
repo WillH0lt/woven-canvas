@@ -15,6 +15,8 @@ import {
   Hovered,
   Edited,
   Opacity,
+  User,
+  UserData,
   EventType,
   SINGLETON_ENTITY_ID,
   defineQuery,
@@ -32,6 +34,7 @@ import {
   type EditorPluginInput,
   type FontFamilyInput,
   type InferComponentType,
+  type UserDataInput,
 } from "@infinitecanvas/editor";
 import {
   CanvasControlsPlugin,
@@ -42,7 +45,13 @@ import { EraserPlugin } from "@infinitecanvas/plugin-eraser";
 import { PenPlugin } from "@infinitecanvas/plugin-pen";
 import { ArrowsPlugin } from "@infinitecanvas/plugin-arrows";
 
-import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../injection";
+import {
+  INFINITE_CANVAS_KEY,
+  TOOLTIP_KEY,
+  type InfiniteCanvasContext,
+  type UserInfo,
+} from "../injection";
+import { createTooltipContext } from "../composables/useTooltipSingleton";
 import SelectionBox from "./blocks/SelectionBox.vue";
 import TransformBox from "./blocks/TransformBox.vue";
 import TransformHandle from "./blocks/TransformHandle.vue";
@@ -57,6 +66,7 @@ import ElbowArrowBlock from "./blocks/ElbowArrowBlock.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 import type { BlockData } from "../types";
+import UserPresence from "./UserPresence.vue";
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block));
@@ -65,6 +75,7 @@ const selectedQuery = defineQuery((q) => q.with(Block).tracking(Selected));
 const hoveredQuery = defineQuery((q) => q.with(Block).tracking(Hovered));
 const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited));
 const opacityQuery = defineQuery((q) => q.with(Block).tracking(Opacity));
+const userQuery = defineQuery((q) => q.tracking(User));
 
 type BlockDef = InferComponentType<typeof Block.schema>;
 
@@ -79,8 +90,8 @@ export interface InfiniteCanvasProps {
   // Maximum number of entities (default: 10_000)
   maxEntities?: number;
 
-  // User ID for presence tracking
-  userId?: string;
+  // User data for presence tracking (all fields optional, defaults applied)
+  user?: UserDataInput;
 
   // Custom block definitions
   blockDefs?: BlockDefInput[];
@@ -142,8 +153,17 @@ const containerRef = ref<HTMLDivElement | null>(null);
 // Editor instance
 const editorRef = shallowRef<Editor | null>(null);
 
+// Parse user data from props (userId and sessionId won't change)
+const parsedUser = UserData.parse(props.user ?? {});
+
 // Track which entities exist (for hasEntity check)
 const entities = new Set<EntityId>();
+
+// Track users by sessionId for selection highlighting
+const usersBySessionId = new Map<string, UserInfo>();
+
+// Users array for UserPresence component
+const usersArray = shallowRef<UserInfo[]>([]);
 
 // Component subscriptions - entityId -> componentName -> Set of callbacks
 const componentSubscriptions = new Map<
@@ -268,10 +288,22 @@ function registerTickCallback(callback: () => void): () => void {
   };
 }
 
+// Get current user's sessionId (parsed from props, won't change)
+function getSessionId(): string {
+  return parsedUser.sessionId;
+}
+
+// Get user info by session ID
+function getUserBySessionId(sessionId: string): UserInfo | null {
+  return usersBySessionId.get(sessionId) ?? null;
+}
+
 // Provide context to composables
 const canvasContext: InfiniteCanvasContext = {
   hasEntity: (entityId: EntityId) => entities.has(entityId),
   getEditor: () => editorRef.value,
+  getSessionId,
+  getUserBySessionId,
   subscribeComponent,
   subscribeSingleton,
   registerTickCallback,
@@ -280,6 +312,10 @@ provide(INFINITE_CANVAS_KEY, canvasContext);
 
 // Provide container ref for FloatingMenu positioning
 provide("containerRef", containerRef);
+
+// Provide tooltip context for per-instance tooltip state
+const tooltipContext = createTooltipContext();
+provide(TOOLTIP_KEY, tooltipContext);
 
 let eventIndex = 0;
 let animationFrameId: number | null = null;
@@ -321,7 +357,7 @@ onMounted(async () => {
   const editorOptions: EditorOptionsInput = {
     store: props.store,
     maxEntities: props.maxEntities,
-    userId: props.userId,
+    user: props.user,
     blockDefs: props.blockDefs,
     keybinds: props.keybinds,
     cursors: props.cursors,
@@ -447,6 +483,35 @@ function updateBlocks(editor: Editor) {
       }
       blockRef.value.block = snapshot;
     }
+  }
+
+  // Update users map for selection color lookup
+  let usersChanged = false;
+  for (const entityId of userQuery.added(ctx)) {
+    const userSnapshot = User.snapshot(ctx, entityId);
+    usersBySessionId.set(userSnapshot.sessionId, {
+      sessionId: userSnapshot.sessionId,
+      color: userSnapshot.color,
+      name: userSnapshot.name,
+    });
+    usersChanged = true;
+  }
+  for (const entityId of userQuery.changed(ctx)) {
+    const userSnapshot = User.snapshot(ctx, entityId);
+    usersBySessionId.set(userSnapshot.sessionId, {
+      sessionId: userSnapshot.sessionId,
+      color: userSnapshot.color,
+      name: userSnapshot.name,
+    });
+    usersChanged = true;
+  }
+  if (userQuery.removed(ctx).length > 0) {
+    // Remove user from map - we need to find the sessionId by iterating
+    // Since the entity is removed, we can't snapshot it, but we track by entityId
+    usersChanged = true;
+  }
+  if (usersChanged) {
+    usersArray.value = Array.from(usersBySessionId.values());
   }
 
   // Update selected state
@@ -578,8 +643,17 @@ function getBlockTransform(block: BlockDef): string | undefined {
   return parts.join(" ");
 }
 
+function getSelectedByColor(data: BlockData): string | null {
+  const { selected } = data;
+  if (!selected || !selected.selectedBy) return null;
+  if (selected.selectedBy === parsedUser.sessionId) return null;
+  const otherUser = getUserBySessionId(selected.selectedBy);
+  return otherUser?.color ?? null;
+}
+
 function getBlockStyle(data: BlockData) {
   const { block, opacity } = data;
+  const selectedByColor = getSelectedByColor(data);
 
   return {
     position: "absolute" as const,
@@ -591,6 +665,7 @@ function getBlockStyle(data: BlockData) {
     opacity: opacity !== null ? opacity.value / 255 : undefined,
     pointerEvents: "none" as const,
     userSelect: "none" as const,
+    "--ic-selected-by-color": selectedByColor ?? undefined,
   };
 }
 </script>
@@ -620,6 +695,9 @@ function getBlockStyle(data: BlockData) {
         :key="blockData.value.entityId"
         :style="getBlockStyle(blockData.value)"
         :data-selected="blockData.value.selected !== null || undefined"
+        :data-selected-by-other="
+          getSelectedByColor(blockData.value) !== null || undefined
+        "
         :data-hovered="blockData.value.hovered || undefined"
         class="ic-block"
       >
@@ -679,6 +757,9 @@ function getBlockStyle(data: BlockData) {
       </template>
     </FloatingMenu>
 
+    <!-- User presence -->
+    <UserPresence v-if="editorRef" :users="usersArray" />
+
     <!-- Toolbar -->
     <slot name="toolbar">
       <div class="ic-toolbar">
@@ -695,5 +776,10 @@ function getBlockStyle(data: BlockData) {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
+}
+
+.ic-block[data-selected-by-other] {
+  outline: calc(3px / var(--ic-zoom, 1)) solid var(--ic-selected-by-color);
+  outline-offset: calc(2px / var(--ic-zoom, 1));
 }
 </style>

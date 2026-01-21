@@ -1,8 +1,5 @@
 export { default as InfiniteCanvas } from "./components/InfiniteCanvas.vue";
-export type {
-  InfiniteCanvasProps,
-  ControlsOptions,
-} from "./components/InfiniteCanvas.vue";
+export type { InfiniteCanvasProps } from "./components/InfiniteCanvas.vue";
 
 // Floating Menu Components
 export { default as FloatingMenu } from "./components/FloatingMenu.vue";
@@ -32,6 +29,10 @@ export { default as ArrowHandle } from "./components/blocks/ArrowHandle.vue";
 // Text Components
 export { default as EditableText } from "./components/EditableText.vue";
 
+// User Presence
+export { default as UserPresence } from "./components/UserPresence.vue";
+export { User } from "@infinitecanvas/editor";
+
 // Menu Button Components
 export { default as MenuDropdown } from "./components/buttons/MenuDropdown.vue";
 export { default as MenuButton } from "./components/buttons/MenuButton.vue";
@@ -56,7 +57,7 @@ export { useQuery, type QueryResultItem } from "./composables/useQuery";
 export { useComponent } from "./composables/useComponent";
 export { useComponents } from "./composables/useComponents";
 export { useSingleton } from "./composables/useSingleton";
-export { useTooltipSingleton } from "./composables/useTooltipSingleton";
+export { useTooltipSingleton, createTooltipContext } from "./composables/useTooltipSingleton";
 export { useToolbar } from "./composables/useToolbar";
 export {
   useEditorContext,

@@ -4,7 +4,7 @@ export { useEditorContext, type EditorContext } from './useEditorContext'
 export { useQuery, type QueryResultItem } from './useQuery'
 export { useSingleton } from './useSingleton'
 export { useToolbar } from './useToolbar'
-export { useTooltipSingleton, type TooltipState } from './useTooltipSingleton'
+export { useTooltipSingleton, createTooltipContext, type TooltipState } from './useTooltipSingleton'
 export {
   useTextStretchBehavior,
   type TextStretchBehaviorOptions,

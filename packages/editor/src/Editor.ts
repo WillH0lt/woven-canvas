@@ -8,6 +8,8 @@ import {
   SINGLETON_ENTITY_ID,
   hasComponent,
   getResources,
+  createEntity,
+  addComponent,
 } from "@infinitecanvas/ecs";
 
 import {
@@ -18,6 +20,7 @@ import {
   Keybind,
   type EditorResources,
   BlockDef,
+  UserData,
 } from "./types";
 import type { StoreAdapter } from "./store";
 import {
@@ -29,7 +32,7 @@ import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
-import { Synced, Edited } from "./components";
+import { Synced, Edited, User } from "./components";
 import type { EditorSystem } from "./EditorSystem";
 import { FontLoader, FontFamily } from "./FontLoader";
 
@@ -136,15 +139,15 @@ export class Editor {
   private store: StoreAdapter | null;
   private storeEventIndex: number = 0;
   private fontLoader: FontLoader;
+  private userData: UserData;
 
   constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
     const options = EditorOptionsSchema.parse(optionsInput ?? {});
-    const { plugins: pluginInputs, maxEntities, userId } = options;
+    const { plugins: pluginInputs, maxEntities } = options;
 
-    // Generate unique session ID for this editor instance
-    const sessionId = crypto.randomUUID();
-    // Use provided userId or generate one
-    const resolvedUserId = userId ?? crypto.randomUUID();
+    // Parse user data with defaults
+    const user = UserData.parse(options.user ?? {});
+    this.userData = user;
 
     // Parse plugin inputs (handle both direct plugins and factory functions)
     const plugins = pluginInputs.map(parsePlugin);
@@ -239,8 +242,8 @@ export class Editor {
     const allResources: EditorResources = {
       domElement,
       editor: this,
-      sessionId,
-      userId: resolvedUserId,
+      userId: user.userId,
+      sessionId: user.sessionId,
       pluginResources,
       componentsByName,
       singletonsByName,
@@ -334,6 +337,19 @@ export class Editor {
     if (this.fonts.length > 0) {
       await this.fontLoader.loadFonts(this.fonts);
     }
+
+    // Create the user entity for presence tracking
+    const userEntity = createEntity(this.ctx);
+    addComponent(this.ctx, userEntity, Synced, {
+      id: this.userData.sessionId,
+    });
+    addComponent(this.ctx, userEntity, User, {
+      userId: this.userData.userId,
+      sessionId: this.userData.sessionId,
+      color: this.userData.color,
+      name: this.userData.name,
+      avatar: this.userData.avatar,
+    });
 
     // Run plugin setup
     for (const plugin of this.plugins.values()) {

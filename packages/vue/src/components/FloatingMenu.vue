@@ -53,8 +53,8 @@ watch(camera, () => {
   }
 });
 
-// Get userId from editor
-const userId = computed(() => {
+// Get sessionId from editor (used to identify current user's selections)
+const sessionId = computed(() => {
   const editor = canvasContext?.getEditor();
   if (!editor) return "";
 
@@ -64,7 +64,7 @@ const userId = computed(() => {
 
 // Filter to only blocks selected by current user
 const mySelectedItems = computed(() => {
-  const uid = userId.value;
+  const uid = sessionId.value;
   if (!uid) return [];
 
   return selectedItems.value.filter(

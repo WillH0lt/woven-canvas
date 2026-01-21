@@ -23,6 +23,8 @@ describe("useComponent", () => {
     mockCanvasContext = {
       hasEntity: (entityId) => mockEntities.has(entityId),
       getEditor: () => null, // No editor = skip eager read
+      getSessionId: () => null,
+      getUserBySessionId: () => null,
       subscribeComponent: (entityId, componentName, callback) => {
         let entitySubs = mockSubscriptions.get(entityId);
         if (!entitySubs) {

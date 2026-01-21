@@ -1,4 +1,4 @@
-import { getResources, createEntity, addComponent } from "@infinitecanvas/ecs";
+import { getResources } from "@infinitecanvas/ecs";
 
 import type { EditorPlugin } from "./plugin";
 import type { EditorResources } from "./types";
@@ -28,8 +28,6 @@ import { keybindSystem } from "./systems/capture";
 import { undoRedoSystem, removeEmptyTextSystem } from "./systems/update";
 import { scaleWithZoomSystem } from "./systems/preRender";
 import { cursorSystem } from "./systems/postRender";
-
-import { Synced, User } from "./components";
 import * as components from "./components";
 import * as singletons from "./singletons";
 import { Key } from "./singletons/Keyboard";
@@ -83,23 +81,13 @@ export const CorePlugin: EditorPlugin = {
   ],
 
   setup(ctx) {
-    const { domElement, sessionId, userId } =
-      getResources<EditorResources>(ctx);
+    const { domElement } = getResources<EditorResources>(ctx);
 
     // Attach all event listeners
     attachKeyboardListeners(domElement);
     attachMouseListeners(domElement);
     attachScreenObserver(domElement);
     attachPointerListeners(domElement);
-
-    // Create the user entity for presence tracking
-    const userEntity = createEntity(ctx);
-    addComponent(ctx, userEntity, Synced, {
-      id: sessionId,
-    });
-    addComponent(ctx, userEntity, User, {
-      id: userId,
-    });
   },
 
   teardown(ctx) {

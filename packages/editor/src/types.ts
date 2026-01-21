@@ -26,6 +26,46 @@ export type { EntityId };
  * }
  * ```
  */
+/**
+ * Generate a random user color from a predefined palette.
+ */
+function generateUserColor(): string {
+  const colors = [
+    "#f43f5e", // rose
+    "#ec4899", // pink
+    "#a855f7", // purple
+    "#6366f1", // indigo
+    "#3b82f6", // blue
+    "#0ea5e9", // sky
+    "#14b8a6", // teal
+    "#22c55e", // green
+    "#eab308", // yellow
+    "#f97316", // orange
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+/**
+ * User data for presence tracking.
+ */
+export const UserData = z.object({
+  userId: z.string().max(36).default(() => crypto.randomUUID()),
+  sessionId: z.string().max(36).default(() => crypto.randomUUID()),
+  color: z.string().max(7).default(generateUserColor),
+  name: z.string().max(100).default("Anonymous"),
+  avatar: z.string().max(500).default(""),
+});
+
+export type UserData = z.infer<typeof UserData>;
+
+/**
+ * Input type for user data (all fields optional, defaults will be applied).
+ * Derived from UserData, omitting sessionId (which is auto-generated).
+ */
+export const UserDataInput = UserData.omit({ sessionId: true }).partial();
+
+export type UserDataInput = z.input<typeof UserDataInput>;
+
 export interface EditorResources {
   /**
    * The DOM element to attach input listeners and render output to.
@@ -40,16 +80,12 @@ export interface EditorResources {
   editor: Editor;
 
   /**
-   * Unique session ID for this editor instance.
-   * Generated automatically on each Editor creation.
-   */
-  sessionId: string;
-
-  /**
-   * User ID for presence tracking.
-   * Either provided via options or auto-generated.
+   * User identity for the current session.
+   * Only stores userId and sessionId - other user data (color, name, avatar)
+   * should be read from the ECS User component.
    */
   userId: string;
+  sessionId: string;
 
   /**
    * Plugin-specific resources keyed by plugin name.
@@ -173,10 +209,10 @@ export const EditorOptionsSchema = z.object({
   maxEntities: z.number().default(5_000),
 
   /**
-   * User ID for presence tracking.
-   * If not provided, a random UUID will be generated.
+   * User data for presence tracking.
+   * All fields are optional - defaults will be applied.
    */
-  userId: z.string().max(36).optional(),
+  user: UserDataInput.optional(),
 
   /**
    * Custom block definitions.

@@ -5,12 +5,15 @@ import { defineEditorComponent } from "../EditorComponentDef";
  * User component - tracks user presence on the canvas.
  *
  * Used to identify who is currently viewing the document.
- * Additional user details (name, avatar, etc.) can be fetched via API using this id.
  */
 export const User = defineEditorComponent(
   "user",
   {
-    id: field.string().max(36),
+    userId: field.string().max(36),
+    sessionId: field.string().max(36),
+    color: field.string().max(7),
+    name: field.string().max(100),
+    avatar: field.string().max(500),
   },
   { sync: "ephemeral" }
 );

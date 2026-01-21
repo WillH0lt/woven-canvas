@@ -28,5 +28,5 @@ export const Frame = defineEditorSingleton(
     /** Timestamp of previous frame in milliseconds (0 if first frame) */
     lastTime: field.float64().default(0),
   },
-  { sync: "none" }
+  { sync: "none" },
 );
