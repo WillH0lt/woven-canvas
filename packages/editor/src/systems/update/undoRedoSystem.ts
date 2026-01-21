@@ -1,4 +1,4 @@
-import { type Context, getResources } from "@infinitecanvas/ecs";
+import { type Context, getResources, defineQuery } from "@infinitecanvas/ecs";
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { on, Undo, Redo } from "../../command";
@@ -9,6 +9,9 @@ import type { EditorResources } from "../../types";
  *
  * Listens for Undo and Redo commands and calls the corresponding
  * methods on the store if available.
+ *
+ * Note: Undo/Redo is skipped when any entity has the Edited component,
+ * allowing the text editor to handle its own undo/redo.
  */
 export const undoRedoSystem = defineEditorSystem(
   { phase: "update" },
@@ -28,5 +31,5 @@ export const undoRedoSystem = defineEditorSystem(
         store.redo?.();
       }
     });
-  }
+  },
 );

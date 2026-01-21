@@ -8,7 +8,14 @@ import {
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Camera, Mouse, Controls, Intersect } from "../../singletons";
-import { Pointer, Block, Aabb, Hovered, HitGeometry } from "../../components";
+import {
+  Pointer,
+  Block,
+  Aabb,
+  Hovered,
+  HitGeometry,
+  Synced,
+} from "../../components";
 import { computeAabb, intersectPoint } from "../../helpers";
 
 // Query for blocks that have changed (need AABB recalculation)
@@ -160,5 +167,18 @@ export const intersectSystem = defineEditorSystem(
 
     // Update hovered entity
     updateHovered(ctx, intersected[0]);
-  }
+
+    // if (intersected[0]) {
+    //   const entity = intersected[0];
+    //   if (hasComponent(ctx, entity, Synced)) {
+    //     const synced = Synced.read(ctx, entity);
+    //     console.log(
+    //       "Mouse intersected synced entity",
+    //       entity,
+    //       "with ID",
+    //       synced.id,
+    //     );
+    //   }
+    // }
+  },
 );

@@ -132,7 +132,7 @@ export class Store implements StoreAdapter {
    */
   async initialize(
     components: AnyEditorComponentDef[],
-    singletons: AnyEditorSingletonDef[]
+    singletons: AnyEditorSingletonDef[],
   ): Promise<void> {
     if (this.initialized) return;
 
@@ -148,9 +148,15 @@ export class Store implements StoreAdapter {
     this.doc.subscribe((event: LoroEventBatch) => {
       this.localDB?.saveDoc(this.doc);
 
-      // Cache external events (undo/redo, network sync) for flushChanges
-      // Skip local changes since they already went through the ECS
-      if (event.origin !== "editor") {
+      // Cache external events (load, undo/redo, network sync) for flushChanges
+      // Skip local edits since they already went through the ECS:
+      // - "editor" origin: our explicit commits
+      // - empty origin + local: auto-commits from UndoManager checkpoints
+      // Process everything else: imports (load, network), undo/redo
+      const isLocalEdit =
+        event.by === "local" &&
+        (event.origin === "editor" || event.origin === "");
+      if (!isLocalEdit) {
         this.pendingEvents.push(event);
       }
     });
@@ -219,7 +225,7 @@ export class Store implements StoreAdapter {
     componentDef: AnyEditorComponentDef,
     id: string,
     entityId: number,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): void {
     // Register UUID -> entityId mapping for locally-created entities
     // This allows flushChanges to find the entity when remote deletions arrive
@@ -259,8 +265,6 @@ export class Store implements StoreAdapter {
       const key = `${componentDef.name}:${id}`;
       this.ephemeralStore.set(key, translatedData as Value);
       this.localEphemeralKeys.add(key);
-
-      // console.log("adding ephemeral key:", key);
     }
   }
 
@@ -275,7 +279,7 @@ export class Store implements StoreAdapter {
   onComponentUpdated(
     componentDef: AnyEditorComponentDef,
     id: string,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): void {
     // Translate refs from entityIds to syncedIds before storing
     const translatedData = this.translateRefsOutbound(componentDef, data);
@@ -473,7 +477,7 @@ export class Store implements StoreAdapter {
 
         const translatedValue = this.translateRefsInbound(
           componentDef,
-          value as Record<string, unknown>
+          value as Record<string, unknown>,
         );
 
         if (hasComponent(ctx, entityId, componentDef)) {
@@ -481,6 +485,15 @@ export class Store implements StoreAdapter {
         } else {
           addComponent(ctx, entityId, componentDef, translatedValue as any);
         }
+
+        // Manually track synced components added by flushChanges
+        // (onComponentAdded may not be called for store-initiated adds)
+        let components = this.entityIdToSyncedComponents.get(entityId);
+        if (!components) {
+          components = new Set();
+          this.entityIdToSyncedComponents.set(entityId, components);
+        }
+        components.add(componentName);
       }
 
       // Process removals
@@ -511,7 +524,7 @@ export class Store implements StoreAdapter {
    */
   private translateRefsOutbound(
     componentDef: AnyEditorComponentDef,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;
     let hasRefs = false;
@@ -545,7 +558,7 @@ export class Store implements StoreAdapter {
    */
   private translateRefsInbound(
     componentDef: AnyEditorComponentDef,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;
     let hasRefs = false;
@@ -570,6 +583,7 @@ export class Store implements StoreAdapter {
         result[fieldName] = entityId ?? null;
       }
     }
+
     return result;
   }
 
@@ -583,7 +597,7 @@ export class Store implements StoreAdapter {
     ctx: Context,
     componentName: string,
     id: string,
-    value: Record<string, unknown>
+    value: Record<string, unknown>,
   ): void {
     const componentDef = this.componentDefsByName.get(componentName);
     if (!componentDef) return;
@@ -599,7 +613,7 @@ export class Store implements StoreAdapter {
           ctx,
           existingEntityId,
           componentDef,
-          translatedValue as any
+          translatedValue as any,
         );
       }
     } else {
@@ -612,7 +626,7 @@ export class Store implements StoreAdapter {
       // Translate refs after entity is registered
       const translatedValue = this.translateRefsInbound(
         componentDef,
-        value as Record<string, unknown>
+        value as Record<string, unknown>,
       );
       addComponent(ctx, ecsEntityId, componentDef, translatedValue as any);
     }
@@ -626,7 +640,7 @@ export class Store implements StoreAdapter {
     ctx: Context,
     componentName: string,
     id: string,
-    value: Record<string, unknown>
+    value: Record<string, unknown>,
   ): void {
     const componentDef = this.componentDefsByName.get(componentName);
     if (!componentDef) return;
@@ -641,7 +655,7 @@ export class Store implements StoreAdapter {
           ctx,
           existingEntityId,
           componentDef,
-          translatedValue as any
+          translatedValue as any,
         );
       }
     }
@@ -655,7 +669,7 @@ export class Store implements StoreAdapter {
   private removeComponentFromEntity(
     ctx: Context,
     componentName: string,
-    id: string
+    id: string,
   ): void {
     const componentDef = this.componentDefsByName.get(componentName);
     if (!componentDef) return;
@@ -692,7 +706,7 @@ export class Store implements StoreAdapter {
   private updateSingleton(
     ctx: Context,
     singletonName: string,
-    value: unknown
+    value: unknown,
   ): void {
     const singletonDef = this.singletonDefsByName.get(singletonName);
     if (singletonDef) {
@@ -718,7 +732,7 @@ export class Store implements StoreAdapter {
         ctx,
         key.slice(0, colonIndex),
         key.slice(colonIndex + 1),
-        value as Record<string, unknown>
+        value as Record<string, unknown>,
       );
     }
 
@@ -733,7 +747,7 @@ export class Store implements StoreAdapter {
         ctx,
         key.slice(0, colonIndex),
         key.slice(colonIndex + 1),
-        value as Record<string, unknown>
+        value as Record<string, unknown>,
       );
     }
 
@@ -744,7 +758,7 @@ export class Store implements StoreAdapter {
       this.removeComponentFromEntity(
         ctx,
         key.slice(0, colonIndex),
-        key.slice(colonIndex + 1)
+        key.slice(colonIndex + 1),
       );
     }
   }
@@ -754,7 +768,6 @@ export class Store implements StoreAdapter {
    */
   undo(): void {
     if (this.undoManager.canUndo()) {
-      console.log("Performing undo");
       this.undoManager.undo();
     }
   }

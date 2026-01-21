@@ -48,7 +48,7 @@ export class LocalDB {
     async (doc: LoroDoc): Promise<void> => {
       if (!this.db) {
         throw new Error(
-          "LocalDB not initialized. Call initialize() before using."
+          "LocalDB not initialized. Call initialize() before using.",
         );
       }
 
@@ -89,17 +89,17 @@ export class LocalDB {
       ) {
         // Don't await - let it run in the background
         this.consolidate(doc).catch((err) =>
-          console.error("Error during consolidation:", err)
+          console.error("Error during consolidation:", err),
         );
       }
     },
-    2000
+    2000,
   );
 
   public async loadIntoDoc(doc: LoroDoc): Promise<void> {
     if (!this.db) {
       throw new Error(
-        "LocalDB not initialized. Call initialize() before using."
+        "LocalDB not initialized. Call initialize() before using.",
       );
     }
 
@@ -142,7 +142,7 @@ export class LocalDB {
   private async consolidate(doc: LoroDoc): Promise<void> {
     if (!this.db) {
       throw new Error(
-        "LocalDB not initialized. Call initialize() before using."
+        "LocalDB not initialized. Call initialize() before using.",
       );
     }
 

@@ -59,7 +59,7 @@ const HitGeometrySchema = {
  */
 class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
   constructor() {
-    super("hitHeometry", HitGeometrySchema, { sync: "document" });
+    super("hitHeometry", HitGeometrySchema, { sync: "none" });
   }
 
   /**
@@ -92,7 +92,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
     ctx: Context,
     entityId: EntityId,
     index: number,
-    capsule: Capsule
+    capsule: Capsule,
   ): void {
     const hitGeometry = this.write(ctx, entityId);
     const offset = index * FLOATS_PER_CAPSULE;
@@ -174,7 +174,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
         worldB[1],
         worldC[0],
         worldC[1],
-        thickness
+        thickness,
       );
 
       if (Arc.containsPoint(worldArc, point)) {
@@ -199,7 +199,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
         worldA[1],
         worldB[0],
         worldB[1],
-        radius
+        radius,
       );
 
       if (Capsule.containsPoint(worldCapsule, point)) {
@@ -247,7 +247,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
         worldB[1],
         worldC[0],
         worldC[1],
-        thickness
+        thickness,
       );
 
       if (Arc.intersectsAabb(worldArc, aabb)) {
@@ -272,7 +272,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
         worldA[1],
         worldB[0],
         worldB[1],
-        radius
+        radius,
       );
 
       if (Capsule.intersectsAabb(worldCapsule, aabb)) {
@@ -316,7 +316,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
         worldA[1],
         worldB[0],
         worldB[1],
-        radius
+        radius,
       );
       pts.push(...Capsule.getExtrema(worldCapsule));
     }
@@ -342,7 +342,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
         worldB[1],
         worldC[0],
         worldC[1],
-        thickness
+        thickness,
       );
       pts.push(...Arc.getExtrema(worldArc));
     }
@@ -390,7 +390,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
     entityId: EntityId,
     uvA: Vec2,
     uvB: Vec2,
-    worldRadius: number
+    worldRadius: number,
   ): void {
     const capsule: Capsule = [uvA[0], uvA[1], uvB[0], uvB[1], worldRadius];
     this.addCapsule(ctx, entityId, capsule);
@@ -411,7 +411,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
     entityId: EntityId,
     worldA: Vec2,
     worldB: Vec2,
-    worldRadius: number
+    worldRadius: number,
   ): void {
     const uvA = Block.worldToUv(ctx, entityId, worldA);
     const uvB = Block.worldToUv(ctx, entityId, worldB);
@@ -456,7 +456,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
     uvA: Vec2,
     uvB: Vec2,
     uvC: Vec2,
-    worldThickness: number
+    worldThickness: number,
   ): void {
     const arc: Arc = [
       uvA[0],
@@ -487,7 +487,7 @@ class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
     worldA: Vec2,
     worldB: Vec2,
     worldC: Vec2,
-    worldThickness: number
+    worldThickness: number,
   ): void {
     const uvA = Block.worldToUv(ctx, entityId, worldA);
     const uvB = Block.worldToUv(ctx, entityId, worldB);

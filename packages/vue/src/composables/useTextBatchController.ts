@@ -1,4 +1,9 @@
-import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue";
+import {
+  computed,
+  toValue,
+  type ComputedRef,
+  type MaybeRefOrGetter,
+} from "vue";
 import { Text, type EntityId } from "@infinitecanvas/editor";
 import { generateJSON, generateHTML } from "@tiptap/core";
 import type { JSONContent } from "@tiptap/core";
@@ -101,7 +106,7 @@ function isTextNode(node: JSONContent): node is TextNode {
  */
 function walkTextNodes(
   doc: JSONContent,
-  callback: (node: TextNode) => void
+  callback: (node: TextNode) => void,
 ): void {
   if (isTextNode(doc)) {
     callback(doc);
@@ -120,7 +125,7 @@ function walkTextNodes(
  */
 function walkParagraphs(
   doc: JSONContent,
-  callback: (node: JSONContent) => void
+  callback: (node: JSONContent) => void,
 ): void {
   if (doc.type === "paragraph") {
     callback(doc);
@@ -323,7 +328,7 @@ function setColorInHtml(html: string, color: string): string {
  * ```
  */
 export function useTextBatchController(
-  entityIds: MaybeRefOrGetter<EntityId[]>
+  entityIds: MaybeRefOrGetter<EntityId[]>,
 ): TextBatchController {
   const { nextEditorTick } = useEditorContext();
   const textsMap = useComponents(entityIds, Text);
@@ -448,21 +453,27 @@ export function useTextBatchController(
       // If all are bold, remove from all. Otherwise add to all.
       const shouldAdd = state.isBold.value !== true;
       applyToAll((content) =>
-        shouldAdd ? addMarkInHtml(content, "bold") : removeMarkInHtml(content, "bold")
+        shouldAdd
+          ? addMarkInHtml(content, "bold")
+          : removeMarkInHtml(content, "bold"),
       );
     },
 
     toggleItalic() {
       const shouldAdd = state.isItalic.value !== true;
       applyToAll((content) =>
-        shouldAdd ? addMarkInHtml(content, "italic") : removeMarkInHtml(content, "italic")
+        shouldAdd
+          ? addMarkInHtml(content, "italic")
+          : removeMarkInHtml(content, "italic"),
       );
     },
 
     toggleUnderline() {
       const shouldAdd = state.isUnderline.value !== true;
       applyToAll((content) =>
-        shouldAdd ? addMarkInHtml(content, "underline") : removeMarkInHtml(content, "underline")
+        shouldAdd
+          ? addMarkInHtml(content, "underline")
+          : removeMarkInHtml(content, "underline"),
       );
     },
 

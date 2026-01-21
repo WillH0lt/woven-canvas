@@ -14,6 +14,7 @@ import {
   MAX_HIT_CAPSULES,
   type Context,
   type EntityId,
+  defineQuery,
 } from "@infinitecanvas/editor";
 import { Vec2, Aabb as AabbNs } from "@infinitecanvas/math";
 import simplify from "simplify-js";
@@ -27,6 +28,8 @@ import {
 import { PenStroke, POINTS_CAPACITY } from "../components";
 import { PenStateSingleton } from "../singletons";
 import { STROKE_THICKNESS } from "../constants";
+
+const penStrokesQuery = defineQuery((q) => q.with(PenStroke));
 
 /**
  * Update pen system - handles pen commands and stroke management.
@@ -55,7 +58,14 @@ export const updatePenSystem = defineEditorSystem(
     on(ctx, RemovePenStroke, (ctx, { strokeId }) => {
       removeStroke(ctx, strokeId);
     });
-  }
+
+    for (const entityId of penStrokesQuery.added(ctx)) {
+      const stroke = PenStroke.read(ctx, entityId);
+      if (stroke.isComplete) {
+        generateHitGeometry(ctx, entityId);
+      }
+    }
+  },
 );
 
 /**
@@ -64,7 +74,7 @@ export const updatePenSystem = defineEditorSystem(
 function startStroke(
   ctx: Context,
   position: [number, number],
-  pressure: number | null
+  pressure: number | null,
 ): void {
   const radius = STROKE_THICKNESS / 2;
 
@@ -117,7 +127,7 @@ function addStrokePoint(
   ctx: Context,
   strokeId: EntityId,
   point: [number, number],
-  pressure: number | null
+  pressure: number | null,
 ): void {
   const stroke = PenStroke.write(ctx, strokeId);
 
@@ -215,17 +225,25 @@ function generateHitGeometry(ctx: Context, strokeId: EntityId): void {
     HitGeometry.clear(ctx, strokeId);
   }
 
-  // Create capsules from simplified points in world coordinates
+  // Create capsules from simplified points using ORIGINAL bounds for UV conversion.
+  // stroke.points are stored in original world coordinates, so we must use
+  // originalLeft/Top/Width/Height (not current Block bounds) for correct UVs.
+  const { originalLeft, originalTop, originalWidth, originalHeight } = stroke;
+
   for (let i = 0; i < simplifiedPoints.length - 1; i++) {
     const p0 = simplifiedPoints[i];
     const p1 = simplifiedPoints[i + 1];
 
-    HitGeometry.addCapsuleWorld(
-      ctx,
-      strokeId,
-      [p0.x, p0.y],
-      [p1.x, p1.y],
-      stroke.thickness
-    );
+    // Convert original world coords to UV using original bounds
+    const uv0: [number, number] = [
+      (p0.x - originalLeft) / originalWidth,
+      (p0.y - originalTop) / originalHeight,
+    ];
+    const uv1: [number, number] = [
+      (p1.x - originalLeft) / originalWidth,
+      (p1.y - originalTop) / originalHeight,
+    ];
+
+    HitGeometry.addCapsuleUv(ctx, strokeId, uv0, uv1, stroke.thickness);
   }
 }
