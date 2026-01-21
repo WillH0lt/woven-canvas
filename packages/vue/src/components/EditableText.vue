@@ -142,7 +142,15 @@ async function handleEditStart(editor: Editor): Promise<void> {
 
 function handleEditEnd(editor: Editor): void {
   // Capture content and dimensions synchronously before editor is destroyed
-  const content = editor.getHTML();
+  let content = editor.getHTML();
+
+  // If content is only HTML tags (no text), treat as empty
+  // Text is initialized with empty string, then Tiptap wraps it in <p></p>
+  // for undo/redo we need to check if something's actually changed
+  const stripped = content.replace(/<[^>]*>/g, "").trim();
+  if (stripped.length === 0) {
+    content = "";
+  }
 
   // Update display content immediately to avoid flash
   displayContent.value = content;

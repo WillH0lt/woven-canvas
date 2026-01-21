@@ -1,0 +1,46 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "server",
+      "dependencies": {
+        "@loro-dev/flock": "^4.4.1",
+        "loro-adaptors": "^0.6.1",
+        "loro-protocol": "^0.3.0",
+        "loro-websocket": "^0.6.2",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.4",
+      },
+      "peerDependencies": {
+        "typescript": "^5.9.3",
+      },
+    },
+  },
+  "packages": {
+    "@loro-dev/flock": ["@loro-dev/flock@4.4.1", "", {}, "sha512-rj9ze9wRSQVD9B0pgEI+cG9LeZrgpaknk0XMY22DGJYVwLuhPJz2Hpn35U8D0gwKmR4r2NdcTJUjnuVFSbdAeA=="],
+
+    "@types/bun": ["@types/bun@1.3.6", "", { "dependencies": { "bun-types": "1.3.6" } }, "sha512-uWCv6FO/8LcpREhenN1d1b6fcspAB+cefwD7uti8C8VffIv0Um08TKMn98FynpTiU38+y2dUO55T11NgDt8VAA=="],
+
+    "@types/node": ["@types/node@25.0.9", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-/rpCXHlCWeqClNBwUhDcusJxXYDjZTyE8v5oTO7WbL8eij2nKhUeU89/6xgjU7N4/Vh3He0BtyhJdQbDyhiXAw=="],
+
+    "@types/ws": ["@types/ws@8.18.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg=="],
+
+    "bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
+
+    "loro-adaptors": ["loro-adaptors@0.6.1", "", { "dependencies": { "loro-protocol": "0.3.0" }, "peerDependencies": { "@loro-dev/flock": "^4.1.0", "loro-crdt": "^1.9.0", "yjs": "*" }, "optionalPeers": ["@loro-dev/flock", "loro-crdt", "yjs"] }, "sha512-s1H4NfKRIRF76FNgOX2/mmtXLnedE7bQVJR4wmcwarpmePXx7nE6r7QJkATYanF4SJnlP5S1oRT6Vkl1N85e2Q=="],
+
+    "loro-crdt": ["loro-crdt@1.10.4", "", {}, "sha512-+BKM5kf8S/e/8tXwaNyy4rihXH3bEjega97kAFywVjQM6hcp2NTa2eGQyDuW4mhj2ezcwHCyR9YrGTq30S6Kow=="],
+
+    "loro-protocol": ["loro-protocol@0.3.0", "", {}, "sha512-j28FzDwOVHk95asjQEk8yse7hfYHnStdusYcQBphWRwzA8wzE5iMHQpnDyog1O6kmJQ6W/iC8yDisHpxH0wUAg=="],
+
+    "loro-websocket": ["loro-websocket@0.6.2", "", { "dependencies": { "@types/ws": "^8.18.1", "loro-adaptors": "0.6.1", "loro-protocol": "0.3.0", "ws": "^8.18.3" }, "peerDependencies": { "loro-crdt": "^1.9.0" } }, "sha512-B9rHs5L1XZkmiBg8+HIFbFH1uiFg12m8Ua66D0tywvOy74WyqKVY/jbYcVLdCMglBzxU+u6XO5/yh0L4RLiJMA=="],
+
+    "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "undici-types": ["undici-types@7.16.0", "", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
+
+    "ws": ["ws@8.19.0", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg=="],
+  }
+}

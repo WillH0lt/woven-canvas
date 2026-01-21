@@ -416,17 +416,6 @@ export class Editor {
         continue;
       }
 
-      // Skip syncing entities that are currently being edited.
-      // This prevents incomplete/empty content from entering the undo history.
-      // Changes will sync after editing ends (and validation like removeWhenTextEmpty runs).
-      if (
-        entityId !== SINGLETON_ENTITY_ID &&
-        hasComponent(ctx, entityId, Edited, false)
-      ) {
-        console.log("Skipping sync for edited entity", entityId);
-        continue;
-      }
-
       switch (eventType) {
         case EventType.COMPONENT_ADDED: {
           if (isSyncedComponent) {

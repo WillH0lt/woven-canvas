@@ -33,7 +33,6 @@ export interface StoreOptions {
   documentId: string;
   websocketUrl?: string;
   useLocalPersistence?: boolean;
-  useWebSocket?: boolean;
   ephemeralTimeoutMs?: number;
 }
 
@@ -350,11 +349,10 @@ export class Store implements StoreAdapter {
 
   /**
    * Commit all pending changes to the Loro document.
-   * Throttled to run at most once every 250ms.
    */
   commit: ReturnType<typeof throttle> = throttle(() => {
     this.doc.commit({ origin: "editor" });
-  }, 250);
+  }, 1000 / 30);
 
   /**
    * Refresh all local ephemeral data to prevent timeout expiration.
