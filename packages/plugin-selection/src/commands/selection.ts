@@ -56,3 +56,21 @@ export const UpdateSelectionBox = defineCommand<{
  * Remove the selection box entity.
  */
 export const RemoveSelectionBox = defineCommand<void>("remove-selection-box");
+
+/**
+ * Add Held component to an entity (marks it as being interacted with).
+ * Used when starting a drag on an unselected block.
+ * @param entityId - The entity to hold
+ */
+export const AddHeld = defineCommand<{
+  entityId: EntityId;
+}>("add-held");
+
+/**
+ * Remove Held component from an entity (if not selected).
+ * Used when cancelling a drag on an unselected block.
+ * @param entityId - The entity to release
+ */
+export const RemoveHeld = defineCommand<{
+  entityId: EntityId;
+}>("remove-held");

@@ -49,8 +49,14 @@ function generateUserColor(): string {
  * User data for presence tracking.
  */
 export const UserData = z.object({
-  userId: z.string().max(36).default(() => crypto.randomUUID()),
-  sessionId: z.string().max(36).default(() => crypto.randomUUID()),
+  userId: z
+    .string()
+    .max(36)
+    .default(() => crypto.randomUUID()),
+  sessionId: z
+    .string()
+    .max(36)
+    .default(() => crypto.randomUUID()),
   color: z.string().max(7).default(generateUserColor),
   name: z.string().max(100).default("Anonymous"),
   avatar: z.string().max(500).default(""),
@@ -58,13 +64,7 @@ export const UserData = z.object({
 
 export type UserData = z.infer<typeof UserData>;
 
-/**
- * Input type for user data (all fields optional, defaults will be applied).
- * Derived from UserData, omitting sessionId (which is auto-generated).
- */
-export const UserDataInput = UserData.omit({ sessionId: true }).partial();
-
-export type UserDataInput = z.input<typeof UserDataInput>;
+export type UserDataInput = z.input<typeof UserData>;
 
 export interface EditorResources {
   /**
@@ -212,7 +212,7 @@ export const EditorOptionsSchema = z.object({
    * User data for presence tracking.
    * All fields are optional - defaults will be applied.
    */
-  user: UserDataInput.optional(),
+  user: z.custom<UserDataInput>().default({}),
 
   /**
    * Custom block definitions.

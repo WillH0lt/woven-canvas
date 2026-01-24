@@ -11,6 +11,7 @@ import {
   Block,
   Edited,
   getPointerInput,
+  isHeldByRemote,
   type PointerInput,
 } from "@infinitecanvas/editor";
 
@@ -26,6 +27,8 @@ import {
   AddSelectionBox,
   UpdateSelectionBox,
   RemoveSelectionBox,
+  AddHeld,
+  RemoveHeld,
 } from "../../commands";
 
 import { SelectionStateSingleton } from "../../singletons";
@@ -85,6 +88,12 @@ const selectionMachine = setup({
       }
       return false;
     },
+    isNotHeldByRemote: ({ event }) => {
+      const ctx = event.ctx;
+      const entityId = event.intersects[0];
+      if (!entityId) return true;
+      return !isHeldByRemote(ctx, entityId);
+    },
     hasEditedBlocks: ({ event }) => {
       return editedBlocksQuery.current(event.ctx).length > 0;
     },
@@ -97,6 +106,14 @@ const selectionMachine = setup({
     setDragStart: assign({
       dragStart: ({ event }) => event.worldPosition,
     }),
+    addHeldToDragged: ({ context, event }) => {
+      if (context.draggedEntity === null) return;
+      AddHeld.spawn(event.ctx, { entityId: context.draggedEntity });
+    },
+    removeHeldFromDragged: ({ context, event }) => {
+      if (context.draggedEntity === null) return;
+      RemoveHeld.spawn(event.ctx, { entityId: context.draggedEntity });
+    },
     setDragCursor: ({ event, context }) => {
       if (!context.draggedEntity) return;
 
@@ -335,7 +352,7 @@ const selectionMachine = setup({
       on: {
         pointerDown: [
           {
-            guard: "isOverBlock",
+            guard: and(["isOverBlock", "isNotHeldByRemote"]),
             target: SelectionState.Pointing,
           },
           {
@@ -371,6 +388,7 @@ const selectionMachine = setup({
     [SelectionState.Dragging]: {
       entry: [
         "setDragStart",
+        "addHeldToDragged",
         "setDragCursor",
         "deselectAllIfDraggedNotSelected",
       ],
@@ -384,7 +402,7 @@ const selectionMachine = setup({
           target: SelectionState.Idle,
         },
         cancel: {
-          actions: "resetDragged",
+          actions: ["resetDragged", "removeHeldFromDragged"],
           target: SelectionState.Idle,
         },
       },

@@ -17,7 +17,7 @@ import {
 } from "@infinitecanvas/editor";
 
 import { CURSORS } from "../src/cursors";
-import { Selected } from "../src/components";
+import { Selected, Held } from "../src/components";
 
 /**
  * Test resources interface for plugin tests.
@@ -111,7 +111,8 @@ export function createBlock(
 
   if (selected) {
     const { sessionId } = getResources<EditorResources>(ctx);
-    addComponent(ctx, entityId, Selected, { selectedBy: sessionId });
+    addComponent(ctx, entityId, Selected, {});
+    addComponent(ctx, entityId, Held, { sessionId });
   }
 
   return entityId;

@@ -20,6 +20,7 @@ import {
   Block,
   RankBounds,
   Cursor,
+  Held,
 } from "@infinitecanvas/editor";
 
 import { Aabb as AabbNs, Vec2 } from "@infinitecanvas/math";
@@ -40,6 +41,8 @@ import {
   Paste,
   CloneEntities,
   UncloneEntities,
+  AddHeld,
+  RemoveHeld,
 } from "../../commands";
 import { Selected } from "../../components";
 import { Clipboard } from "../../singletons";
@@ -47,11 +50,14 @@ import type { ClipboardEntityData } from "../../singletons/Clipboard";
 import {
   generateUuidBySeed,
   selectBlock,
-  getLocalSelectedBlocks,
+  deselectBlock,
   convertRefsToUuids,
   getRefFieldNames,
   resolveRefFields,
 } from "../../helpers";
+
+// Query for locally selected blocks
+const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Query for synced blocks
 const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced));
@@ -84,20 +90,34 @@ export const blockSystem = defineEditorSystem(
     });
 
     on(ctx, DeselectBlock, (ctx, { entityId }) => {
-      if (hasComponent(ctx, entityId, Selected)) {
-        removeComponent(ctx, entityId, Selected);
-      }
+      deselectBlock(ctx, entityId);
     });
 
     on(ctx, ToggleSelect, (ctx, { entityId }) => {
       if (hasComponent(ctx, entityId, Selected)) {
-        removeComponent(ctx, entityId, Selected);
+        deselectBlock(ctx, entityId);
       } else {
         selectBlock(ctx, entityId);
       }
     });
 
     on(ctx, DeselectAll, deselectAllBlocks);
+
+    on(ctx, AddHeld, (ctx, { entityId }) => {
+      if (!hasComponent(ctx, entityId, Synced)) return;
+      if (hasComponent(ctx, entityId, Held)) return;
+
+      const { sessionId } = getResources<EditorResources>(ctx);
+      addComponent(ctx, entityId, Held, { sessionId });
+    });
+
+    on(ctx, RemoveHeld, (ctx, { entityId }) => {
+      // Only remove Held if not selected (selected blocks should keep Held)
+      if (hasComponent(ctx, entityId, Selected)) return;
+      if (!hasComponent(ctx, entityId, Held)) return;
+
+      removeComponent(ctx, entityId, Held);
+    });
 
     on(ctx, SelectAll, (ctx) => {
       for (const entityId of syncedBlocksQuery.current(ctx)) {
@@ -110,7 +130,7 @@ export const blockSystem = defineEditorSystem(
     });
 
     on(ctx, RemoveSelected, (ctx) => {
-      for (const entityId of getLocalSelectedBlocks(ctx)) {
+      for (const entityId of selectedBlocksQuery.current(ctx)) {
         removeEntity(ctx, entityId);
       }
     });
@@ -142,7 +162,7 @@ export const blockSystem = defineEditorSystem(
     on(ctx, Cut, (ctx) => {
       copySelectedBlocks(ctx);
       // Remove selected blocks after copying
-      for (const entityId of getLocalSelectedBlocks(ctx)) {
+      for (const entityId of selectedBlocksQuery.current(ctx)) {
         removeEntity(ctx, entityId);
       }
     });
@@ -165,8 +185,8 @@ export const blockSystem = defineEditorSystem(
  * Deselect all blocks selected by the current session.
  */
 function deselectAllBlocks(ctx: Context): void {
-  for (const entityId of getLocalSelectedBlocks(ctx)) {
-    removeComponent(ctx, entityId, Selected);
+  for (const entityId of selectedBlocksQuery.current(ctx)) {
+    deselectBlock(ctx, entityId);
   }
 }
 
@@ -175,7 +195,7 @@ function deselectAllBlocks(ctx: Context): void {
  * Only affects blocks selected by the current session.
  */
 function bringForwardSelected(ctx: Context): void {
-  const selectedBlocks = getLocalSelectedBlocks(ctx);
+  const selectedBlocks = [...selectedBlocksQuery.current(ctx)];
   if (selectedBlocks.length === 0) return;
 
   // Sort by current rank (ascending)
@@ -202,7 +222,7 @@ function bringForwardSelected(ctx: Context): void {
  * Only affects blocks selected by the current session.
  */
 function sendBackwardSelected(ctx: Context): void {
-  const selectedBlocks = getLocalSelectedBlocks(ctx);
+  const selectedBlocks = [...selectedBlocksQuery.current(ctx)];
   if (selectedBlocks.length === 0) return;
 
   // Sort by current rank (descending - process highest rank first)
@@ -231,7 +251,7 @@ function sendBackwardSelected(ctx: Context): void {
  * Only copies blocks selected by the current session.
  */
 function copySelectedBlocks(ctx: Context): void {
-  const selectedBlocks = getLocalSelectedBlocks(ctx);
+  const selectedBlocks = [...selectedBlocksQuery.current(ctx)];
   if (selectedBlocks.length === 0) return;
 
   const { componentsById } = getResources<EditorResources>(ctx);

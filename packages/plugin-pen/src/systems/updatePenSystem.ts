@@ -3,17 +3,21 @@ import {
   createEntity,
   removeEntity,
   addComponent,
+  removeComponent,
   hasComponent,
+  getResources,
   on,
   Synced,
   Aabb,
   Block,
   Color,
+  Held,
   HitGeometry,
   RankBounds,
   MAX_HIT_CAPSULES,
   type Context,
   type EntityId,
+  type EditorResources,
   defineQuery,
 } from "@infinitecanvas/editor";
 import { Vec2, Aabb as AabbNs } from "@infinitecanvas/math";
@@ -29,7 +33,7 @@ import { PenStroke, POINTS_CAPACITY } from "../components";
 import { PenStateSingleton } from "../singletons";
 import { STROKE_THICKNESS } from "../constants";
 
-const penStrokesQuery = defineQuery((q) => q.with(PenStroke));
+const penStrokesQuery = defineQuery((q) => q.tracking(PenStroke));
 
 /**
  * Update pen system - handles pen commands and stroke management.
@@ -59,7 +63,7 @@ export const updatePenSystem = defineEditorSystem(
       removeStroke(ctx, strokeId);
     });
 
-    for (const entityId of penStrokesQuery.added(ctx)) {
+    for (const entityId of penStrokesQuery.addedOrChanged(ctx)) {
       const stroke = PenStroke.read(ctx, entityId);
       if (stroke.isComplete) {
         generateHitGeometry(ctx, entityId);
@@ -96,6 +100,10 @@ function startStroke(
 
   // Add Color component for stroke color
   addComponent(ctx, strokeId, Color, {});
+
+  // Add Held component to indicate this stroke is being drawn
+  const { sessionId } = getResources<EditorResources>(ctx);
+  addComponent(ctx, strokeId, Held, { sessionId });
 
   // Determine if we have pressure data
   const hasPressure = pressure !== null;
@@ -173,6 +181,9 @@ function addStrokePoint(
 function completeStroke(ctx: Context, strokeId: EntityId): void {
   const stroke = PenStroke.write(ctx, strokeId);
   stroke.isComplete = true;
+
+  // Remove Held component now that drawing is complete
+  removeComponent(ctx, strokeId, Held);
 
   // Generate hit geometry for collision detection
   generateHitGeometry(ctx, strokeId);

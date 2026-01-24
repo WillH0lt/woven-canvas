@@ -21,7 +21,7 @@ const arrowTrim = useComponent(props.entityId, ArrowTrim);
 
 const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP);
 
-const isEmphasized = computed(() => props.hovered || props.selected !== null);
+const isEmphasized = computed(() => props.hovered || props.selected);
 
 // Watch for resize
 let resizeObserver: ResizeObserver | null = null;

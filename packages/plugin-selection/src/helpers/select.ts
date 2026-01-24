@@ -1,88 +1,49 @@
-import { Block, type EditorResources,   addComponent,
+import {
+  type EditorResources,
+  addComponent,
+  removeComponent,
   hasComponent,
   getResources,
-  defineQuery,
+  isHeldByRemote,
+  Held,
   type Context,
-  type EntityId
+  type EntityId,
 } from "@infinitecanvas/editor";
 
 import { Selected } from "../components";
 
-// Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
-
-// Query for selected blocks with change tracking
-const selectedBlocksTrackingQuery = defineQuery((q) =>
-  q.with(Block).tracking(Selected)
-);
-
 /**
- * Add Selected component to an entity with the current session's ID.
+ * Add Selected and Held components to an entity.
  * Does nothing if the entity already has the Selected component.
+ * Does nothing if held by a remote user.
+ * If already held by the local user (from dragging), only adds Selected.
  *
  * @param ctx - The ECS context
  * @param entityId - The entity to select
  */
 export function selectBlock(ctx: Context, entityId: EntityId): void {
   if (hasComponent(ctx, entityId, Selected)) return;
+  // Don't select if held by a remote user
+  if (isHeldByRemote(ctx, entityId)) return;
 
   const { sessionId } = getResources<EditorResources>(ctx);
-  addComponent(ctx, entityId, Selected, { selectedBy: sessionId });
-}
-
-/**
- * Filter an array of entities to only include those selected by the current session.
- *
- * @param ctx - The ECS context
- * @param entities - Array of entity IDs to filter
- * @returns Array of entity IDs that are selected by the current session
- */
-export function filterLocalSelectedBlocks(
-  ctx: Context,
-  entities: EntityId[]
-): EntityId[] {
-  const { sessionId } = getResources<EditorResources>(ctx);
-
-  const result: EntityId[] = [];
-  for (const entityId of entities) {
-    const selected = Selected.read(ctx, entityId);
-    if (selected.selectedBy === sessionId) {
-      result.push(entityId);
-    }
+  addComponent(ctx, entityId, Selected, {});
+  // Only add Held if not already held (might be held by us from dragging)
+  if (!hasComponent(ctx, entityId, Held)) {
+    addComponent(ctx, entityId, Held, { sessionId });
   }
-  return result;
 }
 
 /**
- * Get all blocks selected by the current session.
- * Filters out blocks selected by other users in collaborative environments.
+ * Remove Selected and Held components from an entity.
  *
  * @param ctx - The ECS context
- * @returns Array of entity IDs selected by the current session
+ * @param entityId - The entity to deselect
  */
-export function getLocalSelectedBlocks(ctx: Context): EntityId[] {
-  return filterLocalSelectedBlocks(ctx, [...selectedBlocksQuery.current(ctx)]);
-}
+export function deselectBlock(ctx: Context, entityId: EntityId): void {
+  if (!hasComponent(ctx, entityId, Selected)) return;
 
-/**
- * Get blocks that were just selected by the current session.
- * Uses tracking query to detect newly added Selected components.
- *
- * @param ctx - The ECS context
- * @returns Array of entity IDs that were just selected by the current session
- */
-export function getAddedLocalSelectedBlocks(ctx: Context): EntityId[] {
-  return filterLocalSelectedBlocks(ctx, [...selectedBlocksTrackingQuery.added(ctx)]);
-}
-
-/**
- * Get blocks that were just deselected by the current session.
- * Uses tracking query to detect recently removed Selected components.
- *
- * @param ctx - The ECS context
- * @returns Array of entity IDs that were just deselected by the current session
- */
-export function getRemovedLocalSelectedBlocks(ctx: Context): EntityId[] {
-  return filterLocalSelectedBlocks(ctx, [...selectedBlocksTrackingQuery.removed(ctx)]);
+  removeComponent(ctx, entityId, Selected);
+  removeComponent(ctx, entityId, Held);
 }
 

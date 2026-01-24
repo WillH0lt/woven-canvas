@@ -2,18 +2,16 @@ import { assign, not, setup } from "xstate";
 import {
   type InferStateContext,
   defineEditorSystem,
+  defineQuery,
   Controls,
   getPointerInput,
   type PointerInput,
   type EntityId,
   type Context,
   hasComponent,
+  Block,
 } from "@infinitecanvas/editor";
-import {
-  getLocalSelectedBlocks,
-  getAddedLocalSelectedBlocks,
-  getRemovedLocalSelectedBlocks,
-} from "@infinitecanvas/plugin-selection";
+import { Selected } from "@infinitecanvas/plugin-selection";
 
 import { ArrowTransformState } from "../singletons";
 import { ArrowTransformStateEnum } from "../types";
@@ -24,6 +22,11 @@ import {
   HideTransformHandles,
   ShowTransformHandles,
 } from "../commands";
+
+// Query for selected blocks
+const selectedBlocksQuery = defineQuery((q) =>
+  q.with(Block).tracking(Selected),
+);
 
 /**
  * Arrow transform state machine context - derived from ArrowTransformState schema.
@@ -145,7 +148,7 @@ export const captureArrowTransformSystem = defineEditorSystem(
     if (events.length === 0) return;
 
     ArrowTransformState.run(ctx, arrowTransformMachine, events);
-  }
+  },
 );
 
 /**
@@ -155,13 +158,12 @@ function getSelectionEvents(ctx: Context): SelectionEvent[] {
   const events: SelectionEvent[] = [];
 
   // Check for selection changes using tracking query
-  // Filter by current session to only detect changes for this user
-  const added = getAddedLocalSelectedBlocks(ctx);
-  const removed = getRemovedLocalSelectedBlocks(ctx);
+  const added = selectedBlocksQuery.added(ctx);
+  const removed = selectedBlocksQuery.removed(ctx);
 
   if (added.length > 0 || removed.length > 0) {
     // Get blocks selected by the current session only
-    const selectedEntities = getLocalSelectedBlocks(ctx);
+    const selectedEntities = [...selectedBlocksQuery.current(ctx)];
 
     events.push({
       type: "selectionChanged",

@@ -7,12 +7,15 @@ import {
   Controls,
   RankBounds,
   Block,
+  Held,
   Synced,
   PointerButton,
+  getResources,
   getPointerInput,
   Cursor,
   getBlockDef,
   canBlockEdit,
+  type EditorResources,
 } from "@infinitecanvas/editor";
 import {
   SelectionStateSingleton,
@@ -102,6 +105,9 @@ function createBlockFromSnapshot(
       addComponent(ctx, entityId, Comp, componentData);
     }
   }
+
+  const { sessionId } = getResources<EditorResources>(ctx);
+  addComponent(ctx, entityId, Held, { sessionId });
 
   return entityId;
 }

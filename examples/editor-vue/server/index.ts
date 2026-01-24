@@ -1,74 +1,34 @@
-import { mkdir, writeFile, readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { SimpleServer } from "loro-websocket/server";
-import { CrdtType } from "loro-protocol";
+import WebSocket from "ws";
+import http from "http";
+import * as number from "lib0/number";
+import { setupWSConnection } from "./utils";
 
-const DATA_DIR = "./data";
+const wss = new WebSocket.Server({ noServer: true });
+const host = process.env.HOST || "localhost";
+const port = number.parseInt(process.env.PORT || "1234");
 
-// Ensure data directory exists
-if (!existsSync(DATA_DIR)) {
-  await mkdir(DATA_DIR, { recursive: true });
-}
-
-function getRoomFilePath(roomId: string): string {
-  return join(DATA_DIR, `${roomId}.loro`);
-}
-
-const server = new SimpleServer({
-  port: 8787,
-  authenticate: async (_roomId: string, _crdt: any, auth: Uint8Array) => {
-    // return "read" | "write" | null
-    return new TextDecoder().decode(auth) === "readonly" ? "read" : "write";
-  },
-  onLoadDocument: async (
-    roomId: string,
-    _crdt: CrdtType
-  ): Promise<Uint8Array | null> => {
-    const filePath = getRoomFilePath(roomId);
-
-    if (!existsSync(filePath)) {
-      console.log("No existing document found for room:", roomId);
-      return null;
-    }
-
-    try {
-      const data = await readFile(filePath);
-      console.log(
-        "Document loaded for room:",
-        roomId,
-        "Data size:",
-        data.length
-      );
-      return new Uint8Array(data);
-    } catch (error) {
-      console.error("Error loading document for room:", roomId, error);
-      return null;
-    }
-  },
-  onSaveDocument: async (
-    roomId: string,
-    _crdt: CrdtType,
-    data: Uint8Array
-  ): Promise<void> => {
-    const filePath = getRoomFilePath(roomId);
-
-    try {
-      await writeFile(filePath, data);
-      console.log(
-        "Document saved for room:",
-        roomId,
-        "Data size:",
-        data.length,
-        "File:",
-        filePath
-      );
-    } catch (error) {
-      console.error("Error saving document for room:", roomId, error);
-    }
-  },
-  saveInterval: 6_000,
+const server = http.createServer((_request, response) => {
+  response.writeHead(200, { "Content-Type": "text/plain" });
+  response.end("okay");
 });
 
-await server.start();
-// Later: await server.stop(); flushes any buffered frames before terminating clients
+wss.on("connection", setupWSConnection);
+
+server.on("upgrade", (request, socket, head) => {
+  // You may check auth of request here..
+  // Call `wss.HandleUpgrade` *after* you checked whether the client has access
+  // (e.g. by checking cookies, or url parameters).
+  // See https://github.com/websockets/ws#client-authentication
+  wss.handleUpgrade(
+    request,
+    socket,
+    head,
+    /** @param {any} ws */ (ws) => {
+      wss.emit("connection", ws, request);
+    },
+  );
+});
+
+server.listen(port, host, () => {
+  console.log(`running at '${host}' on port ${port}`);
+});

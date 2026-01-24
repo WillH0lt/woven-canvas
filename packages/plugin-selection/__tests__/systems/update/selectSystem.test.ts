@@ -11,13 +11,12 @@ import {
   Synced,
   Block,
   Aabb,
-  Selected,
   Hovered,
   Opacity,
   Intersect,
   RankBounds,
 } from "@infinitecanvas/editor";
-import { SelectionBox } from "../../../src/components";
+import { SelectionBox, Selected, Held } from "../../../src/components";
 import { selectSystem } from "../../../src/systems/update";
 import {
   AddSelectionBox,
@@ -35,7 +34,7 @@ const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
   cursors: CURSORS,
-  components: [Block, Aabb, Selected, SelectionBox, Hovered, Opacity],
+  components: [Block, Aabb, Selected, Held, SelectionBox, Hovered, Opacity],
   singletons: [Intersect, RankBounds],
   updateSystems: [selectSystem],
 };
@@ -235,7 +234,8 @@ describe("UpdateSelectSystem", () => {
           rank: "a",
         });
         addComponent(ctx, entityId1, Synced, {});
-        addComponent(ctx, entityId1, Selected, { selectedBy: sessionId });
+        addComponent(ctx, entityId1, Selected, {});
+        addComponent(ctx, entityId1, Held, { sessionId });
 
         entityId2 = createEntity(ctx);
         addComponent(ctx, entityId2, Block, {
@@ -244,7 +244,8 @@ describe("UpdateSelectSystem", () => {
           rank: "b",
         });
         addComponent(ctx, entityId2, Synced, {});
-        addComponent(ctx, entityId2, Selected, { selectedBy: sessionId });
+        addComponent(ctx, entityId2, Selected, {});
+        addComponent(ctx, entityId2, Held, { sessionId });
       });
 
       // Let preCaptureIntersect compute AABBs
@@ -287,7 +288,8 @@ describe("UpdateSelectSystem", () => {
           rank: "a",
         });
         addComponent(ctx, entityId1, Synced, {});
-        addComponent(ctx, entityId1, Selected, { selectedBy: sessionId });
+        addComponent(ctx, entityId1, Selected, {});
+        addComponent(ctx, entityId1, Held, { sessionId });
 
         entityId2 = createEntity(ctx);
         addComponent(ctx, entityId2, Block, {
@@ -296,7 +298,8 @@ describe("UpdateSelectSystem", () => {
           rank: "b",
         });
         addComponent(ctx, entityId2, Synced, {});
-        addComponent(ctx, entityId2, Selected, { selectedBy: sessionId });
+        addComponent(ctx, entityId2, Selected, {});
+        addComponent(ctx, entityId2, Held, { sessionId });
       });
 
       // Let preCaptureIntersect compute AABBs
@@ -529,7 +532,7 @@ describe("UpdateSelectSystem", () => {
   describe("already selected blocks", () => {
     it("should not re-add Selected component to already selected blocks", async () => {
       let entityId: number | undefined;
-      let selectedBy: string | undefined;
+      let heldSessionId: string | undefined;
 
       // Create a synced block that's already selected
       editor.nextTick((ctx) => {
@@ -540,7 +543,8 @@ describe("UpdateSelectSystem", () => {
           rank: "a",
         });
         addComponent(ctx, entityId, Synced, {});
-        addComponent(ctx, entityId, Selected, { selectedBy: "original" });
+        addComponent(ctx, entityId, Selected, {});
+        addComponent(ctx, entityId, Held, { sessionId: "original" });
       });
 
       await editor.tick();
@@ -558,13 +562,13 @@ describe("UpdateSelectSystem", () => {
       await editor.tick();
 
       editor.nextTick((ctx) => {
-        const selected = Selected.read(ctx, entityId!);
-        selectedBy = selected.selectedBy;
+        const held = Held.read(ctx, entityId!);
+        heldSessionId = held.sessionId;
       });
 
       await editor.tick();
-      // The original selectedBy value should be preserved
-      expect(selectedBy).toBe("original");
+      // The original Held sessionId value should be preserved
+      expect(heldSessionId).toBe("original");
     });
   });
 });

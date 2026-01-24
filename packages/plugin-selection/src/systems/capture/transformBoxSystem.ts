@@ -32,7 +32,6 @@ import {
 } from "../../commands";
 import { TransformBoxStateSingleton } from "../../singletons";
 import { TransformBoxState } from "../../types";
-import { getLocalSelectedBlocks } from "../../helpers";
 
 /**
  * Selection changed event for transform box state machine.
@@ -53,6 +52,11 @@ type TransformBoxEvent = SelectionChangedEvent | PointerInput;
  */
 type TransformBoxContext = InferStateContext<typeof TransformBoxStateSingleton>;
 
+// Query for selected blocks
+const selectedBlocksQuery = defineQuery((q) =>
+  q.with(Block).tracking(Selected),
+);
+
 /**
  * Transform box state machine - created once at module level.
  *
@@ -71,8 +75,6 @@ const transformBoxMachine = setup({
   },
   guards: {
     isSelectionEditable: ({ event }) => {
-      // Read current selection state, not from event
-      // This matches the core implementation which queries current selection
       return checkSelectionEditable(event.ctx);
     },
     isOverTransformBox: ({ event }) => {
@@ -160,7 +162,8 @@ const transformBoxMachine = setup({
       });
     },
     removeEditAfterPlacing: ({ event }) => {
-      for (const entityId of getLocalSelectedBlocks(event.ctx)) {
+      if (event.type !== "selectionChanged") return;
+      for (const entityId of event.selectedEntityIds) {
         if (hasComponent(event.ctx, entityId, EditAfterPlacing)) {
           removeComponent(event.ctx, entityId, EditAfterPlacing);
         }
@@ -241,22 +244,14 @@ const transformBoxMachine = setup({
   },
 });
 
-// Query for selected blocks with change tracking
-const selectedBlocksQuery = defineQuery((q) =>
-  q.with(Block).tracking(Selected),
-);
-
 /**
  * Check if the current selection is editable.
- * Used by the isSelectionEditable guard - reads current state, not event.
- * Only considers blocks selected by the current session.
  */
 function checkSelectionEditable(ctx: Context): boolean {
-  const selectedEntities = getLocalSelectedBlocks(ctx);
+  const selected = selectedBlocksQuery.current(ctx);
+  if (selected.length !== 1) return false;
 
-  if (selectedEntities.length !== 1) return false;
-
-  const entityId = selectedEntities[0];
+  const entityId = selected[0];
   const block = Block.read(ctx, entityId);
 
   return canBlockEdit(ctx, block.tag);
@@ -281,7 +276,7 @@ export const transformBoxSystem = defineEditorSystem(
 
     if (added.length > 0 || removed.length > 0) {
       // Only include blocks selected by the current session
-      const selectedEntityIds = getLocalSelectedBlocks(ctx);
+      const selectedEntityIds = [...selectedBlocksQuery.current(ctx)];
 
       const selectionEvent: SelectionChangedEvent = {
         type: "selectionChanged",

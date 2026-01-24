@@ -65,9 +65,12 @@ export class LocalDB {
       } else {
         // First save is always a snapshot
         const snapshot = doc.export({
-          mode: "shallow-snapshot",
-          frontiers: doc.frontiers(),
+          mode: "snapshot",
         });
+        // const snapshot = doc.export({
+        //   mode: "shallow-snapshot",
+        //   frontiers: doc.frontiers(),
+        // });
         store.put(snapshot, SNAPSHOT_KEY);
       }
 
@@ -119,9 +122,7 @@ export class LocalDB {
     if (snapshot) {
       doc.import(snapshot);
     }
-    for (const update of updates) {
-      doc.import(update);
-    }
+    doc.importBatch(updates);
 
     // Set lastVersion to current doc version after loading
     this.lastVersion = doc.version();
@@ -156,8 +157,7 @@ export class LocalDB {
     try {
       // Create a new snapshot with current state
       const snapshot = doc.export({
-        mode: "shallow-snapshot",
-        frontiers: doc.frontiers(),
+        mode: "snapshot",
       });
       const version = doc.version();
 

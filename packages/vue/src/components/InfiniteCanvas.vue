@@ -21,6 +21,7 @@ import {
   SINGLETON_ENTITY_ID,
   defineQuery,
   getResources,
+  Held,
   type EntityId,
   type EditorOptionsInput,
   type EditorResources,
@@ -72,6 +73,7 @@ import UserPresence from "./UserPresence.vue";
 const blockQuery = defineQuery((q) => q.tracking(Block));
 const connectorQuery = defineQuery((q) => q.with(Block).tracking(Connector));
 const selectedQuery = defineQuery((q) => q.with(Block).tracking(Selected));
+const heldQuery = defineQuery((q) => q.with(Block).tracking(Held));
 const hoveredQuery = defineQuery((q) => q.with(Block).tracking(Hovered));
 const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited));
 const opacityQuery = defineQuery((q) => q.with(Block).tracking(Opacity));
@@ -357,7 +359,7 @@ onMounted(async () => {
   const editorOptions: EditorOptionsInput = {
     store: props.store,
     maxEntities: props.maxEntities,
-    user: props.user,
+    user: parsedUser,
     blockDefs: props.blockDefs,
     keybinds: props.keybinds,
     cursors: props.cursors,
@@ -457,7 +459,8 @@ function updateBlocks(editor: Editor) {
       ref({
         entityId,
         block: snapshot,
-        selected: null,
+        selected: false,
+        held: null,
         hovered: false,
         edited: false,
         opacity: null,
@@ -514,23 +517,37 @@ function updateBlocks(editor: Editor) {
     usersArray.value = Array.from(usersBySessionId.values());
   }
 
-  // Update selected state
+  // Update selected state (boolean - Selected is an empty component)
   for (const entityId of selectedQuery.added(ctx)) {
     const blockRef = blockMap.get(entityId);
-    if (blockRef) {
-      blockRef.value.selected = Selected.snapshot(ctx, entityId);
+    if (blockRef && !blockRef.value.selected) {
+      blockRef.value.selected = true;
     }
   }
   for (const entityId of selectedQuery.removed(ctx)) {
     const blockRef = blockMap.get(entityId);
-    if (blockRef && blockRef.value.selected !== null) {
-      blockRef.value.selected = null;
+    if (blockRef && blockRef.value.selected) {
+      blockRef.value.selected = false;
     }
   }
-  for (const entityId of selectedQuery.changed(ctx)) {
+
+  // Update held state (for remote user presence)
+  for (const entityId of heldQuery.added(ctx)) {
     const blockRef = blockMap.get(entityId);
     if (blockRef) {
-      blockRef.value.selected = Selected.snapshot(ctx, entityId);
+      blockRef.value.held = Held.snapshot(ctx, entityId);
+    }
+  }
+  for (const entityId of heldQuery.removed(ctx)) {
+    const blockRef = blockMap.get(entityId);
+    if (blockRef && blockRef.value.held !== null) {
+      blockRef.value.held = null;
+    }
+  }
+  for (const entityId of heldQuery.changed(ctx)) {
+    const blockRef = blockMap.get(entityId);
+    if (blockRef) {
+      blockRef.value.held = Held.snapshot(ctx, entityId);
     }
   }
 
@@ -643,17 +660,17 @@ function getBlockTransform(block: BlockDef): string | undefined {
   return parts.join(" ");
 }
 
-function getSelectedByColor(data: BlockData): string | null {
-  const { selected } = data;
-  if (!selected || !selected.selectedBy) return null;
-  if (selected.selectedBy === parsedUser.sessionId) return null;
-  const otherUser = getUserBySessionId(selected.selectedBy);
+function getHeldByColor(data: BlockData): string | null {
+  const { held } = data;
+  if (!held || !held.sessionId) return null;
+  if (held.sessionId === parsedUser.sessionId) return null;
+  const otherUser = getUserBySessionId(held.sessionId);
   return otherUser?.color ?? null;
 }
 
 function getBlockStyle(data: BlockData) {
   const { block, opacity } = data;
-  const selectedByColor = getSelectedByColor(data);
+  const heldByColor = getHeldByColor(data);
 
   return {
     position: "absolute" as const,
@@ -665,7 +682,7 @@ function getBlockStyle(data: BlockData) {
     opacity: opacity !== null ? opacity.value / 255 : undefined,
     pointerEvents: "none" as const,
     userSelect: "none" as const,
-    "--ic-selected-by-color": selectedByColor ?? undefined,
+    "--ic-held-by-color": heldByColor ?? undefined,
   };
 }
 </script>
@@ -694,9 +711,9 @@ function getBlockStyle(data: BlockData) {
         v-for="blockData in sortedBlocks"
         :key="blockData.value.entityId"
         :style="getBlockStyle(blockData.value)"
-        :data-selected="blockData.value.selected !== null || undefined"
-        :data-selected-by-other="
-          getSelectedByColor(blockData.value) !== null || undefined
+        :data-selected="blockData.value.selected || undefined"
+        :data-held-by-other="
+          getHeldByColor(blockData.value) !== null || undefined
         "
         :data-hovered="blockData.value.hovered || undefined"
         class="ic-block"
@@ -776,10 +793,5 @@ function getBlockStyle(data: BlockData) {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-}
-
-.ic-block[data-selected-by-other] {
-  outline: calc(3px / var(--ic-zoom, 1)) solid var(--ic-selected-by-color);
-  outline-offset: calc(2px / var(--ic-zoom, 1));
 }
 </style>

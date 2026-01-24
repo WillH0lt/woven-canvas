@@ -127,6 +127,14 @@
   );
 }
 
+.ic-block[data-held-by-other] > * {
+  outline: calc(3px / var(--ic-zoom, 1)) solid var(--ic-held-by-color);
+  outline-offset: calc(2px / var(--ic-zoom, 1));
+  border-radius: calc(
+    var(--ic-highlighted-block-border-radius) / var(--ic-zoom, 1)
+  );
+}
+
 .ic-root {
   font-family: var(--ic-font-family);
 }

@@ -8,6 +8,8 @@ export {
   AddSelectionBox,
   UpdateSelectionBox,
   RemoveSelectionBox,
+  AddHeld,
+  RemoveHeld,
 } from "./selection";
 
 // Block manipulation commands

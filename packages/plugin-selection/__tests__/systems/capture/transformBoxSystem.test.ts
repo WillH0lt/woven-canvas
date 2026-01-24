@@ -8,14 +8,13 @@ import {
   Controls,
   Block,
   Aabb,
-  Selected,
   Hovered,
   Intersect,
   RankBounds,
-  selectBlock,
   BlockDef,
 } from "@infinitecanvas/editor";
-import { TransformBox, TransformHandle } from "../../../src/components";
+import { TransformBox, TransformHandle, Selected, Held } from "../../../src/components";
+import { selectBlock } from "../../../src/helpers";
 import { TransformBoxStateSingleton } from "../../../src/singletons";
 import { transformBoxSystem } from "../../../src/systems/capture";
 import {
@@ -47,7 +46,7 @@ const testPlugin: EditorPlugin = {
       resizeMode: "text",
     }),
   },
-  components: [Block, Aabb, Selected, Hovered, TransformBox, TransformHandle],
+  components: [Block, Aabb, Selected, Held, Hovered, TransformBox, TransformHandle],
   singletons: [Intersect, RankBounds, TransformBoxStateSingleton],
   captureSystems: [transformBoxSystem],
   setup(ctx) {

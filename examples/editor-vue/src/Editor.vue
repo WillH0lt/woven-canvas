@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
 import { Editor, Color, Text, VerticalAlign } from "@infinitecanvas/editor";
-import { Store } from "@infinitecanvas/store";
+import { YjsStore } from "@infinitecanvas/store-yjs";
 import { InfiniteCanvas, FloatingMenuBar, Toolbar } from "@infinitecanvas/vue";
 
 import { Shape } from "./Shape";
@@ -12,10 +12,9 @@ import ShapeTool from "./components/ShapeTool.vue";
 const editorRef = shallowRef<Editor | null>(null);
 
 // Create store for persistence and sync
-const store = new Store({
-  documentId: "editor-vue-demo",
-  websocketUrl: "ws://localhost:8787",
-  useLocalPersistence: false,
+const store = new YjsStore({
+  documentId: "editor-vue-demo-v2",
+  websocketUrl: "ws://localhost:1234",
 });
 
 function handleReady(editor: Editor) {

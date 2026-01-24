@@ -18,3 +18,6 @@ export { intersectCapsule } from "./intersectCapsule";
 
 // AABB computation
 export { computeAabb } from "./computeAabb";
+
+// Held state helpers
+export { isHeldByRemote } from "./held";

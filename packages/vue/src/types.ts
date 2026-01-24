@@ -6,10 +6,10 @@ import {
   type InferComponentType,
 } from "@infinitecanvas/editor";
 
-import { Selected } from "@infinitecanvas/plugin-selection";
+import { Held } from "@infinitecanvas/plugin-selection";
 
 type BlockComponentData = InferComponentType<typeof Block.schema>;
-type SelectedComponentData = InferComponentType<typeof Selected.schema>;
+type HeldComponentData = InferComponentType<typeof Held.schema>;
 type OpacityComponentData = InferComponentType<typeof Opacity.schema>;
 type ConnectorComponentData = InferComponentType<typeof Connector.schema>;
 
@@ -17,7 +17,8 @@ type ConnectorComponentData = InferComponentType<typeof Connector.schema>;
 export interface BlockData {
   entityId: EntityId;
   block: BlockComponentData;
-  selected: SelectedComponentData | null;
+  selected: boolean;
+  held: HeldComponentData | null;
   hovered: boolean;
   edited: boolean;
   opacity: OpacityComponentData | null;

@@ -137,6 +137,7 @@ export {
   Aabb,
   Hovered,
   Edited,
+  Held,
   ScaleWithZoom,
   Opacity,
   Text,
@@ -178,6 +179,7 @@ export {
   getTopmostBlockAtPoint,
   canBlockEdit,
   getBlockDef,
+  isHeldByRemote,
 } from "./helpers";
 
 // Systems

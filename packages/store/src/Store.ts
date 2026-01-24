@@ -18,6 +18,8 @@ import {
   hasComponent,
   Synced,
   isAlive,
+  defineQuery,
+  User,
   type Context,
   type StoreAdapter,
   type AnyEditorComponentDef,
@@ -25,6 +27,9 @@ import {
   type ComponentSchema,
 } from "@infinitecanvas/editor";
 import { LocalDB } from "./LocalDB";
+
+// Query for connected users - used to adjust commit throttle
+const usersQuery = defineQuery((q) => q.with(User));
 
 /**
  * StoreOptions - Options for configuring the Store.
@@ -103,6 +108,10 @@ export class Store implements StoreAdapter {
   /** Cached ephemeral events from remote peers */
   private pendingEphemeralEvents: EphemeralStoreEvent[] = [];
 
+  // Dynamic commit throttling based on user count
+  /** Current commit throttle wait time in ms (0 = uninitialized) */
+  private commitThrottleMs: number = 0;
+
   constructor(options: StoreOptions = { documentId: "default" }) {
     this.documentId = options.documentId;
     this.websocketUrl = options.websocketUrl;
@@ -117,6 +126,9 @@ export class Store implements StoreAdapter {
       excludeOriginPrefixes: ["sys:"],
     });
     this.ephemeralStore = new EphemeralStore(this.ephemeralTimeoutMs);
+
+    // Initialize with solo mode throttle (no users yet)
+    this.updateCommitThrottle(0);
   }
 
   /**
@@ -349,10 +361,29 @@ export class Store implements StoreAdapter {
 
   /**
    * Commit all pending changes to the Loro document.
+   * Throttle rate adjusts based on connected user count:
+   * - Solo (1 user): once per second
+   * - Multiplayer (2+ users): 30 times per second
    */
-  commit: ReturnType<typeof throttle> = throttle(() => {
-    this.doc.commit({ origin: "editor" });
-  }, 1000 / 30);
+  commit: ReturnType<typeof throttle<() => void>> = null!;
+
+  /**
+   * Update commit throttle based on connected user count.
+   * Called during initialization and each frame in flushChanges.
+   */
+  private updateCommitThrottle(userCount: number): void {
+    // Solo mode: 0-1 users = 1000ms (once per second)
+    // Multiplayer: 2+ users = ~33ms (30 times per second)
+    const newThrottleMs = userCount <= 1 ? 1000 : 1000 / 30;
+
+    if (newThrottleMs !== this.commitThrottleMs) {
+      this.commitThrottleMs = newThrottleMs;
+      this.commit?.cancel();
+      this.commit = throttle(() => {
+        this.doc.commit({ origin: "editor" });
+      }, this.commitThrottleMs);
+    }
+  }
 
   /**
    * Refresh all local ephemeral data to prevent timeout expiration.
@@ -512,6 +543,13 @@ export class Store implements StoreAdapter {
       }
       this.pendingEphemeralEvents = [];
     }
+
+    // Update commit throttle based on connected user count
+    let userCount = 0;
+    for (const _ of usersQuery.current(ctx)) {
+      userCount++;
+    }
+    this.updateCommitThrottle(userCount);
   }
 
   // ─── Ref Translation ─────────────────────────────────────────────────────────
@@ -726,6 +764,7 @@ export class Store implements StoreAdapter {
 
       const colonIndex = key.indexOf(":");
       if (colonIndex === -1) continue;
+
       this.addComponentToEntity(
         ctx,
         key.slice(0, colonIndex),
@@ -753,6 +792,7 @@ export class Store implements StoreAdapter {
     for (const key of event.removed) {
       const colonIndex = key.indexOf(":");
       if (colonIndex === -1) continue;
+
       this.removeComponentFromEntity(
         ctx,
         key.slice(0, colonIndex),

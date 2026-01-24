@@ -14,6 +14,7 @@ export { Aabb } from "./Aabb";
 // State components
 export { Hovered } from "./Hovered";
 export { Edited } from "./Edited";
+export { Held } from "./Held";
 
 // Transform components
 export { ScaleWithZoom } from "./ScaleWithZoom";

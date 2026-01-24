@@ -5,9 +5,7 @@ import {
   Block,
   Camera,
   Screen,
-  getResources,
   type EntityId,
-  type EditorResources,
 } from "@infinitecanvas/editor";
 import {
   Selected,
@@ -53,36 +51,17 @@ watch(camera, () => {
   }
 });
 
-// Get sessionId from editor (used to identify current user's selections)
-const sessionId = computed(() => {
-  const editor = canvasContext?.getEditor();
-  if (!editor) return "";
-
-  const { sessionId } = getResources<EditorResources>(editor._getContext());
-  return sessionId;
-});
-
-// Filter to only blocks selected by current user
-const mySelectedItems = computed(() => {
-  const uid = sessionId.value;
-  if (!uid) return [];
-
-  return selectedItems.value.filter(
-    (item) => item.selected.value?.selectedBy === uid,
-  );
-});
-
 // Selected entity IDs
 const selectedIds = computed<EntityId[]>(() =>
-  mySelectedItems.value.map((item) => item.entityId),
+  selectedItems.value.map((item) => item.entityId),
 );
 
 // Compute common components across selection
 const commonComponents = computed(() => {
   const editor = canvasContext?.getEditor();
-  if (!editor || mySelectedItems.value.length === 0) return new Set<string>();
+  if (!editor || selectedItems.value.length === 0) return new Set<string>();
 
-  const blocks = mySelectedItems.value.map((item) => ({
+  const blocks = selectedItems.value.map((item) => ({
     tag: item.block.value.tag,
   }));
   return computeCommonComponents(editor, blocks);
@@ -96,14 +75,14 @@ const _aabb: Aabb = [0, 0, 0, 0];
 
 // Compute selection bounds in screen coordinates (accounting for rotation)
 const selectionBounds = computed<Aabb | null>(() => {
-  if (mySelectedItems.value.length === 0) return null;
+  if (selectedItems.value.length === 0) return null;
 
   const cam = camera.value;
   if (!cam) return null;
 
   let bounds: Aabb | null = null;
 
-  for (const item of mySelectedItems.value) {
+  for (const item of selectedItems.value) {
     const block = item.block.value;
     Rect.getAabb(block.position, block.size, block.rotateZ, _aabb);
     Aabb.translate(_aabb, [-cam.left, -cam.top]);
@@ -212,7 +191,7 @@ const hiddenSelectionStates: SelectionState[] = [
 // Should the menu be visible?
 const shouldShow = computed(
   () =>
-    mySelectedItems.value.length > 0 &&
+    selectedItems.value.length > 0 &&
     !isOffScreen.value &&
     !hiddenSelectionStates.includes(selectionState.value.state),
 );

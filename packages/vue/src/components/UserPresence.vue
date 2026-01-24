@@ -60,7 +60,7 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
       </div>
     </button>
 
-    <div v-if="isOpen" class="ic-user-presence-dropdown">
+    <div v-if="isOpen" class="ic-user-presence-dropdown" @wheel.stop>
       <div class="ic-user-presence-list">
         <div
           v-for="user in userList"

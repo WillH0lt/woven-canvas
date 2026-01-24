@@ -6,10 +6,9 @@ import {
   type EditorPlugin,
   Block,
   Aabb,
-  Selected,
   RankBounds,
 } from "@infinitecanvas/editor";
-import { TransformBox, TransformHandle, DragStart } from "../../../src/components";
+import { TransformBox, TransformHandle, DragStart, Selected, Held } from "../../../src/components";
 import { DragBlock } from "../../../src/commands";
 import { dragHandlerSystem } from "../../../src/systems/update";
 import { TransformHandleKind } from "../../../src/types";
@@ -22,7 +21,7 @@ import { CURSORS } from "../../../src/cursors";
 const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
   cursors: CURSORS,
-  components: [Block, Aabb, Selected, TransformBox, TransformHandle, DragStart],
+  components: [Block, Aabb, Selected, Held, TransformBox, TransformHandle, DragStart],
   singletons: [RankBounds],
   updateSystems: [dragHandlerSystem],
 };

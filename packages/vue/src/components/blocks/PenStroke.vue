@@ -130,11 +130,11 @@ const fillColor = computed(() => {
   return `rgb(${color.value.red}, ${color.value.green}, ${color.value.blue})`;
 });
 
-const isEmphasized = computed(() => props.selected !== null || props.hovered);
+const isEmphasized = computed(() => props.selected || props.hovered);
 </script>
 
 <template>
-  <div class="ic-pen-stroke">
+  <div class="ic-pen-stroke" :data-complete="penStroke?.isComplete || undefined">
     <svg preserveAspectRatio="none">
       <path :d="path" :fill="fillColor" />
     </svg>
@@ -174,6 +174,7 @@ const isEmphasized = computed(() => props.selected !== null || props.hovered);
   position: absolute;
   inset: 0;
 }
+
 </style>
 
 <style>
@@ -181,4 +182,10 @@ const isEmphasized = computed(() => props.selected !== null || props.hovered);
 .ic-block[data-selected] > .ic-pen-stroke {
   outline: none;
 }
+
+/* Hide held-by-other outline while stroke is being drawn */
+.ic-block[data-held-by-other] > .ic-pen-stroke:not([data-complete]) {
+  outline: none;
+}
+
 </style>

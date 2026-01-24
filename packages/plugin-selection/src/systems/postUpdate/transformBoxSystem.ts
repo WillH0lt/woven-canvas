@@ -35,7 +35,10 @@ import {
 import { SelectionStateSingleton } from "../../singletons";
 import { TransformHandleKind, SelectionState } from "../../types";
 import { CursorKind } from "../../cursors";
-import { getLocalSelectedBlocks } from "../../helpers";
+import { Selected } from "../../components";
+
+// Query for selected blocks
+const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 const editedBlocksQuery = defineQuery((q) => q.with(Block, Edited));
 
@@ -142,7 +145,7 @@ function addTransformBox(
 function updateTransformBox(ctx: Context, transformBoxId: EntityId): void {
   if (!isAlive(ctx, transformBoxId)) return;
 
-  const selectedBlocks = getLocalSelectedBlocks(ctx);
+  const selectedBlocks = selectedBlocksQuery.current(ctx);
   if (selectedBlocks.length === 0) return;
 
   // Get common rotation (or 0 if mixed)
@@ -266,7 +269,7 @@ function addOrUpdateTransformHandles(
   ];
 
   // Get selected blocks and determine capabilities
-  const selectedBlocks = getLocalSelectedBlocks(ctx);
+  const selectedBlocks = selectedBlocksQuery.current(ctx);
 
   let resizeMode = "scale";
   if (selectedBlocks.length === 1) {
@@ -525,7 +528,7 @@ function showTransformBox(ctx: Context, transformBoxId: EntityId): void {
   if (!hasComponent(ctx, transformBoxId, TransformBox)) return;
 
   // Don't show if current selection is not transformable
-  const selectedBlocks = getLocalSelectedBlocks(ctx);
+  const selectedBlocks = selectedBlocksQuery.current(ctx);
   if (selectedBlocks.length === 0) return;
   if (selectedBlocks.length === 1) {
     const block = Block.read(ctx, selectedBlocks[0]);
@@ -571,7 +574,7 @@ function startTransformBoxEdit(ctx: Context, transformBoxId: EntityId): void {
   }
 
   // Mark selected blocks as edited
-  for (const blockId of getLocalSelectedBlocks(ctx)) {
+  for (const blockId of selectedBlocksQuery.current(ctx)) {
     if (!hasComponent(ctx, blockId, Edited)) {
       addComponent(ctx, blockId, Edited, {});
     }

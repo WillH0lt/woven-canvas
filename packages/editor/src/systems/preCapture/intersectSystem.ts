@@ -15,13 +15,17 @@ import {
   Hovered,
   HitGeometry,
   Synced,
+  Held,
 } from "../../components";
-import { computeAabb, intersectPoint } from "../../helpers";
+import { computeAabb, intersectPoint, isHeldByRemote } from "../../helpers";
 
 // Query for blocks that have changed (need AABB recalculation)
 const blocksChanged = defineQuery((q) => q.tracking(Block));
 
 const hitGeometryChanged = defineQuery((q) => q.tracking(HitGeometry));
+
+// Query for held entities - track to re-evaluate hover when Held changes
+const heldQuery = defineQuery((q) => q.with(Held).tracking(Held));
 
 // Query for currently hovered entities
 const hoveredQuery = defineQuery((q) => q.with(Hovered));
@@ -41,9 +45,29 @@ function clearHovered(ctx: Context): void {
 }
 
 /**
+ * Find the first valid entity to hover from the intersect list.
+ * Returns undefined if the topmost synced entity is held by a remote user,
+ * to prevent accidentally grabbing blocks underneath.
+ */
+function findValidHoverTarget(
+  ctx: Context,
+  intersected: number[],
+): number | undefined {
+  for (const entityId of intersected) {
+    // If the topmost synced entity is held by remote, don't hover anything
+    // This prevents accidentally grabbing blocks underneath held blocks
+    if (isHeldByRemote(ctx, entityId)) return undefined;
+
+    return entityId;
+  }
+
+  return undefined;
+}
+
+/**
  * Update which entity has the Hovered component.
  */
-function updateHovered(ctx: Context, newHoveredId: number | undefined): void {
+function updateHovered(ctx: Context, intersected: number[]): void {
   // Only show hover when select tool is active
   const controls = Controls.read(ctx);
   const selectToolActive = controls.leftMouseTool === "select";
@@ -51,11 +75,14 @@ function updateHovered(ctx: Context, newHoveredId: number | undefined): void {
   // Clear existing hovered entities
   clearHovered(ctx);
 
-  // Add hovered to new entity if select tool is active
-  if (newHoveredId !== undefined && selectToolActive) {
-    if (!hasComponent(ctx, newHoveredId, Hovered)) {
-      addComponent(ctx, newHoveredId, Hovered, {});
-    }
+  if (!selectToolActive) return;
+
+  // Find first valid hover target (not held by remote)
+  const newHoveredId = findValidHoverTarget(ctx, intersected);
+
+  // Add hovered to new entity
+  if (newHoveredId !== undefined) {
+    addComponent(ctx, newHoveredId, Hovered, {});
   }
 }
 
@@ -125,12 +152,18 @@ export const intersectSystem = defineEditorSystem(
     const mouseDidScroll = Mouse.didScroll(ctx);
     const blocksHaveChanged = added.size > 0 || changed.size > 0;
 
-    // Only update if mouse moved, left, scrolled, or blocks/hit geometries changed
+    // Check if Held changed (need to re-evaluate hover when blocks are released)
+    const heldAdded = heldQuery.added(ctx);
+    const heldRemoved = heldQuery.removed(ctx);
+    const heldChanged = heldAdded.length > 0 || heldRemoved.length > 0;
+
+    // Only update if mouse moved, left, scrolled, blocks changed, or held state changed
     if (
       !mouseDidMove &&
       !mouseDidLeave &&
       !mouseDidScroll &&
-      !blocksHaveChanged
+      !blocksHaveChanged &&
+      !heldChanged
     ) {
       return;
     }
@@ -151,12 +184,12 @@ export const intersectSystem = defineEditorSystem(
 
     // Check if intersections changed
     const prevIntersected = Intersect.getAll(ctx);
-    if (arraysEqual(intersected, prevIntersected)) {
-      return;
-    }
+    const intersectsChanged = !arraysEqual(intersected, prevIntersected);
 
-    // Update Intersect singleton
-    Intersect.setAll(ctx, intersected);
+    if (intersectsChanged) {
+      // Update Intersect singleton
+      Intersect.setAll(ctx, intersected);
+    }
 
     // Don't change hover state while pointer is down
     // This prevents flickering when dragging objects
@@ -165,20 +198,9 @@ export const intersectSystem = defineEditorSystem(
       return;
     }
 
-    // Update hovered entity
-    updateHovered(ctx, intersected[0]);
-
-    // if (intersected[0]) {
-    //   const entity = intersected[0];
-    //   if (hasComponent(ctx, entity, Synced)) {
-    //     const synced = Synced.read(ctx, entity);
-    //     console.log(
-    //       "Mouse intersected synced entity",
-    //       entity,
-    //       "with ID",
-    //       synced.id,
-    //     );
-    //   }
-    // }
+    // Update hovered entity if intersections or held state changed
+    if (intersectsChanged || heldChanged) {
+      updateHovered(ctx, intersected);
+    }
   },
 );

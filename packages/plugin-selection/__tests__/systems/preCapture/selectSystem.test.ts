@@ -9,12 +9,11 @@ import {
   Keyboard,
   Block,
   Aabb,
-  Selected,
   Hovered,
   Intersect,
   RankBounds,
 } from "@infinitecanvas/editor";
-import { TransformBox, TransformHandle } from "../../../src/components";
+import { TransformBox, TransformHandle, Selected, Held } from "../../../src/components";
 import { SelectionStateSingleton } from "../../../src/singletons";
 import { selectSystem } from "../../../src/systems/preCapture";
 import {
@@ -40,6 +39,7 @@ const testPlugin: EditorPlugin = {
     Block,
     Aabb,
     Selected,
+    Held,
     Hovered,
     TransformBox,
     TransformHandle,

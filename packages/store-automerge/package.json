@@ -1,0 +1,54 @@
+{
+  "private": true,
+  "name": "@infinitecanvas/store-automerge",
+  "version": "0.1.0",
+  "description": "Local-first store adapter using Automerge CRDT for persistence and multiplayer",
+  "files": [
+    "build"
+  ],
+  "main": "./build/index.js",
+  "module": "./build/index.mjs",
+  "types": "./build/index.d.ts",
+  "exports": {
+    ".": {
+      "@infinitecanvas/source": "./src/index.ts",
+      "import": {
+        "types": "./build/index.d.ts",
+        "default": "./build/index.js"
+      },
+      "require": {
+        "types": "./build/index.d.cts",
+        "default": "./build/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "clean": "rimraf build .turbo",
+    "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
+    "build:watch": "pnpm build --watch",
+    "check:exports": "attw --pack .",
+    "test": "vitest --config ../../vitest.config.ts run",
+    "test:watch": "vitest --config ../../vitest.config.ts run --watch"
+  },
+  "dependencies": {
+    "@automerge/automerge": "^3.0.0",
+    "@automerge/automerge-repo": "^2.0.0",
+    "@automerge/automerge-repo-network-websocket": "^2.0.0",
+    "@automerge/automerge-repo-network-broadcastchannel": "^2.0.0",
+    "@automerge/automerge-repo-storage-indexeddb": "^2.0.0",
+    "@infinitecanvas/editor": "workspace:*",
+    "idb": "^8.0.3",
+    "lodash-es": "^4.17.22"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/lodash-es": "^4.17.12",
+    "fake-indexeddb": "^6.2.5",
+    "vitest": "^4.0.7"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
