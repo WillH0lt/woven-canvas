@@ -330,7 +330,11 @@ export class Editor {
       const syncedSingletons = [...singletonsById.values()].filter(
         (def) => def.__editor.sync !== "none",
       );
-      await this.store.initialize(syncedComponents, syncedSingletons);
+      await this.store.initialize(
+        syncedComponents,
+        syncedSingletons,
+        Object.values(this.blockDefs)
+      );
     }
 
     // Load custom fonts

@@ -15,6 +15,7 @@ import {
   type AnyEditorComponentDef,
   type AnyEditorSingletonDef,
   type ComponentSchema,
+  type BlockDef,
 } from "@infinitecanvas/editor";
 
 /**
@@ -29,6 +30,8 @@ export interface YjsStoreOptions {
   websocketUrl?: string;
   /** Time in ms before ephemeral data expires (default: 10000). Used for presence/cursor sync. */
   ephemeralTimeoutMs?: number;
+  /** Whether to start in online mode (default: true if websocketUrl is provided). Set to false for offline-first testing. */
+  startOnline?: boolean;
 }
 
 /**
@@ -70,6 +73,7 @@ export class YjsStore implements StoreAdapter {
   private captureTimeout: number;
   private websocketUrl: string | undefined;
   private ephemeralTimeoutMs: number;
+  private startOnline: boolean;
 
   private initialized: boolean = false;
 
@@ -80,12 +84,16 @@ export class YjsStore implements StoreAdapter {
   private entityIdToId: Map<number, string> = new Map();
   private entityIdToSyncedComponents: Map<number, Set<string>> = new Map();
 
+  // Map of block tag -> required component names for entity validation
+  private blockRequiredComponents: Map<string, string[]> = new Map();
+
   // Ephemeral data tracking (for presence/cursor sync via awareness)
   private localEphemeralKeys: Set<string> = new Set();
   /** Pending local ephemeral updates to batch before sending */
   private pendingLocalEphemeral: Map<string, Record<string, unknown> | null> =
     new Map();
-  private ephemeralRefreshInterval: ReturnType<typeof setInterval> | null = null;
+  private ephemeralRefreshInterval: ReturnType<typeof setInterval> | null =
+    null;
 
   // Pending changes from external sources (undo/redo, network, awareness)
   private pendingChanges: Array<
@@ -108,6 +116,7 @@ export class YjsStore implements StoreAdapter {
     this.captureTimeout = options.captureTimeout ?? 1000;
     this.websocketUrl = options.websocketUrl;
     this.ephemeralTimeoutMs = options.ephemeralTimeoutMs ?? 10000;
+    this.startOnline = options.startOnline ?? true;
     this.doc = new Y.Doc();
     this.awareness = new awarenessProtocol.Awareness(this.doc);
   }
@@ -115,12 +124,25 @@ export class YjsStore implements StoreAdapter {
   /**
    * Initialize the store with component/singleton definitions.
    * Loads from IndexedDB and sets up change observers.
+   *
+   * @param components - Component definitions to sync
+   * @param singletons - Singleton definitions to sync
+   * @param blockDefs - Block type definitions for entity validation.
+   *   Each defines required components for a valid block type.
+   *   Used to clean up orphaned entities after CRDT sync conflicts.
    */
   async initialize(
     components: AnyEditorComponentDef[],
-    singletons: AnyEditorSingletonDef[]
+    singletons: AnyEditorSingletonDef[],
+    blockDefs: BlockDef[],
   ): Promise<void> {
     if (this.initialized) return;
+
+    // Build map of block tag -> required component names for entity validation
+    for (const blockDef of blockDefs) {
+      const componentNames = blockDef.components.map((c) => c.name);
+      this.blockRequiredComponents.set(blockDef.tag, componentNames);
+    }
 
     // Build name -> def maps
     for (const componentDef of components) {
@@ -137,13 +159,13 @@ export class YjsStore implements StoreAdapter {
     // Queue all existing data from IndexedDB for the first flushChanges
     this.queueFullDocumentState();
 
-    // Initialize WebSocket provider for multiplayer (if configured)
-    if (this.websocketUrl) {
+    // Initialize WebSocket provider for multiplayer (if configured and startOnline is true)
+    if (this.websocketUrl && this.startOnline) {
       this.websocketProvider = new WebsocketProvider(
         this.websocketUrl,
         this.documentId,
         this.doc,
-        { awareness: this.awareness }
+        { awareness: this.awareness },
       );
     }
 
@@ -153,7 +175,7 @@ export class YjsStore implements StoreAdapter {
       (changes: { added: number[]; updated: number[]; removed: number[] }) => {
         // queueAwarenessChanges skips local client internally
         this.queueAwarenessChanges(changes);
-      }
+      },
     );
 
     // Start ephemeral data refresh to keep local data alive
@@ -172,7 +194,12 @@ export class YjsStore implements StoreAdapter {
     // Subscribe to doc changes for external events (undo/redo, network sync)
     this.doc.on(
       "update",
-      (_update: Uint8Array, origin: unknown, _doc: Y.Doc, transaction: Y.Transaction) => {
+      (
+        _update: Uint8Array,
+        origin: unknown,
+        _doc: Y.Doc,
+        transaction: Y.Transaction,
+      ) => {
         // Skip local edits - they already went through ECS
         // Local edits have origin === null (from direct mutations)
         if (origin === null) return;
@@ -188,7 +215,7 @@ export class YjsStore implements StoreAdapter {
           this.queueChangesFromTransaction(transaction);
           return;
         }
-      }
+      },
     );
 
     this.initialized = true;
@@ -321,7 +348,7 @@ export class YjsStore implements StoreAdapter {
     componentDef: AnyEditorComponentDef,
     id: string,
     entityId: number,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): void {
     // Register UUID -> entityId mapping
     if (!this.idToEntityId.has(id)) {
@@ -365,7 +392,7 @@ export class YjsStore implements StoreAdapter {
   onComponentUpdated(
     componentDef: AnyEditorComponentDef,
     id: string,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): void {
     // Translate refs from entityIds to syncedIds before storing
     const translatedData = this.translateRefsOutbound(componentDef, data);
@@ -457,7 +484,7 @@ export class YjsStore implements StoreAdapter {
             ctx,
             change.componentName,
             change.id,
-            change.value
+            change.value,
           );
         }
       } else if (change.type === "singleton") {
@@ -475,7 +502,7 @@ export class YjsStore implements StoreAdapter {
    */
   private translateRefsOutbound(
     componentDef: AnyEditorComponentDef,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;
     let hasRefs = false;
@@ -506,7 +533,7 @@ export class YjsStore implements StoreAdapter {
    */
   private translateRefsInbound(
     componentDef: AnyEditorComponentDef,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;
     let hasRefs = false;
@@ -541,7 +568,7 @@ export class YjsStore implements StoreAdapter {
   private removeComponentFromEntity(
     ctx: Context,
     componentName: string,
-    id: string
+    id: string,
   ): void {
     const componentDef = this.componentDefsByName.get(componentName);
     if (!componentDef) return;
@@ -554,20 +581,116 @@ export class YjsStore implements StoreAdapter {
     ) {
       removeComponent(ctx, entityId, componentDef);
 
-      // Check if only Synced remains
-      const syncedId = Synced._getComponentId(ctx);
-      let hasOtherComponents = false;
-      for (const compId of ctx.entityBuffer.getComponentIds(entityId)) {
-        if (compId !== syncedId) {
-          hasOtherComponents = true;
-          break;
-        }
+      // If "block" component was removed, the entity is deleted - clean up everything
+      if (componentName === "block") {
+        this.deleteEntityAndCleanupYjs(ctx, entityId, id);
+        return;
       }
 
-      if (!hasOtherComponents) {
+      // Check if entity still has valid component combination
+      const remainingComponents = this.getEntitySyncedComponents(ctx, entityId);
+
+      // If no synced components remain, delete entity
+      if (remainingComponents.size === 0) {
         removeEntity(ctx, entityId);
         this.idToEntityId.delete(id);
         this.entityIdToId.delete(entityId);
+        return;
+      }
+
+      // Check if remaining components form a valid block type
+      if (!this.isValidBlockEntity(id, remainingComponents)) {
+        this.deleteEntityAndCleanupYjs(ctx, entityId, id);
+      }
+    }
+  }
+
+  /**
+   * Get the set of synced component names on an entity.
+   */
+  private getEntitySyncedComponents(
+    ctx: Context,
+    entityId: number,
+  ): Set<string> {
+    const result = new Set<string>();
+    const syncedCompId = Synced._getComponentId(ctx);
+
+    for (const compId of ctx.entityBuffer.getComponentIds(entityId)) {
+      if (compId === syncedCompId) continue;
+
+      // Find component name by matching component IDs
+      for (const [name, def] of this.componentDefsByName) {
+        if (def._getComponentId(ctx) === compId) {
+          result.add(name);
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Check if the remaining components form a valid block entity.
+   * Gets the tag from the block component and validates against that block definition.
+   */
+  private isValidBlockEntity(id: string, components: Set<string>): boolean {
+    // Must have "block" component
+    if (!components.has("block")) {
+      return false;
+    }
+
+    // Get the block component data from Yjs to read the tag
+    const componentsMap = this.doc.getMap("components");
+    const blockMap = componentsMap.get("block") as Y.Map<unknown> | undefined;
+    const blockData = blockMap?.get(id) as Record<string, unknown> | undefined;
+    const tag = blockData?.tag as string | undefined;
+
+    if (!tag) {
+      return false;
+    }
+
+    // Get required components for this block type
+    const requiredNames = this.blockRequiredComponents.get(tag);
+    if (!requiredNames) {
+      // Unknown tag - invalid
+      return false;
+    }
+
+    // Check if all required components are present
+    return requiredNames.every((name) => components.has(name));
+  }
+
+  /**
+   * Delete an entity and clean up all its components from Yjs.
+   */
+  private deleteEntityAndCleanupYjs(
+    ctx: Context,
+    entityId: number,
+    id: string,
+  ): void {
+    const componentsMap = this.doc.getMap("components");
+
+    // Remove all remaining components from ECS and track which to clean from Yjs
+    const componentsToClean: string[] = [];
+    for (const [name, def] of this.componentDefsByName) {
+      if (hasComponent(ctx, entityId, def)) {
+        removeComponent(ctx, entityId, def);
+        componentsToClean.push(name);
+      }
+    }
+
+    // Remove entity
+    removeEntity(ctx, entityId);
+    this.idToEntityId.delete(id);
+    this.entityIdToId.delete(entityId);
+
+    // Clean up components from Yjs to propagate deletion
+    for (const name of componentsToClean) {
+      const componentMap = componentsMap.get(name) as
+        | Y.Map<unknown>
+        | undefined;
+      if (componentMap?.has(id)) {
+        componentMap.delete(id);
       }
     }
   }
@@ -578,7 +701,7 @@ export class YjsStore implements StoreAdapter {
   private updateSingleton(
     ctx: Context,
     singletonName: string,
-    value: unknown
+    value: unknown,
   ): void {
     const singletonDef = this.singletonDefsByName.get(singletonName);
     if (singletonDef) {
@@ -594,7 +717,7 @@ export class YjsStore implements StoreAdapter {
     ctx: Context,
     componentName: string,
     id: string,
-    value: Record<string, unknown>
+    value: Record<string, unknown>,
   ): void {
     const componentDef = this.componentDefsByName.get(componentName);
     if (!componentDef) return;
@@ -833,6 +956,43 @@ export class YjsStore implements StoreAdapter {
    */
   getAwareness(): awarenessProtocol.Awareness {
     return this.awareness;
+  }
+
+  /**
+   * Check if the store is currently connected to the WebSocket server.
+   */
+  isOnline(): boolean {
+    return (
+      this.websocketProvider !== null && this.websocketProvider.wsconnected
+    );
+  }
+
+  /**
+   * Set the online/offline mode.
+   * When online, connects to the WebSocket server for multiplayer sync.
+   * When offline, disconnects but keeps local persistence working.
+   *
+   * @param online - Whether to be online (connected to WebSocket)
+   */
+  setOnline(online: boolean): void {
+    if (!this.websocketUrl) {
+      // No WebSocket URL configured, can't go online
+      return;
+    }
+
+    if (online && !this.websocketProvider) {
+      // Connect to WebSocket
+      this.websocketProvider = new WebsocketProvider(
+        this.websocketUrl,
+        this.documentId,
+        this.doc,
+        { awareness: this.awareness },
+      );
+    } else if (!online && this.websocketProvider) {
+      // Disconnect from WebSocket
+      this.websocketProvider.destroy();
+      this.websocketProvider = null;
+    }
   }
 
   /**

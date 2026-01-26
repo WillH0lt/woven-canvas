@@ -1,6 +1,7 @@
 import type { Context } from "@infinitecanvas/ecs";
 import type { AnyEditorComponentDef } from "./EditorComponentDef";
 import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
+import type { BlockDef } from "./types";
 
 /**
  * Store adapter interface for persistence and sync.
@@ -108,10 +109,12 @@ export interface StoreAdapter {
    *
    * @param components - Array of all synced component definitions (document + ephemeral)
    * @param singletons - Array of all synced singleton definitions (document + ephemeral)
+   * @param blockDefs - Block type definitions for entity validation after CRDT sync conflicts
    */
   initialize(
     components: AnyEditorComponentDef[],
-    singletons: AnyEditorSingletonDef[]
+    singletons: AnyEditorSingletonDef[],
+    blockDefs: BlockDef[]
   ): Promise<void>;
 
   /**
@@ -150,4 +153,20 @@ export interface StoreAdapter {
    * Optional - implement if your store supports undo/redo.
    */
   canRedo?(): boolean;
+
+  /**
+   * Check if the store is currently online (connected to sync server).
+   * Optional - implement if your store supports online/offline modes.
+   */
+  isOnline?(): boolean;
+
+  /**
+   * Set the online/offline mode.
+   * When online, connects to the sync server for multiplayer.
+   * When offline, works locally only.
+   * Optional - implement if your store supports online/offline modes.
+   *
+   * @param online - Whether to be online
+   */
+  setOnline?(online: boolean): void;
 }

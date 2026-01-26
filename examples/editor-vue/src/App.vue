@@ -5,7 +5,7 @@ import Editor from "./Editor.vue";
 <template>
   <div class="container">
     <Editor class="studio"></Editor>
-    <Editor class="studio"></Editor>
+    <!-- <Editor class="studio"></Editor> -->
   </div>
 </template>
 
