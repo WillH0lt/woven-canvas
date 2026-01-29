@@ -308,7 +308,8 @@ export class Component<T extends ComponentSchema> {
   }
 
   /**
-   * Copy data into a component instance and push a CHANGED event
+   * Copy data into a component instance and push a CHANGED event.
+   * Fields not present in data are reset to their defaults.
    * @internal
    */
   copy(entityId: number, data: any): void {
@@ -324,6 +325,23 @@ export class Component<T extends ComponentSchema> {
     }
 
     // For singletons, use SINGLETON_ENTITY_ID for change tracking
+    const eventEntityId = this.isSingleton ? SINGLETON_ENTITY_ID : entityId;
+    this.eventBuffer?.pushChanged(eventEntityId, this.componentId);
+  }
+
+  /**
+   * Patch a component instance with partial data and push a CHANGED event.
+   * Only fields present in data are updated; all other fields are left untouched.
+   * @internal
+   */
+  patch(entityId: number, data: any): void {
+    for (const fieldName in data) {
+      const field = this.fields[fieldName];
+      if (!field) continue;
+      const array = (this.buffer as any)[fieldName];
+      field.setValue(array, entityId, data[fieldName]);
+    }
+
     const eventEntityId = this.isSingleton ? SINGLETON_ENTITY_ID : entityId;
     this.eventBuffer?.pushChanged(eventEntityId, this.componentId);
   }
@@ -509,6 +527,28 @@ export class ComponentDef<T extends ComponentSchema> {
   }
 
   /**
+   * Patch a component with partial data. Only specified fields are updated;
+   * all other fields are left untouched.
+   *
+   * @param ctx - The context containing the component instance
+   * @param entityId - The entity ID to patch
+   * @param data - Partial component data (only specified fields are written)
+   *
+   * @example
+   * ```typescript
+   * // Only updates x and y, leaves z and other fields unchanged
+   * Position.patch(ctx, entityId, { x: 100, y: 200 });
+   * ```
+   */
+  patch(
+    ctx: Context,
+    entityId: EntityId,
+    data: Partial<InferComponentInput<T>>
+  ): void {
+    this._getInstance(ctx).patch(entityId, data);
+  }
+
+  /**
    * Create a plain object snapshot of entity's component data.
    * Unlike read(), this returns a regular object that can be safely spread,
    * stored, or passed around without the getter/setter binding behavior.
@@ -688,6 +728,23 @@ export class SingletonDef<T extends ComponentSchema> {
    */
   copy(ctx: Context, data: Partial<InferComponentInput<T>>): void {
     this._getInstance(ctx).copy(SINGLETON_INDEX, data);
+  }
+
+  /**
+   * Patch the singleton with partial data. Only specified fields are updated;
+   * all other fields are left untouched.
+   *
+   * @param ctx - The context containing the singleton instance
+   * @param data - Partial singleton data (only specified fields are written)
+   *
+   * @example
+   * ```typescript
+   * // Only updates x, leaves y and other fields unchanged
+   * Mouse.patch(ctx, { x: 100 });
+   * ```
+   */
+  patch(ctx: Context, data: Partial<InferComponentInput<T>>): void {
+    this._getInstance(ctx).patch(SINGLETON_INDEX, data);
   }
 
   /**

@@ -1,0 +1,214 @@
+import type { Adapter } from "../Adapter";
+import type { Mutation, Patch, ComponentData } from "../types";
+import { merge } from "../mutations";
+import { Origin } from "../constants";
+
+interface Checkpoint {
+  forward: Patch[];
+  inverse: Patch[];
+}
+
+export interface HistoryAdapterOptions {
+  /** Inactivity timeout before creating a checkpoint (ms). Default: 1000 */
+  inactivityTimeout?: number;
+  /** Maximum number of checkpoints to keep. Default: 100 */
+  maxCheckpoints?: number;
+}
+
+/**
+ * Undo/redo adapter that creates checkpoints based on inactivity.
+ *
+ * Tracks document state by observing mutations via push() and computes
+ * minimal inverse mutations for each change. After 1 second of inactivity,
+ * bundles accumulated forward/inverse mutations into a checkpoint.
+ *
+ * Only tracks mutations with origin 'ecs' (user actions).
+ * Undo applies the inverse mutations; redo re-applies the forward mutations.
+ */
+export class HistoryAdapter implements Adapter {
+  /** Current state, used to compute inverse mutations */
+  private state: Record<string, ComponentData> = {};
+  private undoStack: Checkpoint[] = [];
+  private redoStack: Checkpoint[] = [];
+  private pendingForward: Patch[] = [];
+  private pendingInverse: Patch[] = [];
+  private pendingPullPatches: Patch[] = [];
+  private dirty = false;
+  private inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+  private inactivityTimeout: number;
+  private maxCheckpoints: number;
+
+  constructor(options: HistoryAdapterOptions = {}) {
+    this.inactivityTimeout = options.inactivityTimeout ?? 1000;
+    this.maxCheckpoints = options.maxCheckpoints ?? 100;
+  }
+
+  async init(): Promise<void> {}
+
+  push(mutations: Mutation[]): void {
+    if (mutations.length === 0) return;
+
+    // Apply every mutation in the order received so that all adapters
+    // converge to the same state.  Only ECS-originated mutations are
+    // recorded for undo/redo; everything else (including our own
+    // History-origin output from undo/redo) just updates state.
+    for (const m of mutations) {
+      if (m.origin === Origin.ECS) {
+        if (Object.keys(m.patch).length === 0) continue;
+
+        const inverse = this.applyAndComputeInverse(m.patch);
+        this.pendingForward.push(m.patch);
+        this.pendingInverse.push(inverse);
+        this.dirty = true;
+        this.resetInactivityTimer();
+        this.redoStack = [];
+      } else {
+        // History, Websocket, Persistence — apply to state only
+        this.applyToState(m.patch);
+      }
+    }
+  }
+
+  pull(): Mutation | null {
+    if (this.pendingPullPatches.length === 0) return null;
+    const patch = merge(...this.pendingPullPatches);
+    this.pendingPullPatches = [];
+    return { patch, origin: Origin.History };
+  }
+
+  undo(): boolean {
+    if (this.dirty) {
+      this.createCheckpoint();
+    }
+
+    if (this.undoStack.length === 0) return false;
+
+    const checkpoint = this.undoStack.pop()!;
+    this.redoStack.push(checkpoint);
+
+    for (const diff of checkpoint.inverse) {
+      this.applyToState(diff);
+    }
+
+    this.pendingPullPatches.push(...checkpoint.inverse);
+
+    return true;
+  }
+
+  redo(): boolean {
+    if (this.redoStack.length === 0) return false;
+
+    const checkpoint = this.redoStack.pop()!;
+    this.undoStack.push(checkpoint);
+
+    for (const diff of checkpoint.forward) {
+      this.applyToState(diff);
+    }
+
+    this.pendingPullPatches.push(...checkpoint.forward);
+
+    return true;
+  }
+
+  canUndo(): boolean {
+    return this.undoStack.length > 0 || this.dirty;
+  }
+
+  canRedo(): boolean {
+    return this.redoStack.length > 0;
+  }
+
+  close(): void {
+    this.clearInactivityTimer();
+  }
+
+  private createCheckpoint(): void {
+    if (!this.dirty) return;
+
+    this.clearInactivityTimer();
+    this.undoStack.push({
+      forward: this.pendingForward,
+      inverse: [...this.pendingInverse].reverse(),
+    });
+    this.pendingForward = [];
+    this.pendingInverse = [];
+    this.dirty = false;
+
+    while (this.undoStack.length > this.maxCheckpoints) {
+      this.undoStack.shift();
+    }
+  }
+
+  /**
+   * Apply a diff to state and return the inverse diff.
+   */
+  private applyAndComputeInverse(diff: Patch): Patch {
+    const inverse: Patch = {};
+
+    for (const [key, value] of Object.entries(diff)) {
+      const prev = this.state[key];
+
+      if (value === null) {
+        // Deletion: inverse restores previous value
+        if (prev !== undefined) {
+          inverse[key] = { _exists: true, ...prev };
+          delete this.state[key];
+        }
+      } else if (value._exists) {
+        // Addition/replacement: inverse is deletion or restore previous
+        if (prev === undefined) {
+          inverse[key] = null;
+        } else {
+          inverse[key] = { _exists: true, ...prev };
+        }
+        const { _exists, ...data } = value;
+        this.state[key] = data as ComponentData;
+      } else {
+        // Partial update: inverse contains previous values of changed fields
+        const inverseChanges: ComponentData = {};
+        for (const field of Object.keys(value)) {
+          if (prev !== undefined && field in prev) {
+            inverseChanges[field] = prev[field];
+          }
+        }
+        if (Object.keys(inverseChanges).length > 0) {
+          inverse[key] = inverseChanges;
+        }
+        this.state[key] = { ...prev, ...value };
+      }
+    }
+
+    return inverse;
+  }
+
+  /**
+   * Apply a diff to state without computing an inverse.
+   * Used during undo/redo to keep state in sync.
+   */
+  private applyToState(diff: Patch): void {
+    for (const [key, value] of Object.entries(diff)) {
+      if (value === null) {
+        delete this.state[key];
+      } else if (value._exists) {
+        const { _exists, ...data } = value;
+        this.state[key] = data as ComponentData;
+      } else {
+        this.state[key] = { ...this.state[key], ...value };
+      }
+    }
+  }
+
+  private resetInactivityTimer(): void {
+    this.clearInactivityTimer();
+    this.inactivityTimer = setTimeout(() => {
+      this.createCheckpoint();
+    }, this.inactivityTimeout);
+  }
+
+  private clearInactivityTimer(): void {
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = null;
+    }
+  }
+}
