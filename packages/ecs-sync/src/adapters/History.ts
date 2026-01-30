@@ -84,11 +84,23 @@ export class HistoryAdapter implements Adapter {
     if (this.undoStack.length === 0) return false;
 
     const checkpoint = this.undoStack.pop()!;
-    this.redoStack.push(checkpoint);
 
-    for (const diff of checkpoint.inverse) {
-      this.applyToState(diff);
+    // Apply inverse patches via applyAndComputeInverse so we capture the
+    // current state of every touched key *before* the undo.  These captured
+    // values become the redo entry's forward patches — ensuring that redo
+    // restores the exact pre-undo state (including any remote changes).
+    const recomputedForward: Patch[] = [];
+    for (const patch of checkpoint.inverse) {
+      const inversePatch = this.applyAndComputeInverse(patch);
+      recomputedForward.push(inversePatch);
     }
+
+    // recomputedForward is in inverse-application order (reverse of creation
+    // order).  Reverse it so redo re-applies in the natural forward order.
+    this.redoStack.push({
+      forward: [...recomputedForward].reverse(),
+      inverse: checkpoint.inverse,
+    });
 
     this.pendingPullPatches.push(...checkpoint.inverse);
 
@@ -99,11 +111,21 @@ export class HistoryAdapter implements Adapter {
     if (this.redoStack.length === 0) return false;
 
     const checkpoint = this.redoStack.pop()!;
-    this.undoStack.push(checkpoint);
 
-    for (const diff of checkpoint.forward) {
-      this.applyToState(diff);
+    // Apply forward patches via applyAndComputeInverse so we capture the
+    // current state of every touched key *before* the redo.  These captured
+    // values become the undo entry's inverse patches — ensuring that a
+    // subsequent undo restores the exact pre-redo state.
+    const recomputedInverse: Patch[] = [];
+    for (const patch of checkpoint.forward) {
+      const inversePatch = this.applyAndComputeInverse(patch);
+      recomputedInverse.push(inversePatch);
     }
+
+    this.undoStack.push({
+      forward: checkpoint.forward,
+      inverse: [...recomputedInverse].reverse(),
+    });
 
     this.pendingPullPatches.push(...checkpoint.forward);
 

@@ -275,6 +275,128 @@ describe("HistoryAdapter", () => {
     });
   });
 
+  describe("undo/redo with remote changes (Figma principle)", () => {
+    it("undo then redo is a no-op when remote changes occurred", () => {
+      const adapter = createAdapter();
+
+      // User changes x: 0 → 10
+      adapter.push([ecsMutation({ "e1/Pos": { _exists: true, x: 0 } })]);
+      vi.advanceTimersByTime(1000);
+      adapter.push([ecsMutation({ "e1/Pos": { x: 10 } })]);
+      vi.advanceTimersByTime(1000);
+
+      // Remote changes x to 50
+      adapter.push([wsMutation({ "e1/Pos": { x: 50 } })]);
+
+      // Undo the user's last change
+      adapter.undo();
+      const undoMut = adapter.pull()!;
+      // Inverse restores x to 0 (pre-user-change value)
+      expect(undoMut.patch["e1/Pos"]).toEqual({ x: 0 });
+
+      // Push the undo result back through (simulating the sync loop)
+      adapter.push([{ patch: undoMut.patch, origin: Origin.History }]);
+
+      // Redo — should restore x to 50 (the pre-undo state), NOT x to 10
+      adapter.redo();
+      const redoMut = adapter.pull()!;
+      expect(redoMut.patch["e1/Pos"]).toEqual({ x: 50 });
+    });
+
+    it("multiple undo then multiple redo restores original state with remote changes", () => {
+      const adapter = createAdapter();
+
+      // User creates entity
+      adapter.push([ecsMutation({ "e1/Pos": { _exists: true, x: 0, y: 0 } })]);
+      vi.advanceTimersByTime(1000);
+
+      // User changes x
+      adapter.push([ecsMutation({ "e1/Pos": { x: 10 } })]);
+      vi.advanceTimersByTime(1000);
+
+      // User changes y
+      adapter.push([ecsMutation({ "e1/Pos": { y: 20 } })]);
+      vi.advanceTimersByTime(1000);
+
+      // Remote changes x to 99
+      adapter.push([wsMutation({ "e1/Pos": { x: 99 } })]);
+
+      // State is now: x=99, y=20
+
+      // Undo y change
+      adapter.undo();
+      const undo1 = adapter.pull()!;
+      adapter.push([{ patch: undo1.patch, origin: Origin.History }]);
+
+      // Undo x change
+      adapter.undo();
+      const undo2 = adapter.pull()!;
+      adapter.push([{ patch: undo2.patch, origin: Origin.History }]);
+
+      // Redo x change — should restore x to 99 (pre-first-undo), not 10
+      adapter.redo();
+      const redo1 = adapter.pull()!;
+      adapter.push([{ patch: redo1.patch, origin: Origin.History }]);
+      expect(redo1.patch["e1/Pos"]).toEqual({ x: 99 });
+
+      // Redo y change — should restore y to 20
+      adapter.redo();
+      const redo2 = adapter.pull()!;
+      expect(redo2.patch["e1/Pos"]).toEqual({ y: 20 });
+    });
+
+    it("redo after remote change on same key preserves pre-undo state", () => {
+      const adapter = createAdapter();
+
+      // User adds entity with x=10
+      adapter.push([ecsMutation({ "e1/Pos": { _exists: true, x: 10 } })]);
+      vi.advanceTimersByTime(1000);
+
+      // Remote changes x to 50
+      adapter.push([wsMutation({ "e1/Pos": { x: 50 } })]);
+
+      // Undo creation — deletes entity
+      adapter.undo();
+      const undoMut = adapter.pull()!;
+      expect(undoMut.patch["e1/Pos"]).toEqual({ _exists: false });
+      adapter.push([{ patch: undoMut.patch, origin: Origin.History }]);
+
+      // Redo — should restore entity with x=50 (remote value was present)
+      adapter.redo();
+      const redoMut = adapter.pull()!;
+      expect(redoMut.patch["e1/Pos"]).toEqual({ _exists: true, x: 50 });
+    });
+
+    it("repeated undo/redo cycles remain stable", () => {
+      const adapter = createAdapter();
+
+      adapter.push([ecsMutation({ "e1/Pos": { _exists: true, x: 0 } })]);
+      vi.advanceTimersByTime(1000);
+      adapter.push([ecsMutation({ "e1/Pos": { x: 10 } })]);
+      vi.advanceTimersByTime(1000);
+
+      // Remote changes x to 50
+      adapter.push([wsMutation({ "e1/Pos": { x: 50 } })]);
+
+      // Cycle 1: undo then redo
+      adapter.undo();
+      let mut = adapter.pull()!;
+      adapter.push([{ patch: mut.patch, origin: Origin.History }]);
+      adapter.redo();
+      mut = adapter.pull()!;
+      adapter.push([{ patch: mut.patch, origin: Origin.History }]);
+      expect(mut.patch["e1/Pos"]).toEqual({ x: 50 });
+
+      // Cycle 2: undo then redo again — should still restore to 50
+      adapter.undo();
+      mut = adapter.pull()!;
+      adapter.push([{ patch: mut.patch, origin: Origin.History }]);
+      adapter.redo();
+      mut = adapter.pull()!;
+      expect(mut.patch["e1/Pos"]).toEqual({ x: 50 });
+    });
+  });
+
   describe("multiple keys in single mutation", () => {
     it("handles mutations affecting multiple entity/component keys", () => {
       const adapter = createAdapter();
