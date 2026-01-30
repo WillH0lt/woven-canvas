@@ -3,78 +3,60 @@ package controllers
 import (
 	"encoding/json"
 	"log"
-	"time"
 
+	"ecs-sync-server/models"
 	"ecs-sync-server/socket"
 )
 
-const oplogMaxAge = 1 * time.Hour
-
-// Patch mirrors the TypeScript Patch type:
-// Record<string, ComponentData | null>
-type Patch map[string]interface{}
-
-// ClientMessage is what the client sends over WebSocket.
-type ClientMessage struct {
-	Type         string  `json:"type"`
-	Patches      []Patch `json:"patches,omitempty"`
-	LastTimestamp int64   `json:"lastTimestamp,omitempty"`
-}
-
-// ServerMessage is what the server broadcasts to clients.
-type ServerMessage struct {
-	Type      string                 `json:"type"`
-	Patches   []Patch                `json:"patches,omitempty"`
-	ClientID  string                 `json:"clientId,omitempty"`
-	Timestamp int64                  `json:"timestamp"`
-	State     map[string]interface{} `json:"state,omitempty"`
-}
-
-// OpLogEntry stores a broadcast for replay on reconnection.
-type OpLogEntry struct {
-	Patches   []Patch
-	ClientID  string
-	Timestamp int64
-	CreatedAt time.Time
-}
-
 type RoomController struct {
-	hub       *socket.Hub
-	timestamp int64
-	oplog     []OpLogEntry
-	state     map[string]interface{}
+	hub        *socket.Hub
+	timestamp  int64
+	state      map[string]models.ComponentData
+	timestamps map[string]models.FieldTimestamps
 }
 
 // NewRoomController creates a RoomController and wires it to the hub.
 func NewRoomController(hub *socket.Hub) *RoomController {
 	rc := &RoomController{
-		hub:   hub,
-		state: make(map[string]interface{}),
+		hub:        hub,
+		state:      make(map[string]models.ComponentData),
+		timestamps: make(map[string]models.FieldTimestamps),
 	}
 	hub.OnMessage = rc.HandleMessage
-	hub.OnTick = rc.PruneOplog
 	return rc
 }
 
 func (r *RoomController) HandleMessage(client *socket.Client, data []byte) {
-	var msg ClientMessage
-	if err := json.Unmarshal(data, &msg); err != nil {
+	var envelope struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &envelope); err != nil {
 		log.Printf("Invalid message from %s: %v", client.ClientID, err)
 		return
 	}
 
-	switch msg.Type {
+	switch envelope.Type {
 	case "patch":
-		r.handlePatch(client, msg.Patches)
+		var req models.PatchRequest
+		if err := json.Unmarshal(data, &req); err != nil {
+			log.Printf("Invalid patch message from %s: %v", client.ClientID, err)
+			return
+		}
+		r.handlePatch(client, req)
 	case "reconnect":
-		r.handleReconnect(client, msg.LastTimestamp)
+		var req models.ReconnectRequest
+		if err := json.Unmarshal(data, &req); err != nil {
+			log.Printf("Invalid reconnect message from %s: %v", client.ClientID, err)
+			return
+		}
+		r.handleReconnect(client, req)
 	default:
-		log.Printf("Unknown message type from %s: %s", client.ClientID, msg.Type)
+		log.Printf("Unknown message type from %s: %s", client.ClientID, envelope.Type)
 	}
 }
 
-func (r *RoomController) handlePatch(client *socket.Client, patches []Patch) {
-	if len(patches) == 0 {
+func (r *RoomController) handlePatch(client *socket.Client, req models.PatchRequest) {
+	if len(req.Patches) == 0 {
 		return
 	}
 
@@ -82,129 +64,134 @@ func (r *RoomController) handlePatch(client *socket.Client, patches []Patch) {
 	ts := r.timestamp
 
 	// Apply patches to document state
-	for _, patch := range patches {
-		r.applyPatch(patch)
+	for _, patch := range req.Patches {
+		r.applyPatch(patch, ts)
 	}
 
-	// Store in oplog for reconnection replay
-	r.oplog = append(r.oplog, OpLogEntry{
-		Patches:   patches,
-		ClientID:  client.ClientID,
+	// Ack the sender with their messageId and the assigned timestamp
+	ack := models.AckResponse{
+		Type:      "ack",
+		MessageID: req.MessageID,
 		Timestamp: ts,
-		CreatedAt: time.Now(),
-	})
+	}
+	if ackData, err := json.Marshal(ack); err == nil {
+		r.hub.SendTo(client, ackData)
+	}
 
-	// Broadcast to ALL clients (including sender — echo protocol)
-	serverMsg := ServerMessage{
+	// Broadcast patches to all other clients
+	broadcast := models.PatchBroadcast{
 		Type:      "patch",
-		Patches:   patches,
+		Patches:   req.Patches,
 		ClientID:  client.ClientID,
 		Timestamp: ts,
 	}
-
-	data, err := json.Marshal(serverMsg)
-	if err != nil {
-		log.Printf("Failed to marshal server message: %v", err)
-		return
+	if data, err := json.Marshal(broadcast); err == nil {
+		r.hub.BroadcastExcept(client, data)
 	}
-
-	r.hub.Broadcast(data)
 }
 
-func (r *RoomController) handleReconnect(client *socket.Client, lastTimestamp int64) {
-	// Find first oplog entry after lastTimestamp
-	startIdx := -1
-	for i, entry := range r.oplog {
-		if entry.Timestamp > lastTimestamp {
-			startIdx = i
-			break
-		}
-	}
+func (r *RoomController) handleReconnect(client *socket.Client, req models.ReconnectRequest) {
+	// Apply offline patches the client accumulated while disconnected
+	if len(req.Patches) > 0 {
+		r.timestamp++
+		ts := r.timestamp
 
-	if lastTimestamp > 0 && startIdx == -1 && r.timestamp > lastTimestamp {
-		// Client is too far behind (oplog has been pruned), send full sync
-		serverMsg := ServerMessage{
-			Type:      "full-sync",
-			State:     r.state,
-			Timestamp: r.timestamp,
+		for _, patch := range req.Patches {
+			r.applyPatch(patch, ts)
 		}
-		data, err := json.Marshal(serverMsg)
-		if err != nil {
-			log.Printf("Failed to marshal full-sync: %v", err)
-			return
-		}
-		r.hub.SendTo(client, data)
-		return
-	}
 
-	if startIdx == -1 {
-		return
-	}
-
-	// Replay missed operations
-	for _, entry := range r.oplog[startIdx:] {
-		serverMsg := ServerMessage{
+		// Broadcast offline patches to other clients
+		broadcast := models.PatchBroadcast{
 			Type:      "patch",
-			Patches:   entry.Patches,
-			ClientID:  entry.ClientID,
-			Timestamp: entry.Timestamp,
+			Patches:   req.Patches,
+			ClientID:  client.ClientID,
+			Timestamp: ts,
 		}
-		data, err := json.Marshal(serverMsg)
-		if err != nil {
-			continue
+		if data, err := json.Marshal(broadcast); err == nil {
+			r.hub.BroadcastExcept(client, data)
 		}
-		r.hub.SendTo(client, data)
 	}
+
+	// Build diff since client's last known timestamp
+	diff := r.buildDiff(req.LastTimestamp)
+	if len(diff) == 0 {
+		return
+	}
+
+	response := models.PatchBroadcast{
+		Type:      "patch",
+		Patches:   []models.Patch{diff},
+		Timestamp: r.timestamp,
+	}
+	data, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("Failed to marshal reconnect patch: %v", err)
+		return
+	}
+	r.hub.SendTo(client, data)
 }
 
-// applyPatch merges a patch into the document state.
-// null values delete the key, otherwise fields are merged.
-func (r *RoomController) applyPatch(patch Patch) {
-	for key, value := range patch {
-		if value == nil {
-			delete(r.state, key)
-			continue
-		}
+// buildDiff walks the timestamps record and collects all state fields
+// that changed after the given timestamp into a single patch.
+func (r *RoomController) buildDiff(since int64) models.Patch {
+	diff := make(models.Patch)
 
+	for key, fieldTs := range r.timestamps {
+		stateMap := r.state[key]
+		fieldDiff := make(models.ComponentData)
+		for field, ts := range fieldTs {
+			if ts > since {
+				fieldDiff[field] = stateMap[field]
+			}
+		}
+		if len(fieldDiff) > 0 {
+			diff[key] = fieldDiff
+		}
+	}
+
+	return diff
+}
+
+// applyPatch merges a patch into the document state and records
+// field-level timestamps. A patch with _exists: false replaces the
+// entry entirely (clearing old fields) to act as a tombstone.
+func (r *RoomController) applyPatch(patch models.Patch, ts int64) {
+	for key, value := range patch {
 		valueMap, ok := value.(map[string]interface{})
 		if !ok {
-			r.state[key] = value
+			log.Printf("Unexpected non-map value for key %s, skipping", key)
+			continue
+		}
+
+		// _exists: false replaces the entire entry, clearing old fields
+		if exists, ok := valueMap["_exists"]; ok && exists == false {
+			r.state[key] = valueMap
+			r.setFieldTimestamps(key, valueMap, ts)
 			continue
 		}
 
 		existing, exists := r.state[key]
 		if !exists {
 			r.state[key] = valueMap
+			r.setFieldTimestamps(key, valueMap, ts)
 			continue
 		}
 
-		existingMap, ok := existing.(map[string]interface{})
-		if !ok {
-			r.state[key] = valueMap
-			continue
-		}
-
-		// Merge fields into existing component data
+		// Merge fields into existing component data and record timestamps
 		for k, v := range valueMap {
-			existingMap[k] = v
+			existing[k] = v
+		}
+		for k := range valueMap {
+			r.timestamps[key][k] = ts
 		}
 	}
 }
 
-// PruneOplog removes oplog entries older than oplogMaxAge.
-func (r *RoomController) PruneOplog() {
-	cutoff := time.Now().Add(-oplogMaxAge)
-	idx := 0
-	for i, entry := range r.oplog {
-		if entry.CreatedAt.After(cutoff) {
-			idx = i
-			break
-		}
-		idx = i + 1
+// setFieldTimestamps creates a new timestamp entry for all fields in a component.
+func (r *RoomController) setFieldTimestamps(key string, fields models.ComponentData, ts int64) {
+	tsMap := make(models.FieldTimestamps, len(fields))
+	for k := range fields {
+		tsMap[k] = ts
 	}
-
-	if idx > 0 {
-		r.oplog = r.oplog[idx:]
-		log.Printf("Pruned %d oplog entries, %d remaining", idx, len(r.oplog))
-	}
+	r.timestamps[key] = tsMap
 }

@@ -44,7 +44,7 @@ class MockAdapter implements Adapter {
 
   private applyPatch(patch: Patch) {
     for (const [key, value] of Object.entries(patch)) {
-      if (value === null) {
+      if (value._exists === false) {
         delete this.state[key];
       } else if (value._exists) {
         const { _exists, ...data } = value;
@@ -379,7 +379,7 @@ describe("Sync loop convergence", () => {
       ecs.state["e1/Pos"] = { x: 5 };
 
       // ECS deletes, WS updates
-      ecs.enqueue({ "e1/Pos": null });
+      ecs.enqueue({ "e1/Pos": { _exists: false } });
       ws.enqueue({ "e1/Pos": { x: 99 } });
 
       syncLoop([ecs, history, ws]);
@@ -389,8 +389,8 @@ describe("Sync loop convergence", () => {
       // ECS-mock receives ws:{x:99} → state = {x:5} + {x:99} = {x:99}
       expect(ecs.state["e1/Pos"]).toEqual({ x: 99 });
 
-      // History: ECS null (delete), then WS {x:99} (partial re-creates)
-      // state["e1/Pos"] deleted, then state["e1/Pos"] = {x:99}
+      // History: ECS {_exists:false} (delete), then WS {x:99} (partial re-creates)
+      // state["e1/Pos"] = {_exists:false}, then state["e1/Pos"] = {x:99}
       expect(historyState["e1/Pos"]).toEqual({ x: 99 });
 
       // Both agree the entity exists with x=99

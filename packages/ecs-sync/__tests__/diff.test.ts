@@ -3,17 +3,17 @@ import { diffFields, diffComponent } from "../src/diff";
 import type { EntityId } from "@infinitecanvas/ecs";
 
 describe("diffFields", () => {
-  it("returns null when both are null", () => {
-    expect(diffFields(null, null)).toBe(null);
+  it("returns null when both are deleted", () => {
+    expect(diffFields({ _exists: false }, { _exists: false })).toBe(null);
   });
 
-  it("returns next when prev is null", () => {
+  it("returns next when prev is deleted", () => {
     const next = { x: 10, y: 20 };
-    expect(diffFields(null, next)).toEqual(next);
+    expect(diffFields({ _exists: false }, next)).toEqual(next);
   });
 
-  it("returns null when next is null", () => {
-    expect(diffFields({ x: 10 }, null)).toBe(null);
+  it("returns null when next is deleted", () => {
+    expect(diffFields({ x: 10 }, { _exists: false })).toBe(null);
   });
 
   it("returns null when no fields changed", () => {
@@ -62,22 +62,22 @@ describe("diffComponent", () => {
   const entityId = "uuid-123" as unknown as EntityId;
   const componentName = "Position";
 
-  it("returns deletion patch when next is null and prev exists", () => {
+  it("returns deletion patch when next is deleted and prev exists", () => {
     const prev = { x: 10, y: 20 };
-    expect(diffComponent(prev, null, entityId, componentName)).toEqual({
-      "uuid-123/Position": null,
+    expect(diffComponent(prev, { _exists: false }, entityId, componentName)).toEqual({
+      "uuid-123/Position": { _exists: false },
     });
   });
 
-  it("returns addition patch with _exists when prev is null", () => {
+  it("returns addition patch with _exists when prev is deleted", () => {
     const next = { x: 10, y: 20 };
-    expect(diffComponent(null, next, entityId, componentName)).toEqual({
+    expect(diffComponent({ _exists: false }, next, entityId, componentName)).toEqual({
       "uuid-123/Position": { _exists: true, x: 10, y: 20 },
     });
   });
 
-  it("returns null when both are null", () => {
-    expect(diffComponent(null, null, entityId, componentName)).toBe(null);
+  it("returns null when both are deleted", () => {
+    expect(diffComponent({ _exists: false }, { _exists: false }, entityId, componentName)).toBe(null);
   });
 
   it("returns null when no fields changed", () => {

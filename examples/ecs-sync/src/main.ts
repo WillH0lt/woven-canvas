@@ -98,6 +98,10 @@ const world = new World(
   },
 );
 
+// Read offline preference from localStorage
+const OFFLINE_KEY = "ecs-sync-offline";
+let isOffline = localStorage.getItem(OFFLINE_KEY) === "true";
+
 // Initialize the synchronizer with transport
 const editorSync = new EditorSync({
   documentId: "ecs-sync-demo",
@@ -107,6 +111,7 @@ const editorSync = new EditorSync({
   websocket: {
     url: "ws://localhost:8087/ws",
     clientId: crypto.randomUUID(),
+    startOffline: isOffline,
   },
 });
 
@@ -120,6 +125,7 @@ const intersection = new THREE.Vector3();
 
 let draggedEntity: number | null = null;
 let dragOffset = new THREE.Vector3();
+let dragStartPos = new THREE.Vector2();
 
 // Get 3D position from mouse on drag plane
 function getMousePosition3D(clientX: number, clientY: number): THREE.Vector3 {
@@ -188,6 +194,8 @@ document.addEventListener("mousemove", (e) => {
 document.addEventListener("mousedown", (e) => {
   if (e.button !== 0) return; // Left click only
 
+  dragStartPos.set(e.clientX, e.clientY);
+
   const hoveredEid = getEntityUnderMouse(e.clientX, e.clientY);
 
   if (hoveredEid !== null) {
@@ -206,37 +214,28 @@ document.addEventListener("mousedown", (e) => {
       // Update drag plane height to sphere's y position
       dragPlane.constant = -sphere.y;
     });
-  } else {
-    // Create new sphere at click position
-    const pos = getMousePosition3D(e.clientX, e.clientY);
-
-    world.nextSync((ctx) => {
-      const eid = createEntity(ctx);
-      const stableId = crypto.randomUUID();
-
-      // Add Synced component with stable ID
-      addComponent(ctx, eid, Synced, { id: stableId });
-
-      // Add Sphere component
-      addComponent(ctx, eid, comps.Sphere, {
-        x: pos.x,
-        y: 0,
-        z: pos.z,
-        radius: 0.3 + Math.random() * 0.3,
-        color: Math.random() * 0xffffff,
-      });
-    });
   }
 });
 
-// Mouse up - stop dragging
+// Mouse up - stop dragging or change color on click
 document.addEventListener("mouseup", (e) => {
   if (e.button !== 0) return;
 
+  const wasClick =
+    Math.abs(e.clientX - dragStartPos.x) < 3 &&
+    Math.abs(e.clientY - dragStartPos.y) < 3;
+
   if (draggedEntity !== null) {
+    const clickedEntity = draggedEntity;
     world.nextSync((ctx) => {
-      if (hasComponent(ctx, draggedEntity!, comps.Dragging, false)) {
-        removeComponent(ctx, draggedEntity!, comps.Dragging);
+      if (hasComponent(ctx, clickedEntity, comps.Dragging, false)) {
+        removeComponent(ctx, clickedEntity, comps.Dragging);
+      }
+
+      // If it was a click (not a drag), change color
+      if (wasClick && hasComponent(ctx, clickedEntity, comps.Sphere, false)) {
+        const sphere = comps.Sphere.write(ctx, clickedEntity);
+        sphere.color = Math.random() * 0xffffff;
       }
     });
     draggedEntity = null;
@@ -270,6 +269,22 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "y" && (e.ctrlKey || e.metaKey)) {
     editorSync.redo();
     e.preventDefault();
+  } else if (e.key === "x" && !e.ctrlKey && !e.metaKey) {
+    // Create a new sphere at origin
+    world.nextSync((ctx) => {
+      const eid = createEntity(ctx);
+      const stableId = crypto.randomUUID();
+
+      addComponent(ctx, eid, Synced, { id: stableId });
+
+      addComponent(ctx, eid, comps.Sphere, {
+        x: 0,
+        y: 0,
+        z: 0,
+        radius: 0.3 + Math.random() * 0.3,
+        color: Math.random() * 0xffffff,
+      });
+    });
   }
 });
 
@@ -295,7 +310,8 @@ instructions.style.cssText = `
 `;
 instructions.innerHTML = `
   <strong>ECS Sync Demo</strong><br>
-  Click: Create sphere<br>
+  X: Create sphere at origin<br>
+  Click sphere: Change color<br>
   Drag: Move sphere<br>
   Right-click: Delete sphere<br>
   Ctrl+Z: Undo<br>
@@ -304,6 +320,44 @@ instructions.innerHTML = `
   <em>Open in multiple tabs to see sync!</em>
 `;
 document.body.appendChild(instructions);
+
+// Online/Offline toggle
+const toggle = document.createElement("button");
+toggle.style.cssText = `
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+`;
+
+function updateToggle() {
+  toggle.textContent = isOffline ? "Offline" : "Online";
+  toggle.style.background = isOffline ? "#aa3333" : "#33aa55";
+  toggle.style.color = "white";
+}
+updateToggle();
+
+toggle.addEventListener("mousedown", async (ev) => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  isOffline = !isOffline;
+  localStorage.setItem(OFFLINE_KEY, String(isOffline));
+  updateToggle();
+
+  if (isOffline) {
+    editorSync.disconnect();
+  } else {
+    await editorSync.connect();
+  }
+});
+
+document.body.appendChild(toggle);
 
 // Main loop
 let lastTime = performance.now();

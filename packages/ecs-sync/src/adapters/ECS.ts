@@ -120,8 +120,8 @@ export class EcsAdapter implements Adapter {
         const prefix = `${stableId}/`;
         for (const key of Object.keys(this.prevState)) {
           if (key.startsWith(prefix)) {
-            patch[key] = null;
-            delete this.prevState[key];
+            patch[key] = { _exists: false };
+            this.prevState[key] = { _exists: false };
           }
         }
 
@@ -166,8 +166,8 @@ export class EcsAdapter implements Adapter {
 
         case EventType.COMPONENT_REMOVED: {
           if (componentDef.isSingleton) continue;
-          patch[key] = null;
-          delete this.prevState[key];
+          patch[key] = { _exists: false };
+          this.prevState[key] = { _exists: false };
           break;
         }
 
@@ -176,7 +176,7 @@ export class EcsAdapter implements Adapter {
             ? (componentDef as AnyEditorSingletonDef).snapshot(ctx)
             : componentDef.snapshot(ctx, entityId);
 
-          const prev = this.prevState[key] ?? null;
+          const prev = this.prevState[key] ?? { _exists: false };
           const changes = diffFields(prev, data);
           if (!changes) continue;
 
@@ -214,7 +214,7 @@ export class EcsAdapter implements Adapter {
         if (!componentDef) continue;
 
         if (stableId === SINGLETON_STABLE_ID) {
-          if (value === null) continue; // Singletons can't be removed
+          if (value._exists === false) continue; // Singletons can't be removed
           (componentDef as AnyEditorSingletonDef).patch(ctx, value as any);
           this.prevState[key] = { ...this.prevState[key], ...value };
           continue;
@@ -223,7 +223,7 @@ export class EcsAdapter implements Adapter {
         // Entity component
         let entityId = this.stableIdToEntity.get(stableId);
 
-        if (value === null) {
+        if (value._exists === false) {
           // Remove component
           if (
             entityId !== undefined &&
@@ -240,7 +240,7 @@ export class EcsAdapter implements Adapter {
               componentDef as AnyEditorComponentDef,
             );
           }
-          delete this.prevState[key];
+          this.prevState[key] = { _exists: false };
         } else if (value._exists) {
           // Add component (create entity if needed)
           const { _exists, ...data } = value;

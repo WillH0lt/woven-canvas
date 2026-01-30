@@ -12,9 +12,10 @@ export type SyncBehavior =
 /**
  * Component data with existence flag.
  * _exists: true indicates the component exists (used when adding).
+ * _exists: false indicates the component is deleted (tombstone).
  * Other fields are the partial component data to merge.
  */
-export type ComponentData = Record<string, unknown> & { _exists?: true };
+export type ComponentData = Record<string, unknown> & { _exists?: boolean };
 
 /**
  * A patch is a map of keys to values representing component changes.
@@ -25,16 +26,16 @@ export type ComponentData = Record<string, unknown> & { _exists?: true };
  *
  * Value:
  * - Partial data to merge (with _exists: true for new components)
- * - null to delete the component
+ * - { _exists: false } to delete the component
  *
  * Examples:
  * - Add component: { "uuid-123/Position": { _exists: true, x: 0, y: 0 } }
  * - Update component: { "uuid-123/Position": { x: 10 } }
- * - Delete component: { "uuid-123/Position": null }
+ * - Delete component: { "uuid-123/Position": { _exists: false } }
  * - Update singleton: { "4294967295/Camera": { zoom: 1.5 } }
- * - Multiple changes: { "uuid-123/Position": { x: 10 }, "uuid-456/Velocity": null }
+ * - Multiple changes: { "uuid-123/Position": { x: 10 }, "uuid-456/Velocity": { _exists: false } }
  */
-export type Patch = Record<string, ComponentData | null>;
+export type Patch = Record<string, ComponentData>;
 
 /**
  * A mutation wraps a patch with an origin tag.
@@ -63,16 +64,39 @@ export function componentKey(
   return `${entityId}/${componentName}`;
 }
 
-/**
- * Client → Server messages
- */
-export type ClientMessage =
-  | { type: "patch"; patches: Patch[] }
-  | { type: "reconnect"; lastTimestamp: number };
+// --- Client requests ---
 
-/**
- * Server → Client messages (echoes to ALL clients including sender)
- */
-export type ServerMessage =
-  | { type: "patch"; patches: Patch[]; clientId: string; timestamp: number }
-  | { type: "full-sync"; state: Record<string, unknown>; timestamp: number };
+/** Sent by a client to apply mutations. */
+export interface PatchRequest {
+  type: "patch";
+  messageId: string;
+  patches: Patch[];
+}
+
+/** Sent by a client to catch up after a disconnect. */
+export interface ReconnectRequest {
+  type: "reconnect";
+  lastTimestamp: number;
+  patches: Patch[];
+}
+
+export type ClientMessage = PatchRequest | ReconnectRequest;
+
+// --- Server responses ---
+
+/** Sent back to the sender to confirm a patch was applied. */
+export interface AckResponse {
+  type: "ack";
+  messageId: string;
+  timestamp: number;
+}
+
+/** Sent to other clients when state changes. */
+export interface PatchBroadcast {
+  type: "patch";
+  patches: Patch[];
+  clientId: string;
+  timestamp: number;
+}
+
+export type ServerMessage = AckResponse | PatchBroadcast;

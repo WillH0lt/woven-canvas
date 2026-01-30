@@ -1,28 +1,30 @@
 import type { Adapter } from "../Adapter";
-import type {
-  Mutation,
-  Patch,
-  ComponentData,
-  ClientMessage,
-  ServerMessage,
-} from "../types";
+import type { Mutation, Patch, ClientMessage, ServerMessage } from "../types";
 import { Origin } from "../constants";
-import { merge } from "../mutations";
+import { merge, strip } from "../mutations";
+import { openStore, type KeyValueStore } from "../storage";
 
 export interface WebsocketAdapterOptions {
   url: string;
   clientId: string;
+  documentId: string;
+  usePersistence: boolean;
+  startOffline?: boolean;
 }
 
 /**
  * WebSocket adapter for real-time multiplayer sync.
  *
  * Sends local mutations to a server and receives remote mutations
- * from other clients. Echoed messages from the same clientId are
- * ignored to prevent circular updates.
+ * from other clients. The server acknowledges our patches with an
+ * ack (containing the assigned timestamp) and broadcasts them to
+ * other clients separately.
  *
  * On reconnect, sends the last known timestamp so the server can
- * replay missed operations or respond with a full-sync.
+ * send a patch with missed operations.
+ *
+ * When `usePersistence` is true, the offline buffer and lastTimestamp
+ * are persisted to IndexedDB so they survive page reloads.
  */
 export class WebsocketAdapter implements Adapter {
   private url: string;
@@ -30,13 +32,55 @@ export class WebsocketAdapter implements Adapter {
   private ws: WebSocket | null = null;
   private pendingPatches: Patch[] = [];
   private lastTimestamp = 0;
+  private messageCounter = 0;
+  /** Patches sent but not yet acknowledged, keyed by messageId. */
+  private inFlight = new Map<string, Patch>();
+
+  private startOffline: boolean;
+  private usePersistence: boolean;
+  private documentId: string;
+  private store: KeyValueStore | null = null;
+
+  /** Patches accumulated while disconnected, merged into one. */
+  private offlineBuffer: Patch = {};
+  /** True when the user intentionally disconnected (no auto-reconnect). */
+  private intentionallyClosed = false;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectDelay = 500;
+  private static readonly MIN_RECONNECT_DELAY = 500;
+  private static readonly MAX_RECONNECT_DELAY = 10_000;
 
   constructor(options: WebsocketAdapterOptions) {
     this.url = options.url;
     this.clientId = options.clientId;
+    this.startOffline = options.startOffline ?? false;
+    this.usePersistence = options.usePersistence;
+    this.documentId = options.documentId;
   }
 
   async init(): Promise<void> {
+    if (this.usePersistence) {
+      try {
+        this.store = await openStore(`${this.documentId}-ws`, "meta");
+        const savedBuffer = await this.store.get<Patch>("offlineBuffer");
+        const savedTimestamp = await this.store.get<number>("lastTimestamp");
+        if (savedBuffer) this.offlineBuffer = savedBuffer;
+        if (savedTimestamp) this.lastTimestamp = savedTimestamp;
+      } catch (err) {
+        console.error("Failed to load websocket offline state:", err);
+      }
+    }
+
+    if (this.startOffline) {
+      this.intentionallyClosed = true;
+      return;
+    }
+    this.intentionallyClosed = false;
+    return this.connectWs();
+  }
+
+  private connectWs(): Promise<void> {
+    this.inFlight.clear();
     return new Promise<void>((resolve, reject) => {
       const url = new URL(this.url);
       url.searchParams.set("clientId", this.clientId);
@@ -44,6 +88,18 @@ export class WebsocketAdapter implements Adapter {
 
       ws.addEventListener("open", () => {
         this.ws = ws;
+        // Request missed ops since last sync
+        const msg: ClientMessage = {
+          type: "reconnect",
+          lastTimestamp: this.lastTimestamp,
+          patches: [],
+        };
+
+        if (Object.keys(this.offlineBuffer).length > 0) {
+          msg.patches = [this.offlineBuffer];
+        }
+
+        ws.send(JSON.stringify(msg));
         resolve();
       });
 
@@ -57,36 +113,77 @@ export class WebsocketAdapter implements Adapter {
 
       ws.addEventListener("close", () => {
         this.ws = null;
+        if (!this.intentionallyClosed) {
+          this.scheduleReconnect();
+        }
       });
     });
   }
 
   push(mutations: Mutation[]): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-
     const patches: Patch[] = [];
     for (const m of mutations) {
-      if (m.origin !== Origin.Websocket) {
-        patches.push(m.patch);
+      if (m.origin === Origin.Websocket) continue;
+      if (m.origin === Origin.Persistence) continue;
+      patches.push(m.patch);
+    }
+
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      // Buffer while offline
+      if (patches.length > 0) {
+        this.offlineBuffer = merge(this.offlineBuffer, ...patches);
+        this.persistOfflineBuffer();
       }
+      return;
+    }
+
+    if (Object.keys(this.offlineBuffer).length > 0) {
+      patches.push(this.offlineBuffer);
+      this.offlineBuffer = {};
     }
 
     if (patches.length === 0) return;
-    const msg: ClientMessage = { type: "patch", patches };
+
+    const messageId = `${this.clientId}-${++this.messageCounter}`;
+    this.inFlight.set(messageId, merge(...patches));
+    const msg: ClientMessage = { type: "patch", messageId, patches };
     this.ws.send(JSON.stringify(msg));
   }
 
   pull(): Mutation | null {
     if (this.pendingPatches.length === 0) return null;
-    const patch = merge(...this.pendingPatches);
+
+    const serverPatch = merge(...this.pendingPatches);
     this.pendingPatches = [];
-    return { patch, origin: Origin.Websocket };
+
+    if (Object.keys(this.offlineBuffer).length === 0) {
+      return { patch: serverPatch, origin: Origin.Websocket };
+    }
+
+    // Strip buffer fields from server response (ECS already has them —
+    // either from Persistence on page load or from the current session).
+    // The buffer itself was already sent to the server in the reconnect message.
+    // Deletions in serverPatch pass through strip() automatically.
+    const diff = strip(serverPatch, this.offlineBuffer);
+    this.clearPersistedOfflineBuffer();
+    if (Object.keys(diff).length === 0) return null;
+    return { patch: diff, origin: Origin.Websocket };
   }
 
-  close(): void {
+  disconnect(): void {
+    this.intentionallyClosed = true;
+    this.clearReconnectTimer();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
+    }
+  }
+
+  close(): void {
+    this.disconnect();
+    if (this.store) {
+      this.store.close();
+      this.store = null;
     }
   }
 
@@ -94,15 +191,36 @@ export class WebsocketAdapter implements Adapter {
    * Attempt to reconnect, requesting missed ops since last timestamp.
    */
   async reconnect(): Promise<void> {
-    await this.init();
+    this.intentionallyClosed = false;
+    this.reconnectDelay = WebsocketAdapter.MIN_RECONNECT_DELAY;
+    this.clearReconnectTimer();
+    await this.connectWs();
+  }
 
-    if (this.ws && this.lastTimestamp > 0) {
-      const msg: ClientMessage = {
-        type: "reconnect",
-        lastTimestamp: this.lastTimestamp,
-      };
-      this.ws.send(JSON.stringify(msg));
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
+  }
+
+  private scheduleReconnect(): void {
+    this.clearReconnectTimer();
+    this.reconnectTimer = setTimeout(async () => {
+      this.reconnectTimer = null;
+      try {
+        await this.connectWs();
+        // Success — reset delay (reconnect message sent inside connectWs)
+        this.reconnectDelay = WebsocketAdapter.MIN_RECONNECT_DELAY;
+      } catch {
+        // Connection failed — back off and retry (close handler will fire)
+        this.reconnectDelay = Math.min(
+          this.reconnectDelay * 2,
+          WebsocketAdapter.MAX_RECONNECT_DELAY,
+        );
+        this.scheduleReconnect();
+      }
+    }, this.reconnectDelay);
   }
 
   private handleMessage(data: string): void {
@@ -114,27 +232,61 @@ export class WebsocketAdapter implements Adapter {
     }
 
     switch (msg.type) {
-      case "patch":
+      case "patch": {
         this.lastTimestamp = msg.timestamp;
-        // Ignore echoes of our own mutations
-        if (msg.clientId === this.clientId) return;
-        this.pendingPatches.push(...msg.patches);
+        this.persistTimestamp();
+        const filtered = this.stripInFlightFields(msg.patches);
+        this.pendingPatches.push(...filtered);
         break;
+      }
 
-      case "full-sync":
+      case "ack":
         this.lastTimestamp = msg.timestamp;
-        this.applyFullSync(msg.state);
+        this.persistTimestamp();
+        this.inFlight.delete(msg.messageId);
         break;
     }
   }
 
-  private applyFullSync(state: Record<string, unknown>): void {
-    const patch: Patch = {};
-    for (const [key, value] of Object.entries(state)) {
-      patch[key] = { _exists: true, ...(value as ComponentData) };
+  /**
+   * Strip fields from incoming patches that overlap with in-flight
+   * patches. Broadcasts that arrive before our ack were processed
+   * before our patch on the server — our patch overwrites them, so
+   * applying them locally would cause divergence. TCP ordering
+   * guarantees broadcasts processed after ours arrive after the ack,
+   * when inFlight is already cleared.
+   */
+  private stripInFlightFields(patches: Patch[]): Patch[] {
+    if (this.inFlight.size === 0) return patches;
+
+    const mask = merge(...Array.from(this.inFlight.values()));
+    const result: Patch[] = [];
+
+    for (const patch of patches) {
+      const filtered = strip(patch, mask);
+      if (Object.keys(filtered).length > 0) {
+        result.push(filtered);
+      }
     }
-    if (Object.keys(patch).length > 0) {
-      this.pendingPatches.push(patch);
-    }
+
+    return result;
+  }
+
+  // --- Persistence helpers ---
+
+  private persistOfflineBuffer(): void {
+    if (!this.store || !this.usePersistence) return;
+    this.store.put("offlineBuffer", this.offlineBuffer);
+  }
+
+  private persistTimestamp(): void {
+    if (!this.store || !this.usePersistence) return;
+    this.store.put("lastTimestamp", this.lastTimestamp);
+  }
+
+  private clearPersistedOfflineBuffer(): void {
+    this.offlineBuffer = {};
+    if (!this.store || !this.usePersistence) return;
+    this.store.delete("offlineBuffer");
   }
 }

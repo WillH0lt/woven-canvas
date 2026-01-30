@@ -148,16 +148,16 @@ export class HistoryAdapter implements Adapter {
     for (const [key, value] of Object.entries(diff)) {
       const prev = this.state[key];
 
-      if (value === null) {
+      if (value._exists === false) {
         // Deletion: inverse restores previous value
-        if (prev !== undefined) {
+        if (prev !== undefined && prev._exists !== false) {
           inverse[key] = { _exists: true, ...prev };
-          delete this.state[key];
         }
+        this.state[key] = { _exists: false };
       } else if (value._exists) {
         // Addition/replacement: inverse is deletion or restore previous
-        if (prev === undefined) {
-          inverse[key] = null;
+        if (prev === undefined || prev._exists === false) {
+          inverse[key] = { _exists: false };
         } else {
           inverse[key] = { _exists: true, ...prev };
         }
@@ -167,14 +167,15 @@ export class HistoryAdapter implements Adapter {
         // Partial update: inverse contains previous values of changed fields
         const inverseChanges: ComponentData = {};
         for (const field of Object.keys(value)) {
-          if (prev !== undefined && field in prev) {
+          if (prev !== undefined && prev._exists !== false && field in prev) {
             inverseChanges[field] = prev[field];
           }
         }
         if (Object.keys(inverseChanges).length > 0) {
           inverse[key] = inverseChanges;
         }
-        this.state[key] = { ...prev, ...value };
+        const base = prev?._exists === false ? {} : prev;
+        this.state[key] = { ...base, ...value };
       }
     }
 
@@ -187,13 +188,15 @@ export class HistoryAdapter implements Adapter {
    */
   private applyToState(diff: Patch): void {
     for (const [key, value] of Object.entries(diff)) {
-      if (value === null) {
-        delete this.state[key];
+      if (value._exists === false) {
+        this.state[key] = { _exists: false };
       } else if (value._exists) {
         const { _exists, ...data } = value;
         this.state[key] = data as ComponentData;
       } else {
-        this.state[key] = { ...this.state[key], ...value };
+        const existing = this.state[key];
+        const base = existing?._exists === false ? {} : existing;
+        this.state[key] = { ...base, ...value };
       }
     }
   }

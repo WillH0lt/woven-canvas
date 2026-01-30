@@ -7,12 +7,12 @@ import { isEqual } from "./utils";
  * Returns null if there are no changes.
  */
 export function diffFields(
-  prev: ComponentData | null,
-  next: ComponentData | null,
+  prev: ComponentData,
+  next: ComponentData,
 ): Record<string, unknown> | null {
-  if (prev === null && next === null) return null;
-  if (prev === null) return next;
-  if (next === null) return null;
+  if (prev._exists === false && next._exists === false) return null;
+  if (prev._exists === false) return next;
+  if (next._exists === false) return null;
 
   const changes: Patch = {};
   let hasChanges = false;
@@ -37,31 +37,31 @@ export function diffFields(
  * Generate a merge mutation from a component diff.
  * Returns null if there are no changes.
  *
- * @param prev - Previous component state (null if didn't exist)
- * @param next - Current component state (null if deleted)
+ * @param prev - Previous component state ({ _exists: false } if didn't exist)
+ * @param next - Current component state ({ _exists: false } if deleted)
  * @param entityId - Stable entity ID
  * @param componentName - Component name
  */
 export function diffComponent(
-  prev: ComponentData | null,
-  next: ComponentData | null,
+  prev: ComponentData,
+  next: ComponentData,
   entityId: EntityId,
   componentName: string,
 ): Patch | null {
   const key = componentKey(entityId, componentName);
 
   // Deleted
-  if (next === null && prev !== null) {
-    return { [key]: null };
+  if (next._exists === false && prev._exists !== false) {
+    return { [key]: { _exists: false } };
   }
 
   // Added - include _exists: true and all fields
-  if (prev === null && next !== null) {
+  if (prev._exists === false && next._exists !== false) {
     return { [key]: { _exists: true, ...next } as ComponentData };
   }
 
-  // Both null - no op
-  if (prev === null && next === null) {
+  // Both deleted - no op
+  if (prev._exists === false && next._exists === false) {
     return null;
   }
 

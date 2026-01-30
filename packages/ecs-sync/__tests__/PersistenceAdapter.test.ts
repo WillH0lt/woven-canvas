@@ -108,7 +108,7 @@ describe("PersistenceAdapter", () => {
       ]);
       await new Promise((r) => setTimeout(r, 50));
 
-      adapter.push([makeMutation({ "e1/Pos": null })]);
+      adapter.push([makeMutation({ "e1/Pos": { _exists: false } })]);
       await new Promise((r) => setTimeout(r, 50));
       adapter.close();
 

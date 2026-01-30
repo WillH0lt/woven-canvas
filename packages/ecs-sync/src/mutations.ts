@@ -16,9 +16,9 @@ import { isEqual } from "./utils";
  * @example
  * merge(
  *   { "e1/Position": { x: 10 } },
- *   { "e1/Position": null }
+ *   { "e1/Position": { _exists: false } }
  * )
- * // Returns: { "e1/Position": null }
+ * // Returns: { "e1/Position": { _exists: false } }
  */
 export function merge(...mutations: Patch[]): Patch {
   const result: Patch = {};
@@ -27,10 +27,10 @@ export function merge(...mutations: Patch[]): Patch {
     for (const [key, value] of Object.entries(mutation)) {
       const existing = result[key];
 
-      if (value === null) {
+      if (value._exists === false) {
         // Deletion overrides everything
-        result[key] = null;
-      } else if (existing === null || existing === undefined) {
+        result[key] = { _exists: false };
+      } else if (existing === undefined || existing._exists === false) {
         // New value or replacing a deletion
         result[key] = { ...value };
       } else {
@@ -70,17 +70,17 @@ export function subtract(a: Patch, b: Patch): Patch {
   for (const [key, aValue] of Object.entries(a)) {
     const bValue = b[key];
 
-    if (aValue === null) {
+    if (aValue._exists === false) {
       // Deletion in a
-      if (bValue !== null) {
+      if (bValue === undefined || bValue._exists !== false) {
         // b doesn't have the deletion, keep it
-        result[key] = null;
+        result[key] = { _exists: false };
       }
-      // If b also has null, it's redundant - skip
+      // If b also has deletion, it's redundant - skip
       continue;
     }
 
-    if (bValue === null || bValue === undefined) {
+    if (bValue === undefined || bValue._exists === false) {
       // a has data but b doesn't or b deletes - keep all of a's data
       result[key] = { ...aValue };
       continue;
@@ -90,6 +90,64 @@ export function subtract(a: Patch, b: Patch): Patch {
     const diff = subtractComponentData(aValue, bValue);
     if (diff !== null) {
       result[key] = diff;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Strip keys and fields from patch `a` that are present in `mask`.
+ * Unlike subtract (which compares values), strip removes by key existence.
+ *
+ * @example
+ * strip(
+ *   { "e1/Position": { x: 5, y: 20 } },
+ *   { "e1/Position": { x: 10 } }
+ * )
+ * // Returns: { "e1/Position": { y: 20 } }
+ *
+ * @example
+ * strip(
+ *   { "e1/Position": { _exists: false } },
+ *   { "e1/Position": { x: 10 } }
+ * )
+ * // Returns: { "e1/Position": { _exists: false } }  (deletions always pass through)
+ */
+export function strip(a: Patch, mask: Patch): Patch {
+  const result: Patch = {};
+
+  for (const [key, aValue] of Object.entries(a)) {
+    const maskValue = mask[key];
+
+    if (maskValue === undefined) {
+      // Key not in mask — keep as-is
+      result[key] = aValue;
+      continue;
+    }
+
+    if (aValue._exists === false) {
+      // Deletions always pass through — a delete can never be masked
+      result[key] = aValue;
+      continue;
+    }
+
+    if (maskValue._exists === false) {
+      // Mask is a deletion — drop the key
+      continue;
+    }
+
+    // Both are component data — keep only fields not in mask
+    const kept: ComponentData = {};
+    let hasFields = false;
+    for (const [field, fieldVal] of Object.entries(aValue)) {
+      if (!(field in maskValue)) {
+        kept[field] = fieldVal;
+        hasFields = true;
+      }
+    }
+    if (hasFields) {
+      result[key] = kept;
     }
   }
 

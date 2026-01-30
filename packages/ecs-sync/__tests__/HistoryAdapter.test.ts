@@ -99,7 +99,7 @@ describe("HistoryAdapter", () => {
       const mutation = adapter.pull();
       expect(mutation).not.toBeNull();
       // Inverse of adding should be deletion
-      expect(mutation!.patch["e1/Pos"]).toBe(null);
+      expect(mutation!.patch["e1/Pos"]).toEqual({ _exists: false });
     });
 
     it("undoes a deletion (inverse is restoration)", () => {
@@ -110,7 +110,7 @@ describe("HistoryAdapter", () => {
       vi.advanceTimersByTime(1000);
 
       // Then delete it
-      adapter.push([ecsMutation({ "e1/Pos": null })]);
+      adapter.push([ecsMutation({ "e1/Pos": { _exists: false } })]);
       vi.advanceTimersByTime(1000);
 
       const undid = adapter.undo();

@@ -1,9 +1,7 @@
-import { type IDBPDatabase, openDB } from "idb";
 import type { Adapter } from "../Adapter";
 import type { Mutation, Patch, ComponentData } from "../types";
 import { Origin } from "../constants";
-
-const STORE_NAME = "state";
+import { openStore, type KeyValueStore } from "../storage";
 
 export interface PersistenceAdapterOptions {
   documentId: string;
@@ -17,7 +15,7 @@ export interface PersistenceAdapterOptions {
  * (entityId/componentName or SINGLETON_ENTITY_ID/singletonName).
  */
 export class PersistenceAdapter implements Adapter {
-  private db: IDBPDatabase | null = null;
+  private store: KeyValueStore | null = null;
   private documentId: string;
   private pendingPatch: Patch | null = null;
 
@@ -27,13 +25,7 @@ export class PersistenceAdapter implements Adapter {
 
   async init(): Promise<void> {
     try {
-      this.db = await openDB(this.documentId, 1, {
-        upgrade(db) {
-          if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME);
-          }
-        },
-      });
+      this.store = await openStore(this.documentId, "state");
       await this.loadState();
     } catch (err) {
       console.error("IndexedDB error:", err);
@@ -44,23 +36,16 @@ export class PersistenceAdapter implements Adapter {
    * Load persisted state and convert to merge mutations.
    */
   private async loadState(): Promise<void> {
-    if (!this.db) return;
+    if (!this.store) return;
 
-    const tx = this.db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-
-    const keys = await store.getAllKeys();
-    const values = await store.getAll();
+    const entries = await this.store.getAllEntries();
 
     // Convert stored state to a single merge mutation with _exists flags
     const mergeDiff: Patch = {};
 
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i] as string;
-      const value = values[i] as Record<string, unknown>;
-
+    for (const [key, value] of entries) {
       // Add _exists: true to indicate this component should be created
-      mergeDiff[key] = { _exists: true, ...value } as ComponentData;
+      mergeDiff[key] = { _exists: true, ...(value as Record<string, unknown>) } as ComponentData;
     }
 
     if (Object.keys(mergeDiff).length > 0) {
@@ -72,7 +57,7 @@ export class PersistenceAdapter implements Adapter {
    * Push mutations - persists to IndexedDB.
    */
   push(mutations: Mutation[]): void {
-    if (!this.db) return;
+    if (!this.store) return;
 
     const filtered = mutations.filter((m) => m.origin !== Origin.Persistence);
     if (filtered.length === 0) return;
@@ -84,35 +69,30 @@ export class PersistenceAdapter implements Adapter {
   }
 
   private async persistMutations(mutations: Mutation[]): Promise<void> {
-    if (!this.db) return;
-
-    const tx = this.db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
+    if (!this.store) return;
 
     for (const { patch } of mutations) {
       for (const [key, value] of Object.entries(patch)) {
-        if (value === null) {
+        if (value._exists === false) {
           // Deletion
-          store.delete(key);
+          this.store.delete(key);
         } else {
           // Add or update - merge with existing state
           const { _exists, ...data } = value;
 
           if (_exists) {
             // Full replacement (new component)
-            store.put(data, key);
+            this.store.put(key, data);
           } else {
             // Partial update - merge with existing
-            const existing = await store.get(key);
+            const existing = await this.store.get<Record<string, unknown>>(key);
             if (existing) {
-              store.put({ ...existing, ...data }, key);
+              this.store.put(key, { ...existing, ...data });
             }
           }
         }
       }
     }
-
-    await tx.done;
   }
 
   /**
@@ -129,9 +109,9 @@ export class PersistenceAdapter implements Adapter {
    * Close the adapter.
    */
   close(): void {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
+    if (this.store) {
+      this.store.close();
+      this.store = null;
     }
   }
 
@@ -139,10 +119,7 @@ export class PersistenceAdapter implements Adapter {
    * Clear all persisted state.
    */
   async clear(): Promise<void> {
-    if (!this.db) return;
-
-    const tx = this.db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).clear();
-    await tx.done;
+    if (!this.store) return;
+    await this.store.clear();
   }
 }

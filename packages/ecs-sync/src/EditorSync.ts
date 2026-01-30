@@ -39,6 +39,7 @@ export interface EditorSyncOptions {
 export class EditorSync {
   private ecsAdapter: EcsAdapter;
   private historyAdapter: HistoryAdapter | null = null;
+  private websocketAdapter: WebsocketAdapter | null = null;
   private adapters: Adapter[] = [];
 
   constructor(options: EditorSyncOptions) {
@@ -60,7 +61,12 @@ export class EditorSync {
     }
 
     if (options.websocket) {
-      this.adapters.push(new WebsocketAdapter(options.websocket));
+      this.websocketAdapter = new WebsocketAdapter({
+        ...options.websocket,
+        documentId: options.documentId,
+        usePersistence: options.usePersistence ?? false,
+      });
+      this.adapters.push(this.websocketAdapter);
     }
   }
 
@@ -105,6 +111,22 @@ export class EditorSync {
 
   canRedo(): boolean {
     return this.historyAdapter?.canRedo() ?? false;
+  }
+
+  /**
+   * Connect the websocket (or reconnect if it was previously connected).
+   */
+  async connect(): Promise<void> {
+    if (!this.websocketAdapter) return;
+    await this.websocketAdapter.reconnect();
+  }
+
+  /**
+   * Disconnect the websocket while keeping all other adapters running.
+   */
+  disconnect(): void {
+    if (!this.websocketAdapter) return;
+    this.websocketAdapter.disconnect();
   }
 
   /**

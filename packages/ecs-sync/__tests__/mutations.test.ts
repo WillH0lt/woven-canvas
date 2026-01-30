@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { merge, subtract } from "../src/mutations";
+import { merge, subtract, strip } from "../src/mutations";
 import type { Patch } from "../src/types";
 
 describe("merge", () => {
@@ -33,15 +33,15 @@ describe("merge", () => {
 
   it("deletion overrides existing data", () => {
     expect(
-      merge({ "e1/Position": { x: 10 } }, { "e1/Position": null }),
+      merge({ "e1/Position": { x: 10 } }, { "e1/Position": { _exists: false } }),
     ).toEqual({
-      "e1/Position": null,
+      "e1/Position": { _exists: false },
     });
   });
 
   it("new data replaces a deletion", () => {
     expect(
-      merge({ "e1/Position": null }, { "e1/Position": { x: 10 } }),
+      merge({ "e1/Position": { _exists: false } }, { "e1/Position": { x: 10 } }),
     ).toEqual({
       "e1/Position": { x: 10 },
     });
@@ -87,11 +87,11 @@ describe("merge", () => {
       merge(
         { "e1/Pos": { x: 1 }, "e2/Pos": { x: 2 } },
         { "e1/Pos": { y: 10 }, "e3/Vel": { vx: 5 } },
-        { "e2/Pos": null },
+        { "e2/Pos": { _exists: false } },
       ),
     ).toEqual({
       "e1/Pos": { x: 1, y: 10 },
-      "e2/Pos": null,
+      "e2/Pos": { _exists: false },
       "e3/Vel": { vx: 5 },
     });
   });
@@ -128,25 +128,25 @@ describe("subtract", () => {
   it("keeps deletion in a if b does not have deletion", () => {
     expect(
       subtract(
-        { "e1/Position": null },
+        { "e1/Position": { _exists: false } },
         { "e1/Position": { x: 10 } },
       ),
     ).toEqual({
-      "e1/Position": null,
+      "e1/Position": { _exists: false },
     });
   });
 
-  it("removes redundant deletions (both null)", () => {
+  it("removes redundant deletions (both deleted)", () => {
     expect(
-      subtract({ "e1/Position": null }, { "e1/Position": null }),
+      subtract({ "e1/Position": { _exists: false } }, { "e1/Position": { _exists: false } }),
     ).toEqual({});
   });
 
-  it("keeps all of a data when b has null for same key", () => {
+  it("keeps all of a data when b has deletion for same key", () => {
     expect(
       subtract(
         { "e1/Position": { x: 10, y: 20 } },
-        { "e1/Position": null },
+        { "e1/Position": { _exists: false } },
       ),
     ).toEqual({
       "e1/Position": { x: 10, y: 20 },
@@ -186,9 +186,83 @@ describe("subtract", () => {
 
   it("keeps deletion when key is absent from b", () => {
     expect(
-      subtract({ "e1/Position": null }, {}),
+      subtract({ "e1/Position": { _exists: false } }, {}),
     ).toEqual({
-      "e1/Position": null,
+      "e1/Position": { _exists: false },
     });
+  });
+});
+
+describe("strip", () => {
+  it("returns empty patch when all fields overlap", () => {
+    expect(
+      strip(
+        { "e1/Position": { x: 5 } },
+        { "e1/Position": { x: 10 } },
+      ),
+    ).toEqual({});
+  });
+
+  it("keeps fields not present in mask", () => {
+    expect(
+      strip(
+        { "e1/Position": { x: 5, y: 20 } },
+        { "e1/Position": { x: 10 } },
+      ),
+    ).toEqual({
+      "e1/Position": { y: 20 },
+    });
+  });
+
+  it("keeps keys not present in mask", () => {
+    expect(
+      strip(
+        { "e1/Position": { x: 5 }, "e2/Velocity": { vx: 3 } },
+        { "e1/Position": { x: 10 } },
+      ),
+    ).toEqual({
+      "e2/Velocity": { vx: 3 },
+    });
+  });
+
+  it("keeps deletion even when mask has the key", () => {
+    expect(
+      strip(
+        { "e1/Position": { _exists: false } },
+        { "e1/Position": { x: 10 } },
+      ),
+    ).toEqual({ "e1/Position": { _exists: false } });
+  });
+
+  it("strips data when mask has deletion for the key", () => {
+    expect(
+      strip(
+        { "e1/Position": { x: 5 } },
+        { "e1/Position": { _exists: false } },
+      ),
+    ).toEqual({});
+  });
+
+  it("keeps deletion even when mask also deletes", () => {
+    expect(
+      strip(
+        { "e1/Position": { _exists: false } },
+        { "e1/Position": { _exists: false } },
+      ),
+    ).toEqual({ "e1/Position": { _exists: false } });
+  });
+
+  it("returns patch as-is when mask is empty", () => {
+    expect(
+      strip({ "e1/Position": { x: 5 } }, {}),
+    ).toEqual({
+      "e1/Position": { x: 5 },
+    });
+  });
+
+  it("returns empty patch when input is empty", () => {
+    expect(
+      strip({}, { "e1/Position": { x: 10 } }),
+    ).toEqual({});
   });
 });

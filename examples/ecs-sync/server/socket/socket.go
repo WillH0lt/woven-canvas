@@ -105,6 +105,21 @@ func (h *Hub) Broadcast(data []byte) {
 	}
 }
 
+// BroadcastExcept sends data to all connected clients except the given one.
+func (h *Hub) BroadcastExcept(exclude *Client, data []byte) {
+	for client := range h.Clients {
+		if client == exclude {
+			continue
+		}
+		select {
+		case client.Send <- data:
+		default:
+			close(client.Send)
+			delete(h.Clients, client)
+		}
+	}
+}
+
 // SendTo sends data to a specific client.
 func (h *Hub) SendTo(client *Client, data []byte) {
 	select {
