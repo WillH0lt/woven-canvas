@@ -167,9 +167,13 @@ describe("WebsocketAdapter", () => {
       const adapter = createAdapter();
       await adapter.init();
 
+      let now = 2000;
+      const spy = vi.spyOn(performance, "now").mockImplementation(() => now);
+
       adapter.push([
         { patch: { "e1/Pos": { x: 1 } }, origin: Origin.ECS },
       ]);
+      now += 1001;
       adapter.push([
         { patch: { "e1/Pos": { x: 2 } }, origin: Origin.ECS },
       ]);
@@ -177,6 +181,7 @@ describe("WebsocketAdapter", () => {
       const sent1 = JSON.parse(mockWs.sentMessages[1]!);
       const sent2 = JSON.parse(mockWs.sentMessages[2]!);
       expect(sent1.messageId).not.toBe(sent2.messageId);
+      spy.mockRestore();
     });
   });
 
@@ -425,10 +430,14 @@ describe("WebsocketAdapter", () => {
       const adapter = createAdapter("client-1");
       await adapter.init();
 
+      let now = 2000;
+      const spy = vi.spyOn(performance, "now").mockImplementation(() => now);
+
       // Two separate sends — both in-flight
       adapter.push([
         { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
       ]);
+      now += 1001;
       adapter.push([
         { patch: { "e2/Pos": { y: 20 } }, origin: Origin.ECS },
       ]);
@@ -446,16 +455,21 @@ describe("WebsocketAdapter", () => {
       // x and y stripped, z kept
       expect(mutation!.patch["e1/Pos"]).toBeUndefined();
       expect(mutation!.patch["e2/Pos"]).toEqual({ z: 3 });
+      spy.mockRestore();
     });
 
     it("partial ack clears only that message's in-flight", async () => {
       const adapter = createAdapter("client-1");
       await adapter.init();
 
+      let now = 2000;
+      const spy = vi.spyOn(performance, "now").mockImplementation(() => now);
+
       // Two sends
       adapter.push([
         { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
       ]);
+      now += 1001;
       adapter.push([
         { patch: { "e2/Pos": { y: 20 } }, origin: Origin.ECS },
       ]);
@@ -479,6 +493,7 @@ describe("WebsocketAdapter", () => {
       expect(mutation).not.toBeNull();
       expect(mutation!.patch["e1/Pos"]).toEqual({ x: 5 });
       expect(mutation!.patch["e2/Pos"]).toBeUndefined();
+      spy.mockRestore();
     });
   });
 
