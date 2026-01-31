@@ -23,7 +23,27 @@ func NewRoomController(hub *socket.Hub) *RoomController {
 		timestamps: make(map[string]models.FieldTimestamps),
 	}
 	hub.OnMessage = rc.HandleMessage
+	hub.OnConnect = rc.handleConnect
+	hub.OnDisconnect = rc.handleDisconnect
 	return rc
+}
+
+func (r *RoomController) broadcastClientCount(count int) {
+	msg := models.ClientCountBroadcast{
+		Type:  "clientCount",
+		Count: count,
+	}
+	if data, err := json.Marshal(msg); err == nil {
+		r.hub.Broadcast(data)
+	}
+}
+
+func (r *RoomController) handleConnect(_ *socket.Client, count int) {
+	r.broadcastClientCount(count)
+}
+
+func (r *RoomController) handleDisconnect(_ *socket.Client, count int) {
+	r.broadcastClientCount(count)
 }
 
 func (r *RoomController) HandleMessage(client *socket.Client, data []byte) {

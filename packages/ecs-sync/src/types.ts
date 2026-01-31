@@ -99,4 +99,10 @@ export interface PatchBroadcast {
   timestamp: number;
 }
 
-export type ServerMessage = AckResponse | PatchBroadcast;
+/** Sent to all clients when the connected client count changes. */
+export interface ClientCountBroadcast {
+  type: "clientCount";
+  count: number;
+}
+
+export type ServerMessage = AckResponse | PatchBroadcast | ClientCountBroadcast;

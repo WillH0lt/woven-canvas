@@ -26,14 +26,20 @@ var hub *Hub
 // MessageHandler is called for each incoming client message.
 type MessageHandler func(client *Client, data []byte)
 
+// ConnectHandler is called when a client connects or disconnects.
+// count is the current number of connected clients after the event.
+type ConnectHandler func(client *Client, count int)
+
 // Hub maintains the set of active clients and dispatches messages.
 type Hub struct {
-	Clients    map[*Client]bool
-	Register   chan *Client
-	Unregister chan *Client
-	incoming   chan *incomingMessage
-	OnMessage  MessageHandler
-	OnTick     func()
+	Clients      map[*Client]bool
+	Register     chan *Client
+	Unregister   chan *Client
+	incoming     chan *incomingMessage
+	OnMessage    MessageHandler
+	OnConnect    ConnectHandler
+	OnDisconnect ConnectHandler
+	OnTick       func()
 }
 
 type incomingMessage struct {
@@ -72,12 +78,18 @@ func (h *Hub) run() {
 		case client := <-h.Register:
 			h.Clients[client] = true
 			log.Printf("Client connected: %s (%d total)", client.ClientID, len(h.Clients))
+			if h.OnConnect != nil {
+				h.OnConnect(client, len(h.Clients))
+			}
 
 		case client := <-h.Unregister:
 			if _, ok := h.Clients[client]; ok {
 				delete(h.Clients, client)
 				close(client.Send)
 				log.Printf("Client disconnected: %s (%d total)", client.ClientID, len(h.Clients))
+				if h.OnDisconnect != nil {
+					h.OnDisconnect(client, len(h.Clients))
+				}
 			}
 
 		case msg := <-h.incoming:

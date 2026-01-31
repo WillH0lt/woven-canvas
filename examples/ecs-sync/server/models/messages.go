@@ -42,3 +42,9 @@ type PatchBroadcast struct {
 	ClientID  string  `json:"clientId"`
 	Timestamp int64   `json:"timestamp"`
 }
+
+// ClientCountBroadcast is sent to all clients when the connected client count changes.
+type ClientCountBroadcast struct {
+	Type  string `json:"type"`
+	Count int    `json:"count"`
+}

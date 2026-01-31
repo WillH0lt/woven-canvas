@@ -4,6 +4,11 @@ import { Origin } from "../constants";
 import { merge, strip } from "../mutations";
 import { openStore, type KeyValueStore } from "../storage";
 
+/** Send interval when multiple clients are connected (~30 fps). */
+const MULTI_CLIENT_INTERVAL = 1000 / 30;
+/** Send interval when editing solo (~1 fps). */
+const SOLO_INTERVAL = 1000;
+
 export interface WebsocketAdapterOptions {
   url: string;
   clientId: string;
@@ -43,12 +48,19 @@ export class WebsocketAdapter implements Adapter {
 
   /** Patches accumulated while disconnected, merged into one. */
   private offlineBuffer: Patch = {};
+  /** Number of clients currently connected to the server. */
+  private connectedUsers = 0;
   /** True when the user intentionally disconnected (no auto-reconnect). */
   private intentionallyClosed = false;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectDelay = 500;
   private static readonly MIN_RECONNECT_DELAY = 500;
   private static readonly MAX_RECONNECT_DELAY = 10_000;
+
+  /** Patches buffered between sends for throttling. */
+  private sendBuffer: Patch[] = [];
+  /** Timestamp of the last flush (ms). */
+  private lastSendTime = 0;
 
   constructor(options: WebsocketAdapterOptions) {
     this.url = options.url;
@@ -137,10 +149,39 @@ export class WebsocketAdapter implements Adapter {
       return;
     }
 
+    if (patches.length > 0) {
+      this.sendBuffer.push(...patches);
+    }
+
+    this.flushIfReady();
+  }
+
+  /** Target send interval based on current client count. */
+  private get sendInterval(): number {
+    return this.connectedUsers > 1 ? MULTI_CLIENT_INTERVAL : SOLO_INTERVAL;
+  }
+
+  /** Flush the send buffer if enough time has elapsed since the last send. */
+  private flushIfReady(): void {
+    const elapsed = performance.now() - this.lastSendTime;
+    if (elapsed >= this.sendInterval) {
+      this.flush();
+    }
+  }
+
+  /** Send all buffered patches to the server. */
+  private flush(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+
+    const patches: Patch[] = [];
+
     if (Object.keys(this.offlineBuffer).length > 0) {
       patches.push(this.offlineBuffer);
       this.offlineBuffer = {};
     }
+
+    patches.push(...this.sendBuffer);
+    this.sendBuffer = [];
 
     if (patches.length === 0) return;
 
@@ -148,6 +189,7 @@ export class WebsocketAdapter implements Adapter {
     this.inFlight.set(messageId, merge(...patches));
     const msg: ClientMessage = { type: "patch", messageId, patches };
     this.ws.send(JSON.stringify(msg));
+    this.lastSendTime = performance.now();
   }
 
   pull(): Mutation | null {
@@ -244,6 +286,10 @@ export class WebsocketAdapter implements Adapter {
         this.lastTimestamp = msg.timestamp;
         this.persistTimestamp();
         this.inFlight.delete(msg.messageId);
+        break;
+
+      case "clientCount":
+        this.connectedUsers = msg.count;
         break;
     }
   }
