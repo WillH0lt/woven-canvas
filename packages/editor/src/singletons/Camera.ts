@@ -1,7 +1,7 @@
 import { field, type Context } from "@infinitecanvas/ecs";
 import type { Vec2 } from "@infinitecanvas/math";
 
-import { EditorSingletonDef } from "../EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 import { Screen } from "./Screen";
 
 const CameraSchema = {
@@ -24,7 +24,7 @@ const CameraSchema = {
  */
 class CameraDef extends EditorSingletonDef<typeof CameraSchema> {
   constructor() {
-    super("camera", CameraSchema, { sync: "none" });
+    super({ name: "camera" }, CameraSchema);
   }
 
   /**

@@ -791,6 +791,9 @@ importers:
       '@infinitecanvas/ecs':
         specifier: workspace:*
         version: link:../ecs
+      '@infinitecanvas/ecs-sync':
+        specifier: workspace:*
+        version: link:../ecs-sync
       '@infinitecanvas/math':
         specifier: workspace:*
         version: link:../math
@@ -1255,6 +1258,9 @@ importers:
       '@floating-ui/vue':
         specifier: ^1.1.6
         version: 1.1.9(vue@3.5.27)
+      '@infinitecanvas/ecs-sync':
+        specifier: workspace:^
+        version: link:../ecs-sync
       '@infinitecanvas/editor':
         specifier: workspace:^
         version: link:../editor

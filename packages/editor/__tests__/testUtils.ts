@@ -7,7 +7,8 @@ import {
   createEntity,
   addComponent,
 } from "@infinitecanvas/ecs";
-import { Block, Aabb, Synced } from "../src/components";
+import { Block, Aabb } from "../src/components";
+import { Synced } from "@infinitecanvas/ecs-sync";
 
 /**
  * Simulate a mouse move event.

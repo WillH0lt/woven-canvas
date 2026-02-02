@@ -4,8 +4,6 @@ export type { Vec2 } from "@infinitecanvas/math";
 // types
 export type {
   EditorResources,
-  SyncBehavior,
-  EditorComponentMeta,
   EditorOptionsInput,
   KeybindInput,
   CursorDefMap,
@@ -28,13 +26,24 @@ export {
 export { FontLoader, FontFamily, type FontFamilyInput } from "./FontLoader";
 export type { FontFamily as FontFamilyType } from "./FontLoader";
 
-// Singleton base class
+// Re-export from ecs-sync
 export {
   EditorSingletonDef,
   defineEditorSingleton,
-  type EditorSingletonOptions,
-  type AnyEditorSingletonDef,
-} from "./EditorSingletonDef";
+} from "@infinitecanvas/ecs-sync";
+
+export type {
+  AnyEditorSingletonDef,
+  SingletonEditorBehavior,
+  AnyEditorComponentDef,
+  SyncBehavior,
+} from "@infinitecanvas/ecs-sync";
+
+export {
+  EditorComponentDef,
+  defineEditorComponent,
+  Synced,
+} from "@infinitecanvas/ecs-sync";
 
 // State machine singleton
 export {
@@ -43,17 +52,6 @@ export {
   type StateSchema,
   type InferStateContext,
 } from "./EditorStateDef";
-
-// Component base classes
-export {
-  EditorComponentDef,
-  defineEditorComponent,
-  type EditorComponentOptions,
-  type AnyEditorComponentDef,
-} from "./EditorComponentDef";
-
-// Store adapter
-export type { StoreAdapter } from "./store";
 
 // Plugin system
 export {
@@ -132,7 +130,6 @@ export {
   Pointer,
   PointerButton,
   PointerType,
-  Synced,
   Block,
   Aabb,
   Hovered,
@@ -185,5 +182,5 @@ export {
 // Systems
 export { rankBoundsSystem } from "./systems/preInput";
 export { intersectSystem } from "./systems/preCapture";
-export { undoRedoSystem, removeEmptyTextSystem } from "./systems/update";
+export { removeEmptyTextSystem } from "./systems/update";
 export { scaleWithZoomSystem } from "./systems/preRender";

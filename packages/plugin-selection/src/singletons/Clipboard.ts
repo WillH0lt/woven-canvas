@@ -40,7 +40,7 @@ const clipboardStorage = new WeakMap<Editor, ClipboardEntityData[]>();
  */
 class ClipboardDef extends EditorSingletonDef<typeof ClipboardSchema> {
   constructor() {
-    super("clipboard", ClipboardSchema, { sync: "none" });
+    super({ name: "clipboard" }, ClipboardSchema);
   }
 
   /**

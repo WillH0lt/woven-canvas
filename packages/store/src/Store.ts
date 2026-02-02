@@ -256,7 +256,7 @@ export class Store implements StoreAdapter {
     // Translate refs from entityIds to syncedIds before storing
     const translatedData = this.translateRefsOutbound(componentDef, data);
 
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       // Store in Loro document for persistence
       const componentsMap = this.doc.getMap("components");
       let componentMap = componentsMap.get(componentDef.name) as
@@ -271,7 +271,7 @@ export class Store implements StoreAdapter {
         componentMap = componentsMap.get(componentDef.name) as LoroMap;
       }
       componentMap.set(id, translatedData);
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       // Store in EphemeralStore for transient sync
       const key = `${componentDef.name}:${id}`;
       this.ephemeralStore.set(key, translatedData as Value);
@@ -295,7 +295,7 @@ export class Store implements StoreAdapter {
     // Translate refs from entityIds to syncedIds before storing
     const translatedData = this.translateRefsOutbound(componentDef, data);
 
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       const componentsMap = this.doc.getMap("components");
       const componentMap = componentsMap.get(componentDef.name) as
         | LoroMap
@@ -303,7 +303,7 @@ export class Store implements StoreAdapter {
       if (componentMap) {
         componentMap.set(id, translatedData);
       }
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       this.ephemeralStore.set(key, translatedData as Value);
       this.localEphemeralKeys.add(key);
@@ -318,7 +318,7 @@ export class Store implements StoreAdapter {
    * @param id - The entity's stable UUID
    */
   onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       const componentsMap = this.doc.getMap("components");
       const componentMap = componentsMap.get(componentDef.name) as
         | LoroMap
@@ -326,7 +326,7 @@ export class Store implements StoreAdapter {
       if (componentMap) {
         componentMap.delete(id);
       }
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       this.ephemeralStore.delete(key);
       this.localEphemeralKeys.delete(key);

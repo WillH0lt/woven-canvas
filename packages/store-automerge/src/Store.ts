@@ -337,14 +337,14 @@ export class Store implements StoreAdapter {
     // Translate refs from entityIds to syncedIds
     const translatedData = this.translateRefsOutbound(componentDef, data);
 
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       this.updateDocument((doc) => {
         if (!doc.components[componentDef.name]) {
           doc.components[componentDef.name] = {};
         }
         doc.components[componentDef.name][id] = translatedData;
       });
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       this.localEphemeralData[key] = translatedData;
     }
@@ -362,7 +362,7 @@ export class Store implements StoreAdapter {
     // Translate refs from entityIds to syncedIds
     const translatedData = this.translateRefsOutbound(componentDef, data);
 
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       this.updateDocument((doc) => {
         if (!doc.components[componentDef.name]) {
           doc.components[componentDef.name] = {};
@@ -377,7 +377,7 @@ export class Store implements StoreAdapter {
           doc.components[componentDef.name][id] = translatedData;
         }
       });
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       this.localEphemeralData[key] = translatedData;
     }
@@ -387,13 +387,13 @@ export class Store implements StoreAdapter {
    * Called when a component is removed from an entity.
    */
   onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       this.updateDocument((doc) => {
         if (doc.components[componentDef.name]) {
           delete doc.components[componentDef.name][id];
         }
       });
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       delete this.localEphemeralData[key];
     }
@@ -596,7 +596,7 @@ export class Store implements StoreAdapter {
         if (components) {
           for (const componentName of components) {
             const componentDef = this.componentDefsByName.get(componentName);
-            if (componentDef && componentDef.__editor.sync === "document") {
+            if (componentDef && componentDef.__sync === "document") {
               if (hasComponent(ctx, entityId, componentDef)) {
                 removeComponent(ctx, entityId, componentDef);
               }
@@ -671,7 +671,7 @@ export class Store implements StoreAdapter {
       const id = key.slice(colonIndex + 1);
 
       const componentDef = this.componentDefsByName.get(componentName);
-      if (!componentDef || componentDef.__editor.sync !== "ephemeral") continue;
+      if (!componentDef || componentDef.__sync !== "ephemeral") continue;
 
       // Prefix the ID with peer ID to distinguish from local entities
       const peerEntityId = `${peerId}:${id}`;

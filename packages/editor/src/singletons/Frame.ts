@@ -1,5 +1,5 @@
 import { field } from "@infinitecanvas/ecs";
-import { defineEditorSingleton } from "../EditorSingletonDef";
+import { defineEditorSingleton } from "@infinitecanvas/ecs-sync";
 
 /**
  * Frame singleton - tracks frame timing information.
@@ -17,7 +17,7 @@ import { defineEditorSingleton } from "../EditorSingletonDef";
  * ```
  */
 export const Frame = defineEditorSingleton(
-  "frame",
+  { name: "frame" },
   {
     /** Current frame number (increments each tick) */
     number: field.uint32().default(0),
@@ -27,6 +27,5 @@ export const Frame = defineEditorSingleton(
     time: field.float64().default(0),
     /** Timestamp of previous frame in milliseconds (0 if first frame) */
     lastTime: field.float64().default(0),
-  },
-  { sync: "none" },
+  }
 );

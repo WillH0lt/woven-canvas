@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@infinitecanvas/ecs": "workspace:*",
+    "@infinitecanvas/ecs-sync": "workspace:*",
     "@infinitecanvas/math": "workspace:*",
     "fractional-indexing-jittered": "^1.0.0",
     "xstate": "^5.24.0",

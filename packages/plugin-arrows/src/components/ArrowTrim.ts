@@ -11,13 +11,12 @@ import { field, defineEditorComponent } from "@infinitecanvas/editor";
  * - tEnd: Where the visible arrow ends (1 = end)
  */
 export const ArrowTrim = defineEditorComponent(
-  "arrowTrim",
+  { name: "arrowTrim" },
   {
     /** Parametric start position (0-1) */
     tStart: field.float64().default(0),
 
     /** Parametric end position (0-1) */
     tEnd: field.float64().default(1),
-  },
-  { sync: "none" }
+  }
 );

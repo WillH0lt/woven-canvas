@@ -1,15 +1,21 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { provide, createApp, h, defineComponent } from "vue";
 import { useSingleton } from "../src/composables/useSingleton";
-import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../src/injection";
+import {
+  INFINITE_CANVAS_KEY,
+  type InfiniteCanvasContext,
+} from "../src/injection";
 import { defineEditorSingleton, field } from "@infinitecanvas/editor";
 
 describe("useSingleton", () => {
   // Create a test singleton definition
-  const TestSingleton = defineEditorSingleton("TestSingleton", {
-    value: field.int32().default(0),
-    name: field.string().max(32).default(""),
-  });
+  const TestSingleton = defineEditorSingleton(
+    { name: "TestSingleton" },
+    {
+      value: field.int32().default(0),
+      name: field.string().max(32).default(""),
+    },
+  );
 
   let mockCanvasContext: InfiniteCanvasContext;
   let mockSubscriptions: Map<string, Set<(value: unknown) => void>>;
@@ -21,7 +27,7 @@ describe("useSingleton", () => {
     mockCanvasContext = {
       hasEntity: () => false,
       getEditor: () => null,
-      getSessionId: () => null,
+      getSessionId: () => "",
       getUserBySessionId: () => null,
       subscribeComponent: () => () => {},
       registerTickCallback: () => () => {},
@@ -81,7 +87,9 @@ describe("useSingleton", () => {
           },
         });
         app.mount(document.createElement("div"));
-      }).toThrow("useSingleton must be used within an InfiniteCanvas component");
+      }).toThrow(
+        "useSingleton must be used within an InfiniteCanvas component",
+      );
     });
   });
 
@@ -125,9 +133,12 @@ describe("useSingleton", () => {
   });
 
   describe("multiple singletons", () => {
-    const AnotherSingleton = defineEditorSingleton("AnotherSingleton", {
-      count: field.int32().default(0),
-    });
+    const AnotherSingleton = defineEditorSingleton(
+      { name: "AnotherSingleton" },
+      {
+        count: field.int32().default(0),
+      },
+    );
 
     it("should return correct data for different singletons", () => {
       const result1 = withSetup(() => useSingleton(TestSingleton));

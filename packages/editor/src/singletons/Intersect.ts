@@ -1,5 +1,5 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "../EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 
 const IntersectSchema = {
   // Store up to 5 intersected entity IDs
@@ -18,7 +18,7 @@ const IntersectSchema = {
  */
 class IntersectDef extends EditorSingletonDef<typeof IntersectSchema> {
   constructor() {
-    super("intersect", IntersectSchema, { sync: "none" });
+    super({ name: "intersect" }, IntersectSchema);
   }
 
   /**

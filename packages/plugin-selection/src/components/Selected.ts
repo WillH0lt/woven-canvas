@@ -1,3 +1,3 @@
 import { defineEditorComponent } from "@infinitecanvas/editor";
 
-export const Selected = defineEditorComponent("selected", {}, { sync: "none" });
+export const Selected = defineEditorComponent({ name: "selected" }, {});

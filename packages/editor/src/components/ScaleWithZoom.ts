@@ -1,5 +1,5 @@
 import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "../EditorComponentDef";
+import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
 
 /**
  * ScaleWithZoom component - marks an entity that should maintain
@@ -9,7 +9,7 @@ import { defineEditorComponent } from "../EditorComponentDef";
  * regardless of zoom level.
  */
 export const ScaleWithZoom = defineEditorComponent(
-  "scaleWithZoom",
+  { name: "scaleWithZoom" },
   {
     /** Pivot point for scaling as [x, y] (0-1, default 0.5,0.5 = center) */
     anchor: field.tuple(field.float64(), 2).default([0.5, 0.5]),
@@ -19,6 +19,5 @@ export const ScaleWithZoom = defineEditorComponent(
     startSize: field.tuple(field.float64(), 2).default([0, 0]),
     /** Scale multiplier per dimension: [x, y] (0 = no zoom effect, 1 = full zoom effect, 0.5 = half effect) */
     scaleMultiplier: field.tuple(field.float64(), 2).default([1, 1]),
-  },
-  { sync: "none" }
+  }
 );

@@ -1,5 +1,5 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "../EditorComponentDef";
+import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
 import {
   Aabb as AabbMath,
   type Vec2,
@@ -26,7 +26,7 @@ const AabbSchema = {
  */
 class AabbDef extends EditorComponentDef<typeof AabbSchema> {
   constructor() {
-    super("aabb", AabbSchema, { sync: "none" });
+    super({ name: "aabb" }, AabbSchema);
   }
 
   /**

@@ -16,6 +16,7 @@ export {
   type TupleFieldBuilder,
   type EnumFieldBuilder,
   type RefFieldBuilder,
+  type BufferFieldBuilder,
   type StringFieldDef,
   type EnumFieldDef,
 } from "./Component";

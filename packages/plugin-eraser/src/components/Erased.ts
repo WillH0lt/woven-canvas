@@ -17,13 +17,12 @@ import { field, defineEditorComponent } from "@infinitecanvas/editor";
  * ```
  */
 export const Erased = defineEditorComponent(
-  "erased",
+  { name: "erased" },
   {
     /**
      * Reference to the eraser stroke entity that is targeting this block.
      * Used to track which stroke caused this entity to be marked for erasure.
      */
     eraserStrokeId: field.ref(),
-  },
-  { sync: "none" }
+  }
 );

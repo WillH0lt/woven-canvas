@@ -1,5 +1,5 @@
 import { field, type Context } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "../EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 import { PointerButton } from "../components";
 
 const ControlsSchema = {
@@ -25,7 +25,7 @@ const ControlsSchema = {
  */
 class ControlsDef extends EditorSingletonDef<typeof ControlsSchema> {
   constructor() {
-    super("controls", ControlsSchema, { sync: "none" });
+    super({ name: "controls" }, ControlsSchema);
   }
 
   /**

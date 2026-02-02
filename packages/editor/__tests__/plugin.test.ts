@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { field } from "@infinitecanvas/ecs";
 import { sortPluginsByDependencies, type EditorPlugin } from "../src/plugin";
 import { defineSystem } from "../src";
-import { EditorComponentDef } from "../src/EditorComponentDef";
-import { EditorSingletonDef } from "../src/EditorSingletonDef";
+import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 
 describe("Plugin System", () => {
   describe("sortPluginsByDependencies", () => {
@@ -123,23 +123,21 @@ describe("Plugin System", () => {
     });
 
     it("should support plugin with components", () => {
-      const Block = new EditorComponentDef("block", {
+      const Block = new EditorComponentDef({ name: "block" }, {
         x: field.float32(),
         y: field.float32(),
       });
 
       const Selected = new EditorComponentDef(
-        "selected",
+        { name: "selected", sync: "ephemeral" },
         {},
-        { sync: "ephemeral" }
       );
 
       const Camera = new EditorSingletonDef(
-        "camera",
+        { name: "camera", sync: "ephemeral" },
         {
           zoom: field.float64().default(1),
         },
-        { sync: "ephemeral" }
       );
 
       const plugin: EditorPlugin = {
@@ -201,26 +199,24 @@ describe("Plugin System", () => {
     });
 
     it("should support full-featured plugin", () => {
-      const Block = new EditorComponentDef("block", {
+      const Block = new EditorComponentDef({ name: "block" }, {
         id: field.string().max(36),
         x: field.float64(),
         y: field.float64(),
       });
 
       const Selected = new EditorComponentDef(
-        "selected",
+        { name: "selected", sync: "ephemeral" },
         {},
-        { sync: "ephemeral" }
       );
 
       const Camera = new EditorSingletonDef(
-        "camera",
+        { name: "camera", sync: "ephemeral" },
         {
           x: field.float64().default(0),
           y: field.float64().default(0),
           zoom: field.float64().default(1),
         },
-        { sync: "ephemeral" }
       );
 
       const plugin: EditorPlugin = {
@@ -253,7 +249,7 @@ describe("Plugin System", () => {
 
   describe("real-world plugin scenarios", () => {
     it("should support a core plugin", () => {
-      const Block = new EditorComponentDef("block", {
+      const Block = new EditorComponentDef({ name: "block" }, {
         id: field.string().max(36),
         left: field.float64(),
         top: field.float64(),
@@ -269,16 +265,15 @@ describe("Plugin System", () => {
       };
 
       expect(corePlugin.name).toBe("core");
-      expect(corePlugin.components![0].__editor.sync).toBe("none");
+      expect(corePlugin.components![0].__sync).toBe("none");
     });
 
     it("should support a selection plugin depending on core", () => {
       const Selected = new EditorComponentDef(
-        "selected",
+        { name: "selected", sync: "ephemeral" },
         {},
-        { sync: "ephemeral" }
       );
-      const Hovered = new EditorComponentDef("hovered", {}, { sync: "none" });
+      const Hovered = new EditorComponentDef({ name: "hovered" }, {});
 
       const selectionPlugin: EditorPlugin = {
         name: "selection",
@@ -293,13 +288,13 @@ describe("Plugin System", () => {
       };
 
       expect(selectionPlugin.dependencies).toContain("core");
-      expect(selectionPlugin.components![0].__editor.sync).toBe("ephemeral");
-      expect(selectionPlugin.components![1].__editor.sync).toBe("none");
+      expect(selectionPlugin.components![0].__sync).toBe("ephemeral");
+      expect(selectionPlugin.components![1].__sync).toBe("none");
     });
 
     it("should support a transform plugin depending on selection", () => {
-      const Dragging = new EditorComponentDef("dragging", {}, { sync: "none" });
-      const Resizing = new EditorComponentDef("resizing", {}, { sync: "none" });
+      const Dragging = new EditorComponentDef({ name: "dragging" }, {});
+      const Resizing = new EditorComponentDef({ name: "resizing" }, {});
 
       const transformPlugin: EditorPlugin = {
         name: "transform",

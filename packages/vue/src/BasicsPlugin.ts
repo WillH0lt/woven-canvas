@@ -4,10 +4,22 @@ import {
   Color,
   Text,
   VerticalAlign,
+  Undo,
+  Redo,
+  Key,
 } from "@infinitecanvas/editor";
 
+import { type EditorSync } from "@infinitecanvas/ecs-sync";
 import { CURSORS } from "./cursors";
-import { blockPlacementSystem } from "./systems";
+import { blockPlacementSystem, undoRedoSystem } from "./systems";
+
+export interface BasicsPluginResources {
+  store: EditorSync;
+}
+
+export interface BasicsPluginOptions {
+  store: EditorSync;
+}
 
 export const DEFAULT_FONTS: FontFamilyInput[] = [
   {
@@ -40,34 +52,35 @@ export const DEFAULT_FONTS: FontFamilyInput[] = [
   },
 ];
 
-export const BasicsPlugin: EditorPlugin = {
-  name: "basics",
-
-  cursors: CURSORS,
-
-  fonts: DEFAULT_FONTS,
-
-  blockDefs: [
-    {
-      tag: "sticky-note",
-      components: [Color, Text, VerticalAlign],
-      editOptions: {
-        canEdit: true,
+export function BasicsPlugin(options: BasicsPluginOptions): EditorPlugin {
+  return {
+    name: "basics",
+    resources: { store: options.store } satisfies BasicsPluginResources,
+    cursors: CURSORS,
+    fonts: DEFAULT_FONTS,
+    keybinds: [
+      { command: Undo.name, key: Key.Z, mod: true },
+      { command: Redo.name, key: Key.Y, mod: true },
+      { command: Redo.name, key: Key.Z, mod: true, shift: true },
+    ],
+    blockDefs: [
+      {
+        tag: "sticky-note",
+        components: [Color, Text, VerticalAlign],
+        editOptions: {
+          canEdit: true,
+        },
       },
-    },
-    {
-      tag: "text",
-      components: [Text],
-      resizeMode: "text",
-      editOptions: {
-        canEdit: true,
-        removeWhenTextEmpty: true,
+      {
+        tag: "text",
+        components: [Text],
+        resizeMode: "text",
+        editOptions: {
+          canEdit: true,
+          removeWhenTextEmpty: true,
+        },
       },
-    },
-  ],
-
-  systems: [
-    // Update phase
-    blockPlacementSystem,
-  ],
-};
+    ],
+    systems: [blockPlacementSystem, undoRedoSystem],
+  };
+}

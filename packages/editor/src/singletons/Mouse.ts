@@ -1,7 +1,7 @@
 import { field, type Context } from "@infinitecanvas/ecs";
 import type { Vec2 } from "@infinitecanvas/math";
 
-import { EditorSingletonDef } from "../EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 
 const MouseSchema = {
   /** Current mouse position relative to the editor element [x, y] */
@@ -28,7 +28,7 @@ const MouseSchema = {
  */
 class MouseDef extends EditorSingletonDef<typeof MouseSchema> {
   constructor() {
-    super("mouse", MouseSchema, { sync: "none" });
+    super({ name: "mouse" }, MouseSchema);
   }
 
   /** Check if mouse moved this frame */

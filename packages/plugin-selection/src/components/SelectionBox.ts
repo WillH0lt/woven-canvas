@@ -8,7 +8,6 @@ import { defineEditorComponent } from "@infinitecanvas/editor";
  * its position/size.
  */
 export const SelectionBox = defineEditorComponent(
-  "selectionBox",
-  {},
-  { sync: "none" }
+  { name: "selectionBox" },
+  {}
 );

@@ -4,10 +4,6 @@ import {
   type QueryDef,
   ComponentDef,
   type SingletonDef,
-  EventType,
-  SINGLETON_ENTITY_ID,
-  hasComponent,
-  getResources,
   createEntity,
   addComponent,
 } from "@infinitecanvas/ecs";
@@ -22,7 +18,6 @@ import {
   BlockDef,
   UserData,
 } from "./types";
-import type { StoreAdapter } from "./store";
 import {
   type EditorPlugin,
   parsePlugin,
@@ -30,9 +25,12 @@ import {
 } from "./plugin";
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
-import type { AnyEditorComponentDef } from "./EditorComponentDef";
-import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
-import { Synced, Edited, User } from "./components";
+import {
+  type AnyEditorComponentDef,
+  type AnyEditorSingletonDef,
+  Synced,
+} from "@infinitecanvas/ecs-sync";
+import { User } from "./components";
 import type { EditorSystem } from "./EditorSystem";
 import { FontLoader, FontFamily } from "./FontLoader";
 
@@ -101,7 +99,6 @@ function batchSystems(systems: EditorSystem[]): EditorSystem[][] {
  * - Plugin registration
  * - System phase execution
  * - Command dispatch
- * - Store integration
  *
  * @example
  * ```typescript
@@ -110,7 +107,6 @@ function batchSystems(systems: EditorSystem[]): EditorSystem[][] {
  *
  * const editor = new Editor(document.getElementById('canvas')!, {
  *   plugins: [SelectionPlugin, TransformPlugin],
- *   store: myStoreAdapter,
  * });
  *
  * // Run the editor loop
@@ -132,12 +128,12 @@ export class Editor {
   public keybinds: Keybind[];
   public blockDefs: Record<string, BlockDef> = {};
   public fonts: FontFamily[] = [];
+  public components: AnyEditorComponentDef[] = [];
+  public singletons: AnyEditorSingletonDef[] = [];
 
   private world: World;
   private systemBatches: EditorSystem[][];
   private plugins: Map<string, EditorPlugin>;
-  private store: StoreAdapter | null;
-  private storeEventIndex: number = 0;
   private fontLoader: FontLoader;
   private userData: UserData;
 
@@ -157,7 +153,7 @@ export class Editor {
 
     // Collect all components and singletons from plugins and custom options
     // Always include CommandMarker for the command system
-    const allDefs: (ComponentDef<any> | SingletonDef<any>)[] = [CommandMarker];
+    const allDefs: (ComponentDef<any> | SingletonDef<any>)[] = [CommandMarker, Synced];
     for (const plugin of sortedPlugins) {
       if (plugin.components) {
         allDefs.push(...plugin.components);
@@ -235,9 +231,6 @@ export class Editor {
     const componentsById = new Map<number, AnyEditorComponentDef>();
     const singletonsById = new Map<number, AnyEditorSingletonDef>();
 
-    // Store adapter
-    this.store = options.store ?? null;
-
     // Create ECS World with editor resources
     const allResources: EditorResources = {
       domElement,
@@ -249,7 +242,6 @@ export class Editor {
       singletonsByName,
       componentsById,
       singletonsById,
-      store: this.store,
     };
 
     this.world = new World(allDefs, {
@@ -304,6 +296,10 @@ export class Editor {
       singletonsById.set(componentId, singleton);
       singletonsByName.set(singleton.name, singleton);
     }
+
+    // Expose collected components/singletons
+    this.components = [...componentsByName.values()];
+    this.singletons = [...singletonsByName.values()];
   }
 
   /**
@@ -319,24 +315,6 @@ export class Editor {
    * Call this after construction to run async setup.
    */
   async initialize(): Promise<void> {
-    // Initialize store with synced component/singleton defs
-    if (this.store) {
-      const { componentsById, singletonsById } = getResources<EditorResources>(
-        this.ctx,
-      );
-      const syncedComponents = [...componentsById.values()].filter(
-        (def) => def.__editor.sync !== "none",
-      );
-      const syncedSingletons = [...singletonsById.values()].filter(
-        (def) => def.__editor.sync !== "none",
-      );
-      await this.store.initialize(
-        syncedComponents,
-        syncedSingletons,
-        Object.values(this.blockDefs)
-      );
-    }
-
     // Load custom fonts
     if (this.fonts.length > 0) {
       await this.fontLoader.loadFonts(this.fonts);
@@ -387,102 +365,6 @@ export class Editor {
 
     // Clean up command entities at end of frame
     cleanupCommands(this.ctx);
-
-    if (this.store) {
-      // Sync local ECS changes to the store
-      this.syncToStore(this.storeEventIndex);
-
-      // Flush external changes (undo/redo, network sync) from store to ECS
-      this.store.flushChanges(this.ctx);
-
-      // Advance past flushChanges events so they don't get synced back to store
-      this.storeEventIndex = this.ctx.eventBuffer.getWriteIndex();
-    }
-  }
-
-  /**
-   * Read events from the event buffer and sync components/singletons to the store.
-   * The store handles routing to document or ephemeral storage based on sync type.
-   */
-  private syncToStore(eventIndex: number): void {
-    if (!this.store) return;
-
-    const ctx = this.ctx;
-    const { events } = ctx.eventBuffer.readEvents(eventIndex);
-
-    if (events.length === 0) return;
-
-    const { componentsById, singletonsById } =
-      getResources<EditorResources>(ctx);
-
-    for (const event of events) {
-      const { entityId, eventType, componentId } = event;
-
-      // Check if this is a synced component or singleton
-      const componentDef = componentsById.get(componentId);
-      const singletonDef = singletonsById.get(componentId);
-
-      const isSyncedComponent =
-        componentDef && componentDef.__editor.sync !== "none";
-      const isSyncedSingleton =
-        singletonDef && singletonDef.__editor.sync !== "none";
-
-      // Skip entity events if the entity doesn't have the Synced component
-      // (required for stable ID lookup)
-      if (
-        entityId !== SINGLETON_ENTITY_ID &&
-        !hasComponent(ctx, entityId, Synced, false)
-      ) {
-        continue;
-      }
-
-      switch (eventType) {
-        case EventType.COMPONENT_ADDED: {
-          if (isSyncedComponent) {
-            const id = Synced.read(ctx, entityId).id;
-            const data = componentDef.snapshot(ctx, entityId);
-            this.store.onComponentAdded(componentDef, id, entityId, data);
-          }
-          break;
-        }
-
-        case EventType.COMPONENT_REMOVED: {
-          if (isSyncedComponent) {
-            const id = Synced.read(ctx, entityId).id;
-            this.store.onComponentRemoved(componentDef, id);
-          }
-          break;
-        }
-
-        case EventType.REMOVED: {
-          // Entity removed - notify store to remove all data for this entity
-          // Component data is still preserved after markDead, so we can read it
-          const id = Synced.read(ctx, entityId).id;
-          for (const cId of ctx.entityBuffer.getComponentIds(entityId)) {
-            const compDef = componentsById.get(cId);
-            if (compDef && compDef.__editor.sync !== "none") {
-              this.store.onComponentRemoved(compDef, id);
-            }
-          }
-          break;
-        }
-
-        case EventType.CHANGED: {
-          if (entityId === SINGLETON_ENTITY_ID && isSyncedSingleton) {
-            const data = singletonDef.snapshot(ctx);
-            this.store.onSingletonUpdated(singletonDef, data);
-          } else if (isSyncedComponent) {
-            const id = Synced.read(ctx, entityId).id;
-            const data = componentDef.snapshot(ctx, entityId);
-            this.store.onComponentUpdated(componentDef, id, data);
-          }
-          break;
-        }
-      }
-    }
-
-    // Commit all changes at end of frame
-    this.store.commit();
   }
 
   /**

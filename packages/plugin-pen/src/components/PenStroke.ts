@@ -17,7 +17,7 @@ export const POINTS_CAPACITY = 256;
  * original bounds for proper scaling/rotation transformations.
  */
 export const PenStroke = defineEditorComponent(
-  "penStroke",
+  { name: "penStroke", sync: "document" },
   {
     /**
      * Flat buffer of point coordinates [x0, y0, x1, y1, ...]
@@ -59,6 +59,5 @@ export const PenStroke = defineEditorComponent(
      * Whether the stroke has pressure data from a stylus.
      */
     hasPressure: field.boolean().default(false),
-  },
-  { sync: "document" }
+  }
 );

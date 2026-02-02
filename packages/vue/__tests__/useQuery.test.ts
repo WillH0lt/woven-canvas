@@ -5,7 +5,7 @@ import { defineEditorComponent, field } from "@infinitecanvas/editor";
 
 describe("useQuery", () => {
   // Create a test component definition
-  const Block = defineEditorComponent("Block", {
+  const Block = defineEditorComponent({ name: "Block" }, {
     position: field.tuple(field.float64(), 2).default([0, 0]),
     size: field.tuple(field.float64(), 2).default([100, 100]),
   });

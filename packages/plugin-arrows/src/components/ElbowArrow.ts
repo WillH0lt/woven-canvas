@@ -39,7 +39,7 @@ const ElbowArrowSchema = {
  */
 class ElbowArrowDef extends EditorComponentDef<typeof ElbowArrowSchema> {
   constructor() {
-    super("elbowArrow", ElbowArrowSchema, { sync: "document" });
+    super({ name: "elbowArrow", sync: "document" }, ElbowArrowSchema);
   }
 
   /**

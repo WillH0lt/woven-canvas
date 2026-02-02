@@ -5,8 +5,6 @@ export {
   addPointerSample,
 } from "./Pointer";
 
-export { Synced } from "./Synced";
-
 // Core spatial components
 export { Block } from "./Block";
 export { Aabb } from "./Aabb";

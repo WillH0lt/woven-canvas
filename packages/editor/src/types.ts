@@ -1,16 +1,15 @@
 import type { Context, EntityId } from "@infinitecanvas/ecs";
 export type { Context };
 import { z } from "zod";
+import {
+  type AnyEditorComponentDef,
+  type AnyEditorSingletonDef,
+} from "@infinitecanvas/ecs-sync";
 
-import type { AnyEditorComponentDef } from "./EditorComponentDef";
-import type { AnyEditorSingletonDef } from "./EditorSingletonDef";
 import type { Editor } from "./Editor";
 import type { EditorPluginInput } from "./plugin";
-import type { StoreAdapter } from "./store";
 import type { EditorSystem } from "./EditorSystem";
 import type { FontFamilyInput } from "./FontLoader";
-
-export type { StoreAdapter };
 
 // Re-export EntityId for convenience
 export type { EntityId };
@@ -117,27 +116,6 @@ export interface EditorResources {
    * Use this for singleton lookup by runtime id (e.g., from events).
    */
   singletonsById: Map<number, AnyEditorSingletonDef>;
-
-  /**
-   * Store adapter for persistence and sync.
-   * May be null if no store was provided.
-   */
-  store: StoreAdapter | null;
-}
-
-/**
- * Sync determines how component changes propagate
- */
-export type SyncBehavior =
-  | "document" // Persisted to database, synced to all clients
-  | "ephemeral" // Synced via websocket for ephemeral (cursors, selections)
-  | "none"; // Not synced or stored anywhere
-
-/**
- * Editor metadata attached to component definitions
- */
-export interface EditorComponentMeta {
-  sync: SyncBehavior;
 }
 
 /**
@@ -196,11 +174,6 @@ export const EditorOptionsSchema = z.object({
    * Plugins are sorted by dependencies automatically.
    */
   plugins: z.array(z.custom<EditorPluginInput>()).default([]),
-
-  /**
-   * Store adapter for persistence and sync.
-   */
-  store: z.custom<StoreAdapter>().optional(),
 
   /**
    * Maximum number of entities.

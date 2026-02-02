@@ -7,7 +7,7 @@ import type {
 } from "@infinitecanvas/ecs";
 import type { AnyStateMachine } from "xstate";
 
-import { EditorSingletonDef } from "./EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 import { runMachine } from "./machine";
 
 /**
@@ -76,7 +76,7 @@ export class EditorStateDef<
 > extends EditorSingletonDef<T> {
   constructor(name: string, schema: T) {
     // State machine state is never synced - it's ephemeral runtime state
-    super(name, schema, { sync: "none" });
+    super({ name, sync: "none" }, schema);
   }
 
   /**

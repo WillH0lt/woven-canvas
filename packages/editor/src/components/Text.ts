@@ -1,5 +1,5 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "../EditorComponentDef";
+import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
 import { TextAlignment } from "../types";
 
 const TextSchema = {
@@ -27,7 +27,7 @@ const TextSchema = {
  */
 class TextDef extends EditorComponentDef<typeof TextSchema> {
   constructor() {
-    super("text", TextSchema, { sync: "document" });
+    super({ name: "text", sync: "document" }, TextSchema);
   }
 
   /**

@@ -1,7 +1,7 @@
 import { field, type Context } from "@infinitecanvas/ecs";
 import type { Vec2 } from "@infinitecanvas/math";
 
-import { EditorSingletonDef } from "../EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 
 const ScreenSchema = {
   /** Width of the editor element in pixels */
@@ -21,7 +21,7 @@ const ScreenSchema = {
  */
 class ScreenDef extends EditorSingletonDef<typeof ScreenSchema> {
   constructor() {
-    super("screen", ScreenSchema, { sync: "none" });
+    super({ name: "screen" }, ScreenSchema);
   }
 
   /** Get screen dimensions as [width, height] */

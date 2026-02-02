@@ -1,6 +1,6 @@
 import { field, ComponentDef, type Context } from "@infinitecanvas/ecs";
 import type { Vec2 } from "@infinitecanvas/math";
-import { EditorComponentDef } from "../EditorComponentDef";
+import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
 
 /**
  * Pointer button types
@@ -75,7 +75,7 @@ const PointerSchema = {
  */
 class PointerDef extends EditorComponentDef<typeof PointerSchema> {
   constructor() {
-    super("pointer", PointerSchema, { sync: "none" });
+    super({ name: "pointer" }, PointerSchema);
   }
 
   /** Get the computed velocity of a pointer */

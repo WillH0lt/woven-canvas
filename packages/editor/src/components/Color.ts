@@ -1,5 +1,5 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "../EditorComponentDef";
+import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
 
 const ColorSchema = {
   red: field.uint8().default(0),
@@ -15,7 +15,7 @@ const ColorSchema = {
  */
 class ColorDef extends EditorComponentDef<typeof ColorSchema> {
   constructor() {
-    super("color", ColorSchema, { sync: "document" });
+    super({ name: "color", sync: "document" }, ColorSchema);
   }
 
   /**

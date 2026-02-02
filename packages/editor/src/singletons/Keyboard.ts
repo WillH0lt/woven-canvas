@@ -1,5 +1,5 @@
 import { field, type Context } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "../EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 
 /** Buffer size for key states (32 bytes = 256 bits = covers all keycodes) */
 const KEY_BUFFER_SIZE = 32;
@@ -48,7 +48,7 @@ function getBit(buffer: ArrayLike<number>, bitIndex: number): boolean {
  */
 class KeyboardDef extends EditorSingletonDef<typeof KeyboardSchema> {
   constructor() {
-    super("keyboard", KeyboardSchema, { sync: "none" });
+    super({ name: "keyboard" }, KeyboardSchema);
   }
 
   /**

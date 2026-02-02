@@ -1,5 +1,5 @@
 import { field, type Context } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "../EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
 
 const RankBoundsSchema = {
@@ -15,7 +15,7 @@ const RankBoundsSchema = {
  */
 class RankBoundsDef extends EditorSingletonDef<typeof RankBoundsSchema> {
   constructor() {
-    super("rankBounds", RankBoundsSchema, { sync: "none" });
+    super({ name: "rankBounds" }, RankBoundsSchema);
   }
 
   /**

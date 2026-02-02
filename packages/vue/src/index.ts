@@ -95,5 +95,19 @@ export { computeCommonComponents } from "./utils/computeCommonComponents";
 // Cursors
 export { CursorKind, CURSORS } from "./cursors";
 
+// ECS Sync
+export {
+  EditorSync,
+  type EditorSyncOptions,
+  EditorComponentDef,
+  EditorSingletonDef,
+  defineEditorComponent,
+  defineEditorSingleton,
+  Synced,
+  type AnyEditorComponentDef,
+  type AnyEditorSingletonDef,
+  type SyncBehavior,
+} from "@infinitecanvas/ecs-sync";
+
 // Types
 export type { BlockData } from "./types";

@@ -16,7 +16,7 @@ export const POINTS_CAPACITY = 10;
  * consecutive points, with the specified radius.
  */
 export const EraserStroke = defineEditorComponent(
-  "eraserStroke",
+  { name: "eraserStroke" },
   {
     /**
      * Flat buffer of point coordinates [x0, y0, x1, y1, ...]
@@ -41,6 +41,5 @@ export const EraserStroke = defineEditorComponent(
      * Radius of the eraser stroke in world coordinates.
      */
     radius: field.float32().default(8),
-  },
-  { sync: "none" }
+  }
 );

@@ -1,6 +1,6 @@
 import { field, type Context } from "@infinitecanvas/ecs";
 
-import { EditorSingletonDef } from "../EditorSingletonDef";
+import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 
 const CursorSchema = {
   /** Base cursor kind (from current tool) */
@@ -26,7 +26,7 @@ const CursorSchema = {
  */
 class CursorDef extends EditorSingletonDef<typeof CursorSchema> {
   constructor() {
-    super("cursor", CursorSchema, { sync: "none" });
+    super({ name: "cursor" }, CursorSchema);
   }
 
   /**

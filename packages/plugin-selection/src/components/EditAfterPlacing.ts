@@ -8,7 +8,6 @@ import { defineEditorComponent } from "@infinitecanvas/editor";
  * transitions to Editing state if present, then removes the component.
  */
 export const EditAfterPlacing = defineEditorComponent(
-  "editAfterPlacing",
-  {},
-  { sync: "none" }
+  { name: "editAfterPlacing" },
+  {}
 );

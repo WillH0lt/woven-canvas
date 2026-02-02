@@ -1,5 +1,5 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "../EditorComponentDef";
+import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
 import { Vec2, Aabb, Arc, Capsule, Mat2 } from "@infinitecanvas/math";
 import { Block } from "./Block";
 
@@ -59,7 +59,7 @@ const HitGeometrySchema = {
  */
 class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
   constructor() {
-    super("hitHeometry", HitGeometrySchema, { sync: "none" });
+    super({ name: "hitHeometry" }, HitGeometrySchema);
   }
 
   /**

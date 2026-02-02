@@ -25,7 +25,6 @@ import {
   type EntityId,
   type EditorOptionsInput,
   type EditorResources,
-  type StoreAdapter,
   type BlockDefInput,
   type Keybind,
   type CursorDef,
@@ -37,6 +36,7 @@ import {
   type InferComponentType,
   type UserDataInput,
 } from "@infinitecanvas/editor";
+import { EditorSync, type EditorSyncOptions } from "@infinitecanvas/ecs-sync";
 import {
   CanvasControlsPlugin,
   type CanvasControlsOptionsInput,
@@ -86,9 +86,8 @@ type BlockDef = InferComponentType<typeof Block.schema>;
  * Mirrors EditorOptionsInput with additional controls/selection customization
  */
 export interface InfiniteCanvasProps {
-  // Store adapter for persistence and sync
-  store?: StoreAdapter;
-
+  // Sync options for persistence, history, and multiplayer
+  syncOptions?: EditorSyncOptions;
   // Maximum number of entities (default: 10_000)
   maxEntities?: number;
 
@@ -136,7 +135,7 @@ const props = withDefaults(defineProps<InfiniteCanvasProps>(), {
 });
 
 const emit = defineEmits<{
-  ready: [editor: Editor];
+  ready: [editor: Editor, store: EditorSync];
 }>();
 
 // Define slots - block slots use "block:<tag>" naming, floating-menu and toolbar slots have no props
@@ -321,9 +320,15 @@ provide(TOOLTIP_KEY, tooltipContext);
 
 let eventIndex = 0;
 let animationFrameId: number | null = null;
+let store: EditorSync;
 
 async function tick() {
   if (!editorRef.value) return;
+
+  editorRef.value.nextTick((ctx) => {
+    store.sync(ctx);
+  });
+
   await editorRef.value.tick();
 
   processEvents(editorRef.value);
@@ -340,24 +345,24 @@ async function tick() {
 onMounted(async () => {
   if (!containerRef.value) return;
 
+  // Create store (adapters are built lazily in initialize)
+  store = new EditorSync(props.syncOptions ?? { documentId: "default" });
+
   // Build plugins array with built-in plugins
   const allPlugins: EditorPluginInput[] = [];
 
-  // Add controls plugin unless disabled
   allPlugins.push(CanvasControlsPlugin(props.controls ?? {}));
   allPlugins.push(SelectionPlugin);
   allPlugins.push(EraserPlugin);
   allPlugins.push(PenPlugin);
   allPlugins.push(ArrowsPlugin);
-
-  allPlugins.push(BasicsPlugin);
+  allPlugins.push(BasicsPlugin({ store }));
 
   // Add user-provided plugins
   allPlugins.push(...props.plugins);
 
-  // Create editor options from props
+  // Create editor (collects all components/singletons from plugins)
   const editorOptions: EditorOptionsInput = {
-    store: props.store,
     maxEntities: props.maxEntities,
     user: parsedUser,
     blockDefs: props.blockDefs,
@@ -370,9 +375,14 @@ onMounted(async () => {
     fonts: props.fonts,
   };
 
-  // Create and initialize editor
   const editor = new Editor(containerRef.value, editorOptions);
   await editor.initialize();
+
+  // Initialize store with the editor's collected components/singletons
+  await store.initialize({
+    components: editor.components,
+    singletons: editor.singletons,
+  });
 
   editorRef.value = editor;
 
@@ -380,13 +390,14 @@ onMounted(async () => {
   animationFrameId = requestAnimationFrame(tick);
 
   // Emit ready event with editor instance
-  emit("ready", editor);
+  emit("ready", editor, store);
 });
 
 onUnmounted(() => {
   if (animationFrameId !== null) {
     cancelAnimationFrame(animationFrameId);
   }
+  store.close();
   editorRef.value?.dispose();
 });
 

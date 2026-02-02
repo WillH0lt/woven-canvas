@@ -1,5 +1,5 @@
 import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "../EditorComponentDef";
+import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
 
 /**
  * Connector component - defines a line/arrow between two blocks.
@@ -13,7 +13,7 @@ import { defineEditorComponent } from "../EditorComponentDef";
  * - `startNeedsUpdate`/`endNeedsUpdate`: Flags to trigger recalculation
  */
 export const Connector = defineEditorComponent(
-  "connector",
+  { name: "connector", sync: "document" },
   {
     startBlock: field.ref(),
     startBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
@@ -22,6 +22,5 @@ export const Connector = defineEditorComponent(
     endBlock: field.ref(),
     endBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
     endUv: field.tuple(field.float64(), 2).default([1, 1]),
-  },
-  { sync: "document" }
+  }
 );

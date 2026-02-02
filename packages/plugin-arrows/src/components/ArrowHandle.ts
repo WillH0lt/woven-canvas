@@ -8,13 +8,12 @@ import { ArrowHandleKind } from "../types";
  * modify arrow endpoints and control points.
  */
 export const ArrowHandle = defineEditorComponent(
-  "arrowHandle",
+  { name: "arrowHandle" },
   {
     /** Kind of handle (start, middle, or end) */
     kind: field.enum(ArrowHandleKind).default(ArrowHandleKind.Start),
 
     /** Reference to the arrow entity this handle controls */
     arrowEntity: field.ref(),
-  },
-  { sync: "none" }
+  }
 );

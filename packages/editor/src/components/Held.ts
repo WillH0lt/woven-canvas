@@ -1,5 +1,5 @@
 import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "../EditorComponentDef";
+import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
 
 /**
  * Held component - marks an entity as being actively held by a user.
@@ -12,9 +12,8 @@ import { defineEditorComponent } from "../EditorComponentDef";
  * This syncs ephemerally so remote users can see what's being held.
  */
 export const Held = defineEditorComponent(
-  "held",
+  { name: "held", sync: "ephemeral" },
   {
     sessionId: field.string().max(36).default(""),
-  },
-  { sync: "ephemeral" }
+  }
 );

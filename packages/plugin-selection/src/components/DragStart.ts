@@ -7,7 +7,7 @@ import { field, defineEditorComponent } from "@infinitecanvas/editor";
  * original position on cancel.
  */
 export const DragStart = defineEditorComponent(
-  "dragStart",
+  { name: "dragStart" },
   {
     /** Initial position as [left, top] */
     position: field.tuple(field.float64(), 2).default([0, 0]),
@@ -19,6 +19,5 @@ export const DragStart = defineEditorComponent(
     flip: field.tuple(field.boolean(), 2).default([false, false]),
     /** Initial font size */
     fontSize: field.float64().default(16),
-  },
-  { sync: "none" }
+  }
 );

@@ -1,5 +1,5 @@
 import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "../EditorComponentDef";
+import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
 
 /**
  * Opacity component - controls visibility of an entity.
@@ -8,9 +8,8 @@ import { defineEditorComponent } from "../EditorComponentDef";
  * Used to temporarily hide transform boxes and handles during drag operations.
  */
 export const Opacity = defineEditorComponent(
-  "opacity",
+  { name: "opacity" },
   {
     value: field.uint8().default(255),
-  },
-  { sync: "none" }
+  }
 );

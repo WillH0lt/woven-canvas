@@ -11,7 +11,6 @@ import { defineEditorComponent } from "@infinitecanvas/editor";
  * TransformHandle component's transformBox field.
  */
 export const TransformBox = defineEditorComponent(
-  "transformBox",
-  {},
-  { sync: "none" }
+  { name: "transformBox" },
+  {}
 );

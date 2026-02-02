@@ -1,7 +1,8 @@
+import {
+  type AnyEditorComponentDef,
+  type AnyEditorSingletonDef,
+} from "@infinitecanvas/ecs-sync";
 import type { Context } from "@infinitecanvas/ecs";
-
-import type { AnyEditorComponentDef } from "./EditorComponentDef";
-import type { AnyEditorSingletonDef as EditorSingletonDef } from "./EditorSingletonDef";
 import type { EditorSystem } from "./EditorSystem";
 import type { CursorDef, Keybind, BlockDefInput } from "./types";
 import type { FontFamilyInput } from "./FontLoader";
@@ -105,7 +106,7 @@ export interface EditorPlugin<TResources = unknown> {
    * Singletons to register.
    * Create with new EditorSingletonDef(schema, options).
    */
-  singletons?: EditorSingletonDef[];
+  singletons?: AnyEditorSingletonDef[];
 
   /**
    * Systems to register.
@@ -148,7 +149,7 @@ export interface EditorPlugin<TResources = unknown> {
  * ```
  */
 export type EditorPluginFactory<TOptions = unknown, TResources = unknown> = (
-  options: TOptions
+  options: TOptions,
 ) => EditorPlugin<TResources>;
 
 /**
@@ -176,7 +177,7 @@ export function parsePlugin(input: EditorPluginInput): EditorPlugin {
  * @internal
  */
 export function sortPluginsByDependencies(
-  plugins: EditorPlugin[]
+  plugins: EditorPlugin[],
 ): EditorPlugin[] {
   const sorted: EditorPlugin[] = [];
   const visited = new Set<string>();
@@ -195,7 +196,7 @@ export function sortPluginsByDependencies(
       const dep = pluginMap.get(depName);
       if (!dep) {
         throw new Error(
-          `Plugin "${plugin.name}" depends on "${depName}" which is not registered`
+          `Plugin "${plugin.name}" depends on "${depName}" which is not registered`,
         );
       }
       visit(dep);

@@ -5,8 +5,9 @@ import type { EditorResources } from "./types";
 import {
   EditorComponentDef,
   type AnyEditorComponentDef,
-} from "./EditorComponentDef";
-import { EditorSingletonDef } from "./EditorSingletonDef";
+  EditorSingletonDef,
+  type AnyEditorSingletonDef,
+} from "@infinitecanvas/ecs-sync";
 import {
   attachKeyboardListeners,
   detachKeyboardListeners,
@@ -25,13 +26,11 @@ import {
 import { rankBoundsSystem } from "./systems/preInput";
 import { intersectSystem } from "./systems/preCapture";
 import { keybindSystem } from "./systems/capture";
-import { undoRedoSystem, removeEmptyTextSystem } from "./systems/update";
+import { removeEmptyTextSystem } from "./systems/update";
 import { scaleWithZoomSystem } from "./systems/preRender";
 import { cursorSystem } from "./systems/postRender";
 import * as components from "./components";
 import * as singletons from "./singletons";
-import { Key } from "./singletons/Keyboard";
-import { Undo, Redo } from "./command";
 
 import { PLUGIN_NAME } from "./constants";
 import { cursors } from "./cursors";
@@ -45,18 +44,12 @@ export const CorePlugin: EditorPlugin = {
   cursors,
 
   singletons: Object.values(singletons).filter(
-    (v): v is EditorSingletonDef<any> => v instanceof EditorSingletonDef,
-  ),
+    (v) => v instanceof EditorSingletonDef,
+  ) as AnyEditorSingletonDef[],
 
   components: Object.values(components).filter(
     (v) => v instanceof EditorComponentDef,
   ) as AnyEditorComponentDef[],
-
-  keybinds: [
-    { command: Undo.name, key: Key.Z, mod: true },
-    { command: Redo.name, key: Key.Y, mod: true },
-    { command: Redo.name, key: Key.Z, mod: true, shift: true },
-  ],
 
   systems: [
     // Input phase
@@ -72,7 +65,6 @@ export const CorePlugin: EditorPlugin = {
     keybindSystem,
 
     // Update phase
-    undoRedoSystem,
     removeEmptyTextSystem,
 
     // Render phase

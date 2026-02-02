@@ -15,13 +15,12 @@ import { CursorKind } from "../cursors";
  * - `cursorKind`: Cursor to show when hovering this handle
  */
 export const TransformHandle = defineEditorComponent(
-  "transformHandle",
+  { name: "transformHandle" },
   {
     kind: field.string().max(16).default(TransformHandleKind.Scale),
     vectorX: field.int8().default(0),
     vectorY: field.int8().default(0),
     transformBox: field.ref(),
     cursorKind: field.string().max(16).default(CursorKind.Drag),
-  },
-  { sync: "none" }
+  }
 );

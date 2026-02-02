@@ -51,7 +51,7 @@ const ArcArrowSchema = {
  */
 class ArcArrowDef extends EditorComponentDef<typeof ArcArrowSchema> {
   constructor() {
-    super("arcArrow", ArcArrowSchema, { sync: "document" });
+    super({ name: "arcArrow", sync: "document" }, ArcArrowSchema);
   }
 
   /**

@@ -14,9 +14,9 @@ import {
   Aabb,
   Hovered,
   HitGeometry,
-  Synced,
   Held,
 } from "../../components";
+import { Synced } from "@infinitecanvas/ecs-sync";
 import { computeAabb, intersectPoint, isHeldByRemote } from "../../helpers";
 
 // Query for blocks that have changed (need AABB recalculation)

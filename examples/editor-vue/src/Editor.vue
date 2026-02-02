@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { shallowRef, ref } from "vue";
+import { ref } from "vue";
 import { Editor, Color, Text, VerticalAlign } from "@infinitecanvas/editor";
-import { YjsStore } from "@infinitecanvas/store-yjs";
-import { InfiniteCanvas, FloatingMenuBar, Toolbar } from "@infinitecanvas/vue";
+import {
+  InfiniteCanvas,
+  FloatingMenuBar,
+  Toolbar,
+  type EditorSync,
+} from "@infinitecanvas/vue";
 
 import { Shape } from "./Shape";
 import ShapeBlock from "./components/ShapeBlock.vue";
@@ -16,24 +20,32 @@ const savedOnline = localStorage.getItem(ONLINE_STORAGE_KEY);
 const initialOnline = savedOnline !== null ? savedOnline === "true" : true;
 const isOnline = ref(initialOnline);
 
-const editorRef = shallowRef<Editor | null>(null);
+let store: EditorSync | null = null;
 
-// Create store for persistence and sync
-const store = new YjsStore({
-  documentId: "editor-vue-demo-v2",
-  websocketUrl: "ws://localhost:1234",
-  startOnline: initialOnline,
-});
-
-function handleReady(editor: Editor) {
-  editorRef.value = editor;
+function handleReady(_inEditor: Editor, inStore: EditorSync) {
+  store = inStore;
 }
 
-function toggleOnline() {
+async function toggleOnline() {
   isOnline.value = !isOnline.value;
   localStorage.setItem(ONLINE_STORAGE_KEY, String(isOnline.value));
-  store.setOnline(isOnline.value);
+  if (isOnline.value) {
+    await store?.connect();
+  } else {
+    store?.disconnect();
+  }
 }
+
+const syncOptions = ref({
+  documentId: "editor-vue-test",
+  usePersistence: true,
+  useHistory: true,
+  websocket: {
+    url: "ws://localhost:8087/ws",
+    clientId: crypto.randomUUID(),
+    startOffline: !isOnline.value,
+  },
+});
 </script>
 
 <template>
@@ -46,7 +58,7 @@ function toggleOnline() {
     </div>
     <InfiniteCanvas
       @ready="handleReady"
-      :store="store"
+      :sync-options="syncOptions"
       :controls="{ maxZoom: 3 }"
       :components="[Shape]"
       :blockDefs="[

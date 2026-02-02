@@ -12,16 +12,19 @@ import {
   type WebsocketAdapterOptions,
 } from "./adapters/Websocket";
 
+export interface EditorSyncInitOptions {
+  components: AnyEditorComponentDef[];
+  singletons: AnyEditorSingletonDef[];
+}
+
 /**
  * Options for EditorSync
  */
 export interface EditorSyncOptions {
   documentId: string;
-  components?: AnyEditorComponentDef[];
-  singletons?: AnyEditorSingletonDef[];
   usePersistence?: boolean;
   useHistory?: boolean;
-  websocket?: WebsocketAdapterOptions;
+  websocket?: Omit<WebsocketAdapterOptions, "documentId" | "usePersistence">;
 }
 
 /**
@@ -37,40 +40,40 @@ export interface EditorSyncOptions {
  * to the server) while still updating internal state to match.
  */
 export class EditorSync {
-  private ecsAdapter: EcsAdapter;
+  private ecsAdapter!: EcsAdapter;
   private historyAdapter: HistoryAdapter | null = null;
   private websocketAdapter: WebsocketAdapter | null = null;
   private adapters: Adapter[] = [];
+  private options: EditorSyncOptions;
 
   constructor(options: EditorSyncOptions) {
-    this.ecsAdapter = new EcsAdapter({
-      components: options.components || [],
-      singletons: options.singletons || [],
-    });
+    this.options = options;
+  }
+
+  async initialize({ components, singletons }: EditorSyncInitOptions): Promise<void> {
+    this.ecsAdapter = new EcsAdapter({ components, singletons });
     this.adapters.push(this.ecsAdapter);
 
-    if (options.usePersistence) {
+    if (this.options.usePersistence) {
       this.adapters.push(
-        new PersistenceAdapter({ documentId: options.documentId }),
+        new PersistenceAdapter({ documentId: this.options.documentId }),
       );
     }
 
-    if (options.useHistory) {
+    if (this.options.useHistory) {
       this.historyAdapter = new HistoryAdapter();
       this.adapters.push(this.historyAdapter);
     }
 
-    if (options.websocket) {
+    if (this.options.websocket) {
       this.websocketAdapter = new WebsocketAdapter({
-        ...options.websocket,
-        documentId: options.documentId,
-        usePersistence: options.usePersistence ?? false,
+        ...this.options.websocket,
+        documentId: this.options.documentId,
+        usePersistence: this.options.usePersistence ?? false,
       });
       this.adapters.push(this.websocketAdapter);
     }
-  }
 
-  async initialize(): Promise<void> {
     await Promise.all(this.adapters.map((adapter) => adapter.init()));
   }
 

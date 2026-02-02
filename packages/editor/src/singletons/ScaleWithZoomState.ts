@@ -1,5 +1,5 @@
 import { field } from "@infinitecanvas/ecs";
-import { defineEditorSingleton } from "../EditorSingletonDef";
+import { defineEditorSingleton } from "@infinitecanvas/ecs-sync";
 
 /**
  * ScaleWithZoomState singleton - tracks state for the ScaleWithZoom system.
@@ -8,10 +8,9 @@ import { defineEditorSingleton } from "../EditorSingletonDef";
  * and update all ScaleWithZoom entities accordingly.
  */
 export const ScaleWithZoomState = defineEditorSingleton(
-  "scaleWithZoomState",
+  { name: "scaleWithZoomState" },
   {
     /** Last processed zoom level */
     lastZoom: field.float64().default(1),
-  },
-  { sync: "none" }
+  }
 );

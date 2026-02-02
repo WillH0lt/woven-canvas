@@ -4,7 +4,6 @@ import {
   defineSystem,
   getResources,
   type EditorPlugin,
-  type StoreAdapter,
   type EditorResources,
 } from "../src";
 
@@ -44,24 +43,6 @@ describe("Editor", () => {
       expect(setup).toHaveBeenCalledWith(editor._getContext());
     });
 
-    it("should initialize store on initialize", async () => {
-      const initialize = vi.fn().mockResolvedValue(undefined);
-
-      const store: StoreAdapter = {
-        onComponentAdded: vi.fn(),
-        onComponentUpdated: vi.fn(),
-        onComponentRemoved: vi.fn(),
-        onSingletonUpdated: vi.fn(),
-        commit: vi.fn(),
-        initialize,
-        flushChanges: vi.fn(),
-      };
-
-      editor = new Editor(mockDomElement, { store });
-      await editor.initialize();
-
-      expect(initialize).toHaveBeenCalled();
-    });
   });
 
   describe("tick", () => {

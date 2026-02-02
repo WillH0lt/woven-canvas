@@ -1,5 +1,5 @@
 import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "../EditorComponentDef";
+import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
 import { VerticalAlignment } from "../types";
 
 /**
@@ -8,9 +8,8 @@ import { VerticalAlignment } from "../types";
  * Values: "top", "center", "bottom"
  */
 export const VerticalAlign = defineEditorComponent(
-  "verticalAlign",
+  { name: "verticalAlign", sync: "document" },
   {
     value: field.enum(VerticalAlignment).default(VerticalAlignment.Top),
-  },
-  { sync: "document" },
+  }
 );

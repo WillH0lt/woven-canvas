@@ -1,5 +1,5 @@
 import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "../EditorComponentDef";
+import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
 import { Vec2, Rect, Aabb, Mat2 } from "@infinitecanvas/math";
 
 // Pre-allocated arrays for SAT intersection to avoid allocations
@@ -43,7 +43,7 @@ const BlockSchema = {
  */
 class BlockDef extends EditorComponentDef<typeof BlockSchema> {
   constructor() {
-    super("block", BlockSchema, { sync: "document" });
+    super({ name: "block", sync: "document" }, BlockSchema);
   }
 
   /**

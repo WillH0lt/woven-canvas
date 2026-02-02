@@ -367,7 +367,7 @@ export class YjsStore implements StoreAdapter {
     // Translate refs from entityIds to syncedIds before storing
     const translatedData = this.translateRefsOutbound(componentDef, data);
 
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       // Store in Yjs document for persistence
       const componentsMap = this.doc.getMap("components");
       let componentMap = componentsMap.get(componentDef.name) as Y.Map<unknown>;
@@ -378,7 +378,7 @@ export class YjsStore implements StoreAdapter {
       }
 
       componentMap.set(id, translatedData);
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       // Store in awareness for ephemeral sync (presence/cursors)
       const key = `${componentDef.name}:${id}`;
       this.setLocalEphemeral(key, translatedData);
@@ -397,7 +397,7 @@ export class YjsStore implements StoreAdapter {
     // Translate refs from entityIds to syncedIds before storing
     const translatedData = this.translateRefsOutbound(componentDef, data);
 
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       const componentsMap = this.doc.getMap("components");
       const componentMap = componentsMap.get(componentDef.name) as
         | Y.Map<unknown>
@@ -406,7 +406,7 @@ export class YjsStore implements StoreAdapter {
       if (componentMap) {
         componentMap.set(id, translatedData);
       }
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       this.setLocalEphemeral(key, translatedData);
       this.localEphemeralKeys.add(key);
@@ -417,7 +417,7 @@ export class YjsStore implements StoreAdapter {
    * Called when a component is removed from an entity.
    */
   onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
-    if (componentDef.__editor.sync === "document") {
+    if (componentDef.__sync === "document") {
       const componentsMap = this.doc.getMap("components");
       const componentMap = componentsMap.get(componentDef.name) as
         | Y.Map<unknown>
@@ -426,7 +426,7 @@ export class YjsStore implements StoreAdapter {
       if (componentMap) {
         componentMap.delete(id);
       }
-    } else if (componentDef.__editor.sync === "ephemeral") {
+    } else if (componentDef.__sync === "ephemeral") {
       const key = `${componentDef.name}:${id}`;
       this.removeLocalEphemeral(key);
       this.localEphemeralKeys.delete(key);
@@ -452,7 +452,7 @@ export class YjsStore implements StoreAdapter {
    */
   onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void {
     // Only handle document-synced singletons
-    if (singletonDef.__editor.sync !== "document") return;
+    if (singletonDef.__sync !== "document") return;
 
     const singletonsMap = this.doc.getMap("singletons");
     singletonsMap.set(singletonDef.name, data);

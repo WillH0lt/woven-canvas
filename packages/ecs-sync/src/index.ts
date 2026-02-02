@@ -19,7 +19,11 @@ export {
   defineEditorSingleton,
 } from "./EditorSingletonDef";
 
-export { EditorSync, type EditorSyncOptions } from "./EditorSync";
+export {
+  EditorSync,
+  type EditorSyncOptions,
+  type EditorSyncInitOptions,
+} from "./EditorSync";
 
 export {
   WebsocketAdapter,

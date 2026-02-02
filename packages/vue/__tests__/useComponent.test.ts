@@ -6,7 +6,7 @@ import { defineEditorComponent, field } from "@infinitecanvas/editor";
 
 describe("useComponent", () => {
   // Create properly typed component definitions
-  const TestComponent = defineEditorComponent("TestComponent", {
+  const TestComponent = defineEditorComponent({ name: "TestComponent" }, {
     value: field.int32(),
   });
 
