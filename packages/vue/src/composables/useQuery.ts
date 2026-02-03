@@ -10,6 +10,7 @@ import {
   type EntityId,
   type InferComponentType,
   type AnyEditorComponentDef,
+  type Context,
 } from "@infinitecanvas/editor";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
@@ -59,7 +60,7 @@ export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
  * ```
  */
 export function useQuery<T extends readonly ComponentDefWithSchema[]>(
-  components: T
+  components: T,
 ): Ref<QueryResultItem<T>[]> {
   const canvasContext = inject(INFINITE_CANVAS_KEY);
   if (!canvasContext) {
@@ -110,7 +111,7 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(
         componentDef.name,
         (value) => {
           (componentRef as ShallowRef<unknown>).value = value;
-        }
+        },
       );
       unsubscribes.push(unsubscribe);
     }
@@ -144,12 +145,7 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(
   }
 
   // Called on each tick by InfiniteCanvas
-  function onTick() {
-    const editor = canvasContext!.getEditor();
-    if (!editor) return;
-
-    const ctx = editor._getContext();
-
+  function onTick(ctx: Context) {
     // Initialize on first tick with editor available
     if (!initialized) {
       const currentIds = queryDef.current(ctx);

@@ -93,35 +93,40 @@ export class EcsAdapter implements Adapter {
       this.componentMap.set(componentId, comp);
       this.componentsByName.set(comp.name, comp);
     }
-    this.eventIndex = ctx.eventBuffer.getWriteIndex();
   }
 
   /**
    * Read ECS events since the last push and convert to mutations.
    * Keys use stable IDs: "uuid/componentName" or "SINGLETON/singletonName".
    */
-  pull(): Mutation | null {
+  pull(): Mutation[] {
     this.ensureInitialized();
     const ctx = this.ctx;
+
     const { events } = ctx.eventBuffer.readEvents(this.eventIndex);
 
-    if (events.length === 0) return null;
+    if (events.length === 0) return [];
 
-    const patch: Patch = {};
+    const docPatch: Patch = {};
+    const ephPatch: Patch = {};
 
     for (const event of events) {
       const { entityId, eventType, componentId } = event;
 
       // Handle entity removal — emit deletion patches for all tracked components
       if (eventType === EventType.REMOVED) {
-        let stableId = this.entityToStableId.get(entityId);
+        const stableId = this.entityToStableId.get(entityId);
 
         if (!stableId) continue;
 
         const prefix = `${stableId}/`;
         for (const key of Object.keys(this.prevState)) {
           if (key.startsWith(prefix)) {
-            patch[key] = { _exists: false };
+            const compName = key.slice(prefix.length);
+            const compDef = this.componentsByName.get(compName);
+            const target =
+              compDef?.__sync === "ephemeral" ? ephPatch : docPatch;
+            target[key] = { _exists: false };
             this.prevState[key] = { _exists: false };
           }
         }
@@ -155,6 +160,7 @@ export class EcsAdapter implements Adapter {
       }
 
       const key = `${stableId}/${componentDef.name}`;
+      const patch = componentDef.__sync === "ephemeral" ? ephPatch : docPatch;
 
       switch (eventType) {
         case EventType.COMPONENT_ADDED: {
@@ -190,11 +196,22 @@ export class EcsAdapter implements Adapter {
       }
     }
 
-    if (Object.keys(patch).length > 0) {
-      return { patch, origin: Origin.ECS };
+    const results: Mutation[] = [];
+    if (Object.keys(docPatch).length > 0) {
+      results.push({
+        patch: docPatch,
+        origin: Origin.ECS,
+        syncBehavior: "document",
+      });
     }
-
-    return null;
+    if (Object.keys(ephPatch).length > 0) {
+      results.push({
+        patch: ephPatch,
+        origin: Origin.ECS,
+        syncBehavior: "ephemeral",
+      });
+    }
+    return results;
   }
 
   /**

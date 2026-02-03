@@ -115,6 +115,8 @@ export function subtract(a: Patch, b: Patch): Patch {
  * // Returns: { "e1/Position": { _exists: false } }  (deletions always pass through)
  */
 export function strip(a: Patch, mask: Patch): Patch {
+  if (Object.keys(mask).length === 0) return a;
+
   const result: Patch = {};
 
   for (const [key, aValue] of Object.entries(a)) {

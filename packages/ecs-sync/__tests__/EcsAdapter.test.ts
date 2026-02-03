@@ -97,11 +97,11 @@ function createSyncedEntity(
 }
 
 function wsMutation(patch: Mutation["patch"]): Mutation {
-  return { patch, origin: Origin.Websocket };
+  return { patch, origin: Origin.Websocket, syncBehavior: "document" };
 }
 
 function ecsMutation(patch: Mutation["patch"]): Mutation {
-  return { patch, origin: Origin.ECS };
+  return { patch, origin: Origin.ECS, syncBehavior: "document" };
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
@@ -124,7 +124,8 @@ describe("EcsAdapter", () => {
   describe("pull", () => {
     it("returns null when no events have occurred", () => {
       const { adapter } = setup();
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("returns null when events exist but none are for tracked components", () => {
@@ -136,7 +137,8 @@ describe("EcsAdapter", () => {
       const eid = createEntity(ctx);
       addComponent(ctx, eid, Unsyncable, { value: 42 });
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("produces a mutation for a component addition on a synced entity", () => {
@@ -146,10 +148,10 @@ describe("EcsAdapter", () => {
       const eid = createSyncedEntity(ctx, "uuid-1");
       addComponent(ctx, eid, Position, { x: 10, y: 20 });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.origin).toBe(Origin.ECS);
-      expect(mutation!.patch["uuid-1/Position"]).toEqual({
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].origin).toBe(Origin.ECS);
+      expect(mutations[0].patch["uuid-1/Position"]).toEqual({
         _exists: true,
         x: 10,
         y: 20,
@@ -166,9 +168,9 @@ describe("EcsAdapter", () => {
 
       removeComponent(ctx, eid, Position);
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["uuid-1/Position"]).toEqual({ _exists: false });
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch["uuid-1/Position"]).toEqual({ _exists: false });
     });
 
     it("produces diffs for changed fields only", () => {
@@ -178,8 +180,8 @@ describe("EcsAdapter", () => {
       const eid = createSyncedEntity(ctx, "uuid-1");
       addComponent(ctx, eid, Position, { x: 10, y: 20 });
 
-      const addMutation = adapter.pull(); // consume add
-      expect(addMutation).not.toBeNull();
+      const addMutations = adapter.pull(); // consume add
+      expect(addMutations.length).toBeGreaterThan(0);
 
       // push() advances eventIndex — mimics the real sync loop
       adapter.push([]);
@@ -188,10 +190,10 @@ describe("EcsAdapter", () => {
       const writer = Position.write(ctx, eid);
       writer.x = 50;
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
       // Only x changed
-      expect(mutation!.patch["uuid-1/Position"]).toEqual({ x: 50 });
+      expect(mutations[0].patch["uuid-1/Position"]).toEqual({ x: 50 });
     });
 
     it("returns null when field values have not changed", () => {
@@ -207,7 +209,8 @@ describe("EcsAdapter", () => {
       const writer = Position.write(ctx, eid);
       writer.x = 10;
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("handles multiple components on the same entity", () => {
@@ -218,14 +221,14 @@ describe("EcsAdapter", () => {
       addComponent(ctx, eid, Position, { x: 1, y: 2 });
       addComponent(ctx, eid, Velocity, { vx: 3, vy: 4 });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["uuid-1/Position"]).toEqual({
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch["uuid-1/Position"]).toEqual({
         _exists: true,
         x: 1,
         y: 2,
       });
-      expect(mutation!.patch["uuid-1/Velocity"]).toEqual({
+      expect(mutations[0].patch["uuid-1/Velocity"]).toEqual({
         _exists: true,
         vx: 3,
         vy: 4,
@@ -242,10 +245,10 @@ describe("EcsAdapter", () => {
       const eid2 = createSyncedEntity(ctx, "uuid-2");
       addComponent(ctx, eid2, Position, { x: 30, y: 40 });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["uuid-1/Position"]).toBeDefined();
-      expect(mutation!.patch["uuid-2/Position"]).toBeDefined();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch["uuid-1/Position"]).toBeDefined();
+      expect(mutations[0].patch["uuid-2/Position"]).toBeDefined();
     });
 
     it("ignores entities without Synced component", () => {
@@ -255,7 +258,8 @@ describe("EcsAdapter", () => {
       const eid = createEntity(ctx);
       addComponent(ctx, eid, Position, { x: 10, y: 20 });
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("ignores components with sync: none", () => {
@@ -265,7 +269,8 @@ describe("EcsAdapter", () => {
       const eid = createSyncedEntity(ctx, "uuid-1");
       addComponent(ctx, eid, Unsyncable, { value: 42 });
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("emits deletion patches when entity is removed", () => {
@@ -279,10 +284,10 @@ describe("EcsAdapter", () => {
 
       removeEntity(ctx, eid);
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["uuid-1/Position"]).toEqual({ _exists: false });
-      expect(mutation!.patch["uuid-1/Velocity"]).toEqual({ _exists: false });
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch["uuid-1/Position"]).toEqual({ _exists: false });
+      expect(mutations[0].patch["uuid-1/Velocity"]).toEqual({ _exists: false });
     });
 
     it("ignores entity removal for untracked entities", () => {
@@ -293,7 +298,8 @@ describe("EcsAdapter", () => {
       // No Synced, no tracked components
       removeEntity(ctx, eid);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
   });
 
@@ -313,9 +319,9 @@ describe("EcsAdapter", () => {
       const w1 = Camera.write(ctx);
       w1.zoom = 5;
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch[`${SINGLETON_STABLE_ID}/Camera`]).toEqual({
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch[`${SINGLETON_STABLE_ID}/Camera`]).toEqual({
         zoom: 5,
       });
     });
@@ -334,9 +340,9 @@ describe("EcsAdapter", () => {
       const w2 = Camera.write(ctx);
       w2.panX = 200;
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch[`${SINGLETON_STABLE_ID}/Camera`]).toEqual({
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch[`${SINGLETON_STABLE_ID}/Camera`]).toEqual({
         panX: 200,
       });
     });
@@ -348,7 +354,8 @@ describe("EcsAdapter", () => {
       const writer = UnsyncedSingleton.write(ctx);
       writer.foo = 99;
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("does not emit COMPONENT_ADDED for singletons", () => {
@@ -363,12 +370,12 @@ describe("EcsAdapter", () => {
       const writer = Camera.write(ctx);
       writer.zoom = 3;
 
-      const mutation = adapter.pull();
-      if (mutation) {
+      const mutations = adapter.pull();
+      if (mutations.length > 0) {
         // If a mutation is produced, it should be a diff, not an _exists: true
         const key = `${SINGLETON_STABLE_ID}/Camera`;
-        if (mutation.patch[key]) {
-          expect(mutation.patch[key]._exists).toBeUndefined();
+        if (mutations[0].patch[key]) {
+          expect(mutations[0].patch[key]._exists).toBeUndefined();
         }
       }
     });
@@ -382,7 +389,8 @@ describe("EcsAdapter", () => {
       adapter.push([ecsMutation({ "uuid-1/Position": { _exists: true, x: 10, y: 20 } })]);
 
       // No entity should have been created
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("creates a new entity and adds a component from a mutation", () => {
@@ -397,7 +405,8 @@ describe("EcsAdapter", () => {
 
       // Entity should now exist in ECS with a Synced component
       // pull() should return null since push advances the event index
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("applies component data when adding", () => {
@@ -415,7 +424,8 @@ describe("EcsAdapter", () => {
       // We need to find the entity that was created
       // The adapter created an entity with Synced.id = "uuid-1"
       // Let's push another mutation and check pull still works
-      expect(adapter.pull()).toBeNull();
+      let mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
 
       // Push a second mutation for the same entity (partial update)
       adapter.push([
@@ -423,7 +433,8 @@ describe("EcsAdapter", () => {
       ]);
 
       // Verify no spurious pull
-      expect(adapter.pull()).toBeNull();
+      mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("removes a component via _exists: false", () => {
@@ -442,7 +453,8 @@ describe("EcsAdapter", () => {
         wsMutation({ "uuid-1/Position": { _exists: false } }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("applies partial updates to existing components", () => {
@@ -461,7 +473,8 @@ describe("EcsAdapter", () => {
         wsMutation({ "uuid-1/Position": { x: 99 } }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("creates multiple entities from one mutation", () => {
@@ -475,7 +488,8 @@ describe("EcsAdapter", () => {
         }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("handles multiple mutations in one push call", () => {
@@ -487,7 +501,8 @@ describe("EcsAdapter", () => {
         wsMutation({ "uuid-2/Velocity": { _exists: true, vx: 3, vy: 4 } }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("ignores unknown component names", () => {
@@ -498,7 +513,8 @@ describe("EcsAdapter", () => {
         wsMutation({ "uuid-1/Unknown": { _exists: true, foo: 1 } }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("ignores _exists: false for singletons", () => {
@@ -512,7 +528,8 @@ describe("EcsAdapter", () => {
         }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("patches a singleton", () => {
@@ -543,7 +560,8 @@ describe("EcsAdapter", () => {
       ]);
 
       // Should not have created a second entity — adapter maps stableId -> entityId
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("overwrites existing component data when _exists: true is pushed again", () => {
@@ -559,7 +577,8 @@ describe("EcsAdapter", () => {
         wsMutation({ "uuid-1/Position": { _exists: true, x: 99, y: 88 } }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
   });
 
@@ -574,7 +593,8 @@ describe("EcsAdapter", () => {
       ]);
 
       // pull() should not produce a mutation from the events push just created
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("pull sees only events between push and the next pull", () => {
@@ -593,15 +613,15 @@ describe("EcsAdapter", () => {
       const eid2 = createSyncedEntity(ctx, "uuid-2");
       addComponent(ctx, eid2, Position, { x: 50, y: 60 });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
       // Should see only the locally-created entity, not the pushed one
-      expect(mutation!.patch["uuid-2/Position"]).toEqual({
+      expect(mutations[0].patch["uuid-2/Position"]).toEqual({
         _exists: true,
         x: 50,
         y: 60,
       });
-      expect(mutation!.patch["uuid-1/Position"]).toBeUndefined();
+      expect(mutations[0].patch["uuid-1/Position"]).toBeUndefined();
     });
   });
 
@@ -617,10 +637,10 @@ describe("EcsAdapter", () => {
       const sourceEid = createSyncedEntity(ctx, "source-uuid");
       addComponent(ctx, sourceEid, Linked, { target: targetEid });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
       // The ref field should be translated from entityId to stableId
-      expect(mutation!.patch["source-uuid/Linked"]).toEqual({
+      expect(mutations[0].patch["source-uuid/Linked"]).toEqual({
         _exists: true,
         target: "target-uuid",
       });
@@ -633,9 +653,9 @@ describe("EcsAdapter", () => {
       const eid = createSyncedEntity(ctx, "uuid-1");
       addComponent(ctx, eid, Linked, { target: null });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["uuid-1/Linked"]).toEqual({
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch["uuid-1/Linked"]).toEqual({
         _exists: true,
         target: null,
       });
@@ -659,7 +679,8 @@ describe("EcsAdapter", () => {
         }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("translates ref within the same mutation (pass 1 creates entities first)", () => {
@@ -675,7 +696,8 @@ describe("EcsAdapter", () => {
         }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("translates ref to null for unknown stableId on inbound push", () => {
@@ -693,7 +715,8 @@ describe("EcsAdapter", () => {
       ]);
 
       // Should not crash; ref resolves to null
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("translates ref to null for untracked entityId on outbound pull", () => {
@@ -706,10 +729,10 @@ describe("EcsAdapter", () => {
       const eid = createSyncedEntity(ctx, "uuid-1");
       addComponent(ctx, eid, Linked, { target: unsyncedEid });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
       // The ref points to an entity with no stableId mapping → null
-      expect(mutation!.patch["uuid-1/Linked"]!.target).toBeNull();
+      expect(mutations[0].patch["uuid-1/Linked"]!.target).toBeNull();
     });
   });
 
@@ -722,16 +745,17 @@ describe("EcsAdapter", () => {
       const eid = createSyncedEntity(ctx, "uuid-1");
       addComponent(ctx, eid, Position, { x: 10, y: 20 });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
 
       // Simulate another adapter receiving this mutation (as websocket origin)
       const { ctx: ctx2, adapter: adapter2 } = setup();
       adapter2.pull(); // init
-      adapter2.push([{ patch: mutation!.patch, origin: Origin.Websocket }]);
+      adapter2.push([{ patch: mutations[0].patch, origin: Origin.Websocket, syncBehavior: "document" }]);
 
       // Verify the entity was created in ctx2
-      expect(adapter2.pull()).toBeNull();
+      const mutations2 = adapter2.pull();
+      expect(mutations2.length).toBe(0);
     });
 
     it("entity removal round-trips correctly", () => {
@@ -743,9 +767,9 @@ describe("EcsAdapter", () => {
       adapter.pull(); // consume add
 
       removeEntity(ctx, eid);
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["uuid-1/Position"]).toEqual({ _exists: false });
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch["uuid-1/Position"]).toEqual({ _exists: false });
 
       // Apply on another adapter
       const { adapter: adapter2 } = setup();
@@ -757,9 +781,10 @@ describe("EcsAdapter", () => {
       ]);
 
       // Then remove it
-      adapter2.push([{ patch: mutation!.patch, origin: Origin.Websocket }]);
+      adapter2.push([{ patch: mutations[0].patch, origin: Origin.Websocket, syncBehavior: "document" }]);
 
-      expect(adapter2.pull()).toBeNull();
+      const mutations2 = adapter2.pull();
+      expect(mutations2.length).toBe(0);
     });
   });
 
@@ -771,16 +796,18 @@ describe("EcsAdapter", () => {
       const eid = createSyncedEntity(ctx, "uuid-1");
       addComponent(ctx, eid, Position, { x: 10, y: 20 });
 
-      // First pull triggers ensureInitialized and sets eventIndex to current write index
-      // Events before initialization are skipped
-      const mutation = adapter.pull();
+      // First pull triggers ensureInitialized.  eventIndex starts at 0
+      // so events created before the first pull are captured (this is
+      // important for entities created during editor initialization,
+      // e.g. the User entity).
+      const mutations = adapter.pull();
 
-      // May or may not produce a mutation depending on whether
-      // ensureInitialized's eventIndex advancement skips these events.
-      // The key invariant: no crash occurs.
-      // Since ensureInitialized sets eventIndex to getWriteIndex(), events
-      // created before the first pull are skipped.
-      expect(mutation).toBeNull();
+      expect(mutations.length).toBe(1);
+      expect(mutations[0].patch["uuid-1/Position"]).toEqual({
+        _exists: true,
+        x: 10,
+        y: 20,
+      });
     });
 
     it("initializes component maps on first push via pull dependency", () => {
@@ -803,7 +830,8 @@ describe("EcsAdapter", () => {
       ]);
 
       // Events from push are skipped
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
   });
 
@@ -835,7 +863,8 @@ describe("EcsAdapter", () => {
       // Push another mutation for the same stableId — should reuse entity
       adapter.push([wsMutation({ "uuid-1/Position": { x: 50 } })]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
 
     it("cleans up mapping when entity is removed via pull", () => {
@@ -854,7 +883,8 @@ describe("EcsAdapter", () => {
         wsMutation({ "uuid-1/Position": { _exists: true, x: 99, y: 88 } }),
       ]);
 
-      expect(adapter.pull()).toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations.length).toBe(0);
     });
   });
 });

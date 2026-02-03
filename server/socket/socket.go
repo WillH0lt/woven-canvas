@@ -10,7 +10,7 @@ import (
 
 const (
 	writeWait      = 10 * time.Second
-	pongWait       = 60 * time.Second
+	pongWait       = 20 * time.Second
 	pingPeriod     = (pongWait * 9) / 10
 	maxMessageSize = 512 * 1024 // 512KB
 )
@@ -83,14 +83,7 @@ func (h *Hub) run() {
 			}
 
 		case client := <-h.Unregister:
-			if _, ok := h.Clients[client]; ok {
-				delete(h.Clients, client)
-				close(client.Send)
-				log.Printf("Client disconnected: %s (%d total)", client.ClientID, len(h.Clients))
-				if h.OnDisconnect != nil {
-					h.OnDisconnect(client, len(h.Clients))
-				}
-			}
+			h.removeClient(client)
 
 		case msg := <-h.incoming:
 			if h.OnMessage != nil {
@@ -105,14 +98,25 @@ func (h *Hub) run() {
 	}
 }
 
+func (h *Hub) removeClient(client *Client) {
+	if _, ok := h.Clients[client]; !ok {
+		return
+	}
+	delete(h.Clients, client)
+	close(client.Send)
+	log.Printf("Client disconnected: %s (%d total)", client.ClientID, len(h.Clients))
+	if h.OnDisconnect != nil {
+		h.OnDisconnect(client, len(h.Clients))
+	}
+}
+
 // Broadcast sends data to all connected clients.
 func (h *Hub) Broadcast(data []byte) {
 	for client := range h.Clients {
 		select {
 		case client.Send <- data:
 		default:
-			close(client.Send)
-			delete(h.Clients, client)
+			h.removeClient(client)
 		}
 	}
 }
@@ -126,8 +130,7 @@ func (h *Hub) BroadcastExcept(exclude *Client, data []byte) {
 		select {
 		case client.Send <- data:
 		default:
-			close(client.Send)
-			delete(h.Clients, client)
+			h.removeClient(client)
 		}
 	}
 }

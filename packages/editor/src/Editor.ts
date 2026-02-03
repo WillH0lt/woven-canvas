@@ -153,7 +153,10 @@ export class Editor {
 
     // Collect all components and singletons from plugins and custom options
     // Always include CommandMarker for the command system
-    const allDefs: (ComponentDef<any> | SingletonDef<any>)[] = [CommandMarker, Synced];
+    const allDefs: (ComponentDef<any> | SingletonDef<any>)[] = [
+      CommandMarker,
+      Synced,
+    ];
     for (const plugin of sortedPlugins) {
       if (plugin.components) {
         allDefs.push(...plugin.components);
@@ -321,16 +324,18 @@ export class Editor {
     }
 
     // Create the user entity for presence tracking
-    const userEntity = createEntity(this.ctx);
-    addComponent(this.ctx, userEntity, Synced, {
-      id: this.userData.sessionId,
-    });
-    addComponent(this.ctx, userEntity, User, {
-      userId: this.userData.userId,
-      sessionId: this.userData.sessionId,
-      color: this.userData.color,
-      name: this.userData.name,
-      avatar: this.userData.avatar,
+    this.nextTick((ctx) => {
+      const userEntity = createEntity(ctx);
+      addComponent(ctx, userEntity, Synced, {
+        id: crypto.randomUUID(),
+      });
+      addComponent(ctx, userEntity, User, {
+        userId: this.userData.userId,
+        sessionId: this.userData.sessionId,
+        color: this.userData.color,
+        name: this.userData.name,
+        avatar: this.userData.avatar,
+      });
     });
 
     // Run plugin setup

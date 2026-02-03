@@ -1,5 +1,9 @@
 import { type InjectionKey } from "vue";
-import { type EntityId, type Editor } from "@infinitecanvas/editor";
+import {
+  type EntityId,
+  type Editor,
+  type Context,
+} from "@infinitecanvas/editor";
 
 /** User data stored in the users map */
 export interface UserInfo {
@@ -23,15 +27,15 @@ export interface InfiniteCanvasContext {
   subscribeComponent: (
     entityId: EntityId,
     componentName: string,
-    callback: (value: unknown) => void
+    callback: (value: unknown) => void,
   ) => () => void;
   /** Subscribe to singleton changes. Returns unsubscribe function. */
   subscribeSingleton: (
     singletonName: string,
-    callback: (value: unknown) => void
+    callback: (value: unknown) => void,
   ) => () => void;
   /** Register a callback to be called on each tick. Returns unregister function. */
-  registerTickCallback: (callback: () => void) => () => void;
+  registerTickCallback: (callback: (ctx: Context) => void) => () => void;
 }
 
 /** Injection key for InfiniteCanvas context */

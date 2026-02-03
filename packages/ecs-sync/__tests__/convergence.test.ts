@@ -22,13 +22,13 @@ class MockAdapter implements Adapter {
 
   /** Queue a mutation to be returned on the next pull(). */
   enqueue(patch: Patch) {
-    this.pendingMutation = { patch, origin: this.origin };
+    this.pendingMutation = { patch, origin: this.origin, syncBehavior: "document" };
   }
 
-  pull(): Mutation | null {
+  pull(): Mutation[] {
     const m = this.pendingMutation;
     this.pendingMutation = null;
-    return m;
+    return m ? [m] : [];
   }
 
   push(mutations: Mutation[]): void {
@@ -65,10 +65,8 @@ function syncLoop(adapters: Adapter[]): void {
   // Phase 1: Pull
   const allMutations: Mutation[] = [];
   for (const adapter of adapters) {
-    const mutation = adapter.pull();
-    if (mutation !== null) {
-      allMutations.push(mutation);
-    }
+    const mutations = adapter.pull();
+    allMutations.push(...mutations);
   }
 
   // Phase 2: Push the same list to every adapter
@@ -81,7 +79,7 @@ function syncLoop(adapters: Adapter[]): void {
 // Helpers
 // ---------------------------------------------------------------------------
 function ecsMutation(patch: Patch): Mutation {
-  return { patch, origin: Origin.ECS };
+  return { patch, origin: Origin.ECS, syncBehavior: "document" };
 }
 
 /** Read History adapter's internal state for test verification. */
@@ -240,12 +238,12 @@ describe("Sync loop convergence", () => {
 
       // Step 4: Undo the x=50 change
       history.undo();
-      const undoMutation = history.pull();
-      expect(undoMutation).not.toBeNull();
+      const undoMutations = history.pull();
+      expect(undoMutations).toHaveLength(1);
 
       // The inverse correctly restores to x=20 (the actual state before
       // the user's x=50 change), not x=10 or x=0.
-      expect(undoMutation!.patch["e1/Pos"]).toEqual({ x: 20 });
+      expect(undoMutations[0].patch["e1/Pos"]).toEqual({ x: 20 });
     });
   });
 
@@ -540,9 +538,9 @@ describe("Sync loop convergence", () => {
 
       // The y=99 change should be undoable
       history.undo();
-      const undoPatch = history.pull();
-      expect(undoPatch).not.toBeNull();
-      expect(undoPatch!.patch["e1/Pos"]).toEqual({ y: 0 });
+      const undoPatches = history.pull();
+      expect(undoPatches).toHaveLength(1);
+      expect(undoPatches[0].patch["e1/Pos"]).toEqual({ y: 0 });
     });
 
     it("no divergence when only one adapter produces a mutation", () => {
@@ -600,15 +598,15 @@ describe("Sync loop convergence", () => {
 
       // Undo
       history.undo();
-      const undoPatch = history.pull();
-      expect(undoPatch).not.toBeNull();
-      expect(undoPatch!.patch["e1/Pos"]).toEqual({ x: 0 });
+      const undoPatches = history.pull();
+      expect(undoPatches).toHaveLength(1);
+      expect(undoPatches[0].patch["e1/Pos"]).toEqual({ x: 0 });
 
       // Redo
       history.redo();
-      const redoPatch = history.pull();
-      expect(redoPatch).not.toBeNull();
-      expect(redoPatch!.patch["e1/Pos"]).toEqual({ x: 42 });
+      const redoPatches = history.pull();
+      expect(redoPatches).toHaveLength(1);
+      expect(redoPatches[0].patch["e1/Pos"]).toEqual({ x: 42 });
     });
   });
 });

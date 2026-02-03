@@ -119,7 +119,7 @@ describe("WebsocketAdapter", () => {
       await adapter.init();
 
       const mutations: Mutation[] = [
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ];
       adapter.push(mutations);
 
@@ -127,7 +127,7 @@ describe("WebsocketAdapter", () => {
       const sent = JSON.parse(mockWs.sentMessages[1]!);
       expect(sent.type).toBe("patch");
       expect(sent.messageId).toEqual(expect.any(String));
-      expect(sent.patches).toEqual([{ "e1/Pos": { x: 10 } }]);
+      expect(sent.documentPatches).toEqual([{ "e1/Pos": { x: 10 } }]);
     });
 
     it("does nothing when WebSocket is not open", async () => {
@@ -136,7 +136,7 @@ describe("WebsocketAdapter", () => {
       mockWs.readyState = MockWebSocket.CLOSED;
 
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       expect(mockWs.sentMessages).toHaveLength(1); // only the initial reconnect
     });
@@ -154,13 +154,13 @@ describe("WebsocketAdapter", () => {
       await adapter.init();
 
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
-        { patch: { "e2/Vel": { vx: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
+        { patch: { "e2/Vel": { vx: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       expect(mockWs.sentMessages).toHaveLength(2);
       const sent = JSON.parse(mockWs.sentMessages[1]!);
-      expect(sent.patches).toHaveLength(2);
+      expect(sent.documentPatches).toHaveLength(2);
     });
 
     it("increments messageId per send", async () => {
@@ -171,11 +171,11 @@ describe("WebsocketAdapter", () => {
       const spy = vi.spyOn(performance, "now").mockImplementation(() => now);
 
       adapter.push([
-        { patch: { "e1/Pos": { x: 1 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 1 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       now += 1001;
       adapter.push([
-        { patch: { "e1/Pos": { x: 2 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 2 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       const sent1 = JSON.parse(mockWs.sentMessages[1]!);
@@ -186,10 +186,10 @@ describe("WebsocketAdapter", () => {
   });
 
   describe("pull / message handling", () => {
-    it("returns null when no messages received", async () => {
+    it("returns empty array when no messages received", async () => {
       const adapter = createAdapter();
       await adapter.init();
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
 
     it("queues mutations from remote clients", async () => {
@@ -198,15 +198,15 @@ describe("WebsocketAdapter", () => {
 
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 99 } }],
+        documentPatches: [{ "e1/Pos": { x: 99 } }],
         clientId: "client-2",
         timestamp: 100,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch).toEqual({ "e1/Pos": { x: 99 } });
-      expect(mutation!.origin).toBe(Origin.Websocket);
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
+      expect(mutations[0].patch).toEqual({ "e1/Pos": { x: 99 } });
+      expect(mutations[0].origin).toBe(Origin.Websocket);
     });
 
     it("ignores malformed JSON messages", async () => {
@@ -214,7 +214,7 @@ describe("WebsocketAdapter", () => {
       await adapter.init();
 
       mockWs.dispatchEvent("message", { data: "not-json" });
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
 
     it("clears pending mutations after pull", async () => {
@@ -223,13 +223,13 @@ describe("WebsocketAdapter", () => {
 
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 10 } }],
+        documentPatches: [{ "e1/Pos": { x: 10 } }],
         clientId: "client-2",
         timestamp: 100,
       });
 
       adapter.pull(); // consume
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
 
     it("merges multiple patches from one message into a single mutation", async () => {
@@ -238,7 +238,7 @@ describe("WebsocketAdapter", () => {
 
       mockWs.receiveMessage({
         type: "patch",
-        patches: [
+        documentPatches: [
           { "e1/Pos": { x: 10 } },
           { "e2/Pos": { x: 20 } },
         ],
@@ -246,10 +246,10 @@ describe("WebsocketAdapter", () => {
         timestamp: 100,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["e1/Pos"]).toEqual({ x: 10 });
-      expect(mutation!.patch["e2/Pos"]).toEqual({ x: 20 });
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ x: 10 });
+      expect(mutations[0].patch["e2/Pos"]).toEqual({ x: 20 });
     });
   });
 
@@ -260,7 +260,7 @@ describe("WebsocketAdapter", () => {
 
       // Send a patch
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Server acks with timestamp
@@ -271,7 +271,7 @@ describe("WebsocketAdapter", () => {
       });
 
       // Ack should not produce a pending patch
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
 
       // Verify timestamp was updated via reconnect message
       await adapter.reconnect();
@@ -287,7 +287,7 @@ describe("WebsocketAdapter", () => {
       // Receive a remote patch
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 5 } }],
+        documentPatches: [{ "e1/Pos": { x: 5 } }],
         clientId: "client-2",
         timestamp: 100,
       });
@@ -315,19 +315,19 @@ describe("WebsocketAdapter", () => {
 
       // Send a patch — now in-flight
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Concurrent broadcast arrives before ack (processed before ours on server)
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 5 } }],
+        documentPatches: [{ "e1/Pos": { x: 5 } }],
         clientId: "client-2",
         timestamp: 1,
       });
 
       // x was stripped — our in-flight value takes precedence
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
 
     it("keeps non-overlapping fields from concurrent broadcasts", async () => {
@@ -336,21 +336,21 @@ describe("WebsocketAdapter", () => {
 
       // Send a patch for x only
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Broadcast touches x (overlapping) and y (non-overlapping)
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 5, y: 20 } }],
+        documentPatches: [{ "e1/Pos": { x: 5, y: 20 } }],
         clientId: "client-2",
         timestamp: 1,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
       // x stripped, y kept
-      expect(mutation!.patch["e1/Pos"]).toEqual({ y: 20 });
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ y: 20 });
     });
 
     it("applies broadcasts after ack clears in-flight", async () => {
@@ -359,7 +359,7 @@ describe("WebsocketAdapter", () => {
 
       // Send a patch
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Ack arrives — clears in-flight
@@ -372,14 +372,14 @@ describe("WebsocketAdapter", () => {
       // Broadcast arrives after ack — should be applied fully
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 99 } }],
+        documentPatches: [{ "e1/Pos": { x: 99 } }],
         clientId: "client-2",
         timestamp: 2,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["e1/Pos"]).toEqual({ x: 99 });
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ x: 99 });
     });
 
     it("keeps deletion broadcast even while in-flight", async () => {
@@ -388,20 +388,20 @@ describe("WebsocketAdapter", () => {
 
       // Send a patch for e1
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Another client deleted e1 — deletions always win
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { _exists: false } }],
+        documentPatches: [{ "e1/Pos": { _exists: false } }],
         clientId: "client-2",
         timestamp: 1,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["e1/Pos"]).toEqual({ _exists: false });
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ _exists: false });
     });
 
     it("does not filter patches for unrelated keys", async () => {
@@ -410,20 +410,20 @@ describe("WebsocketAdapter", () => {
 
       // Send a patch for e1
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Broadcast for e2 — completely unrelated
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e2/Vel": { vx: 5 } }],
+        documentPatches: [{ "e2/Vel": { vx: 5 } }],
         clientId: "client-2",
         timestamp: 1,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["e2/Vel"]).toEqual({ vx: 5 });
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
+      expect(mutations[0].patch["e2/Vel"]).toEqual({ vx: 5 });
     });
 
     it("handles multiple in-flight patches", async () => {
@@ -435,26 +435,26 @@ describe("WebsocketAdapter", () => {
 
       // Two separate sends — both in-flight
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       now += 1001;
       adapter.push([
-        { patch: { "e2/Pos": { y: 20 } }, origin: Origin.ECS },
+        { patch: { "e2/Pos": { y: 20 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Broadcast overlaps with both
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 5 }, "e2/Pos": { y: 7, z: 3 } }],
+        documentPatches: [{ "e1/Pos": { x: 5 }, "e2/Pos": { y: 7, z: 3 } }],
         clientId: "client-2",
         timestamp: 1,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
       // x and y stripped, z kept
-      expect(mutation!.patch["e1/Pos"]).toBeUndefined();
-      expect(mutation!.patch["e2/Pos"]).toEqual({ z: 3 });
+      expect(mutations[0].patch["e1/Pos"]).toBeUndefined();
+      expect(mutations[0].patch["e2/Pos"]).toEqual({ z: 3 });
       spy.mockRestore();
     });
 
@@ -467,11 +467,11 @@ describe("WebsocketAdapter", () => {
 
       // Two sends
       adapter.push([
-        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       now += 1001;
       adapter.push([
-        { patch: { "e2/Pos": { y: 20 } }, origin: Origin.ECS },
+        { patch: { "e2/Pos": { y: 20 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Ack first message only
@@ -484,15 +484,15 @@ describe("WebsocketAdapter", () => {
       // Broadcast touches both — e1 should apply (acked), e2 should strip
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 5 }, "e2/Pos": { y: 7 } }],
+        documentPatches: [{ "e1/Pos": { x: 5 }, "e2/Pos": { y: 7 } }],
         clientId: "client-2",
         timestamp: 2,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["e1/Pos"]).toEqual({ x: 5 });
-      expect(mutation!.patch["e2/Pos"]).toBeUndefined();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ x: 5 });
+      expect(mutations[0].patch["e2/Pos"]).toBeUndefined();
       spy.mockRestore();
     });
   });
@@ -523,7 +523,6 @@ describe("WebsocketAdapter", () => {
       expect(sent).toEqual({
         type: "reconnect",
         lastTimestamp: 0,
-        patches: [],
       });
     });
 
@@ -534,7 +533,7 @@ describe("WebsocketAdapter", () => {
       // Receive a message to set lastTimestamp
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 10 } }],
+        documentPatches: [{ "e1/Pos": { x: 10 } }],
         clientId: "client-2",
         timestamp: 500,
       });
@@ -548,7 +547,6 @@ describe("WebsocketAdapter", () => {
       expect(reconnectMsg).toEqual({
         type: "reconnect",
         lastTimestamp: 500,
-        patches: [],
       });
     });
   });
@@ -560,14 +558,14 @@ describe("WebsocketAdapter", () => {
 
       mockWs.receiveMessage({
         type: "patch",
-        patches: [],
+        documentPatches: [],
         clientId: "client-2",
         timestamp: 100,
       });
 
       mockWs.receiveMessage({
         type: "patch",
-        patches: [],
+        documentPatches: [],
         clientId: "client-2",
         timestamp: 200,
       });
@@ -609,9 +607,9 @@ describe("WebsocketAdapter", () => {
 
       // push should buffer, not throw
       adapter.push([
-        { patch: { "e1/Pos": { x: 1 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 1 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
 
     it("can connect later via reconnect after startOffline", async () => {
@@ -626,7 +624,7 @@ describe("WebsocketAdapter", () => {
 
       // Buffer a mutation while offline
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Connect for the first time
@@ -638,7 +636,7 @@ describe("WebsocketAdapter", () => {
       // sentMessages[0] is the initial reconnect, [1] is the buffered patch
       expect(mockWs.sentMessages).toHaveLength(2);
       const sent = JSON.parse(mockWs.sentMessages[1]!);
-      expect(sent.patches).toEqual([{ "e1/Pos": { x: 5 } }]);
+      expect(sent.documentPatches).toEqual([{ "e1/Pos": { x: 5 } }]);
     });
   });
 
@@ -669,7 +667,7 @@ describe("WebsocketAdapter", () => {
       // Set lastTimestamp so reconnect sends a reconnect message
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 0 } }],
+        documentPatches: [{ "e1/Pos": { x: 0 } }],
         clientId: "client-2",
         timestamp: 100,
       });
@@ -680,35 +678,35 @@ describe("WebsocketAdapter", () => {
 
       // Push mutations while offline — these should buffer
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       adapter.push([
-        { patch: { "e2/Vel": { vx: 10 } }, origin: Origin.ECS },
+        { patch: { "e2/Vel": { vx: 10 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Reconnect — buffer is sent in the reconnect message
       await adapter.reconnect();
       const sent = mockWs.sentMessages.map((s) => JSON.parse(s));
       const reconnectMsg = sent.find((m) => m.type === "reconnect");
-      expect(reconnectMsg.patches).toEqual([
+      expect(reconnectMsg.documentPatches).toEqual([
         { "e1/Pos": { x: 5 }, "e2/Vel": { vx: 10 } },
       ]);
 
       // Server sends patches for things that changed while we were away
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e3/Pos": { x: 99 } }],
+        documentPatches: [{ "e3/Pos": { x: 99 } }],
         clientId: "client-2",
         timestamp: 200,
       });
 
       // pull() returns only new server values (buffer fields stripped —
       // ECS already has them from this session)
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["e3/Pos"]).toEqual({ x: 99 });
-      expect(mutation!.patch["e1/Pos"]).toBeUndefined();
-      expect(mutation!.patch["e2/Vel"]).toBeUndefined();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
+      expect(mutations[0].patch["e3/Pos"]).toEqual({ x: 99 });
+      expect(mutations[0].patch["e1/Pos"]).toBeUndefined();
+      expect(mutations[0].patch["e2/Vel"]).toBeUndefined();
     });
 
     it("merges multiple buffered mutations into one", async () => {
@@ -723,13 +721,13 @@ describe("WebsocketAdapter", () => {
 
       // Push several mutations while offline
       adapter.push([
-        { patch: { "e1/Pos": { x: 1, y: 0 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 1, y: 0 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       adapter.push([
-        { patch: { "e1/Pos": { z: 3 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { z: 3 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Connect for first time (lastTimestamp=0, flushes directly)
@@ -741,7 +739,7 @@ describe("WebsocketAdapter", () => {
       expect(mockWs.sentMessages).toHaveLength(2);
       const sent = JSON.parse(mockWs.sentMessages[1]!);
       // x=5 (overwritten), y=0 (kept), z=3 (added)
-      expect(sent.patches).toEqual([{ "e1/Pos": { x: 5, y: 0, z: 3 } }]);
+      expect(sent.documentPatches).toEqual([{ "e1/Pos": { x: 5, y: 0, z: 3 } }]);
     });
 
     it("sends buffer in reconnect even when server sends no patches back", async () => {
@@ -751,7 +749,7 @@ describe("WebsocketAdapter", () => {
       // Establish lastTimestamp
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 0 } }],
+        documentPatches: [{ "e1/Pos": { x: 0 } }],
         clientId: "client-2",
         timestamp: 100,
       });
@@ -761,7 +759,7 @@ describe("WebsocketAdapter", () => {
 
       // Make edits offline
       adapter.push([
-        { patch: { "e1/Pos": { x: 42 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 42 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
@@ -769,10 +767,10 @@ describe("WebsocketAdapter", () => {
       // Buffer was sent in the reconnect message
       const sent = mockWs.sentMessages.map((s) => JSON.parse(s));
       const reconnectMsg = sent.find((m) => m.type === "reconnect");
-      expect(reconnectMsg.patches).toEqual([{ "e1/Pos": { x: 42 } }]);
+      expect(reconnectMsg.documentPatches).toEqual([{ "e1/Pos": { x: 42 } }]);
 
       // Server sends NOTHING — no changes while we were offline
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
 
     it("skips websocket-origin mutations when buffering", async () => {
@@ -781,7 +779,7 @@ describe("WebsocketAdapter", () => {
       adapter.disconnect();
 
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.Websocket },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.Websocket, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
@@ -802,7 +800,7 @@ describe("WebsocketAdapter", () => {
       // Establish lastTimestamp
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { _exists: true, x: 0, y: 0, z: 0 } }],
+        documentPatches: [{ "e1/Pos": { _exists: true, x: 0, y: 0, z: 0 } }],
         clientId: "client-2",
         timestamp: 100,
       });
@@ -817,7 +815,7 @@ describe("WebsocketAdapter", () => {
 
       // Modify e1 locally while offline
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
@@ -825,15 +823,15 @@ describe("WebsocketAdapter", () => {
       // Server also modified e1
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 10, y: 20 } }],
+        documentPatches: [{ "e1/Pos": { x: 10, y: 20 } }],
         clientId: "client-2",
         timestamp: 200,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
       // x is in our buffer → stripped. y is new from server → kept.
-      expect(mutation!.patch["e1/Pos"]).toEqual({ y: 20 });
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ y: 20 });
     });
 
     it("server deletions win over local modifications", async () => {
@@ -841,7 +839,7 @@ describe("WebsocketAdapter", () => {
 
       // Modify e1 locally while offline
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
@@ -849,15 +847,15 @@ describe("WebsocketAdapter", () => {
       // Server deleted e1
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { _exists: false } }],
+        documentPatches: [{ "e1/Pos": { _exists: false } }],
         clientId: "client-2",
         timestamp: 200,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
       // Deletion wins — entity stays deleted
-      expect(mutation!.patch["e1/Pos"]).toEqual({ _exists: false });
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ _exists: false });
     });
 
     it("non-conflicting server changes pass through", async () => {
@@ -865,24 +863,24 @@ describe("WebsocketAdapter", () => {
 
       // Modify e1 locally, server modifies e2
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
 
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e2/Pos": { x: 99 } }],
+        documentPatches: [{ "e2/Pos": { x: 99 } }],
         clientId: "client-2",
         timestamp: 200,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
       // e2 is from server (not in buffer) → kept
-      expect(mutation!.patch["e2/Pos"]).toEqual({ x: 99 });
+      expect(mutations[0].patch["e2/Pos"]).toEqual({ x: 99 });
       // e1 is not in server patch → absent
-      expect(mutation!.patch["e1/Pos"]).toBeUndefined();
+      expect(mutations[0].patch["e1/Pos"]).toBeUndefined();
     });
 
     it("server deletes one entity while local modifies another", async () => {
@@ -893,6 +891,7 @@ describe("WebsocketAdapter", () => {
         {
           patch: { "e1/Pos": { x: 5 }, "e2/Pos": { x: 7 } },
           origin: Origin.ECS,
+          syncBehavior: "document",
         },
       ]);
 
@@ -901,16 +900,16 @@ describe("WebsocketAdapter", () => {
       // Server deletes e1 only
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { _exists: false } }],
+        documentPatches: [{ "e1/Pos": { _exists: false } }],
         clientId: "client-2",
         timestamp: 200,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
       // e1 deleted (server deletion wins), e2 not in server patch
-      expect(mutation!.patch["e1/Pos"]).toEqual({ _exists: false });
-      expect(mutation!.patch["e2/Pos"]).toBeUndefined();
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ _exists: false });
+      expect(mutations[0].patch["e2/Pos"]).toBeUndefined();
     });
 
     it("no buffer produces normal server-only merge", async () => {
@@ -919,15 +918,15 @@ describe("WebsocketAdapter", () => {
 
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 10 } }],
+        documentPatches: [{ "e1/Pos": { x: 10 } }],
         clientId: "client-2",
         timestamp: 100,
       });
 
       // No buffer — should behave exactly as before
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch).toEqual({ "e1/Pos": { x: 10 } });
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
+      expect(mutations[0].patch).toEqual({ "e1/Pos": { x: 10 } });
     });
   });
 
@@ -953,7 +952,7 @@ describe("WebsocketAdapter", () => {
       await adapter1.init();
 
       adapter1.push([
-        { patch: { "e1/Pos": { x: 10, y: 20 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10, y: 20 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       // Allow fire-and-forget IndexedDB write to complete
@@ -970,7 +969,7 @@ describe("WebsocketAdapter", () => {
       const sent = mockWs.sentMessages.map((s) => JSON.parse(s));
       const reconnectMsg = sent.find((m) => m.type === "reconnect");
       expect(reconnectMsg).toBeDefined();
-      expect(reconnectMsg.patches).toEqual([
+      expect(reconnectMsg.documentPatches).toEqual([
         { "e1/Pos": { x: 10, y: 20 } },
       ]);
 
@@ -991,7 +990,7 @@ describe("WebsocketAdapter", () => {
 
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 10 } }],
+        documentPatches: [{ "e1/Pos": { x: 10 } }],
         clientId: "client-2",
         timestamp: 500,
       });
@@ -1018,14 +1017,14 @@ describe("WebsocketAdapter", () => {
 
       // Buffer while offline
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
 
       const sent = mockWs.sentMessages.map((s) => JSON.parse(s));
       const reconnectMsg = sent.find((m) => m.type === "reconnect");
-      expect(reconnectMsg.patches).toEqual([{ "e1/Pos": { x: 5 } }]);
+      expect(reconnectMsg.documentPatches).toEqual([{ "e1/Pos": { x: 5 } }]);
 
       adapter.close();
     });
@@ -1041,7 +1040,7 @@ describe("WebsocketAdapter", () => {
 
       const sent = mockWs.sentMessages.map((s) => JSON.parse(s));
       const reconnectMsg = sent.find((m) => m.type === "reconnect");
-      expect(reconnectMsg.patches).toEqual([]);
+      expect(reconnectMsg.documentPatches).toBeUndefined();
 
       adapter.close();
     });
@@ -1052,7 +1051,7 @@ describe("WebsocketAdapter", () => {
 
       // Buffer while offline
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
@@ -1060,17 +1059,17 @@ describe("WebsocketAdapter", () => {
       // Server sends back diff including our offline changes + other changes
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 5, y: 20 }, "e2/Vel": { vx: 10 } }],
+        documentPatches: [{ "e1/Pos": { x: 5, y: 20 }, "e2/Vel": { vx: 10 } }],
         clientId: "server",
         timestamp: 200,
       });
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      const mutations = adapter.pull();
+      expect(mutations).toHaveLength(1);
       // x was in offlineBuffer → stripped. y is new from server → kept.
-      expect(mutation!.patch["e1/Pos"]).toEqual({ y: 20 });
+      expect(mutations[0].patch["e1/Pos"]).toEqual({ y: 20 });
       // e2/Vel is entirely from server → kept
-      expect(mutation!.patch["e2/Vel"]).toEqual({ vx: 10 });
+      expect(mutations[0].patch["e2/Vel"]).toEqual({ vx: 10 });
 
       adapter.close();
     });
@@ -1080,7 +1079,7 @@ describe("WebsocketAdapter", () => {
       await adapter.init();
 
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
@@ -1088,12 +1087,12 @@ describe("WebsocketAdapter", () => {
       // Server echoes back exactly what we sent
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 5 } }],
+        documentPatches: [{ "e1/Pos": { x: 5 } }],
         clientId: "server",
         timestamp: 200,
       });
 
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
 
       adapter.close();
     });
@@ -1104,7 +1103,7 @@ describe("WebsocketAdapter", () => {
       await adapter.init();
 
       adapter.push([
-        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
@@ -1112,7 +1111,7 @@ describe("WebsocketAdapter", () => {
       // Server response triggers pull which clears buffer
       mockWs.receiveMessage({
         type: "patch",
-        patches: [{ "e1/Pos": { x: 5 }, "e2/Vel": { vx: 10 } }],
+        documentPatches: [{ "e1/Pos": { x: 5 }, "e2/Vel": { vx: 10 } }],
         clientId: "server",
         timestamp: 200,
       });
@@ -1128,7 +1127,7 @@ describe("WebsocketAdapter", () => {
 
       const sent = mockWs.sentMessages.map((s) => JSON.parse(s));
       const reconnectMsg = sent.find((m) => m.type === "reconnect");
-      expect(reconnectMsg.patches).toEqual([]);
+      expect(reconnectMsg.documentPatches).toBeUndefined();
 
       adapter2.close();
     });
@@ -1139,7 +1138,7 @@ describe("WebsocketAdapter", () => {
 
       // Push a Persistence-origin mutation (simulating page-load state)
       adapter.push([
-        { patch: { "e1/Pos": { _exists: true, x: 10 } }, origin: Origin.Persistence },
+        { patch: { "e1/Pos": { _exists: true, x: 10 } }, origin: Origin.Persistence, syncBehavior: "document" },
       ]);
 
       await adapter.reconnect();
@@ -1147,7 +1146,7 @@ describe("WebsocketAdapter", () => {
       // Should NOT have patches in reconnect (Persistence-origin was skipped)
       const sent = mockWs.sentMessages.map((s) => JSON.parse(s));
       const reconnectMsg = sent.find((m) => m.type === "reconnect");
-      expect(reconnectMsg.patches).toEqual([]);
+      expect(reconnectMsg.documentPatches).toBeUndefined();
 
       adapter.close();
     });
@@ -1159,7 +1158,7 @@ describe("WebsocketAdapter", () => {
       const adapter1 = createPersistentAdapter("client-1", docId);
       await adapter1.init();
       adapter1.push([
-        { patch: { "e1/Pos": { x: 10, y: 20 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 10, y: 20 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       await new Promise((r) => setTimeout(r, 50));
       adapter1.close();
@@ -1168,7 +1167,7 @@ describe("WebsocketAdapter", () => {
       const adapter2 = createPersistentAdapter("client-1", docId);
       await adapter2.init();
       adapter2.push([
-        { patch: { "e1/Pos": { x: 30 }, "e2/Vel": { vx: 5 } }, origin: Origin.ECS },
+        { patch: { "e1/Pos": { x: 30 }, "e2/Vel": { vx: 5 } }, origin: Origin.ECS, syncBehavior: "document" },
       ]);
       await new Promise((r) => setTimeout(r, 50));
 
@@ -1176,7 +1175,7 @@ describe("WebsocketAdapter", () => {
       const sent = mockWs.sentMessages.map((s) => JSON.parse(s));
       const reconnectMsg = sent.find((m) => m.type === "reconnect");
       // x=30 overwrites x=10, y=20 kept, e2/Vel added
-      expect(reconnectMsg.patches).toEqual([
+      expect(reconnectMsg.documentPatches).toEqual([
         { "e1/Pos": { x: 30, y: 20 }, "e2/Vel": { vx: 5 } },
       ]);
 

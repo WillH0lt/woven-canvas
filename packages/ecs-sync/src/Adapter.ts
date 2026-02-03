@@ -17,10 +17,10 @@ export interface Adapter {
   push(mutations: Mutation[]): void;
 
   /**
-   * Pull and return any received mutation.
-   * Returns null if none pending.
+   * Pull and return any received mutations.
+   * Returns an empty array if none pending.
    */
-  pull(): Mutation | null;
+  pull(): Mutation[];
 
   /**
    * Close the adapter and clean up resources.

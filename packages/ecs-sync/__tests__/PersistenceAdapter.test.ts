@@ -12,7 +12,7 @@ describe("PersistenceAdapter", () => {
   }
 
   function makeMutation(patch: Mutation["patch"], origin: Mutation["origin"] = Origin.ECS): Mutation {
-    return { patch, origin };
+    return { patch, origin, syncBehavior: "document" };
   }
 
   afterEach(() => {
@@ -30,7 +30,7 @@ describe("PersistenceAdapter", () => {
     it("returns null pull on fresh database", async () => {
       adapter = createAdapter("fresh-db");
       await adapter.init();
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
   });
 
@@ -56,10 +56,10 @@ describe("PersistenceAdapter", () => {
       adapter = createAdapter(docId);
       await adapter.init();
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.origin).toBe(Origin.Persistence);
-      expect(mutation!.patch["e1/Pos"]).toEqual({
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].origin).toBe(Origin.Persistence);
+      expect(mutations[0].patch["e1/Pos"]).toEqual({
         _exists: true,
         x: 10,
         y: 20,
@@ -88,9 +88,9 @@ describe("PersistenceAdapter", () => {
       adapter = createAdapter(docId);
       await adapter.init();
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.patch["e1/Pos"]).toEqual({
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch["e1/Pos"]).toEqual({
         _exists: true,
         x: 50,
         y: 20,
@@ -116,7 +116,7 @@ describe("PersistenceAdapter", () => {
       adapter = createAdapter(docId);
       await adapter.init();
 
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
   });
 
@@ -138,10 +138,10 @@ describe("PersistenceAdapter", () => {
       await adapter.init();
 
       const first = adapter.pull();
-      expect(first).not.toBeNull();
+      expect(first.length).toBeGreaterThan(0);
 
       const second = adapter.pull();
-      expect(second).toBeNull();
+      expect(second).toEqual([]);
     });
   });
 
@@ -174,7 +174,7 @@ describe("PersistenceAdapter", () => {
       adapter = createAdapter(docId);
       await adapter.init();
 
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
   });
 
@@ -197,9 +197,9 @@ describe("PersistenceAdapter", () => {
       adapter = createAdapter(docId);
       await adapter.init();
 
-      const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      const patch = mutation!.patch;
+      const mutations = adapter.pull();
+      expect(mutations.length).toBeGreaterThan(0);
+      const patch = mutations[0].patch;
 
       expect(patch["e1/Pos"]).toEqual({ _exists: true, x: 10, y: 20 });
       expect(patch["e2/Pos"]).toEqual({ _exists: true, x: 30, y: 40 });

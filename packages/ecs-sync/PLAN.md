@@ -1,172 +1,220 @@
-# Consolidate EditorComponentDef/EditorSingletonDef/Synced to ecs-sync
+# Ephemeral Data Sync Implementation Plan
 
-## Summary
+## Overview
 
-Remove duplicate `EditorComponentDef`, `EditorSingletonDef`, and `Synced` from `editor` and use the canonical definitions from `ecs-sync`. Add `ecs-sync` as a dependency of both `editor` and `vue`. Remove the `StoreAdapter` interface from `vue`.
+Add ephemeral data sync (cursors, selections, entity-in-use indicators) alongside the existing document sync. Ephemeral data is not undoable, not persisted, and scoped per-client on the server for cleanup on disconnect.
 
-## API Migration
+## Decisions
 
-The `ecs-sync` versions use an options-object constructor pattern and `__sync` instead of `__editor`:
+- `Mutation` gains a `syncBehavior: SyncBehavior` field (`"document"` or `"ephemeral"`)
+- `Adapter.pull()` returns `Mutation[]` instead of `Mutation | null`
+- New `"ephemeral-patch"` wire message type (no ACKs, no timestamps)
+- Server stores ephemeral data in memory namespaced by clientId
+- Client doesn't see ownership — server merges all ephemeral state when sending
+- On disconnect, server broadcasts deletion patches for that client's ephemeral keys
+- On reconnect, client resends full ephemeral snapshot so server can restore it
 
-```
-// OLD (editor)
-defineEditorComponent("name", schema, { sync: "document" })
-new EditorComponentDef("name", schema, { sync: "document" })
-def.__editor.sync
+---
 
-// NEW (ecs-sync)
-defineEditorComponent({ name: "name", sync: "document" }, schema)
-new EditorComponentDef({ name: "name", sync: "document" }, schema)
-def.__sync
-```
+## Step 1: Update `Mutation` type and `Adapter` interface
 
-`Synced` in ecs-sync is a plain `defineComponent` (not an EditorComponentDef) — it doesn't need sync metadata since it's the marker itself.
+**File: `src/types.ts`**
+- Add `syncBehavior: SyncBehavior` to `Mutation` interface
 
-## Steps
+**File: `src/Adapter.ts`**
+- Change `pull(): Mutation | null` to `pull(): Mutation[]`
 
-### 1. Add `ecs-sync` as dependency to `editor` and `vue`
+---
 
-- `packages/editor/package.json`: add `"@infinitecanvas/ecs-sync": "workspace:*"`
-- `packages/vue/package.json`: add `"@infinitecanvas/ecs-sync": "workspace:*"`
+## Step 2: Add new wire protocol message types
 
-### 2. Delete editor's own definitions
+**File: `src/types.ts`**
+- Add `EphemeralPatchRequest`:
+  ```typescript
+  interface EphemeralPatchRequest {
+    type: "ephemeral-patch";
+    patches: Patch[];
+  }
+  ```
+- Add `EphemeralPatchBroadcast`:
+  ```typescript
+  interface EphemeralPatchBroadcast {
+    type: "ephemeral-patch";
+    patches: Patch[];
+  }
+  ```
+- Add `ephemeralPatches?: Patch[]` field to `ReconnectRequest`
+- Update `ClientMessage` and `ServerMessage` unions
 
-Delete these files (their exports will be replaced by re-exports from ecs-sync):
-- `packages/editor/src/EditorComponentDef.ts`
-- `packages/editor/src/EditorSingletonDef.ts`
-- `packages/editor/src/components/Synced.ts`
+---
 
-### 3. Update `editor/src/index.ts` exports
+## Step 3: Update `EcsAdapter`
 
-Replace the local exports with re-exports from `@infinitecanvas/ecs-sync`:
+**File: `src/adapters/ECS.ts`**
 
-```ts
-export {
-  EditorComponentDef,
-  defineEditorComponent,
-  type AnyEditorComponentDef,
-} from "@infinitecanvas/ecs-sync";
+`pull()` changes:
+- Return `Mutation[]` instead of `Mutation | null`
+- Build two separate patches: one for document components, one for ephemeral
+- During event iteration, check `componentDef.__sync` to route into the correct patch
+- Return 0-2 mutations (one per non-empty patch), each tagged with the appropriate `syncBehavior`
 
-export {
-  EditorSingletonDef,
-  defineEditorSingleton,
-  type AnyEditorSingletonDef,
-  type SingletonEditorBehavior,
-} from "@infinitecanvas/ecs-sync";
+`push()` changes:
+- No changes needed — EcsAdapter applies all mutations the same way regardless of `syncBehavior`
 
-export { Synced } from "@infinitecanvas/ecs-sync";
-```
+Add `getEphemeralSnapshot(): Patch` method:
+- Iterate `prevState` keys, check component name against `componentsByName` to find ephemeral components
+- Return only entries whose component has `__sync === "ephemeral"`
+- Add `_exists: true` flag to each entry
+- Used by WebsocketAdapter to build the ephemeral payload for reconnect messages
 
-Remove `EditorComponentOptions` and `EditorSingletonOptions` from exports (these types don't exist in ecs-sync; the options are inline in the first arg).
+---
 
-Also re-export `SyncBehavior` from ecs-sync instead of from local types (or keep local — both define the same type; simplest to re-export from ecs-sync).
+## Step 4: Update `WebsocketAdapter`
 
-Remove `EditorComponentMeta` from `editor/src/types.ts` and its export.
+**File: `src/adapters/Websocket.ts`**
 
-### 4. Update `editor/src/types.ts`
+`push()` changes:
+- Split incoming mutations by `syncBehavior`
+- Document mutations: existing behavior (buffer, throttle, send as `"patch"`)
+- Ephemeral mutations: buffer into separate `ephemeralSendBuffer`, send as `"ephemeral-patch"` on same throttle cycle
+- Ephemeral patches are fire-and-forget: no `inFlight` tracking, no ACK expected
+- When offline: document patches go to `offlineBuffer` as before; ephemeral patches are dropped (no point buffering ephemeral data offline)
 
-- Remove the `EditorComponentMeta` interface (no longer used)
-- Remove the `SyncBehavior` type (now comes from ecs-sync)
-- Update imports of `AnyEditorComponentDef` and `AnyEditorSingletonDef` to come from `@infinitecanvas/ecs-sync`
+`pull()` changes:
+- Return `Mutation[]` instead of `Mutation | null`
+- Maintain separate `pendingEphemeralPatches` alongside existing `pendingPatches`
+- Return 0-2 mutations tagged with appropriate `syncBehavior`
 
-### 5. Update `EditorStateDef` (extends EditorSingletonDef)
+`flush()` changes:
+- Send two separate messages if both document and ephemeral data are buffered
+- Document: `{ type: "patch", messageId, patches }` (existing)
+- Ephemeral: `{ type: "ephemeral-patch", patches }` (new, no messageId)
 
-`packages/editor/src/EditorStateDef.ts`:
-- Change import from `"./EditorSingletonDef"` to `"@infinitecanvas/ecs-sync"`
-- Update constructor: `super({ name, sync: "none" }, schema)` instead of `super(name, schema, { sync: "none" })`
+`handleMessage()` changes:
+- Handle incoming `"ephemeral-patch"` messages: push patches into `pendingEphemeralPatches`
+- No timestamp tracking for ephemeral messages
 
-### 6. Update all component/singleton definitions in `editor`
+`connectWs()` changes:
+- On reconnect, include ephemeral snapshot in the reconnect message via `getEphemeralSnapshot` callback
 
-Each file that imports from `"../EditorComponentDef"` or `"../EditorSingletonDef"` needs to:
-1. Change import to `"@infinitecanvas/ecs-sync"`
-2. Update constructor/function call to options-object pattern
+New constructor option:
+- `getEphemeralSnapshot: () => Patch` — callback to get current ephemeral state for reconnect
 
-Files to update (components using `extends EditorComponentDef` with `super(name, schema, opts)`):
-- `components/Block.ts`: `super({ name: "block", sync: "document" }, BlockSchema)`
-- `components/Color.ts`: `super({ name: "color", sync: "document" }, ColorSchema)`
-- `components/Aabb.ts`: `super({ name: "aabb" }, AabbSchema)`
-- `components/Text.ts`: `super({ name: "text", sync: "document" }, TextSchema)`
-- `components/Pointer.ts`: `super({ name: "pointer" }, PointerSchema)`
-- `components/HitGeometry.ts`: `super({ name: "hitHeometry" }, HitGeometrySchema)`
+---
 
-Files using `defineEditorComponent(name, schema, opts)`:
-- `components/Held.ts`: `defineEditorComponent({ name: "held", sync: "ephemeral" }, { ... })`
-- `components/User.ts`: `defineEditorComponent({ name: "user", sync: "ephemeral" }, { ... })`
-- `components/VerticalAlign.ts`: `defineEditorComponent({ name: "verticalAlign", sync: "document" }, { ... })`
-- `components/ScaleWithZoom.ts`: `defineEditorComponent({ name: "scaleWithZoom" }, { ... })`
-- `components/Opacity.ts`: `defineEditorComponent({ name: "opacity" }, { ... })`
-- `components/Hovered.ts`: `defineEditorComponent({ name: "hovered" }, {})`
-- `components/Edited.ts`: `defineEditorComponent({ name: "edited" }, {})`
-- `components/Connector.ts`: `defineEditorComponent({ name: "connector", sync: "document" }, { ... })`
+## Step 5: Update `HistoryAdapter`
 
-Files using `defineEditorSingleton(name, schema, opts)`:
-- `singletons/Frame.ts`: `defineEditorSingleton({ name: "frame" }, { ... })`
-- `singletons/ScaleWithZoomState.ts`: `defineEditorSingleton({ name: "scaleWithZoomState" }, { ... })`
+**File: `src/adapters/History.ts`**
 
-Files using `extends EditorSingletonDef` with `super(name, schema, opts)`:
-- `singletons/Camera.ts`: `super({ name: "camera" }, CameraSchema)`
+`push()` changes:
+- Filter out mutations with `syncBehavior === "ephemeral"` before processing
+- Ephemeral mutations are not recorded for undo/redo and don't update history state
 
-Also update `components/Synced.ts` usage — this file is being deleted, so any file importing from it needs to import from `@infinitecanvas/ecs-sync` instead. Check `components/index.ts` barrel.
+`pull()` changes:
+- Return `Mutation[]` instead of `Mutation | null`
+- Return 0-1 element array, always tagged with `syncBehavior: "document"`
 
-### 7. Update `editor/src/Editor.ts`
+---
 
-- Change import of `AnyEditorComponentDef` from `"./EditorComponentDef"` to `"@infinitecanvas/ecs-sync"`
-- Change import of `AnyEditorSingletonDef` from `"./EditorSingletonDef"` to `"@infinitecanvas/ecs-sync"`
-- Change import of `Synced` from `"./components"` — verify it's re-exported from components barrel, or import from `@infinitecanvas/ecs-sync`
+## Step 6: Update `PersistenceAdapter`
 
-### 8. Update `editor/src/plugin.ts`
+**File: `src/adapters/Persistence.ts`**
 
-- Change import of `AnyEditorComponentDef` to `"@infinitecanvas/ecs-sync"`
-- Change import of `AnyEditorSingletonDef` to `"@infinitecanvas/ecs-sync"`
+`push()` changes:
+- Filter out mutations with `syncBehavior === "ephemeral"` before persisting
 
-### 9. Update `__editor.sync` → `__sync` across all packages
+`pull()` changes:
+- Return `Mutation[]` instead of `Mutation | null`
+- Return 0-1 element array, always tagged with `syncBehavior: "document"`
 
-All references to `def.__editor.sync` become `def.__sync`:
+---
 
-- `packages/store/src/Store.ts` (6 occurrences)
-- `packages/store-yjs/src/YjsStore.ts` (6 occurrences)
-- `packages/store-automerge/src/Store.ts` (8 occurrences)
-- `packages/plugin-selection/src/systems/update/blockSystem.ts` (3 occurrences)
-- `packages/editor/__tests__/plugin.test.ts` (3 occurrences)
+## Step 7: Update `EditorSync`
 
-### 10. Update plugin packages
+**File: `src/EditorSync.ts`**
 
-Plugin packages that use `defineEditorComponent`:
-- `packages/plugin-arrows/src/components/ArrowTrim.ts`
-- `packages/plugin-arrows/src/components/ArrowHandle.ts`
-- `packages/plugin-selection/src/components/TransformHandle.ts`
-- `packages/plugin-selection/src/components/TransformBox.ts`
-- `packages/plugin-selection/src/components/SelectionBox.ts`
-- `packages/plugin-selection/src/components/Selected.ts`
-- `packages/plugin-selection/src/components/EditAfterPlacing.ts`
-- `packages/plugin-selection/src/components/DragStart.ts`
-- `packages/plugin-eraser/src/components/EraserStroke.ts`
-- `packages/plugin-eraser/src/components/Erased.ts`
-- `packages/plugin-pen/src/components/PenStroke.ts`
+`sync()` changes:
+- `pull()` now returns arrays, so flatten into `allMutations`:
+  ```typescript
+  for (const adapter of this.adapters) {
+    allMutations.push(...adapter.pull());
+  }
+  ```
 
-These all import `defineEditorComponent` from `@infinitecanvas/editor` (which will re-export from ecs-sync), so they only need the call-site signature updated.
+`initialize()` changes:
+- Pass `getEphemeralSnapshot` callback to WebsocketAdapter:
+  ```typescript
+  this.websocketAdapter = new WebsocketAdapter({
+    ...this.options.websocket,
+    documentId: this.options.documentId,
+    usePersistence: this.options.usePersistence ?? false,
+    getEphemeralSnapshot: () => this.ecsAdapter.getEphemeralSnapshot(),
+  });
+  ```
 
-### 11. Update `vue` package
+---
 
-- Remove `packages/vue/src/store.ts`
-- Update `packages/vue/src/index.ts`:
-  - Remove `StoreAdapter` export
-  - Add re-exports from `@infinitecanvas/ecs-sync`: `EditorSync`, `EditorSyncOptions`, `EditorComponentDef`, `EditorSingletonDef`, `defineEditorComponent`, `defineEditorSingleton`, `Synced`
-- Update `packages/vue/src/BasicsPlugin.ts`: replace `StoreAdapter` with `EditorSync` from ecs-sync
-- Update `packages/vue/src/components/InfiniteCanvas.vue`: replace `StoreAdapter` with `EditorSync`
-- Update `packages/vue/src/systems/undoRedoSystem.ts`: update type reference
+## Step 8: Update Go server — message types
 
-### 12. Update vue tests
+**File: `server/models/messages.go`**
+- Add `EphemeralPatchRequest`:
+  ```go
+  type EphemeralPatchRequest struct {
+    Type    string  `json:"type"`
+    Patches []Patch `json:"patches"`
+  }
+  ```
+- Add `EphemeralPatchBroadcast`:
+  ```go
+  type EphemeralPatchBroadcast struct {
+    Type    string  `json:"type"`
+    Patches []Patch `json:"patches"`
+  }
+  ```
+- Add `EphemeralPatches []Patch` field to `ReconnectRequest`
 
-- `packages/vue/__tests__/useQuery.test.ts`: update `defineEditorComponent` call signature
-- `packages/vue/__tests__/useComponent.test.ts`: update `defineEditorComponent` call signature
-- `packages/vue/__tests__/useSingleton.test.ts`: update `defineEditorSingleton` call signature
+---
 
-### 13. Update editor tests
+## Step 9: Update Go server — room controller
 
-- `packages/editor/__tests__/plugin.test.ts`: update all `new EditorComponentDef(...)` and `new EditorSingletonDef(...)` calls and `__editor.sync` references
+**File: `server/controllers/room.go`**
 
-### 14. Build and verify
+New state:
+- `ephemeralState map[string]models.Patch` — keyed by clientId, each value is a merged Patch of that client's ephemeral data
 
-- Run `pnpm build` across affected packages
-- Run `pnpm test` to verify nothing is broken
+New handler `handleEphemeralPatch()`:
+- Merge incoming patches into `ephemeralState[client.ClientID]`
+- Broadcast `"ephemeral-patch"` to all other clients (pass through patches)
+
+Update `handleReconnect()`:
+- Store `req.EphemeralPatches` into `ephemeralState[client.ClientID]`
+- Broadcast client's ephemeral patches to others
+- Merge all OTHER clients' ephemeral state into one patch, send to reconnecting client as `"ephemeral-patch"`
+
+Update `handleConnect()`:
+- Send merged ephemeral state from all existing clients to the new client as `"ephemeral-patch"`
+
+Update `handleDisconnect()`:
+- Look up `ephemeralState[client.ClientID]`
+- Build deletion patch: for each key in their ephemeral data, emit `{ "_exists": false }`
+- Broadcast deletion patch as `"ephemeral-patch"` to remaining clients
+- Delete `ephemeralState[client.ClientID]`
+
+Update `HandleMessage()`:
+- Add `case "ephemeral-patch"` to the message type switch
+
+---
+
+## File Change Summary
+
+| File | Changes |
+|------|---------|
+| `src/types.ts` | Add `syncBehavior` to `Mutation`, add ephemeral message types, update `ReconnectRequest` |
+| `src/Adapter.ts` | `pull()` returns `Mutation[]` |
+| `src/adapters/ECS.ts` | Split pull into doc/ephemeral patches, add `getEphemeralSnapshot()` |
+| `src/adapters/Websocket.ts` | Separate ephemeral send/receive, reconnect with ephemeral snapshot |
+| `src/adapters/History.ts` | Skip ephemeral in push, return array from pull |
+| `src/adapters/Persistence.ts` | Skip ephemeral in push, return array from pull |
+| `src/EditorSync.ts` | Flatten pull arrays, pass ephemeral snapshot callback |
+| `server/models/messages.go` | Add ephemeral message types, update ReconnectRequest |
+| `server/controllers/room.go` | Add ephemeralState, handle ephemeral-patch, cleanup on disconnect |

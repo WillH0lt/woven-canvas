@@ -59,7 +59,9 @@ export class PersistenceAdapter implements Adapter {
   push(mutations: Mutation[]): void {
     if (!this.store) return;
 
-    const filtered = mutations.filter((m) => m.origin !== Origin.Persistence);
+    const filtered = mutations.filter(
+      (m) => m.origin !== Origin.Persistence && m.syncBehavior !== "ephemeral",
+    );
     if (filtered.length === 0) return;
 
     // Fire and forget - don't await
@@ -98,11 +100,11 @@ export class PersistenceAdapter implements Adapter {
   /**
    * Pull pending mutation (loaded from storage on init).
    */
-  pull(): Mutation | null {
-    if (!this.pendingPatch) return null;
-    const mutation = { patch: this.pendingPatch, origin: Origin.Persistence };
+  pull(): Mutation[] {
+    if (!this.pendingPatch) return [];
+    const mutation: Mutation = { patch: this.pendingPatch, origin: Origin.Persistence, syncBehavior: "document" };
     this.pendingPatch = null;
-    return mutation;
+    return [mutation];
   }
 
   /**

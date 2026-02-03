@@ -35,6 +35,7 @@ import {
   type FontFamilyInput,
   type InferComponentType,
   type UserDataInput,
+  type Context,
 } from "@infinitecanvas/editor";
 import { EditorSync, type EditorSyncOptions } from "@infinitecanvas/ecs-sync";
 import {
@@ -176,7 +177,7 @@ const componentSubscriptions = new Map<
 const singletonSubscriptions = new Map<string, Set<(value: unknown) => void>>();
 
 // Tick callbacks - called after each tick/processEvents
-const tickCallbacks = new Set<() => void>();
+const tickCallbacks = new Set<(ctx: Context) => void>();
 
 // Block data for rendering - entityId -> reactive block data
 const blockMap = new Map<EntityId, Ref<BlockData>>();
@@ -218,6 +219,7 @@ function subscribeComponent(
 
 // Notify subscribers of a component change (or removal when removed=true)
 function notifySubscribers(
+  ctx: Context,
   entityId: EntityId,
   componentDef: AnyEditorComponentDef,
   removed = false,
@@ -230,9 +232,6 @@ function notifySubscribers(
 
   let value: unknown = null;
   if (!removed) {
-    const editor = editorRef.value;
-    if (!editor) return;
-    const ctx = editor._getContext();
     value = componentDef.snapshot(ctx, entityId);
   }
 
@@ -264,14 +263,13 @@ function subscribeSingleton(
 }
 
 // Notify singleton subscribers
-function notifySingletonSubscribers(singletonDef: AnyEditorSingletonDef): void {
+function notifySingletonSubscribers(
+  ctx: Context,
+  singletonDef: AnyEditorSingletonDef,
+): void {
   const callbacks = singletonSubscriptions.get(singletonDef.name);
   if (!callbacks || callbacks.size === 0) return;
 
-  const editor = editorRef.value;
-  if (!editor) return;
-
-  const ctx = editor._getContext();
   const value = singletonDef.snapshot(ctx);
 
   for (const callback of callbacks) {
@@ -280,7 +278,7 @@ function notifySingletonSubscribers(singletonDef: AnyEditorSingletonDef): void {
 }
 
 // Register a callback to be called on each tick
-function registerTickCallback(callback: () => void): () => void {
+function registerTickCallback(callback: (ctx: Context) => void): () => void {
   tickCallbacks.add(callback);
 
   // Return unregister function
@@ -327,17 +325,16 @@ async function tick() {
 
   editorRef.value.nextTick((ctx) => {
     store.sync(ctx);
+    processEvents(ctx);
+    updateBlocks(ctx);
+
+    // Call registered tick callbacks (e.g., for useQuery)
+    for (const callback of tickCallbacks) {
+      callback(ctx);
+    }
   });
 
   await editorRef.value.tick();
-
-  processEvents(editorRef.value);
-  updateBlocks(editorRef.value);
-
-  // Call registered tick callbacks (e.g., for useQuery)
-  for (const callback of tickCallbacks) {
-    callback();
-  }
 
   animationFrameId = requestAnimationFrame(tick);
 }
@@ -404,8 +401,7 @@ onUnmounted(() => {
 /**
  * Process ECS events and update reactive state.
  */
-function processEvents(editor: Editor) {
-  const ctx = editor._getContext();
+function processEvents(ctx: Context) {
   const { events, newIndex } = ctx.eventBuffer.readEvents(eventIndex);
   eventIndex = newIndex;
 
@@ -419,7 +415,7 @@ function processEvents(editor: Editor) {
       if (eventType === EventType.CHANGED) {
         const singletonDef = singletonsById.get(componentId);
         if (singletonDef) {
-          notifySingletonSubscribers(singletonDef);
+          notifySingletonSubscribers(ctx, singletonDef);
         }
       }
       continue;
@@ -438,17 +434,17 @@ function processEvents(editor: Editor) {
 
       const componentDef = componentsById.get(componentId);
       if (componentDef) {
-        notifySubscribers(entityId, componentDef);
+        notifySubscribers(ctx, entityId, componentDef);
       }
     } else if (eventType === EventType.COMPONENT_REMOVED) {
       const componentDef = componentsById.get(componentId);
       if (componentDef) {
-        notifySubscribers(entityId, componentDef, true);
+        notifySubscribers(ctx, entityId, componentDef, true);
       }
     } else if (eventType === EventType.CHANGED) {
       const componentDef = componentsById.get(componentId);
       if (componentDef) {
-        notifySubscribers(entityId, componentDef);
+        notifySubscribers(ctx, entityId, componentDef);
       }
     }
   }
@@ -457,10 +453,8 @@ function processEvents(editor: Editor) {
 /**
  * Update block state using ECS queries and rebuild sorted array if needed.
  */
-function updateBlocks(editor: Editor) {
+function updateBlocks(ctx: Context) {
   let needsResort = false;
-
-  const ctx = editor._getContext();
 
   // Handle block additions
   for (const entityId of blockQuery.added(ctx)) {
@@ -519,9 +513,9 @@ function updateBlocks(editor: Editor) {
     });
     usersChanged = true;
   }
-  if (userQuery.removed(ctx).length > 0) {
-    // Remove user from map - we need to find the sessionId by iterating
-    // Since the entity is removed, we can't snapshot it, but we track by entityId
+  for (const entityId of userQuery.removed(ctx)) {
+    const user = User.read(ctx, entityId);
+    usersBySessionId.delete(user.sessionId);
     usersChanged = true;
   }
   if (usersChanged) {

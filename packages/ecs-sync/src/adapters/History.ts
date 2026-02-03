@@ -49,10 +49,12 @@ export class HistoryAdapter implements Adapter {
     if (mutations.length === 0) return;
 
     // Apply every mutation in the order received so that all adapters
-    // converge to the same state.  Only ECS-originated mutations are
-    // recorded for undo/redo; everything else (including our own
-    // History-origin output from undo/redo) just updates state.
+    // converge to the same state.  Only ECS-originated document mutations
+    // are recorded for undo/redo; ephemeral mutations are skipped entirely;
+    // everything else (including our own History-origin output) just updates state.
     for (const m of mutations) {
+      if (m.syncBehavior === "ephemeral") continue;
+
       if (m.origin === Origin.ECS) {
         if (Object.keys(m.patch).length === 0) continue;
 
@@ -69,11 +71,11 @@ export class HistoryAdapter implements Adapter {
     }
   }
 
-  pull(): Mutation | null {
-    if (this.pendingPullPatches.length === 0) return null;
+  pull(): Mutation[] {
+    if (this.pendingPullPatches.length === 0) return [];
     const patch = merge(...this.pendingPullPatches);
     this.pendingPullPatches = [];
-    return { patch, origin: Origin.History };
+    return [{ patch, origin: Origin.History, syncBehavior: "document" }];
   }
 
   undo(): boolean {

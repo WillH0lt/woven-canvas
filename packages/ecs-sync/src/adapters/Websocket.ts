@@ -35,9 +35,11 @@ export class WebsocketAdapter implements Adapter {
   private url: string;
   private clientId: string;
   private ws: WebSocket | null = null;
-  private pendingPatches: Patch[] = [];
+  private pendingDocumentPatches: Patch[] = [];
+  private pendingEphemeralPatches: Patch[] = [];
   private lastTimestamp = 0;
   private messageCounter = 0;
+
   /** Patches sent but not yet acknowledged, keyed by messageId. */
   private inFlight = new Map<string, Patch>();
 
@@ -48,8 +50,9 @@ export class WebsocketAdapter implements Adapter {
 
   /** Patches accumulated while disconnected, merged into one. */
   private offlineBuffer: Patch = {};
-  /** Number of clients currently connected to the server. */
+
   private connectedUsers = 0;
+
   /** True when the user intentionally disconnected (no auto-reconnect). */
   private intentionallyClosed = false;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -57,10 +60,16 @@ export class WebsocketAdapter implements Adapter {
   private static readonly MIN_RECONNECT_DELAY = 500;
   private static readonly MAX_RECONNECT_DELAY = 10_000;
 
-  /** Patches buffered between sends for throttling. */
-  private sendBuffer: Patch[] = [];
+  /** Document patches buffered between sends for throttling. */
+  private documentSendBuffer: Patch[] = [];
+  /** Ephemeral patches buffered between sends for throttling. */
+  private ephemeralSendBuffer: Patch[] = [];
   /** Timestamp of the last flush (ms). */
   private lastSendTime = 0;
+  /** Accumulated ephemeral state we've sent, used to resync on reconnect. */
+  private localEphemeralState: Patch = {};
+  /** Accumulated ephemeral state received from remote clients, used to emit deletions on disconnect. */
+  private remoteEphemeralState: Patch = {};
 
   constructor(options: WebsocketAdapterOptions) {
     this.url = options.url;
@@ -104,12 +113,13 @@ export class WebsocketAdapter implements Adapter {
         const msg: ClientMessage = {
           type: "reconnect",
           lastTimestamp: this.lastTimestamp,
-          patches: [],
+          ...(Object.keys(this.offlineBuffer).length > 0 && {
+            documentPatches: [this.offlineBuffer],
+          }),
+          ...(Object.keys(this.localEphemeralState).length > 0 && {
+            ephemeralPatches: [this.localEphemeralState],
+          }),
         };
-
-        if (Object.keys(this.offlineBuffer).length > 0) {
-          msg.patches = [this.offlineBuffer];
-        }
 
         ws.send(JSON.stringify(msg));
         resolve();
@@ -125,6 +135,7 @@ export class WebsocketAdapter implements Adapter {
 
       ws.addEventListener("close", () => {
         this.ws = null;
+        this.clearRemoteEphemeral();
         if (!this.intentionallyClosed) {
           this.scheduleReconnect();
         }
@@ -133,24 +144,35 @@ export class WebsocketAdapter implements Adapter {
   }
 
   push(mutations: Mutation[]): void {
-    const patches: Patch[] = [];
+    const docPatches: Patch[] = [];
+    const ephPatches: Patch[] = [];
     for (const m of mutations) {
       if (m.origin === Origin.Websocket) continue;
       if (m.origin === Origin.Persistence) continue;
-      patches.push(m.patch);
+      if (m.syncBehavior === "ephemeral") {
+        ephPatches.push(m.patch);
+      } else {
+        docPatches.push(m.patch);
+      }
     }
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      // Buffer while offline
-      if (patches.length > 0) {
-        this.offlineBuffer = merge(this.offlineBuffer, ...patches);
+      if (docPatches.length > 0) {
+        this.offlineBuffer = merge(this.offlineBuffer, ...docPatches);
         this.persistOfflineBuffer();
+      }
+      // Track ephemeral state so it can be restored on reconnect
+      if (ephPatches.length > 0) {
+        this.localEphemeralState = merge(this.localEphemeralState, ...ephPatches);
       }
       return;
     }
 
-    if (patches.length > 0) {
-      this.sendBuffer.push(...patches);
+    if (docPatches.length > 0) {
+      this.documentSendBuffer.push(...docPatches);
+    }
+    if (ephPatches.length > 0) {
+      this.ephemeralSendBuffer.push(...ephPatches);
     }
 
     this.flushIfReady();
@@ -169,47 +191,78 @@ export class WebsocketAdapter implements Adapter {
     }
   }
 
-  /** Send all buffered patches to the server. */
+  /** Send all buffered patches to the server in a single message. */
   private flush(): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
-    const patches: Patch[] = [];
+    // Document patches
+    const docPatches: Patch[] = [];
 
     if (Object.keys(this.offlineBuffer).length > 0) {
-      patches.push(this.offlineBuffer);
+      docPatches.push(this.offlineBuffer);
       this.offlineBuffer = {};
     }
 
-    patches.push(...this.sendBuffer);
-    this.sendBuffer = [];
+    docPatches.push(...this.documentSendBuffer);
+    this.documentSendBuffer = [];
 
-    if (patches.length === 0) return;
+    // Ephemeral patches (fire-and-forget, no inFlight tracking)
+    const ephPatches = this.ephemeralSendBuffer;
+    this.ephemeralSendBuffer = [];
+
+    // Track sent ephemeral state for reconnect
+    if (ephPatches.length > 0) {
+      this.localEphemeralState = merge(this.localEphemeralState, ...ephPatches);
+    }
+
+    if (docPatches.length === 0 && ephPatches.length === 0) return;
 
     const messageId = `${this.clientId}-${++this.messageCounter}`;
-    this.inFlight.set(messageId, merge(...patches));
-    const msg: ClientMessage = { type: "patch", messageId, patches };
+    if (docPatches.length > 0) {
+      this.inFlight.set(messageId, merge(...docPatches));
+    }
+
+    const msg: ClientMessage = {
+      type: "patch",
+      messageId,
+      ...(docPatches.length > 0 && { documentPatches: docPatches }),
+      ...(ephPatches.length > 0 && { ephemeralPatches: ephPatches }),
+    };
     this.ws.send(JSON.stringify(msg));
     this.lastSendTime = performance.now();
   }
 
-  pull(): Mutation | null {
-    if (this.pendingPatches.length === 0) return null;
+  pull(): Mutation[] {
+    const results: Mutation[] = [];
 
-    const serverPatch = merge(...this.pendingPatches);
-    this.pendingPatches = [];
+    if (this.pendingDocumentPatches.length > 0) {
+      const serverPatch = merge(...this.pendingDocumentPatches);
+      this.pendingDocumentPatches = [];
 
-    if (Object.keys(this.offlineBuffer).length === 0) {
-      return { patch: serverPatch, origin: Origin.Websocket };
+      // Strip fields we already have locally from the offline buffer.
+      // When the buffer is empty, strip() returns serverPatch unchanged.
+      const diff = strip(serverPatch, this.offlineBuffer);
+      this.clearPersistedOfflineBuffer();
+      if (Object.keys(diff).length > 0) {
+        results.push({
+          patch: diff,
+          origin: Origin.Websocket,
+          syncBehavior: "document",
+        });
+      }
     }
 
-    // Strip buffer fields from server response (ECS already has them —
-    // either from Persistence on page load or from the current session).
-    // The buffer itself was already sent to the server in the reconnect message.
-    // Deletions in serverPatch pass through strip() automatically.
-    const diff = strip(serverPatch, this.offlineBuffer);
-    this.clearPersistedOfflineBuffer();
-    if (Object.keys(diff).length === 0) return null;
-    return { patch: diff, origin: Origin.Websocket };
+    if (this.pendingEphemeralPatches.length > 0) {
+      const ephPatch = merge(...this.pendingEphemeralPatches);
+      this.pendingEphemeralPatches = [];
+      results.push({
+        patch: ephPatch,
+        origin: Origin.Websocket,
+        syncBehavior: "ephemeral",
+      });
+    }
+
+    return results;
   }
 
   disconnect(): void {
@@ -277,8 +330,14 @@ export class WebsocketAdapter implements Adapter {
       case "patch": {
         this.lastTimestamp = msg.timestamp;
         this.persistTimestamp();
-        const filtered = this.stripInFlightFields(msg.patches);
-        this.pendingPatches.push(...filtered);
+        if (msg.documentPatches && msg.documentPatches.length > 0) {
+          const filtered = this.stripInFlightFields(msg.documentPatches);
+          this.pendingDocumentPatches.push(...filtered);
+        }
+        if (msg.ephemeralPatches && msg.ephemeralPatches.length > 0) {
+          this.pendingEphemeralPatches.push(...msg.ephemeralPatches);
+          this.remoteEphemeralState = merge(this.remoteEphemeralState, ...msg.ephemeralPatches);
+        }
         break;
       }
 
@@ -318,6 +377,22 @@ export class WebsocketAdapter implements Adapter {
     return result;
   }
 
+  /**
+   * Emit deletion patches for all tracked remote ephemeral keys.
+   * Called on disconnect so the ECS world drops other users' ephemeral state.
+   */
+  private clearRemoteEphemeral(): void {
+    const keys = Object.keys(this.remoteEphemeralState);
+    if (keys.length === 0) return;
+
+    const deletionPatch: Patch = {};
+    for (const key of keys) {
+      deletionPatch[key] = { _exists: false };
+    }
+    this.pendingEphemeralPatches.push(deletionPatch);
+    this.remoteEphemeralState = {};
+  }
+
   // --- Persistence helpers ---
 
   private persistOfflineBuffer(): void {
@@ -331,6 +406,7 @@ export class WebsocketAdapter implements Adapter {
   }
 
   private clearPersistedOfflineBuffer(): void {
+    if (Object.keys(this.offlineBuffer).length === 0) return;
     this.offlineBuffer = {};
     if (!this.store || !this.usePersistence) return;
     this.store.delete("offlineBuffer");

@@ -50,8 +50,14 @@ export class EditorSync {
     this.options = options;
   }
 
-  async initialize({ components, singletons }: EditorSyncInitOptions): Promise<void> {
-    this.ecsAdapter = new EcsAdapter({ components, singletons });
+  async initialize({
+    components,
+    singletons,
+  }: EditorSyncInitOptions): Promise<void> {
+    this.ecsAdapter = new EcsAdapter({
+      components,
+      singletons,
+    });
     this.adapters.push(this.ecsAdapter);
 
     if (this.options.usePersistence) {
@@ -85,13 +91,10 @@ export class EditorSync {
     // Set the ECS context for this frame
     this.ecsAdapter.ctx = ctx;
 
-    // Phase 1: Pull mutation from each adapter
+    // Phase 1: Pull mutations from each adapter
     const allMutations: Mutation[] = [];
     for (const adapter of this.adapters) {
-      const mutation = adapter.pull();
-      if (mutation !== null) {
-        allMutations.push(mutation);
-      }
+      allMutations.push(...adapter.pull());
     }
 
     // Phase 2: Push the same list to every adapter

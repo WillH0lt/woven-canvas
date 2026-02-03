@@ -46,6 +46,7 @@ export type Patch = Record<string, ComponentData>;
 export interface Mutation {
   patch: Patch;
   origin: Origin;
+  syncBehavior: SyncBehavior;
 }
 
 /**
@@ -66,18 +67,20 @@ export function componentKey(
 
 // --- Client requests ---
 
-/** Sent by a client to apply mutations. */
+/** Sent by a client to apply mutations. May contain document and/or ephemeral patches. */
 export interface PatchRequest {
   type: "patch";
   messageId: string;
-  patches: Patch[];
+  documentPatches?: Patch[];
+  ephemeralPatches?: Patch[];
 }
 
 /** Sent by a client to catch up after a disconnect. */
 export interface ReconnectRequest {
   type: "reconnect";
   lastTimestamp: number;
-  patches: Patch[];
+  documentPatches?: Patch[];
+  ephemeralPatches?: Patch[];
 }
 
 export type ClientMessage = PatchRequest | ReconnectRequest;
@@ -91,10 +94,11 @@ export interface AckResponse {
   timestamp: number;
 }
 
-/** Sent to other clients when state changes. */
+/** Sent to other clients when state changes. May contain document and/or ephemeral patches. */
 export interface PatchBroadcast {
   type: "patch";
-  patches: Patch[];
+  documentPatches?: Patch[];
+  ephemeralPatches?: Patch[];
   clientId: string;
   timestamp: number;
 }

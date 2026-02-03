@@ -17,11 +17,11 @@ describe("HistoryAdapter", () => {
   }
 
   function ecsMutation(patch: Mutation["patch"]): Mutation {
-    return { patch, origin: Origin.ECS };
+    return { patch, origin: Origin.ECS, syncBehavior: "document" };
   }
 
   function wsMutation(patch: Mutation["patch"]): Mutation {
-    return { patch, origin: Origin.Websocket };
+    return { patch, origin: Origin.Websocket, syncBehavior: "document" };
   }
 
   describe("init", () => {
@@ -67,9 +67,9 @@ describe("HistoryAdapter", () => {
   });
 
   describe("pull", () => {
-    it("returns null when no pending mutations", () => {
+    it("returns empty array when no pending mutations", () => {
       const adapter = createAdapter();
-      expect(adapter.pull()).toBeNull();
+      expect(adapter.pull()).toEqual([]);
     });
 
     it("returns pending mutation from undo and clears it", () => {
@@ -79,11 +79,11 @@ describe("HistoryAdapter", () => {
 
       adapter.undo();
       const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
-      expect(mutation!.origin).toBe(Origin.History);
+      expect(mutation).toHaveLength(1);
+      expect(mutation[0].origin).toBe(Origin.History);
 
-      // Second pull should be null
-      expect(adapter.pull()).toBeNull();
+      // Second pull should be empty array
+      expect(adapter.pull()).toEqual([]);
     });
   });
 
@@ -97,9 +97,9 @@ describe("HistoryAdapter", () => {
       expect(undid).toBe(true);
 
       const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      expect(mutation).toHaveLength(1);
       // Inverse of adding should be deletion
-      expect(mutation!.patch["e1/Pos"]).toEqual({ _exists: false });
+      expect(mutation[0].patch["e1/Pos"]).toEqual({ _exists: false });
     });
 
     it("undoes a deletion (inverse is restoration)", () => {
@@ -117,9 +117,9 @@ describe("HistoryAdapter", () => {
       expect(undid).toBe(true);
 
       const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      expect(mutation).toHaveLength(1);
       // Inverse of deletion should restore the component with _exists
-      expect(mutation!.patch["e1/Pos"]).toEqual({
+      expect(mutation[0].patch["e1/Pos"]).toEqual({
         _exists: true,
         x: 10,
         y: 20,
@@ -141,9 +141,9 @@ describe("HistoryAdapter", () => {
       expect(undid).toBe(true);
 
       const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      expect(mutation).toHaveLength(1);
       // Inverse should restore x to its previous value
-      expect(mutation!.patch["e1/Pos"]).toEqual({ x: 10 });
+      expect(mutation[0].patch["e1/Pos"]).toEqual({ x: 10 });
     });
 
     it("redo re-applies forward mutations", () => {
@@ -162,9 +162,9 @@ describe("HistoryAdapter", () => {
       expect(redone).toBe(true);
 
       const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      expect(mutation).toHaveLength(1);
       // Redo should re-apply the forward mutation
-      expect(mutation!.patch["e1/Pos"]).toEqual({ x: 50 });
+      expect(mutation[0].patch["e1/Pos"]).toEqual({ x: 50 });
     });
   });
 
@@ -205,7 +205,7 @@ describe("HistoryAdapter", () => {
       adapter.undo();
       const mutation = adapter.pull();
       // Should undo both (merged into a single mutation)
-      expect(mutation).not.toBeNull();
+      expect(mutation).toHaveLength(1);
     });
 
     it("flushes pending on undo if dirty", () => {
@@ -290,16 +290,16 @@ describe("HistoryAdapter", () => {
 
       // Undo the user's last change
       adapter.undo();
-      const undoMut = adapter.pull()!;
+      const undoMut = adapter.pull()[0];
       // Inverse restores x to 0 (pre-user-change value)
       expect(undoMut.patch["e1/Pos"]).toEqual({ x: 0 });
 
       // Push the undo result back through (simulating the sync loop)
-      adapter.push([{ patch: undoMut.patch, origin: Origin.History }]);
+      adapter.push([{ patch: undoMut.patch, origin: Origin.History, syncBehavior: "document" }]);
 
       // Redo — should restore x to 50 (the pre-undo state), NOT x to 10
       adapter.redo();
-      const redoMut = adapter.pull()!;
+      const redoMut = adapter.pull()[0];
       expect(redoMut.patch["e1/Pos"]).toEqual({ x: 50 });
     });
 
@@ -325,23 +325,23 @@ describe("HistoryAdapter", () => {
 
       // Undo y change
       adapter.undo();
-      const undo1 = adapter.pull()!;
-      adapter.push([{ patch: undo1.patch, origin: Origin.History }]);
+      const undo1 = adapter.pull()[0];
+      adapter.push([{ patch: undo1.patch, origin: Origin.History, syncBehavior: "document" }]);
 
       // Undo x change
       adapter.undo();
-      const undo2 = adapter.pull()!;
-      adapter.push([{ patch: undo2.patch, origin: Origin.History }]);
+      const undo2 = adapter.pull()[0];
+      adapter.push([{ patch: undo2.patch, origin: Origin.History, syncBehavior: "document" }]);
 
       // Redo x change — should restore x to 99 (pre-first-undo), not 10
       adapter.redo();
-      const redo1 = adapter.pull()!;
-      adapter.push([{ patch: redo1.patch, origin: Origin.History }]);
+      const redo1 = adapter.pull()[0];
+      adapter.push([{ patch: redo1.patch, origin: Origin.History, syncBehavior: "document" }]);
       expect(redo1.patch["e1/Pos"]).toEqual({ x: 99 });
 
       // Redo y change — should restore y to 20
       adapter.redo();
-      const redo2 = adapter.pull()!;
+      const redo2 = adapter.pull()[0];
       expect(redo2.patch["e1/Pos"]).toEqual({ y: 20 });
     });
 
@@ -357,13 +357,13 @@ describe("HistoryAdapter", () => {
 
       // Undo creation — deletes entity
       adapter.undo();
-      const undoMut = adapter.pull()!;
+      const undoMut = adapter.pull()[0];
       expect(undoMut.patch["e1/Pos"]).toEqual({ _exists: false });
-      adapter.push([{ patch: undoMut.patch, origin: Origin.History }]);
+      adapter.push([{ patch: undoMut.patch, origin: Origin.History, syncBehavior: "document" }]);
 
       // Redo — should restore entity with x=50 (remote value was present)
       adapter.redo();
-      const redoMut = adapter.pull()!;
+      const redoMut = adapter.pull()[0];
       expect(redoMut.patch["e1/Pos"]).toEqual({ _exists: true, x: 50 });
     });
 
@@ -380,19 +380,19 @@ describe("HistoryAdapter", () => {
 
       // Cycle 1: undo then redo
       adapter.undo();
-      let mut = adapter.pull()!;
-      adapter.push([{ patch: mut.patch, origin: Origin.History }]);
+      let mut = adapter.pull()[0];
+      adapter.push([{ patch: mut.patch, origin: Origin.History, syncBehavior: "document" }]);
       adapter.redo();
-      mut = adapter.pull()!;
-      adapter.push([{ patch: mut.patch, origin: Origin.History }]);
+      mut = adapter.pull()[0];
+      adapter.push([{ patch: mut.patch, origin: Origin.History, syncBehavior: "document" }]);
       expect(mut.patch["e1/Pos"]).toEqual({ x: 50 });
 
       // Cycle 2: undo then redo again — should still restore to 50
       adapter.undo();
-      mut = adapter.pull()!;
-      adapter.push([{ patch: mut.patch, origin: Origin.History }]);
+      mut = adapter.pull()[0];
+      adapter.push([{ patch: mut.patch, origin: Origin.History, syncBehavior: "document" }]);
       adapter.redo();
-      mut = adapter.pull()!;
+      mut = adapter.pull()[0];
       expect(mut.patch["e1/Pos"]).toEqual({ x: 50 });
     });
   });
@@ -413,10 +413,10 @@ describe("HistoryAdapter", () => {
       expect(undid).toBe(true);
 
       const mutation = adapter.pull();
-      expect(mutation).not.toBeNull();
+      expect(mutation).toHaveLength(1);
       // Both keys should be in the inverse
-      expect("e1/Pos" in mutation!.patch).toBe(true);
-      expect("e2/Pos" in mutation!.patch).toBe(true);
+      expect("e1/Pos" in mutation[0].patch).toBe(true);
+      expect("e2/Pos" in mutation[0].patch).toBe(true);
     });
   });
 });

@@ -12,18 +12,22 @@ type Patch map[string]interface{}
 // --- Client requests ---
 
 // PatchRequest is sent by a client to apply mutations.
+// May contain document patches, ephemeral patches, or both.
 type PatchRequest struct {
-	Type      string  `json:"type"`
-	MessageID string  `json:"messageId"`
-	Patches   []Patch `json:"patches"`
+	Type             string  `json:"type"`
+	MessageID        string  `json:"messageId"`
+	DocumentPatches  []Patch `json:"documentPatches,omitempty"`
+	EphemeralPatches []Patch `json:"ephemeralPatches,omitempty"`
 }
 
 // ReconnectRequest is sent by a client to catch up after a disconnect.
-// Patches contains offline changes the server hasn't seen yet.
+// DocumentPatches contains offline changes the server hasn't seen yet.
+// EphemeralPatches contains the client's current ephemeral state to restore.
 type ReconnectRequest struct {
-	Type         string  `json:"type"`
-	LastTimestamp int64   `json:"lastTimestamp"`
-	Patches      []Patch `json:"patches,omitempty"`
+	Type             string  `json:"type"`
+	LastTimestamp     int64   `json:"lastTimestamp"`
+	DocumentPatches  []Patch `json:"documentPatches,omitempty"`
+	EphemeralPatches []Patch `json:"ephemeralPatches,omitempty"`
 }
 
 // --- Server responses ---
@@ -36,11 +40,13 @@ type AckResponse struct {
 }
 
 // PatchBroadcast is sent to other clients when state changes.
+// May contain document patches, ephemeral patches, or both.
 type PatchBroadcast struct {
-	Type      string  `json:"type"`
-	Patches   []Patch `json:"patches"`
-	ClientID  string  `json:"clientId"`
-	Timestamp int64   `json:"timestamp"`
+	Type             string  `json:"type"`
+	DocumentPatches  []Patch `json:"documentPatches,omitempty"`
+	EphemeralPatches []Patch `json:"ephemeralPatches,omitempty"`
+	ClientID         string  `json:"clientId"`
+	Timestamp        int64   `json:"timestamp"`
 }
 
 // ClientCountBroadcast is sent to all clients when the connected client count changes.
