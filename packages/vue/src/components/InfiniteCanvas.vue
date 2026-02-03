@@ -16,7 +16,7 @@ import {
   Edited,
   Opacity,
   User,
-  UserData,
+  UserData as UserDataZod,
   EventType,
   SINGLETON_ENTITY_ID,
   defineQuery,
@@ -51,7 +51,7 @@ import {
   INFINITE_CANVAS_KEY,
   TOOLTIP_KEY,
   type InfiniteCanvasContext,
-  type UserInfo,
+  type UserData,
 } from "../injection";
 import { createTooltipContext } from "../composables/useTooltipSingleton";
 import SelectionBox from "./blocks/SelectionBox.vue";
@@ -69,6 +69,7 @@ import ArrowHandle from "./blocks/ArrowHandle.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 import type { BlockData } from "../types";
 import UserPresence from "./UserPresence.vue";
+import UserCursors from "./UserCursors.vue";
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block));
@@ -156,16 +157,16 @@ const containerRef = ref<HTMLDivElement | null>(null);
 const editorRef = shallowRef<Editor | null>(null);
 
 // Parse user data from props (userId and sessionId won't change)
-const parsedUser = UserData.parse(props.user ?? {});
+const parsedUser = UserDataZod.parse(props.user ?? {});
 
 // Track which entities exist (for hasEntity check)
 const entities = new Set<EntityId>();
 
 // Track users by sessionId for selection highlighting
-const usersBySessionId = new Map<string, UserInfo>();
+const usersBySessionId = new Map<string, UserData>();
 
 // Users array for UserPresence component
-const usersArray = shallowRef<UserInfo[]>([]);
+const usersArray = shallowRef<UserData[]>([]);
 
 // Component subscriptions - entityId -> componentName -> Set of callbacks
 const componentSubscriptions = new Map<
@@ -293,7 +294,7 @@ function getSessionId(): string {
 }
 
 // Get user info by session ID
-function getUserBySessionId(sessionId: string): UserInfo | null {
+function getUserBySessionId(sessionId: string): UserData | null {
   return usersBySessionId.get(sessionId) ?? null;
 }
 
@@ -495,22 +496,9 @@ function updateBlocks(ctx: Context) {
 
   // Update users map for selection color lookup
   let usersChanged = false;
-  for (const entityId of userQuery.added(ctx)) {
+  for (const entityId of userQuery.addedOrChanged(ctx)) {
     const userSnapshot = User.snapshot(ctx, entityId);
-    usersBySessionId.set(userSnapshot.sessionId, {
-      sessionId: userSnapshot.sessionId,
-      color: userSnapshot.color,
-      name: userSnapshot.name,
-    });
-    usersChanged = true;
-  }
-  for (const entityId of userQuery.changed(ctx)) {
-    const userSnapshot = User.snapshot(ctx, entityId);
-    usersBySessionId.set(userSnapshot.sessionId, {
-      sessionId: userSnapshot.sessionId,
-      color: userSnapshot.color,
-      name: userSnapshot.name,
-    });
+    usersBySessionId.set(userSnapshot.sessionId, userSnapshot);
     usersChanged = true;
   }
   for (const entityId of userQuery.removed(ctx)) {
@@ -537,7 +525,7 @@ function updateBlocks(ctx: Context) {
   }
 
   // Update held state (for remote user presence)
-  for (const entityId of heldQuery.added(ctx)) {
+  for (const entityId of heldQuery.addedOrChanged(ctx)) {
     const blockRef = blockMap.get(entityId);
     if (blockRef) {
       blockRef.value.held = Held.snapshot(ctx, entityId);
@@ -547,12 +535,6 @@ function updateBlocks(ctx: Context) {
     const blockRef = blockMap.get(entityId);
     if (blockRef && blockRef.value.held !== null) {
       blockRef.value.held = null;
-    }
-  }
-  for (const entityId of heldQuery.changed(ctx)) {
-    const blockRef = blockMap.get(entityId);
-    if (blockRef) {
-      blockRef.value.held = Held.snapshot(ctx, entityId);
     }
   }
 
@@ -585,7 +567,7 @@ function updateBlocks(ctx: Context) {
   }
 
   // Update opacity state
-  for (const entityId of opacityQuery.added(ctx)) {
+  for (const entityId of opacityQuery.addedOrChanged(ctx)) {
     const blockRef = blockMap.get(entityId);
     if (blockRef) {
       blockRef.value.opacity = Opacity.snapshot(ctx, entityId);
@@ -597,15 +579,9 @@ function updateBlocks(ctx: Context) {
       blockRef.value.opacity = null;
     }
   }
-  for (const entityId of opacityQuery.changed(ctx)) {
-    const blockRef = blockMap.get(entityId);
-    if (blockRef) {
-      blockRef.value.opacity = Opacity.snapshot(ctx, entityId);
-    }
-  }
 
   // Update connector state
-  for (const entityId of connectorQuery.added(ctx)) {
+  for (const entityId of connectorQuery.addedOrChanged(ctx)) {
     const blockRef = blockMap.get(entityId);
     if (blockRef) {
       blockRef.value.connector = Connector.snapshot(ctx, entityId);
@@ -615,12 +591,6 @@ function updateBlocks(ctx: Context) {
     const blockRef = blockMap.get(entityId);
     if (blockRef && blockRef.value.connector !== null) {
       blockRef.value.connector = null;
-    }
-  }
-  for (const entityId of connectorQuery.changed(ctx)) {
-    const blockRef = blockMap.get(entityId);
-    if (blockRef) {
-      blockRef.value.connector = Connector.snapshot(ctx, entityId);
     }
   }
 
@@ -771,6 +741,14 @@ function getBlockStyle(data: BlockData) {
         </slot>
       </div>
     </div>
+
+    <!-- User cursors layer -->
+    <UserCursors
+      v-if="editorRef"
+      :users="usersArray"
+      :current-session-id="parsedUser.sessionId"
+      :camera="cameraRef"
+    />
 
     <!-- Floating menu -->
     <FloatingMenu v-if="editorRef">

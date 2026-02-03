@@ -21,3 +21,6 @@ export { computeAabb } from "./computeAabb";
 
 // Held state helpers
 export { isHeldByRemote } from "./held";
+
+// User helpers
+export { getMyUserEntityId } from "./user";

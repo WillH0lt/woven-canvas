@@ -3,15 +3,12 @@ import {
   type EntityId,
   type Editor,
   type Context,
+  type InferComponentType,
+  type User,
 } from "@infinitecanvas/editor";
 
 /** User data stored in the users map */
-export interface UserInfo {
-  sessionId: string;
-  color: string;
-  name: string;
-  avatar?: string;
-}
+export type UserData = InferComponentType<typeof User.schema>;
 
 /** Context provided by InfiniteCanvas */
 export interface InfiniteCanvasContext {
@@ -22,7 +19,7 @@ export interface InfiniteCanvasContext {
   /** Get the current user's sessionId */
   getSessionId: () => string;
   /** Get a user's info by their session ID */
-  getUserBySessionId: (sessionId: string) => UserInfo | null;
+  getUserBySessionId: (sessionId: string) => UserData | null;
   /** Subscribe to component changes for an entity. Returns unsubscribe function. */
   subscribeComponent: (
     entityId: EntityId,

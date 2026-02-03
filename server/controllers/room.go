@@ -13,7 +13,7 @@ type RoomController struct {
 	timestamp      int64
 	state          map[string]models.ComponentData
 	timestamps     map[string]models.FieldTimestamps
-	ephemeralState map[string]models.Patch
+	ephemeralState map[string]map[string]models.ComponentData
 }
 
 // NewRoomController creates a RoomController and wires it to the hub.
@@ -22,7 +22,7 @@ func NewRoomController(hub *socket.Hub) *RoomController {
 		hub:            hub,
 		state:          make(map[string]models.ComponentData),
 		timestamps:     make(map[string]models.FieldTimestamps),
-		ephemeralState: make(map[string]models.Patch),
+		ephemeralState: make(map[string]map[string]models.ComponentData),
 	}
 	hub.OnMessage = rc.HandleMessage
 	hub.OnConnect = rc.handleConnect
@@ -225,24 +225,13 @@ func (r *RoomController) handleReconnect(client *socket.Client, req models.Recon
 
 // applyEphemeralPatch merges patches into the ephemeral state for a client.
 func (r *RoomController) applyEphemeralPatch(clientID string, patches []models.Patch) {
-	existing, ok := r.ephemeralState[clientID]
+	clientState, ok := r.ephemeralState[clientID]
 	if !ok {
-		existing = make(models.Patch)
-		r.ephemeralState[clientID] = existing
+		clientState = make(map[string]models.ComponentData)
+		r.ephemeralState[clientID] = clientState
 	}
 	for _, patch := range patches {
-		for key, value := range patch {
-			valueMap, ok := value.(map[string]interface{})
-			if !ok {
-				existing[key] = value
-				continue
-			}
-			if ex, ok := valueMap["_exists"]; ok && ex == false {
-				delete(existing, key)
-			} else {
-				existing[key] = value
-			}
-		}
+		applyPatch(clientState, patch)
 	}
 }
 
@@ -258,6 +247,39 @@ func (r *RoomController) buildEphemeralSnapshot(excludeClientID string) models.P
 		}
 	}
 	return merged
+}
+
+// applyPatch merges a patch into a state map and returns the keys that were modified.
+// Handles _exists: false for deletions and field-level merging for updates.
+func applyPatch(state map[string]models.ComponentData, patch models.Patch) map[string]models.ComponentData {
+	modified := make(map[string]models.ComponentData)
+	for key, value := range patch {
+		valueMap, ok := value.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// _exists: false means delete/tombstone
+		if exists, ok := valueMap["_exists"]; ok && exists == false {
+			delete(state, key)
+			modified[key] = valueMap
+			continue
+		}
+
+		existing, hasExisting := state[key]
+		if !hasExisting {
+			state[key] = valueMap
+			modified[key] = valueMap
+			continue
+		}
+
+		// Merge new fields into existing map
+		for k, v := range valueMap {
+			existing[k] = v
+		}
+		modified[key] = valueMap
+	}
+	return modified
 }
 
 // buildDiff walks the timestamps record and collects all state fields
@@ -285,42 +307,22 @@ func (r *RoomController) buildDiff(since int64) models.Patch {
 // field-level timestamps. A patch with _exists: false replaces the
 // entry entirely (clearing old fields) to act as a tombstone.
 func (r *RoomController) applyDocumentPatch(patch models.Patch, ts int64) {
-	for key, value := range patch {
-		valueMap, ok := value.(map[string]interface{})
-		if !ok {
-			log.Printf("Unexpected non-map value for key %s, skipping", key)
-			continue
-		}
-
-		// _exists: false replaces the entire entry, clearing old fields
-		if exists, ok := valueMap["_exists"]; ok && exists == false {
-			r.state[key] = valueMap
-			r.setFieldTimestamps(key, valueMap, ts)
-			continue
-		}
-
-		existing, exists := r.state[key]
-		if !exists {
-			r.state[key] = valueMap
-			r.setFieldTimestamps(key, valueMap, ts)
-			continue
-		}
-
-		// Merge fields into existing component data and record timestamps
-		for k, v := range valueMap {
-			existing[k] = v
-		}
-		for k := range valueMap {
-			r.timestamps[key][k] = ts
-		}
+	modified := applyPatch(r.state, patch)
+	for key, valueMap := range modified {
+		r.updateTimestamps(key, valueMap, ts)
 	}
 }
 
-// setFieldTimestamps creates a new timestamp entry for all fields in a component.
-func (r *RoomController) setFieldTimestamps(key string, fields models.ComponentData, ts int64) {
-	tsMap := make(models.FieldTimestamps, len(fields))
-	for k := range fields {
-		tsMap[k] = ts
+// updateTimestamps records field-level timestamps for modified fields.
+// For deletions (_exists: false) or new entries, replaces all timestamps.
+// For updates, merges new field timestamps into existing ones.
+func (r *RoomController) updateTimestamps(key string, fields models.ComponentData, ts int64) {
+	existing, hasExisting := r.timestamps[key]
+	if !hasExisting || fields["_exists"] == false {
+		existing = make(models.FieldTimestamps, len(fields))
+		r.timestamps[key] = existing
 	}
-	r.timestamps[key] = tsMap
+	for k := range fields {
+		existing[k] = ts
+	}
 }

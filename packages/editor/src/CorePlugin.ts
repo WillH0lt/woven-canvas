@@ -28,7 +28,7 @@ import { intersectSystem } from "./systems/preCapture";
 import { keybindSystem } from "./systems/capture";
 import { removeEmptyTextSystem } from "./systems/update";
 import { scaleWithZoomSystem } from "./systems/preRender";
-import { cursorSystem } from "./systems/postRender";
+import { cursorSystem, presenceSystem } from "./systems/postRender";
 import * as components from "./components";
 import * as singletons from "./singletons";
 
@@ -70,6 +70,7 @@ export const CorePlugin: EditorPlugin = {
     // Render phase
     scaleWithZoomSystem, // priority: 100
     cursorSystem, // priority: -100
+    presenceSystem, // priority: -100
   ],
 
   setup(ctx) {

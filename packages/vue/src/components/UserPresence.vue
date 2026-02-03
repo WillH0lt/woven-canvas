@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { onClickOutside } from "@vueuse/core";
-import type { UserInfo } from "../injection";
+import type { UserData } from "../injection";
 
 const props = defineProps<{
-  users: UserInfo[];
+  users: UserData[];
 }>();
 
 // Dropdown state
@@ -54,7 +54,12 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
           class="ic-user-avatar"
           :style="{ backgroundColor: user.avatar ? 'transparent' : user.color }"
         >
-          <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="ic-user-avatar-img" />
+          <img
+            v-if="user.avatar"
+            :src="user.avatar"
+            :alt="user.name"
+            class="ic-user-avatar-img"
+          />
           <template v-else>{{ user.initials }}</template>
         </div>
       </div>
@@ -69,9 +74,16 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
         >
           <div
             class="ic-user-avatar ic-user-avatar-small"
-            :style="{ backgroundColor: user.avatar ? 'transparent' : user.color }"
+            :style="{
+              backgroundColor: user.avatar ? 'transparent' : user.color,
+            }"
           >
-            <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="ic-user-avatar-img" />
+            <img
+              v-if="user.avatar"
+              :src="user.avatar"
+              :alt="user.name"
+              class="ic-user-avatar-img"
+            />
             <template v-else>{{ user.initials }}</template>
           </div>
           <span class="ic-user-presence-name">{{ user.name }}</span>
@@ -173,7 +185,10 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
 .ic-user-presence-name {
   font-size: 13px;
   color: #374151;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -14,5 +14,6 @@ export const User = defineEditorComponent(
     color: field.string().max(7),
     name: field.string().max(100),
     avatar: field.string().max(500),
-  }
+    position: field.tuple(field.float32(), 2).default([0, 0]),
+  },
 );
