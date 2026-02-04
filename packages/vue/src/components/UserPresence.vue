@@ -41,7 +41,7 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
 </script>
 
 <template>
-  <div ref="containerRef" class="ic-user-presence">
+  <div v-if="users.length > 1" ref="containerRef" class="ic-user-presence">
     <button
       class="ic-user-presence-trigger"
       :class="{ 'is-open': isOpen }"

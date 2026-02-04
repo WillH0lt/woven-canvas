@@ -44,7 +44,7 @@ export class HistoryAdapter implements Adapter {
   private maxHistoryStackSize: number;
   private checkpoints = new Map<string, number>();
   private settledCallbacks: SettledCallback[] = [];
-  private commitCallback: SettledCallback | null = null;
+  private cancelCommitSettled: (() => void) | null = null;
 
   constructor(options: HistoryAdapterOptions = {}) {
     this.commitAfterFrames = options.commitAfterFrames ?? 60;
@@ -71,7 +71,11 @@ export class HistoryAdapter implements Adapter {
         this.pendingForward = merge(this.pendingForward, m.patch);
         this.pendingInverse = merge(inverse, this.pendingInverse);
         this.dirty = true;
-        this.resetCommitCallback();
+        this.cancelCommitSettled?.();
+        this.cancelCommitSettled = this.onSettled(
+          () => this.commitPendingDelta(),
+          { frames: this.commitAfterFrames },
+        );
         this.redoStack = [];
       } else {
         // History, Websocket, Persistence — apply to state only
@@ -152,7 +156,8 @@ export class HistoryAdapter implements Adapter {
   }
 
   close(): void {
-    this.commitCallback = null;
+    this.cancelCommitSettled?.();
+    this.cancelCommitSettled = null;
     this.settledCallbacks = [];
   }
 
@@ -233,53 +238,41 @@ export class HistoryAdapter implements Adapter {
    * Register a callback to be called after N consecutive frames with no ECS mutations.
    * Useful for waiting for state to settle before performing operations like squash.
    */
-  onSettled(callback: () => void, options: { frames: number }): void {
-    this.settledCallbacks.push({
+  onSettled(callback: () => void, options: { frames: number }): () => void {
+    const entry: SettledCallback = {
       callback,
       requiredFrames: options.frames,
       quietFrames: 0,
-    });
+    };
+    this.settledCallbacks.push(entry);
+    return () => {
+      const index = this.settledCallbacks.indexOf(entry);
+      if (index !== -1) this.settledCallbacks.splice(index, 1);
+    };
   }
 
   private processSettledCallbacks(isQuiet: boolean): void {
-    // Process commit callback (replaces inactivity timer)
-    if (this.commitCallback) {
-      if (isQuiet) {
-        this.commitCallback.quietFrames++;
-        if (
-          this.commitCallback.quietFrames >= this.commitCallback.requiredFrames
-        ) {
-          this.commitCallback.callback();
-          this.commitCallback = null;
-        }
-      } else {
-        // Reset on activity
-        this.commitCallback.quietFrames = 0;
-      }
-    }
-
-    // Process user callbacks
-    const remaining: SettledCallback[] = [];
-    for (const cb of this.settledCallbacks) {
+    const callbacks = this.settledCallbacks;
+    this.settledCallbacks = [];
+    for (const cb of callbacks) {
       if (isQuiet) {
         cb.quietFrames++;
         if (cb.quietFrames >= cb.requiredFrames) {
           cb.callback();
         } else {
-          remaining.push(cb);
+          this.settledCallbacks.push(cb);
         }
       } else {
         cb.quietFrames = 0;
-        remaining.push(cb);
+        this.settledCallbacks.push(cb);
       }
     }
-    this.settledCallbacks = remaining;
   }
 
   private commitPendingDelta(): void {
     if (!this.dirty) return;
 
-    this.commitCallback = null;
+    this.cancelCommitSettled = null;
     this.dirty = false;
 
     // Remove no-op entries where forward and inverse are identical
@@ -377,21 +370,6 @@ export class HistoryAdapter implements Adapter {
         const base = existing?._exists === false ? {} : existing;
         this.state[key] = { ...base, ...value };
       }
-    }
-  }
-
-  private resetCommitCallback(): void {
-    // Register or reset the commit callback
-    // It will fire after commitAfterFrames quiet frames
-    if (!this.commitCallback) {
-      this.commitCallback = {
-        callback: () => this.commitPendingDelta(),
-        requiredFrames: this.commitAfterFrames,
-        quietFrames: 0,
-      };
-    } else {
-      // Reset the counter on new activity
-      this.commitCallback.quietFrames = 0;
     }
   }
 }

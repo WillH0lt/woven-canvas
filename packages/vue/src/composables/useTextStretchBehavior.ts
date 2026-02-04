@@ -5,10 +5,21 @@ import {
   type Ref,
   type MaybeRefOrGetter,
 } from "vue";
-import { Block, Text, Camera, Screen } from "@infinitecanvas/editor";
+import {
+  Block,
+  Text,
+  Camera,
+  Screen,
+  hasComponent,
+  type Context,
+} from "@infinitecanvas/editor";
 import {
   UpdateTransformBox,
   TransformBoxStateSingleton,
+  SelectionStateSingleton,
+  SelectionState,
+  TransformHandle,
+  TransformHandleKind,
 } from "@infinitecanvas/plugin-selection";
 
 import { useSingleton } from "./useSingleton";
@@ -66,6 +77,8 @@ export function useTextStretchBehavior(
 
     resizeObserver = new ResizeObserver(() => {
       nextEditorTick((ctx) => {
+        if (isScaling(ctx)) return;
+
         const { entityId } = toValue(options.blockData);
         const block = Block.read(ctx, entityId);
 
@@ -161,4 +174,15 @@ export function useTextStretchBehavior(
   return {
     handleEditEnd,
   };
+}
+
+function isScaling(ctx: Context): boolean {
+  const selectionState = SelectionStateSingleton.read(ctx);
+  return (
+    selectionState.state === SelectionState.Dragging &&
+    selectionState.draggedEntity !== null &&
+    hasComponent(ctx, selectionState.draggedEntity, TransformHandle) &&
+    TransformHandle.read(ctx, selectionState.draggedEntity).kind ===
+      TransformHandleKind.Scale
+  );
 }

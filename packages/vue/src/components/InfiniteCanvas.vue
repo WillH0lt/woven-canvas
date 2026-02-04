@@ -327,12 +327,13 @@ async function tick() {
   editorRef.value.nextTick((ctx) => {
     processEvents(ctx);
     updateBlocks(ctx);
-    store.sync(ctx);
 
     // Call registered tick callbacks (e.g., for useQuery)
     for (const callback of tickCallbacks) {
       callback(ctx);
     }
+
+    store.sync(ctx);
   });
 
   await editorRef.value.tick();
@@ -598,11 +599,7 @@ function updateBlocks(ctx: Context) {
   if (needsResort) {
     const blocks = Array.from(blockMap.values());
 
-    blocks.sort((a, b) => {
-      // const aRank = getEffectiveRank(a.value.entityId, a.value.block.rank);
-      // const bRank = getEffectiveRank(b.value.entityId, b.value.block.rank);
-      return a.value.block.rank > b.value.block.rank ? 1 : -1;
-    });
+    blocks.sort((a, b) => (a.value.block.rank > b.value.block.rank ? 1 : -1));
 
     sortedBlocks.value = blocks;
   }
