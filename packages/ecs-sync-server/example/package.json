@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "name": "ecs-sync-server-example",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server.ts"
+  },
+  "dependencies": {
+    "@infinitecanvas/ecs-sync-server": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.0"
+  }
+}

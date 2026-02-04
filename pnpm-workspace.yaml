@@ -1,3 +1,4 @@
 packages:
   - "packages/*"
+  - "packages/ecs-sync-server/example"
   - "examples/*"

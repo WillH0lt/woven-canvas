@@ -786,6 +786,32 @@ importers:
         specifier: ^4.0.7
         version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
 
+  packages/ecs-sync-server:
+    dependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+    devDependencies:
+      vitest:
+        specifier: ^4.0.7
+        version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
+
+  packages/ecs-sync-server/example:
+    dependencies:
+      '@infinitecanvas/ecs-sync-server':
+        specifier: workspace:*
+        version: link:..
+      ws:
+        specifier: ^8.18.0
+        version: 8.19.0
+    devDependencies:
+      '@types/ws':
+        specifier: ^8.5.13
+        version: 8.18.1
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
+
   packages/editor:
     dependencies:
       '@infinitecanvas/ecs':
@@ -6676,7 +6702,6 @@ packages:
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
     dependencies:
       '@types/node': 24.10.9
-    dev: false
 
   /@typescript-eslint/eslint-plugin@8.53.1(@typescript-eslint/parser@8.53.1)(eslint@9.39.2)(typescript@5.9.3):
     resolution: {integrity: sha512-cFYYFZ+oQFi6hUnBTbLRXfTJiaQtYE3t4O692agbBl+2Zy+eqSKWtPjhPXJu1G7j4RLjKgeJPDdq3EqOwmX5Ag==}

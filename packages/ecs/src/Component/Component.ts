@@ -406,9 +406,9 @@ export class Component<T extends ComponentSchema> {
     for (let i = 0; i < this.fieldNames.length; i++) {
       const fieldName = this.fieldNames[i];
       let value = (readView as any)[fieldName];
-      // Clone typed arrays (e.g., tuple subarrays) to ensure snapshot is independent
+      // Convert typed arrays to plain arrays so they serialize correctly as JSON
       if (ArrayBuffer.isView(value)) {
-        value = (value as any).slice();
+        value = Array.from(value as any);
       }
       (result as any)[fieldName] = value;
     }

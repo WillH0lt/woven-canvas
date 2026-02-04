@@ -1,13 +1,22 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref } from "vue";
+import { Text } from "@infinitecanvas/editor";
 
 import type { BlockData } from "../../types";
+import { useComponent } from "../../composables/useComponent";
 import { useTextStretchBehavior } from "../../composables/useTextStretchBehavior";
 import EditableText from "../EditableText.vue";
 
 const props = defineProps<BlockData>();
 
 const containerRef = ref<HTMLElement | null>(null);
+const text = useComponent(props.entityId, Text);
+
+const isEmpty = computed(() => {
+  const content = text.value?.content ?? "";
+  const stripped = content.replace(/<[^>]*>/g, "").trim();
+  return stripped.length === 0;
+});
 
 // Use the text stretch behavior composable
 const { handleEditEnd } = useTextStretchBehavior({
@@ -17,7 +26,7 @@ const { handleEditEnd } = useTextStretchBehavior({
 </script>
 
 <template>
-  <div ref="containerRef" class="ic-text-block">
+  <div ref="containerRef" class="ic-text-block" :data-text-empty="isEmpty || undefined">
     <EditableText
       v-bind="props"
       :block-element="containerRef"
@@ -33,6 +42,10 @@ const { handleEditEnd } = useTextStretchBehavior({
 }
 
 .ic-block[data-selected] > .ic-text-block {
+  outline: none;
+}
+
+.ic-block[data-held-by-other] > .ic-text-block[data-text-empty] {
   outline: none;
 }
 </style>
