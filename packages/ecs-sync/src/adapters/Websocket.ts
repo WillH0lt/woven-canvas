@@ -163,7 +163,10 @@ export class WebsocketAdapter implements Adapter {
       }
       // Track ephemeral state so it can be restored on reconnect
       if (ephPatches.length > 0) {
-        this.localEphemeralState = merge(this.localEphemeralState, ...ephPatches);
+        this.localEphemeralState = merge(
+          this.localEphemeralState,
+          ...ephPatches,
+        );
       }
       return;
     }
@@ -336,7 +339,10 @@ export class WebsocketAdapter implements Adapter {
         }
         if (msg.ephemeralPatches && msg.ephemeralPatches.length > 0) {
           this.pendingEphemeralPatches.push(...msg.ephemeralPatches);
-          this.remoteEphemeralState = merge(this.remoteEphemeralState, ...msg.ephemeralPatches);
+          this.remoteEphemeralState = merge(
+            this.remoteEphemeralState,
+            ...msg.ephemeralPatches,
+          );
         }
         break;
       }

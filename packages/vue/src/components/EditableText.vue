@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch, onUnmounted, nextTick } from "vue";
-import { Text, Camera, Screen } from "@infinitecanvas/editor";
+import {
+  Text,
+  Camera,
+  Screen,
+  removeEntity,
+  getBlockDef,
+} from "@infinitecanvas/editor";
 import { Editor, EditorContent } from "@tiptap/vue-3";
 import Document from "@tiptap/extension-document";
 import Paragraph from "@tiptap/extension-paragraph";
@@ -14,7 +20,7 @@ import Color from "@tiptap/extension-color";
 import { UndoRedo } from "@tiptap/extensions";
 
 import type { BlockData } from "../types";
-import { useComponent, useSingleton } from "../composables";
+import { useComponent, useSingleton, useEditorContext } from "../composables";
 import { useTextEditorController } from "../composables/useTextEditorController";
 import { computeBlockDimensions } from "../utils/blockDimensions";
 
@@ -40,6 +46,7 @@ const text = useComponent(props.entityId, Text);
 const camera = useSingleton(Camera);
 const screen = useSingleton(Screen);
 const textEditorController = useTextEditorController();
+const { nextEditorTick } = useEditorContext();
 
 // Template ref for measuring text dimensions
 const editableTextRef = ref<HTMLElement | null>(null);
@@ -141,33 +148,45 @@ async function handleEditStart(editor: Editor): Promise<void> {
 }
 
 function handleEditEnd(editor: Editor): void {
-  // Capture content and dimensions synchronously before editor is destroyed
-  let content = editor.getHTML();
+  nextEditorTick((ctx) => {
+    // Capture content and dimensions synchronously before editor is destroyed
+    let content = editor.getHTML();
 
-  // If content is only HTML tags (no text), treat as empty
-  // Text is initialized with empty string, then Tiptap wraps it in <p></p>
-  // for undo/redo we need to check if something's actually changed
-  const stripped = content.replace(/<[^>]*>/g, "").trim();
-  if (stripped.length === 0) {
-    content = "";
-  }
+    // If content is only HTML tags (no text), treat as empty
+    // Text is initialized with empty string, then Tiptap wraps it in <p></p>
+    // for undo/redo we need to check if something's actually changed
+    const stripped = content.replace(/<[^>]*>/g, "").trim();
+    const hasContent = stripped.length > 0;
 
-  // Update display content immediately to avoid flash
-  displayContent.value = content;
+    if (!hasContent) {
+      content = "";
+    }
 
-  if (!editableTextRef.value) {
-    console.warn("EditableText: element not found");
-    return;
-  }
+    // Update display content immediately to avoid flash
+    displayContent.value = content;
 
-  const dimensions = computeBlockDimensions(
-    editableTextRef.value,
-    camera,
-    screen,
-  );
+    const blockDef = getBlockDef(ctx, props.block.tag);
+    if (!hasContent && blockDef.editOptions?.removeWhenTextEmpty) {
+      // No content and block should be removed when empty - delete it
+      // Since entity was never synced, this won't affect undo/redo
+      removeEntity(ctx, props.entityId);
+      return;
+    }
 
-  // Emit event for parent components to handle content and sizing
-  emit("editEnd", { content, ...dimensions });
+    if (!editableTextRef.value) {
+      console.warn("EditableText: element not found");
+      return;
+    }
+
+    const dimensions = computeBlockDimensions(
+      editableTextRef.value,
+      camera,
+      screen,
+    );
+
+    // Emit event for parent components to handle content and sizing
+    emit("editEnd", { content, ...dimensions });
+  });
 }
 
 // Watch for external text content changes (e.g., from undo/redo or sync)

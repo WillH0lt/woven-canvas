@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
-import { Block, Color, type EntityId } from "@infinitecanvas/editor";
+import { Color, Block } from "@infinitecanvas/editor";
 import { useComponent } from "../../composables/useComponent";
 import { PenStroke } from "@infinitecanvas/plugin-pen";
 import { getStroke } from "perfect-freehand";
@@ -22,7 +22,7 @@ function average(a: number, b: number) {
 function getSvgPathFromStroke(
   outlinePoints: number[][],
   pointCount: number,
-  thickness: number
+  thickness: number,
 ): string {
   if (pointCount <= 4 || outlinePoints.length < 3) {
     // Draw a dot for very short strokes
@@ -35,17 +35,17 @@ function getSvgPathFromStroke(
   const c = outlinePoints[2];
 
   let pathStr = `M${a[0].toFixed(2)},${a[1].toFixed(2)} Q${b[0].toFixed(
-    2
+    2,
   )},${b[1].toFixed(2)} ${average(b[0], c[0]).toFixed(2)},${average(
     b[1],
-    c[1]
+    c[1],
   ).toFixed(2)} T`;
 
   for (let i = 2; i < outlinePoints.length - 1; i++) {
     a = outlinePoints[i];
     b = outlinePoints[i + 1];
     pathStr += `${average(a[0], b[0]).toFixed(2)},${average(a[1], b[1]).toFixed(
-      2
+      2,
     )} `;
   }
 
@@ -103,7 +103,7 @@ watch(
     path.value = getSvgPathFromStroke(
       outlinePoints,
       stroke.pointCount,
-      stroke.thickness
+      stroke.thickness,
     );
 
     // Generate highlight path for selection/hover
@@ -118,11 +118,11 @@ watch(
       highlightPath.value = getSvgPathFromStroke(
         highlightOutline,
         stroke.pointCount,
-        highlightThickness
+        highlightThickness,
       );
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const fillColor = computed(() => {
@@ -134,7 +134,10 @@ const isEmphasized = computed(() => props.selected || props.hovered);
 </script>
 
 <template>
-  <div class="ic-pen-stroke" :data-complete="penStroke?.isComplete || undefined">
+  <div
+    class="ic-pen-stroke"
+    :data-complete="penStroke?.isComplete || undefined"
+  >
     <svg preserveAspectRatio="none">
       <path :d="path" :fill="fillColor" />
     </svg>
@@ -174,7 +177,6 @@ const isEmphasized = computed(() => props.selected || props.hovered);
   position: absolute;
   inset: 0;
 }
-
 </style>
 
 <style>
@@ -187,5 +189,4 @@ const isEmphasized = computed(() => props.selected || props.hovered);
 .ic-block[data-held-by-other] > .ic-pen-stroke:not([data-complete]) {
   outline: none;
 }
-
 </style>

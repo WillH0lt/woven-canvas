@@ -2,7 +2,7 @@ import { type Context, defineQuery } from "@infinitecanvas/ecs";
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Pointer, User } from "../../components";
-import { Mouse } from "../../singletons";
+import { Mouse, Camera } from "../../singletons";
 import { getMyUserEntityId } from "../../helpers";
 
 const pointerQuery = defineQuery((q) => q.tracking(Pointer));
@@ -44,5 +44,5 @@ function updateUserPosition(ctx: Context, position: [number, number]): void {
   if (myUserEid === null) return;
 
   const user = User.write(ctx, myUserEid);
-  user.position = position;
+  user.position = Camera.toWorld(ctx, position);
 }

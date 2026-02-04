@@ -325,9 +325,9 @@ async function tick() {
   if (!editorRef.value) return;
 
   editorRef.value.nextTick((ctx) => {
-    store.sync(ctx);
     processEvents(ctx);
     updateBlocks(ctx);
+    store.sync(ctx);
 
     // Call registered tick callbacks (e.g., for useQuery)
     for (const callback of tickCallbacks) {

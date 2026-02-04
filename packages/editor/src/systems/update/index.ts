@@ -1,1 +1,0 @@
-export { removeEmptyTextSystem } from "./removeEmptyTextSystem";

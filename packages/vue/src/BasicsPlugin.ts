@@ -12,6 +12,7 @@ import {
 import { type EditorSync } from "@infinitecanvas/ecs-sync";
 import { CURSORS } from "./cursors";
 import { blockPlacementSystem, undoRedoSystem } from "./systems";
+import { BlockPlacementState } from "./singletons";
 
 export interface BasicsPluginResources {
   store: EditorSync;
@@ -56,6 +57,7 @@ export function BasicsPlugin(options: BasicsPluginOptions): EditorPlugin {
   return {
     name: "basics",
     resources: { store: options.store } satisfies BasicsPluginResources,
+    singletons: [BlockPlacementState],
     cursors: CURSORS,
     fonts: DEFAULT_FONTS,
     keybinds: [

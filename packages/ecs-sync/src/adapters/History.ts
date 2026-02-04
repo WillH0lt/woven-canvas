@@ -3,16 +3,22 @@ import type { Mutation, Patch, ComponentData } from "../types";
 import { merge } from "../mutations";
 import { Origin } from "../constants";
 
-interface Checkpoint {
-  forward: Patch[];
-  inverse: Patch[];
+interface Delta {
+  forward: Patch;
+  inverse: Patch;
+}
+
+interface SettledCallback {
+  callback: () => void;
+  requiredFrames: number;
+  quietFrames: number;
 }
 
 export interface HistoryAdapterOptions {
-  /** Inactivity timeout before creating a checkpoint (ms). Default: 1000 */
-  inactivityTimeout?: number;
-  /** Maximum number of checkpoints to keep. Default: 100 */
-  maxCheckpoints?: number;
+  /** Number of quiet frames before committing pending changes. Default: 60 */
+  commitAfterFrames?: number;
+  /** Maximum number of undo steps to keep. Default: 100 */
+  maxHistoryStackSize?: number;
 }
 
 /**
@@ -28,26 +34,29 @@ export interface HistoryAdapterOptions {
 export class HistoryAdapter implements Adapter {
   /** Current state, used to compute inverse mutations */
   private state: Record<string, ComponentData> = {};
-  private undoStack: Checkpoint[] = [];
-  private redoStack: Checkpoint[] = [];
-  private pendingForward: Patch[] = [];
-  private pendingInverse: Patch[] = [];
+  private undoStack: Delta[] = [];
+  private redoStack: Delta[] = [];
+  private pendingForward: Patch = {};
+  private pendingInverse: Patch = {};
   private pendingPullPatches: Patch[] = [];
   private dirty = false;
-  private inactivityTimer: ReturnType<typeof setTimeout> | null = null;
-  private inactivityTimeout: number;
-  private maxCheckpoints: number;
+  private commitAfterFrames: number;
+  private maxHistoryStackSize: number;
+  private checkpoints = new Map<string, number>();
+  private settledCallbacks: SettledCallback[] = [];
+  private commitCallback: SettledCallback | null = null;
 
   constructor(options: HistoryAdapterOptions = {}) {
-    this.inactivityTimeout = options.inactivityTimeout ?? 1000;
-    this.maxCheckpoints = options.maxCheckpoints ?? 100;
+    this.commitAfterFrames = options.commitAfterFrames ?? 60;
+    this.maxHistoryStackSize = options.maxHistoryStackSize ?? 100;
   }
 
   async init(): Promise<void> {}
 
   push(mutations: Mutation[]): void {
-    if (mutations.length === 0) return;
-
+    const ecsMutations = mutations.filter(
+      (m) => m.origin === Origin.ECS && m.syncBehavior !== "ephemeral",
+    );
     // Apply every mutation in the order received so that all adapters
     // converge to the same state.  Only ECS-originated document mutations
     // are recorded for undo/redo; ephemeral mutations are skipped entirely;
@@ -59,16 +68,19 @@ export class HistoryAdapter implements Adapter {
         if (Object.keys(m.patch).length === 0) continue;
 
         const inverse = this.applyAndComputeInverse(m.patch);
-        this.pendingForward.push(m.patch);
-        this.pendingInverse.push(inverse);
+        this.pendingForward = merge(this.pendingForward, m.patch);
+        this.pendingInverse = merge(inverse, this.pendingInverse);
         this.dirty = true;
-        this.resetInactivityTimer();
+        this.resetCommitCallback();
         this.redoStack = [];
       } else {
         // History, Websocket, Persistence — apply to state only
         this.applyToState(m.patch);
       }
     }
+
+    // Process settled callbacks
+    this.processSettledCallbacks(ecsMutations.length === 0);
   }
 
   pull(): Mutation[] {
@@ -80,31 +92,32 @@ export class HistoryAdapter implements Adapter {
 
   undo(): boolean {
     if (this.dirty) {
-      this.createCheckpoint();
+      this.commitPendingDelta();
     }
 
     if (this.undoStack.length === 0) return false;
 
-    const checkpoint = this.undoStack.pop()!;
+    const delta = this.undoStack.pop()!;
 
-    // Apply inverse patches via applyAndComputeInverse so we capture the
+    // Apply inverse patch via applyAndComputeInverse so we capture the
     // current state of every touched key *before* the undo.  These captured
-    // values become the redo entry's forward patches — ensuring that redo
+    // values become the redo entry's forward patch — ensuring that redo
     // restores the exact pre-undo state (including any remote changes).
-    const recomputedForward: Patch[] = [];
-    for (const patch of checkpoint.inverse) {
-      const inversePatch = this.applyAndComputeInverse(patch);
-      recomputedForward.push(inversePatch);
-    }
+    const recomputedForward = this.applyAndComputeInverse(delta.inverse);
 
-    // recomputedForward is in inverse-application order (reverse of creation
-    // order).  Reverse it so redo re-applies in the natural forward order.
     this.redoStack.push({
-      forward: [...recomputedForward].reverse(),
-      inverse: checkpoint.inverse,
+      forward: recomputedForward,
+      inverse: delta.inverse,
     });
 
-    this.pendingPullPatches.push(...checkpoint.inverse);
+    this.pendingPullPatches.push(delta.inverse);
+
+    // Invalidate checkpoints that are now beyond the stack
+    for (const [id, index] of this.checkpoints) {
+      if (index > this.undoStack.length) {
+        this.checkpoints.delete(id);
+      }
+    }
 
     return true;
   }
@@ -112,24 +125,20 @@ export class HistoryAdapter implements Adapter {
   redo(): boolean {
     if (this.redoStack.length === 0) return false;
 
-    const checkpoint = this.redoStack.pop()!;
+    const delta = this.redoStack.pop()!;
 
-    // Apply forward patches via applyAndComputeInverse so we capture the
+    // Apply forward patch via applyAndComputeInverse so we capture the
     // current state of every touched key *before* the redo.  These captured
-    // values become the undo entry's inverse patches — ensuring that a
+    // values become the undo entry's inverse patch — ensuring that a
     // subsequent undo restores the exact pre-redo state.
-    const recomputedInverse: Patch[] = [];
-    for (const patch of checkpoint.forward) {
-      const inversePatch = this.applyAndComputeInverse(patch);
-      recomputedInverse.push(inversePatch);
-    }
+    const recomputedInverse = this.applyAndComputeInverse(delta.forward);
 
     this.undoStack.push({
-      forward: checkpoint.forward,
-      inverse: [...recomputedInverse].reverse(),
+      forward: delta.forward,
+      inverse: recomputedInverse,
     });
 
-    this.pendingPullPatches.push(...checkpoint.forward);
+    this.pendingPullPatches.push(delta.forward);
 
     return true;
   }
@@ -143,23 +152,169 @@ export class HistoryAdapter implements Adapter {
   }
 
   close(): void {
-    this.clearInactivityTimer();
+    this.commitCallback = null;
+    this.settledCallbacks = [];
   }
 
-  private createCheckpoint(): void {
+  /**
+   * Create a checkpoint at the current position in history.
+   * Use with revertToCheckpoint() to discard changes or squashToCheckpoint()
+   * to combine all changes since into a single undo step.
+   */
+  createCheckpoint(): string {
+    const id = crypto.randomUUID();
+    this.checkpoints.set(id, this.undoStack.length);
+
+    return id;
+  }
+
+  /**
+   * Revert all changes since the checkpoint and discard them.
+   * Returns false if the checkpoint is invalid or no changes to revert.
+   */
+  revertToCheckpoint(checkpointId: string): boolean {
+    const targetIndex = this.checkpoints.get(checkpointId);
+    if (targetIndex === undefined) return false;
+
+    this.commitPendingDelta();
+
+    if (this.undoStack.length <= targetIndex) {
+      this.checkpoints.delete(checkpointId);
+      return false;
+    }
+
+    // Apply inverse patches for all deltas since the checkpoint
+    while (this.undoStack.length > targetIndex) {
+      const delta = this.undoStack.pop()!;
+      this.applyToState(delta.inverse);
+      this.pendingPullPatches.push(delta.inverse);
+    }
+
+    // Clear redo stack since we're discarding changes
+    this.redoStack = [];
+    this.checkpoints.delete(checkpointId);
+    return true;
+  }
+
+  /**
+   * Squash all changes since the checkpoint into a single undo step.
+   * Commits any pending changes and squashes immediately.
+   * Returns false if the checkpoint is invalid or no changes to squash.
+   */
+  squashToCheckpoint(checkpointId: string): boolean {
+    const targetIndex = this.checkpoints.get(checkpointId);
+    if (targetIndex === undefined) return false;
+
+    this.commitPendingDelta();
+
+    if (this.undoStack.length <= targetIndex) {
+      this.checkpoints.delete(checkpointId);
+      return false;
+    }
+
+    // Collect all deltas since the checkpoint
+    const deltasToSquash = this.undoStack.splice(targetIndex);
+
+    // Merge all forward and inverse patches
+    const mergedForward = merge(...deltasToSquash.map((d) => d.forward));
+    const mergedInverse = merge(...deltasToSquash.map((d) => d.inverse));
+
+    // Push as a single delta
+    this.undoStack.push({
+      forward: mergedForward,
+      inverse: mergedInverse,
+    });
+
+    this.checkpoints.delete(checkpointId);
+    return true;
+  }
+
+  /**
+   * Register a callback to be called after N consecutive frames with no ECS mutations.
+   * Useful for waiting for state to settle before performing operations like squash.
+   */
+  onSettled(callback: () => void, options: { frames: number }): void {
+    this.settledCallbacks.push({
+      callback,
+      requiredFrames: options.frames,
+      quietFrames: 0,
+    });
+  }
+
+  private processSettledCallbacks(isQuiet: boolean): void {
+    // Process commit callback (replaces inactivity timer)
+    if (this.commitCallback) {
+      if (isQuiet) {
+        this.commitCallback.quietFrames++;
+        if (
+          this.commitCallback.quietFrames >= this.commitCallback.requiredFrames
+        ) {
+          this.commitCallback.callback();
+          this.commitCallback = null;
+        }
+      } else {
+        // Reset on activity
+        this.commitCallback.quietFrames = 0;
+      }
+    }
+
+    // Process user callbacks
+    const remaining: SettledCallback[] = [];
+    for (const cb of this.settledCallbacks) {
+      if (isQuiet) {
+        cb.quietFrames++;
+        if (cb.quietFrames >= cb.requiredFrames) {
+          cb.callback();
+        } else {
+          remaining.push(cb);
+        }
+      } else {
+        cb.quietFrames = 0;
+        remaining.push(cb);
+      }
+    }
+    this.settledCallbacks = remaining;
+  }
+
+  private commitPendingDelta(): void {
     if (!this.dirty) return;
 
-    this.clearInactivityTimer();
-    this.undoStack.push({
-      forward: this.pendingForward,
-      inverse: [...this.pendingInverse].reverse(),
-    });
-    this.pendingForward = [];
-    this.pendingInverse = [];
+    this.commitCallback = null;
     this.dirty = false;
 
-    while (this.undoStack.length > this.maxCheckpoints) {
+    // Remove no-op entries where forward and inverse are identical
+    // (e.g., entity created then immediately deleted within the same batch)
+    for (const key of Object.keys(this.pendingForward)) {
+      if (
+        key in this.pendingInverse &&
+        JSON.stringify(this.pendingForward[key]) ===
+          JSON.stringify(this.pendingInverse[key])
+      ) {
+        delete this.pendingForward[key];
+        delete this.pendingInverse[key];
+      }
+    }
+
+    // If no actual changes remain, don't create a delta
+    if (Object.keys(this.pendingForward).length === 0) return;
+
+    this.undoStack.push({
+      forward: this.pendingForward,
+      inverse: this.pendingInverse,
+    });
+    this.pendingForward = {};
+    this.pendingInverse = {};
+
+    while (this.undoStack.length > this.maxHistoryStackSize) {
       this.undoStack.shift();
+      // Adjust checkpoint indices since we shifted from the front
+      for (const [id, index] of this.checkpoints) {
+        if (index <= 0) {
+          this.checkpoints.delete(id);
+        } else {
+          this.checkpoints.set(id, index - 1);
+        }
+      }
     }
   }
 
@@ -225,17 +380,18 @@ export class HistoryAdapter implements Adapter {
     }
   }
 
-  private resetInactivityTimer(): void {
-    this.clearInactivityTimer();
-    this.inactivityTimer = setTimeout(() => {
-      this.createCheckpoint();
-    }, this.inactivityTimeout);
-  }
-
-  private clearInactivityTimer(): void {
-    if (this.inactivityTimer) {
-      clearTimeout(this.inactivityTimer);
-      this.inactivityTimer = null;
+  private resetCommitCallback(): void {
+    // Register or reset the commit callback
+    // It will fire after commitAfterFrames quiet frames
+    if (!this.commitCallback) {
+      this.commitCallback = {
+        callback: () => this.commitPendingDelta(),
+        requiredFrames: this.commitAfterFrames,
+        quietFrames: 0,
+      };
+    } else {
+      // Reset the counter on new activity
+      this.commitCallback.quietFrames = 0;
     }
   }
 }

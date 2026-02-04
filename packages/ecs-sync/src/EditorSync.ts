@@ -120,6 +120,37 @@ export class EditorSync {
   }
 
   /**
+   * Create a checkpoint at the current position in history.
+   * Use with revertToCheckpoint() to discard changes or squashToCheckpoint()
+   * to combine all changes since into a single undo step.
+   */
+  createCheckpoint(): string | null {
+    return this.historyAdapter?.createCheckpoint() ?? null;
+  }
+
+  /**
+   * Revert all changes since the checkpoint and discard them.
+   */
+  revertToCheckpoint(checkpointId: string): boolean {
+    return this.historyAdapter?.revertToCheckpoint(checkpointId) ?? false;
+  }
+
+  /**
+   * Squash all changes since the checkpoint into a single undo step.
+   */
+  squashToCheckpoint(checkpointId: string): boolean {
+    return this.historyAdapter?.squashToCheckpoint(checkpointId) ?? false;
+  }
+
+  /**
+   * Register a callback to be called after N consecutive frames with no ECS mutations.
+   * Useful for waiting for state to settle before performing operations like squash.
+   */
+  onSettled(callback: () => void, options: { frames: number }): void {
+    this.historyAdapter?.onSettled(callback, options);
+  }
+
+  /**
    * Connect the websocket (or reconnect if it was previously connected).
    */
   async connect(): Promise<void> {

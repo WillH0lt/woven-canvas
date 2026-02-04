@@ -4,6 +4,7 @@ import {
   createEntity,
   addComponent,
   defineEditorSystem,
+  defineQuery,
   Controls,
   RankBounds,
   Block,
@@ -11,10 +12,12 @@ import {
   Synced,
   PointerButton,
   getResources,
+  getPluginResources,
   getPointerInput,
   Cursor,
   getBlockDef,
   canBlockEdit,
+  Edited,
   type EditorResources,
 } from "@infinitecanvas/editor";
 import {
@@ -22,6 +25,11 @@ import {
   SelectionState,
   EditAfterPlacing,
 } from "@infinitecanvas/plugin-selection";
+import type { BasicsPluginResources } from "../BasicsPlugin";
+import { BlockPlacementState } from "../singletons";
+
+// Query for edited blocks
+const editedQuery = defineQuery((q) => q.with(Edited));
 
 /**
  * Snapshot format for creating blocks.
@@ -132,6 +140,20 @@ function placeBlockAndSetupSelection(
   // Mark block for editing after placement if it's editable
   if (canBlockEdit(ctx, snapshot.block.tag)) {
     addComponent(ctx, entityId, EditAfterPlacing, {});
+
+    if (mode === "placement") {
+      // Create an undo checkpoint for the placement + edit
+      // so we don't end up with un-edited blocks in uhistory
+      const { store } = getPluginResources<BasicsPluginResources>(
+        ctx,
+        "basics",
+      );
+      const checkpointId = store.createCheckpoint();
+      if (checkpointId) {
+        const placementState = BlockPlacementState.write(ctx);
+        placementState.editedCheckpoint = checkpointId;
+      }
+    }
   }
 
   // Set SelectionStateSingleton to Pointing state
@@ -156,6 +178,18 @@ function placeBlockAndSetupSelection(
   cursor.rotation = 0;
 }
 
+function squashUndoHistory(ctx: Context): void {
+  const placementState = BlockPlacementState.read(ctx);
+  if (placementState.editedCheckpoint) {
+    const cp = placementState.editedCheckpoint;
+    BlockPlacementState.write(ctx).editedCheckpoint = "";
+
+    // Wait for state to settle before squashing
+    const { store } = getPluginResources<BasicsPluginResources>(ctx, "basics");
+    store.onSettled(() => store.squashToCheckpoint(cp), { frames: 5 });
+  }
+}
+
 /**
  * Block placement system - handles placing blocks from toolbar tools.
  *
@@ -171,6 +205,14 @@ function placeBlockAndSetupSelection(
 export const blockPlacementSystem = defineEditorSystem(
   { phase: "capture" },
   (ctx: Context) => {
+    // Squash undo history when editing ends
+    if (
+      editedQuery.removed(ctx).length > 0 &&
+      editedQuery.current(ctx).length === 0
+    ) {
+      squashUndoHistory(ctx);
+    }
+
     const controls = Controls.read(ctx);
 
     // Only run when we have a snapshot to place
