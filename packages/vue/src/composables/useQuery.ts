@@ -8,7 +8,7 @@ import {
 import {
   defineQuery,
   type EntityId,
-  type InferComponentType,
+  type InferEditorComponentType,
   type AnyEditorComponentDef,
   type Context,
 } from "@infinitecanvas/editor";
@@ -26,7 +26,9 @@ type ComponentDefWithSchema = AnyEditorComponentDef & {
 export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
   entityId: EntityId;
 } & {
-  [K in T[number] as K["name"]]: ShallowRef<InferComponentType<K["schema"]>>;
+  [K in T[number] as K["name"]]: ShallowRef<
+    InferEditorComponentType<K["schema"]>
+  >;
 };
 
 /**

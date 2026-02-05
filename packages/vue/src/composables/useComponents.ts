@@ -10,7 +10,7 @@ import {
 import {
   hasComponent,
   type EntityId,
-  type InferComponentType,
+  type InferEditorComponentType,
   type AnyEditorComponentDef,
 } from "@infinitecanvas/editor";
 import { INFINITE_CANVAS_KEY } from "../injection";
@@ -46,17 +46,19 @@ type ComponentDefWithSchema = AnyEditorComponentDef & {
  */
 export function useComponents<T extends ComponentDefWithSchema>(
   entityIds: MaybeRefOrGetter<EntityId[]>,
-  componentDef: T
-): ShallowRef<Map<EntityId, Readonly<InferComponentType<T["schema"]>> | null>> {
+  componentDef: T,
+): ShallowRef<
+  Map<EntityId, Readonly<InferEditorComponentType<T["schema"]>> | null>
+> {
   const canvasContext = inject(INFINITE_CANVAS_KEY);
   if (!canvasContext) {
     throw new Error(
-      "useComponents must be used within an InfiniteCanvas component"
+      "useComponents must be used within an InfiniteCanvas component",
     );
   }
 
   const componentsMap = shallowRef<
-    Map<EntityId, InferComponentType<T["schema"]> | null>
+    Map<EntityId, InferEditorComponentType<T["schema"]> | null>
   >(new Map());
 
   // Track active subscriptions
@@ -86,9 +88,12 @@ export function useComponents<T extends ComponentDefWithSchema>(
       componentDef.name,
       (value) => {
         const newMap = new Map(componentsMap.value);
-        newMap.set(entityId, value as InferComponentType<T["schema"]> | null);
+        newMap.set(
+          entityId,
+          value as InferEditorComponentType<T["schema"]> | null,
+        );
         componentsMap.value = newMap;
-      }
+      },
     );
 
     subscriptions.set(entityId, unsubscribe);
@@ -126,7 +131,7 @@ export function useComponents<T extends ComponentDefWithSchema>(
         }
       }
     },
-    { immediate: true }
+    { immediate: true },
   );
 
   // Cleanup all subscriptions on unmount

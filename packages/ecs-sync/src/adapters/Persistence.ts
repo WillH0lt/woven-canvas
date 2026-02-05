@@ -2,9 +2,14 @@ import type { Adapter } from "../Adapter";
 import type { Mutation, Patch, ComponentData } from "../types";
 import { Origin } from "../constants";
 import { openStore, type KeyValueStore } from "../storage";
+import { migratePatch } from "../migrations";
+import type { AnyEditorComponentDef } from "../EditorComponentDef";
+import type { AnyEditorSingletonDef } from "../EditorSingletonDef";
 
 export interface PersistenceAdapterOptions {
   documentId: string;
+  components: AnyEditorComponentDef[];
+  singletons: AnyEditorSingletonDef[];
 }
 
 /**
@@ -18,9 +23,18 @@ export class PersistenceAdapter implements Adapter {
   private store: KeyValueStore | null = null;
   private documentId: string;
   private pendingPatch: Patch | null = null;
+  private componentsByName: Map<
+    string,
+    AnyEditorComponentDef | AnyEditorSingletonDef
+  >;
 
   constructor(options: PersistenceAdapterOptions) {
     this.documentId = options.documentId;
+
+    this.componentsByName = new Map();
+    for (const def of [...options.components, ...options.singletons]) {
+      this.componentsByName.set(def.name, def);
+    }
   }
 
   async init(): Promise<void> {
@@ -40,17 +54,26 @@ export class PersistenceAdapter implements Adapter {
 
     const entries = await this.store.getAllEntries();
 
-    // Convert stored state to a single merge mutation with _exists flags
+    // Convert stored state to a single merge mutation
     const mergeDiff: Patch = {};
 
     for (const [key, value] of entries) {
-      // Add _exists: true to indicate this component should be created
-      mergeDiff[key] = { _exists: true, ...(value as Record<string, unknown>) } as ComponentData;
+      mergeDiff[key] = value as ComponentData;
     }
 
-    if (Object.keys(mergeDiff).length > 0) {
-      this.pendingPatch = mergeDiff;
+    if (Object.keys(mergeDiff).length === 0) return;
+
+    // Migrate any out-of-date components
+    const patch = migratePatch(mergeDiff, this.componentsByName);
+
+    // Write migrated entries back to the store
+    if (patch !== mergeDiff) {
+      for (const [key, value] of Object.entries(patch)) {
+        this.store.put(key, value);
+      }
     }
+
+    this.pendingPatch = patch;
   }
 
   /**
@@ -78,19 +101,14 @@ export class PersistenceAdapter implements Adapter {
         if (value._exists === false) {
           // Deletion
           this.store.delete(key);
+        } else if (value._exists) {
+          // Full replacement
+          this.store.put(key, value);
         } else {
-          // Add or update - merge with existing state
-          const { _exists, ...data } = value;
-
-          if (_exists) {
-            // Full replacement (new component)
-            this.store.put(key, data);
-          } else {
-            // Partial update - merge with existing
-            const existing = await this.store.get<Record<string, unknown>>(key);
-            if (existing) {
-              this.store.put(key, { ...existing, ...data });
-            }
+          // Partial update - merge with existing
+          const existing = await this.store.get<Record<string, unknown>>(key);
+          if (existing) {
+            this.store.put(key, { ...existing, ...value });
           }
         }
       }
@@ -102,7 +120,11 @@ export class PersistenceAdapter implements Adapter {
    */
   pull(): Mutation[] {
     if (!this.pendingPatch) return [];
-    const mutation: Mutation = { patch: this.pendingPatch, origin: Origin.Persistence, syncBehavior: "document" };
+    const mutation: Mutation = {
+      patch: this.pendingPatch,
+      origin: Origin.Persistence,
+      syncBehavior: "document",
+    };
     this.pendingPatch = null;
     return [mutation];
   }

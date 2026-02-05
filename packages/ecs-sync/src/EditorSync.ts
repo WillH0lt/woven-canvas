@@ -26,7 +26,11 @@ export interface EditorSyncOptions {
   useHistory?: boolean;
   websocket?: Omit<
     WebsocketAdapterOptions,
-    "documentId" | "usePersistence" | "onVersionMismatch"
+    | "documentId"
+    | "usePersistence"
+    | "onVersionMismatch"
+    | "components"
+    | "singletons"
   >;
   onVersionMismatch?: (serverProtocolVersion: number) => void;
 }
@@ -68,6 +72,8 @@ export class EditorSync {
     if (this.options.usePersistence) {
       this.persistenceAdapter = new PersistenceAdapter({
         documentId: this.options.documentId,
+        components,
+        singletons,
       });
       this.adapters.push(this.persistenceAdapter);
     }
@@ -83,6 +89,8 @@ export class EditorSync {
         documentId: this.options.documentId,
         usePersistence: this.options.usePersistence ?? false,
         onVersionMismatch: this.options.onVersionMismatch,
+        components,
+        singletons,
       });
       this.adapters.push(this.websocketAdapter);
     }

@@ -33,7 +33,7 @@ import {
   type EditorSystem,
   type EditorPluginInput,
   type FontFamilyInput,
-  type InferComponentType,
+  type InferEditorComponentType,
   type UserDataInput,
   type Context,
 } from "@infinitecanvas/editor";
@@ -83,7 +83,7 @@ const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited));
 const opacityQuery = defineQuery((q) => q.with(Block).tracking(Opacity));
 const userQuery = defineQuery((q) => q.tracking(User));
 
-type BlockDef = InferComponentType<typeof Block.schema>;
+type BlockDef = InferEditorComponentType<typeof Block.schema>;
 
 /**
  * InfiniteCanvas component props

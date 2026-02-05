@@ -153,6 +153,7 @@ describe("EcsAdapter", () => {
       expect(mutations[0].origin).toBe(Origin.ECS);
       expect(mutations[0].patch["uuid-1/Position"]).toEqual({
         _exists: true,
+        _version: null,
         x: 10,
         y: 20,
       });
@@ -225,11 +226,13 @@ describe("EcsAdapter", () => {
       expect(mutations.length).toBeGreaterThan(0);
       expect(mutations[0].patch["uuid-1/Position"]).toEqual({
         _exists: true,
+        _version: null,
         x: 1,
         y: 2,
       });
       expect(mutations[0].patch["uuid-1/Velocity"]).toEqual({
         _exists: true,
+        _version: null,
         vx: 3,
         vy: 4,
       });
@@ -361,23 +364,32 @@ describe("EcsAdapter", () => {
     it("does not emit COMPONENT_ADDED for singletons", () => {
       const { ctx, adapter } = setup();
 
-      // Singletons always exist; any COMPONENT_ADDED event should be skipped
-      // Only CHANGED events should produce mutations
-      // The first pull initializes and captures the write index
-      adapter.pull();
+      // Singletons always exist; COMPONENT_ADDED events should be skipped.
+      const initial = adapter.pull();
+      const key = `${SINGLETON_STABLE_ID}/Camera`;
+      expect(initial.some((m) => m.patch[key])).toBe(false);
 
-      // Write triggers CHANGED, not COMPONENT_ADDED for singletons typically
+      // First CHANGED event produces a full snapshot (no prevState baseline)
       const writer = Camera.write(ctx);
       writer.zoom = 3;
 
       const mutations = adapter.pull();
-      if (mutations.length > 0) {
-        // If a mutation is produced, it should be a diff, not an _exists: true
-        const key = `${SINGLETON_STABLE_ID}/Camera`;
-        if (mutations[0].patch[key]) {
-          expect(mutations[0].patch[key]._exists).toBeUndefined();
-        }
-      }
+      expect(mutations.length).toBeGreaterThan(0);
+      expect(mutations[0].patch[key]).toEqual({
+        _exists: true,
+        _version: null,
+        panX: 0,
+        panY: 0,
+        zoom: 3,
+      });
+
+      // Subsequent changes produce minimal diffs
+      const writer2 = Camera.write(ctx);
+      writer2.panX = 10;
+
+      const mutations2 = adapter.pull();
+      expect(mutations2.length).toBeGreaterThan(0);
+      expect(mutations2[0].patch[key]).toEqual({ panX: 10 });
     });
   });
 
@@ -618,6 +630,7 @@ describe("EcsAdapter", () => {
       // Should see only the locally-created entity, not the pushed one
       expect(mutations[0].patch["uuid-2/Position"]).toEqual({
         _exists: true,
+        _version: null,
         x: 50,
         y: 60,
       });
@@ -642,6 +655,7 @@ describe("EcsAdapter", () => {
       // The ref field should be translated from entityId to stableId
       expect(mutations[0].patch["source-uuid/Linked"]).toEqual({
         _exists: true,
+        _version: null,
         target: "target-uuid",
       });
     });
@@ -657,6 +671,7 @@ describe("EcsAdapter", () => {
       expect(mutations.length).toBeGreaterThan(0);
       expect(mutations[0].patch["uuid-1/Linked"]).toEqual({
         _exists: true,
+        _version: null,
         target: null,
       });
     });
@@ -805,6 +820,7 @@ describe("EcsAdapter", () => {
       expect(mutations.length).toBe(1);
       expect(mutations[0].patch["uuid-1/Position"]).toEqual({
         _exists: true,
+        _version: null,
         x: 10,
         y: 20,
       });

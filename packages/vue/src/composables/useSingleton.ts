@@ -1,6 +1,6 @@
 import { inject, shallowRef, onUnmounted, type ShallowRef } from "vue";
 import {
-  type InferComponentType,
+  type InferEditorComponentType,
   type AnyEditorSingletonDef,
 } from "@infinitecanvas/editor";
 import { INFINITE_CANVAS_KEY } from "../injection";
@@ -40,18 +40,18 @@ type SingletonDefWithSchema = AnyEditorSingletonDef & {
  * ```
  */
 export function useSingleton<T extends SingletonDefWithSchema>(
-  singletonDef: T
-): ShallowRef<Readonly<InferComponentType<T["schema"]>>> {
+  singletonDef: T,
+): ShallowRef<Readonly<InferEditorComponentType<T["schema"]>>> {
   const canvasContext = inject(INFINITE_CANVAS_KEY);
   if (!canvasContext) {
     throw new Error(
-      "useSingleton must be used within an InfiniteCanvas component"
+      "useSingleton must be used within an InfiniteCanvas component",
     );
   }
 
   // Create our own ref for this singleton
-  const singletonRef = shallowRef<InferComponentType<T["schema"]>>(
-    singletonDef.default()
+  const singletonRef = shallowRef<InferEditorComponentType<T["schema"]>>(
+    singletonDef.default(),
   );
 
   // Try to eagerly read the initial value
@@ -65,8 +65,10 @@ export function useSingleton<T extends SingletonDefWithSchema>(
   const unsubscribe = canvasContext.subscribeSingleton(
     singletonDef.name,
     (value) => {
-      singletonRef.value = (value ?? {}) as InferComponentType<T["schema"]>;
-    }
+      singletonRef.value = (value ?? {}) as InferEditorComponentType<
+        T["schema"]
+      >;
+    },
   );
 
   // Register a one-time tick callback to read the initial value once editor is ready

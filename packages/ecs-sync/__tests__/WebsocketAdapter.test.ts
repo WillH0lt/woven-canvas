@@ -75,6 +75,8 @@ describe("WebsocketAdapter", () => {
       clientId,
       documentId: "test-doc",
       usePersistence: false,
+      components: [],
+      singletons: [],
     });
   }
 
@@ -604,6 +606,8 @@ describe("WebsocketAdapter", () => {
         documentId: "test-doc",
         usePersistence: false,
         startOffline: true,
+        components: [],
+        singletons: [],
       });
       await adapter.init();
 
@@ -621,6 +625,8 @@ describe("WebsocketAdapter", () => {
         documentId: "test-doc",
         usePersistence: false,
         startOffline: true,
+        components: [],
+        singletons: [],
       });
       await adapter.init();
 
@@ -718,6 +724,8 @@ describe("WebsocketAdapter", () => {
         documentId: "test-doc",
         usePersistence: false,
         startOffline: true,
+        components: [],
+        singletons: [],
       });
       await adapter.init();
 
@@ -943,6 +951,8 @@ describe("WebsocketAdapter", () => {
         documentId,
         usePersistence: true,
         startOffline: true,
+        components: [],
+        singletons: [],
       });
     }
 
@@ -987,6 +997,8 @@ describe("WebsocketAdapter", () => {
         clientId: "client-1",
         documentId: docId,
         usePersistence: true,
+        components: [],
+        singletons: [],
       });
       await adapter1.init();
 
@@ -1037,6 +1049,8 @@ describe("WebsocketAdapter", () => {
         clientId: "client-1",
         documentId: "empty-buf-test",
         usePersistence: true,
+        components: [],
+        singletons: [],
       });
       await adapter.init();
 

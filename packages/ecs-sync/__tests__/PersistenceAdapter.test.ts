@@ -8,7 +8,7 @@ describe("PersistenceAdapter", () => {
   let adapter: PersistenceAdapter;
 
   function createAdapter(documentId = "test-doc") {
-    return new PersistenceAdapter({ documentId });
+    return new PersistenceAdapter({ documentId, components: [], singletons: [] });
   }
 
   function makeMutation(patch: Mutation["patch"], origin: Mutation["origin"] = Origin.ECS): Mutation {

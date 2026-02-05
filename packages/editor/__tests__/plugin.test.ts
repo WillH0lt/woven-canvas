@@ -74,7 +74,7 @@ describe("Plugin System", () => {
       ];
 
       expect(() => sortPluginsByDependencies(plugins)).toThrow(
-        'Plugin "child" depends on "nonexistent" which is not registered'
+        'Plugin "child" depends on "nonexistent" which is not registered',
       );
     });
 
@@ -85,7 +85,7 @@ describe("Plugin System", () => {
       ];
 
       expect(() => sortPluginsByDependencies(plugins)).toThrow(
-        "Circular plugin dependency"
+        "Circular plugin dependency",
       );
     });
 
@@ -97,7 +97,7 @@ describe("Plugin System", () => {
       ];
 
       expect(() => sortPluginsByDependencies(plugins)).toThrow(
-        "Circular plugin dependency"
+        "Circular plugin dependency",
       );
     });
 
@@ -105,7 +105,7 @@ describe("Plugin System", () => {
       const plugins: EditorPlugin[] = [{ name: "a", dependencies: ["a"] }];
 
       expect(() => sortPluginsByDependencies(plugins)).toThrow(
-        "Circular plugin dependency"
+        "Circular plugin dependency",
       );
     });
   });
@@ -123,10 +123,13 @@ describe("Plugin System", () => {
     });
 
     it("should support plugin with components", () => {
-      const Block = new EditorComponentDef({ name: "block" }, {
-        x: field.float32(),
-        y: field.float32(),
-      });
+      const Block = new EditorComponentDef(
+        { name: "block" },
+        {
+          x: field.float32(),
+          y: field.float32(),
+        },
+      );
 
       const Selected = new EditorComponentDef(
         { name: "selected", sync: "ephemeral" },
@@ -199,11 +202,14 @@ describe("Plugin System", () => {
     });
 
     it("should support full-featured plugin", () => {
-      const Block = new EditorComponentDef({ name: "block" }, {
-        id: field.string().max(36),
-        x: field.float64(),
-        y: field.float64(),
-      });
+      const Block = new EditorComponentDef(
+        { name: "block" },
+        {
+          id: field.string().max(36),
+          x: field.float64(),
+          y: field.float64(),
+        },
+      );
 
       const Selected = new EditorComponentDef(
         { name: "selected", sync: "ephemeral" },
@@ -249,14 +255,17 @@ describe("Plugin System", () => {
 
   describe("real-world plugin scenarios", () => {
     it("should support a core plugin", () => {
-      const Block = new EditorComponentDef({ name: "block" }, {
-        id: field.string().max(36),
-        left: field.float64(),
-        top: field.float64(),
-        width: field.float64(),
-        height: field.float64(),
-        zIndex: field.int32().default(0),
-      });
+      const Block = new EditorComponentDef(
+        { name: "block" },
+        {
+          id: field.string().max(36),
+          left: field.float64(),
+          top: field.float64(),
+          width: field.float64(),
+          height: field.float64(),
+          zIndex: field.int32().default(0),
+        },
+      );
 
       const corePlugin: EditorPlugin = {
         name: "core",
@@ -265,7 +274,7 @@ describe("Plugin System", () => {
       };
 
       expect(corePlugin.name).toBe("core");
-      expect(corePlugin.components![0].__sync).toBe("none");
+      expect(corePlugin.components![0].sync).toBe("none");
     });
 
     it("should support a selection plugin depending on core", () => {
@@ -288,8 +297,8 @@ describe("Plugin System", () => {
       };
 
       expect(selectionPlugin.dependencies).toContain("core");
-      expect(selectionPlugin.components![0].__sync).toBe("ephemeral");
-      expect(selectionPlugin.components![1].__sync).toBe("none");
+      expect(selectionPlugin.components![0].sync).toBe("ephemeral");
+      expect(selectionPlugin.components![1].sync).toBe("none");
     });
 
     it("should support a transform plugin depending on selection", () => {
@@ -333,7 +342,7 @@ describe("Plugin System", () => {
       const names = sorted.map((p) => p.name);
       expect(names.indexOf("core")).toBeLessThan(names.indexOf("selection"));
       expect(names.indexOf("selection")).toBeLessThan(
-        names.indexOf("transform")
+        names.indexOf("transform"),
       );
       expect(names.indexOf("transform")).toBeLessThan(names.indexOf("app"));
     });

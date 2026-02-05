@@ -3,6 +3,9 @@ import type { Mutation, Patch, ClientMessage, ServerMessage } from "../types";
 import { Origin, PROTOCOL_VERSION } from "../constants";
 import { merge, strip } from "../mutations";
 import { openStore, type KeyValueStore } from "../storage";
+import { migratePatch } from "../migrations";
+import type { AnyEditorComponentDef } from "../EditorComponentDef";
+import type { AnyEditorSingletonDef } from "../EditorSingletonDef";
 
 /** Send interval when multiple clients are connected (~30 fps). */
 const MULTI_CLIENT_INTERVAL = 1000 / 30;
@@ -18,6 +21,8 @@ export interface WebsocketAdapterOptions {
   token?: string;
   /** Called when the server reports a protocol version mismatch. */
   onVersionMismatch?: (serverProtocolVersion: number) => void;
+  components: AnyEditorComponentDef[];
+  singletons: AnyEditorSingletonDef[];
 }
 
 /**
@@ -76,6 +81,10 @@ export class WebsocketAdapter implements Adapter {
 
   private token?: string;
   private onVersionMismatch?: (serverProtocolVersion: number) => void;
+  private componentsByName: ReadonlyMap<
+    string,
+    AnyEditorComponentDef | AnyEditorSingletonDef
+  >;
 
   get isOnline(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
@@ -89,6 +98,15 @@ export class WebsocketAdapter implements Adapter {
     this.documentId = options.documentId;
     this.token = options.token;
     this.onVersionMismatch = options.onVersionMismatch;
+
+    const componentMap = new Map<
+      string,
+      AnyEditorComponentDef | AnyEditorSingletonDef
+    >();
+    for (const def of [...options.components, ...options.singletons]) {
+      componentMap.set(def.name, def);
+    }
+    this.componentsByName = componentMap;
   }
 
   async init(): Promise<void> {
@@ -261,8 +279,10 @@ export class WebsocketAdapter implements Adapter {
       const diff = strip(serverPatch, this.offlineBuffer);
       this.clearPersistedOfflineBuffer();
       if (Object.keys(diff).length > 0) {
+        // Migrate any out-of-date components
+        const migrated = migratePatch(diff, this.componentsByName);
         results.push({
-          patch: diff,
+          patch: migrated,
           origin: Origin.Websocket,
           syncBehavior: "document",
         });

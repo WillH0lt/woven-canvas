@@ -1,5 +1,11 @@
-import { ComponentDef, type ComponentSchema } from "@infinitecanvas/ecs";
-import type { SyncBehavior } from "./types";
+import {
+  ComponentDef,
+  type ComponentSchema,
+  type Context,
+  type EntityId,
+} from "@infinitecanvas/ecs";
+import type { SyncBehavior, InferEditorComponentType } from "./types";
+import { type ComponentMigration, validateMigrations } from "./migrations";
 
 /**
  * An editor-aware component definition with sync behavior metadata.
@@ -18,12 +24,45 @@ export class EditorComponentDef<
   readonly name: N;
 
   /** Sync-specific metadata */
-  readonly __sync: SyncBehavior;
+  readonly sync: SyncBehavior;
 
-  constructor(options: { name: N; sync?: SyncBehavior }, schema: T) {
+  /** Ordered migration chain for this component's persisted data. */
+  readonly migrations: readonly ComponentMigration[];
+
+  /** Version name of the latest migration, or null if none. */
+  get currentVersion(): string | null {
+    return this.migrations.length > 0
+      ? this.migrations[this.migrations.length - 1].name
+      : null;
+  }
+
+  constructor(
+    options: {
+      name: N;
+      sync?: SyncBehavior;
+      migrations?: ComponentMigration[];
+    },
+    schema: T,
+  ) {
     super(schema, false);
     this.name = options.name;
-    this.__sync = options.sync ?? "none";
+    this.sync = options.sync ?? "none";
+    this.migrations = options.migrations ?? [];
+    if (this.migrations.length > 0) {
+      validateMigrations(this.migrations);
+    }
+  }
+
+  override snapshot(
+    ctx: Context,
+    entityId: EntityId,
+  ): InferEditorComponentType<T> {
+    const data = super.snapshot(ctx, entityId);
+    return {
+      ...data,
+      _exists: true as const,
+      _version: this.currentVersion,
+    } as InferEditorComponentType<T>;
   }
 }
 
@@ -56,7 +95,7 @@ export function defineEditorComponent<
   N extends string,
   T extends ComponentSchema,
 >(
-  options: { name: N; sync?: SyncBehavior },
+  options: { name: N; sync?: SyncBehavior; migrations?: ComponentMigration[] },
   schema: T,
 ): EditorComponentDef<T, N> {
   return new EditorComponentDef(options, schema);

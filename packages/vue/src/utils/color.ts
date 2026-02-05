@@ -1,6 +1,6 @@
-import { Color, type InferComponentType } from "@infinitecanvas/editor";
+import { Color, type InferEditorComponentType } from "@infinitecanvas/editor";
 
-type ColorData = InferComponentType<typeof Color.schema>;
+type ColorData = InferEditorComponentType<typeof Color.schema>;
 
 /**
  * Normalize a color string to uppercase hex format for consistent comparison.
@@ -54,12 +54,14 @@ export function rgbToHex(color: ColorData): string {
   }
 }
 
-
 export function hexToRgb(hex: string): ColorData | null {
   // Remove leading #
   hex = hex.replace(/^#/, "");
 
-  let r: number, g: number, b: number, a: number = 255;
+  let r: number,
+    g: number,
+    b: number,
+    a: number = 255;
 
   if (hex.length === 6) {
     r = parseInt(hex.slice(0, 2), 16);

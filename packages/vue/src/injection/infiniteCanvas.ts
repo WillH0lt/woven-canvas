@@ -3,12 +3,12 @@ import {
   type EntityId,
   type Editor,
   type Context,
-  type InferComponentType,
+  type InferEditorComponentType,
   type User,
 } from "@infinitecanvas/editor";
 
 /** User data stored in the users map */
-export type UserData = InferComponentType<typeof User.schema>;
+export type UserData = InferEditorComponentType<typeof User.schema>;
 
 /** Context provided by InfiniteCanvas */
 export interface InfiniteCanvasContext {

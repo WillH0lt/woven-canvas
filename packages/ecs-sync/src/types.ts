@@ -1,4 +1,8 @@
-import { type EntityId } from "@infinitecanvas/ecs";
+import {
+  type EntityId,
+  type ComponentSchema,
+  type InferComponentType,
+} from "@infinitecanvas/ecs";
 import type { Origin } from "./constants";
 
 /**
@@ -10,12 +14,22 @@ export type SyncBehavior =
   | "none"; // Not synced or stored anywhere
 
 /**
+ * Component snapshot extended with sync metadata.
+ * Returned by `EditorComponentDef.snapshot()` and `EditorSingletonDef.snapshot()`.
+ */
+export type InferEditorComponentType<T extends ComponentSchema> =
+  InferComponentType<T> & { _exists: true; _version: string | null };
+
+/**
  * Component data with existence flag.
  * _exists: true indicates the component exists (used when adding).
  * _exists: false indicates the component is deleted (tombstone).
  * Other fields are the partial component data to merge.
  */
-export type ComponentData = Record<string, unknown> & { _exists?: boolean };
+export type ComponentData = Record<string, unknown> & {
+  _exists?: boolean;
+  _version?: string;
+};
 
 /**
  * A patch is a map of keys to values representing component changes.

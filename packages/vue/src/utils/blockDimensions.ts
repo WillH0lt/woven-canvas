@@ -1,8 +1,12 @@
 import type { ShallowRef } from "vue";
-import { Camera, Screen, type InferComponentType } from "@infinitecanvas/editor";
+import {
+  Camera,
+  Screen,
+  type InferEditorComponentType,
+} from "@infinitecanvas/editor";
 
-type CameraValue = InferComponentType<typeof Camera.schema>;
-type ScreenValue = InferComponentType<typeof Screen.schema>;
+type CameraValue = InferEditorComponentType<typeof Camera.schema>;
+type ScreenValue = InferEditorComponentType<typeof Screen.schema>;
 
 export interface BlockDimensions {
   width: number;
@@ -18,7 +22,7 @@ export interface BlockDimensions {
 export function getUnrotatedDimensions(
   aabbWidth: number,
   aabbHeight: number,
-  angle: number
+  angle: number,
 ): { width: number; height: number } {
   if (angle === 0) {
     return { width: aabbWidth, height: aabbHeight };
@@ -44,7 +48,7 @@ export function getUnrotatedDimensions(
 export function computeBlockDimensions(
   element: HTMLElement,
   camera: ShallowRef<CameraValue>,
-  screen: ShallowRef<ScreenValue>
+  screen: ShallowRef<ScreenValue>,
 ): BlockDimensions {
   const blockElement = element.closest(".ic-block") as HTMLElement | null;
   if (!blockElement) {
@@ -59,7 +63,7 @@ export function computeBlockDimensions(
   const rect = element.getBoundingClientRect();
   const center = new DOMPoint(
     rect.left + rect.width / 2,
-    rect.top + rect.height / 2
+    rect.top + rect.height / 2,
   );
 
   const cameraLeft = camera.value.left;
@@ -73,12 +77,20 @@ export function computeBlockDimensions(
 
   const worldCenter = cameraMatrix.transformPoint(center);
 
-  const topLeft = cameraMatrix.transformPoint(new DOMPoint(rect.left, rect.top));
-  const bottomRight = cameraMatrix.transformPoint(new DOMPoint(rect.right, rect.bottom));
+  const topLeft = cameraMatrix.transformPoint(
+    new DOMPoint(rect.left, rect.top),
+  );
+  const bottomRight = cameraMatrix.transformPoint(
+    new DOMPoint(rect.right, rect.bottom),
+  );
   const aabbWidth = bottomRight.x - topLeft.x;
   const aabbHeight = bottomRight.y - topLeft.y;
 
-  const { width, height } = getUnrotatedDimensions(aabbWidth, aabbHeight, -rotateZ);
+  const { width, height } = getUnrotatedDimensions(
+    aabbWidth,
+    aabbHeight,
+    -rotateZ,
+  );
 
   const offsetX = screen.value.left;
   const offsetY = screen.value.top;

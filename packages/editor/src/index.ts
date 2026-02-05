@@ -37,6 +37,7 @@ export type {
   SingletonEditorBehavior,
   AnyEditorComponentDef,
   SyncBehavior,
+  InferEditorComponentType,
 } from "@infinitecanvas/ecs-sync";
 
 export {
@@ -103,7 +104,6 @@ export {
   type EntityId,
   type QueryDef,
   type System,
-  type InferComponentType,
   type ComponentSchema,
 } from "@infinitecanvas/ecs";
 

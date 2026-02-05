@@ -1,13 +1,15 @@
 import type {
   Context,
   ComponentSchema,
-  InferComponentType,
   StringFieldDef,
   EnumFieldDef,
 } from "@infinitecanvas/ecs";
 import type { AnyStateMachine } from "xstate";
 
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import {
+  EditorSingletonDef,
+  type InferEditorComponentType,
+} from "@infinitecanvas/ecs-sync";
 import { runMachine } from "./machine";
 
 /**
@@ -23,7 +25,7 @@ export interface StateSchema extends ComponentSchema {
  * Internal type: infer machine context from schema (excludes 'state' field).
  */
 type InferMachineContext<T extends StateSchema> = Omit<
-  InferComponentType<T>,
+  InferEditorComponentType<T>,
   "state"
 >;
 
@@ -43,9 +45,8 @@ type InferMachineContext<T extends StateSchema> = Omit<
  * // { startX: number; startY: number }
  * ```
  */
-export type InferStateContext<T> = T extends EditorStateDef<infer S>
-  ? InferMachineContext<S>
-  : never;
+export type InferStateContext<T> =
+  T extends EditorStateDef<infer S> ? InferMachineContext<S> : never;
 
 /**
  * Editor singleton definition for XState state machine state storage.
@@ -72,7 +73,7 @@ export type InferStateContext<T> = T extends EditorStateDef<infer S>
  * ```
  */
 export class EditorStateDef<
-  T extends StateSchema
+  T extends StateSchema,
 > extends EditorSingletonDef<T> {
   constructor(name: string, schema: T) {
     // State machine state is never synced - it's ephemeral runtime state
@@ -96,7 +97,7 @@ export class EditorStateDef<
    * @returns Plain object with context field values
    */
   getContext<TContext extends object = InferMachineContext<T>>(
-    ctx: Context
+    ctx: Context,
   ): TContext {
     const snapshot = this.snapshot(ctx);
     const result: Record<string, unknown> = {};
@@ -136,11 +137,11 @@ export class EditorStateDef<
   run<
     TState extends string,
     TContext extends object = InferMachineContext<T>,
-    TEvent extends { type: string } = { type: string }
+    TEvent extends { type: string } = { type: string },
   >(
     ctx: Context,
     machine: AnyStateMachine,
-    events: TEvent[]
+    events: TEvent[],
   ): { value: TState; context: TContext } {
     // Read current state
     const currentState = this.getState(ctx) as TState;
@@ -151,7 +152,7 @@ export class EditorStateDef<
       machine,
       currentState,
       currentContext,
-      events as unknown as Array<{ type: string; [key: string]: unknown }>
+      events as unknown as Array<{ type: string; [key: string]: unknown }>,
     );
 
     // Write updated state and context
@@ -188,7 +189,7 @@ export class EditorStateDef<
  */
 export function defineEditorState<T extends StateSchema>(
   name: string,
-  schema: T
+  schema: T,
 ): EditorStateDef<T> {
   return new EditorStateDef(name, schema);
 }

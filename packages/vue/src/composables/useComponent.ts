@@ -2,7 +2,7 @@ import { inject, shallowRef, onUnmounted, type ShallowRef } from "vue";
 import {
   hasComponent,
   type EntityId,
-  type InferComponentType,
+  type InferEditorComponentType,
   type AnyEditorComponentDef,
 } from "@infinitecanvas/editor";
 import { INFINITE_CANVAS_KEY } from "../injection";
@@ -49,17 +49,19 @@ type ComponentDefWithSchema = AnyEditorComponentDef & {
  */
 export function useComponent<T extends ComponentDefWithSchema>(
   entityId: EntityId,
-  componentDef: T
-): ShallowRef<Readonly<InferComponentType<T["schema"]>> | null> {
+  componentDef: T,
+): ShallowRef<Readonly<InferEditorComponentType<T["schema"]>> | null> {
   const canvasContext = inject(INFINITE_CANVAS_KEY);
   if (!canvasContext) {
     throw new Error(
-      "useComponent must be used within an InfiniteCanvas component"
+      "useComponent must be used within an InfiniteCanvas component",
     );
   }
 
   // Create our own ref for this component
-  const componentRef = shallowRef<InferComponentType<T["schema"]> | null>(null);
+  const componentRef = shallowRef<InferEditorComponentType<T["schema"]> | null>(
+    null,
+  );
 
   // Try to eagerly read the initial value
   const editor = canvasContext.getEditor();
@@ -75,8 +77,10 @@ export function useComponent<T extends ComponentDefWithSchema>(
     entityId,
     componentDef.name,
     (value) => {
-      componentRef.value = value as InferComponentType<T["schema"]> | null;
-    }
+      componentRef.value = value as InferEditorComponentType<
+        T["schema"]
+      > | null;
+    },
   );
 
   // Cleanup on unmount

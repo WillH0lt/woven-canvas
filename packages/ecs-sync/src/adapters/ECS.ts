@@ -87,7 +87,7 @@ export class EcsAdapter implements Adapter {
 
     const ctx = this.ctx;
     for (const comp of [...this.components, ...this.singletons]) {
-      if (comp.__sync === "none") continue;
+      if (comp.sync === "none") continue;
 
       const componentId = comp._getComponentId(ctx);
       this.componentMap.set(componentId, comp);
@@ -124,8 +124,7 @@ export class EcsAdapter implements Adapter {
           if (key.startsWith(prefix)) {
             const compName = key.slice(prefix.length);
             const compDef = this.componentsByName.get(compName);
-            const target =
-              compDef?.__sync === "ephemeral" ? ephPatch : docPatch;
+            const target = compDef?.sync === "ephemeral" ? ephPatch : docPatch;
             target[key] = { _exists: false };
             this.prevState[key] = { _exists: false };
           }
@@ -160,14 +159,14 @@ export class EcsAdapter implements Adapter {
       }
 
       const key = `${stableId}/${componentDef.name}`;
-      const patch = componentDef.__sync === "ephemeral" ? ephPatch : docPatch;
+      const patch = componentDef.sync === "ephemeral" ? ephPatch : docPatch;
 
       switch (eventType) {
         case EventType.COMPONENT_ADDED: {
           if (componentDef.isSingleton) continue;
           const raw = componentDef.snapshot(ctx, entityId);
           const data = this.translateRefsOutbound(componentDef, raw);
-          patch[key] = { _exists: true, ...data };
+          patch[key] = data as ComponentData;
           this.prevState[key] = { ...data };
           break;
         }
@@ -253,7 +252,10 @@ export class EcsAdapter implements Adapter {
         if (stableId === SINGLETON_STABLE_ID) {
           if (value._exists === false) continue; // Singletons can't be removed
           (componentDef as AnyEditorSingletonDef).patch(ctx, value as any);
-          this.prevState[key] = { ...this.prevState[key], ...value };
+          this.prevState[key] = {
+            ...this.prevState[key],
+            ...value,
+          };
           continue;
         }
 
@@ -280,8 +282,7 @@ export class EcsAdapter implements Adapter {
           this.prevState[key] = { _exists: false };
         } else if (value._exists) {
           // Add component (entity already created in pass 1)
-          const { _exists, ...data } = value;
-          const translated = this.translateRefsInbound(componentDef, data);
+          const translated = this.translateRefsInbound(componentDef, value);
 
           if (
             hasComponent(
@@ -304,7 +305,7 @@ export class EcsAdapter implements Adapter {
               translated as any,
             );
           }
-          this.prevState[key] = { ...data };
+          this.prevState[key] = { ...value };
         } else {
           // Partial update — only touch specified fields
           if (
@@ -316,10 +317,7 @@ export class EcsAdapter implements Adapter {
               false,
             )
           ) {
-            const translated = this.translateRefsInbound(
-              componentDef,
-              value as Record<string, unknown>,
-            );
+            const translated = this.translateRefsInbound(componentDef, value);
             (componentDef as AnyEditorComponentDef).patch(
               ctx,
               entityId,

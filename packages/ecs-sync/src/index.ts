@@ -1,5 +1,15 @@
 // Core types
-export type { SyncBehavior, VersionMismatchResponse } from "./types";
+export type {
+  SyncBehavior,
+  VersionMismatchResponse,
+  InferEditorComponentType,
+} from "./types";
+export {
+  type ComponentMigration,
+  type MigrationResult,
+  migrateComponentData,
+  validateMigrations,
+} from "./migrations";
 
 // Synced component
 export { Synced } from "./Synced";

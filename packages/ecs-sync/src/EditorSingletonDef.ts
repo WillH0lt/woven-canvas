@@ -1,5 +1,10 @@
-import { SingletonDef, type ComponentSchema } from "@infinitecanvas/ecs";
-import type { SyncBehavior } from "./types";
+import {
+  SingletonDef,
+  type ComponentSchema,
+  type Context,
+} from "@infinitecanvas/ecs";
+import type { SyncBehavior, InferEditorComponentType } from "./types";
+import { type ComponentMigration, validateMigrations } from "./migrations";
 
 export type SingletonEditorBehavior = Exclude<SyncBehavior, "ephemeral">;
 
@@ -18,12 +23,42 @@ export class EditorSingletonDef<
   readonly name: N;
 
   /** Sync-specific metadata */
-  readonly __sync: SingletonEditorBehavior;
+  readonly sync: SingletonEditorBehavior;
 
-  constructor(options: { name: N; sync?: SingletonEditorBehavior }, schema: T) {
+  /** Ordered migration chain for this singleton's persisted data. */
+  readonly migrations: readonly ComponentMigration[];
+
+  /** Version name of the latest migration, or null if none. */
+  get currentVersion(): string | null {
+    return this.migrations.length > 0
+      ? this.migrations[this.migrations.length - 1].name
+      : null;
+  }
+
+  constructor(
+    options: {
+      name: N;
+      sync?: SingletonEditorBehavior;
+      migrations?: ComponentMigration[];
+    },
+    schema: T,
+  ) {
     super(schema);
     this.name = options.name;
-    this.__sync = options.sync ?? "none";
+    this.sync = options.sync ?? "none";
+    this.migrations = options.migrations ?? [];
+    if (this.migrations.length > 0) {
+      validateMigrations(this.migrations);
+    }
+  }
+
+  override snapshot(ctx: Context): InferEditorComponentType<T> {
+    const data = super.snapshot(ctx);
+    return {
+      ...data,
+      _exists: true as const,
+      _version: this.currentVersion,
+    } as InferEditorComponentType<T>;
   }
 }
 
@@ -53,7 +88,11 @@ export function defineEditorSingleton<
   N extends string,
   T extends ComponentSchema,
 >(
-  options: { name: N; sync?: SingletonEditorBehavior },
+  options: {
+    name: N;
+    sync?: SingletonEditorBehavior;
+    migrations?: ComponentMigration[];
+  },
   schema: T,
 ): EditorSingletonDef<T, N> {
   return new EditorSingletonDef(options, schema);
