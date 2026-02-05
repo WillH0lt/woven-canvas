@@ -334,6 +334,8 @@ async function tick() {
     }
 
     store.sync(ctx);
+
+    isOnline.value = store.isOnline;
   });
 
   await editorRef.value.tick();
@@ -605,6 +607,9 @@ function updateBlocks(ctx: Context) {
   }
 }
 
+// Online status - updated each tick from the store
+const isOnline = ref(true);
+
 // Camera ref for internal rendering - updated via subscription
 const cameraRef = shallowRef(Camera.default());
 
@@ -763,6 +768,9 @@ function getBlockStyle(data: BlockData) {
         <Toolbar />
       </div>
     </slot>
+
+    <!-- Offline indicator -->
+    <div v-if="!isOnline" class="ic-offline-indicator">Working Offline</div>
   </div>
 </template>
 
@@ -773,5 +781,18 @@ function getBlockStyle(data: BlockData) {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
+}
+
+.ic-offline-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+  padding: 6px 12px;
+  color: var(--ic-gray-400);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
 }
 </style>

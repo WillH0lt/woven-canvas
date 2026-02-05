@@ -74,6 +74,10 @@ export class WebsocketAdapter implements Adapter {
 
   private token?: string;
 
+  get isOnline(): boolean {
+    return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+  }
+
   constructor(options: WebsocketAdapterOptions) {
     this.url = options.url;
     this.clientId = options.clientId;
@@ -161,7 +165,7 @@ export class WebsocketAdapter implements Adapter {
       }
     }
 
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    if (!this.isOnline) {
       if (docPatches.length > 0) {
         this.offlineBuffer = merge(this.offlineBuffer, ...docPatches);
         this.persistOfflineBuffer();
@@ -201,7 +205,7 @@ export class WebsocketAdapter implements Adapter {
 
   /** Send all buffered patches to the server in a single message. */
   private flush(): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    if (!this.isOnline) return;
 
     // Document patches
     const docPatches: Patch[] = [];
@@ -236,7 +240,7 @@ export class WebsocketAdapter implements Adapter {
       ...(docPatches.length > 0 && { documentPatches: docPatches }),
       ...(ephPatches.length > 0 && { ephemeralPatches: ephPatches }),
     };
-    this.ws.send(JSON.stringify(msg));
+    this.ws!.send(JSON.stringify(msg));
     this.lastSendTime = performance.now();
   }
 

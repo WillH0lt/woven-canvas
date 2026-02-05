@@ -151,6 +151,14 @@ export class EditorSync {
   }
 
   /**
+   * Whether the websocket is currently connected.
+   * Returns true if no websocket adapter is configured.
+   */
+  get isOnline(): boolean {
+    return this.websocketAdapter?.isOnline ?? true;
+  }
+
+  /**
    * Connect the websocket (or reconnect if it was previously connected).
    */
   async connect(): Promise<void> {
