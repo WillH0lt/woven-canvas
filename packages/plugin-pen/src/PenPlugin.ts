@@ -1,6 +1,7 @@
 import {
   EditorComponentDef,
   EditorSingletonDef,
+  Color,
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
@@ -15,7 +16,7 @@ import { PLUGIN_NAME } from "./constants";
 const filterSystems = (ns: object): EditorSystem[] =>
   Object.values(ns).filter(
     (v): v is EditorSystem =>
-      typeof v === "object" && v !== null && "_system" in v && "phase" in v
+      typeof v === "object" && v !== null && "_system" in v && "phase" in v,
   );
 
 /**
@@ -35,18 +36,18 @@ export function createPenPlugin(): EditorPlugin {
     name: PLUGIN_NAME,
 
     components: Object.values(components).filter(
-      (v) => v instanceof EditorComponentDef
+      (v) => v instanceof EditorComponentDef,
     ),
 
     singletons: Object.values(singletons).filter(
-      (v) => v instanceof EditorSingletonDef
+      (v) => v instanceof EditorSingletonDef,
     ),
 
     blockDefs: [
       {
         tag: "pen-stroke",
         resizeMode: "free",
-        components: [components.PenStroke],
+        components: [components.PenStroke, Color],
       },
     ],
 

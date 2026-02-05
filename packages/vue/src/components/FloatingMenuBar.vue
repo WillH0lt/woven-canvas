@@ -2,6 +2,7 @@
 import { computed, useSlots, inject, onUnmounted } from "vue";
 
 import ColorButton from "./buttons/ColorButton.vue";
+import PenStrokeThicknessButton from "./buttons/PenStrokeThicknessButton.vue";
 import MenuTooltip from "./buttons/MenuTooltip.vue";
 import TextBoldButton from "./buttons/text/TextBoldButton.vue";
 import TextItalicButton from "./buttons/text/TextItalicButton.vue";
@@ -20,7 +21,7 @@ const context = inject(FLOATING_MENU_KEY)!;
 const { selectedIds, commonComponents } = context;
 
 // Built-in component names (handled in template)
-const builtInComponentNames = new Set(["color", "text", "verticalAlign"]);
+const builtInComponentNames = new Set(["color", "text", "verticalAlign", "penStroke"]);
 
 // Custom slots for components not covered by built-ins
 const customButtons = computed(() => {
@@ -54,6 +55,14 @@ onUnmounted(() => {
     <slot name="button:color" :entityIds="selectedIds">
       <ColorButton
         v-if="commonComponents.has('color')"
+        :entityIds="selectedIds"
+      />
+    </slot>
+
+    <!-- Pen stroke thickness button -->
+    <slot name="button:penStroke" :entityIds="selectedIds">
+      <PenStrokeThicknessButton
+        v-if="commonComponents.has('penStroke')"
         :entityIds="selectedIds"
       />
     </slot>

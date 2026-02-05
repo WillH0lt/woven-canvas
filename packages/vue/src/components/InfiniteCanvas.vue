@@ -140,11 +140,18 @@ const emit = defineEmits<{
   ready: [editor: Editor, store: EditorSync];
 }>();
 
-// Define slots - block slots use "block:<tag>" naming, floating-menu and toolbar slots have no props
+// Define slots - block slots use "block:<tag>" naming, other slots allow overriding built-in UI
 defineSlots<
   {
     "floating-menu"?: () => any;
     toolbar?: () => any;
+    "user-cursors"?: (props: {
+      users: UserData[];
+      currentSessionId: string;
+      camera: { left: number; top: number; zoom: number };
+    }) => any;
+    "user-presence"?: (props: { users: UserData[] }) => any;
+    "offline-indicator"?: (props: { isOnline: boolean }) => any;
   } & {
     [slotName: `block:${string}`]: (props: BlockData) => any;
   }
@@ -745,12 +752,19 @@ function getBlockStyle(data: BlockData) {
     </div>
 
     <!-- User cursors layer -->
-    <UserCursors
+    <slot
       v-if="editorRef"
+      name="user-cursors"
       :users="usersArray"
       :current-session-id="parsedUser.sessionId"
       :camera="cameraRef"
-    />
+    >
+      <UserCursors
+        :users="usersArray"
+        :current-session-id="parsedUser.sessionId"
+        :camera="cameraRef"
+      />
+    </slot>
 
     <!-- Floating menu -->
     <FloatingMenu v-if="editorRef">
@@ -760,7 +774,9 @@ function getBlockStyle(data: BlockData) {
     </FloatingMenu>
 
     <!-- User presence -->
-    <UserPresence v-if="editorRef" :users="usersArray" />
+    <slot v-if="editorRef" name="user-presence" :users="usersArray">
+      <UserPresence :users="usersArray" />
+    </slot>
 
     <!-- Toolbar -->
     <slot name="toolbar">
@@ -770,7 +786,9 @@ function getBlockStyle(data: BlockData) {
     </slot>
 
     <!-- Offline indicator -->
-    <div v-if="!isOnline" class="ic-offline-indicator">Working Offline</div>
+    <slot name="offline-indicator" :is-online="isOnline">
+      <div v-if="!isOnline" class="ic-offline-indicator">Working Offline</div>
+    </slot>
   </div>
 </template>
 
