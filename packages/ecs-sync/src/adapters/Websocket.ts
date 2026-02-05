@@ -274,15 +274,23 @@ export class WebsocketAdapter implements Adapter {
       const serverPatch = merge(...this.pendingDocumentPatches);
       this.pendingDocumentPatches = [];
 
+      // Migrate server patches first (they might be from older clients)
+      const migratedServer = migratePatch(serverPatch, this.componentsByName);
+
+      // Migrate offline buffer in case it's from an old persisted session
+      const migratedBuffer = migratePatch(
+        this.offlineBuffer,
+        this.componentsByName,
+      );
+
       // Strip fields we already have locally from the offline buffer.
-      // When the buffer is empty, strip() returns serverPatch unchanged.
-      const diff = strip(serverPatch, this.offlineBuffer);
+      // Both are now at the same version, so strip can compare correctly.
+      const diff = strip(migratedServer, migratedBuffer);
       this.clearPersistedOfflineBuffer();
+
       if (Object.keys(diff).length > 0) {
-        // Migrate any out-of-date components
-        const migrated = migratePatch(diff, this.componentsByName);
         results.push({
-          patch: migrated,
+          patch: diff,
           origin: Origin.Websocket,
           syncBehavior: "document",
         });

@@ -350,11 +350,14 @@ export class Room {
   private buildDiff(since: number): Patch {
     const diff: Patch = {};
     for (const [key, fieldTs] of Object.entries(this.timestamps)) {
+      const componentState = this.state[key];
+      if (!componentState) continue;
+
       const fieldDiff: ComponentData = {};
       let hasChanges = false;
       for (const [field, ts] of Object.entries(fieldTs)) {
         if (ts > since) {
-          fieldDiff[field] = this.state[key] ?? { _exists: false };
+          fieldDiff[field] = componentState[field];
           hasChanges = true;
         }
       }
