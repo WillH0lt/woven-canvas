@@ -24,7 +24,11 @@ export interface EditorSyncOptions {
   documentId: string;
   usePersistence?: boolean;
   useHistory?: boolean;
-  websocket?: Omit<WebsocketAdapterOptions, "documentId" | "usePersistence">;
+  websocket?: Omit<
+    WebsocketAdapterOptions,
+    "documentId" | "usePersistence" | "onVersionMismatch"
+  >;
+  onVersionMismatch?: (serverProtocolVersion: number) => void;
 }
 
 /**
@@ -43,6 +47,7 @@ export class EditorSync {
   private ecsAdapter!: EcsAdapter;
   private historyAdapter: HistoryAdapter | null = null;
   private websocketAdapter: WebsocketAdapter | null = null;
+  private persistenceAdapter: PersistenceAdapter | null = null;
   private adapters: Adapter[] = [];
   private options: EditorSyncOptions;
 
@@ -61,9 +66,10 @@ export class EditorSync {
     this.adapters.push(this.ecsAdapter);
 
     if (this.options.usePersistence) {
-      this.adapters.push(
-        new PersistenceAdapter({ documentId: this.options.documentId }),
-      );
+      this.persistenceAdapter = new PersistenceAdapter({
+        documentId: this.options.documentId,
+      });
+      this.adapters.push(this.persistenceAdapter);
     }
 
     if (this.options.useHistory) {
@@ -76,6 +82,7 @@ export class EditorSync {
         ...this.options.websocket,
         documentId: this.options.documentId,
         usePersistence: this.options.usePersistence ?? false,
+        onVersionMismatch: this.options.onVersionMismatch,
       });
       this.adapters.push(this.websocketAdapter);
     }

@@ -100,53 +100,63 @@ const customTools = computed(() => {
 </script>
 
 <template>
-  <div class="ic-toolbar" @mouseleave="handleMouseLeave">
-    <!-- Select tool -->
-    <slot name="tool:select">
-      <SelectTool />
-    </slot>
+  <div class="ic-toolbar-container">
+    <div class="ic-toolbar" @mouseleave="handleMouseLeave">
+      <!-- Select tool -->
+      <slot name="tool:select">
+        <SelectTool />
+      </slot>
 
-    <!-- Hand tool -->
-    <slot name="tool:hand">
-      <HandTool />
-    </slot>
+      <!-- Hand tool -->
+      <slot name="tool:hand">
+        <HandTool />
+      </slot>
 
-    <!-- Text tool -->
-    <slot name="tool:text">
-      <TextTool />
-    </slot>
+      <!-- Text tool -->
+      <slot name="tool:text">
+        <TextTool />
+      </slot>
 
-    <!-- Sticky note tool -->
-    <slot name="tool:sticky-note">
-      <StickyNoteTool />
-    </slot>
+      <!-- Sticky note tool -->
+      <slot name="tool:sticky-note">
+        <StickyNoteTool />
+      </slot>
 
-    <!-- Pen tool -->
-    <slot name="tool:pen">
-      <PenTool />
-    </slot>
+      <!-- Pen tool -->
+      <slot name="tool:pen">
+        <PenTool />
+      </slot>
 
-    <!-- Eraser tool -->
-    <slot name="tool:eraser">
-      <EraserTool />
-    </slot>
+      <!-- Eraser tool -->
+      <slot name="tool:eraser">
+        <EraserTool />
+      </slot>
 
-    <!-- Elbow Arrow tool  -->
-    <slot name="tool:elbow-arrow">
-      <ElbowArrowTool />
-    </slot>
+      <!-- Elbow Arrow tool  -->
+      <slot name="tool:elbow-arrow">
+        <ElbowArrowTool />
+      </slot>
 
-    <!-- Custom tools via slots -->
-    <template v-for="tool in customTools" :key="tool">
-      <slot :name="`tool:${tool}`" />
-    </template>
+      <!-- Custom tools via slots -->
+      <template v-for="tool in customTools" :key="tool">
+        <slot :name="`tool:${tool}`" />
+      </template>
 
-    <!-- Singleton tooltip rendered once for all toolbar items -->
-    <MenuTooltip />
+      <!-- Singleton tooltip rendered once for all toolbar items -->
+      <MenuTooltip />
+    </div>
   </div>
 </template>
 
 <style>
+.ic-toolbar-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
 .ic-toolbar {
   display: flex;
   gap: 8px;
@@ -156,7 +166,9 @@ const customTools = computed(() => {
   color: var(--ic-gray-100);
   background-color: var(--ic-gray-100);
   border-radius: 12px;
-  box-shadow: 0px 0px 0.5px rgba(0, 0, 0, 0.18), 0px 3px 8px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0px 0px 0.5px rgba(0, 0, 0, 0.18),
+    0px 3px 8px rgba(0, 0, 0, 0.1),
     0px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -200,7 +212,8 @@ const customTools = computed(() => {
 .menu {
   background-color: var(--ic-gray-700);
   border-radius: var(--ic-menu-border-radius);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 </style>

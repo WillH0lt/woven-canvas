@@ -70,6 +70,8 @@ import { BasicsPlugin } from "../BasicsPlugin";
 import type { BlockData } from "../types";
 import UserPresence from "./UserPresence.vue";
 import UserCursors from "./UserCursors.vue";
+import OfflineIndicator from "./OfflineIndicator.vue";
+import VersionMismatch from "./VersionMismatch.vue";
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block));
@@ -152,6 +154,7 @@ defineSlots<
     }) => any;
     "user-presence"?: (props: { users: UserData[] }) => any;
     "offline-indicator"?: (props: { isOnline: boolean }) => any;
+    "version-mismatch"?: (props: { versionMismatch: boolean }) => any;
   } & {
     [slotName: `block:${string}`]: (props: BlockData) => any;
   }
@@ -192,6 +195,15 @@ const blockMap = new Map<EntityId, Ref<BlockData>>();
 
 // Blocks sorted by rank for rendering
 const sortedBlocks = shallowRef<Ref<BlockData>[]>([]);
+
+// Online status - updated each tick from the store
+const isOnline = ref(true);
+
+// Version mismatch - set when server reports incompatible protocol version
+const versionMismatch = ref(false);
+
+// Camera ref for internal rendering - updated via subscription
+const cameraRef = shallowRef(Camera.default());
 
 // Subscribe to component changes for an entity
 function subscribeComponent(
@@ -354,7 +366,14 @@ onMounted(async () => {
   if (!containerRef.value) return;
 
   // Create store (adapters are built lazily in initialize)
-  store = new EditorSync(props.syncOptions ?? { documentId: "default" });
+  const syncOpts = props.syncOptions ?? { documentId: "default" };
+  store = new EditorSync({
+    ...syncOpts,
+    onVersionMismatch: (serverProtocolVersion) => {
+      versionMismatch.value = true;
+      syncOpts.onVersionMismatch?.(serverProtocolVersion);
+    },
+  });
 
   // Build plugins array with built-in plugins
   const allPlugins: EditorPluginInput[] = [];
@@ -614,12 +633,6 @@ function updateBlocks(ctx: Context) {
   }
 }
 
-// Online status - updated each tick from the store
-const isOnline = ref(true);
-
-// Camera ref for internal rendering - updated via subscription
-const cameraRef = shallowRef(Camera.default());
-
 // Subscribe to Camera singleton for internal rendering
 subscribeSingleton(Camera.name, (value) => {
   if (value) {
@@ -780,37 +793,19 @@ function getBlockStyle(data: BlockData) {
 
     <!-- Toolbar -->
     <slot name="toolbar">
-      <div class="ic-toolbar">
-        <Toolbar />
-      </div>
+      <Toolbar />
     </slot>
 
     <!-- Offline indicator -->
     <slot name="offline-indicator" :is-online="isOnline">
-      <div v-if="!isOnline" class="ic-offline-indicator">Working Offline</div>
+      <OfflineIndicator :is-online="isOnline" />
+    </slot>
+
+    <!-- Version mismatch overlay -->
+    <slot name="version-mismatch" :version-mismatch="versionMismatch">
+      <VersionMismatch :version-mismatch="versionMismatch" />
     </slot>
   </div>
 </template>
 
-<style>
-.ic-toolbar {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-}
-
-.ic-offline-indicator {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 100;
-  padding: 6px 12px;
-  color: var(--ic-gray-400);
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  pointer-events: none;
-}
-</style>
+<style></style>

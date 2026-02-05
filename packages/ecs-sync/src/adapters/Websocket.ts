@@ -1,6 +1,6 @@
 import type { Adapter } from "../Adapter";
 import type { Mutation, Patch, ClientMessage, ServerMessage } from "../types";
-import { Origin } from "../constants";
+import { Origin, PROTOCOL_VERSION } from "../constants";
 import { merge, strip } from "../mutations";
 import { openStore, type KeyValueStore } from "../storage";
 
@@ -16,6 +16,8 @@ export interface WebsocketAdapterOptions {
   usePersistence: boolean;
   startOffline?: boolean;
   token?: string;
+  /** Called when the server reports a protocol version mismatch. */
+  onVersionMismatch?: (serverProtocolVersion: number) => void;
 }
 
 /**
@@ -73,6 +75,7 @@ export class WebsocketAdapter implements Adapter {
   private remoteEphemeralState: Patch = {};
 
   private token?: string;
+  private onVersionMismatch?: (serverProtocolVersion: number) => void;
 
   get isOnline(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
@@ -85,6 +88,7 @@ export class WebsocketAdapter implements Adapter {
     this.usePersistence = options.usePersistence;
     this.documentId = options.documentId;
     this.token = options.token;
+    this.onVersionMismatch = options.onVersionMismatch;
   }
 
   async init(): Promise<void> {
@@ -122,6 +126,7 @@ export class WebsocketAdapter implements Adapter {
         const msg: ClientMessage = {
           type: "reconnect",
           lastTimestamp: this.lastTimestamp,
+          protocolVersion: PROTOCOL_VERSION,
           ...(Object.keys(this.offlineBuffer).length > 0 && {
             documentPatches: [this.offlineBuffer],
           }),
@@ -364,6 +369,11 @@ export class WebsocketAdapter implements Adapter {
 
       case "clientCount":
         this.connectedUsers = msg.count;
+        break;
+
+      case "version-mismatch":
+        this.disconnect();
+        this.onVersionMismatch?.(msg.serverProtocolVersion);
         break;
     }
   }

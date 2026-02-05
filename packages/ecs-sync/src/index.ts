@@ -1,5 +1,5 @@
 // Core types
-export type { SyncBehavior } from "./types";
+export type { SyncBehavior, VersionMismatchResponse } from "./types";
 
 // Synced component
 export { Synced } from "./Synced";

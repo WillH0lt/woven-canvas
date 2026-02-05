@@ -523,6 +523,7 @@ describe("WebsocketAdapter", () => {
       expect(sent).toEqual({
         type: "reconnect",
         lastTimestamp: 0,
+        protocolVersion: 1,
       });
     });
 
@@ -547,6 +548,7 @@ describe("WebsocketAdapter", () => {
       expect(reconnectMsg).toEqual({
         type: "reconnect",
         lastTimestamp: 500,
+        protocolVersion: 1,
       });
     });
   });

@@ -42,6 +42,7 @@ export interface PatchRequest {
 export interface ReconnectRequest {
   type: "reconnect";
   lastTimestamp: number;
+  protocolVersion: number;
   documentPatches?: Patch[];
   ephemeralPatches?: Patch[];
 }
@@ -69,4 +70,14 @@ export interface ClientCountBroadcast {
   count: number;
 }
 
-export type ServerMessage = AckResponse | PatchBroadcast | ClientCountBroadcast;
+/** Sent by the server when the client's protocol version doesn't match. */
+export interface VersionMismatchResponse {
+  type: "version-mismatch";
+  serverProtocolVersion: number;
+}
+
+export type ServerMessage =
+  | AckResponse
+  | PatchBroadcast
+  | ClientCountBroadcast
+  | VersionMismatchResponse;

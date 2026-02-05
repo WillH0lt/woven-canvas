@@ -1,5 +1,6 @@
 export { Room } from "./Room";
 export type { RoomOptions } from "./Room";
+export { PROTOCOL_VERSION } from "./constants";
 
 export { RoomManager } from "./RoomManager";
 export type { RoomManagerOptions } from "./RoomManager";
@@ -23,6 +24,7 @@ export type {
   AckResponse,
   PatchBroadcast,
   ClientCountBroadcast,
+  VersionMismatchResponse,
   ClientMessage,
   ServerMessage,
 } from "./types";

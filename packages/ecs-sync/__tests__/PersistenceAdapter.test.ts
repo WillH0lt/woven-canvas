@@ -167,7 +167,7 @@ describe("PersistenceAdapter", () => {
       ]);
       await new Promise((r) => setTimeout(r, 50));
 
-      await adapter.clear();
+      await adapter.clearAll();
       adapter.close();
 
       // Reload - should be empty

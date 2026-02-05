@@ -118,9 +118,10 @@ export class PersistenceAdapter implements Adapter {
   }
 
   /**
-   * Clear all persisted state.
+   * Clear all persisted state and pending patches.
    */
-  async clear(): Promise<void> {
+  async clearAll(): Promise<void> {
+    this.pendingPatch = null;
     if (!this.store) return;
     await this.store.clear();
   }

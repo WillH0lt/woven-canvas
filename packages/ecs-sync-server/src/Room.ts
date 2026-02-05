@@ -12,7 +12,9 @@ import type {
   AckResponse,
   PatchBroadcast,
   ClientCountBroadcast,
+  VersionMismatchResponse,
 } from "./types";
+import { PROTOCOL_VERSION } from "./constants";
 
 export interface RoomOptions {
   /** Restore from a previous snapshot. */
@@ -229,6 +231,16 @@ export class Room {
   }
 
   private handleReconnect(session: Session, req: ReconnectRequest): void {
+    // Check protocol version for all clients (including readonly)
+    if (req.protocolVersion !== PROTOCOL_VERSION) {
+      const mismatch: VersionMismatchResponse = {
+        type: "version-mismatch",
+        serverProtocolVersion: PROTOCOL_VERSION,
+      };
+      this.sendTo(session, mismatch);
+      return;
+    }
+
     if (session.permissions === "readonly") return;
 
     this.applyAndBroadcast(session, req);

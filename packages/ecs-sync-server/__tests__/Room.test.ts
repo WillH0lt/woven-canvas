@@ -7,6 +7,7 @@ import type {
   AckResponse,
   PatchBroadcast,
   ClientCountBroadcast,
+  VersionMismatchResponse,
 } from "../src/types";
 
 // --- Test helpers ---
@@ -325,6 +326,7 @@ describe("Room", () => {
       room.handleSocketMessage(sid2, JSON.stringify({
         type: "reconnect",
         lastTimestamp: 1,
+        protocolVersion: 1,
       }));
 
       const patches = getMessages<PatchBroadcast>(s2, "patch");
@@ -344,6 +346,7 @@ describe("Room", () => {
       room.handleSocketMessage(sid2, JSON.stringify({
         type: "reconnect",
         lastTimestamp: 0,
+        protocolVersion: 1,
         documentPatches: [{ "e1/Pos": { _exists: true, x: 99 } }],
       }));
 
@@ -366,6 +369,7 @@ describe("Room", () => {
       room.handleSocketMessage(sid2, JSON.stringify({
         type: "reconnect",
         lastTimestamp: 0,
+        protocolVersion: 1,
       }));
 
       // Bob should receive Alice's ephemeral state
@@ -389,6 +393,7 @@ describe("Room", () => {
       room.handleSocketMessage(sid2, JSON.stringify({
         type: "reconnect",
         lastTimestamp: 0,
+        protocolVersion: 1,
         documentPatches: [{ "e1/Pos": { _exists: true, x: 42 } }],
       }));
 
@@ -617,6 +622,7 @@ describe("Room", () => {
       room.handleSocketMessage(readerSid, JSON.stringify({
         type: "reconnect",
         lastTimestamp: 0,
+        protocolVersion: 1,
         documentPatches: [{ "e1/Pos": { x: 999 } }],
         ephemeralPatches: [{ "bob/Cursor": { x: 50 } }],
       }));
@@ -672,6 +678,64 @@ describe("Room", () => {
       const bob = sessions.find((s) => s.clientId === "bob");
       expect(alice?.permissions).toBe("readwrite");
       expect(bob?.permissions).toBe("readonly");
+    });
+  });
+
+  describe("version mismatch", () => {
+    it("sends version-mismatch when protocolVersion differs", () => {
+      const { socket, sessionId } = connectClient(room, "alice");
+      clearMessages(socket);
+
+      room.handleSocketMessage(sessionId, JSON.stringify({
+        type: "reconnect",
+        lastTimestamp: 0,
+        protocolVersion: 999,
+      }));
+
+      const mismatches = getMessages<VersionMismatchResponse>(socket, "version-mismatch");
+      expect(mismatches).toHaveLength(1);
+      expect(mismatches[0].serverProtocolVersion).toBe(1);
+    });
+
+    it("does not send version-mismatch when protocolVersion matches", () => {
+      const { socket, sessionId } = connectClient(room, "alice");
+      clearMessages(socket);
+
+      room.handleSocketMessage(sessionId, JSON.stringify({
+        type: "reconnect",
+        lastTimestamp: 0,
+        protocolVersion: 1,
+      }));
+
+      const mismatches = getMessages<VersionMismatchResponse>(socket, "version-mismatch");
+      expect(mismatches).toHaveLength(0);
+    });
+
+    it("still processes reconnect after version-mismatch", () => {
+      const { sessionId: sid1 } = connectClient(room, "alice");
+
+      room.handleSocketMessage(sid1, JSON.stringify({
+        type: "patch",
+        messageId: "msg-1",
+        documentPatches: [{ "e1/Pos": { _exists: true, x: 10 } }],
+      }));
+
+      const { socket: s2, sessionId: sid2 } = connectClient(room, "bob");
+      clearMessages(s2);
+
+      room.handleSocketMessage(sid2, JSON.stringify({
+        type: "reconnect",
+        lastTimestamp: 0,
+        protocolVersion: 999,
+      }));
+
+      // Should get version-mismatch AND the document diff
+      const mismatches = getMessages<VersionMismatchResponse>(s2, "version-mismatch");
+      expect(mismatches).toHaveLength(1);
+
+      const patches = getMessages<PatchBroadcast>(s2, "patch");
+      expect(patches).toHaveLength(1);
+      expect(patches[0].documentPatches).toBeDefined();
     });
   });
 });

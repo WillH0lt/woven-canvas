@@ -1,220 +1,154 @@
-# Ephemeral Data Sync Implementation Plan
+# Document Version Staleness Detection
 
 ## Overview
 
-Add ephemeral data sync (cursors, selections, entity-in-use indicators) alongside the existing document sync. Ephemeral data is not undoable, not persisted, and scoped per-client on the server for cleanup on disconnect.
+Add two version numbers to detect stale local data and protocol incompatibilities:
 
-## Decisions
+- **`dataVersion`**: Bumped when the server-side data schema changes (migrations). Defaults to `1`. Specified by the library user in `EditorSyncOptions`.
+- **`protocolVersion`**: Bumped when the wire protocol between client and server changes. Hardcoded as a constant inside `ecs-sync` (not user-facing).
 
-- `Mutation` gains a `syncBehavior: SyncBehavior` field (`"document"` or `"ephemeral"`)
-- `Adapter.pull()` returns `Mutation[]` instead of `Mutation | null`
-- New `"ephemeral-patch"` wire message type (no ACKs, no timestamps)
-- Server stores ephemeral data in memory namespaced by clientId
-- Client doesn't see ownership — server merges all ephemeral state when sending
-- On disconnect, server broadcasts deletion patches for that client's ephemeral keys
-- On reconnect, client resends full ephemeral snapshot so server can restore it
+Both are sent on reconnect. They trigger different behaviors on mismatch:
+
+- **`dataVersion` mismatch**: Local data is stale. Dump IndexedDB state and offline buffer, reload from server.
+- **`protocolVersion` mismatch**: Client can't talk to server, but local data is still valid. Set `needsRefresh` flag so the app can prompt the user to refresh. Don't touch local data.
+
+Migrations are performed manually on the server by the library user.
+
+## Flow
+
+1. Library user specifies `dataVersion` in `EditorSyncOptions` (default `1`). `protocolVersion` is a hardcoded constant in the library.
+2. `PersistenceAdapter` stores `dataVersion` locally. `WebsocketAdapter` stores both versions locally.
+3. On init, each adapter compares stored versions with code versions:
+   - `dataVersion` differs → clear local data (IndexedDB state, offline buffer, timestamp)
+   - `protocolVersion` differs → no data clearing (data is still valid)
+4. On reconnect, the client sends both versions to the server
+5. If the server detects a mismatch on either, it responds with a `version-mismatch` message
+6. The client sets `needsRefresh = true` and fires `onVersionMismatch` so the app can prompt the user to refresh
+
+## Deployment sequence
+
+1. Take server offline
+2. Run migration scripts on server data
+3. Bump document version in server metadata
+4. Deploy new client code with matching `dataVersion`
+5. Server comes back online
+6. Clients reconnect, detect local version != code version, dump local data, reload from server
 
 ---
 
-## Step 1: Update `Mutation` type and `Adapter` interface
+## Step 1: Add versions to wire protocol
+
+**File: `src/constants.ts`**
+
+Add hardcoded protocol version:
+
+```typescript
+export const PROTOCOL_VERSION = 1;
+```
 
 **File: `src/types.ts`**
-- Add `syncBehavior: SyncBehavior` to `Mutation` interface
 
-**File: `src/Adapter.ts`**
-- Change `pull(): Mutation | null` to `pull(): Mutation[]`
+Add versions to `ReconnectRequest`:
 
----
+```typescript
+export interface ReconnectRequest {
+  type: "reconnect";
+  lastTimestamp: number;
+  dataVersion: number;
+  protocolVersion: number;
+  documentPatches?: Patch[];
+  ephemeralPatches?: Patch[];
+}
+```
 
-## Step 2: Add new wire protocol message types
+Add `VersionMismatchResponse`:
 
-**File: `src/types.ts`**
-- Add `EphemeralPatchRequest`:
-  ```typescript
-  interface EphemeralPatchRequest {
-    type: "ephemeral-patch";
-    patches: Patch[];
-  }
-  ```
-- Add `EphemeralPatchBroadcast`:
-  ```typescript
-  interface EphemeralPatchBroadcast {
-    type: "ephemeral-patch";
-    patches: Patch[];
-  }
-  ```
-- Add `ephemeralPatches?: Patch[]` field to `ReconnectRequest`
-- Update `ClientMessage` and `ServerMessage` unions
+```typescript
+export interface VersionMismatchResponse {
+  type: "version-mismatch";
+  serverDataVersion: number;
+  serverProtocolVersion: number;
+}
+```
 
----
+Update `ServerMessage` union:
 
-## Step 3: Update `EcsAdapter`
-
-**File: `src/adapters/ECS.ts`**
-
-`pull()` changes:
-- Return `Mutation[]` instead of `Mutation | null`
-- Build two separate patches: one for document components, one for ephemeral
-- During event iteration, check `componentDef.__sync` to route into the correct patch
-- Return 0-2 mutations (one per non-empty patch), each tagged with the appropriate `syncBehavior`
-
-`push()` changes:
-- No changes needed — EcsAdapter applies all mutations the same way regardless of `syncBehavior`
-
-Add `getEphemeralSnapshot(): Patch` method:
-- Iterate `prevState` keys, check component name against `componentsByName` to find ephemeral components
-- Return only entries whose component has `__sync === "ephemeral"`
-- Add `_exists: true` flag to each entry
-- Used by WebsocketAdapter to build the ephemeral payload for reconnect messages
+```typescript
+export type ServerMessage =
+  | AckResponse
+  | PatchBroadcast
+  | ClientCountBroadcast
+  | VersionMismatchResponse;
+```
 
 ---
 
-## Step 4: Update `WebsocketAdapter`
-
-**File: `src/adapters/Websocket.ts`**
-
-`push()` changes:
-- Split incoming mutations by `syncBehavior`
-- Document mutations: existing behavior (buffer, throttle, send as `"patch"`)
-- Ephemeral mutations: buffer into separate `ephemeralSendBuffer`, send as `"ephemeral-patch"` on same throttle cycle
-- Ephemeral patches are fire-and-forget: no `inFlight` tracking, no ACK expected
-- When offline: document patches go to `offlineBuffer` as before; ephemeral patches are dropped (no point buffering ephemeral data offline)
-
-`pull()` changes:
-- Return `Mutation[]` instead of `Mutation | null`
-- Maintain separate `pendingEphemeralPatches` alongside existing `pendingPatches`
-- Return 0-2 mutations tagged with appropriate `syncBehavior`
-
-`flush()` changes:
-- Send two separate messages if both document and ephemeral data are buffered
-- Document: `{ type: "patch", messageId, patches }` (existing)
-- Ephemeral: `{ type: "ephemeral-patch", patches }` (new, no messageId)
-
-`handleMessage()` changes:
-- Handle incoming `"ephemeral-patch"` messages: push patches into `pendingEphemeralPatches`
-- No timestamp tracking for ephemeral messages
-
-`connectWs()` changes:
-- On reconnect, include ephemeral snapshot in the reconnect message via `getEphemeralSnapshot` callback
-
-New constructor option:
-- `getEphemeralSnapshot: () => Patch` — callback to get current ephemeral state for reconnect
-
----
-
-## Step 5: Update `HistoryAdapter`
-
-**File: `src/adapters/History.ts`**
-
-`push()` changes:
-- Filter out mutations with `syncBehavior === "ephemeral"` before processing
-- Ephemeral mutations are not recorded for undo/redo and don't update history state
-
-`pull()` changes:
-- Return `Mutation[]` instead of `Mutation | null`
-- Return 0-1 element array, always tagged with `syncBehavior: "document"`
-
----
-
-## Step 6: Update `PersistenceAdapter`
+## Step 2: Update PersistenceAdapter
 
 **File: `src/adapters/Persistence.ts`**
 
-`push()` changes:
-- Filter out mutations with `syncBehavior === "ephemeral"` before persisting
-
-`pull()` changes:
-- Return `Mutation[]` instead of `Mutation | null`
-- Return 0-1 element array, always tagged with `syncBehavior: "document"`
+- Add `dataVersion: number` to `PersistenceAdapterOptions` (default `1`)
+- On `init()`:
+  - Read stored `__dataVersion` from the state store
+  - If stored version exists and differs from code version, call `this.store.clear()`
+  - Save code `dataVersion` to `__dataVersion`
+- In `loadState()`:
+  - Skip keys starting with `__` when building the merge patch
+- Add `clearAll()` method:
+  - Clears the store and resets `pendingPatch`
 
 ---
 
-## Step 7: Update `EditorSync`
+## Step 3: Update WebsocketAdapter
+
+**File: `src/adapters/Websocket.ts`**
+
+- Add `dataVersion: number` to `WebsocketAdapterOptions` (default `1`)
+- Import `PROTOCOL_VERSION` from constants
+- On `init()`:
+  - Read stored `dataVersion` from meta store
+  - If stored `dataVersion` exists and differs from code version, clear `offlineBuffer`, `lastTimestamp`, and persisted metadata (stale data)
+  - Save code `dataVersion` to meta store
+- In `connectWs()`:
+  - Include `dataVersion` and `PROTOCOL_VERSION` in the reconnect message
+- In `handleMessage()`:
+  - Handle `"version-mismatch"` message type
+  - Set `this._needsRefresh = true`
+  - Call `onVersionMismatch` callback
+- Add `clearLocalData()` method:
+  - Clears offline buffer, timestamp, and persisted metadata
+- Add `needsRefresh` getter
+- Add `onVersionMismatch` callback to options
+
+---
+
+## Step 4: Update EditorSync
 
 **File: `src/EditorSync.ts`**
 
-`sync()` changes:
-- `pull()` now returns arrays, so flatten into `allMutations`:
-  ```typescript
-  for (const adapter of this.adapters) {
-    allMutations.push(...adapter.pull());
-  }
-  ```
-
-`initialize()` changes:
-- Pass `getEphemeralSnapshot` callback to WebsocketAdapter:
-  ```typescript
-  this.websocketAdapter = new WebsocketAdapter({
-    ...this.options.websocket,
-    documentId: this.options.documentId,
-    usePersistence: this.options.usePersistence ?? false,
-    getEphemeralSnapshot: () => this.ecsAdapter.getEphemeralSnapshot(),
-  });
-  ```
+- Add `dataVersion?: number` (default `1`) to `EditorSyncOptions`
+- Add `onVersionMismatch` callback to `EditorSyncOptions`
+- Pass versions through to both `PersistenceAdapter` and `WebsocketAdapter`
+- Expose `needsRefresh` getter (delegates to `WebsocketAdapter`)
+- Add `clearLocalData()` method that clears both adapters
 
 ---
 
-## Step 8: Update Go server — message types
+## Step 5: Update exports
 
-**File: `server/models/messages.go`**
-- Add `EphemeralPatchRequest`:
-  ```go
-  type EphemeralPatchRequest struct {
-    Type    string  `json:"type"`
-    Patches []Patch `json:"patches"`
-  }
-  ```
-- Add `EphemeralPatchBroadcast`:
-  ```go
-  type EphemeralPatchBroadcast struct {
-    Type    string  `json:"type"`
-    Patches []Patch `json:"patches"`
-  }
-  ```
-- Add `EphemeralPatches []Patch` field to `ReconnectRequest`
+**File: `src/index.ts`**
 
----
-
-## Step 9: Update Go server — room controller
-
-**File: `server/controllers/room.go`**
-
-New state:
-- `ephemeralState map[string]models.Patch` — keyed by clientId, each value is a merged Patch of that client's ephemeral data
-
-New handler `handleEphemeralPatch()`:
-- Merge incoming patches into `ephemeralState[client.ClientID]`
-- Broadcast `"ephemeral-patch"` to all other clients (pass through patches)
-
-Update `handleReconnect()`:
-- Store `req.EphemeralPatches` into `ephemeralState[client.ClientID]`
-- Broadcast client's ephemeral patches to others
-- Merge all OTHER clients' ephemeral state into one patch, send to reconnecting client as `"ephemeral-patch"`
-
-Update `handleConnect()`:
-- Send merged ephemeral state from all existing clients to the new client as `"ephemeral-patch"`
-
-Update `handleDisconnect()`:
-- Look up `ephemeralState[client.ClientID]`
-- Build deletion patch: for each key in their ephemeral data, emit `{ "_exists": false }`
-- Broadcast deletion patch as `"ephemeral-patch"` to remaining clients
-- Delete `ephemeralState[client.ClientID]`
-
-Update `HandleMessage()`:
-- Add `case "ephemeral-patch"` to the message type switch
+- Export `VersionMismatchResponse` type from `types.ts`
 
 ---
 
 ## File Change Summary
 
-| File | Changes |
-|------|---------|
-| `src/types.ts` | Add `syncBehavior` to `Mutation`, add ephemeral message types, update `ReconnectRequest` |
-| `src/Adapter.ts` | `pull()` returns `Mutation[]` |
-| `src/adapters/ECS.ts` | Split pull into doc/ephemeral patches, add `getEphemeralSnapshot()` |
-| `src/adapters/Websocket.ts` | Separate ephemeral send/receive, reconnect with ephemeral snapshot |
-| `src/adapters/History.ts` | Skip ephemeral in push, return array from pull |
-| `src/adapters/Persistence.ts` | Skip ephemeral in push, return array from pull |
-| `src/EditorSync.ts` | Flatten pull arrays, pass ephemeral snapshot callback |
-| `server/models/messages.go` | Add ephemeral message types, update ReconnectRequest |
-| `server/controllers/room.go` | Add ephemeralState, handle ephemeral-patch, cleanup on disconnect |
+| File                          | Changes                                                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `src/constants.ts`            | Add `PROTOCOL_VERSION` constant                                                                              |
+| `src/types.ts`                | Add `dataVersion`/`protocolVersion` to `ReconnectRequest`, add `VersionMismatchResponse`, update `ServerMessage` |
+| `src/adapters/Persistence.ts` | `dataVersion`-aware init, clear on data mismatch, skip `__`-prefixed keys in loadState                     |
+| `src/adapters/Websocket.ts`   | Send versions on reconnect, clear offline data on data mismatch, handle `version-mismatch`, `needsRefresh` |
+| `src/EditorSync.ts`           | Accept and pass `dataVersion`, expose `needsRefresh`, `clearLocalData()`, `onVersionMismatch`              |
+| `src/index.ts`                | Export `VersionMismatchResponse`                                                                           |
