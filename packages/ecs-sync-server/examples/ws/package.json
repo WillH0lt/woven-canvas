@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "ecs-sync-server-example",
+  "name": "ecs-sync-server-example-ws",
   "type": "module",
   "scripts": {
     "dev": "tsx watch server.ts"

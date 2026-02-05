@@ -5,6 +5,7 @@ import type {
   FieldTimestamps,
   Patch,
   RoomSnapshot,
+  SessionPermission,
   SessionInfo,
   PatchRequest,
   ReconnectRequest,
@@ -33,6 +34,7 @@ interface Session {
   sessionId: string;
   clientId: string;
   socket: WebSocketLike;
+  permissions: SessionPermission;
 }
 
 export class Room {
@@ -92,27 +94,15 @@ export class Room {
   // ---------------------------------------------------------------
 
   handleSocketConnect(options: {
-    sessionId: string;
     socket: WebSocketLike;
     clientId: string;
-  }): void {
-    const { sessionId, socket, clientId } = options;
+    permissions: SessionPermission;
+  }): string {
+    const { socket, clientId, permissions } = options;
+    const sessionId = crypto.randomUUID();
 
-    const session: Session = { sessionId, clientId, socket };
+    const session: Session = { sessionId, clientId, socket, permissions };
     this.sessions.set(sessionId, session);
-
-    // Listen for incoming messages
-    socket.addEventListener("message", (ev) => {
-      this.handleRawMessage(session, String(ev.data));
-    });
-
-    socket.addEventListener("close", () => {
-      this.removeSession(sessionId);
-    });
-
-    socket.addEventListener("error", () => {
-      this.removeSession(sessionId);
-    });
 
     // Send existing ephemeral state from other clients
     const snapshot = this.buildEphemeralSnapshot(clientId);
@@ -127,12 +117,10 @@ export class Room {
     }
 
     this.broadcastClientCount();
+
+    return sessionId;
   }
 
-  /**
-   * Manual message forwarding for environments that don't support addEventListener
-   * (e.g. Bun websocket handlers, Cloudflare Workers hibernation API).
-   */
   handleSocketMessage(sessionId: string, data: string): void {
     const session = this.sessions.get(sessionId);
     if (!session) return;
@@ -163,12 +151,25 @@ export class Room {
     return this.sessions.size;
   }
 
+  getSessionPermissions(sessionId: string): SessionPermission | undefined {
+    return this.sessions.get(sessionId)?.permissions;
+  }
+
+  setSessionPermissions(
+    sessionId: string,
+    permissions: SessionPermission,
+  ): void {
+    const session = this.sessions.get(sessionId);
+    if (session) session.permissions = permissions;
+  }
+
   getSessions(): SessionInfo[] {
     const result: SessionInfo[] = [];
     for (const session of this.sessions.values()) {
       result.push({
         sessionId: session.sessionId,
         clientId: session.clientId,
+        permissions: session.permissions,
       });
     }
     return result;
@@ -215,6 +216,8 @@ export class Room {
   }
 
   private handlePatch(session: Session, req: PatchRequest): void {
+    if (session.permissions === "readonly") return;
+
     this.applyAndBroadcast(session, req);
 
     const ack: AckResponse = {
@@ -226,6 +229,8 @@ export class Room {
   }
 
   private handleReconnect(session: Session, req: ReconnectRequest): void {
+    if (session.permissions === "readonly") return;
+
     this.applyAndBroadcast(session, req);
 
     // Send document diff since client's last known timestamp

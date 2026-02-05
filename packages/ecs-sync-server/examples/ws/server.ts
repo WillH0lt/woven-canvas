@@ -19,18 +19,30 @@ wss.on("connection", async (ws, req) => {
   const url = new URL(req.url!, `http://localhost:${PORT}`);
   const roomId = url.searchParams.get("roomId") ?? "default";
   const clientId = url.searchParams.get("clientId");
+  const token = url.searchParams.get("token");
 
   if (!clientId) {
     ws.close(1008, "Missing clientId query parameter");
     return;
   }
 
+  // Example: validate the token and determine permissions.
+  // Replace this with your own authentication logic.
+  // const auth = await validateToken(token);
+  // if (!auth) { ws.close(1008, "Unauthorized"); return; }
+  // const permissions = auth.canWrite ? "readwrite" : "readonly";
+
   const room = await manager.getRoom(roomId);
-  room.handleSocketConnect({
-    sessionId: crypto.randomUUID(),
-    socket: ws,
+
+  const sessionId = room.handleSocketConnect({
+    socket: { send: (data) => ws.send(data), close: () => ws.close() },
     clientId,
+    permissions: "readwrite",
   });
+
+  ws.on("message", (data) => room.handleSocketMessage(sessionId, String(data)));
+  ws.on("close", () => room.handleSocketClose(sessionId));
+  ws.on("error", () => room.handleSocketError(sessionId));
 
   console.log(
     `Client ${clientId} connected to room ${roomId} (${room.getSessionCount()} active)`,
@@ -39,7 +51,9 @@ wss.on("connection", async (ws, req) => {
 
 server.listen(PORT, () => {
   console.log(`ECS sync server listening on ws://localhost:${PORT}`);
-  console.log(`Connect: ws://localhost:${PORT}?roomId=myRoom&clientId=myClient`);
+  console.log(
+    `Connect: ws://localhost:${PORT}?roomId=myRoom&clientId=myClient`,
+  );
 });
 
 process.on("SIGINT", () => {

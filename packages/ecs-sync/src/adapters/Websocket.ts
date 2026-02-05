@@ -15,6 +15,7 @@ export interface WebsocketAdapterOptions {
   documentId: string;
   usePersistence: boolean;
   startOffline?: boolean;
+  token?: string;
 }
 
 /**
@@ -71,12 +72,15 @@ export class WebsocketAdapter implements Adapter {
   /** Accumulated ephemeral state received from remote clients, used to emit deletions on disconnect. */
   private remoteEphemeralState: Patch = {};
 
+  private token?: string;
+
   constructor(options: WebsocketAdapterOptions) {
     this.url = options.url;
     this.clientId = options.clientId;
     this.startOffline = options.startOffline ?? false;
     this.usePersistence = options.usePersistence;
     this.documentId = options.documentId;
+    this.token = options.token;
   }
 
   async init(): Promise<void> {
@@ -105,6 +109,7 @@ export class WebsocketAdapter implements Adapter {
     return new Promise<void>((resolve, reject) => {
       const url = new URL(this.url);
       url.searchParams.set("clientId", this.clientId);
+      if (this.token) url.searchParams.set("token", this.token);
       const ws = new WebSocket(url.toString());
 
       ws.addEventListener("open", () => {

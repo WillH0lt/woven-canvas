@@ -16,6 +16,7 @@ export type {
   Patch,
   FieldTimestamps,
   RoomSnapshot,
+  SessionPermission,
   SessionInfo,
   PatchRequest,
   ReconnectRequest,

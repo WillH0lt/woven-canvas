@@ -1,27 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { RoomManager } from "../src/RoomManager";
 import { MemoryStorage } from "../src/storage/MemoryStorage";
-import type { WebSocketLike } from "../src/WebSocketLike";
 import type { ServerMessage } from "../src/types";
 
-function createMockSocket(): WebSocketLike & {
-  messages: ServerMessage[];
-  triggerClose: () => void;
-} {
-  let onClose: (() => void) | null = null;
-
+function createMockSocket() {
   const socket = {
     messages: [] as ServerMessage[],
     send: vi.fn((data: string) => {
       socket.messages.push(JSON.parse(data));
     }),
     close: vi.fn(),
-    addEventListener: vi.fn((event: string, handler: (...args: any[]) => void) => {
-      if (event === "close") onClose = handler;
-    }),
-    triggerClose() {
-      onClose?.();
-    },
   };
   return socket;
 }
@@ -63,11 +51,7 @@ describe("RoomManager", () => {
   it("closes a specific room", async () => {
     const room = await manager.getRoom("room-1");
     const socket = createMockSocket();
-    room.handleSocketConnect({
-      sessionId: "s1",
-      socket,
-      clientId: "alice",
-    });
+    room.handleSocketConnect({ socket, clientId: "alice", permissions: "readwrite" });
 
     manager.closeRoom("room-1");
 
@@ -89,14 +73,10 @@ describe("RoomManager", () => {
 
     const room = await manager.getRoom("room-1");
     const socket = createMockSocket();
-    room.handleSocketConnect({
-      sessionId: "s1",
-      socket,
-      clientId: "alice",
-    });
+    const sessionId = room.handleSocketConnect({ socket, clientId: "alice", permissions: "readwrite" });
 
     // Disconnect the client
-    socket.triggerClose();
+    room.handleSocketClose(sessionId);
 
     // Room still exists immediately
     expect(manager.getRoomIds()).toEqual(["room-1"]);
@@ -114,21 +94,17 @@ describe("RoomManager", () => {
 
     const room = await manager.getRoom("room-1");
     const s1 = createMockSocket();
-    room.handleSocketConnect({ sessionId: "s1", socket: s1, clientId: "alice" });
+    const sid1 = room.handleSocketConnect({ socket: s1, clientId: "alice", permissions: "readwrite" });
 
     // Disconnect first client (triggers idle timer)
-    s1.triggerClose();
+    room.handleSocketClose(sid1);
 
     // New client reconnects before timeout
     await vi.advanceTimersByTimeAsync(25);
     // Getting the room again should cancel the idle timer
     const sameRoom = await manager.getRoom("room-1");
     const s2 = createMockSocket();
-    sameRoom.handleSocketConnect({
-      sessionId: "s2",
-      socket: s2,
-      clientId: "bob",
-    });
+    sameRoom.handleSocketConnect({ socket: s2, clientId: "bob", permissions: "readwrite" });
 
     // Advance past the original timeout
     await vi.advanceTimersByTimeAsync(100);

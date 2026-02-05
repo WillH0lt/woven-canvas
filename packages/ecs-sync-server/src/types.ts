@@ -20,10 +20,14 @@ export interface RoomSnapshot {
   timestamps: Record<string, FieldTimestamps>;
 }
 
+/** Permission level for a connected session. */
+export type SessionPermission = "readonly" | "readwrite";
+
 /** Info about a connected session. */
 export interface SessionInfo {
   sessionId: string;
   clientId: string;
+  permissions: SessionPermission;
 }
 
 // --- Client -> Server messages ---
