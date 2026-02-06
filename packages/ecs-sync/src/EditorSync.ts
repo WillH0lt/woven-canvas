@@ -81,7 +81,10 @@ export class EditorSync {
     }
 
     if (this.options.useHistory) {
-      this.historyAdapter = new HistoryAdapter();
+      this.historyAdapter = new HistoryAdapter({
+        components,
+        singletons,
+      });
       this.adapters.push(this.historyAdapter);
     }
 

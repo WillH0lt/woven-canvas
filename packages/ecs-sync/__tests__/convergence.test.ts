@@ -106,7 +106,7 @@ describe("Sync loop convergence", () => {
   describe("non-conflicting concurrent mutations", () => {
     it("History tracks both ECS and WS changes", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       // Pre-populate
@@ -143,7 +143,7 @@ describe("Sync loop convergence", () => {
   describe("conflicting concurrent mutations (same field)", () => {
     it("History and ECS-mock converge to the same value", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       // Pre-populate
@@ -174,7 +174,7 @@ describe("Sync loop convergence", () => {
 
     it("convergence holds across subsequent no-op frames", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       // Pre-populate
@@ -209,7 +209,7 @@ describe("Sync loop convergence", () => {
   describe("undo correctness after concurrent conflict", () => {
     it("undo produces correct inverse after concurrent conflict", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       // Step 1: establish initial state x=0
@@ -256,7 +256,7 @@ describe("Sync loop convergence", () => {
   describe("adapter ordering", () => {
     it("standard order [ecs, history, ws] converges", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       history.push([ecsMutation({ "e1/Pos": { _exists: true, x: 0 } })]);
@@ -276,7 +276,7 @@ describe("Sync loop convergence", () => {
 
     it("reversed order [ws, history, ecs] gives ECS priority", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       history.push([ecsMutation({ "e1/Pos": { _exists: true, x: 0 } })]);
@@ -301,7 +301,7 @@ describe("Sync loop convergence", () => {
   describe("partial field overlap in concurrent mutations", () => {
     it("all fields converge between History and ECS-mock", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       history.push([
@@ -336,7 +336,7 @@ describe("Sync loop convergence", () => {
   describe("concurrent add and update", () => {
     it("History and ECS-mock converge on conflicting fields", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       ecs.enqueue({ "e1/Pos": { _exists: true, x: 10, y: 5 } });
@@ -366,7 +366,7 @@ describe("Sync loop convergence", () => {
   describe("concurrent delete and update", () => {
     it("History and ECS-mock agree on entity existence", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       // Pre-populate
@@ -402,7 +402,7 @@ describe("Sync loop convergence", () => {
   describe("sequential mutations converge correctly", () => {
     it("ECS mutation in frame 1, WS mutation in frame 2 — no divergence", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       // Frame 1: ECS adds entity
@@ -431,7 +431,7 @@ describe("Sync loop convergence", () => {
     it("all adapters converge with standard ordering", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
       const persistence = new MockAdapter("persistence", Origin.Persistence);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
       const ws = new MockAdapter("ws", Origin.Websocket);
 
       ecs.enqueue({ "e1/Pos": { x: 10 } });
@@ -469,7 +469,7 @@ describe("Sync loop convergence", () => {
   describe("concurrent ECS and History mutations converge", () => {
     it("ECS and History converge when both produce mutations for the same key", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
 
       // Setup: entity at x=10, with undo history back to x=0
       ecs.enqueue({ "e1/Pos": { _exists: true, x: 0 } });
@@ -511,7 +511,7 @@ describe("Sync loop convergence", () => {
 
     it("ECS changes during undo frame are still tracked for undo", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
 
       // Setup: entity with x=0, y=0
       ecs.enqueue({ "e1/Pos": { _exists: true, x: 0, y: 0 } });
@@ -545,7 +545,7 @@ describe("Sync loop convergence", () => {
 
     it("no divergence when only one adapter produces a mutation", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
 
       // Setup
       ecs.enqueue({ "e1/Pos": { _exists: true, x: 0 } });
@@ -581,7 +581,7 @@ describe("Sync loop convergence", () => {
   describe("undo-redo round trip (no conflict baseline)", () => {
     it("undo then redo restores original state when no conflicts exist", () => {
       const ecs = new MockAdapter("ecs", Origin.ECS);
-      const history = new HistoryAdapter();
+      const history = new HistoryAdapter({ components: [], singletons: [] });
 
       // Frame 1: add entity
       ecs.enqueue({ "e1/Pos": { _exists: true, x: 0, y: 0 } });

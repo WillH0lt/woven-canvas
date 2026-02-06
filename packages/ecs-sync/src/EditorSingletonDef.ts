@@ -28,6 +28,12 @@ export class EditorSingletonDef<
   /** Ordered migration chain for this singleton's persisted data. */
   readonly migrations: readonly ComponentMigration[];
 
+  /**
+   * Fields to exclude from undo/redo history.
+   * Changes to these fields won't be recorded in history and won't be affected by undo/redo.
+   */
+  readonly excludeFromHistory: readonly string[];
+
   /** Version name of the latest migration, or null if none. */
   get currentVersion(): string | null {
     return this.migrations.length > 0
@@ -40,6 +46,7 @@ export class EditorSingletonDef<
       name: N;
       sync?: SingletonEditorBehavior;
       migrations?: ComponentMigration[];
+      excludeFromHistory?: string[];
     },
     schema: T,
   ) {
@@ -47,6 +54,7 @@ export class EditorSingletonDef<
     this.name = options.name;
     this.sync = options.sync ?? "none";
     this.migrations = options.migrations ?? [];
+    this.excludeFromHistory = options.excludeFromHistory ?? [];
     if (this.migrations.length > 0) {
       validateMigrations(this.migrations);
     }
@@ -92,6 +100,7 @@ export function defineEditorSingleton<
     name: N;
     sync?: SingletonEditorBehavior;
     migrations?: ComponentMigration[];
+    excludeFromHistory?: string[];
   },
   schema: T,
 ): EditorSingletonDef<T, N> {

@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
+import { field } from "@infinitecanvas/ecs";
 import { HistoryAdapter } from "../src/adapters/History";
 import { Origin } from "../src/constants";
 import type { Mutation } from "../src/types";
+import { defineEditorComponent } from "../src/EditorComponentDef";
+import { defineEditorSingleton } from "../src/EditorSingletonDef";
 
 describe("HistoryAdapter", () => {
   function createAdapter(opts?: {
@@ -9,7 +12,12 @@ describe("HistoryAdapter", () => {
     maxHistoryStackSize?: number;
   }) {
     // Default to 1 frame for easier testing
-    return new HistoryAdapter({ commitAfterFrames: 1, ...opts });
+    return new HistoryAdapter({
+      components: [],
+      singletons: [],
+      commitAfterFrames: 1,
+      ...opts,
+    });
   }
 
   /** Simulate N quiet frames (pushes with no ECS mutations) */
@@ -788,6 +796,199 @@ describe("HistoryAdapter", () => {
       // Checkpoint should still be valid
       const result = adapter.revertToCheckpoint(cp);
       expect(result).toBe(true);
+    });
+  });
+
+  describe("excludeFromHistory", () => {
+    const TestComponent = defineEditorComponent(
+      {
+        name: "Test",
+        sync: "document",
+        excludeFromHistory: ["excluded"],
+      },
+      {
+        included: field.int32().default(0),
+        excluded: field.int32().default(0),
+      },
+    );
+
+    const TestSingleton = defineEditorSingleton(
+      {
+        name: "TestSingleton",
+        sync: "document",
+        excludeFromHistory: ["excluded"],
+      },
+      {
+        included: field.int32().default(0),
+        excluded: field.int32().default(0),
+      },
+    );
+
+    function createAdapterWithExclusions() {
+      return new HistoryAdapter({
+        components: [TestComponent],
+        singletons: [TestSingleton],
+        commitAfterFrames: 1,
+      });
+    }
+
+    it("excludes specified fields from history tracking", () => {
+      const adapter = createAdapterWithExclusions();
+
+      // Change both included and excluded fields
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { _exists: true, included: 10, excluded: 20 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      adapter.undo();
+      const mutation = adapter.pull();
+
+      // Undo should only affect the included field
+      expect(mutation).toHaveLength(1);
+      expect(mutation[0].patch["e1/Test"]).toEqual({ _exists: false });
+      // The excluded field should not appear in the undo
+    });
+
+    it("does not record changes to only excluded fields", () => {
+      const adapter = createAdapterWithExclusions();
+
+      // First add the component with both fields
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { _exists: true, included: 10, excluded: 20 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      // Now change only the excluded field
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { excluded: 30 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      // Undo should skip the excluded-only change and undo the creation
+      adapter.undo();
+      const mutation = adapter.pull();
+
+      expect(mutation).toHaveLength(1);
+      // Should be undoing the creation, not the excluded field change
+      expect(mutation[0].patch["e1/Test"]).toEqual({ _exists: false });
+    });
+
+    it("records changes to included fields normally", () => {
+      const adapter = createAdapterWithExclusions();
+
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { _exists: true, included: 10, excluded: 20 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { included: 50 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      adapter.undo();
+      const mutation = adapter.pull();
+
+      expect(mutation).toHaveLength(1);
+      // Should undo the included field change
+      expect(mutation[0].patch["e1/Test"]).toEqual({ included: 10 });
+    });
+
+    it("works with singletons", () => {
+      const adapter = createAdapterWithExclusions();
+
+      adapter.push([
+        ecsMutation({
+          "SINGLETON/TestSingleton": {
+            _exists: true,
+            included: 10,
+            excluded: 20,
+          },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      adapter.push([
+        ecsMutation({
+          "SINGLETON/TestSingleton": { included: 50, excluded: 100 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      adapter.undo();
+      const mutation = adapter.pull();
+
+      expect(mutation).toHaveLength(1);
+      // Should only undo the included field
+      expect(mutation[0].patch["SINGLETON/TestSingleton"]).toEqual({
+        included: 10,
+      });
+    });
+
+    it("preserves component additions even when all data fields are excluded", () => {
+      const AllExcluded = defineEditorComponent(
+        {
+          name: "AllExcluded",
+          sync: "document",
+          excludeFromHistory: ["value"],
+        },
+        {
+          value: field.int32().default(0),
+        },
+      );
+
+      const adapter = new HistoryAdapter({
+        components: [AllExcluded],
+        singletons: [],
+        commitAfterFrames: 1,
+      });
+
+      // Add component with only excluded field
+      adapter.push([
+        ecsMutation({
+          "e1/AllExcluded": { _exists: true, value: 10 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      // Should still track the addition
+      expect(adapter.canUndo()).toBe(true);
+
+      adapter.undo();
+      const mutation = adapter.pull();
+
+      expect(mutation).toHaveLength(1);
+      // Should be a deletion
+      expect(mutation[0].patch["e1/AllExcluded"]).toEqual({ _exists: false });
+    });
+
+    it("does not affect components without exclusions", () => {
+      const adapter = createAdapterWithExclusions();
+
+      // Use a different component name that has no exclusions
+      adapter.push([
+        ecsMutation({
+          "e1/Other": { _exists: true, someField: 10 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      adapter.undo();
+      const mutation = adapter.pull();
+
+      expect(mutation).toHaveLength(1);
+      expect(mutation[0].patch["e1/Other"]).toEqual({ _exists: false });
     });
   });
 });

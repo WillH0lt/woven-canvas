@@ -1,5 +1,7 @@
 import type { Adapter } from "../Adapter";
 import type { Mutation, Patch, ComponentData } from "../types";
+import type { AnyEditorComponentDef } from "../EditorComponentDef";
+import type { AnyEditorSingletonDef } from "../EditorSingletonDef";
 import { merge } from "../mutations";
 import { Origin } from "../constants";
 
@@ -15,6 +17,10 @@ interface SettledCallback {
 }
 
 export interface HistoryAdapterOptions {
+  /** Component definitions for field exclusion lookup */
+  components: AnyEditorComponentDef[];
+  /** Singleton definitions for field exclusion lookup */
+  singletons: AnyEditorSingletonDef[];
   /** Number of quiet frames before committing pending changes. Default: 60 */
   commitAfterFrames?: number;
   /** Maximum number of undo steps to keep. Default: 100 */
@@ -45,10 +51,23 @@ export class HistoryAdapter implements Adapter {
   private checkpoints = new Map<string, number>();
   private settledCallbacks: SettledCallback[] = [];
   private cancelCommitSettled: (() => void) | null = null;
+  private excludedFields = new Map<string, Set<string>>();
 
-  constructor(options: HistoryAdapterOptions = {}) {
+  constructor(options: HistoryAdapterOptions) {
     this.commitAfterFrames = options.commitAfterFrames ?? 60;
     this.maxHistoryStackSize = options.maxHistoryStackSize ?? 100;
+
+    // Build excluded fields lookup
+    for (const def of options.components) {
+      if (def.excludeFromHistory.length > 0) {
+        this.excludedFields.set(def.name, new Set(def.excludeFromHistory));
+      }
+    }
+    for (const def of options.singletons) {
+      if (def.excludeFromHistory.length > 0) {
+        this.excludedFields.set(def.name, new Set(def.excludeFromHistory));
+      }
+    }
   }
 
   async init(): Promise<void> {}
@@ -67,9 +86,22 @@ export class HistoryAdapter implements Adapter {
       if (m.origin === Origin.ECS) {
         if (Object.keys(m.patch).length === 0) continue;
 
+        // Apply full patch to state and compute inverse
         const inverse = this.applyAndComputeInverse(m.patch);
-        this.pendingForward = merge(this.pendingForward, m.patch);
-        this.pendingInverse = merge(inverse, this.pendingInverse);
+
+        // Filter out excluded fields before recording to history (only if exclusions are configured)
+        let forwardToRecord = m.patch;
+        let inverseToRecord = inverse;
+        if (this.excludedFields.size > 0) {
+          forwardToRecord = this.filterExcludedFields(m.patch);
+          inverseToRecord = this.filterExcludedFields(inverse);
+
+          // Only record if there are non-excluded changes
+          if (Object.keys(forwardToRecord).length === 0) continue;
+        }
+
+        this.pendingForward = merge(this.pendingForward, forwardToRecord);
+        this.pendingInverse = merge(inverseToRecord, this.pendingInverse);
         this.dirty = true;
         this.cancelCommitSettled?.();
         this.cancelCommitSettled = this.onSettled(
@@ -371,5 +403,62 @@ export class HistoryAdapter implements Adapter {
         this.state[key] = { ...base, ...value };
       }
     }
+  }
+
+  /**
+   * Get excluded fields for a patch key.
+   * Key format: "<entityId>/<componentName>" or "SINGLETON/<singletonName>"
+   */
+  private getExcludedFields(key: string): Set<string> | undefined {
+    const slashIndex = key.indexOf("/");
+    if (slashIndex === -1) return undefined;
+    const name = key.slice(slashIndex + 1);
+    return this.excludedFields.get(name);
+  }
+
+  /**
+   * Filter excluded fields from a patch, returning a new patch.
+   * Component additions/deletions are preserved, but excluded fields are removed from the data.
+   */
+  private filterExcludedFields(patch: Patch): Patch {
+    const filtered: Patch = {};
+
+    for (const [key, value] of Object.entries(patch)) {
+      const excluded = this.getExcludedFields(key);
+      if (!excluded || excluded.size === 0) {
+        // No exclusions for this component
+        filtered[key] = value;
+        continue;
+      }
+
+      if (value._exists === false) {
+        // Deletion - keep as-is
+        filtered[key] = value;
+        continue;
+      }
+
+      // Filter out excluded fields
+      const filteredValue: ComponentData = {};
+      let hasFields = false;
+
+      for (const [field, fieldValue] of Object.entries(value)) {
+        if (field === "_exists") {
+          filteredValue._exists = fieldValue as boolean;
+        } else if (field === "_version") {
+          filteredValue._version = fieldValue as string;
+        } else if (!excluded.has(field)) {
+          filteredValue[field] = fieldValue;
+          hasFields = true;
+        }
+      }
+
+      // For additions (_exists: true), always include even if only metadata
+      // For partial updates, only include if there are non-excluded fields
+      if (value._exists || hasFields) {
+        filtered[key] = filteredValue;
+      }
+    }
+
+    return filtered;
   }
 }

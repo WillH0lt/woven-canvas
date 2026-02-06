@@ -22,7 +22,7 @@ export const UploadState = {
  * the permanent identifier returned by the AssetProvider.
  */
 export const Asset = defineEditorComponent(
-  { name: "asset", sync: "document" },
+  { name: "asset", sync: "document", excludeFromHistory: ["uploadState"] },
   {
     /** Permanent identifier from AssetProvider (empty until upload complete) */
     identifier: field.string().max(512).default(""),
