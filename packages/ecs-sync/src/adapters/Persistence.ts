@@ -22,7 +22,8 @@ export interface PersistenceAdapterOptions {
 export class PersistenceAdapter implements Adapter {
   private store: KeyValueStore | null = null;
   private documentId: string;
-  private pendingPatch: Patch | null = null;
+  private pendingDocumentPatch: Patch | null = null;
+  private pendingLocalPatch: Patch | null = null;
   private componentsByName: Map<
     string,
     AnyEditorComponentDef | AnyEditorSingletonDef
@@ -73,7 +74,27 @@ export class PersistenceAdapter implements Adapter {
       }
     }
 
-    this.pendingPatch = patch;
+    // Separate patches by sync behavior (document vs local)
+    const documentPatch: Patch = {};
+    const localPatch: Patch = {};
+
+    for (const [key, value] of Object.entries(patch)) {
+      const slashIndex = key.indexOf("/");
+      const componentName = slashIndex !== -1 ? key.slice(slashIndex + 1) : key;
+      const def = this.componentsByName.get(componentName);
+      if (def?.sync === "local") {
+        localPatch[key] = value;
+      } else {
+        documentPatch[key] = value;
+      }
+    }
+
+    if (Object.keys(documentPatch).length > 0) {
+      this.pendingDocumentPatch = documentPatch;
+    }
+    if (Object.keys(localPatch).length > 0) {
+      this.pendingLocalPatch = localPatch;
+    }
   }
 
   /**
@@ -116,17 +137,30 @@ export class PersistenceAdapter implements Adapter {
   }
 
   /**
-   * Pull pending mutation (loaded from storage on init).
+   * Pull pending mutations (loaded from storage on init).
    */
   pull(): Mutation[] {
-    if (!this.pendingPatch) return [];
-    const mutation: Mutation = {
-      patch: this.pendingPatch,
-      origin: Origin.Persistence,
-      syncBehavior: "document",
-    };
-    this.pendingPatch = null;
-    return [mutation];
+    const mutations: Mutation[] = [];
+
+    if (this.pendingDocumentPatch) {
+      mutations.push({
+        patch: this.pendingDocumentPatch,
+        origin: Origin.Persistence,
+        syncBehavior: "document",
+      });
+      this.pendingDocumentPatch = null;
+    }
+
+    if (this.pendingLocalPatch) {
+      mutations.push({
+        patch: this.pendingLocalPatch,
+        origin: Origin.Persistence,
+        syncBehavior: "local",
+      });
+      this.pendingLocalPatch = null;
+    }
+
+    return mutations;
   }
 
   /**
@@ -143,7 +177,8 @@ export class PersistenceAdapter implements Adapter {
    * Clear all persisted state and pending patches.
    */
   async clearAll(): Promise<void> {
-    this.pendingPatch = null;
+    this.pendingDocumentPatch = null;
+    this.pendingLocalPatch = null;
     if (!this.store) return;
     await this.store.clear();
   }

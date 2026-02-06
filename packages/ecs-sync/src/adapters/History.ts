@@ -74,16 +74,20 @@ export class HistoryAdapter implements Adapter {
 
   push(mutations: Mutation[]): void {
     const ecsMutations = mutations.filter(
-      (m) => m.origin === Origin.ECS && m.syncBehavior !== "ephemeral",
+      (m) =>
+        m.origin === Origin.ECS &&
+        m.syncBehavior !== "ephemeral" &&
+        m.syncBehavior !== "local",
     );
     // Apply every mutation in the order received so that all adapters
     // converge to the same state.  Only ECS-originated document mutations
     // are recorded for undo/redo; ephemeral mutations are skipped entirely;
+    // local mutations update state but are not recorded (preferences shouldn't be undoable);
     // everything else (including our own History-origin output) just updates state.
     for (const m of mutations) {
       if (m.syncBehavior === "ephemeral") continue;
 
-      if (m.origin === Origin.ECS) {
+      if (m.origin === Origin.ECS && m.syncBehavior !== "local") {
         if (Object.keys(m.patch).length === 0) continue;
 
         // Apply full patch to state and compute inverse

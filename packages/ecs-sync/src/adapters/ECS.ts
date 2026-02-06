@@ -109,6 +109,13 @@ export class EcsAdapter implements Adapter {
 
     const docPatch: Patch = {};
     const ephPatch: Patch = {};
+    const localPatch: Patch = {};
+
+    const getPatchTarget = (sync: string | undefined): Patch => {
+      if (sync === "ephemeral") return ephPatch;
+      if (sync === "local") return localPatch;
+      return docPatch;
+    };
 
     for (const event of events) {
       const { entityId, eventType, componentId } = event;
@@ -124,7 +131,7 @@ export class EcsAdapter implements Adapter {
           if (key.startsWith(prefix)) {
             const compName = key.slice(prefix.length);
             const compDef = this.componentsByName.get(compName);
-            const target = compDef?.sync === "ephemeral" ? ephPatch : docPatch;
+            const target = getPatchTarget(compDef?.sync);
             target[key] = { _exists: false };
             this.prevState[key] = { _exists: false };
           }
@@ -159,7 +166,7 @@ export class EcsAdapter implements Adapter {
       }
 
       const key = `${stableId}/${componentDef.name}`;
-      const patch = componentDef.sync === "ephemeral" ? ephPatch : docPatch;
+      const patch = getPatchTarget(componentDef.sync);
 
       switch (eventType) {
         case EventType.COMPONENT_ADDED: {
@@ -208,6 +215,13 @@ export class EcsAdapter implements Adapter {
         patch: ephPatch,
         origin: Origin.ECS,
         syncBehavior: "ephemeral",
+      });
+    }
+    if (Object.keys(localPatch).length > 0) {
+      results.push({
+        patch: localPatch,
+        origin: Origin.ECS,
+        syncBehavior: "local",
       });
     }
     return results;

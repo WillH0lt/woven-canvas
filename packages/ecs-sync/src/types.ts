@@ -11,6 +11,7 @@ import type { Origin } from "./constants";
 export type SyncBehavior =
   | "document" // Persisted to database, synced to all clients
   | "ephemeral" // Synced via websocket for ephemeral (cursors, selections)
+  | "local" // Persisted locally only, not synced (preferences, camera position)
   | "none"; // Not synced or stored anywhere
 
 /**

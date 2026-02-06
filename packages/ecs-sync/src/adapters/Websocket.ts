@@ -181,6 +181,7 @@ export class WebsocketAdapter implements Adapter {
     for (const m of mutations) {
       if (m.origin === Origin.Websocket) continue;
       if (m.origin === Origin.Persistence) continue;
+      if (m.syncBehavior === "local") continue; // Local data is not synced
       if (m.syncBehavior === "ephemeral") {
         ephPatches.push(m.patch);
       } else {
