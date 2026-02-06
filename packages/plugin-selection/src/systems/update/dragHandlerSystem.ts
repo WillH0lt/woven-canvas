@@ -9,6 +9,7 @@ import {
   Block,
   Text,
   Grid,
+  Keyboard,
 } from "@infinitecanvas/editor";
 import { Vec2, Scalar } from "@infinitecanvas/math";
 
@@ -141,7 +142,22 @@ function onRotateHandleDrag(
       boxBlock.size[1] * handle.vectorY,
     ]) + dragStart.rotateZ;
 
-  const delta = angleHandle - handleStartAngle;
+  let delta = angleHandle - handleStartAngle;
+
+  // Apply angular snapping
+  const grid = Grid.read(ctx);
+  const keyboard = Keyboard.read(ctx);
+  let snapAngle = 0;
+  if (keyboard.shiftDown) {
+    snapAngle = grid.shiftSnapAngleRad;
+  } else if (grid.enabled) {
+    snapAngle = grid.snapAngleRad;
+  }
+
+  if (snapAngle > 0) {
+    const offset = dragStart.rotateZ % snapAngle;
+    delta = Math.round(delta / snapAngle) * snapAngle - offset;
+  }
 
   // Update transform box rotation so cursor system can detect the change
   boxBlock.rotateZ = Scalar.normalizeAngle(dragStart.rotateZ + delta);

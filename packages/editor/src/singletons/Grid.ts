@@ -9,6 +9,10 @@ const GridSchema = {
   colWidth: field.float64().default(20),
   /** Height of each grid row in world units */
   rowHeight: field.float64().default(20),
+  /** Angular snap increment in radians when grid is enabled */
+  snapAngleRad: field.float64().default(Math.PI / 36),
+  /** Angular snap increment in radians when shift key is held */
+  shiftSnapAngleRad: field.float64().default(Math.PI / 12),
 };
 
 /**

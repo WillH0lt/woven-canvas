@@ -331,10 +331,7 @@ export class Editor {
 
     // Initialize grid settings
     this.nextTick((ctx) => {
-      const grid = Grid.write(ctx);
-      grid.enabled = this.gridOptions.enabled;
-      grid.colWidth = this.gridOptions.colWidth;
-      grid.rowHeight = this.gridOptions.rowHeight;
+      Grid.copy(ctx, this.gridOptions);
     });
 
     // Create the user entity for presence tracking

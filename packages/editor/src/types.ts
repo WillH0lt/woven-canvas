@@ -179,13 +179,31 @@ export const GridOptions = z.object({
    * Width of each grid column in world units.
    * @default 20
    */
-  colWidth: z.number().positive().default(20),
+  colWidth: z.number().nonnegative().default(20),
 
   /**
    * Height of each grid row in world units.
    * @default 20
    */
-  rowHeight: z.number().positive().default(20),
+  rowHeight: z.number().nonnegative().default(20),
+
+  /**
+   * Angular snap increment in radians when grid is enabled.
+   * @default Math.PI / 36 (5 degrees)
+   */
+  snapAngleRad: z
+    .number()
+    .nonnegative()
+    .default(Math.PI / 36),
+
+  /**
+   * Angular snap increment in radians when shift key is held.
+   * @default Math.PI / 12 (15 degrees)
+   */
+  shiftSnapAngleRad: z
+    .number()
+    .nonnegative()
+    .default(Math.PI / 12),
 });
 
 export type GridOptions = z.infer<typeof GridOptions>;
@@ -356,15 +374,13 @@ const BlockDefConnectors = z.object({
   /** Whether connectors are enabled for this block type */
   enabled: z.boolean().default(true),
   /** UV coordinates of terminal positions (0-1 range, where [0,0] is top-left) */
-  terminals: z
-    .array(z.tuple([z.number(), z.number()]))
-    .default([
-      [0.5, 0], // top
-      [0.5, 1], // bottom
-      [0.5, 0.5], // center
-      [0, 0.5], // left
-      [1, 0.5], // right
-    ]),
+  terminals: z.array(z.tuple([z.number(), z.number()])).default([
+    [0.5, 0], // top
+    [0.5, 1], // bottom
+    [0.5, 0.5], // center
+    [0, 0.5], // left
+    [1, 0.5], // right
+  ]),
 });
 
 /**
