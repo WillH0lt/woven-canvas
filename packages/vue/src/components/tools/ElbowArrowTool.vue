@@ -5,7 +5,7 @@ import { ArrowHeadKind } from "@infinitecanvas/plugin-arrows";
 const snapshot = JSON.stringify({
   block: {
     tag: "elbow-arrow",
-    size: [195, 195],
+    size: [200, 200],
   },
   elbowArrow: {
     points: [0, 0, 0.5, 0, 0.5, 1, 1, 1],

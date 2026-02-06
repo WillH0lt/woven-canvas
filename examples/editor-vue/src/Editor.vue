@@ -71,6 +71,9 @@ const syncOptions = ref({
           },
         },
       ]"
+      :grid="{
+        enabled: true,
+      }"
     >
       <template #block:shape="blockData">
         <ShapeBlock v-bind="blockData" />

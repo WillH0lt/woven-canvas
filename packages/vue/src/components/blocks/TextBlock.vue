@@ -26,7 +26,11 @@ const { handleEditEnd } = useTextStretchBehavior({
 </script>
 
 <template>
-  <div ref="containerRef" class="ic-text-block" :data-text-empty="isEmpty || undefined">
+  <div
+    ref="containerRef"
+    class="ic-text-block"
+    :data-text-empty="isEmpty || undefined"
+  >
     <EditableText
       v-bind="props"
       :block-element="containerRef"
@@ -36,11 +40,6 @@ const { handleEditEnd } = useTextStretchBehavior({
 </template>
 
 <style>
-.ic-text-block {
-  width: fit-content;
-  height: fit-content;
-}
-
 .ic-block[data-selected] > .ic-text-block {
   outline: none;
 }

@@ -77,7 +77,9 @@ export function useTextStretchBehavior(
 
     resizeObserver = new ResizeObserver(() => {
       nextEditorTick((ctx) => {
-        if (isScaling(ctx)) return;
+        if (!isStretching(ctx)) return;
+
+        console.log("ResizeObserver triggered for text stretch behavior");
 
         const { entityId } = toValue(options.blockData);
         const block = Block.read(ctx, entityId);
@@ -176,13 +178,13 @@ export function useTextStretchBehavior(
   };
 }
 
-function isScaling(ctx: Context): boolean {
+function isStretching(ctx: Context): boolean {
   const selectionState = SelectionStateSingleton.read(ctx);
   return (
     selectionState.state === SelectionState.Dragging &&
     selectionState.draggedEntity !== null &&
     hasComponent(ctx, selectionState.draggedEntity, TransformHandle) &&
     TransformHandle.read(ctx, selectionState.draggedEntity).kind ===
-      TransformHandleKind.Scale
+      TransformHandleKind.Stretch
   );
 }

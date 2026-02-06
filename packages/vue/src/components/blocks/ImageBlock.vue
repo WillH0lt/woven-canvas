@@ -99,7 +99,7 @@ const uploadProgress = computed(() => {
 const imageStyle = computed(() => ({
   width: "100%",
   height: "100%",
-  objectFit: "contain" as const,
+  objectFit: "fill" as const,
 }));
 </script>
 
@@ -144,8 +144,6 @@ const imageStyle = computed(() => ({
 
 .ic-image-block img {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
 }
 
 .ic-image-placeholder {

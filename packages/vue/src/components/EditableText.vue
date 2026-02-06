@@ -148,23 +148,23 @@ async function handleEditStart(editor: Editor): Promise<void> {
 }
 
 function handleEditEnd(editor: Editor): void {
+  // Capture content and dimensions synchronously before editor is destroyed
+  let content = editor.getHTML();
+
+  // If content is only HTML tags (no text), treat as empty
+  // Text is initialized with empty string, then Tiptap wraps it in <p></p>
+  // for undo/redo we need to check if something's actually changed
+  const stripped = content.replace(/<[^>]*>/g, "").trim();
+  const hasContent = stripped.length > 0;
+
+  if (!hasContent) {
+    content = "";
+  }
+
+  // Update display content immediately to avoid flash
+  displayContent.value = content;
+
   nextEditorTick((ctx) => {
-    // Capture content and dimensions synchronously before editor is destroyed
-    let content = editor.getHTML();
-
-    // If content is only HTML tags (no text), treat as empty
-    // Text is initialized with empty string, then Tiptap wraps it in <p></p>
-    // for undo/redo we need to check if something's actually changed
-    const stripped = content.replace(/<[^>]*>/g, "").trim();
-    const hasContent = stripped.length > 0;
-
-    if (!hasContent) {
-      content = "";
-    }
-
-    // Update display content immediately to avoid flash
-    displayContent.value = content;
-
     const blockDef = getBlockDef(ctx, props.block.tag);
     if (!hasContent && blockDef.editOptions?.removeWhenTextEmpty) {
       // No content and block should be removed when empty - delete it

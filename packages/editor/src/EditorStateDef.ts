@@ -46,7 +46,9 @@ type InferMachineContext<T extends StateSchema> = Omit<
  * ```
  */
 export type InferStateContext<T> =
-  T extends EditorStateDef<infer S> ? InferMachineContext<S> : never;
+  T extends EditorStateDef<infer S>
+    ? Omit<InferMachineContext<S>, "_exists" | "_version">
+    : never;
 
 /**
  * Editor singleton definition for XState state machine state storage.

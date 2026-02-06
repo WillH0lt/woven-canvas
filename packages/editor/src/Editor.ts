@@ -31,8 +31,10 @@ import {
   Synced,
 } from "@infinitecanvas/ecs-sync";
 import { User } from "./components";
+import { Grid } from "./singletons";
 import type { EditorSystem } from "./EditorSystem";
 import { FontLoader, FontFamily } from "./FontLoader";
+import { GridOptions } from "./types";
 
 /**
  * Query subscription callback
@@ -136,6 +138,7 @@ export class Editor {
   private plugins: Map<string, EditorPlugin>;
   private fontLoader: FontLoader;
   private userData: UserData;
+  private gridOptions: GridOptions;
 
   constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
     const options = EditorOptionsSchema.parse(optionsInput ?? {});
@@ -144,6 +147,9 @@ export class Editor {
     // Parse user data with defaults
     const user = UserData.parse(options.user ?? {});
     this.userData = user;
+
+    // Parse grid options with defaults
+    this.gridOptions = GridOptions.parse(options.grid ?? {});
 
     // Parse plugin inputs (handle both direct plugins and factory functions)
     const plugins = pluginInputs.map(parsePlugin);
@@ -322,6 +328,14 @@ export class Editor {
     if (this.fonts.length > 0) {
       await this.fontLoader.loadFonts(this.fonts);
     }
+
+    // Initialize grid settings
+    this.nextTick((ctx) => {
+      const grid = Grid.write(ctx);
+      grid.enabled = this.gridOptions.enabled;
+      grid.colWidth = this.gridOptions.colWidth;
+      grid.rowHeight = this.gridOptions.rowHeight;
+    });
 
     // Create the user entity for presence tracking
     this.nextTick((ctx) => {

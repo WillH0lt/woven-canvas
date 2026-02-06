@@ -35,6 +35,7 @@ import {
   type FontFamilyInput,
   type InferEditorComponentType,
   type UserDataInput,
+  type GridOptionsInput,
   type Context,
 } from "@infinitecanvas/editor";
 import { EditorSync, type EditorSyncOptions } from "@infinitecanvas/ecs-sync";
@@ -98,6 +99,7 @@ type BlockDef = InferEditorComponentType<typeof Block.schema>;
 export interface InfiniteCanvasProps {
   // Sync options for persistence, history, and multiplayer
   syncOptions?: EditorSyncOptions;
+
   // Maximum number of entities (default: 10_000)
   maxEntities?: number;
 
@@ -127,6 +129,9 @@ export interface InfiniteCanvasProps {
 
   // Controls plugin options
   controls?: CanvasControlsOptionsInput;
+
+  // Grid options for snap-to-grid behavior
+  grid?: GridOptionsInput;
 
   // Custom fonts to load and make available in the font selector
   fonts?: FontFamilyInput[];
@@ -412,6 +417,7 @@ onMounted(async () => {
     systems: props.systems,
     plugins: allPlugins,
     fonts: props.fonts,
+    grid: props.grid,
   };
 
   const editor = new Editor(containerRef.value, editorOptions);

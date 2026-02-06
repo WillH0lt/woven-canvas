@@ -10,6 +10,7 @@ export type {
   ResizeMode,
   BlockDefInput,
   UserDataInput,
+  GridOptionsInput,
 } from "./types";
 
 export {
@@ -20,6 +21,7 @@ export {
   TextAlignment,
   BlockDef,
   UserData,
+  GridOptions,
 } from "./types";
 
 // Font loading
@@ -115,6 +117,7 @@ export {
   Camera,
   Controls,
   Frame,
+  Grid,
   Keyboard,
   Key,
   Mouse,

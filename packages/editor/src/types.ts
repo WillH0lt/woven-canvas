@@ -166,6 +166,32 @@ export function getPluginResources<T>(ctx: Context, pluginName: string): T {
 }
 
 /**
+ * Grid configuration options schema.
+ */
+export const GridOptions = z.object({
+  /**
+   * Whether grid snapping is enabled.
+   * @default false
+   */
+  enabled: z.boolean().default(false),
+
+  /**
+   * Width of each grid column in world units.
+   * @default 20
+   */
+  colWidth: z.number().positive().default(20),
+
+  /**
+   * Height of each grid row in world units.
+   * @default 20
+   */
+  rowHeight: z.number().positive().default(20),
+});
+
+export type GridOptions = z.infer<typeof GridOptions>;
+export type GridOptionsInput = z.input<typeof GridOptions>;
+
+/**
  * Editor configuration options schema.
  */
 export const EditorOptionsSchema = z.object({
@@ -186,6 +212,12 @@ export const EditorOptionsSchema = z.object({
    * All fields are optional - defaults will be applied.
    */
   user: z.custom<UserDataInput>().default({}),
+
+  /**
+   * Grid configuration for snap-to-grid behavior.
+   * All fields are optional - defaults will be applied.
+   */
+  grid: z.custom<GridOptionsInput>().default({}),
 
   /**
    * Custom block definitions.

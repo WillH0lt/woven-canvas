@@ -3,14 +3,21 @@ import {
   defineQuery,
   hasComponent,
   on,
+  getBlockDef,
   type Context,
   type EntityId,
   Block,
   Text,
+  Grid,
 } from "@infinitecanvas/editor";
 import { Vec2, Scalar } from "@infinitecanvas/math";
 
-import { TransformBox, TransformHandle, DragStart, Selected } from "../../components";
+import {
+  TransformBox,
+  TransformHandle,
+  DragStart,
+  Selected,
+} from "../../components";
 import { DragBlock } from "../../commands";
 import { TransformHandleKind } from "../../types";
 
@@ -19,7 +26,7 @@ const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 
 // Query for transform box
 const transformBoxQuery = defineQuery((q) =>
-  q.with(Block, TransformBox, DragStart)
+  q.with(Block, TransformBox, DragStart),
 );
 
 /**
@@ -48,7 +55,7 @@ export const dragHandlerSystem = defineEditorSystem(
         return;
       }
     });
-  }
+  },
 );
 
 /**
@@ -58,7 +65,7 @@ export const dragHandlerSystem = defineEditorSystem(
 function onTransformBoxDrag(
   ctx: Context,
   boxId: EntityId,
-  position: Vec2
+  position: Vec2,
 ): void {
   const boxStart = DragStart.read(ctx, boxId);
 
@@ -71,6 +78,9 @@ function onTransformBoxDrag(
     const block = Block.write(ctx, blockId);
 
     block.position = [blockStart.position[0] + dx, blockStart.position[1] + dy];
+
+    // Apply grid snapping to final position
+    Grid.snapPosition(ctx, block.position);
   }
 }
 
@@ -81,7 +91,7 @@ function onTransformBoxDrag(
 function onTransformHandleDrag(
   ctx: Context,
   handleId: EntityId,
-  position: Vec2
+  position: Vec2,
 ): void {
   const handle = TransformHandle.read(ctx, handleId);
 
@@ -101,7 +111,7 @@ function onTransformHandleDrag(
 function onRotateHandleDrag(
   ctx: Context,
   handleId: EntityId,
-  position: Vec2
+  position: Vec2,
 ): void {
   const transformBoxes = transformBoxQuery.current(ctx);
   if (transformBoxes.length === 0) {
@@ -159,6 +169,9 @@ function onRotateHandleDrag(
       newCenter[0] - block.size[0] / 2,
       newCenter[1] - block.size[1] / 2,
     ];
+
+    // Apply grid snapping to final position
+    Grid.snapPosition(ctx, block.position);
   }
 }
 
@@ -171,7 +184,7 @@ function onScaleHandleDrag(
   ctx: Context,
   handleId: EntityId,
   position: Vec2,
-  maintainAspectRatio: boolean
+  maintainAspectRatio: boolean,
 ): void {
   const transformBoxes = transformBoxQuery.current(ctx);
   if (transformBoxes.length === 0) {
@@ -308,9 +321,30 @@ function onScaleHandleDrag(
     const newBlockSize: Vec2 = Vec2.clone(blockStart.size);
     Vec2.multiply(newBlockSize, scaleFactor);
 
+    // Check if this is a text block that should maintain aspect ratio
+    const blockDef = getBlockDef(ctx, block.tag);
+    const isTextResize = blockDef?.resizeMode === "text";
+
+    if (isTextResize && maintainAspectRatio) {
+      // For text blocks, snap height to grid and derive width from aspect ratio
+      const grid = Grid.read(ctx);
+      newBlockSize[1] = Math.max(
+        grid.rowHeight,
+        Grid.snapY(ctx, newBlockSize[1]),
+      );
+      const aspectRatio = blockStart.size[0] / blockStart.size[1];
+      newBlockSize[0] = newBlockSize[1] * aspectRatio;
+    } else {
+      // Apply grid snapping to size (enforces minimum of one grid cell)
+      Grid.snapSize(ctx, newBlockSize);
+    }
+
     // Convert center back to top-left position
     Vec2.copy(block.position, newBlockCenter);
     Vec2.sub(block.position, [newBlockSize[0] / 2, newBlockSize[1] / 2]);
+
+    // Apply grid snapping to position
+    Grid.snapPosition(ctx, block.position);
 
     if (!maintainAspectRatio && handle.vectorY === 0) {
       // Horizontal stretch - only update width
@@ -329,8 +363,10 @@ function onScaleHandleDrag(
         // constrain width so the text wraps within the new width
         text.constrainWidth = true;
       } else {
-        // Scale font size for text entities
-        text.fontSizePx = blockStart.fontSize * scaleY;
+        // Scale font size based on snapped height (not the unsnapped scaleY)
+        const snappedScaleY =
+          blockStart.size[1] > 0 ? newBlockSize[1] / blockStart.size[1] : 1;
+        text.fontSizePx = blockStart.fontSize * snappedScaleY;
       }
     }
 

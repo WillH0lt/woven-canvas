@@ -5,7 +5,7 @@ import ToolbarButton from "../ToolbarButton.vue";
 const snapshot = JSON.stringify({
   block: {
     tag: "sticky-note",
-    size: [195, 195],
+    size: [200, 200],
   },
   color: {
     red: 255,

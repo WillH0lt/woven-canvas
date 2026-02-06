@@ -10,6 +10,7 @@ import {
   Synced,
   Block,
   Edited,
+  Grid,
   getPointerInput,
   isHeldByRemote,
   type PointerInput,
@@ -209,6 +210,12 @@ const selectionMachine = setup({
           } else {
             left = context.draggedEntityStart[0];
           }
+        }
+
+        // Apply grid snapping for synced blocks
+        if (draggingSynced) {
+          left = Grid.snapX(ctx, left);
+          top = Grid.snapY(ctx, top);
         }
 
         // Move the block
