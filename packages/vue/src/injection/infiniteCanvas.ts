@@ -6,6 +6,7 @@ import {
   type InferEditorComponentType,
   type User,
 } from "@infinitecanvas/editor";
+import type { AssetManager } from "@infinitecanvas/ecs-asset-sync";
 
 /** User data stored in the users map */
 export type UserData = InferEditorComponentType<typeof User.schema>;
@@ -16,6 +17,8 @@ export interface InfiniteCanvasContext {
   hasEntity: (entityId: EntityId) => boolean;
   /** Get the editor instance */
   getEditor: () => Editor | null;
+  /** Get the asset manager (null if no assetProvider configured) */
+  getAssetManager: () => AssetManager | null;
   /** Get the current user's sessionId */
   getSessionId: () => string;
   /** Get a user's info by their session ID */

@@ -67,7 +67,7 @@ export class EditorComponentDef<
 }
 
 /** Any editor component definition */
-export type AnyEditorComponentDef = EditorComponentDef<ComponentSchema>;
+export type AnyEditorComponentDef = EditorComponentDef<any>;
 
 /**
  * Define an editor component with a stable name.

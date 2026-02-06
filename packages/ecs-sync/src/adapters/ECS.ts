@@ -18,7 +18,7 @@ import {
 import { Origin } from "../constants";
 import type { AnyEditorComponentDef } from "../EditorComponentDef";
 import type { AnyEditorSingletonDef } from "../EditorSingletonDef";
-import { Synced } from "../Synced";
+import { Synced } from "../components/Synced";
 import { diffFields } from "../diff";
 import type { Adapter } from "../Adapter";
 

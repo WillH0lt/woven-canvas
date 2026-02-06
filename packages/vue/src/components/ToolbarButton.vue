@@ -18,7 +18,7 @@ const props = withDefaults(
   }>(),
   {
     cursor: "crosshair",
-  }
+  },
 );
 
 const injectedContext = inject(TOOLBAR_KEY);
@@ -31,7 +31,7 @@ const buttonRef = ref<HTMLButtonElement | null>(null);
 const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
 
 const isSelected = computed(
-  () => toolbarContext.activeTool.value === props.name
+  () => toolbarContext.activeTool.value === props.name,
 );
 
 function handleClick() {

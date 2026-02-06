@@ -764,6 +764,25 @@ importers:
         specifier: ^4.0.7
         version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
 
+  packages/ecs-asset-sync:
+    dependencies:
+      idb:
+        specifier: ^8.0.3
+        version: 8.0.3
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.8
+      fake-indexeddb:
+        specifier: ^6.2.5
+        version: 6.2.5
+      vitest:
+        specifier: ^4.0.7
+        version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
+
   packages/ecs-sync:
     dependencies:
       '@infinitecanvas/ecs':
@@ -797,10 +816,6 @@ importers:
         version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
 
   packages/ecs-sync-server/examples/bun:
-    dependencies:
-      '@infinitecanvas/ecs-sync-server':
-        specifier: workspace:*
-        version: link:../..
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -1294,6 +1309,9 @@ importers:
       '@floating-ui/vue':
         specifier: ^1.1.6
         version: 1.1.9(vue@3.5.27)
+      '@infinitecanvas/ecs-asset-sync':
+        specifier: workspace:^
+        version: link:../ecs-asset-sync
       '@infinitecanvas/ecs-sync':
         specifier: workspace:^
         version: link:../ecs-sync

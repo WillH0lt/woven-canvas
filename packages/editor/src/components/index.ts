@@ -24,6 +24,10 @@ export { Text } from "./Text";
 export { Connector } from "./Connector";
 export { VerticalAlign } from "./VerticalAlign";
 
+// Image/Asset components
+export { Image } from "./Image";
+export { Asset, UploadState } from "./Asset";
+
 // User presence
 export { User } from "./User";
 

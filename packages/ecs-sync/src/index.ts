@@ -12,7 +12,7 @@ export {
 } from "./migrations";
 
 // Synced component
-export { Synced } from "./Synced";
+export { Synced } from "./components/Synced";
 
 // Component definitions
 export {

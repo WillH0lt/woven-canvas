@@ -1,6 +1,15 @@
 import { openDB, type IDBPDatabase } from "idb";
 
-const FLUSH_INTERVAL_MS = 1000;
+const DEFAULT_FLUSH_INTERVAL_MS = 1000;
+
+export interface KeyValueStoreOptions {
+  /**
+   * Interval in ms between flushing pending writes to IndexedDB.
+   * Set to 0 for immediate writes (no buffering).
+   * Default: 1000
+   */
+  flushIntervalMs?: number;
+}
 
 /**
  * Open (or create) a named IndexedDB database with a single object store
@@ -9,6 +18,7 @@ const FLUSH_INTERVAL_MS = 1000;
 export async function openStore(
   dbName: string,
   storeName: string,
+  options?: KeyValueStoreOptions,
 ): Promise<KeyValueStore> {
   const db = await openDB(dbName, 1, {
     upgrade(db) {
@@ -17,7 +27,7 @@ export async function openStore(
       }
     },
   });
-  return new KeyValueStore(db, storeName);
+  return new KeyValueStore(db, storeName, options);
 }
 
 type PendingOp = { type: "put"; value: unknown } | { type: "delete" };
@@ -37,11 +47,15 @@ type PendingOp = { type: "put"; value: unknown } | { type: "delete" };
 export class KeyValueStore {
   private pending = new Map<string, PendingOp>();
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private flushIntervalMs: number;
 
   constructor(
     private db: IDBPDatabase,
     private storeName: string,
-  ) {}
+    options?: KeyValueStoreOptions,
+  ) {
+    this.flushIntervalMs = options?.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS;
+  }
 
   async get<T>(key: string): Promise<T | undefined> {
     const op = this.pending.get(key);
@@ -100,11 +114,17 @@ export class KeyValueStore {
   // --- Internal ---
 
   private scheduleFlush(): void {
+    // Immediate mode: flush synchronously
+    if (this.flushIntervalMs === 0) {
+      this.flush().catch(console.error);
+      return;
+    }
+
     if (this.flushTimer !== null) return;
     this.flushTimer = setTimeout(() => {
       this.flushTimer = null;
       this.flush().catch(console.error);
-    }, FLUSH_INTERVAL_MS);
+    }, this.flushIntervalMs);
   }
 
   private cancelFlush(): void {

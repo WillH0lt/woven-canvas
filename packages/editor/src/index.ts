@@ -145,6 +145,9 @@ export {
   HitGeometry,
   MAX_HIT_CAPSULES,
   MAX_HIT_ARCS,
+  Image,
+  Asset,
+  UploadState,
 } from "./components";
 
 // Events

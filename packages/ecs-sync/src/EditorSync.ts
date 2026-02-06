@@ -54,8 +54,10 @@ export class EditorSync {
   private persistenceAdapter: PersistenceAdapter | null = null;
   private adapters: Adapter[] = [];
   private options: EditorSyncOptions;
+  readonly documentId: string;
 
   constructor(options: EditorSyncOptions) {
+    this.documentId = options.documentId;
     this.options = options;
   }
 

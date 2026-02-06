@@ -63,7 +63,7 @@ export class EditorSingletonDef<
 }
 
 /** Any editor singleton definition */
-export type AnyEditorSingletonDef = EditorSingletonDef<ComponentSchema>;
+export type AnyEditorSingletonDef = EditorSingletonDef<any>;
 
 /**
  * Define an editor singleton with a stable name for storage.

@@ -39,6 +39,11 @@ import {
 } from "@infinitecanvas/editor";
 import { EditorSync, type EditorSyncOptions } from "@infinitecanvas/ecs-sync";
 import {
+  AssetManager,
+  LocalAssetProvider,
+  type AssetProvider,
+} from "@infinitecanvas/ecs-asset-sync";
+import {
   CanvasControlsPlugin,
   type CanvasControlsOptionsInput,
 } from "@infinitecanvas/plugin-canvas-controls";
@@ -66,6 +71,7 @@ import PenStrokeBlock from "./blocks/PenStroke.vue";
 import ArcArrowBlock from "./blocks/ArcArrowBlock.vue";
 import ElbowArrowBlock from "./blocks/ElbowArrowBlock.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
+import ImageBlock from "./blocks/ImageBlock.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 import type { BlockData } from "../types";
 import UserPresence from "./UserPresence.vue";
@@ -124,6 +130,9 @@ export interface InfiniteCanvasProps {
 
   // Custom fonts to load and make available in the font selector
   fonts?: FontFamilyInput[];
+
+  // Asset provider for image uploads (defaults to LocalAssetProvider)
+  assetProvider?: AssetProvider;
 }
 
 const props = withDefaults(defineProps<InfiniteCanvasProps>(), {
@@ -321,6 +330,7 @@ function getUserBySessionId(sessionId: string): UserData | null {
 const canvasContext: InfiniteCanvasContext = {
   hasEntity: (entityId: EntityId) => entities.has(entityId),
   getEditor: () => editorRef.value,
+  getAssetManager: () => assetManager,
   getSessionId,
   getUserBySessionId,
   subscribeComponent,
@@ -338,10 +348,11 @@ provide(TOOLTIP_KEY, tooltipContext);
 
 let eventIndex = 0;
 let animationFrameId: number | null = null;
-let store: EditorSync;
+let store: EditorSync | null = null;
+let assetManager: AssetManager | null = null;
 
 async function tick() {
-  if (!editorRef.value) return;
+  if (!editorRef.value || !store) return;
 
   editorRef.value.nextTick((ctx) => {
     processEvents(ctx);
@@ -352,9 +363,10 @@ async function tick() {
       callback(ctx);
     }
 
-    store.sync(ctx);
-
-    isOnline.value = store.isOnline;
+    if (store) {
+      store.sync(ctx);
+      isOnline.value = store.isOnline;
+    }
   });
 
   await editorRef.value.tick();
@@ -411,6 +423,14 @@ onMounted(async () => {
     singletons: editor.singletons,
   });
 
+  // Initialize asset manager
+  assetManager = new AssetManager({
+    provider: props.assetProvider ?? new LocalAssetProvider(),
+    documentId: store.documentId,
+  });
+  await assetManager.init();
+  await assetManager.resumePendingUploads();
+
   editorRef.value = editor;
 
   // Start the render loop
@@ -424,7 +444,8 @@ onUnmounted(() => {
   if (animationFrameId !== null) {
     cancelAnimationFrame(animationFrameId);
   }
-  store.close();
+  assetManager?.close();
+  store?.close();
   editorRef.value?.dispose();
 });
 
@@ -758,6 +779,10 @@ function getBlockStyle(data: BlockData) {
           />
           <TextBlock
             v-else-if="blockData.value.block.tag === 'text'"
+            v-bind="blockData.value"
+          />
+          <ImageBlock
+            v-else-if="blockData.value.block.tag === 'image'"
             v-bind="blockData.value"
           />
         </slot>

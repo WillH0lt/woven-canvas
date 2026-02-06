@@ -11,6 +11,7 @@ import PenTool from "./tools/PenTool.vue";
 import ArcArrowTool from "./tools/ArcArrowTool.vue";
 import TextTool from "./tools/TextTool.vue";
 import ElbowArrowTool from "./tools/ElbowArrowTool.vue";
+import ImageTool from "./tools/ImageTool.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { TOOLBAR_KEY, type ToolbarContext } from "../injection";
 import { useSingleton } from "../composables/useSingleton";
@@ -135,6 +136,11 @@ const customTools = computed(() => {
       <!-- Elbow Arrow tool  -->
       <slot name="tool:elbow-arrow">
         <ElbowArrowTool />
+      </slot>
+
+      <!-- Image tool -->
+      <slot name="tool:image">
+        <ImageTool />
       </slot>
 
       <!-- Custom tools via slots -->

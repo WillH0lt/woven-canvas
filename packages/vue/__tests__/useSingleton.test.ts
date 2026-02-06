@@ -27,6 +27,7 @@ describe("useSingleton", () => {
     mockCanvasContext = {
       hasEntity: () => false,
       getEditor: () => null,
+      getAssetManager: () => null,
       getSessionId: () => "",
       getUserBySessionId: () => null,
       subscribeComponent: () => () => {},

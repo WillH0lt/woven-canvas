@@ -16,6 +16,7 @@ export { default as EraserTool } from "./components/tools/EraserTool.vue";
 export { default as PenTool } from "./components/tools/PenTool.vue";
 export { default as ArcArrowTool } from "./components/tools/ArcArrowTool.vue";
 export { default as ElbowArrowTool } from "./components/tools/ElbowArrowTool.vue";
+export { default as ImageTool } from "./components/tools/ImageTool.vue";
 export { default as Eraser } from "./components/blocks/Eraser.vue";
 export { default as PenStroke } from "./components/blocks/PenStroke.vue";
 export { default as TextBlock } from "./components/blocks/TextBlock.vue";
@@ -25,6 +26,9 @@ export { default as ArcArrowBlock } from "./components/blocks/ArcArrowBlock.vue"
 export { default as ElbowArrowBlock } from "./components/blocks/ElbowArrowBlock.vue";
 export { default as ArrowHead } from "./components/blocks/ArrowHead.vue";
 export { default as ArrowHandle } from "./components/blocks/ArrowHandle.vue";
+
+// Image Components
+export { default as ImageBlock } from "./components/blocks/ImageBlock.vue";
 
 // Text Components
 export { default as EditableText } from "./components/EditableText.vue";
@@ -57,7 +61,10 @@ export { useQuery, type QueryResultItem } from "./composables/useQuery";
 export { useComponent } from "./composables/useComponent";
 export { useComponents } from "./composables/useComponents";
 export { useSingleton } from "./composables/useSingleton";
-export { useTooltipSingleton, createTooltipContext } from "./composables/useTooltipSingleton";
+export {
+  useTooltipSingleton,
+  createTooltipContext,
+} from "./composables/useTooltipSingleton";
 export { useToolbar } from "./composables/useToolbar";
 export {
   useEditorContext,
