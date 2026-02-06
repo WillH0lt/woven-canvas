@@ -74,6 +74,12 @@ const syncOptions = ref({
       :grid="{
         enabled: true,
       }"
+      :background="{
+        kind: 'dots',
+        color: '#f4f4f4',
+        strokeColor: '#a1a1a1',
+        subdivisionStep: 5,
+      }"
     >
       <template #block:shape="blockData">
         <ShapeBlock v-bind="blockData" />

@@ -23,3 +23,15 @@ export interface BlockData {
   opacity: OpacityComponentData | null;
   connector: ConnectorComponentData | null;
 }
+
+// Background configuration options
+export interface BackgroundOptions {
+  /** Background type: 'grid', 'dots', or 'none' */
+  kind: "grid" | "dots" | "none";
+  /** Background fill color */
+  color: string;
+  /** Stroke color for grid lines or dots */
+  strokeColor: string;
+  /** Number of subdivisions for the pattern */
+  subdivisionStep: number;
+}

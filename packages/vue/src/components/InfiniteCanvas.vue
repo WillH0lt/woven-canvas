@@ -74,11 +74,12 @@ import ElbowArrowBlock from "./blocks/ElbowArrowBlock.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
 import ImageBlock from "./blocks/ImageBlock.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
-import type { BlockData } from "../types";
+import type { BlockData, BackgroundOptions } from "../types";
 import UserPresence from "./UserPresence.vue";
 import UserCursors from "./UserCursors.vue";
 import OfflineIndicator from "./OfflineIndicator.vue";
 import VersionMismatch from "./VersionMismatch.vue";
+import CanvasBackground from "./CanvasBackground.vue";
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block));
@@ -133,6 +134,9 @@ export interface InfiniteCanvasProps {
   // Grid options for snap-to-grid behavior
   grid?: GridOptionsInput;
 
+  // Background options (grid, dots, or none)
+  background?: BackgroundOptions;
+
   // Custom fonts to load and make available in the font selector
   fonts?: FontFamilyInput[];
 
@@ -159,6 +163,7 @@ const emit = defineEmits<{
 // Define slots - block slots use "block:<tag>" naming, other slots allow overriding built-in UI
 defineSlots<
   {
+    background?: (props: { background: BackgroundOptions }) => any;
     "floating-menu"?: () => any;
     toolbar?: () => any;
     "user-cursors"?: (props: {
@@ -722,6 +727,11 @@ function getBlockStyle(data: BlockData) {
       overflow: 'hidden',
     }"
   >
+    <!-- Background layer -->
+    <slot v-if="background" name="background" :background="background">
+      <CanvasBackground :background="background" />
+    </slot>
+
     <div
       class="ic-canvas"
       :style="{

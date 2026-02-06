@@ -1,6 +1,9 @@
 export { default as InfiniteCanvas } from "./components/InfiniteCanvas.vue";
 export type { InfiniteCanvasProps } from "./components/InfiniteCanvas.vue";
 
+// Background Components
+export { default as CanvasBackground } from "./components/CanvasBackground.vue";
+
 // Floating Menu Components
 export { default as FloatingMenu } from "./components/FloatingMenu.vue";
 export { default as FloatingMenuBar } from "./components/FloatingMenuBar.vue";
@@ -117,4 +120,4 @@ export {
 } from "@infinitecanvas/ecs-sync";
 
 // Types
-export type { BlockData } from "./types";
+export type { BlockData, BackgroundOptions } from "./types";

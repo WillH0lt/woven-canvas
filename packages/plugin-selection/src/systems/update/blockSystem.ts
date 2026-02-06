@@ -256,7 +256,7 @@ function copySelectedBlocks(ctx: Context): void {
 
   const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...componentsById].filter(([, def]) => def.__sync === "document"),
+    [...componentsById].filter(([, def]) => def.sync === "document"),
   );
 
   const clipboardEntities: ClipboardEntityData[] = [];
@@ -329,7 +329,7 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
 
   const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...componentsById].filter(([, def]) => def.__sync === "document"),
+    [...componentsById].filter(([, def]) => def.sync === "document"),
   );
 
   const clipboard = Clipboard.read(ctx);
@@ -454,7 +454,7 @@ function cloneEntities(
 ): void {
   const { componentsById } = getResources<EditorResources>(ctx);
   const documentComponents = new Map(
-    [...componentsById].filter(([, def]) => def.__sync === "document"),
+    [...componentsById].filter(([, def]) => def.sync === "document"),
   );
   const syncedComponentId = Synced._getComponentId(ctx);
   const blockComponentId = Block._getComponentId(ctx);
