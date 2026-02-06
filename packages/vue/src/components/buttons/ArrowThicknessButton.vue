@@ -69,7 +69,7 @@ function handleSelect(thickness: number) {
 <template>
   <MenuDropdown title="Thickness">
     <template #button>
-      <div class="ic-arrow-thickness-button">
+      <div class="ic-menu-button">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -88,62 +88,15 @@ function handleSelect(thickness: number) {
     </template>
 
     <template #dropdown>
-      <div class="ic-arrow-thickness-dropdown">
-        <button
-          v-for="option in THICKNESS_OPTIONS"
-          :key="option.value"
-          class="ic-arrow-thickness-option"
-          :class="{ 'is-active': currentThickness === option.value }"
-          @click="handleSelect(option.value)"
-        >
-          {{ option.label }}
-        </button>
-      </div>
+      <button
+        v-for="option in THICKNESS_OPTIONS"
+        :key="option.value"
+        class="ic-menu-option ic-arrow-thickness-option"
+        :class="{ 'is-active': currentThickness === option.value }"
+        @click="handleSelect(option.value)"
+      >
+        {{ option.label }}
+      </button>
     </template>
   </MenuDropdown>
 </template>
-
-<style>
-.ic-arrow-thickness-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 4px;
-  padding: 0 8px;
-}
-
-.ic-arrow-thickness-dropdown {
-  display: flex;
-  background-color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
-  overflow: hidden;
-  box-shadow:
-    0px 0px 0.5px rgba(0, 0, 0, 0.18),
-    0px 3px 8px rgba(0, 0, 0, 0.1),
-    0px 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.ic-arrow-thickness-option {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  color: var(--ic-gray-100);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: background-color 0.15s ease;
-}
-
-.ic-arrow-thickness-option:hover {
-  background-color: var(--ic-gray-600);
-}
-
-.ic-arrow-thickness-option.is-active {
-  background-color: var(--ic-primary);
-}
-</style>

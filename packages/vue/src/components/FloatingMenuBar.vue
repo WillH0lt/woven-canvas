@@ -4,6 +4,7 @@ import { computed, useSlots, inject, onUnmounted } from "vue";
 import ColorButton from "./buttons/ColorButton.vue";
 import PenStrokeThicknessButton from "./buttons/PenStrokeThicknessButton.vue";
 import ArrowThicknessButton from "./buttons/ArrowThicknessButton.vue";
+import ArrowHeadButton from "./buttons/ArrowHeadButton.vue";
 import MenuTooltip from "./buttons/MenuTooltip.vue";
 import TextBoldButton from "./buttons/text/TextBoldButton.vue";
 import TextItalicButton from "./buttons/text/TextItalicButton.vue";
@@ -82,6 +83,26 @@ onUnmounted(() => {
           commonComponents.has('elbowArrow') || commonComponents.has('arcArrow')
         "
         :entityIds="selectedIds"
+      />
+    </slot>
+
+    <!-- Arrow head buttons -->
+    <slot name="button:arrowHeadStart" :entityIds="selectedIds">
+      <ArrowHeadButton
+        v-if="
+          commonComponents.has('elbowArrow') || commonComponents.has('arcArrow')
+        "
+        :entityIds="selectedIds"
+        side="start"
+      />
+    </slot>
+    <slot name="button:arrowHeadEnd" :entityIds="selectedIds">
+      <ArrowHeadButton
+        v-if="
+          commonComponents.has('elbowArrow') || commonComponents.has('arcArrow')
+        "
+        :entityIds="selectedIds"
+        side="end"
       />
     </slot>
 

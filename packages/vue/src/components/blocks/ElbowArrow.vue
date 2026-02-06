@@ -6,8 +6,7 @@ import { ElbowArrow } from "@infinitecanvas/plugin-arrows";
 import { useComponent } from "../../composables/useComponent";
 import ArrowHead from "./ArrowHead.vue";
 import type { BlockData } from "../../types";
-
-const BASE_ARROW_HEAD_GAP = 15;
+import { getArrowHead } from "../../arrowHeads";
 
 const props = defineProps<BlockData>();
 
@@ -17,8 +16,6 @@ const clientHeight = ref(0);
 
 const color = useComponent(props.entityId, Color);
 const elbowArrow = useComponent(props.entityId, ElbowArrow);
-
-const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP);
 
 const isEmphasized = computed(() => props.hovered || props.selected);
 
@@ -107,7 +104,8 @@ const pathData = computed(() => {
   // Add gap if connected to a block and has arrow head
   if (props.connector?.startBlock && startHead !== "none") {
     const len = Math.hypot(startVec[0], startVec[1]);
-    const gap = len > 0 ? arrowHeadGap.value / len : 0;
+    const headGap = getArrowHead(startHead)?.gap ?? 0;
+    const gap = len > 0 ? headGap / len : 0;
     tStart += gap;
   }
 
@@ -115,7 +113,8 @@ const pathData = computed(() => {
   // Add gap if connected to a block and has arrow head
   if (props.connector?.endBlock && endHead !== "none") {
     const len = Math.hypot(endVec[0], endVec[1]);
-    const gap = len > 0 ? arrowHeadGap.value / len : 0;
+    const headGap = getArrowHead(endHead)?.gap ?? 0;
+    const gap = len > 0 ? headGap / len : 0;
     tEnd += gap;
   }
 
@@ -175,7 +174,7 @@ const pathData = computed(() => {
             stroke-dasharray: calc(12px / var(--ic-zoom));
           "
           stroke-linecap="round"
-        />
+        ></line>
       </template>
 
       <template v-if="pathData">
@@ -191,7 +190,7 @@ const pathData = computed(() => {
           fill="none"
           :stroke-width="thickness"
           stroke-linecap="round"
-        />
+        ></line>
 
         <!-- Arrow heads -->
         <ArrowHead
@@ -201,6 +200,7 @@ const pathData = computed(() => {
           :thickness="thickness"
           :arrow-thickness="baseThickness"
           :color="hex"
+          :kind="pathData.startHead"
         />
         <ArrowHead
           v-if="pathData.endHead !== 'none'"
@@ -209,6 +209,7 @@ const pathData = computed(() => {
           :thickness="thickness"
           :arrow-thickness="baseThickness"
           :color="hex"
+          :kind="pathData.endHead"
         />
 
         <!-- Highlight overlay (solid, trimmed) -->
@@ -224,7 +225,7 @@ const pathData = computed(() => {
             fill="none"
             style="stroke-width: calc(2px / var(--ic-zoom))"
             stroke-linecap="round"
-          />
+          ></line>
           <ArrowHead
             v-if="pathData.startHead !== 'none'"
             :position="pathData.startPos"
@@ -232,6 +233,7 @@ const pathData = computed(() => {
             thickness="calc(2px / var(--ic-zoom))"
             :arrow-thickness="baseThickness"
             color="var(--ic-highlighted-block-outline-color)"
+            :kind="pathData.startHead"
           />
           <ArrowHead
             v-if="pathData.endHead !== 'none'"
@@ -240,6 +242,7 @@ const pathData = computed(() => {
             thickness="calc(2px / var(--ic-zoom))"
             :arrow-thickness="baseThickness"
             color="var(--ic-highlighted-block-outline-color)"
+            :kind="pathData.endHead"
           />
         </template>
       </template>

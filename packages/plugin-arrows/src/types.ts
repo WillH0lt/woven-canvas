@@ -41,11 +41,14 @@ export type ArrowHandleKind =
   (typeof ArrowHandleKind)[keyof typeof ArrowHandleKind];
 
 /**
- * Kind of arrow head (none or v-shaped).
+ * Kind of arrow head.
  */
 export const ArrowHeadKind = {
   None: "none",
   V: "v",
+  Delta: "delta",
+  Circle: "circle",
+  Diamond: "diamond",
 } as const;
 
 export type ArrowHeadKind = (typeof ArrowHeadKind)[keyof typeof ArrowHeadKind];

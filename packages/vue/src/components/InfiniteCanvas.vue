@@ -861,4 +861,46 @@ function getBlockStyle(data: BlockData) {
   </div>
 </template>
 
-<style></style>
+<style>
+/* Shared menu button styles */
+.ic-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.ic-menu-dropdown {
+  display: flex;
+  background-color: var(--ic-gray-700);
+  border-radius: var(--ic-menu-border-radius);
+  overflow: hidden;
+  box-shadow:
+    0px 0px 0.5px rgba(0, 0, 0, 0.18),
+    0px 3px 8px rgba(0, 0, 0, 0.1),
+    0px 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ic-menu-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--ic-gray-100);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.ic-menu-option:hover {
+  background-color: var(--ic-gray-600);
+}
+
+.ic-menu-option.is-active {
+  background-color: var(--ic-primary);
+}
+</style>

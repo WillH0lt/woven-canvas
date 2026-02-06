@@ -111,12 +111,6 @@ function handleWheelStop(e: Event) {
   text-overflow: ellipsis;
 }
 
-.ic-chevron-down {
-  width: 4px;
-  margin-bottom: 2px;
-  color: var(--ic-gray-300);
-}
-
 .ic-font-family-menu {
   background-color: var(--ic-gray-700);
   box-shadow:

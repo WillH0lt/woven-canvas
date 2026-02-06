@@ -7,8 +7,7 @@ import { ArcArrow } from "@infinitecanvas/plugin-arrows";
 import { useComponent } from "../../composables/useComponent";
 import ArrowHead from "./ArrowHead.vue";
 import type { BlockData } from "../../types";
-
-const BASE_ARROW_HEAD_GAP = 15;
+import { getArrowHead } from "../../arrowHeads";
 
 const props = defineProps<BlockData>();
 
@@ -18,8 +17,6 @@ const clientHeight = ref(0);
 
 const color = useComponent(props.entityId, Color);
 const arcArrow = useComponent(props.entityId, ArcArrow);
-
-const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP);
 
 // Watch for resize
 let resizeObserver: ResizeObserver | null = null;
@@ -95,17 +92,20 @@ const pathData = computed(() => {
   const endHead = arcArrow.value.endArrowHead;
 
   const arcLength = Arc.length(arc);
-  const gap = arcLength > 0 ? arrowHeadGap.value / arcLength : 0;
 
   let tStart = arcArrow.value.trimStart;
   // Add gap if connected to a block and has arrow head
   if (props.connector?.startBlock && startHead !== "none") {
+    const headGap = getArrowHead(startHead)?.gap ?? 0;
+    const gap = arcLength > 0 ? headGap / arcLength : 0;
     tStart += gap;
   }
 
   let tEnd = arcArrow.value.trimEnd;
   // Add gap if connected to a block and has arrow head
   if (props.connector?.endBlock && endHead !== "none") {
+    const headGap = getArrowHead(endHead)?.gap ?? 0;
+    const gap = arcLength > 0 ? headGap / arcLength : 0;
     tEnd += gap; // Add because we use (1 - tEnd) below
   }
 
@@ -196,6 +196,7 @@ function flipDirection(dir: Vec2): Vec2 {
           :thickness="thickness"
           :arrow-thickness="baseThickness"
           :color="hex"
+          :kind="pathData.startHead"
         />
         <ArrowHead
           v-if="pathData.endHead !== 'none'"
@@ -204,6 +205,7 @@ function flipDirection(dir: Vec2): Vec2 {
           :thickness="thickness"
           :arrow-thickness="baseThickness"
           :color="hex"
+          :kind="pathData.endHead"
         />
 
         <!-- Highlight overlay -->
@@ -234,6 +236,7 @@ function flipDirection(dir: Vec2): Vec2 {
             thickness="calc(2px / var(--ic-zoom))"
             :arrow-thickness="baseThickness"
             color="var(--ic-highlighted-block-outline-color)"
+            :kind="pathData.startHead"
           />
           <ArrowHead
             v-if="pathData.endHead !== 'none'"
@@ -242,6 +245,7 @@ function flipDirection(dir: Vec2): Vec2 {
             thickness="calc(2px / var(--ic-zoom))"
             :arrow-thickness="baseThickness"
             color="var(--ic-highlighted-block-outline-color)"
+            :kind="pathData.endHead"
           />
         </template>
       </template>

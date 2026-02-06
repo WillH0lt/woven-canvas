@@ -85,10 +85,4 @@ const underlineStyle = computed(() => {
   border: 1px solid var(--ic-gray-500);
   border-radius: 1px;
 }
-
-.ic-chevron-down {
-  width: 4px;
-  margin-bottom: 2px;
-  color: var(--ic-gray-300);
-}
 </style>

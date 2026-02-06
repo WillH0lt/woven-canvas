@@ -30,6 +30,11 @@ export { default as ElbowArrow } from "./components/blocks/ElbowArrow.vue";
 export { default as ArrowHead } from "./components/blocks/ArrowHead.vue";
 export { default as ArrowHandle } from "./components/blocks/ArrowHandle.vue";
 export { default as ArrowTerminal } from "./components/blocks/ArrowTerminal.vue";
+export {
+  ARROW_HEADS,
+  getArrowHead,
+  type ArrowHeadDef,
+} from "./arrowHeads";
 
 // Image Components
 export { default as ImageBlock } from "./components/blocks/ImageBlock.vue";
@@ -48,6 +53,7 @@ export { default as MenuTooltip } from "./components/buttons/MenuTooltip.vue";
 export { default as ColorButton } from "./components/buttons/ColorButton.vue";
 export { default as ColorPicker } from "./components/buttons/ColorPicker.vue";
 export { default as ArrowThicknessButton } from "./components/buttons/ArrowThicknessButton.vue";
+export { default as ArrowHeadButton } from "./components/buttons/ArrowHeadButton.vue";
 
 // Text Formatting Button Components
 export {

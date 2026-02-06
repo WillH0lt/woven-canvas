@@ -104,10 +104,4 @@ function handleColorChange(colorHex: string) {
   outline-width: 1px;
   outline-color: #ffffff55;
 }
-
-.ic-chevron-down {
-  width: 4px;
-  margin-bottom: 2px;
-  color: var(--ic-gray-300);
-}
 </style>
