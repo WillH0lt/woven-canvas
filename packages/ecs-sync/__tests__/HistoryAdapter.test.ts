@@ -990,5 +990,64 @@ describe("HistoryAdapter", () => {
       expect(mutation).toHaveLength(1);
       expect(mutation[0].patch["e1/Other"]).toEqual({ _exists: false });
     });
+
+    it("restores excluded fields when undoing a deletion", () => {
+      const adapter = createAdapterWithExclusions();
+
+      // Create component with both fields
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { _exists: true, included: 10, excluded: 20 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      // Update the excluded field (simulates upload completing)
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { excluded: 100 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      // Delete the component
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { _exists: false },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      // Undo the deletion - should restore BOTH fields including excluded
+      adapter.undo();
+      const mutation = adapter.pull();
+
+      expect(mutation).toHaveLength(1);
+      // The restored component should have the excluded field's final value
+      expect(mutation[0].patch["e1/Test"]).toEqual({
+        _exists: true,
+        included: 10,
+        excluded: 100,
+      });
+    });
+
+    it("does not include excluded fields when undoing creation", () => {
+      const adapter = createAdapterWithExclusions();
+
+      // Create component with both fields
+      adapter.push([
+        ecsMutation({
+          "e1/Test": { _exists: true, included: 10, excluded: 20 },
+        }),
+      ]);
+      advanceFrames(adapter, 1);
+
+      // Undo the creation - inverse is deletion, no excluded fields involved
+      adapter.undo();
+      const mutation = adapter.pull();
+
+      expect(mutation).toHaveLength(1);
+      expect(mutation[0].patch["e1/Test"]).toEqual({ _exists: false });
+    });
   });
 });

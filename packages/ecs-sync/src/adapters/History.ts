@@ -94,7 +94,9 @@ export class HistoryAdapter implements Adapter {
         let inverseToRecord = inverse;
         if (this.excludedFields.size > 0) {
           forwardToRecord = this.filterExcludedFields(m.patch);
-          inverseToRecord = this.filterExcludedFields(inverse);
+          // Preserve excluded fields for restorations (_exists: true) so that
+          // undoing a deletion restores the complete entity state
+          inverseToRecord = this.filterExcludedFields(inverse, true);
 
           // Only record if there are non-excluded changes
           if (Object.keys(forwardToRecord).length === 0) continue;
@@ -419,8 +421,13 @@ export class HistoryAdapter implements Adapter {
   /**
    * Filter excluded fields from a patch, returning a new patch.
    * Component additions/deletions are preserved, but excluded fields are removed from the data.
+   *
+   * @param patch - The patch to filter
+   * @param preserveRestorations - If true, preserve all fields (including excluded) for
+   *   entries with _exists: true. Used for inverse patches so that undoing a deletion
+   *   restores the complete state including excluded fields.
    */
-  private filterExcludedFields(patch: Patch): Patch {
+  private filterExcludedFields(patch: Patch, preserveRestorations = false): Patch {
     const filtered: Patch = {};
 
     for (const [key, value] of Object.entries(patch)) {
@@ -433,6 +440,13 @@ export class HistoryAdapter implements Adapter {
 
       if (value._exists === false) {
         // Deletion - keep as-is
+        filtered[key] = value;
+        continue;
+      }
+
+      // For restorations (_exists: true in inverse patches), preserve all fields
+      // so that undoing a deletion restores the complete state
+      if (preserveRestorations && value._exists) {
         filtered[key] = value;
         continue;
       }
