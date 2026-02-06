@@ -72,6 +72,7 @@ import PenStrokeBlock from "./blocks/PenStroke.vue";
 import ArcArrowBlock from "./blocks/ArcArrowBlock.vue";
 import ElbowArrowBlock from "./blocks/ElbowArrowBlock.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
+import ArrowTerminal from "./blocks/ArrowTerminal.vue";
 import ImageBlock from "./blocks/ImageBlock.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 import type { BlockData, BackgroundOptions } from "../types";
@@ -771,6 +772,10 @@ function getBlockStyle(data: BlockData) {
           />
           <ArrowHandle
             v-else-if="blockData.value.block.tag === 'arrow-handle'"
+            v-bind="blockData.value"
+          />
+          <ArrowTerminal
+            v-else-if="blockData.value.block.tag === 'arrow-terminal'"
             v-bind="blockData.value"
           />
           <StickyNote

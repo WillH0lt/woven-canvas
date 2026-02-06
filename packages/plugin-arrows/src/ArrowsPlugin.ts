@@ -43,17 +43,17 @@ export interface ArrowsPluginOptions {
  * ```
  */
 export function createArrowsPlugin(
-  options: ArrowsPluginOptions = {}
+  options: ArrowsPluginOptions = {},
 ): EditorPlugin<ArrowsPluginOptions> {
   return {
     name: PLUGIN_NAME,
 
     components: Object.values(components).filter(
-      (v) => v instanceof EditorComponentDef
+      (v) => v instanceof EditorComponentDef,
     ),
 
     singletons: Object.values(singletons).filter(
-      (v) => v instanceof EditorSingletonDef
+      (v) => v instanceof EditorSingletonDef,
     ),
 
     blockDefs: [
@@ -61,17 +61,27 @@ export function createArrowsPlugin(
         tag: "arc-arrow",
         resizeMode: "groupOnly",
         components: [components.ArcArrow, Connector],
+        connectors: { enabled: false },
       },
       {
         tag: "elbow-arrow",
         resizeMode: "groupOnly",
         components: [components.ElbowArrow, Connector],
+        connectors: { enabled: false },
       },
       {
         tag: "arrow-handle",
         canRotate: false,
         canScale: false,
         components: [components.ArrowHandle],
+        connectors: { enabled: false },
+      },
+      {
+        tag: "arrow-terminal",
+        canRotate: false,
+        canScale: false,
+        components: [components.ArrowTerminal],
+        connectors: { enabled: false },
       },
     ],
 
@@ -119,5 +129,5 @@ export function createArrowsPlugin(
  * ```
  */
 export const ArrowsPlugin: EditorPluginFactory<ArrowsPluginOptions> = (
-  options = {}
+  options = {},
 ) => createArrowsPlugin(options);

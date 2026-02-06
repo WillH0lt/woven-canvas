@@ -16,6 +16,7 @@ import {
   RankBounds,
   getBackrefs,
   Intersect,
+  getBlockDef,
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
@@ -37,7 +38,7 @@ import {
   SelectionStateSingleton,
   SelectionState,
 } from "@infinitecanvas/plugin-selection";
-import { ArcArrow, ElbowArrow, ArrowHandle } from "../components";
+import { ArcArrow, ElbowArrow, ArrowHandle, ArrowTerminal } from "../components";
 import {
   ArrowKind,
   ArrowHandleKind,
@@ -49,6 +50,8 @@ import {
   TRANSFORM_HANDLE_SIZE,
   DEFAULT_ARROW_THICKNESS,
   ELBOW_ARROW_PADDING,
+  TERMINAL_SIZE,
+  TERMINAL_SNAP_DISTANCE,
 } from "../constants";
 import { polarDelta, applyPolarDelta, calculateElbowPath } from "../helpers";
 
@@ -57,6 +60,9 @@ const arrowHandlesQuery = defineQuery((q) => q.with(ArrowHandle, Block));
 
 // Query for synced blocks (for connector attachment)
 const blocksQuery = defineQuery((q) => q.with(Synced, Aabb).tracking(Block));
+
+// Query for arrow terminals
+const terminalsQuery = defineQuery((q) => q.with(ArrowTerminal, Block));
 
 /**
  * Update arrow transform system - handles arrow commands and geometry updates.
@@ -101,7 +107,7 @@ export const updateArrowTransformSystem = defineEditorSystem(
 
     // Update arrows when connected blocks change
     updateArrowsForChangedBlocks(ctx);
-  }
+  },
 );
 
 /**
@@ -123,7 +129,7 @@ function updateArrowsForChangedBlocks(ctx: Context): void {
       blockId,
       Connector,
       "startBlock",
-      false
+      false,
     );
     for (const arrowId of startArrows) {
       if (updatedArrows.has(arrowId)) continue;
@@ -158,7 +164,7 @@ function updateArrowForConnectedBlock(ctx: Context, arrowId: EntityId): void {
       newStart = Block.uvToWorld(
         ctx,
         connector.startBlock,
-        connector.startBlockUv
+        connector.startBlockUv,
       );
       updateArcArrow(ctx, arrowId, ArrowHandleKind.Start, newStart);
     }
@@ -174,7 +180,7 @@ function updateArrowForConnectedBlock(ctx: Context, arrowId: EntityId): void {
       const newStart = Block.uvToWorld(
         ctx,
         connector.startBlock,
-        connector.startBlockUv
+        connector.startBlockUv,
       );
       updateElbowArrow(ctx, arrowId, ArrowHandleKind.Start, newStart);
     }
@@ -184,7 +190,7 @@ function updateArrowForConnectedBlock(ctx: Context, arrowId: EntityId): void {
       const newEnd = Block.uvToWorld(
         ctx,
         connector.endBlock,
-        connector.endBlockUv
+        connector.endBlockUv,
       );
       updateElbowArrow(ctx, arrowId, ArrowHandleKind.End, newEnd);
     }
@@ -198,7 +204,7 @@ function addArrow(
   ctx: Context,
   entityId: EntityId,
   position: Vec2,
-  kind: ArrowKind
+  kind: ArrowKind,
 ): void {
   const thickness = DEFAULT_ARROW_THICKNESS;
 
@@ -207,7 +213,9 @@ function addArrow(
   // Check if there's a block under the cursor to connect to
   const intersects = Intersect.getAll(ctx);
   const startBlockId =
-    intersects.find((eid) => hasComponent(ctx, eid, Synced)) ?? null;
+    intersects.find(
+      (eid) => hasComponent(ctx, eid, Synced) && canConnectToBlock(ctx, eid),
+    ) ?? null;
 
   // If starting on a block, snap to its center
   let startPosition = position;
@@ -338,31 +346,39 @@ function onElbowArrowDrag(ctx: Context, arrowEntityId: EntityId): void {
 function onArrowHandleDrag(
   ctx: Context,
   handleId: EntityId,
-  position: Vec2
+  position: Vec2,
 ): void {
   const handle = ArrowHandle.read(ctx, handleId);
   const arrowEntityId = handle.arrowEntity;
   if (!arrowEntityId) return;
 
   const handleBlock = Block.read(ctx, handleId);
-  const handlePosition: Vec2 = [
+  let handlePosition: Vec2 = [
     position[0] + handleBlock.size[0] / 2,
     position[1] + handleBlock.size[1] / 2,
   ];
+
+  // Check for terminal snapping before updating arrow geometry
+  if (handle.kind !== ArrowHandleKind.Middle) {
+    const snappedPosition = getSnappedPosition(ctx, arrowEntityId, handle.kind as ArrowHandleKindType, handlePosition);
+    if (snappedPosition !== null) {
+      handlePosition = snappedPosition;
+    }
+  }
 
   if (hasComponent(ctx, arrowEntityId, ArcArrow)) {
     updateArcArrow(
       ctx,
       arrowEntityId,
       handle.kind as ArrowHandleKindType,
-      handlePosition
+      handlePosition,
     );
   } else if (hasComponent(ctx, arrowEntityId, ElbowArrow)) {
     updateElbowArrow(
       ctx,
       arrowEntityId,
       handle.kind as ArrowHandleKindType,
-      handlePosition
+      handlePosition,
     );
   }
 
@@ -371,7 +387,7 @@ function onArrowHandleDrag(
       ctx,
       arrowEntityId,
       handle.kind as ArrowHandleKindType,
-      handlePosition
+      handlePosition,
     );
   }
 }
@@ -382,7 +398,7 @@ function onArrowHandleDrag(
  */
 function addOrUpdateTransformHandles(
   ctx: Context,
-  arrowEntityId: EntityId
+  arrowEntityId: EntityId,
 ): EntityId[] {
   const handleSize = TRANSFORM_HANDLE_SIZE;
 
@@ -458,6 +474,8 @@ function removeTransformHandles(ctx: Context): void {
   for (const handleId of arrowHandlesQuery.current(ctx)) {
     removeEntity(ctx, handleId);
   }
+  // Also remove any terminals
+  removeAllTerminals(ctx);
 }
 
 /**
@@ -493,6 +511,9 @@ function showTransformHandles(ctx: Context): void {
       addOrUpdateTransformHandles(ctx, handle.arrowEntity);
     }
   }
+
+  // Remove terminals when dragging ends
+  removeAllTerminals(ctx);
 }
 
 /**
@@ -501,7 +522,7 @@ function showTransformHandles(ctx: Context): void {
 function getHandlePosition(
   ctx: Context,
   arrowEntityId: EntityId,
-  handleKind: ArrowHandleKindType
+  handleKind: ArrowHandleKindType,
 ): Vec2 {
   if (hasComponent(ctx, arrowEntityId, ArcArrow)) {
     const { a, b, c } = ArcArrow.getWorldPoints(ctx, arrowEntityId);
@@ -535,7 +556,7 @@ function updateArcArrow(
   ctx: Context,
   entityId: EntityId,
   handleKind: ArrowHandleKindType,
-  handlePosition: Vec2
+  handlePosition: Vec2,
 ): void {
   // Get current world positions
   const {
@@ -592,7 +613,7 @@ function updateElbowArrow(
   ctx: Context,
   entityId: EntityId,
   handleKind: ArrowHandleKindType,
-  handlePosition: Vec2
+  handlePosition: Vec2,
 ): void {
   // Get connector for routing and live positions
   const connector = Connector.read(ctx, entityId);
@@ -614,7 +635,7 @@ function updateElbowArrow(
       start = Block.uvToWorld(
         ctx,
         connector.startBlock,
-        connector.startBlockUv
+        connector.startBlockUv,
       );
     } else {
       start = ElbowArrow.getStartWorld(ctx, entityId);
@@ -634,7 +655,7 @@ function updateElbowArrow(
     connector.startBlock,
     connector.endBlock,
     ELBOW_ARROW_PADDING,
-    rotation
+    rotation,
   );
 
   // Update block bounds (accounting for rotation)
@@ -657,7 +678,7 @@ function updateConnector(
   ctx: Context,
   entityId: EntityId,
   handleKind: ArrowHandleKindType,
-  handlePosition: Vec2
+  handlePosition: Vec2,
 ): void {
   const intersects = Intersect.getAll(ctx);
   let attachmentBlockId =
@@ -665,7 +686,8 @@ function updateConnector(
       (eid) =>
         eid !== entityId &&
         hasComponent(ctx, eid, Synced) &&
-        !hasComponent(ctx, eid, Connector)
+        !hasComponent(ctx, eid, Connector) &&
+        canConnectToBlock(ctx, eid),
     ) ?? null;
 
   const connector = Connector.write(ctx, entityId);
@@ -681,9 +703,22 @@ function updateConnector(
     }
   }
 
+  // Show or hide terminals based on whether we're over a connectable block
+  if (attachmentBlockId !== null) {
+    showTerminalsForBlock(ctx, attachmentBlockId);
+  } else {
+    removeAllTerminals(ctx);
+  }
+
   let uv: Vec2 = [0, 0];
   if (attachmentBlockId !== null) {
-    uv = Block.worldToUv(ctx, attachmentBlockId, handlePosition);
+    // Check for terminal snapping
+    const snapTerminal = findSnapTerminal(ctx, attachmentBlockId, handlePosition);
+    if (snapTerminal !== null) {
+      uv = snapTerminal.uv;
+    } else {
+      uv = Block.worldToUv(ctx, attachmentBlockId, handlePosition);
+    }
   }
 
   if (handleKind === ArrowHandleKind.Start) {
@@ -716,4 +751,145 @@ function updateConnectorRank(ctx: Context, entityId: EntityId): void {
     const block = Block.write(ctx, entityId);
     block.rank = generateJitteredKeyBetween(maxRank, null);
   }
+}
+
+/**
+ * Check if a block can have connectors attached to it.
+ */
+function canConnectToBlock(ctx: Context, entityId: EntityId): boolean {
+  const tag = Block.read(ctx, entityId).tag;
+  const blockDef = getBlockDef(ctx, tag);
+  return blockDef.connectors.enabled;
+}
+
+/**
+ * Get the block ID that currently has terminals shown, or null if none.
+ */
+function getCurrentTerminalBlockId(ctx: Context): EntityId | null {
+  const terminals = terminalsQuery.current(ctx);
+  if (terminals.length === 0) return null;
+  return ArrowTerminal.read(ctx, terminals[0]).blockEntity;
+}
+
+/**
+ * Show terminals for a block. Creates terminal entities at each terminal position.
+ */
+function showTerminalsForBlock(ctx: Context, blockId: EntityId): void {
+  // If terminals are already shown for this block, do nothing
+  if (getCurrentTerminalBlockId(ctx) === blockId) return;
+
+  // Remove existing terminals
+  removeAllTerminals(ctx);
+
+  const tag = Block.read(ctx, blockId).tag;
+  const blockDef = getBlockDef(ctx, tag);
+
+  if (!blockDef.connectors.enabled) return;
+
+  const terminals = blockDef.connectors.terminals;
+
+  for (let i = 0; i < terminals.length; i++) {
+    const uv = terminals[i];
+    const worldPos = Block.uvToWorld(ctx, blockId, uv);
+
+    const terminalId = createEntity(ctx);
+
+    addComponent(ctx, terminalId, ArrowTerminal, {
+      blockEntity: blockId,
+      terminalIndex: i,
+    });
+
+    addComponent(ctx, terminalId, Block, {
+      tag: "arrow-terminal",
+      rank: TRANSFORM_HANDLE_RANK,
+      position: [worldPos[0] - TERMINAL_SIZE / 2, worldPos[1] - TERMINAL_SIZE / 2],
+      size: [TERMINAL_SIZE, TERMINAL_SIZE],
+    });
+
+    addComponent(ctx, terminalId, ScaleWithZoom, {
+      startPosition: [worldPos[0] - TERMINAL_SIZE / 2, worldPos[1] - TERMINAL_SIZE / 2],
+      startSize: [TERMINAL_SIZE, TERMINAL_SIZE],
+    });
+  }
+}
+
+/**
+ * Remove all terminal entities.
+ */
+function removeAllTerminals(ctx: Context): void {
+  for (const terminalId of terminalsQuery.current(ctx)) {
+    removeEntity(ctx, terminalId);
+  }
+}
+
+/**
+ * Find the closest terminal to a position within snap distance.
+ * Returns the terminal's world position if found, null otherwise.
+ */
+function findSnapTerminal(
+  ctx: Context,
+  blockId: EntityId,
+  handlePosition: Vec2,
+): { position: Vec2; uv: Vec2 } | null {
+  const tag = Block.read(ctx, blockId).tag;
+  const blockDef = getBlockDef(ctx, tag);
+
+  if (!blockDef.connectors.enabled) return null;
+
+  const terminals = blockDef.connectors.terminals;
+  let closestTerminal: { position: Vec2; uv: Vec2 } | null = null;
+  let closestDistance = TERMINAL_SNAP_DISTANCE;
+
+  for (const uv of terminals) {
+    const worldPos = Block.uvToWorld(ctx, blockId, uv);
+    const dx = worldPos[0] - handlePosition[0];
+    const dy = worldPos[1] - handlePosition[1];
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestTerminal = {
+        position: worldPos,
+        uv: uv as Vec2,
+      };
+    }
+  }
+
+  return closestTerminal;
+}
+
+/**
+ * Get the snapped world position if within snap distance of a terminal.
+ * Returns null if no snapping should occur.
+ */
+function getSnappedPosition(
+  ctx: Context,
+  arrowEntityId: EntityId,
+  handleKind: ArrowHandleKindType,
+  handlePosition: Vec2,
+): Vec2 | null {
+  const intersects = Intersect.getAll(ctx);
+  const attachmentBlockId =
+    intersects.find(
+      (eid) =>
+        eid !== arrowEntityId &&
+        hasComponent(ctx, eid, Synced) &&
+        !hasComponent(ctx, eid, Connector) &&
+        canConnectToBlock(ctx, eid),
+    ) ?? null;
+
+  if (attachmentBlockId === null) return null;
+
+  // Don't allow connecting both ends to the same block
+  const connector = Connector.read(ctx, arrowEntityId);
+  const otherEnd =
+    handleKind === ArrowHandleKind.Start
+      ? connector.endBlock
+      : connector.startBlock;
+  if (attachmentBlockId === otherEnd) return null;
+
+  const snapTerminal = findSnapTerminal(ctx, attachmentBlockId, handlePosition);
+  if (snapTerminal === null) return null;
+
+  return snapTerminal.position;
 }

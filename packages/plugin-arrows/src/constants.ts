@@ -32,3 +32,13 @@ export const POINTING_THRESHOLD = 4;
  * Maximum number of points in an elbow arrow path.
  */
 export const ELBOW_ARROW_CAPACITY = 24;
+
+/**
+ * Size of arrow terminals (snap points) in pixels.
+ */
+export const TERMINAL_SIZE = 24;
+
+/**
+ * Distance in pixels at which arrow handles snap to terminals.
+ */
+export const TERMINAL_SNAP_DISTANCE = 30;

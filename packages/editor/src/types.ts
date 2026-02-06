@@ -349,6 +349,25 @@ const BlockDefEditOptions = z.object({
 });
 
 /**
+ * Block definition connectors schema.
+ * Defines connector terminals for arrows/links.
+ */
+const BlockDefConnectors = z.object({
+  /** Whether connectors are enabled for this block type */
+  enabled: z.boolean().default(true),
+  /** UV coordinates of terminal positions (0-1 range, where [0,0] is top-left) */
+  terminals: z
+    .array(z.tuple([z.number(), z.number()]))
+    .default([
+      [0.5, 0], // top
+      [0.5, 1], // bottom
+      [0.5, 0.5], // center
+      [0, 0.5], // left
+      [1, 0.5], // right
+    ]),
+});
+
+/**
  * Block definition schema with validation and defaults.
  * Defines how different block types behave (editing, resizing, rotation, etc.)
  */
@@ -359,6 +378,7 @@ export const BlockDef = z.object({
   resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
+  connectors: BlockDefConnectors.default(BlockDefConnectors.parse({})),
 });
 
 /**
