@@ -27,14 +27,14 @@ export function calculateElbowPath(
   startBlockId: EntityId | null,
   endBlockId: EntityId | null,
   padding: number,
-  rotation: number
+  rotation: number,
 ): Vec2[] {
   const calculator = new ElbowPathCalculator(
     ctx,
     start,
     end,
     padding,
-    rotation
+    rotation,
   );
   return calculator.calculate(startBlockId, endBlockId);
 }
@@ -56,7 +56,7 @@ class ElbowPathCalculator {
     start: Vec2,
     end: Vec2,
     padding: number,
-    rotation: number
+    rotation: number,
   ) {
     this.ctx = ctx;
     this.padding = padding;
@@ -92,23 +92,43 @@ class ElbowPathCalculator {
 
   calculate(
     startBlockId: EntityId | null,
-    endBlockId: EntityId | null
+    endBlockId: EntityId | null,
   ): Vec2[] {
     const startRay = this.calculateRay(
       this.localStart,
       this.localEnd,
-      startBlockId
+      startBlockId,
     );
     const endRay = this.calculateRay(
       this.localEnd,
       this.localStart,
-      endBlockId
+      endBlockId,
     );
 
     let path: Vec2[];
 
     if (startBlockId && endBlockId) {
-      path = this.routeBlockToBlock(startBlockId, endBlockId, startRay, endRay);
+      // If either point is inside the other block's margin,
+      // the blocks overlap or are very close - use simple point-to-point routing
+      const startInEndBlock = this.isPointInsideBlockMargin(
+        this.localStart,
+        endBlockId,
+      );
+      const endInStartBlock = this.isPointInsideBlockMargin(
+        this.localEnd,
+        startBlockId,
+      );
+
+      if (startInEndBlock || endInStartBlock) {
+        path = routePointToPoint(Ray.origin(startRay), Ray.origin(endRay));
+      } else {
+        path = this.routeBlockToBlock(
+          startBlockId,
+          endBlockId,
+          startRay,
+          endRay,
+        );
+      }
     } else if (startBlockId && !endBlockId) {
       // If the endpoint is inside or within margin of the block, use point-to-point
       if (this.isPointInsideBlockMargin(this.localEnd, startBlockId)) {
@@ -124,7 +144,7 @@ class ElbowPathCalculator {
         path = this.routeBlockToPoint(
           endBlockId,
           endRay,
-          this.localStart
+          this.localStart,
         ).reverse();
       }
     } else {
@@ -178,7 +198,7 @@ class ElbowPathCalculator {
     startBlockId: EntityId,
     endBlockId: EntityId,
     startRay: Ray,
-    endRay: Ray
+    endRay: Ray,
   ): Vec2[] {
     const startAabb = this.getBlockAabb(startBlockId);
     const endAabb = this.getBlockAabb(endBlockId);
@@ -198,7 +218,7 @@ class ElbowPathCalculator {
 
     if (startId === null || endId === null) {
       console.warn(
-        "[routeBlockToBlock] Failed to add start or end node to graph"
+        "[routeBlockToBlock] Failed to add start or end node to graph",
       );
 
       return [startOrigin, endOrigin];
@@ -229,7 +249,7 @@ class ElbowPathCalculator {
   private routeBlockToPoint(
     blockId: EntityId,
     ray: Ray,
-    endPoint: Vec2
+    endPoint: Vec2,
   ): Vec2[] {
     const rayOrigin = Ray.origin(ray);
     const rayDir = Ray.direction(ray);
@@ -289,7 +309,7 @@ class ElbowPathCalculator {
   private calculateRay(
     point: Vec2,
     target: Vec2,
-    blockId: EntityId | null
+    blockId: EntityId | null,
   ): Ray {
     let direction: Vec2;
 
@@ -305,7 +325,7 @@ class ElbowPathCalculator {
 
   private exitClosestSide(
     point: Vec2,
-    blockId: EntityId
+    blockId: EntityId,
   ): { direction: Vec2; distance: number } {
     const block = Block.read(this.ctx, blockId);
     const center = Block.getCenter(this.ctx, blockId);
@@ -345,7 +365,7 @@ class ElbowPathCalculator {
         ray,
         block.position,
         block.size,
-        block.rotateZ
+        block.rotateZ,
       );
       if (intersections.length === 0) {
         continue;
@@ -386,7 +406,8 @@ class ElbowPathCalculator {
       const dominantDir = getDominantDirection(point, this.localEnd);
       const dominantExit = exits.find(
         (e) =>
-          e.direction[0] === dominantDir[0] && e.direction[1] === dominantDir[1]
+          e.direction[0] === dominantDir[0] &&
+          e.direction[1] === dominantDir[1],
       );
       if (dominantExit) {
         return dominantExit;
@@ -604,7 +625,7 @@ function connectAdjacentNodes(nodes: Node[], dim: number): void {
       nodeA.connections.push(nodeB.id);
       nodeB.connections.push(nodeA.id);
       const distance = Math.abs(
-        nodeB.coords[otherDim] - nodeA.coords[otherDim]
+        nodeB.coords[otherDim] - nodeA.coords[otherDim],
       );
       nodeA.distances[nodeB.id] = distance;
       nodeB.distances[nodeA.id] = distance;
@@ -665,7 +686,7 @@ function getNodes(aabb1: Aabb, aabb2: Aabb): Node[] {
 function intersectRayAndAddNode(ray: Ray, nodes: Node[]): number | null {
   const rayOrigin = Ray.origin(ray);
   const preexistingNode = nodes.find(
-    (n) => n.coords[0] === rayOrigin[0] && n.coords[1] === rayOrigin[1]
+    (n) => n.coords[0] === rayOrigin[0] && n.coords[1] === rayOrigin[1],
   );
   if (preexistingNode) {
     return preexistingNode.id;
@@ -685,7 +706,7 @@ function intersectRayAndAddNode(ray: Ray, nodes: Node[]): number | null {
       const intersection = Ray.intersectSegment(
         ray,
         node.coords,
-        neighbor.coords
+        neighbor.coords,
       );
 
       if (
@@ -710,7 +731,7 @@ function intersectRayAndAddNode(ray: Ray, nodes: Node[]): number | null {
       ray,
       nearestIntersection,
       intersectedNodeId,
-      intersectedNeighborId
+      intersectedNeighborId,
     );
 
     return null;
@@ -729,11 +750,11 @@ function intersectRayAndAddNode(ray: Ray, nodes: Node[]): number | null {
 
   const distanceToStart = Math.hypot(
     nearestIntersection.point[0] - startNode.coords[0],
-    nearestIntersection.point[1] - startNode.coords[1]
+    nearestIntersection.point[1] - startNode.coords[1],
   );
   const distanceToEnd = Math.hypot(
     nearestIntersection.point[0] - endNode.coords[0],
-    nearestIntersection.point[1] - endNode.coords[1]
+    nearestIntersection.point[1] - endNode.coords[1],
   );
 
   newNode.connections.push(intersectedNodeId, intersectedNeighborId);
@@ -747,12 +768,12 @@ function intersectRayAndAddNode(ray: Ray, nodes: Node[]): number | null {
   endNode.distances[newNodeId] = distanceToEnd;
 
   startNode.connections = startNode.connections.filter(
-    (id) => id !== intersectedNeighborId
+    (id) => id !== intersectedNeighborId,
   );
   delete startNode.distances[intersectedNeighborId];
 
   endNode.connections = endNode.connections.filter(
-    (id) => id !== intersectedNodeId
+    (id) => id !== intersectedNodeId,
   );
   delete endNode.distances[intersectedNodeId];
 
@@ -764,7 +785,7 @@ function intersectRayAndAddNode(ray: Ray, nodes: Node[]): number | null {
 function shortestPathInGraph(
   nodes: Node[],
   startId: number,
-  endId: number
+  endId: number,
 ): number[] | null {
   const distances: { [key: number]: number } = {};
   const previous: { [key: number]: number | null } = {};

@@ -1,5 +1,5 @@
 import { field, type Context } from "@infinitecanvas/ecs";
-import type { Vec2 } from "@infinitecanvas/math";
+import { type Vec2, type Aabb as AabbType } from "@infinitecanvas/math";
 
 import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
 import { Screen } from "./Screen";
@@ -11,6 +11,10 @@ const CameraSchema = {
   left: field.float64().default(0),
   /** Zoom level (1 = 100%, 2 = 200%, 0.5 = 50%) */
   zoom: field.float64().default(1),
+  /** Whether the camera viewport intersects any blocks */
+  canSeeBlocks: field.boolean().default(true),
+  /** Reference to a block that the camera can currently see (for optimization) */
+  lastSeenBlock: field.ref(),
 };
 
 /**
@@ -86,6 +90,23 @@ class CameraDef extends EditorSingletonDef<typeof CameraSchema> {
       right: camera.left + screen.width / camera.zoom,
       bottom: camera.top + screen.height / camera.zoom,
     };
+  }
+
+  /**
+   * Get the camera viewport as an AABB tuple [left, top, right, bottom].
+   * @param ctx - ECS context
+   * @param out - Optional output array to write to (avoids allocation)
+   * @returns AABB tuple in world coordinates
+   */
+  getAabb(ctx: Context, out?: AabbType): AabbType {
+    const camera = this.read(ctx);
+    const screen = Screen.read(ctx);
+    const result: AabbType = out ?? [0, 0, 0, 0];
+    result[0] = camera.left;
+    result[1] = camera.top;
+    result[2] = camera.left + screen.width / camera.zoom;
+    result[3] = camera.top + screen.height / camera.zoom;
+    return result;
   }
 }
 

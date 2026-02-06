@@ -81,6 +81,7 @@ import UserCursors from "./UserCursors.vue";
 import OfflineIndicator from "./OfflineIndicator.vue";
 import VersionMismatch from "./VersionMismatch.vue";
 import CanvasBackground from "./CanvasBackground.vue";
+import BackToContentButton from "./BackToContentButton.vue";
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block));
@@ -175,6 +176,7 @@ defineSlots<
     "user-presence"?: (props: { users: UserData[] }) => any;
     "offline-indicator"?: (props: { isOnline: boolean }) => any;
     "version-mismatch"?: (props: { versionMismatch: boolean }) => any;
+    "back-to-content"?: () => any;
   } & {
     [slotName: `block:${string}`]: (props: BlockData) => any;
   }
@@ -715,6 +717,7 @@ function getBlockStyle(data: BlockData) {
     "--ic-held-by-color": heldByColor ?? undefined,
   };
 }
+
 </script>
 
 <template>
@@ -850,6 +853,11 @@ function getBlockStyle(data: BlockData) {
     <!-- Version mismatch overlay -->
     <slot name="version-mismatch" :version-mismatch="versionMismatch">
       <VersionMismatch :version-mismatch="versionMismatch" />
+    </slot>
+
+    <!-- Back to content button -->
+    <slot name="back-to-content">
+      <BackToContentButton />
     </slot>
   </div>
 </template>

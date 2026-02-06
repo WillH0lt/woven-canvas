@@ -26,7 +26,7 @@ import {
 import { rankBoundsSystem } from "./systems/preInput";
 import { intersectSystem } from "./systems/preCapture";
 import { keybindSystem } from "./systems/capture";
-import { scaleWithZoomSystem } from "./systems/preRender";
+import { scaleWithZoomSystem, canSeeBlocksSystem } from "./systems/preRender";
 import { cursorSystem, presenceSystem } from "./systems/postRender";
 import * as components from "./components";
 import * as singletons from "./singletons";
@@ -65,6 +65,7 @@ export const CorePlugin: EditorPlugin = {
 
     // Render phase
     scaleWithZoomSystem, // priority: 100
+    canSeeBlocksSystem, // priority: 90
     cursorSystem, // priority: -100
     presenceSystem, // priority: -100
   ],
