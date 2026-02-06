@@ -12,7 +12,7 @@ import {
 } from "@infinitecanvas/editor";
 import { Arc, Capsule, type Vec2 } from "@infinitecanvas/math";
 
-import { ArcArrow, ElbowArrow, ArrowTrim } from "../components";
+import { ArcArrow, ElbowArrow } from "../components";
 import { closestPointToPoint } from "../helpers";
 
 const MIN_HIT_THICKNESS = 20;
@@ -52,11 +52,6 @@ function updateArcArrowHitGeometry(ctx: Context, entityId: EntityId): void {
     addComponent(ctx, entityId, HitGeometry, {});
   }
 
-  // Ensure ArrowTrim component exists
-  if (!hasComponent(ctx, entityId, ArrowTrim)) {
-    addComponent(ctx, entityId, ArrowTrim, {});
-  }
-
   // Copy arc directly from ArcArrow to HitGeometry (both use same UV format)
   const arcArrow = ArcArrow.read(ctx, entityId);
   const arc = Arc.clone(arcArrow.value);
@@ -78,11 +73,6 @@ function updateElbowArrowHitGeometry(ctx: Context, entityId: EntityId): void {
   // Ensure HitGeometry component exists
   if (!hasComponent(ctx, entityId, HitGeometry)) {
     addComponent(ctx, entityId, HitGeometry, {});
-  }
-
-  // Ensure ArrowTrim component exists
-  if (!hasComponent(ctx, entityId, ArrowTrim)) {
-    addComponent(ctx, entityId, ArrowTrim, {});
   }
 
   const arrow = ElbowArrow.read(ctx, entityId);
@@ -118,26 +108,26 @@ function updateArcArrowTrim(ctx: Context, entityId: EntityId): void {
   const connector = Connector.read(ctx, entityId);
   const { a, c } = ArcArrow.getWorldPoints(ctx, entityId);
 
-  const trim = ArrowTrim.write(ctx, entityId);
+  const arcArrow = ArcArrow.write(ctx, entityId);
 
   // Calculate trim values using refs directly
   const startTrim = calculateLineTrim(ctx, connector.startBlock, a, c);
   const endTrim = calculateLineTrim(ctx, connector.endBlock, c, a);
 
-  trim.tStart = startTrim;
-  trim.tEnd = endTrim;
+  arcArrow.trimStart = startTrim;
+  arcArrow.trimEnd = endTrim;
 
   // Reset if visible portion is too small
   if (1 - endTrim - startTrim < 0.1) {
-    trim.tStart = 0;
-    trim.tEnd = 0;
+    arcArrow.trimStart = 0;
+    arcArrow.trimEnd = 0;
   }
 
   // Trim the hit arc geometry
   const hitGeometry = HitGeometry.read(ctx, entityId);
   for (let i = 0; i < hitGeometry.arcCount; i++) {
     const arc = HitGeometry.getArcAt(ctx, entityId, i);
-    Arc.trim(arc, trim.tStart, 1 - trim.tEnd);
+    Arc.trim(arc, arcArrow.trimStart, 1 - arcArrow.trimEnd);
     HitGeometry.setArcAt(ctx, entityId, i, arc);
   }
 }
@@ -152,7 +142,7 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
 
   if (segmentCount < 1) return;
 
-  const trim = ArrowTrim.write(ctx, entityId);
+  const elbowArrow = ElbowArrow.write(ctx, entityId);
 
   // Calculate trim for first and last segments using refs directly
   const start = points[0];
@@ -173,8 +163,8 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
     lastSegmentStart
   );
 
-  trim.tStart = startTrim;
-  trim.tEnd = endTrim;
+  elbowArrow.trimStart = startTrim;
+  elbowArrow.trimEnd = endTrim;
 
   // Trim the first capsule from startTrim to 1
   const startCapsule = HitGeometry.getCapsuleAt(ctx, entityId, 0);

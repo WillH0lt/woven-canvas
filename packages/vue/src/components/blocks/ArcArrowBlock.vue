@@ -3,7 +3,7 @@ import { computed, ref, onMounted, onUnmounted } from "vue";
 import type { EntityId } from "@infinitecanvas/editor";
 import { Color } from "@infinitecanvas/editor";
 import { Arc, type ArcComputed, type Vec2 } from "@infinitecanvas/math";
-import { ArcArrow, ArrowTrim } from "@infinitecanvas/plugin-arrows";
+import { ArcArrow } from "@infinitecanvas/plugin-arrows";
 
 import { useComponent } from "../../composables/useComponent";
 import ArrowHead from "./ArrowHead.vue";
@@ -20,7 +20,6 @@ const clientHeight = ref(0);
 
 const color = useComponent(props.entityId, Color);
 const arcArrow = useComponent(props.entityId, ArcArrow);
-const arrowTrim = useComponent(props.entityId, ArrowTrim);
 
 const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP);
 
@@ -92,26 +91,20 @@ const pathData = computed(() => {
   if (!arcArrow.value || !worldArc.value) return null;
 
   const arc = worldArc.value;
-  const trim = arrowTrim.value;
   const startHead = arcArrow.value.startArrowHead;
   const endHead = arcArrow.value.endArrowHead;
 
-  let tStart = 0;
-  let tEnd = 1;
+  const arcLength = Arc.length(arc);
+  const gap = arcLength > 0 ? arrowHeadGap.value / arcLength : 0;
 
-  if (trim) {
-    const arcLength = Arc.length(arc);
-    const gap = arcLength > 0 ? arrowHeadGap.value / arcLength : 0;
+  let tStart = arcArrow.value.trimStart;
+  if (tStart !== 0 && startHead !== "none") {
+    tStart += gap;
+  }
 
-    tStart = trim.tStart;
-    if (tStart !== 0 && startHead !== "none") {
-      tStart += gap;
-    }
-
-    tEnd = trim.tEnd;
-    if (tEnd !== 0 && endHead !== "none") {
-      tEnd += gap; // Add because we use (1 - tEnd) below
-    }
+  let tEnd = arcArrow.value.trimEnd;
+  if (tEnd !== 0 && endHead !== "none") {
+    tEnd += gap; // Add because we use (1 - tEnd) below
   }
 
   // tEnd is measured from end toward start, so invert it for arc parametric

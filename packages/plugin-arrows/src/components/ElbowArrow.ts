@@ -29,6 +29,12 @@ const ElbowArrowSchema = {
 
   /** Arrow head at end point */
   endArrowHead: field.enum(ArrowHeadKind).default(ArrowHeadKind.V),
+
+  /** Parametric start position for trimming (0-1) */
+  trimStart: field.float64().default(0),
+
+  /** Parametric end position for trimming (0-1) */
+  trimEnd: field.float64().default(1),
 };
 
 /**

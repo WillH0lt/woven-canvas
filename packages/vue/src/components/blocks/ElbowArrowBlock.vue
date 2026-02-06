@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import { Color } from "@infinitecanvas/editor";
 import { Vec2 } from "@infinitecanvas/math";
-import { ElbowArrow, ArrowTrim } from "@infinitecanvas/plugin-arrows";
+import { ElbowArrow } from "@infinitecanvas/plugin-arrows";
 import { useComponent } from "../../composables/useComponent";
 import ArrowHead from "./ArrowHead.vue";
 import type { BlockData } from "../../types";
@@ -17,7 +17,6 @@ const clientHeight = ref(0);
 
 const color = useComponent(props.entityId, Color);
 const elbowArrow = useComponent(props.entityId, ElbowArrow);
-const arrowTrim = useComponent(props.entityId, ArrowTrim);
 
 const arrowHeadGap = computed(() => BASE_ARROW_HEAD_GAP);
 
@@ -89,7 +88,6 @@ const pathData = computed(() => {
   if (!elbowArrow.value || worldPoints.value.length < 2) return null;
 
   const arrow = elbowArrow.value;
-  const trim = arrowTrim.value;
   const points = [...worldPoints.value.map((p) => [...p] as Vec2)];
 
   const startHead = arrow.startArrowHead;
@@ -105,39 +103,34 @@ const pathData = computed(() => {
     points[points.length - 1][1] - points[points.length - 2][1],
   ];
 
-  let tStart = 0;
-  let tEnd = 0;
-
-  if (trim) {
-    tStart = trim.tStart;
-    if (tStart !== 0 && startHead !== "none") {
-      const len = Math.hypot(startVec[0], startVec[1]);
-      const gap = len > 0 ? arrowHeadGap.value / len : 0;
-      tStart += gap;
-    }
-
-    tEnd = trim.tEnd;
-    if (tEnd !== 0 && endHead !== "none") {
-      const len = Math.hypot(endVec[0], endVec[1]);
-      const gap = len > 0 ? arrowHeadGap.value / len : 0;
-      tEnd += gap;
-    }
-
-    // Trim start point
-    points[0] = [
-      points[0][0] + (points[1][0] - points[0][0]) * tStart,
-      points[0][1] + (points[1][1] - points[0][1]) * tStart,
-    ];
-
-    // Trim end point
-    const lastIdx = points.length - 1;
-    points[lastIdx] = [
-      points[lastIdx - 1][0] +
-        (points[lastIdx][0] - points[lastIdx - 1][0]) * (1 - tEnd),
-      points[lastIdx - 1][1] +
-        (points[lastIdx][1] - points[lastIdx - 1][1]) * (1 - tEnd),
-    ];
+  let tStart = arrow.trimStart;
+  if (tStart !== 0 && startHead !== "none") {
+    const len = Math.hypot(startVec[0], startVec[1]);
+    const gap = len > 0 ? arrowHeadGap.value / len : 0;
+    tStart += gap;
   }
+
+  let tEnd = arrow.trimEnd;
+  if (tEnd !== 0 && endHead !== "none") {
+    const len = Math.hypot(endVec[0], endVec[1]);
+    const gap = len > 0 ? arrowHeadGap.value / len : 0;
+    tEnd += gap;
+  }
+
+  // Trim start point
+  points[0] = [
+    points[0][0] + (points[1][0] - points[0][0]) * tStart,
+    points[0][1] + (points[1][1] - points[0][1]) * tStart,
+  ];
+
+  // Trim end point
+  const lastIdx = points.length - 1;
+  points[lastIdx] = [
+    points[lastIdx - 1][0] +
+      (points[lastIdx][0] - points[lastIdx - 1][0]) * (1 - tEnd),
+    points[lastIdx - 1][1] +
+      (points[lastIdx][1] - points[lastIdx - 1][1]) * (1 - tEnd),
+  ];
 
   // Build line segments
   const lines: { start: Vec2; end: Vec2 }[] = [];
