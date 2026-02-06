@@ -52,6 +52,8 @@ const hex = computed(() => {
 const baseThickness = computed(() => arcArrow.value?.value[6] ?? 2);
 const thickness = computed(() => `${baseThickness.value}px`);
 
+const isEmphasized = computed(() => props.hovered || props.selected);
+
 // Check if the arc is curved (points are not collinear)
 const isCurved = computed(() => {
   if (!arcArrow.value) return false;
@@ -192,6 +194,7 @@ function flipDirection(dir: Vec2): Vec2 {
           :position="pathData.start"
           :direction="pathData.startDir"
           :thickness="thickness"
+          :arrow-thickness="baseThickness"
           :color="hex"
         />
         <ArrowHead
@@ -199,8 +202,48 @@ function flipDirection(dir: Vec2): Vec2 {
           :position="pathData.end"
           :direction="pathData.endDir"
           :thickness="thickness"
+          :arrow-thickness="baseThickness"
           :color="hex"
         />
+
+        <!-- Highlight overlay -->
+        <template v-if="isEmphasized">
+          <path
+            v-if="isCurved && curvedPath"
+            :d="curvedPath"
+            class="highlight-overlay"
+            fill="none"
+            style="stroke-width: calc(2px / var(--ic-zoom))"
+            stroke-linecap="round"
+          />
+          <line
+            v-else-if="straightLinePoints"
+            :x1="straightLinePoints.x1"
+            :y1="straightLinePoints.y1"
+            :x2="straightLinePoints.x2"
+            :y2="straightLinePoints.y2"
+            class="highlight-overlay"
+            fill="none"
+            style="stroke-width: calc(2px / var(--ic-zoom))"
+            stroke-linecap="round"
+          />
+          <ArrowHead
+            v-if="pathData.startHead !== 'none'"
+            :position="pathData.start"
+            :direction="pathData.startDir"
+            thickness="calc(2px / var(--ic-zoom))"
+            :arrow-thickness="baseThickness"
+            color="var(--ic-highlighted-block-outline-color)"
+          />
+          <ArrowHead
+            v-if="pathData.endHead !== 'none'"
+            :position="pathData.end"
+            :direction="pathData.endDir"
+            thickness="calc(2px / var(--ic-zoom))"
+            :arrow-thickness="baseThickness"
+            color="var(--ic-highlighted-block-outline-color)"
+          />
+        </template>
       </template>
     </svg>
   </div>
@@ -222,5 +265,16 @@ function flipDirection(dir: Vec2): Vec2 {
   width: 100%;
   height: 100%;
   overflow: visible !important;
+}
+
+.highlight-overlay {
+  stroke: var(--ic-highlighted-block-outline-color);
+}
+</style>
+
+<style>
+.ic-block[data-hovered] > .ic-arc-arrow,
+.ic-block[data-selected] > .ic-arc-arrow {
+  outline: none;
 }
 </style>

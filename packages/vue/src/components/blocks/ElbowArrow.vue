@@ -199,6 +199,7 @@ const pathData = computed(() => {
           :position="pathData.startPos"
           :direction="pathData.startDir"
           :thickness="thickness"
+          :arrow-thickness="baseThickness"
           :color="hex"
         />
         <ArrowHead
@@ -206,6 +207,7 @@ const pathData = computed(() => {
           :position="pathData.endPos"
           :direction="pathData.endDir"
           :thickness="thickness"
+          :arrow-thickness="baseThickness"
           :color="hex"
         />
 
@@ -228,6 +230,7 @@ const pathData = computed(() => {
             :position="pathData.startPos"
             :direction="pathData.startDir"
             thickness="calc(2px / var(--ic-zoom))"
+            :arrow-thickness="baseThickness"
             color="var(--ic-highlighted-block-outline-color)"
           />
           <ArrowHead
@@ -235,6 +238,7 @@ const pathData = computed(() => {
             :position="pathData.endPos"
             :direction="pathData.endDir"
             thickness="calc(2px / var(--ic-zoom))"
+            :arrow-thickness="baseThickness"
             color="var(--ic-highlighted-block-outline-color)"
           />
         </template>

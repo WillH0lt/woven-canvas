@@ -1,28 +1,27 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Camera } from "@infinitecanvas/editor";
 import type { Vec2 } from "@infinitecanvas/math";
-import { useSingleton } from "../../composables/useSingleton";
 
 const props = defineProps<{
   position: Vec2;
   direction: Vec2;
   thickness: number | string;
   color: string;
+  arrowThickness: number;
 }>();
 
 const BASE_ARROW_HEAD_LENGTH = 15;
-const BASE_ARROW_HEAD_WIDTH = 20;
-
-const camera = useSingleton(Camera);
+const BASE_ARROW_HEAD_WIDTH = 15;
+const BASE_THICKNESS = 2;
 
 const points = computed(() => {
   const dirLen = Math.hypot(props.direction[0], props.direction[1]);
   if (dirLen === 0) return null;
 
-  const zoom = camera.value.zoom;
-  const headLength = BASE_ARROW_HEAD_LENGTH * zoom;
-  const headWidth = BASE_ARROW_HEAD_WIDTH * zoom;
+  // Scale arrow head with thickness using cube root for dampened effect
+  const thicknessScale = (props.arrowThickness / BASE_THICKNESS) ** 0.33;
+  const headLength = BASE_ARROW_HEAD_LENGTH * thicknessScale;
+  const headWidth = BASE_ARROW_HEAD_WIDTH * thicknessScale;
 
   const unitDir: Vec2 = [
     props.direction[0] / dirLen,

@@ -2,6 +2,7 @@ import {
   EditorComponentDef,
   EditorSingletonDef,
   Connector,
+  Color,
   type EditorPlugin,
   type EditorPluginFactory,
 } from "@infinitecanvas/editor";
@@ -60,13 +61,13 @@ export function createArrowsPlugin(
       {
         tag: "arc-arrow",
         resizeMode: "groupOnly",
-        components: [components.ArcArrow, Connector],
+        components: [components.ArcArrow, Connector, Color],
         connectors: { enabled: false },
       },
       {
         tag: "elbow-arrow",
         resizeMode: "groupOnly",
-        components: [components.ElbowArrow, Connector],
+        components: [components.ElbowArrow, Connector, Color],
         connectors: { enabled: false },
       },
       {

@@ -3,6 +3,7 @@ import { computed, useSlots, inject, onUnmounted } from "vue";
 
 import ColorButton from "./buttons/ColorButton.vue";
 import PenStrokeThicknessButton from "./buttons/PenStrokeThicknessButton.vue";
+import ArrowThicknessButton from "./buttons/ArrowThicknessButton.vue";
 import MenuTooltip from "./buttons/MenuTooltip.vue";
 import TextBoldButton from "./buttons/text/TextBoldButton.vue";
 import TextItalicButton from "./buttons/text/TextItalicButton.vue";
@@ -21,7 +22,14 @@ const context = inject(FLOATING_MENU_KEY)!;
 const { selectedIds, commonComponents } = context;
 
 // Built-in component names (handled in template)
-const builtInComponentNames = new Set(["color", "text", "verticalAlign", "penStroke"]);
+const builtInComponentNames = new Set([
+  "color",
+  "text",
+  "verticalAlign",
+  "penStroke",
+  "elbowArrow",
+  "arcArrow",
+]);
 
 // Custom slots for components not covered by built-ins
 const customButtons = computed(() => {
@@ -63,6 +71,16 @@ onUnmounted(() => {
     <slot name="button:penStroke" :entityIds="selectedIds">
       <PenStrokeThicknessButton
         v-if="commonComponents.has('penStroke')"
+        :entityIds="selectedIds"
+      />
+    </slot>
+
+    <!-- Arrow thickness button -->
+    <slot name="button:arrowThickness" :entityIds="selectedIds">
+      <ArrowThicknessButton
+        v-if="
+          commonComponents.has('elbowArrow') || commonComponents.has('arcArrow')
+        "
         :entityIds="selectedIds"
       />
     </slot>

@@ -68,9 +68,9 @@ import TextBlock from "./blocks/TextBlock.vue";
 import FloatingMenu from "./FloatingMenu.vue";
 import Toolbar from "./Toolbar.vue";
 import Eraser from "./blocks/Eraser.vue";
-import PenStrokeBlock from "./blocks/PenStroke.vue";
-import ArcArrowBlock from "./blocks/ArcArrowBlock.vue";
-import ElbowArrowBlock from "./blocks/ElbowArrowBlock.vue";
+import PenStroke from "./blocks/PenStroke.vue";
+import ArcArrow from "./blocks/ArcArrow.vue";
+import ElbowArrow from "./blocks/ElbowArrow.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
 import ArrowTerminal from "./blocks/ArrowTerminal.vue";
 import ImageBlock from "./blocks/ImageBlock.vue";
@@ -717,7 +717,6 @@ function getBlockStyle(data: BlockData) {
     "--ic-held-by-color": heldByColor ?? undefined,
   };
 }
-
 </script>
 
 <template>
@@ -789,15 +788,15 @@ function getBlockStyle(data: BlockData) {
             v-else-if="blockData.value.block.tag === 'eraser'"
             v-bind="blockData.value"
           />
-          <PenStrokeBlock
+          <PenStroke
             v-else-if="blockData.value.block.tag === 'pen-stroke'"
             v-bind="blockData.value"
           />
-          <ArcArrowBlock
+          <ArcArrow
             v-else-if="blockData.value.block.tag === 'arc-arrow'"
             v-bind="blockData.value"
           />
-          <ElbowArrowBlock
+          <ElbowArrow
             v-else-if="blockData.value.block.tag === 'elbow-arrow'"
             v-bind="blockData.value"
           />

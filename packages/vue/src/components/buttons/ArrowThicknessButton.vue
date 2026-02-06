@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
-import { PenStroke } from "@infinitecanvas/plugin-pen";
+import { shallowRef } from "vue";
+import { hasComponent, type EntityId } from "@infinitecanvas/editor";
+import { ElbowArrow, ArcArrow } from "@infinitecanvas/plugin-arrows";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useComponents } from "../../composables/useComponents";
 import { useEditorContext } from "../../composables/useEditorContext";
 
 const THICKNESS_OPTIONS = [
-  { label: "S", value: 4 },
-  { label: "M", value: 8 },
-  { label: "L", value: 16 },
+  { label: "S", value: 2 },
+  { label: "M", value: 4 },
+  { label: "L", value: 8 },
 ] as const;
 
 const props = defineProps<{
@@ -20,27 +19,48 @@ const props = defineProps<{
 
 const { nextEditorTick } = useEditorContext();
 
-const strokesMap = useComponents(() => props.entityIds, PenStroke);
+const currentThickness = shallowRef<number | null>(null);
 
-const currentThickness = computed<number | null>(() => {
+// Update current thickness on each tick
+nextEditorTick((ctx) => {
   let first: number | null = null;
-  for (const stroke of strokesMap.value.values()) {
-    if (stroke) {
+
+  for (const entityId of props.entityIds) {
+    if (hasComponent(ctx, entityId, ElbowArrow)) {
+      const arrow = ElbowArrow.read(ctx, entityId);
       if (first === null) {
-        first = stroke.thickness;
-      } else if (stroke.thickness !== first) {
-        return null; // mixed
+        first = arrow.thickness;
+      } else if (arrow.thickness !== first) {
+        currentThickness.value = null;
+        return;
+      }
+    }
+    if (hasComponent(ctx, entityId, ArcArrow)) {
+      const thickness = ArcArrow.getThickness(ctx, entityId);
+      if (first === null) {
+        first = thickness;
+      } else if (thickness !== first) {
+        currentThickness.value = null;
+        return;
       }
     }
   }
-  return first;
+
+  currentThickness.value = first;
 });
 
 function handleSelect(thickness: number) {
+  currentThickness.value = thickness;
+
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const stroke = PenStroke.write(ctx, entityId);
-      stroke.thickness = thickness;
+      if (hasComponent(ctx, entityId, ElbowArrow)) {
+        const arrow = ElbowArrow.write(ctx, entityId);
+        arrow.thickness = thickness;
+      }
+      if (hasComponent(ctx, entityId, ArcArrow)) {
+        ArcArrow.setThickness(ctx, entityId, thickness);
+      }
     }
   });
 }
@@ -49,7 +69,7 @@ function handleSelect(thickness: number) {
 <template>
   <MenuDropdown title="Thickness">
     <template #button>
-      <div class="ic-pen-thickness-button">
+      <div class="ic-arrow-thickness-button">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -68,11 +88,11 @@ function handleSelect(thickness: number) {
     </template>
 
     <template #dropdown>
-      <div class="ic-pen-thickness-dropdown">
+      <div class="ic-arrow-thickness-dropdown">
         <button
           v-for="option in THICKNESS_OPTIONS"
           :key="option.value"
-          class="ic-pen-thickness-option"
+          class="ic-arrow-thickness-option"
           :class="{ 'is-active': currentThickness === option.value }"
           @click="handleSelect(option.value)"
         >
@@ -84,7 +104,7 @@ function handleSelect(thickness: number) {
 </template>
 
 <style>
-.ic-pen-thickness-button {
+.ic-arrow-thickness-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -93,7 +113,7 @@ function handleSelect(thickness: number) {
   padding: 0 8px;
 }
 
-.ic-pen-thickness-dropdown {
+.ic-arrow-thickness-dropdown {
   display: flex;
   background-color: var(--ic-gray-700);
   border-radius: var(--ic-menu-border-radius);
@@ -104,7 +124,7 @@ function handleSelect(thickness: number) {
     0px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.ic-pen-thickness-option {
+.ic-arrow-thickness-option {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,11 +139,11 @@ function handleSelect(thickness: number) {
   transition: background-color 0.15s ease;
 }
 
-.ic-pen-thickness-option:hover {
+.ic-arrow-thickness-option:hover {
   background-color: var(--ic-gray-600);
 }
 
-.ic-pen-thickness-option.is-active {
+.ic-arrow-thickness-option.is-active {
   background-color: var(--ic-primary);
 }
 </style>
