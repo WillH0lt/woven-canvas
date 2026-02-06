@@ -86,9 +86,9 @@ const uploadProgress = computed(() => {
 
   switch (assetData.uploadState) {
     case UploadState.Pending:
-      return "Pending...";
+      return "Loading...";
     case UploadState.Uploading:
-      return "Uploading...";
+      return "Loading...";
     case UploadState.Failed:
       return "Failed";
     default:

@@ -15,10 +15,13 @@ import { Synced } from "@infinitecanvas/ecs-sync";
 
 import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
 import { useEditorContext } from "../../composables/useEditorContext";
+import { useToolbar } from "../../composables/useToolbar";
 import { INFINITE_CANVAS_KEY } from "../../injection";
+import { CursorKind } from "../../cursors";
 
 const { nextEditorTick } = useEditorContext();
 const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
+const { setTool } = useToolbar();
 
 const canvasContext = inject(INFINITE_CANVAS_KEY);
 if (!canvasContext) {
@@ -102,6 +105,9 @@ async function handleFileSelect(event: Event) {
     addComponent(ctx, entityId, Synced, {
       id: crypto.randomUUID(),
     });
+
+    // Switch to select tool
+    setTool("select", undefined, CursorKind.Select);
 
     // Upload if asset manager is available
     if (assetManager) {
