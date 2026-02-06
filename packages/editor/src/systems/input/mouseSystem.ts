@@ -104,67 +104,74 @@ export function detachMouseListeners(domElement: HTMLElement): void {
  * - Wheel deltas (normalized across browsers)
  * - Triggers for move, wheel, enter, leave events
  */
-export const mouseSystem = defineEditorSystem({ phase: "input" }, (ctx: Context) => {
-  const resources = getResources<EditorResources>(ctx);
-  const state = instanceState.get(resources.domElement);
-  if (!state) return;
+export const mouseSystem = defineEditorSystem(
+  { phase: "input" },
+  (ctx: Context) => {
+    const resources = getResources<EditorResources>(ctx);
+    const state = instanceState.get(resources.domElement);
+    if (!state) return;
 
-  const currentMouse = Mouse.read(ctx);
-  const hadTriggers =
-    currentMouse.moveTrigger ||
-    currentMouse.wheelTrigger ||
-    currentMouse.enterTrigger ||
-    currentMouse.leaveTrigger;
-  const hasEvents = state.eventsBuffer.length > 0;
+    const currentMouse = Mouse.read(ctx);
+    const hadTriggers =
+      currentMouse.moveTrigger ||
+      currentMouse.wheelTrigger ||
+      currentMouse.enterTrigger ||
+      currentMouse.leaveTrigger;
+    const hasEvents = state.eventsBuffer.length > 0;
 
-  // Only write if we need to clear previous triggers or process new events
-  if (!hadTriggers && !hasEvents) return;
+    // Only write if we need to clear previous triggers or process new events
+    if (!hadTriggers && !hasEvents) return;
 
-  const mouse = Mouse.write(ctx);
-  const screen = Screen.read(ctx);
+    const mouse = Mouse.write(ctx);
+    const screen = Screen.read(ctx);
 
-  // Clear triggers from previous frame
-  mouse.moveTrigger = false;
-  mouse.wheelTrigger = false;
-  mouse.enterTrigger = false;
-  mouse.leaveTrigger = false;
-  mouse.wheelDeltaX = 0;
-  mouse.wheelDeltaY = 0;
+    // Clear triggers from previous frame
+    mouse.moveTrigger = false;
+    mouse.wheelTrigger = false;
+    mouse.enterTrigger = false;
+    mouse.leaveTrigger = false;
+    mouse.wheelDeltaX = 0;
+    mouse.wheelDeltaY = 0;
 
-  // Process buffered events
-  for (const event of state.eventsBuffer) {
-    switch (event.type) {
-      case "mousemove":
-        // Convert to element-relative coordinates
-        mouse.position = [
-          event.clientX! - screen.left,
-          event.clientY! - screen.top,
-        ];
-        mouse.moveTrigger = true;
-        break;
+    // Process buffered events
+    for (const event of state.eventsBuffer) {
+      switch (event.type) {
+        case "mousemove":
+          // Convert to element-relative coordinates
+          mouse.position = [
+            event.clientX! - screen.left,
+            event.clientY! - screen.top,
+          ];
+          mouse.moveTrigger = true;
+          break;
 
-      case "wheel":
-        mouse.wheelDeltaX = event.deltaX!;
-        mouse.wheelDeltaY = normalizeWheelDelta(
-          event.deltaY!,
-          event.deltaMode!
-        );
-        mouse.wheelTrigger = true;
-        break;
+        case "wheel":
+          mouse.wheelDeltaX = event.deltaX!;
+          mouse.wheelDeltaY = normalizeWheelDelta(
+            event.deltaY!,
+            event.deltaMode!,
+          );
+          mouse.wheelTrigger = true;
 
-      case "mouseenter":
-        mouse.enterTrigger = true;
-        break;
+          console.log(
+            `Wheel event: deltaX=${mouse.wheelDeltaX}, deltaY=${mouse.wheelDeltaY}`,
+          );
+          break;
 
-      case "mouseleave":
-        mouse.leaveTrigger = true;
-        break;
+        case "mouseenter":
+          mouse.enterTrigger = true;
+          break;
+
+        case "mouseleave":
+          mouse.leaveTrigger = true;
+          break;
+      }
     }
-  }
 
-  // Clear buffer
-  state.eventsBuffer.length = 0;
-});
+    // Clear buffer
+    state.eventsBuffer.length = 0;
+  },
+);
 
 /**
  * Normalize wheel deltaY across browsers and delta modes.

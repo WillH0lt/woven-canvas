@@ -10,6 +10,6 @@ export const BlockPlacementState = defineEditorSingleton(
   { name: "blockPlacementState" },
   {
     /** Checkpoint ID for squashing edited block history, or empty string if none */
-    editedCheckpoint: field.string().default(""),
+    editedCheckpoint: field.string().default("").max(36),
   },
 );

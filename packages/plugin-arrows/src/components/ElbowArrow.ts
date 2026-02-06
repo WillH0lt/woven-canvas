@@ -48,6 +48,12 @@ class ElbowArrowDef extends EditorComponentDef<typeof ElbowArrowSchema> {
     super({ name: "elbowArrow", sync: "document" }, ElbowArrowSchema);
   }
 
+  snapshot(ctx: Context, entityId: EntityId) {
+    const snap = super.snapshot(ctx, entityId);
+    snap.points = snap.points.slice(0, snap.pointCount * 2);
+    return snap;
+  }
+
   /**
    * Get a point at the given index in UV coordinates.
    */

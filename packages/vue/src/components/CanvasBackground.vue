@@ -48,7 +48,7 @@ function createDotPattern(
 ): CanvasPattern | null {
   if (!patternCanvas) return null;
 
-  const dotSize = 2;
+  const dotSize = background.dotSize ?? 2;
   const width = colWidth * background.subdivisionStep;
   const height = rowHeight * background.subdivisionStep;
 
@@ -100,7 +100,7 @@ function createGridPattern(
 ): CanvasPattern | null {
   if (!patternCanvas) return null;
 
-  const lineSize = 1;
+  const lineSize = background.gridSize ?? 1;
   const width = colWidth * background.subdivisionStep;
   const height = rowHeight * background.subdivisionStep;
 

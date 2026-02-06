@@ -34,4 +34,8 @@ export interface BackgroundOptions {
   strokeColor: string;
   /** Number of subdivisions for the pattern */
   subdivisionStep: number;
+  /** Size of dots when kind is 'dots' (default: 2) */
+  dotSize?: number;
+  /** Width of grid lines when kind is 'grid' (default: 1) */
+  gridSize?: number;
 }
