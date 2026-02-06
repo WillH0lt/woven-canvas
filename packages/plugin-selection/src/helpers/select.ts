@@ -5,12 +5,17 @@ import {
   hasComponent,
   getResources,
   isHeldByRemote,
+  defineQuery,
   Held,
+  Block,
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
 
 import { Selected } from "../components";
+
+const selectedQuery = defineQuery((q) => q.with(Selected));
+const blockQuery = defineQuery((q) => q.with(Block));
 
 /**
  * Add Selected and Held components to an entity.
@@ -45,5 +50,28 @@ export function deselectBlock(ctx: Context, entityId: EntityId): void {
 
   removeComponent(ctx, entityId, Selected);
   removeComponent(ctx, entityId, Held);
+}
+
+/**
+ * Deselect all currently selected entities.
+ *
+ * @param ctx - The ECS context
+ */
+export function deselectAll(ctx: Context): void {
+  for (const entityId of selectedQuery.current(ctx)) {
+    deselectBlock(ctx, entityId);
+  }
+}
+
+/**
+ * Select all blocks in the document.
+ * Skips blocks held by remote users.
+ *
+ * @param ctx - The ECS context
+ */
+export function selectAll(ctx: Context): void {
+  for (const entityId of blockQuery.current(ctx)) {
+    selectBlock(ctx, entityId);
+  }
 }
 

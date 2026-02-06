@@ -21,6 +21,7 @@ import {
   RankBounds,
   Cursor,
   Held,
+  Grid,
 } from "@infinitecanvas/editor";
 
 import { Aabb as AabbNs, Vec2 } from "@infinitecanvas/math";
@@ -347,6 +348,8 @@ function pasteBlocks(ctx: Context, position?: Vec2): void {
     const screenCenter = Camera.getWorldCenter(ctx);
     offset = Vec2.clone(screenCenter);
     Vec2.sub(offset, clipboard.center);
+    // Snap offset to grid so the entire group aligns while preserving arrangement
+    Grid.snapPosition(ctx, offset);
   }
 
   // Sort clipboard entities by rank to maintain relative z-order
