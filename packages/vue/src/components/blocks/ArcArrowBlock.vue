@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
 import { Color } from "@infinitecanvas/editor";
 import { Arc, type ArcComputed, type Vec2 } from "@infinitecanvas/math";
 import { ArcArrow } from "@infinitecanvas/plugin-arrows";
 
 import { useComponent } from "../../composables/useComponent";
 import ArrowHead from "./ArrowHead.vue";
+import type { BlockData } from "../../types";
 
 const BASE_ARROW_HEAD_GAP = 15;
 
-const props = defineProps<{
-  entityId: EntityId;
-}>();
+const props = defineProps<BlockData>();
 
 const containerRef = ref<HTMLElement | null>(null);
 const clientWidth = ref(0);
@@ -98,12 +96,14 @@ const pathData = computed(() => {
   const gap = arcLength > 0 ? arrowHeadGap.value / arcLength : 0;
 
   let tStart = arcArrow.value.trimStart;
-  if (tStart !== 0 && startHead !== "none") {
+  // Add gap if connected to a block and has arrow head
+  if (props.connector?.startBlock && startHead !== "none") {
     tStart += gap;
   }
 
   let tEnd = arcArrow.value.trimEnd;
-  if (tEnd !== 0 && endHead !== "none") {
+  // Add gap if connected to a block and has arrow head
+  if (props.connector?.endBlock && endHead !== "none") {
     tEnd += gap; // Add because we use (1 - tEnd) below
   }
 

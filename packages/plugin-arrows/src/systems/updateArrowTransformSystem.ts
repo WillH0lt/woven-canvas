@@ -38,7 +38,12 @@ import {
   SelectionStateSingleton,
   SelectionState,
 } from "@infinitecanvas/plugin-selection";
-import { ArcArrow, ElbowArrow, ArrowHandle, ArrowTerminal } from "../components";
+import {
+  ArcArrow,
+  ElbowArrow,
+  ArrowHandle,
+  ArrowTerminal,
+} from "../components";
 import {
   ArrowKind,
   ArrowHandleKind,
@@ -217,10 +222,20 @@ function addArrow(
       (eid) => hasComponent(ctx, eid, Synced) && canConnectToBlock(ctx, eid),
     ) ?? null;
 
-  // If starting on a block, snap to its center
+  // If starting on a block, snap to nearest terminal or center
   let startPosition = position;
+  let startBlockUv: Vec2 = [0, 0];
   if (startBlockId !== null) {
-    startPosition = Block.uvToWorld(ctx, startBlockId, [0.5, 0.5]);
+    // Try to snap to nearest terminal first (no distance limit for initial creation)
+    const nearestTerminal = findNearestTerminal(ctx, startBlockId, position);
+    if (nearestTerminal !== null) {
+      startPosition = nearestTerminal.position;
+      startBlockUv = nearestTerminal.uv;
+    } else {
+      // Fall back to center if no terminals defined
+      startPosition = Block.uvToWorld(ctx, startBlockId, [0.5, 0.5]);
+      startBlockUv = [0.5, 0.5];
+    }
   }
 
   // Add Block component
@@ -254,9 +269,7 @@ function addArrow(
 
   addComponent(ctx, entityId, Connector, {
     startBlock: startBlockId,
-    startBlockUv: startBlockId
-      ? Block.worldToUv(ctx, startBlockId, startPosition)
-      : [0, 0],
+    startBlockUv: startBlockUv,
   });
 
   // Select the arrow and set up for handle dragging
@@ -279,6 +292,8 @@ function addArrow(
       handleBlock.position[0],
       handleBlock.position[1],
     ];
+    // Hide handles during initial draw
+    hideTransformHandles(ctx);
   }
 }
 
@@ -360,7 +375,12 @@ function onArrowHandleDrag(
 
   // Check for terminal snapping before updating arrow geometry
   if (handle.kind !== ArrowHandleKind.Middle) {
-    const snappedPosition = getSnappedPosition(ctx, arrowEntityId, handle.kind as ArrowHandleKindType, handlePosition);
+    const snappedPosition = getSnappedPosition(
+      ctx,
+      arrowEntityId,
+      handle.kind as ArrowHandleKindType,
+      handlePosition,
+    );
     if (snappedPosition !== null) {
       handlePosition = snappedPosition;
     }
@@ -462,6 +482,16 @@ function addOrUpdateTransformHandles(
     if (!usedHandleIds.has(handleId)) {
       removeEntity(ctx, handleId);
     }
+  }
+
+  // Hide handles if currently dragging an arrow handle
+  const selectionState = SelectionStateSingleton.read(ctx);
+  if (
+    selectionState.state === SelectionState.Dragging &&
+    selectionState.draggedEntity !== null &&
+    hasComponent(ctx, selectionState.draggedEntity, ArrowHandle)
+  ) {
+    hideTransformHandles(ctx);
   }
 
   return Array.from(usedHandleIds);
@@ -713,7 +743,12 @@ function updateConnector(
   let uv: Vec2 = [0, 0];
   if (attachmentBlockId !== null) {
     // Check for terminal snapping
-    const snapTerminal = findSnapTerminal(ctx, attachmentBlockId, handlePosition);
+    const snapTerminal = findNearestTerminal(
+      ctx,
+      attachmentBlockId,
+      handlePosition,
+      TERMINAL_SNAP_DISTANCE,
+    );
     if (snapTerminal !== null) {
       uv = snapTerminal.uv;
     } else {
@@ -802,12 +837,18 @@ function showTerminalsForBlock(ctx: Context, blockId: EntityId): void {
     addComponent(ctx, terminalId, Block, {
       tag: "arrow-terminal",
       rank: TRANSFORM_HANDLE_RANK,
-      position: [worldPos[0] - TERMINAL_SIZE / 2, worldPos[1] - TERMINAL_SIZE / 2],
+      position: [
+        worldPos[0] - TERMINAL_SIZE / 2,
+        worldPos[1] - TERMINAL_SIZE / 2,
+      ],
       size: [TERMINAL_SIZE, TERMINAL_SIZE],
     });
 
     addComponent(ctx, terminalId, ScaleWithZoom, {
-      startPosition: [worldPos[0] - TERMINAL_SIZE / 2, worldPos[1] - TERMINAL_SIZE / 2],
+      startPosition: [
+        worldPos[0] - TERMINAL_SIZE / 2,
+        worldPos[1] - TERMINAL_SIZE / 2,
+      ],
       startSize: [TERMINAL_SIZE, TERMINAL_SIZE],
     });
   }
@@ -823,13 +864,15 @@ function removeAllTerminals(ctx: Context): void {
 }
 
 /**
- * Find the closest terminal to a position within snap distance.
- * Returns the terminal's world position if found, null otherwise.
+ * Find the nearest terminal to a position.
+ * @param maxDistance - Optional max distance limit. If not provided, returns nearest terminal regardless of distance.
+ * Returns the terminal's world position if found, null if no terminals defined or none within distance.
  */
-function findSnapTerminal(
+function findNearestTerminal(
   ctx: Context,
   blockId: EntityId,
-  handlePosition: Vec2,
+  position: Vec2,
+  maxDistance?: number,
 ): { position: Vec2; uv: Vec2 } | null {
   const tag = Block.read(ctx, blockId).tag;
   const blockDef = getBlockDef(ctx, tag);
@@ -837,13 +880,15 @@ function findSnapTerminal(
   if (!blockDef.connectors.enabled) return null;
 
   const terminals = blockDef.connectors.terminals;
+  if (terminals.length === 0) return null;
+
   let closestTerminal: { position: Vec2; uv: Vec2 } | null = null;
-  let closestDistance = TERMINAL_SNAP_DISTANCE;
+  let closestDistance = maxDistance ?? Infinity;
 
   for (const uv of terminals) {
     const worldPos = Block.uvToWorld(ctx, blockId, uv);
-    const dx = worldPos[0] - handlePosition[0];
-    const dy = worldPos[1] - handlePosition[1];
+    const dx = worldPos[0] - position[0];
+    const dy = worldPos[1] - position[1];
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (distance < closestDistance) {
@@ -888,7 +933,12 @@ function getSnappedPosition(
       : connector.startBlock;
   if (attachmentBlockId === otherEnd) return null;
 
-  const snapTerminal = findSnapTerminal(ctx, attachmentBlockId, handlePosition);
+  const snapTerminal = findNearestTerminal(
+    ctx,
+    attachmentBlockId,
+    handlePosition,
+    TERMINAL_SNAP_DISTANCE,
+  );
   if (snapTerminal === null) return null;
 
   return snapTerminal.position;

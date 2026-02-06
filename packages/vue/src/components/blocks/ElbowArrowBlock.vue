@@ -104,14 +104,16 @@ const pathData = computed(() => {
   ];
 
   let tStart = arrow.trimStart;
-  if (tStart !== 0 && startHead !== "none") {
+  // Add gap if connected to a block and has arrow head
+  if (props.connector?.startBlock && startHead !== "none") {
     const len = Math.hypot(startVec[0], startVec[1]);
     const gap = len > 0 ? arrowHeadGap.value / len : 0;
     tStart += gap;
   }
 
   let tEnd = arrow.trimEnd;
-  if (tEnd !== 0 && endHead !== "none") {
+  // Add gap if connected to a block and has arrow head
+  if (props.connector?.endBlock && endHead !== "none") {
     const len = Math.hypot(endVec[0], endVec[1]);
     const gap = len > 0 ? arrowHeadGap.value / len : 0;
     tEnd += gap;

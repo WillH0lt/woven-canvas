@@ -41,4 +41,4 @@ export const TERMINAL_SIZE = 24;
 /**
  * Distance in pixels at which arrow handles snap to terminals.
  */
-export const TERMINAL_SNAP_DISTANCE = 30;
+export const TERMINAL_SNAP_DISTANCE = 40;

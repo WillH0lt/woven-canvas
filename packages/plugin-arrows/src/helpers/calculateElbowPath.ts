@@ -110,13 +110,23 @@ class ElbowPathCalculator {
     if (startBlockId && endBlockId) {
       path = this.routeBlockToBlock(startBlockId, endBlockId, startRay, endRay);
     } else if (startBlockId && !endBlockId) {
-      path = this.routeBlockToPoint(startBlockId, startRay, this.localEnd);
+      // If the endpoint is inside or within margin of the block, use point-to-point
+      if (this.isPointInsideBlockMargin(this.localEnd, startBlockId)) {
+        path = routePointToPoint(Ray.origin(startRay), this.localEnd);
+      } else {
+        path = this.routeBlockToPoint(startBlockId, startRay, this.localEnd);
+      }
     } else if (!startBlockId && endBlockId) {
-      path = this.routeBlockToPoint(
-        endBlockId,
-        endRay,
-        this.localStart
-      ).reverse();
+      // If the start point is inside or within margin of the block, use point-to-point
+      if (this.isPointInsideBlockMargin(this.localStart, endBlockId)) {
+        path = routePointToPoint(this.localStart, Ray.origin(endRay));
+      } else {
+        path = this.routeBlockToPoint(
+          endBlockId,
+          endRay,
+          this.localStart
+        ).reverse();
+      }
     } else {
       path = routePointToPoint(Ray.origin(startRay), this.localEnd);
     }
@@ -153,6 +163,15 @@ class ElbowPathCalculator {
     const out: Aabb = [0, 0, 0, 0];
     Rect.getAabb(localPosition, block.size, relativeRotation, out);
     return out;
+  }
+
+  /**
+   * Check if a point (in local space) is inside or within the padding margin of a block.
+   */
+  private isPointInsideBlockMargin(point: Vec2, blockId: EntityId): boolean {
+    const aabb = this.getBlockAabb(blockId);
+    Aabb.pad(aabb, this.padding);
+    return Aabb.containsPoint(aabb, point);
   }
 
   private routeBlockToBlock(
