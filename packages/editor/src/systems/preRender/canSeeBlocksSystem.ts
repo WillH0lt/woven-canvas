@@ -16,6 +16,8 @@ const camerasQuery = defineQuery((q) => q.tracking(Camera));
 // Query for synced blocks with Aabb (persistent blocks)
 const blocksQuery = defineQuery((q) => q.with(Synced, Block, Aabb));
 
+const syncedBlocksQuery = defineQuery((q) => q.with(Synced, Block));
+
 // Re-usable AABB for camera viewport (avoids allocation)
 const _cameraAabb: AabbMath = [0, 0, 0, 0];
 
@@ -32,7 +34,10 @@ const _cameraAabb: AabbMath = [0, 0, 0, 0];
 export const canSeeBlocksSystem = defineEditorSystem(
   { phase: "render", priority: 90 },
   (ctx: Context) => {
-    if (camerasQuery.changed(ctx).length === 0) {
+    if (
+      camerasQuery.changed(ctx).length === 0 &&
+      syncedBlocksQuery.removed(ctx).length === 0
+    ) {
       // No camera changes, skip expensive block intersection checks
       return;
     }

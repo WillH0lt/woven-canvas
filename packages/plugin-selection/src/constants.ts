@@ -1,1 +1,1 @@
-export const PLUGIN_NAME = "infiniteCanvas";
+export const PLUGIN_NAME = "selection";

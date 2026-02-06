@@ -25,6 +25,12 @@ interface PointerTrackingState {
     altDown: boolean;
     modDown: boolean;
   };
+  /** Previous camera state for detecting camera movement during drag */
+  prevCamera: {
+    left: number;
+    top: number;
+    zoom: number;
+  };
 }
 
 const trackingState = new Map<string, PointerTrackingState>();
@@ -40,6 +46,11 @@ function getTrackingState(ctx: Context): PointerTrackingState {
         altDown: false,
         modDown: false,
       },
+      prevCamera: {
+        left: 0,
+        top: 0,
+        zoom: 1,
+      },
     };
     trackingState.set(key, state);
   }
@@ -54,7 +65,7 @@ function getTrackingState(ctx: Context): PointerTrackingState {
  *
  * - **pointerDown** - When a new pointer matching the specified buttons is added
  * - **pointerUp** - When a matching pointer is removed
- * - **pointerMove** - When a matching pointer's position changes, or modifier keys change
+ * - **pointerMove** - When a matching pointer's position changes, modifier keys change, or camera moves
  * - **click** - After pointerUp, if the pointer didn't move much and wasn't held long
  * - **cancel** - When Escape is pressed or multi-touch is detected
  * - **frame** - Optional continuous event while pointer is active
@@ -206,14 +217,19 @@ export function getPointerInput(
     }
   }
 
-  // Handle pointer move (position changed or modifier keys changed)
+  // Handle pointer move (position changed, modifier keys changed, or camera moved)
   const modifiersChanged =
     modifiers.shiftDown !== state.prevModifiers.shiftDown ||
     modifiers.altDown !== state.prevModifiers.altDown ||
     modifiers.modDown !== state.prevModifiers.modDown;
 
+  const cameraChanged =
+    camera.left !== state.prevCamera.left ||
+    camera.top !== state.prevCamera.top ||
+    camera.zoom !== state.prevCamera.zoom;
+
   if (
-    (matchingChanged.length > 0 || modifiersChanged) &&
+    (matchingChanged.length > 0 || modifiersChanged || cameraChanged) &&
     matchingCurrent.length === 1
   ) {
     events.push(createEvent("pointerMove", matchingCurrent[0]));
@@ -224,8 +240,9 @@ export function getPointerInput(
     events.push(createEvent("frame", matchingCurrent[0]));
   }
 
-  // Update previous modifier state
+  // Update previous modifier and camera state
   state.prevModifiers = { ...modifiers };
+  state.prevCamera = { left: camera.left, top: camera.top, zoom: camera.zoom };
 
   return events;
 }

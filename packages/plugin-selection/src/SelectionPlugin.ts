@@ -23,6 +23,11 @@ import * as systems from "./systems";
 
 import { PLUGIN_NAME } from "./constants";
 import { CURSORS } from "./cursors";
+import {
+  SelectionPluginOptionsSchema,
+  type SelectionPluginOptions,
+  type SelectionPluginOptionsInput,
+} from "./types";
 
 
 // Helper to filter EditorSystem instances from a namespace
@@ -41,26 +46,24 @@ const filterSystems = (ns: object): EditorSystem[] =>
  * @example
  * ```typescript
  * const plugin = createSelectionPlugin({
- *   customBlocks: [
- *     {
- *       tag: "text",
- *       editOptions: { canEdit: true, removeWhenTextEmpty: true },
- *       resizeMode: "text",
- *     },
- *     {
- *       tag: "image",
- *       resizeMode: "scale",
- *       canRotate: true,
- *     },
- *   ],
+ *   edgeScrolling: {
+ *     enabled: true,
+ *     edgeSizePx: 10,
+ *     edgeScrollSpeedPxPerFrame: 15,
+ *     edgeScrollDelayMs: 250,
+ *   },
  * });
  *
  * const editor = new Editor(container, { plugins: [plugin] });
  * ```
  */
-export function createSelectionPlugin(): EditorPlugin {
+export function createSelectionPlugin(
+  options: SelectionPluginOptionsInput = {}
+): EditorPlugin<SelectionPluginOptions> {
   return {
     name: PLUGIN_NAME,
+
+    resources: SelectionPluginOptionsSchema.parse(options),
 
     components: Object.values(components).filter(
       (v) => v instanceof EditorComponentDef
@@ -150,14 +153,14 @@ export function createSelectionPlugin(): EditorPlugin {
 }
 
 /**
- * Infinite Canvas Plugin
+ * Selection Plugin
  *
- * Provides core infinite canvas functionality:
+ * Provides core selection functionality:
  * - Block management (create, select, move, resize, rotate)
  * - Selection (single, multi-select, marquee selection)
  * - Transform box (scale, stretch, rotate handles)
  * - Z-ordering (bring forward, send backward)
- * - Connectors (lines/arrows between blocks)
+ * - Edge scrolling (auto-scroll when dragging near viewport edges)
  *
  * Can be used with or without options:
  *
@@ -166,18 +169,23 @@ export function createSelectionPlugin(): EditorPlugin {
  * import { Editor } from '@infinitecanvas/editor';
  * import { SelectionPlugin } from '@infinitecanvas/plugin-selection';
  *
- * // With default options (no parentheses needed)
+ * // With default options
  * const editor = new Editor(el, {
- *   plugins: [SelectionPlugin],
+ *   plugins: [SelectionPlugin()],
  * });
  *
  * // With custom options
  * const editor = new Editor(el, {
  *   plugins: [SelectionPlugin({
- *     customBlocks: [{ tag: "text", resizeMode: "text" }],
+ *     edgeScrolling: {
+ *       enabled: true,
+ *       edgeSizePx: 20,
+ *     },
  *   })],
  * });
  * ```
  */
-export const SelectionPlugin: EditorPluginFactory = () =>
-  createSelectionPlugin();
+export const SelectionPlugin: EditorPluginFactory<
+  SelectionPluginOptionsInput,
+  SelectionPluginOptions
+> = (options = {}) => createSelectionPlugin(options);
