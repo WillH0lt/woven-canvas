@@ -186,8 +186,10 @@ function onRotateHandleDrag(
       newCenter[1] - block.size[1] / 2,
     ];
 
-    // Apply grid snapping to final position
-    Grid.snapPosition(ctx, block.position);
+    // Apply grid snapping to position only in strict mode
+    if (grid.strict) {
+      Grid.snapPosition(ctx, block.position);
+    }
   }
 }
 
@@ -219,6 +221,9 @@ function onScaleHandleDrag(
     position[0] + handleBlock.size[0] / 2,
     position[1] + handleBlock.size[1] / 2,
   ];
+
+  // Snap handle position to grid (transform box always aligns to grid)
+  Grid.snapPosition(ctx, handleCenter);
 
   // Calculate the opposite corner position from the START state (fixed anchor point)
   // The opposite corner is on the opposite side of the box from the handle
@@ -292,6 +297,8 @@ function onScaleHandleDrag(
   const scaleX = boxStart.size[0] > 0 ? newWidth / boxStart.size[0] : 1;
   const scaleY = boxStart.size[1] > 0 ? newHeight / boxStart.size[1] : 1;
 
+  const grid = Grid.read(ctx);
+
   // Calculate new box center by rotating the scaled vector back to world space
   // and adding half of it to the opposite corner
   const vec: Vec2 = Vec2.create(vectorX * newWidth, vectorY * newHeight);
@@ -341,26 +348,30 @@ function onScaleHandleDrag(
     const blockDef = getBlockDef(ctx, block.tag);
     const isTextResize = blockDef?.resizeMode === "text";
 
-    if (isTextResize && maintainAspectRatio) {
-      // For text blocks, snap height to grid and derive width from aspect ratio
-      const grid = Grid.read(ctx);
-      newBlockSize[1] = Math.max(
-        grid.rowHeight,
-        Grid.snapY(ctx, newBlockSize[1]),
-      );
-      const aspectRatio = blockStart.size[0] / blockStart.size[1];
-      newBlockSize[0] = newBlockSize[1] * aspectRatio;
-    } else {
-      // Apply grid snapping to size (enforces minimum of one grid cell)
-      Grid.snapSize(ctx, newBlockSize);
+    // Apply grid snapping to size only in strict mode
+    if (grid.strict) {
+      if (isTextResize && maintainAspectRatio) {
+        // For text blocks, snap height to grid and derive width from aspect ratio
+        newBlockSize[1] = Math.max(
+          grid.rowHeight,
+          Grid.snapY(ctx, newBlockSize[1]),
+        );
+        const aspectRatio = blockStart.size[0] / blockStart.size[1];
+        newBlockSize[0] = newBlockSize[1] * aspectRatio;
+      } else {
+        // Apply grid snapping to size (enforces minimum of one grid cell)
+        Grid.snapSize(ctx, newBlockSize);
+      }
     }
 
     // Convert center back to top-left position
     Vec2.copy(block.position, newBlockCenter);
     Vec2.sub(block.position, [newBlockSize[0] / 2, newBlockSize[1] / 2]);
 
-    // Apply grid snapping to position
-    Grid.snapPosition(ctx, block.position);
+    // Apply grid snapping to position only in strict mode
+    if (grid.strict) {
+      Grid.snapPosition(ctx, block.position);
+    }
 
     if (!maintainAspectRatio && handle.vectorY === 0) {
       // Horizontal stretch - only update width

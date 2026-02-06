@@ -10,7 +10,7 @@ import {
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
-import { Arc, Capsule, type Vec2 } from "@infinitecanvas/math";
+import { Arc, Capsule, Scalar, type Vec2 } from "@infinitecanvas/math";
 
 import { ArcArrow, ElbowArrow } from "../components";
 import { closestPointToPoint } from "../helpers";
@@ -108,26 +108,32 @@ function updateArcArrowTrim(ctx: Context, entityId: EntityId): void {
   const connector = Connector.read(ctx, entityId);
   const { a, c } = ArcArrow.getWorldPoints(ctx, entityId);
 
-  const arcArrow = ArcArrow.write(ctx, entityId);
-
   // Calculate trim values using refs directly
-  const startTrim = calculateLineTrim(ctx, connector.startBlock, a, c);
-  const endTrim = calculateLineTrim(ctx, connector.endBlock, c, a);
-
-  arcArrow.trimStart = startTrim;
-  arcArrow.trimEnd = endTrim;
+  let startTrim = calculateLineTrim(ctx, connector.startBlock, a, c);
+  let endTrim = calculateLineTrim(ctx, connector.endBlock, c, a);
 
   // Reset if visible portion is too small
   if (1 - endTrim - startTrim < 0.1) {
-    arcArrow.trimStart = 0;
-    arcArrow.trimEnd = 0;
+    startTrim = 0;
+    endTrim = 0;
+  }
+
+  // Only update if trim values have changed significantly to avoid update loops
+  const arcArrowRead = ArcArrow.read(ctx, entityId);
+  if (
+    !Scalar.approxEqual(arcArrowRead.trimStart, startTrim) ||
+    !Scalar.approxEqual(arcArrowRead.trimEnd, endTrim)
+  ) {
+    const arcArrow = ArcArrow.write(ctx, entityId);
+    arcArrow.trimStart = startTrim;
+    arcArrow.trimEnd = endTrim;
   }
 
   // Trim the hit arc geometry
   const hitGeometry = HitGeometry.read(ctx, entityId);
   for (let i = 0; i < hitGeometry.arcCount; i++) {
     const arc = HitGeometry.getArcAt(ctx, entityId, i);
-    Arc.trim(arc, arcArrow.trimStart, 1 - arcArrow.trimEnd);
+    Arc.trim(arc, startTrim, 1 - endTrim);
     HitGeometry.setArcAt(ctx, entityId, i, arc);
   }
 }
@@ -141,8 +147,6 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
   const segmentCount = points.length - 1;
 
   if (segmentCount < 1) return;
-
-  const elbowArrow = ElbowArrow.write(ctx, entityId);
 
   // Calculate trim for first and last segments using refs directly
   const start = points[0];
@@ -163,8 +167,16 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
     lastSegmentStart,
   );
 
-  elbowArrow.trimStart = startTrim;
-  elbowArrow.trimEnd = endTrim;
+  // Only update if trim values have changed significantly to avoid update loops
+  const elbowArrowRead = ElbowArrow.read(ctx, entityId);
+  if (
+    !Scalar.approxEqual(elbowArrowRead.trimStart, startTrim) ||
+    !Scalar.approxEqual(elbowArrowRead.trimEnd, endTrim)
+  ) {
+    const elbowArrow = ElbowArrow.write(ctx, entityId);
+    elbowArrow.trimStart = startTrim;
+    elbowArrow.trimEnd = endTrim;
+  }
 
   // Trim the first capsule from startTrim to 1
   const startCapsule = HitGeometry.getCapsuleAt(ctx, entityId, 0);

@@ -176,6 +176,15 @@ export const GridOptions = z.object({
   enabled: z.boolean().default(false),
 
   /**
+   * Whether resized/rotated objects must stay aligned to the grid.
+   * If true, objects snap to grid during resize/rotate.
+   * If false, objects scale proportionally to the transform box, which may
+   * cause them to be unaligned with the grid.
+   * @default false
+   */
+  strict: z.boolean().default(false),
+
+  /**
    * Width of each grid column in world units.
    * @default 20
    */
