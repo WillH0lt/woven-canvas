@@ -379,6 +379,10 @@ export class Editor {
       await this.world.execute(...systems);
     }
 
+    const currentEventIndex = this.ctx.eventBuffer.getWriteIndex();
+    this.ctx.prevEventIndex = currentEventIndex;
+    this.ctx.currEventIndex = currentEventIndex;
+
     // Clean up command entities at end of frame
     cleanupCommands(this.ctx);
   }

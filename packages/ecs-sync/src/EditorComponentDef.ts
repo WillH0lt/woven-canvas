@@ -61,6 +61,15 @@ export class EditorComponentDef<
     }
   }
 
+  override default(): InferEditorComponentType<T> {
+    const data = super.default();
+    return {
+      ...data,
+      _exists: true as const,
+      _version: this.currentVersion,
+    };
+  }
+
   override snapshot(
     ctx: Context,
     entityId: EntityId,
@@ -70,7 +79,7 @@ export class EditorComponentDef<
       ...data,
       _exists: true as const,
       _version: this.currentVersion,
-    } as InferEditorComponentType<T>;
+    };
   }
 }
 

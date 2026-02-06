@@ -39,7 +39,7 @@ export const updateArrowHitGeometrySystem = defineEditorSystem(
     for (const entityId of elbowArrowsQuery.addedOrChanged(ctx)) {
       updateElbowArrowHitGeometry(ctx, entityId);
     }
-  }
+  },
 );
 
 /**
@@ -154,13 +154,13 @@ function updateElbowArrowTrim(ctx: Context, entityId: EntityId): void {
     ctx,
     connector.startBlock,
     start,
-    firstSegmentEnd
+    firstSegmentEnd,
   );
   const endTrim = calculateLineTrim(
     ctx,
     connector.endBlock,
     end,
-    lastSegmentStart
+    lastSegmentStart,
   );
 
   elbowArrow.trimStart = startTrim;
@@ -185,7 +185,7 @@ function calculateLineTrim(
   ctx: Context,
   blockId: EntityId | null,
   lineStart: Vec2,
-  lineEnd: Vec2
+  lineEnd: Vec2,
 ): number {
   if (!blockId) return 0;
 
@@ -201,7 +201,7 @@ function calculateLineTrim(
       lineStart,
       lineEnd,
       edgeStart,
-      edgeEnd
+      edgeEnd,
     );
     if (intersection) {
       intersections.push(intersection);
@@ -236,7 +236,7 @@ function lineSegmentIntersection(
   a1: Vec2,
   a2: Vec2,
   b1: Vec2,
-  b2: Vec2
+  b2: Vec2,
 ): Vec2 | null {
   const dx1 = a2[0] - a1[0];
   const dy1 = a2[1] - a1[1];

@@ -96,7 +96,7 @@ export class QueryReader {
     const result = ctx.eventBuffer.collectEntitiesInRange(
       this.prevFrameIndex,
       EventType.CHANGED,
-      masks.tracking
+      masks.tracking,
     );
 
     if (result.entities.size > 0) {
@@ -111,7 +111,7 @@ export class QueryReader {
   private rebuildCacheFromEntityBuffer(
     ctx: Context,
     cache: QueryCache,
-    masks: QueryMasks
+    masks: QueryMasks,
   ): void {
     const entityBuffer = ctx.entityBuffer;
     const maxEntities = ctx.maxEntities;
@@ -134,7 +134,7 @@ export class QueryReader {
   private processEventsAndComputeResults(
     ctx: Context,
     cache: QueryCache,
-    masks: QueryMasks
+    masks: QueryMasks,
   ): void {
     const maxEvents = ctx.maxEvents;
     const entityBuffer = ctx.entityBuffer;
@@ -158,7 +158,7 @@ export class QueryReader {
           toIndex - prevFrameIndex
         } events since last frame, ` +
           `but maxEvents is ${maxEvents}. Some added/removed/changed events may be missed. ` +
-          `Consider increasing maxEvents in World constructor.`
+          `Consider increasing maxEvents in World constructor.`,
       );
       prevFrameIndex = toIndex - maxEvents;
     }

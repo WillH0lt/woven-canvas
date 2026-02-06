@@ -60,13 +60,22 @@ export class EditorSingletonDef<
     }
   }
 
+  override default(): InferEditorComponentType<T> {
+    const data = super.default();
+    return {
+      ...data,
+      _exists: true as const,
+      _version: this.currentVersion,
+    };
+  }
+
   override snapshot(ctx: Context): InferEditorComponentType<T> {
     const data = super.snapshot(ctx);
     return {
       ...data,
       _exists: true as const,
       _version: this.currentVersion,
-    } as InferEditorComponentType<T>;
+    };
   }
 }
 

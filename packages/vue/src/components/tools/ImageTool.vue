@@ -9,6 +9,7 @@ import {
   Image,
   Asset,
   UploadState,
+  Grid,
   type Context,
 } from "@infinitecanvas/editor";
 import { Synced } from "@infinitecanvas/ecs-sync";
@@ -70,8 +71,15 @@ async function handleFileSelect(event: Event) {
       1,
       maxSize / Math.max(dimensions.width, dimensions.height),
     );
-    const width = Math.round(dimensions.width * scale);
-    const height = Math.round(dimensions.height * scale);
+    let width = Math.round(dimensions.width * scale);
+    let height = Math.round(dimensions.height * scale);
+
+    // Snap size to grid if enabled
+    const grid = Grid.read(ctx);
+    if (grid.enabled) {
+      width = Math.max(grid.colWidth, Math.round(width / grid.colWidth) * grid.colWidth);
+      height = Math.max(grid.rowHeight, Math.round(height / grid.rowHeight) * grid.rowHeight);
+    }
 
     // Create entity
     const entityId = createEntity(ctx);
@@ -84,6 +92,9 @@ async function handleFileSelect(event: Event) {
     block.position[1] = centerY - height / 2;
     block.size[0] = width;
     block.size[1] = height;
+
+    // Snap position to grid if enabled
+    Grid.snapPosition(ctx, block.position);
 
     // Generate identifier upfront
     const identifier = crypto.randomUUID();
