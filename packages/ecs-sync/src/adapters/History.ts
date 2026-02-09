@@ -129,6 +129,7 @@ export class HistoryAdapter implements Adapter {
     if (this.pendingPullPatches.length === 0) return [];
     const patch = merge(...this.pendingPullPatches);
     this.pendingPullPatches = [];
+
     return [{ patch, origin: Origin.History, syncBehavior: "document" }];
   }
 
@@ -259,8 +260,23 @@ export class HistoryAdapter implements Adapter {
     const deltasToSquash = this.undoStack.splice(targetIndex);
 
     // Merge all forward and inverse patches
+    // Note: merge() automatically removes create-then-delete sequences as no-ops
     const mergedForward = merge(...deltasToSquash.map((d) => d.forward));
     const mergedInverse = merge(...deltasToSquash.map((d) => d.inverse));
+
+    // Sync inverse with forward: if a key was removed from forward as a no-op
+    // (create-then-delete), also remove it from inverse
+    for (const key of Object.keys(mergedInverse)) {
+      if (!(key in mergedForward)) {
+        delete mergedInverse[key];
+      }
+    }
+
+    // If no actual changes remain, don't create a delta
+    if (Object.keys(mergedForward).length === 0) {
+      this.checkpoints.delete(checkpointId);
+      return true;
+    }
 
     // Push as a single delta
     this.undoStack.push({
@@ -431,7 +447,10 @@ export class HistoryAdapter implements Adapter {
    *   entries with _exists: true. Used for inverse patches so that undoing a deletion
    *   restores the complete state including excluded fields.
    */
-  private filterExcludedFields(patch: Patch, preserveRestorations = false): Patch {
+  private filterExcludedFields(
+    patch: Patch,
+    preserveRestorations = false,
+  ): Patch {
     const filtered: Patch = {};
 
     for (const [key, value] of Object.entries(patch)) {

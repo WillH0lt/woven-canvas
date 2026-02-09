@@ -10,7 +10,6 @@ import {
   Asset,
   UploadState,
   Grid,
-  type Context,
 } from "@infinitecanvas/editor";
 import { Synced } from "@infinitecanvas/ecs-sync";
 
@@ -58,91 +57,87 @@ async function handleFileSelect(event: Event) {
   const assetManager = canvasContext?.getAssetManager();
 
   // Create the block entity
-  nextEditorTick(async (ctx: Context) => {
-    const camera = Camera.read(ctx);
-    const screen = Screen.read(ctx);
-    // Calculate center of viewport
-    const centerX = camera.left + screen.width / camera.zoom / 2;
-    const centerY = camera.top + screen.height / camera.zoom / 2;
+  const ctx = await nextEditorTick();
 
-    // Scale image to reasonable size (max 400px on longest side)
-    const maxSize = 400;
-    const scale = Math.min(
-      1,
-      maxSize / Math.max(dimensions.width, dimensions.height),
-    );
-    let width = Math.round(dimensions.width * scale);
-    let height = Math.round(dimensions.height * scale);
+  const camera = Camera.read(ctx);
+  const screen = Screen.read(ctx);
+  // Calculate center of viewport
+  const centerX = camera.left + screen.width / camera.zoom / 2;
+  const centerY = camera.top + screen.height / camera.zoom / 2;
 
-    // Snap size to grid if enabled
-    const grid = Grid.read(ctx);
-    if (grid.enabled) {
-      width = Math.max(grid.colWidth, Math.round(width / grid.colWidth) * grid.colWidth);
-      height = Math.max(grid.rowHeight, Math.round(height / grid.rowHeight) * grid.rowHeight);
-    }
+  // Scale image to reasonable size (max 400px on longest side)
+  const maxSize = 400;
+  const scale = Math.min(
+    1,
+    maxSize / Math.max(dimensions.width, dimensions.height),
+  );
+  let width = Math.round(dimensions.width * scale);
+  let height = Math.round(dimensions.height * scale);
 
-    // Create entity
-    const entityId = createEntity(ctx);
+  // Snap size to grid if enabled
+  const grid = Grid.read(ctx);
+  if (grid.enabled) {
+    width = Math.max(grid.colWidth, Math.round(width / grid.colWidth) * grid.colWidth);
+    height = Math.max(grid.rowHeight, Math.round(height / grid.rowHeight) * grid.rowHeight);
+  }
 
-    // Add Block component
-    addComponent(ctx, entityId, Block);
-    const block = Block.write(ctx, entityId);
-    block.tag = "image";
-    block.position[0] = centerX - width / 2;
-    block.position[1] = centerY - height / 2;
-    block.size[0] = width;
-    block.size[1] = height;
+  // Create entity
+  const entityId = createEntity(ctx);
 
-    // Snap position to grid if enabled
-    Grid.snapPosition(ctx, block.position);
+  // Add Block component
+  addComponent(ctx, entityId, Block);
+  const block = Block.write(ctx, entityId);
+  block.tag = "image";
+  block.position[0] = centerX - width / 2;
+  block.position[1] = centerY - height / 2;
+  block.size[0] = width;
+  block.size[1] = height;
 
-    // Generate identifier upfront
-    const identifier = crypto.randomUUID();
+  // Snap position to grid if enabled
+  Grid.snapPosition(ctx, block.position);
 
-    // Add Asset component
-    addComponent(ctx, entityId, Asset);
-    const asset = Asset.write(ctx, entityId);
-    asset.identifier = identifier;
-    asset.uploadState = UploadState.Pending;
+  // Generate identifier upfront
+  const identifier = crypto.randomUUID();
 
-    // Add Image component
-    addComponent(ctx, entityId, Image);
-    const image = Image.write(ctx, entityId);
-    image.width = dimensions.width;
-    image.height = dimensions.height;
-    image.alt = file.name;
+  // Add Asset component
+  addComponent(ctx, entityId, Asset);
+  const asset = Asset.write(ctx, entityId);
+  asset.identifier = identifier;
+  asset.uploadState = UploadState.Pending;
 
-    // Add Synced component
-    addComponent(ctx, entityId, Synced, {
-      id: crypto.randomUUID(),
-    });
+  // Add Image component
+  addComponent(ctx, entityId, Image);
+  const image = Image.write(ctx, entityId);
+  image.width = dimensions.width;
+  image.height = dimensions.height;
+  image.alt = file.name;
 
-    // Switch to select tool
-    setTool("select", undefined, CursorKind.Select);
-
-    // Upload if asset manager is available
-    if (assetManager) {
-      assetManager
-        .upload(identifier, file, {
-          filename: file.name,
-          mimeType: file.type,
-          width: dimensions.width,
-          height: dimensions.height,
-        })
-        .then(() => {
-          nextEditorTick((ctx: Context) => {
-            const asset = Asset.write(ctx, entityId);
-            asset.uploadState = UploadState.Complete;
-          });
-        })
-        .catch(() => {
-          nextEditorTick((ctx: Context) => {
-            const asset = Asset.write(ctx, entityId);
-            asset.uploadState = UploadState.Failed;
-          });
-        });
-    }
+  // Add Synced component
+  addComponent(ctx, entityId, Synced, {
+    id: crypto.randomUUID(),
   });
+
+  // Switch to select tool
+  setTool("select", undefined, CursorKind.Select);
+
+  // Upload if asset manager is available
+  if (assetManager) {
+    try {
+      await assetManager.upload(identifier, file, {
+        filename: file.name,
+        mimeType: file.type,
+        width: dimensions.width,
+        height: dimensions.height,
+      });
+      const ctx = await nextEditorTick();
+      const asset = Asset.write(ctx, entityId);
+      asset.uploadState = UploadState.Complete;
+    } catch {
+      const ctx = await nextEditorTick();
+      const asset = Asset.write(ctx, entityId);
+      asset.uploadState = UploadState.Failed;
+    }
+  }
 }
 
 function getImageDimensions(

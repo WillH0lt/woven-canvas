@@ -127,7 +127,15 @@ export class WebsocketAdapter implements Adapter {
       return;
     }
     this.intentionallyClosed = false;
-    return this.connectWs();
+
+    try {
+      await this.connectWs();
+    } catch (err) {
+      console.warn("WebSocket connection failed:", err);
+      this.scheduleReconnect();
+    }
+
+    return;
   }
 
   private connectWs(): Promise<void> {

@@ -7,21 +7,32 @@ export interface EditorContext {
    * Execute a callback on the next editor tick.
    * This is the recommended way to make changes to the editor state.
    *
-   * @param callback - Function that receives the context for making changes
+   * Can be used with a callback or as a promise:
+   *
+   * @param callback - Optional function that receives the context for making changes
+   * @returns Promise that resolves with the context
    *
    * @example
    * ```typescript
    * const { nextEditorTick } = useEditorContext();
    *
+   * // Callback style
    * function handleClick() {
    *   nextEditorTick((ctx) => {
    *     const shape = Shape.write(ctx, entityId);
    *     shape.border = 10;
    *   });
    * }
+   *
+   * // Promise style
+   * async function handleClick() {
+   *   const ctx = await nextEditorTick();
+   *   const shape = Shape.write(ctx, entityId);
+   *   shape.border = 10;
+   * }
    * ```
    */
-  nextEditorTick(callback: (ctx: Context) => void): void;
+  nextEditorTick(callback?: (ctx: Context) => void): Promise<Context>;
 }
 
 /**
@@ -60,11 +71,16 @@ export function useEditorContext(): EditorContext {
   }
 
   return {
-    nextEditorTick(callback: (ctx: Context) => void) {
-      const editor = canvasContext.getEditor();
-      if (editor) {
-        editor.nextTick(callback);
-      }
+    nextEditorTick(callback?: (ctx: Context) => void): Promise<Context> {
+      return new Promise((resolve) => {
+        const editor = canvasContext.getEditor();
+        if (editor) {
+          editor.nextTick((ctx) => {
+            callback?.(ctx);
+            resolve(ctx);
+          });
+        }
+      });
     },
   };
 }

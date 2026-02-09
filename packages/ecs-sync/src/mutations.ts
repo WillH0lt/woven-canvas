@@ -6,6 +6,10 @@ import { isEqual } from "./utils";
  * Later mutations override earlier ones for the same key.
  * For component data, fields are merged (later values override earlier).
  *
+ * Create-then-delete sequences are detected and removed as no-ops:
+ * if an entity is created (_exists: true) and later deleted (_exists: false)
+ * within the same merge, the key is removed entirely.
+ *
  * @example
  * merge(
  *   { "e1/Position": { x: 10 } },
@@ -19,19 +23,37 @@ import { isEqual } from "./utils";
  *   { "e1/Position": { _exists: false } }
  * )
  * // Returns: { "e1/Position": { _exists: false } }
+ *
+ * @example
+ * merge(
+ *   { "e1/Position": { _exists: true, x: 10 } },
+ *   { "e1/Position": { _exists: false } }
+ * )
+ * // Returns: {} (create-then-delete is a no-op)
  */
 export function merge(...mutations: Patch[]): Patch {
   const result: Patch = {};
+  const createdWithin = new Set<string>();
 
   for (const mutation of mutations) {
     for (const [key, value] of Object.entries(mutation)) {
       const existing = result[key];
 
       if (value._exists === false) {
-        // Deletion overrides everything
-        result[key] = { _exists: false };
+        // Deletion
+        if (createdWithin.has(key)) {
+          // Entity was created and now deleted within this merge - remove as no-op
+          delete result[key];
+          createdWithin.delete(key);
+        } else {
+          result[key] = { _exists: false };
+        }
       } else if (existing === undefined || existing._exists === false) {
         // New value or replacing a deletion
+        if (existing === undefined && value._exists === true) {
+          // Track that this entity was created within this merge
+          createdWithin.add(key);
+        }
         result[key] = { ...value };
       } else {
         // Merge component data fields

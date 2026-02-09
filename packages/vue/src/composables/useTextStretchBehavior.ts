@@ -47,9 +47,15 @@ export interface TextStretchBehaviorResult {
   /**
    * Call this when text editing ends.
    * Handles saving the text content and updating block dimensions
-   * by measuring the container.
+   * using the provided dimensions from EditableText.
    */
-  handleEditEnd: (data: { content: string }) => void;
+  handleEditEnd: (data: {
+    content: string;
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+  }) => void;
 }
 
 /**
@@ -69,6 +75,43 @@ export function useTextStretchBehavior(
   // ResizeObserver for content-driven resizes
   let resizeObserver: ResizeObserver | null = null;
 
+  interface Dimensions {
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+  }
+
+  /**
+   * Updates block dimensions with min constraints applied.
+   */
+  function applyBlockDimensions(ctx: Context, dimensions: Dimensions): void {
+    const { entityId } = toValue(options.blockData);
+
+    // Apply min constraints
+    const minW = toValue(options.minWidth) ?? 0;
+    const minH = toValue(options.minHeight) ?? 0;
+    const finalWidth = Math.max(dimensions.width, minW);
+    const finalHeight = Math.max(dimensions.height, minH);
+
+    // Only write if dimensions actually changed
+    const block = Block.read(ctx, entityId);
+    const widthChanged = Math.abs(block.size[0] - finalWidth) > 0.5;
+    const heightChanged = Math.abs(block.size[1] - finalHeight) > 0.5;
+
+    if (!widthChanged && !heightChanged) return;
+
+    const writableBlock = Block.write(ctx, entityId);
+    writableBlock.size = [finalWidth, finalHeight];
+    writableBlock.position = [dimensions.left, dimensions.top];
+
+    if (TransformBoxState.value.transformBoxId !== null) {
+      UpdateTransformBox.spawn(ctx, {
+        transformBoxId: TransformBoxState.value.transformBoxId,
+      });
+    }
+  }
+
   function startResizeObserver() {
     if (resizeObserver) return; // Already observing
 
@@ -79,35 +122,8 @@ export function useTextStretchBehavior(
       nextEditorTick((ctx) => {
         if (!isStretching(ctx)) return;
 
-        console.log("ResizeObserver triggered for text stretch behavior");
-
-        const { entityId } = toValue(options.blockData);
-        const block = Block.read(ctx, entityId);
-
-        // Compute new dimensions from DOM
         const dimensions = computeBlockDimensions(element, camera, screen);
-
-        // Apply min constraints
-        const minW = toValue(options.minWidth) ?? 0;
-        const minH = toValue(options.minHeight) ?? 0;
-        const finalWidth = Math.max(dimensions.width, minW);
-        const finalHeight = Math.max(dimensions.height, minH);
-
-        // Only write if dimensions actually changed
-        const widthChanged = Math.abs(block.size[0] - finalWidth) > 0.5;
-        const heightChanged = Math.abs(block.size[1] - finalHeight) > 0.5;
-
-        if (!widthChanged && !heightChanged) return;
-
-        const writableBlock = Block.write(ctx, entityId);
-        writableBlock.size = [finalWidth, finalHeight];
-        writableBlock.position = [dimensions.left, dimensions.top];
-
-        if (TransformBoxState.value.transformBoxId !== null) {
-          UpdateTransformBox.spawn(ctx, {
-            transformBoxId: TransformBoxState.value.transformBoxId,
-          });
-        }
+        applyBlockDimensions(ctx, dimensions);
       });
     });
     resizeObserver.observe(element);
@@ -139,33 +155,26 @@ export function useTextStretchBehavior(
   /**
    * Handle edit end - saves text content and updates block dimensions.
    */
-  function handleEditEnd(data: { content: string }): void {
-    const { content } = data;
-    const element = options.containerRef.value;
-    if (!element) return;
+  function handleEditEnd(data: {
+    content: string;
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+  }): void {
+    const { content, ...dimensions } = data;
 
     nextEditorTick((ctx) => {
       const { entityId } = toValue(options.blockData);
 
       // Save text content
       const text = Text.read(ctx, entityId);
-      if (text.content === content) return;
+      if (text.content !== content) {
+        const writableText = Text.write(ctx, entityId);
+        writableText.content = content;
+      }
 
-      const writableText = Text.write(ctx, entityId);
-      writableText.content = content;
-
-      // Measure container (includes padding, etc.)
-      const dimensions = computeBlockDimensions(element, camera, screen);
-
-      // Apply min constraints
-      const minW = toValue(options.minWidth) ?? 0;
-      const minH = toValue(options.minHeight) ?? 0;
-      const finalWidth = Math.max(dimensions.width, minW);
-      const finalHeight = Math.max(dimensions.height, minH);
-
-      const block = Block.write(ctx, entityId);
-      block.size = [finalWidth, finalHeight];
-      block.position = [dimensions.left, dimensions.top];
+      applyBlockDimensions(ctx, dimensions);
     });
   }
 
