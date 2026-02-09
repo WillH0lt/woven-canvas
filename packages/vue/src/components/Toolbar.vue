@@ -133,6 +133,11 @@ const customTools = computed(() => {
         <ElbowArrowTool />
       </slot>
 
+      <!-- Arc Arrow tool -->
+      <slot name="tool:arc-arrow">
+        <ArcArrowTool />
+      </slot>
+
       <!-- Pen tool -->
       <slot name="tool:pen">
         <PenTool />

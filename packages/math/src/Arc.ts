@@ -300,6 +300,23 @@ export namespace Arc {
   };
 
   /**
+   * Find intersection points between the arc and a rectangle (4 corners).
+   * The corners should be provided in order (e.g., clockwise or counter-clockwise).
+   */
+  export const intersectRect = (arc: Arc, corners: Vec2[]): Vec2[] => {
+    const intersectionPoints: Vec2[] = [];
+
+    for (let i = 0; i < corners.length; i++) {
+      const p1 = corners[i];
+      const p2 = corners[(i + 1) % corners.length];
+      const intersects = intersectSegment(arc, p1, p2);
+      intersectionPoints.push(...intersects);
+    }
+
+    return intersectionPoints;
+  };
+
+  /**
    * Convert a point on the arc to a parametric value (0 = start, 1 = end).
    * Returns null if the point is not on the arc.
    */

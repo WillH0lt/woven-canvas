@@ -876,6 +876,9 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
+      '@infinitecanvas/math':
+        specifier: workspace:^
+        version: link:../math
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5

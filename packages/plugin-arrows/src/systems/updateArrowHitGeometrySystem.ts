@@ -106,11 +106,12 @@ function updateElbowArrowHitGeometry(ctx: Context, entityId: EntityId): void {
  */
 function updateArcArrowTrim(ctx: Context, entityId: EntityId): void {
   const connector = Connector.read(ctx, entityId);
+  const worldArc = ArcArrow.getWorldArc(ctx, entityId);
   const { a, c } = ArcArrow.getWorldPoints(ctx, entityId);
 
-  // Calculate trim values using refs directly
-  let startTrim = calculateLineTrim(ctx, connector.startBlock, a, c);
-  let endTrim = calculateLineTrim(ctx, connector.endBlock, c, a);
+  // Calculate trim values using arc-block intersection
+  let startTrim = calculateArcTrim(ctx, connector.startBlock, worldArc, a);
+  let endTrim = calculateArcTrim(ctx, connector.endBlock, worldArc, c);
 
   // Reset if visible portion is too small
   if (1 - endTrim - startTrim < 0.1) {
@@ -136,6 +137,37 @@ function updateArcArrowTrim(ctx: Context, entityId: EntityId): void {
     Arc.trim(arc, startTrim, 1 - endTrim);
     HitGeometry.setArcAt(ctx, entityId, i, arc);
   }
+}
+
+/**
+ * Calculate trim value where an arc intersects a block.
+ * Uses arc-circle intersection with block edges (not straight-line intersection).
+ */
+function calculateArcTrim(
+  ctx: Context,
+  blockId: EntityId | null,
+  arc: Arc,
+  referencePoint: Vec2,
+): number {
+  if (!blockId) return 0;
+
+  // Get block corners for intersection testing
+  const corners = Block.getCorners(ctx, blockId);
+
+  // Find arc-block intersections (arc-circle intersection with each edge)
+  const intersections = Arc.intersectRect(arc, corners);
+
+  if (intersections.length === 0) return 0;
+
+  // Find closest intersection to the reference point
+  const closest = closestPointToPoint(intersections, referencePoint);
+
+  if (!closest) return 0;
+
+  // Convert intersection point to parametric value on the arc
+  const t = Arc.pointToParametric(arc, closest);
+
+  return t ?? 0;
 }
 
 /**

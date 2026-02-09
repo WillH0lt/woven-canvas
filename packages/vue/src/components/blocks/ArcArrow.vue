@@ -73,7 +73,7 @@ const worldArc = computed(() => {
     v[3] * h,
     v[4] * w,
     v[5] * h,
-    v[6]
+    v[6],
   );
 });
 

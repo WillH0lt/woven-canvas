@@ -387,28 +387,13 @@ function onArrowHandleDrag(
   }
 
   if (hasComponent(ctx, arrowEntityId, ArcArrow)) {
-    updateArcArrow(
-      ctx,
-      arrowEntityId,
-      handle.kind as ArrowHandleKindType,
-      handlePosition,
-    );
+    updateArcArrow(ctx, arrowEntityId, handle.kind, handlePosition);
   } else if (hasComponent(ctx, arrowEntityId, ElbowArrow)) {
-    updateElbowArrow(
-      ctx,
-      arrowEntityId,
-      handle.kind as ArrowHandleKindType,
-      handlePosition,
-    );
+    updateElbowArrow(ctx, arrowEntityId, handle.kind, handlePosition);
   }
 
   if (handle.kind !== ArrowHandleKind.Middle) {
-    updateConnector(
-      ctx,
-      arrowEntityId,
-      handle.kind as ArrowHandleKindType,
-      handlePosition,
-    );
+    updateConnector(ctx, arrowEntityId, handle.kind, handlePosition);
   }
 }
 
