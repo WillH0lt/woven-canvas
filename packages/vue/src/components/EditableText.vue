@@ -274,7 +274,7 @@ onUnmounted(() => {
 .ic-editable-text {
   width: 100%;
   display: block;
-  color: var(--ic-text-color);
+  color: #000000;
 }
 
 .ic-editable-text p {
