@@ -36,6 +36,10 @@ export {
   type ArrowHeadDef,
 } from "./arrowHeads";
 
+// Shape Components
+export { default as ShapeBlock } from "./components/blocks/ShapeBlock.vue";
+export { default as ShapeTool } from "./components/tools/ShapeTool.vue";
+
 // Image Components
 export { default as ImageBlock } from "./components/blocks/ImageBlock.vue";
 
@@ -54,6 +58,11 @@ export { default as ColorButton } from "./components/buttons/ColorButton.vue";
 export { default as ColorPicker } from "./components/buttons/ColorPicker.vue";
 export { default as ArrowThicknessButton } from "./components/buttons/ArrowThicknessButton.vue";
 export { default as ArrowHeadButton } from "./components/buttons/ArrowHeadButton.vue";
+
+// Shape Menu Button Components
+export { default as ShapeKindButton } from "./components/buttons/ShapeKindButton.vue";
+export { default as ShapeFillColorButton } from "./components/buttons/ShapeFillColorButton.vue";
+export { default as ShapeStrokeColorButton } from "./components/buttons/ShapeStrokeColorButton.vue";
 
 // Text Formatting Button Components
 export {

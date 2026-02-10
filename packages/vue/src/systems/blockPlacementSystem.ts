@@ -105,6 +105,7 @@ function createBlockFromSnapshot(
   });
   addComponent(ctx, entityId, Block, blockData);
 
+  console.log(blockDef.components);
   for (const Comp of blockDef.components) {
     if (!(Comp.name in snapshot)) {
       addComponent(ctx, entityId, Comp);

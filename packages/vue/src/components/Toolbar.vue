@@ -6,6 +6,7 @@ import MenuTooltip from "./buttons/MenuTooltip.vue";
 import SelectTool from "./tools/SelectTool.vue";
 import HandTool from "./tools/HandTool.vue";
 import StickyNoteTool from "./tools/StickyNoteTool.vue";
+import ShapeTool from "./tools/ShapeTool.vue";
 import EraserTool from "./tools/EraserTool.vue";
 import PenTool from "./tools/PenTool.vue";
 import ArcArrowTool from "./tools/ArcArrowTool.vue";
@@ -126,6 +127,11 @@ const customTools = computed(() => {
       <!-- Sticky note tool -->
       <slot name="tool:sticky-note">
         <StickyNoteTool />
+      </slot>
+
+      <!-- Shape tool -->
+      <slot name="tool:shape">
+        <ShapeTool />
       </slot>
 
       <!-- Elbow Arrow tool  -->

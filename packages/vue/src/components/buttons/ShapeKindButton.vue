@@ -1,0 +1,171 @@
+<script setup lang="ts">
+import { computed } from "vue";
+import type { EntityId } from "@infinitecanvas/editor";
+import { Shape, ShapeKind, getShapePath } from "@infinitecanvas/plugin-shapes";
+
+import MenuDropdown from "./MenuDropdown.vue";
+import IconChevronDown from "../icons/IconChevronDown.vue";
+import { useComponents } from "../../composables/useComponents";
+import { useEditorContext } from "../../composables/useEditorContext";
+
+const props = defineProps<{
+  entityIds: EntityId[];
+}>();
+
+const { nextEditorTick } = useEditorContext();
+
+const shapesMap = useComponents(() => props.entityIds, Shape);
+
+// Get the current shape kind
+const currentKind = computed(() => {
+  const first = shapesMap.value.values().next().value;
+  return first?.kind ?? ShapeKind.Rectangle;
+});
+
+// Check if multiple different kinds are selected
+const hasMultipleKinds = computed(() => {
+  const kinds = new Set<ShapeKind>();
+  for (const shape of shapesMap.value.values()) {
+    if (shape) {
+      kinds.add(shape.kind);
+    }
+  }
+  return kinds.size > 1;
+});
+
+// Available shape kinds with labels
+const shapeOptions: { kind: ShapeKind; label: string }[] = [
+  { kind: ShapeKind.Rectangle, label: "Rectangle" },
+  { kind: ShapeKind.Ellipse, label: "Ellipse" },
+  { kind: ShapeKind.Triangle, label: "Triangle" },
+  { kind: ShapeKind.Diamond, label: "Diamond" },
+  { kind: ShapeKind.Pentagon, label: "Pentagon" },
+  { kind: ShapeKind.Hexagon, label: "Hexagon" },
+  { kind: ShapeKind.Star, label: "Star" },
+  { kind: ShapeKind.Heart, label: "Heart" },
+  { kind: ShapeKind.Cloud, label: "Cloud" },
+  { kind: ShapeKind.Speech, label: "Speech" },
+  { kind: ShapeKind.Arrow, label: "Arrow" },
+  { kind: ShapeKind.Explosion, label: "Explosion" },
+  { kind: ShapeKind.Crescent, label: "Crescent" },
+  { kind: ShapeKind.Rainbow, label: "Rainbow" },
+  { kind: ShapeKind.Flower, label: "Flower" },
+  { kind: ShapeKind.Sticker, label: "Sticker" },
+  { kind: ShapeKind.Flare, label: "Flare" },
+  { kind: ShapeKind.Kapow, label: "Kapow" },
+];
+
+function handleKindChange(kind: ShapeKind) {
+  nextEditorTick((ctx) => {
+    for (const entityId of props.entityIds) {
+      const shapeData = Shape.write(ctx, entityId);
+      shapeData.kind = kind;
+    }
+  });
+}
+</script>
+
+<template>
+  <MenuDropdown title="Shape Type">
+    <template #button>
+      <div class="ic-shape-kind-button">
+        <svg
+          viewBox="0 0 20 20"
+          class="ic-shape-kind-icon"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path
+            :d="getShapePath(currentKind)"
+            transform="translate(2, 2) scale(0.16)"
+          />
+        </svg>
+        <IconChevronDown class="ic-chevron-down" />
+      </div>
+    </template>
+
+    <template #dropdown>
+      <div class="ic-shape-kind-dropdown">
+        <button
+          v-for="option in shapeOptions"
+          :key="option.kind"
+          class="ic-shape-kind-option"
+          :class="{
+            'is-selected': !hasMultipleKinds && option.kind === currentKind,
+          }"
+          @click="handleKindChange(option.kind)"
+        >
+          <svg
+            viewBox="0 0 20 20"
+            class="ic-shape-option-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <path
+              :d="getShapePath(option.kind)"
+              transform="translate(2, 2) scale(0.16)"
+            />
+          </svg>
+          <span>{{ option.label }}</span>
+        </button>
+      </div>
+    </template>
+  </MenuDropdown>
+</template>
+
+<style>
+.ic-shape-kind-button {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 6px;
+  margin: 0 8px;
+}
+
+.ic-shape-kind-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.ic-shape-kind-dropdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 8px;
+  background: var(--ic-gray-700);
+  border-radius: var(--ic-menu-border-radius);
+  min-width: 200px;
+}
+
+.ic-shape-kind-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--ic-gray-100);
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.ic-shape-kind-option:hover {
+  background: var(--ic-gray-600);
+}
+
+.ic-shape-kind-option.is-selected {
+  background: var(--ic-primary-600);
+}
+
+.ic-shape-option-icon {
+  width: 24px;
+  height: 24px;
+}
+</style>

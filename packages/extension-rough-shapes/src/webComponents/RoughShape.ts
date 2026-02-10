@@ -275,15 +275,11 @@ export class ICRoughShape extends ICEditableBlock {
       fillInfo = null
     }
 
-    let strokeInfo: PathInfo | null = null
-
-    if (shape.strokeKind !== ShapeStrokeKind.None) {
-      strokeInfo = toPathInfo(
-        paths[1],
-        options.strokeLineDash ? options.strokeLineDash.join(' ') : undefined,
-        options.strokeWidth,
-      )
-    }
+    const strokeInfo = toPathInfo(
+      paths[1],
+      options.strokeLineDash ? options.strokeLineDash.join(' ') : undefined,
+      options.strokeWidth,
+    )
 
     const highlightInfo = toPathInfo(paths[1], undefined, 1)
 

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import ColorPicker from "./ColorPicker.vue";
+import { hexToRgb, type ColorData } from "../../utils/color";
 
 const props = defineProps<{
   currentColor?: string;
   palette?: string[];
   hideHighlight?: boolean;
   withPicker?: boolean;
+  withOpacity?: boolean;
 }>();
 
 const emit = defineEmits<{
-  change: [color: string];
+  change: [color: ColorData];
+  "picker-open": [open: boolean];
 }>();
 
 const defaultPalette = [
@@ -50,7 +53,12 @@ const pickerOpen = ref(false);
 const pickerColor = ref(props.currentColor ?? "#ff0000");
 
 function colorsEqual(a: string, b: string): boolean {
-  return a.toLowerCase() === b.toLowerCase();
+  // Compare full RGBA (normalize 6-digit hex to 8-digit with ff alpha)
+  const normalize = (c: string) => {
+    const hex = c.replace(/^#/, "").toLowerCase();
+    return hex.length === 6 ? hex + "ff" : hex;
+  };
+  return normalize(a) === normalize(b);
 }
 
 function isSelected(color: string): boolean {
@@ -64,7 +72,10 @@ function isRainbowSelected(): boolean {
 }
 
 function selectColor(color: string) {
-  emit("change", color);
+  const rgb = hexToRgb(color);
+  if (rgb) {
+    emit("change", rgb);
+  }
 }
 
 function togglePicker() {
@@ -72,11 +83,15 @@ function togglePicker() {
     pickerColor.value = props.currentColor;
   }
   pickerOpen.value = !pickerOpen.value;
+  emit("picker-open", pickerOpen.value);
 }
 
 function onPickerChange(color: string) {
   pickerColor.value = color;
-  emit("change", color);
+  const rgb = hexToRgb(color);
+  if (rgb) {
+    emit("change", rgb);
+  }
 }
 </script>
 
@@ -85,6 +100,7 @@ function onPickerChange(color: string) {
     <ColorPicker
       v-if="pickerOpen"
       v-model="pickerColor"
+      :withOpacity="withOpacity"
       @update:model-value="onPickerChange"
     />
     <div v-else class="ic-color-bubbles">

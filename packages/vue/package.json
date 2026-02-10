@@ -41,6 +41,7 @@
     "@infinitecanvas/plugin-eraser": "workspace:^",
     "@infinitecanvas/plugin-pen": "workspace:^",
     "@infinitecanvas/plugin-selection": "workspace:^",
+    "@infinitecanvas/plugin-shapes": "workspace:^",
     "@tiptap/core": "^3.15.3",
     "@tiptap/extension-bold": "^3.15.3",
     "@tiptap/extension-color": "^3.10.1",

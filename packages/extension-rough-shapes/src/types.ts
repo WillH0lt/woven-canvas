@@ -22,7 +22,6 @@ export enum ShapeStrokeKind {
   Solid = 'solid',
   Dashed = 'dashed',
   Dotted = 'dotted',
-  None = 'none',
 }
 
 export enum ShapeFillKind {

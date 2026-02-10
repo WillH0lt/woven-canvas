@@ -876,9 +876,6 @@ importers:
       '@infinitecanvas/core':
         specifier: workspace:^
         version: link:../core
-      '@infinitecanvas/math':
-        specifier: workspace:^
-        version: link:../math
       '@lastolivegames/becsy':
         specifier: ^0.15.5
         version: 0.15.5
@@ -1196,6 +1193,28 @@ importers:
         specifier: ^4.0.7
         version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
 
+  packages/plugin-shapes:
+    dependencies:
+      '@infinitecanvas/editor':
+        specifier: workspace:*
+        version: link:../editor
+      '@infinitecanvas/math':
+        specifier: workspace:*
+        version: link:../math
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.8
+      resize-observer-polyfill:
+        specifier: ^1.5.1
+        version: 1.5.1
+      vitest:
+        specifier: ^4.0.7
+        version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
+
   packages/store:
     dependencies:
       '@infinitecanvas/editor':
@@ -1339,6 +1358,9 @@ importers:
       '@infinitecanvas/plugin-selection':
         specifier: workspace:^
         version: link:../plugin-selection
+      '@infinitecanvas/plugin-shapes':
+        specifier: workspace:^
+        version: link:../plugin-shapes
       '@tiptap/core':
         specifier: ^3.15.3
         version: 3.17.0(@tiptap/pm@3.17.0)

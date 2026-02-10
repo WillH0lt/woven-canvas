@@ -1,6 +1,9 @@
 import { Color, type InferEditorComponentType } from "@infinitecanvas/editor";
 
-type ColorData = InferEditorComponentType<typeof Color.schema>;
+export type ColorData = Omit<
+  InferEditorComponentType<typeof Color.schema>,
+  "_exists" | "_version"
+>;
 
 /**
  * Normalize a color string to uppercase hex format for consistent comparison.
@@ -80,17 +83,20 @@ export function hexToRgb(hex: string): ColorData | null {
 }
 
 export type HSVColor = { h: number; s: number; v: number };
+export type HSVAColor = { h: number; s: number; v: number; a: number };
 
-export function hexToHsv(hex: string): HSVColor {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return { h: 0, s: 100, v: 100 };
+export function hexToHsva(hex: string): HSVAColor {
+  const rgb = hexToRgb(hex);
+  if (!rgb) {
+    return { h: 0, s: 100, v: 100, a: 255 };
+  }
 
-  const r = parseInt(result[1], 16) / 255;
-  const g = parseInt(result[2], 16) / 255;
-  const b = parseInt(result[3], 16) / 255;
+  const rNorm = rgb.red / 255;
+  const gNorm = rgb.green / 255;
+  const bNorm = rgb.blue / 255;
 
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
+  const max = Math.max(rNorm, gNorm, bNorm);
+  const min = Math.min(rNorm, gNorm, bNorm);
   const d = max - min;
 
   let h = 0;
@@ -99,18 +105,23 @@ export function hexToHsv(hex: string): HSVColor {
 
   if (d !== 0) {
     switch (max) {
-      case r:
-        h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+      case rNorm:
+        h = ((gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0)) * 60;
         break;
-      case g:
-        h = ((b - r) / d + 2) * 60;
+      case gNorm:
+        h = ((bNorm - rNorm) / d + 2) * 60;
         break;
-      case b:
-        h = ((r - g) / d + 4) * 60;
+      case bNorm:
+        h = ((rNorm - gNorm) / d + 4) * 60;
         break;
     }
   }
 
+  return { h, s, v, a: rgb.alpha };
+}
+
+export function hexToHsv(hex: string): HSVColor {
+  const { h, s, v } = hexToHsva(hex);
   return { h, s, v };
 }
 
@@ -166,5 +177,66 @@ export function hsvToHex(hsv: HSVColor): string {
     Math.round(n * 255)
       .toString(16)
       .padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+export function hsvaToHex(hsva: HSVAColor): string {
+  const h = hsva.h / 360;
+  const s = hsva.s / 100;
+  const v = hsva.v / 100;
+
+  let r = 0,
+    g = 0,
+    b = 0;
+
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+
+  switch (i % 6) {
+    case 0:
+      r = v;
+      g = t;
+      b = p;
+      break;
+    case 1:
+      r = q;
+      g = v;
+      b = p;
+      break;
+    case 2:
+      r = p;
+      g = v;
+      b = t;
+      break;
+    case 3:
+      r = p;
+      g = q;
+      b = v;
+      break;
+    case 4:
+      r = t;
+      g = p;
+      b = v;
+      break;
+    case 5:
+      r = v;
+      g = p;
+      b = q;
+      break;
+  }
+
+  const toHex = (n: number) =>
+    Math.round(n * 255)
+      .toString(16)
+      .padStart(2, "0");
+
+  const aHex = Math.round(hsva.a).toString(16).padStart(2, "0");
+
+  if (hsva.a < 255) {
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}${aHex}`;
+  }
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }

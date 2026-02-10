@@ -7,13 +7,12 @@ import { customElement, state } from 'lit/decorators.js'
 import { consume } from '@lit/context'
 import type { RoughShape } from '../components'
 import { ShapeStrokeKind } from '../types'
-import { none, strokeDashed, strokeDotted, strokeSolid } from './icons'
+import { strokeDashed, strokeDotted, strokeSolid } from './icons'
 
 const strokeStyles = {
   [ShapeStrokeKind.Solid]: strokeSolid,
   [ShapeStrokeKind.Dotted]: strokeDotted,
   [ShapeStrokeKind.Dashed]: strokeDashed,
-  [ShapeStrokeKind.None]: none,
 }
 
 function getStrokeHex(roughShape: RoughShape): string {

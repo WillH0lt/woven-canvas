@@ -14,6 +14,9 @@ import TextFontSizeButton from "./buttons/text/TextFontSizeButton.vue";
 import TextFontFamilyButton from "./buttons/text/TextFontFamilyButton.vue";
 import TextColorButton from "./buttons/text/TextColorButton.vue";
 import VerticalAlignButton from "./buttons/text/VerticalAlignButton.vue";
+import ShapeKindButton from "./buttons/ShapeKindButton.vue";
+import ShapeFillColorButton from "./buttons/ShapeFillColorButton.vue";
+import ShapeStrokeColorButton from "./buttons/ShapeStrokeColorButton.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { FLOATING_MENU_KEY } from "../injection";
 
@@ -30,6 +33,7 @@ const builtInComponentNames = new Set([
   "penStroke",
   "elbowArrow",
   "arcArrow",
+  "shape",
 ]);
 
 // Custom slots for components not covered by built-ins
@@ -66,6 +70,15 @@ onUnmounted(() => {
         v-if="commonComponents.has('color')"
         :entityIds="selectedIds"
       />
+    </slot>
+
+    <!-- Shape buttons -->
+    <slot name="button:shape" :entityIds="selectedIds">
+      <template v-if="commonComponents.has('shape')">
+        <ShapeKindButton :entityIds="selectedIds" />
+        <ShapeFillColorButton :entityIds="selectedIds" />
+        <ShapeStrokeColorButton :entityIds="selectedIds" />
+      </template>
     </slot>
 
     <!-- Pen stroke thickness button -->

@@ -1,17 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Editor, Color, Text, VerticalAlign } from "@infinitecanvas/editor";
-import {
-  InfiniteCanvas,
-  FloatingMenuBar,
-  Toolbar,
-  type EditorSync,
-} from "@infinitecanvas/vue";
-
-import { Shape } from "./Shape";
-import ShapeBlock from "./components/ShapeBlock.vue";
-import BorderButton from "./components/BorderButton.vue";
-import ShapeTool from "./components/ShapeTool.vue";
+import { Editor } from "@infinitecanvas/editor";
+import { InfiniteCanvas, type EditorSync } from "@infinitecanvas/vue";
 
 const ONLINE_STORAGE_KEY = "infinitecanvas-online-mode";
 
@@ -60,17 +50,6 @@ const syncOptions = ref({
       @ready="handleReady"
       :sync-options="syncOptions"
       :controls="{ maxZoom: 3 }"
-      :components="[Shape]"
-      :blockDefs="[
-        {
-          tag: 'shape',
-          components: [Shape, Color, Text, VerticalAlign],
-          resizeMode: 'free',
-          editOptions: {
-            canEdit: true,
-          },
-        },
-      ]"
       :grid="{
         enabled: true,
       }"
@@ -81,25 +60,38 @@ const syncOptions = ref({
         subdivisionStep: 5,
       }"
     >
-      <template #block:shape="blockData">
-        <ShapeBlock v-bind="blockData" />
-      </template>
+      <!-- 
+      :components="[Shape]"
+      :blockDefs="[
+        {
+          tag: 'shape',
+          components: [Shape, Color, Text, VerticalAlign],
+          resizeMode: 'free',
+          editOptions: {
+            canEdit: true,
+          },
+        },
+      ]" -->
 
-      <template #floating-menu>
+      <!-- <template #block:shape="blockData">
+        <ShapeBlock v-bind="blockData" />
+      </template> -->
+
+      <!-- <template #floating-menu>
         <FloatingMenuBar>
           <template #button:shape="buttonData">
             <BorderButton v-bind="buttonData" />
           </template>
         </FloatingMenuBar>
-      </template>
+      </template> -->
 
-      <template #toolbar>
+      <!-- <template #toolbar>
         <Toolbar>
           <template #tool:shape="toolData">
             <ShapeTool v-bind="toolData" />
           </template>
         </Toolbar>
-      </template>
+      </template> -->
     </InfiniteCanvas>
   </div>
 </template>

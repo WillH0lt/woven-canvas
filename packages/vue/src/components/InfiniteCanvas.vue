@@ -52,6 +52,7 @@ import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
 import { EraserPlugin } from "@infinitecanvas/plugin-eraser";
 import { PenPlugin } from "@infinitecanvas/plugin-pen";
 import { ArrowsPlugin } from "@infinitecanvas/plugin-arrows";
+import { ShapesPlugin } from "@infinitecanvas/plugin-shapes";
 
 import {
   INFINITE_CANVAS_KEY,
@@ -74,6 +75,7 @@ import ElbowArrow from "./blocks/ElbowArrow.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
 import ArrowTerminal from "./blocks/ArrowTerminal.vue";
 import ImageBlock from "./blocks/ImageBlock.vue";
+import ShapeBlock from "./blocks/ShapeBlock.vue";
 import { BasicsPlugin } from "../BasicsPlugin";
 import type { BlockData, BackgroundOptions } from "../types";
 import UserPresence from "./UserPresence.vue";
@@ -408,6 +410,7 @@ onMounted(async () => {
   allPlugins.push(EraserPlugin);
   allPlugins.push(PenPlugin);
   allPlugins.push(ArrowsPlugin);
+  allPlugins.push(ShapesPlugin);
   allPlugins.push(BasicsPlugin({ store }));
 
   // Add user-provided plugins
@@ -806,6 +809,10 @@ function getBlockStyle(data: BlockData) {
           />
           <ImageBlock
             v-else-if="blockData.value.block.tag === 'image'"
+            v-bind="blockData.value"
+          />
+          <ShapeBlock
+            v-else-if="blockData.value.block.tag === 'shape'"
             v-bind="blockData.value"
           />
         </slot>

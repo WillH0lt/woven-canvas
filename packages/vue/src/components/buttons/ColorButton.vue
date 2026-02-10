@@ -8,7 +8,7 @@ import ColorBubbles from "./ColorBubbles.vue";
 import IconChevronDown from "../icons/IconChevronDown.vue";
 import { useComponents } from "../../composables/useComponents";
 import { useEditorContext } from "../../composables/useEditorContext";
-import { rgbToHex } from "../../utils/color";
+import { rgbToHex, type ColorData } from "../../utils/color";
 
 const props = defineProps<{
   entityIds: EntityId[];
@@ -56,10 +56,11 @@ const swatchStyle = computed(() => {
   return { backgroundColor: selectedColors.value[0] };
 });
 
-function handleColorChange(colorHex: string) {
+function handleColorChange(color: ColorData) {
+  const hex = rgbToHex(color);
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      Color.fromHex(ctx, entityId, colorHex);
+      Color.fromHex(ctx, entityId, hex);
     }
   });
 }
