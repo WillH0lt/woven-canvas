@@ -62,6 +62,7 @@ export function createEraserPlugin(
     blockDefs: [
       {
         tag: "eraser-stroke",
+        stratum: "overlay",
         canRotate: false,
         canScale: false,
         components: [components.EraserStroke],

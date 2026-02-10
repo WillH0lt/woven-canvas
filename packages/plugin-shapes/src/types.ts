@@ -10,16 +10,7 @@ export enum ShapeKind {
   Hexagon = "hexagon",
   Star = "star",
   Heart = "heart",
-  Cloud = "cloud",
-  Speech = "speech",
   Arrow = "arrow",
-  Explosion = "explosion",
-  Crescent = "crescent",
-  Rainbow = "rainbow",
-  Flower = "flower",
-  Sticker = "sticker",
-  Flare = "flare",
-  Kapow = "kapow",
 }
 
 /**

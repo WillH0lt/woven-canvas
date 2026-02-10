@@ -6,7 +6,7 @@ import ToolbarButton from "../ToolbarButton.vue";
 const snapshot = JSON.stringify({
   block: {
     tag: "shape",
-    size: [200, 150],
+    size: [200, 200],
   },
   shape: {
     kind: ShapeKind.Rectangle,

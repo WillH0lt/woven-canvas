@@ -12,6 +12,8 @@ import {
 import { Block } from "../components/Block";
 import { Aabb as AabbComp } from "../components/Aabb";
 import { HitGeometry } from "../components/HitGeometry";
+import { getBlockDef } from "./blockDefs";
+import { STRATUM_ORDER } from "../constants";
 
 // Query for all blocks with Aabb
 const blocksWithAabb = defineQuery((q) => q.with(Block, AabbComp));
@@ -111,13 +113,29 @@ export function intersectAabb(
 }
 
 /**
- * Sort entity IDs by rank in descending order (topmost first).
- * Fractional indexing keys are designed to be compared with simple string comparison.
+ * Sort entity IDs by stratum then rank in descending order (topmost first).
+ * Overlay blocks are always on top of content, which are on top of background.
+ * Within each stratum, blocks are sorted by rank (higher = on top).
  */
 function sortByRankDescending(ctx: Context, entityIds: EntityId[]): EntityId[] {
   return entityIds.sort((a, b) => {
-    const rankA = Block.read(ctx, a).rank;
-    const rankB = Block.read(ctx, b).rank;
+    const blockA = Block.read(ctx, a);
+    const blockB = Block.read(ctx, b);
+
+    // Get stratum for each block
+    const stratumA = getBlockDef(ctx, blockA.tag).stratum;
+    const stratumB = getBlockDef(ctx, blockB.tag).stratum;
+
+    // Sort by stratum first (overlay > content > background)
+    const stratumOrderA = STRATUM_ORDER[stratumA];
+    const stratumOrderB = STRATUM_ORDER[stratumB];
+    if (stratumOrderB !== stratumOrderA) {
+      return stratumOrderB - stratumOrderA;
+    }
+
+    // Within same stratum, sort by rank
+    const rankA = blockA.rank;
+    const rankB = blockB.rank;
 
     // Handle empty ranks (put at bottom)
     if (!rankA && !rankB) return 0;

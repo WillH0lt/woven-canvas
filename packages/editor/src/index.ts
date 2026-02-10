@@ -20,6 +20,7 @@ export {
   VerticalAlignment,
   TextAlignment,
   BlockDef,
+  Stratum,
   UserData,
   GridOptions,
 } from "./types";
@@ -111,6 +112,9 @@ export {
 
 // Plugin
 export { CorePlugin } from "./CorePlugin";
+
+// Constants
+export { STRATUM_ORDER } from "./constants";
 
 // Singletons
 export {

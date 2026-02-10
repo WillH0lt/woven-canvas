@@ -118,6 +118,7 @@ function handleEditEnd(data: { content: string }) {
   height: 100%;
   pointer-events: none;
   overflow: visible;
+  z-index: -1;
 }
 
 .ic-shape-content {

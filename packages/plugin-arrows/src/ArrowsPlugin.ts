@@ -72,6 +72,7 @@ export function createArrowsPlugin(
       },
       {
         tag: "arrow-handle",
+        stratum: "overlay",
         canRotate: false,
         canScale: false,
         components: [components.ArrowHandle],
@@ -79,6 +80,7 @@ export function createArrowsPlugin(
       },
       {
         tag: "arrow-terminal",
+        stratum: "overlay",
         canRotate: false,
         canScale: false,
         components: [components.ArrowTerminal],

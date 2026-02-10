@@ -76,30 +76,35 @@ export function createSelectionPlugin(
     blockDefs: [
       {
         tag: "selection-box",
+        stratum: "overlay",
         canRotate: false,
         canScale: false,
         components: [components.SelectionBox]
       },
       {
         tag: "transform-box",
+        stratum: "overlay",
         canRotate: false,
         canScale: false,
         components: [components.TransformBox]
       },
       {
         tag: "transform-handle",
+        stratum: "overlay",
         canRotate: false,
         canScale: false,
         components: [components.TransformHandle]
       },
       {
         tag: "transform-edge",
+        stratum: "overlay",
         canRotate: false,
         canScale: false,
         components: [components.TransformHandle]
       },
       {
         tag: "transform-rotate",
+        stratum: "overlay",
         canRotate: false,
         canScale: false,
         components: [components.TransformHandle]

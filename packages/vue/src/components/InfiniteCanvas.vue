@@ -19,6 +19,7 @@ import {
   UserData as UserDataZod,
   EventType,
   SINGLETON_ENTITY_ID,
+  STRATUM_ORDER,
   defineQuery,
   getResources,
   Held,
@@ -527,11 +528,14 @@ function updateBlocks(ctx: Context) {
   // Handle block additions
   for (const entityId of blockQuery.added(ctx)) {
     const snapshot = Block.snapshot(ctx, entityId);
+    const blockDef = editorRef.value?.blockDefs[snapshot.tag];
+    const stratum = blockDef?.stratum ?? "content";
     blockMap.set(
       entityId,
       ref({
         entityId,
         block: snapshot,
+        stratum,
         selected: false,
         held: null,
         hovered: false,
@@ -704,7 +708,7 @@ function getHeldByColor(data: BlockData): string | null {
 }
 
 function getBlockStyle(data: BlockData) {
-  const { block, opacity } = data;
+  const { block, stratum, opacity } = data;
   const heldByColor = getHeldByColor(data);
 
   return {
@@ -713,6 +717,7 @@ function getBlockStyle(data: BlockData) {
     top: `${block.position[1]}px`,
     width: `${block.size[0]}px`,
     height: `${block.size[1]}px`,
+    zIndex: STRATUM_ORDER[stratum] * 1000,
     transform: getBlockTransform(block),
     opacity: opacity !== null ? opacity.value / 255 : undefined,
     pointerEvents: "none" as const,

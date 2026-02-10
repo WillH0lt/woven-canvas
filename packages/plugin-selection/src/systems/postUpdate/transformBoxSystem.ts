@@ -43,10 +43,10 @@ const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 const editedBlocksQuery = defineQuery((q) => q.with(Block, Edited));
 
 // Transform box z-order rank
-const TRANSFORM_BOX_RANK = "za";
-const TRANSFORM_HANDLE_ROTATE_RANK = "zb";
-const TRANSFORM_HANDLE_EDGE_RANK = "zc";
-const TRANSFORM_HANDLE_CORNER_RANK = "zd";
+const TRANSFORM_BOX_RANK = "a";
+const TRANSFORM_HANDLE_ROTATE_RANK = "b";
+const TRANSFORM_HANDLE_EDGE_RANK = "c";
+const TRANSFORM_HANDLE_CORNER_RANK = "d";
 
 /**
  * Transform box update system - manages transform box and handles.

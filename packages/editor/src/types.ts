@@ -396,8 +396,12 @@ const BlockDefConnectors = z.object({
  * Block definition schema with validation and defaults.
  * Defines how different block types behave (editing, resizing, rotation, etc.)
  */
+export const Stratum = z.enum(["background", "content", "overlay"]);
+export type Stratum = z.infer<typeof Stratum>;
+
 export const BlockDef = z.object({
   tag: z.string(),
+  stratum: Stratum.default("content"),
   editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
   components: z.array(z.custom<AnyEditorComponentDef>()).default([]),
   resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),

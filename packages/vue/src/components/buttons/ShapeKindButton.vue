@@ -41,18 +41,9 @@ const shapeOptions: { kind: ShapeKind; label: string }[] = [
   { kind: ShapeKind.Diamond, label: "Diamond" },
   { kind: ShapeKind.Pentagon, label: "Pentagon" },
   { kind: ShapeKind.Hexagon, label: "Hexagon" },
+  { kind: ShapeKind.Arrow, label: "Arrow" },
   { kind: ShapeKind.Star, label: "Star" },
   { kind: ShapeKind.Heart, label: "Heart" },
-  { kind: ShapeKind.Cloud, label: "Cloud" },
-  { kind: ShapeKind.Speech, label: "Speech" },
-  { kind: ShapeKind.Arrow, label: "Arrow" },
-  { kind: ShapeKind.Explosion, label: "Explosion" },
-  { kind: ShapeKind.Crescent, label: "Crescent" },
-  { kind: ShapeKind.Rainbow, label: "Rainbow" },
-  { kind: ShapeKind.Flower, label: "Flower" },
-  { kind: ShapeKind.Sticker, label: "Sticker" },
-  { kind: ShapeKind.Flare, label: "Flare" },
-  { kind: ShapeKind.Kapow, label: "Kapow" },
 ];
 
 function handleKindChange(kind: ShapeKind) {
@@ -76,10 +67,8 @@ function handleKindChange(kind: ShapeKind) {
           stroke="currentColor"
           stroke-width="1.5"
         >
-          <path
-            :d="getShapePath(currentKind)"
-            transform="translate(2, 2) scale(0.16)"
-          />
+          <circle cx="6" cy="6" r="5" />
+          <rect x="6" y="6" width="10" height="10" fill="var(--ic-gray-600)" />
         </svg>
         <IconChevronDown class="ic-chevron-down" />
       </div>
@@ -101,7 +90,7 @@ function handleKindChange(kind: ShapeKind) {
             class="ic-shape-option-icon"
             fill="none"
             stroke="currentColor"
-            stroke-width="1.5"
+            stroke-width="4"
           >
             <path
               :d="getShapePath(option.kind)"

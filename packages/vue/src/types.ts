@@ -5,6 +5,7 @@ import {
   Held,
   type EntityId,
   type InferEditorComponentType,
+  type Stratum,
 } from "@infinitecanvas/editor";
 
 type BlockComponentData = InferEditorComponentType<typeof Block.schema>;
@@ -16,6 +17,7 @@ type ConnectorComponentData = InferEditorComponentType<typeof Connector.schema>;
 export interface BlockData {
   entityId: EntityId;
   block: BlockComponentData;
+  stratum: Stratum;
   selected: boolean;
   held: HeldComponentData | null;
   hovered: boolean;

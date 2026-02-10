@@ -124,11 +124,6 @@ const customTools = computed(() => {
         <ImageTool />
       </slot>
 
-      <!-- Sticky note tool -->
-      <slot name="tool:sticky-note">
-        <StickyNoteTool />
-      </slot>
-
       <!-- Shape tool -->
       <slot name="tool:shape">
         <ShapeTool />
@@ -139,10 +134,15 @@ const customTools = computed(() => {
         <ElbowArrowTool />
       </slot>
 
-      <!-- Arc Arrow tool -->
-      <slot name="tool:arc-arrow">
-        <ArcArrowTool />
+      <!-- Sticky note tool -->
+      <slot name="tool:sticky-note">
+        <StickyNoteTool />
       </slot>
+
+      <!-- Arc Arrow tool -->
+      <!-- <slot name="tool:arc-arrow">
+        <ArcArrowTool />
+      </slot> -->
 
       <!-- Pen tool -->
       <slot name="tool:pen">
