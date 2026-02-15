@@ -1,4 +1,4 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/editor";
 
 /**
  * ArrowTerminal component - marks an entity as an arrow snap terminal.
@@ -6,7 +6,7 @@ import { field, defineEditorComponent } from "@infinitecanvas/editor";
  * Arrow terminals are visual indicators that appear on blocks when
  * dragging arrow handles, showing valid snap points for connections.
  */
-export const ArrowTerminal = defineEditorComponent(
+export const ArrowTerminal = defineCanvasComponent(
   { name: "arrowTerminal" },
   {
     /** Reference to the block this terminal belongs to */

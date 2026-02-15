@@ -1,12 +1,12 @@
 import { inject, shallowRef, onUnmounted, type ShallowRef } from "vue";
 import {
   type InferEditorComponentType,
-  type AnyEditorSingletonDef,
+  type AnyCanvasSingletonDef,
 } from "@infinitecanvas/editor";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
 /** Singleton def with name and schema for type inference */
-type SingletonDefWithSchema = AnyEditorSingletonDef & {
+type SingletonDefWithSchema = AnyCanvasSingletonDef & {
   name: string;
   schema: any;
 };

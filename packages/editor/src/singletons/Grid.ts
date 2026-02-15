@@ -1,6 +1,6 @@
-import { field, type Context } from "@infinitecanvas/ecs";
+import { field, type Context } from "@woven-ecs/core";
 import type { Vec2 } from "@infinitecanvas/math";
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 
 const GridSchema = {
   /** Whether grid snapping is enabled */
@@ -26,7 +26,7 @@ const GridSchema = {
  *
  * The grid size is defined by `colWidth` and `rowHeight`.
  */
-class GridDef extends EditorSingletonDef<typeof GridSchema> {
+class GridDef extends CanvasSingletonDef<typeof GridSchema> {
   constructor() {
     super({ name: "grid" }, GridSchema);
   }

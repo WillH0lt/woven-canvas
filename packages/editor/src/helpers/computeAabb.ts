@@ -1,4 +1,4 @@
-import { hasComponent, type Context, type EntityId } from "@infinitecanvas/ecs";
+import { hasComponent, type Context, type EntityId } from "@woven-ecs/core";
 import { Aabb } from "@infinitecanvas/math";
 import { Block } from "../components/Block";
 import { HitGeometry } from "../components/HitGeometry";

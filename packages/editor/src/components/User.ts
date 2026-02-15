@@ -1,12 +1,12 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
 /**
  * User component - tracks user presence on the canvas.
  *
  * Used to identify who is currently viewing the document.
  */
-export const User = defineEditorComponent(
+export const User = defineCanvasComponent(
   { name: "user", sync: "ephemeral" },
   {
     userId: field.string().max(36),

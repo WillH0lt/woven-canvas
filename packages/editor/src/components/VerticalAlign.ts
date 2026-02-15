@@ -1,5 +1,5 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 import { VerticalAlignment } from "../types";
 
 /**
@@ -7,7 +7,7 @@ import { VerticalAlignment } from "../types";
  *
  * Values: "top", "center", "bottom"
  */
-export const VerticalAlign = defineEditorComponent(
+export const VerticalAlign = defineCanvasComponent(
   { name: "verticalAlign", sync: "document" },
   {
     value: field.enum(VerticalAlignment).default(VerticalAlignment.Top),

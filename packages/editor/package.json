@@ -33,9 +33,9 @@
     "test:watch": "vitest --config ../../vitest.config.ts --watch"
   },
   "dependencies": {
-    "@infinitecanvas/ecs": "workspace:*",
-    "@infinitecanvas/ecs-sync": "workspace:*",
     "@infinitecanvas/math": "workspace:*",
+    "@woven-ecs/canvas-store": "^1.0.1",
+    "@woven-ecs/core": "^1.0.1",
     "fractional-indexing-jittered": "^1.0.0",
     "xstate": "^5.24.0",
     "zod": "^4.2.1"

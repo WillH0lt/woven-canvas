@@ -3,7 +3,7 @@ import {
   type EntityId,
   defineQuery,
   hasComponent,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 import {
   Aabb,
   type Vec2,

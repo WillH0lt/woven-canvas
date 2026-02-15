@@ -11,7 +11,7 @@ import {
   UploadState,
   Grid,
 } from "@infinitecanvas/editor";
-import { Synced } from "@infinitecanvas/ecs-sync";
+import { Synced } from "@woven-ecs/canvas-store";
 
 import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
 import { useEditorContext } from "../../composables/useEditorContext";

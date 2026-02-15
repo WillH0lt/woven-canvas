@@ -1,7 +1,7 @@
-import { field, type Context } from "@infinitecanvas/ecs";
+import { field, type Context } from "@woven-ecs/core";
 import { type Vec2, type Aabb as AabbType } from "@infinitecanvas/math";
 
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 import { Screen } from "./Screen";
 
 const CameraSchema = {
@@ -26,7 +26,7 @@ const CameraSchema = {
  *
  * Screen coordinates can be converted to world coordinates using `toWorld()`.
  */
-class CameraDef extends EditorSingletonDef<typeof CameraSchema> {
+class CameraDef extends CanvasSingletonDef<typeof CameraSchema> {
   constructor() {
     super({ name: "camera", sync: "local" }, CameraSchema);
   }

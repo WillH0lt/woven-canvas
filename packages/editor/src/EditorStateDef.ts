@@ -3,13 +3,13 @@ import type {
   ComponentSchema,
   StringFieldDef,
   EnumFieldDef,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 import type { AnyStateMachine } from "xstate";
 
 import {
-  EditorSingletonDef,
+  CanvasSingletonDef,
   type InferEditorComponentType,
-} from "@infinitecanvas/ecs-sync";
+} from "@woven-ecs/canvas-store";
 import { runMachine } from "./machine";
 
 /**
@@ -53,7 +53,7 @@ export type InferStateContext<T> =
 /**
  * Editor singleton definition for XState state machine state storage.
  *
- * This class extends EditorSingletonDef to provide convenient methods
+ * This class extends CanvasSingletonDef to provide convenient methods
  * for working with XState machines in ECS systems.
  *
  * The schema must include a 'state' field for the current state value,
@@ -76,7 +76,7 @@ export type InferStateContext<T> =
  */
 export class EditorStateDef<
   T extends StateSchema,
-> extends EditorSingletonDef<T> {
+> extends CanvasSingletonDef<T> {
   constructor(name: string, schema: T) {
     // State machine state is never synced - it's ephemeral runtime state
     super({ name, sync: "none" }, schema);

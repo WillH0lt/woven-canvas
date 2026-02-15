@@ -31,23 +31,23 @@ export type { FontFamily as FontFamilyType } from "./FontLoader";
 
 // Re-export from ecs-sync
 export {
-  EditorSingletonDef,
-  defineEditorSingleton,
-} from "@infinitecanvas/ecs-sync";
+  CanvasSingletonDef,
+  defineCanvasSingleton,
+} from "@woven-ecs/canvas-store";
 
 export type {
-  AnyEditorSingletonDef,
+  AnyCanvasSingletonDef,
   SingletonEditorBehavior,
-  AnyEditorComponentDef,
+  AnyCanvasComponentDef,
   SyncBehavior,
   InferEditorComponentType,
-} from "@infinitecanvas/ecs-sync";
+} from "@woven-ecs/canvas-store";
 
 export {
-  EditorComponentDef,
-  defineEditorComponent,
+  CanvasComponentDef,
+  defineCanvasComponent,
   Synced,
-} from "@infinitecanvas/ecs-sync";
+} from "@woven-ecs/canvas-store";
 
 // State machine singleton
 export {
@@ -108,7 +108,7 @@ export {
   type QueryDef,
   type System,
   type ComponentSchema,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 
 // Plugin
 export { CorePlugin } from "./CorePlugin";

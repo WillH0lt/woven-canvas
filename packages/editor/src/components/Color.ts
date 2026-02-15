@@ -1,5 +1,5 @@
-import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
+import { field, type Context, type EntityId } from "@woven-ecs/core";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
 
 const ColorSchema = {
   red: field.uint8().default(0),
@@ -13,7 +13,7 @@ const ColorSchema = {
  *
  * Each channel is 0-255. Alpha defaults to 255 (fully opaque).
  */
-class ColorDef extends EditorComponentDef<typeof ColorSchema> {
+class ColorDef extends CanvasComponentDef<typeof ColorSchema> {
   constructor() {
     super({ name: "color", sync: "document" }, ColorSchema);
   }

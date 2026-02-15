@@ -1,5 +1,5 @@
-import { field, type Context } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { field, type Context } from "@woven-ecs/core";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 import { PointerButton } from "../components";
 
 const ControlsSchema = {
@@ -23,7 +23,7 @@ const ControlsSchema = {
  * This allows applications to define their own tools (select, brush, hand, etc.)
  * and configure which mouse buttons or wheel actions activate them.
  */
-class ControlsDef extends EditorSingletonDef<typeof ControlsSchema> {
+class ControlsDef extends CanvasSingletonDef<typeof ControlsSchema> {
   constructor() {
     super({ name: "controls" }, ControlsSchema);
   }

@@ -6,7 +6,7 @@ import {
   type SingletonDef,
   createEntity,
   addComponent,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 
 import {
   type SystemPhase,
@@ -26,10 +26,10 @@ import {
 import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
 import { CorePlugin } from "./CorePlugin";
 import {
-  type AnyEditorComponentDef,
-  type AnyEditorSingletonDef,
+  type AnyCanvasComponentDef,
+  type AnyCanvasSingletonDef,
   Synced,
-} from "@infinitecanvas/ecs-sync";
+} from "@woven-ecs/canvas-store";
 import { User } from "./components";
 import { Grid } from "./singletons";
 import type { EditorSystem } from "./EditorSystem";
@@ -130,8 +130,8 @@ export class Editor {
   public keybinds: Keybind[];
   public blockDefs: Record<string, BlockDef> = {};
   public fonts: FontFamily[] = [];
-  public components: AnyEditorComponentDef[] = [];
-  public singletons: AnyEditorSingletonDef[] = [];
+  public components: AnyCanvasComponentDef[] = [];
+  public singletons: AnyCanvasSingletonDef[] = [];
 
   private world: World;
   private systemBatches: EditorSystem[][];
@@ -235,10 +235,10 @@ export class Editor {
     }
 
     // Build component/singleton maps for resources
-    const componentsByName = new Map<string, AnyEditorComponentDef>();
-    const singletonsByName = new Map<string, AnyEditorSingletonDef>();
-    const componentsById = new Map<number, AnyEditorComponentDef>();
-    const singletonsById = new Map<number, AnyEditorSingletonDef>();
+    const componentsByName = new Map<string, AnyCanvasComponentDef>();
+    const singletonsByName = new Map<string, AnyCanvasSingletonDef>();
+    const componentsById = new Map<number, AnyCanvasComponentDef>();
+    const singletonsById = new Map<number, AnyCanvasSingletonDef>();
 
     // Create ECS World with editor resources
     const allResources: EditorResources = {

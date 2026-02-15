@@ -22,8 +22,8 @@ import {
   User,
   type Context,
   type StoreAdapter,
-  type AnyEditorComponentDef,
-  type AnyEditorSingletonDef,
+  type AnyCanvasComponentDef,
+  type AnyCanvasSingletonDef,
   type ComponentSchema,
 } from "@infinitecanvas/editor";
 import { LocalDB } from "./LocalDB";
@@ -94,9 +94,9 @@ export class Store implements StoreAdapter {
 
   // Bidirectional sync state for document-synced components
   /** Map of component name -> component def for applying changes */
-  private componentDefsByName: Map<string, AnyEditorComponentDef> = new Map();
+  private componentDefsByName: Map<string, AnyCanvasComponentDef> = new Map();
   /** Map of singleton name -> singleton def for applying changes */
-  private singletonDefsByName: Map<string, AnyEditorSingletonDef> = new Map();
+  private singletonDefsByName: Map<string, AnyCanvasSingletonDef> = new Map();
   /** Map of _id -> entityId for tracking entities we've created */
   private idToEntityId: Map<string, number> = new Map();
   /** Map of entityId -> _id for reverse lookup */
@@ -142,8 +142,8 @@ export class Store implements StoreAdapter {
    * @param singletons - Array of all synced singleton definitions
    */
   async initialize(
-    components: AnyEditorComponentDef[],
-    singletons: AnyEditorSingletonDef[],
+    components: AnyCanvasComponentDef[],
+    singletons: AnyCanvasSingletonDef[],
   ): Promise<void> {
     if (this.initialized) return;
 
@@ -233,7 +233,7 @@ export class Store implements StoreAdapter {
    * @param data - The component data (includes `id` field)
    */
   onComponentAdded(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     id: string,
     entityId: number,
     data: Record<string, unknown>,
@@ -288,7 +288,7 @@ export class Store implements StoreAdapter {
    * @param data - The updated component data
    */
   onComponentUpdated(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     id: string,
     data: Record<string, unknown>,
   ): void {
@@ -317,7 +317,7 @@ export class Store implements StoreAdapter {
    * @param componentDef - The component definition
    * @param id - The entity's stable UUID
    */
-  onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
+  onComponentRemoved(componentDef: AnyCanvasComponentDef, id: string): void {
     if (componentDef.__sync === "document") {
       const componentsMap = this.doc.getMap("components");
       const componentMap = componentsMap.get(componentDef.name) as
@@ -354,7 +354,7 @@ export class Store implements StoreAdapter {
    * @param singletonDef - The singleton definition
    * @param data - The singleton data
    */
-  onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void {
+  onSingletonUpdated(singletonDef: AnyCanvasSingletonDef, data: unknown): void {
     const singletonsMap = this.doc.getMap("singletons");
     singletonsMap.set(singletonDef.name, data);
   }
@@ -559,7 +559,7 @@ export class Store implements StoreAdapter {
    * Returns a new object with refs converted to UUIDs (or null if not synced).
    */
   private translateRefsOutbound(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;
@@ -593,7 +593,7 @@ export class Store implements StoreAdapter {
    * Returns a new object with refs converted to entityIds (or null if not found).
    */
   private translateRefsInbound(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;

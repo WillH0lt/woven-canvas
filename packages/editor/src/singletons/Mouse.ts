@@ -1,7 +1,7 @@
-import { field, type Context } from "@infinitecanvas/ecs";
+import { field, type Context } from "@woven-ecs/core";
 import type { Vec2 } from "@infinitecanvas/math";
 
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 
 const MouseSchema = {
   /** Current mouse position relative to the editor element [x, y] */
@@ -26,7 +26,7 @@ const MouseSchema = {
  * Position is relative to the editor's DOM element (not the viewport).
  * Triggers are true for exactly 1 frame after the event occurs.
  */
-class MouseDef extends EditorSingletonDef<typeof MouseSchema> {
+class MouseDef extends CanvasSingletonDef<typeof MouseSchema> {
   constructor() {
     super({ name: "mouse" }, MouseSchema);
   }

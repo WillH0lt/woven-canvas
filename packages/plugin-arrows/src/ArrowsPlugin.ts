@@ -1,6 +1,6 @@
 import {
-  EditorComponentDef,
-  EditorSingletonDef,
+  CanvasComponentDef,
+  CanvasSingletonDef,
   Connector,
   Color,
   type EditorPlugin,
@@ -50,11 +50,11 @@ export function createArrowsPlugin(
     name: PLUGIN_NAME,
 
     components: Object.values(components).filter(
-      (v) => v instanceof EditorComponentDef,
+      (v) => v instanceof CanvasComponentDef,
     ),
 
     singletons: Object.values(singletons).filter(
-      (v) => v instanceof EditorSingletonDef,
+      (v) => v instanceof CanvasSingletonDef,
     ),
 
     blockDefs: [

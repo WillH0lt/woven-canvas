@@ -3,9 +3,9 @@ import {
   hasComponent,
   type Context,
   type EntityId,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 import { Aabb as AabbMath } from "@infinitecanvas/math";
-import { Synced } from "@infinitecanvas/ecs-sync";
+import { Synced } from "@woven-ecs/canvas-store";
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Camera } from "../../singletons";

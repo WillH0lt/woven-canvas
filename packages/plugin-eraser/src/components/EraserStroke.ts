@@ -1,4 +1,4 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/editor";
 
 /**
  * Maximum number of points that can be stored in the stroke.
@@ -15,7 +15,7 @@ export const POINTS_CAPACITY = 10;
  * The stroke is rendered as a series of connected capsules between
  * consecutive points, with the specified radius.
  */
-export const EraserStroke = defineEditorComponent(
+export const EraserStroke = defineCanvasComponent(
   { name: "eraserStroke" },
   {
     /**

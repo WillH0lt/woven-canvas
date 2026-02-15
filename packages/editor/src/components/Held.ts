@@ -1,5 +1,5 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
 /**
  * Held component - marks an entity as being actively held by a user.
@@ -11,7 +11,7 @@ import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
  * The `sessionId` field stores which user is holding this entity.
  * This syncs ephemerally so remote users can see what's being held.
  */
-export const Held = defineEditorComponent(
+export const Held = defineCanvasComponent(
   { name: "held", sync: "ephemeral" },
   {
     sessionId: field.string().max(36).default(""),

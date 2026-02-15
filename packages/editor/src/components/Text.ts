@@ -1,11 +1,11 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 import { TextAlignment } from "../types";
 
 /**
  * Text component - stores text content and styling for text blocks.
  */
-export const Text = defineEditorComponent(
+export const Text = defineCanvasComponent(
   { name: "text", sync: "document" },
   {
     /** HTML content (supports rich text formatting) */

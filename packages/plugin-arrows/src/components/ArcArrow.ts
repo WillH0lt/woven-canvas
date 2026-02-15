@@ -1,6 +1,6 @@
 import {
   field,
-  EditorComponentDef,
+  CanvasComponentDef,
   Block,
   type Context,
   type EntityId,
@@ -55,7 +55,7 @@ const ArcArrowSchema = {
  * - `c` (indices 4-5): End point
  * - thickness (index 6): Line thickness in pixels
  */
-class ArcArrowDef extends EditorComponentDef<typeof ArcArrowSchema> {
+class ArcArrowDef extends CanvasComponentDef<typeof ArcArrowSchema> {
   constructor() {
     super({ name: "arcArrow", sync: "document" }, ArcArrowSchema);
   }

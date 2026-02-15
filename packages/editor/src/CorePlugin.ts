@@ -1,13 +1,13 @@
-import { getResources } from "@infinitecanvas/ecs";
+import { getResources } from "@woven-ecs/core";
 
 import type { EditorPlugin } from "./plugin";
 import type { EditorResources } from "./types";
 import {
-  EditorComponentDef,
-  type AnyEditorComponentDef,
-  EditorSingletonDef,
-  type AnyEditorSingletonDef,
-} from "@infinitecanvas/ecs-sync";
+  CanvasComponentDef,
+  type AnyCanvasComponentDef,
+  CanvasSingletonDef,
+  type AnyCanvasSingletonDef,
+} from "@woven-ecs/canvas-store";
 import {
   attachKeyboardListeners,
   detachKeyboardListeners,
@@ -43,12 +43,12 @@ export const CorePlugin: EditorPlugin = {
   cursors,
 
   singletons: Object.values(singletons).filter(
-    (v) => v instanceof EditorSingletonDef,
-  ) as AnyEditorSingletonDef[],
+    (v) => v instanceof CanvasSingletonDef,
+  ) as AnyCanvasSingletonDef[],
 
   components: Object.values(components).filter(
-    (v) => v instanceof EditorComponentDef,
-  ) as AnyEditorComponentDef[],
+    (v) => v instanceof CanvasComponentDef,
+  ) as AnyCanvasComponentDef[],
 
   systems: [
     // Input phase

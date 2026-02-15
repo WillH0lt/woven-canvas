@@ -3,7 +3,7 @@ import {
   defineQuery,
   getResources,
   type EntityId,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 import { User } from "../components/User";
 import type { EditorResources } from "../types";
 

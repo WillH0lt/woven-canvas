@@ -1,5 +1,5 @@
-import type { Context } from "@infinitecanvas/ecs";
-import { MainThreadSystem } from "@infinitecanvas/ecs";
+import type { Context } from "@woven-ecs/core";
+import { MainThreadSystem } from "@woven-ecs/core";
 
 import type { SystemPhase } from "./types";
 

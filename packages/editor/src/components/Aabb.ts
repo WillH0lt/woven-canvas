@@ -1,5 +1,5 @@
-import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
+import { field, type Context, type EntityId } from "@woven-ecs/core";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
 import {
   Aabb as AabbMath,
   type Vec2,
@@ -24,7 +24,7 @@ const AabbSchema = {
  * Used for fast intersection tests and spatial queries.
  * Updated automatically when Block transforms change.
  */
-class AabbDef extends EditorComponentDef<typeof AabbSchema> {
+class AabbDef extends CanvasComponentDef<typeof AabbSchema> {
   constructor() {
     super({ name: "aabb" }, AabbSchema);
   }

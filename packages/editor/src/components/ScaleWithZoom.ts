@@ -1,5 +1,5 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
 /**
  * ScaleWithZoom component - marks an entity that should maintain
@@ -8,7 +8,7 @@ import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
  * Used for transform handles so they remain a consistent size
  * regardless of zoom level.
  */
-export const ScaleWithZoom = defineEditorComponent(
+export const ScaleWithZoom = defineCanvasComponent(
   { name: "scaleWithZoom" },
   {
     /** Pivot point for scaling as [x, y] (0-1, default 0.5,0.5 = center) */

@@ -1,8 +1,8 @@
 import {
-  type AnyEditorComponentDef,
-  type AnyEditorSingletonDef,
-} from "@infinitecanvas/ecs-sync";
-import type { Context } from "@infinitecanvas/ecs";
+  type AnyCanvasComponentDef,
+  type AnyCanvasSingletonDef,
+} from "@woven-ecs/canvas-store";
+import type { Context } from "@woven-ecs/core";
 import type { EditorSystem } from "./EditorSystem";
 import type { CursorDef, Keybind, BlockDefInput } from "./types";
 import type { FontFamilyInput } from "./FontLoader";
@@ -11,8 +11,8 @@ import type { FontFamilyInput } from "./FontLoader";
  * Editor plugin interface.
  *
  * Plugins extend the editor with:
- * - Components (EditorComponentDef instances)
- * - Singletons (EditorSingletonDef instances)
+ * - Components (CanvasComponentDef instances)
+ * - Singletons (CanvasSingletonDef instances)
  * - Systems (behavior in specific phases with priority)
  * - Commands (user actions)
  *
@@ -20,16 +20,16 @@ import type { FontFamilyInput } from "./FontLoader";
  * ```typescript
  * import {
  *   EditorPlugin,
- *   defineEditorComponent,
- *   defineEditorSingleton,
+ *   defineCanvasComponent,
+ *   defineCanvasSingleton,
  *   defineEditorSystem,
  *   field,
  * } from '@infinitecanvas/editor';
  *
- * const Selected = defineEditorComponent('selected', {}, { sync: 'ephemeral' });
- * const Hovered = defineEditorComponent('hovered', {}, { sync: 'none' });
+ * const Selected = defineCanvasComponent('selected', {}, { sync: 'ephemeral' });
+ * const Hovered = defineCanvasComponent('hovered', {}, { sync: 'none' });
  *
- * const CameraState = defineEditorSingleton('camera', {
+ * const CameraState = defineCanvasSingleton('camera', {
  *   x: field.float64().default(0),
  *   y: field.float64().default(0),
  *   zoom: field.float64().default(1),
@@ -97,16 +97,16 @@ export interface EditorPlugin<TResources = unknown> {
 
   /**
    * Components to register.
-   * User-defined components should use defineEditorComponent() with an `id` field.
+   * User-defined components should use defineCanvasComponent() with an `id` field.
    * Internal components may use base ComponentDef.
    */
-  components?: AnyEditorComponentDef[];
+  components?: AnyCanvasComponentDef[];
 
   /**
    * Singletons to register.
-   * Create with new EditorSingletonDef(schema, options).
+   * Create with new CanvasSingletonDef(schema, options).
    */
-  singletons?: AnyEditorSingletonDef[];
+  singletons?: AnyCanvasSingletonDef[];
 
   /**
    * Systems to register.

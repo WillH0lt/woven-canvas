@@ -1,4 +1,4 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/editor";
 
 /**
  * DragStart component - stores the initial transform state when a drag begins.
@@ -6,7 +6,7 @@ import { field, defineEditorComponent } from "@infinitecanvas/editor";
  * Used to calculate deltas during drag operations and to restore
  * original position on cancel.
  */
-export const DragStart = defineEditorComponent(
+export const DragStart = defineCanvasComponent(
   { name: "dragStart" },
   {
     /** Initial position as [left, top] */

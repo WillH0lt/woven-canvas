@@ -12,8 +12,8 @@ import {
   isAlive,
   type Context,
   type StoreAdapter,
-  type AnyEditorComponentDef,
-  type AnyEditorSingletonDef,
+  type AnyCanvasComponentDef,
+  type AnyCanvasSingletonDef,
   type ComponentSchema,
   type BlockDef,
 } from "@infinitecanvas/editor";
@@ -78,8 +78,8 @@ export class YjsStore implements StoreAdapter {
   private initialized: boolean = false;
 
   // Bidirectional sync state for document-synced components
-  private componentDefsByName: Map<string, AnyEditorComponentDef> = new Map();
-  private singletonDefsByName: Map<string, AnyEditorSingletonDef> = new Map();
+  private componentDefsByName: Map<string, AnyCanvasComponentDef> = new Map();
+  private singletonDefsByName: Map<string, AnyCanvasSingletonDef> = new Map();
   private idToEntityId: Map<string, number> = new Map();
   private entityIdToId: Map<number, string> = new Map();
   private entityIdToSyncedComponents: Map<number, Set<string>> = new Map();
@@ -132,8 +132,8 @@ export class YjsStore implements StoreAdapter {
    *   Used to clean up orphaned entities after CRDT sync conflicts.
    */
   async initialize(
-    components: AnyEditorComponentDef[],
-    singletons: AnyEditorSingletonDef[],
+    components: AnyCanvasComponentDef[],
+    singletons: AnyCanvasSingletonDef[],
     blockDefs: BlockDef[],
   ): Promise<void> {
     if (this.initialized) return;
@@ -345,7 +345,7 @@ export class YjsStore implements StoreAdapter {
    * Called when a component is added to an entity.
    */
   onComponentAdded(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     id: string,
     entityId: number,
     data: Record<string, unknown>,
@@ -390,7 +390,7 @@ export class YjsStore implements StoreAdapter {
    * Called when a component is updated.
    */
   onComponentUpdated(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     id: string,
     data: Record<string, unknown>,
   ): void {
@@ -416,7 +416,7 @@ export class YjsStore implements StoreAdapter {
   /**
    * Called when a component is removed from an entity.
    */
-  onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
+  onComponentRemoved(componentDef: AnyCanvasComponentDef, id: string): void {
     if (componentDef.__sync === "document") {
       const componentsMap = this.doc.getMap("components");
       const componentMap = componentsMap.get(componentDef.name) as
@@ -450,7 +450,7 @@ export class YjsStore implements StoreAdapter {
   /**
    * Called when a singleton is updated.
    */
-  onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void {
+  onSingletonUpdated(singletonDef: AnyCanvasSingletonDef, data: unknown): void {
     // Only handle document-synced singletons
     if (singletonDef.__sync !== "document") return;
 
@@ -501,7 +501,7 @@ export class YjsStore implements StoreAdapter {
    * Translate ref fields from entityIds to syncedIds for outbound storage.
    */
   private translateRefsOutbound(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;
@@ -532,7 +532,7 @@ export class YjsStore implements StoreAdapter {
    * Translate ref fields from syncedIds to entityIds for inbound data.
    */
   private translateRefsInbound(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;

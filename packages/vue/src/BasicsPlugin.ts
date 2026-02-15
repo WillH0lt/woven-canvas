@@ -11,17 +11,17 @@ import {
   Key,
 } from "@infinitecanvas/editor";
 
-import { type EditorSync } from "@infinitecanvas/ecs-sync";
+import { type CanvasStore } from "@woven-ecs/canvas-store";
 import { CURSORS } from "./cursors";
 import { blockPlacementSystem, undoRedoSystem } from "./systems";
 import { BlockPlacementState } from "./singletons";
 
 export interface BasicsPluginResources {
-  store: EditorSync;
+  store: CanvasStore;
 }
 
 export interface BasicsPluginOptions {
-  store: EditorSync;
+  store: CanvasStore;
 }
 
 export const DEFAULT_FONTS: FontFamilyInput[] = [

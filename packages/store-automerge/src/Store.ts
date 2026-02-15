@@ -21,8 +21,8 @@ import {
   User,
   type Context,
   type StoreAdapter,
-  type AnyEditorComponentDef,
-  type AnyEditorSingletonDef,
+  type AnyCanvasComponentDef,
+  type AnyCanvasSingletonDef,
   type ComponentSchema,
 } from "@infinitecanvas/editor";
 import { LocalDB, type AutomergeDocData } from "./LocalDB";
@@ -124,8 +124,8 @@ export class Store implements StoreAdapter {
   private beforeUnload: (() => void) | null = null;
 
   // Bidirectional sync state for document-synced components
-  private componentDefsByName: Map<string, AnyEditorComponentDef> = new Map();
-  private singletonDefsByName: Map<string, AnyEditorSingletonDef> = new Map();
+  private componentDefsByName: Map<string, AnyCanvasComponentDef> = new Map();
+  private singletonDefsByName: Map<string, AnyCanvasSingletonDef> = new Map();
   private idToEntityId: Map<string, number> = new Map();
   private entityIdToId: Map<number, string> = new Map();
   private entityIdToSyncedComponents: Map<number, Set<string>> = new Map();
@@ -162,8 +162,8 @@ export class Store implements StoreAdapter {
    * Sets up persistence, networking, and the Automerge document.
    */
   async initialize(
-    components: AnyEditorComponentDef[],
-    singletons: AnyEditorSingletonDef[],
+    components: AnyCanvasComponentDef[],
+    singletons: AnyCanvasSingletonDef[],
   ): Promise<void> {
     if (this.initialized) return;
 
@@ -315,7 +315,7 @@ export class Store implements StoreAdapter {
    * Called when a component is added to an entity.
    */
   onComponentAdded(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     id: string,
     entityId: number,
     data: Record<string, unknown>,
@@ -355,7 +355,7 @@ export class Store implements StoreAdapter {
    * Uses field-level updates for efficiency.
    */
   onComponentUpdated(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     id: string,
     data: Record<string, unknown>,
   ): void {
@@ -386,7 +386,7 @@ export class Store implements StoreAdapter {
   /**
    * Called when a component is removed from an entity.
    */
-  onComponentRemoved(componentDef: AnyEditorComponentDef, id: string): void {
+  onComponentRemoved(componentDef: AnyCanvasComponentDef, id: string): void {
     if (componentDef.__sync === "document") {
       this.updateDocument((doc) => {
         if (doc.components[componentDef.name]) {
@@ -416,7 +416,7 @@ export class Store implements StoreAdapter {
   /**
    * Called when a singleton is updated.
    */
-  onSingletonUpdated(singletonDef: AnyEditorSingletonDef, data: unknown): void {
+  onSingletonUpdated(singletonDef: AnyCanvasSingletonDef, data: unknown): void {
     this.updateDocument((doc) => {
       doc.singletons[singletonDef.name] = data;
     });
@@ -622,7 +622,7 @@ export class Store implements StoreAdapter {
    */
   private applyComponentToEntity(
     ctx: Context,
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     id: string,
     data: Record<string, unknown>,
   ): void {
@@ -717,7 +717,7 @@ export class Store implements StoreAdapter {
    * Translate ref fields from entityIds to syncedIds for outbound storage.
    */
   private translateRefsOutbound(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;
@@ -748,7 +748,7 @@ export class Store implements StoreAdapter {
    * Translate ref fields from syncedIds to entityIds for inbound data.
    */
   private translateRefsInbound(
-    componentDef: AnyEditorComponentDef,
+    componentDef: AnyCanvasComponentDef,
     data: Record<string, unknown>,
   ): Record<string, unknown> {
     const schema = componentDef.schema as ComponentSchema;

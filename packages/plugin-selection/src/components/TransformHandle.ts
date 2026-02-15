@@ -1,4 +1,4 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/editor";
 
 import { TransformHandleKind } from "../types";
 import { CursorKind } from "../cursors";
@@ -14,7 +14,7 @@ import { CursorKind } from "../cursors";
  * - `transformBox`: Entity ID of the parent transform box
  * - `cursorKind`: Cursor to show when hovering this handle
  */
-export const TransformHandle = defineEditorComponent(
+export const TransformHandle = defineCanvasComponent(
   { name: "transformHandle" },
   {
     kind: field.string().max(16).default(TransformHandleKind.Scale),

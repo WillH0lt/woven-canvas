@@ -1,4 +1,4 @@
-import { defineQuery, type Context, type EntityId } from "@infinitecanvas/ecs";
+import { defineQuery, type Context, type EntityId } from "@woven-ecs/core";
 import { Vec2 } from "@infinitecanvas/math";
 
 import { Pointer, type PointerButton } from "../components";

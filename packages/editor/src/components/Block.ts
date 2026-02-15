@@ -1,5 +1,5 @@
-import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
+import { field, type Context, type EntityId } from "@woven-ecs/core";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
 import { Vec2, Rect, Aabb, Mat2 } from "@infinitecanvas/math";
 
 // Pre-allocated arrays for SAT intersection to avoid allocations
@@ -41,7 +41,7 @@ const BlockSchema = {
  * Contains position (left, top), size (width, height), rotation (rotateZ),
  * z-order (rank), and element tag.
  */
-class BlockDef extends EditorComponentDef<typeof BlockSchema> {
+class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
   constructor() {
     super({ name: "block", sync: "document" }, BlockSchema);
   }

@@ -1,4 +1,4 @@
-import { type Context, getResources } from "@infinitecanvas/ecs";
+import { type Context, getResources } from "@woven-ecs/core";
 
 import { BlockDef, type EditorResources } from "../types";
 

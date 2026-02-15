@@ -1,4 +1,4 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/editor";
 
 /**
  * Erased component - marks an entity as being erased by an active eraser stroke.
@@ -16,7 +16,7 @@ import { field, defineEditorComponent } from "@infinitecanvas/editor";
  * }
  * ```
  */
-export const Erased = defineEditorComponent(
+export const Erased = defineCanvasComponent(
   { name: "erased" },
   {
     /**

@@ -1,6 +1,6 @@
-import { field, type Context } from "@infinitecanvas/ecs";
+import { field, type Context } from "@woven-ecs/core";
 
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 
 const CursorSchema = {
   /** Base cursor kind (from current tool) */
@@ -24,7 +24,7 @@ const CursorSchema = {
  *
  * When contextCursorKind is set, it takes precedence over cursorKind.
  */
-class CursorDef extends EditorSingletonDef<typeof CursorSchema> {
+class CursorDef extends CanvasSingletonDef<typeof CursorSchema> {
   constructor() {
     super({ name: "cursor" }, CursorSchema);
   }

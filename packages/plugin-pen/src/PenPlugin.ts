@@ -1,6 +1,6 @@
 import {
-  EditorComponentDef,
-  EditorSingletonDef,
+  CanvasComponentDef,
+  CanvasSingletonDef,
   Color,
   type EditorPlugin,
   type EditorPluginFactory,
@@ -36,11 +36,11 @@ export function createPenPlugin(): EditorPlugin {
     name: PLUGIN_NAME,
 
     components: Object.values(components).filter(
-      (v) => v instanceof EditorComponentDef,
+      (v) => v instanceof CanvasComponentDef,
     ),
 
     singletons: Object.values(singletons).filter(
-      (v) => v instanceof EditorSingletonDef,
+      (v) => v instanceof CanvasSingletonDef,
     ),
 
     blockDefs: [

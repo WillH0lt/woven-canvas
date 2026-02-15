@@ -1,6 +1,6 @@
 import {
   field,
-  EditorSingletonDef,
+  CanvasSingletonDef,
   getResources,
   type Context,
   type EditorResources,
@@ -38,7 +38,7 @@ const clipboardStorage = new WeakMap<Editor, ClipboardEntityData[]>();
  * All components with sync="document" are automatically serialized.
  * Each Editor instance has its own isolated clipboard.
  */
-class ClipboardDef extends EditorSingletonDef<typeof ClipboardSchema> {
+class ClipboardDef extends CanvasSingletonDef<typeof ClipboardSchema> {
   constructor() {
     super({ name: "clipboard" }, ClipboardSchema);
   }

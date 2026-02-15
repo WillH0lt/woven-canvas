@@ -1,5 +1,5 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorSingleton } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasSingleton } from "@woven-ecs/canvas-store";
 
 /**
  * ScaleWithZoomState singleton - tracks state for the ScaleWithZoom system.
@@ -7,7 +7,7 @@ import { defineEditorSingleton } from "@infinitecanvas/ecs-sync";
  * Stores the last zoom level so the system can detect when zoom changes
  * and update all ScaleWithZoom entities accordingly.
  */
-export const ScaleWithZoomState = defineEditorSingleton(
+export const ScaleWithZoomState = defineCanvasSingleton(
   { name: "scaleWithZoomState" },
   {
     /** Last processed zoom level */

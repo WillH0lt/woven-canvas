@@ -1,5 +1,5 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorSingleton } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasSingleton } from "@woven-ecs/canvas-store";
 
 /**
  * Frame singleton - tracks frame timing information.
@@ -16,7 +16,7 @@ import { defineEditorSingleton } from "@infinitecanvas/ecs-sync";
  * });
  * ```
  */
-export const Frame = defineEditorSingleton(
+export const Frame = defineCanvasSingleton(
   { name: "frame" },
   {
     /** Current frame number (increments each tick) */

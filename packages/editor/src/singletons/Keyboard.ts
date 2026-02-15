@@ -1,5 +1,5 @@
-import { field, type Context } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { field, type Context } from "@woven-ecs/core";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 
 /** Buffer size for key states (32 bytes = 256 bits = covers all keycodes) */
 const KEY_BUFFER_SIZE = 32;
@@ -46,7 +46,7 @@ function getBit(buffer: ArrayLike<number>, bitIndex: number): boolean {
  * where each bit represents a key state. This is more memory-efficient and
  * allows tracking all possible keys.
  */
-class KeyboardDef extends EditorSingletonDef<typeof KeyboardSchema> {
+class KeyboardDef extends CanvasSingletonDef<typeof KeyboardSchema> {
   constructor() {
     super({ name: "keyboard" }, KeyboardSchema);
   }

@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { provide, createApp, h, defineComponent } from "vue";
 import { useComponent } from "../src/composables/useComponent";
 import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../src/injection";
-import { defineEditorComponent, field } from "@infinitecanvas/editor";
+import { defineCanvasComponent, field } from "@infinitecanvas/editor";
 
 describe("useComponent", () => {
   // Create properly typed component definitions
-  const TestComponent = defineEditorComponent({ name: "TestComponent" }, {
+  const TestComponent = defineCanvasComponent({ name: "TestComponent" }, {
     value: field.int32(),
   });
 

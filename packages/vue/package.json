@@ -33,7 +33,6 @@
   "dependencies": {
     "@floating-ui/vue": "^1.1.6",
     "@infinitecanvas/ecs-asset-sync": "workspace:^",
-    "@infinitecanvas/ecs-sync": "workspace:^",
     "@infinitecanvas/editor": "workspace:^",
     "@infinitecanvas/math": "workspace:^",
     "@infinitecanvas/plugin-arrows": "workspace:^",
@@ -55,6 +54,7 @@
     "@tiptap/extensions": "^3.15.3",
     "@tiptap/vue-3": "^3.15.3",
     "@vueuse/core": "^14.0.0",
+    "@woven-ecs/canvas-store": "^1.0.1",
     "perfect-freehand": "^1.2.2",
     "vue": "^3.5.26"
   },

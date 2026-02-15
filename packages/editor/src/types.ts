@@ -1,10 +1,10 @@
-import type { Context, EntityId } from "@infinitecanvas/ecs";
+import type { Context, EntityId } from "@woven-ecs/core";
 export type { Context };
 import { z } from "zod";
 import {
-  type AnyEditorComponentDef,
-  type AnyEditorSingletonDef,
-} from "@infinitecanvas/ecs-sync";
+  type AnyCanvasComponentDef,
+  type AnyCanvasSingletonDef,
+} from "@woven-ecs/canvas-store";
 
 import type { Editor } from "./Editor";
 import type { EditorPluginInput } from "./plugin";
@@ -97,25 +97,25 @@ export interface EditorResources {
    * All registered components keyed by name.
    * Use this for fast component lookup by name (e.g., from snapshots).
    */
-  componentsByName: Map<string, AnyEditorComponentDef>;
+  componentsByName: Map<string, AnyCanvasComponentDef>;
 
   /**
    * All registered singletons keyed by name.
    * Use this for fast singleton lookup by name.
    */
-  singletonsByName: Map<string, AnyEditorSingletonDef>;
+  singletonsByName: Map<string, AnyCanvasSingletonDef>;
 
   /**
    * All registered components keyed by componentId.
    * Use this for component lookup by runtime id (e.g., from events).
    */
-  componentsById: Map<number, AnyEditorComponentDef>;
+  componentsById: Map<number, AnyCanvasComponentDef>;
 
   /**
    * All registered singletons keyed by componentId.
    * Use this for singleton lookup by runtime id (e.g., from events).
    */
-  singletonsById: Map<number, AnyEditorSingletonDef>;
+  singletonsById: Map<number, AnyCanvasSingletonDef>;
 }
 
 /**
@@ -267,12 +267,12 @@ export const EditorOptionsSchema = z.object({
   /**
    * Custom components to register without creating a plugin.
    */
-  components: z.array(z.custom<AnyEditorComponentDef>()).default([]),
+  components: z.array(z.custom<AnyCanvasComponentDef>()).default([]),
 
   /**
    * Custom singletons to register without creating a plugin.
    */
-  singletons: z.array(z.custom<AnyEditorSingletonDef>()).default([]),
+  singletons: z.array(z.custom<AnyCanvasSingletonDef>()).default([]),
 
   /**
    * Custom systems to register without creating a plugin.
@@ -403,7 +403,7 @@ export const BlockDef = z.object({
   tag: z.string(),
   stratum: Stratum.default("content"),
   editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
-  components: z.array(z.custom<AnyEditorComponentDef>()).default([]),
+  components: z.array(z.custom<AnyCanvasComponentDef>()).default([]),
   resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),

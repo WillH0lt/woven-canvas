@@ -1,6 +1,6 @@
 import {
   field,
-  EditorComponentDef,
+  CanvasComponentDef,
   type Context,
   type EntityId,
 } from "@infinitecanvas/editor";
@@ -64,7 +64,7 @@ const PenStrokeSchema = {
  * The stroke supports pressure sensitivity for stylus input and stores
  * original bounds for proper scaling/rotation transformations.
  */
-class PenStrokeDef extends EditorComponentDef<typeof PenStrokeSchema> {
+class PenStrokeDef extends CanvasComponentDef<typeof PenStrokeSchema> {
   constructor() {
     super({ name: "penStroke", sync: "document" }, PenStrokeSchema);
   }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { Editor } from "@infinitecanvas/editor";
-import { InfiniteCanvas, type EditorSync } from "@infinitecanvas/vue";
+import { InfiniteCanvas, type CanvasStore, type CanvasStoreOptions } from "@infinitecanvas/vue";
 
 const ONLINE_STORAGE_KEY = "infinitecanvas-online-mode";
 
@@ -10,9 +10,9 @@ const savedOnline = localStorage.getItem(ONLINE_STORAGE_KEY);
 const initialOnline = savedOnline !== null ? savedOnline === "true" : true;
 const isOnline = ref(initialOnline);
 
-let store: EditorSync | null = null;
+let store: CanvasStore | null = null;
 
-function handleReady(_inEditor: Editor, inStore: EditorSync) {
+function handleReady(_inEditor: Editor, inStore: CanvasStore) {
   store = inStore;
 }
 
@@ -26,11 +26,17 @@ async function toggleOnline() {
   }
 }
 
-const syncOptions = ref({
-  documentId: "editor-vue-test",
-  usePersistence: true,
-  useHistory: true,
+const syncOptions = ref<CanvasStoreOptions>({
+  persistence: {
+    enabled: true,
+    documentId: "editor-vue-test",
+  },
+  history: {
+    enabled: true,
+  },
   websocket: {
+    enabled: true,
+    documentId: "editor-vue-test",
     url: "ws://localhost:8087/ws",
     clientId: crypto.randomUUID(),
     startOffline: !isOnline.value,

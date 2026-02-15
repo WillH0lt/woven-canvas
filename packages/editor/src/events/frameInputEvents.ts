@@ -1,4 +1,4 @@
-import type { Context } from "@infinitecanvas/ecs";
+import type { Context } from "@woven-ecs/core";
 
 import type { FrameInput } from "./types";
 import { Frame } from "../singletons";

@@ -1,5 +1,5 @@
-import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
+import { field, type Context, type EntityId } from "@woven-ecs/core";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
 import { Vec2, Aabb, Arc, Capsule, Mat2 } from "@infinitecanvas/math";
 import { Block } from "./Block";
 
@@ -57,7 +57,7 @@ const HitGeometrySchema = {
  * Uses field.buffer for zero-allocation subarray views.
  * Used for collision detection with eraser strokes and other tools.
  */
-class HitGeometryDef extends EditorComponentDef<typeof HitGeometrySchema> {
+class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
   constructor() {
     super({ name: "hitHeometry" }, HitGeometrySchema);
   }

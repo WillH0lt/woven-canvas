@@ -1,4 +1,4 @@
-import { getResources } from "@infinitecanvas/ecs";
+import { getResources } from "@woven-ecs/core";
 import { defineEditorSystem } from "../../EditorSystem";
 
 import type { EditorResources } from "../../types";

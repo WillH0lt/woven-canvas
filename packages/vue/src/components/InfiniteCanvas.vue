@@ -29,8 +29,8 @@ import {
   type BlockDefInput,
   type Keybind,
   type CursorDef,
-  type AnyEditorComponentDef,
-  type AnyEditorSingletonDef,
+  type AnyCanvasComponentDef,
+  type AnyCanvasSingletonDef,
   type EditorSystem,
   type EditorPluginInput,
   type FontFamilyInput,
@@ -39,7 +39,7 @@ import {
   type GridOptionsInput,
   type Context,
 } from "@infinitecanvas/editor";
-import { EditorSync, type EditorSyncOptions } from "@infinitecanvas/ecs-sync";
+import { CanvasStore, type CanvasStoreOptions } from "@woven-ecs/canvas-store";
 import {
   AssetManager,
   LocalAssetProvider,
@@ -104,7 +104,7 @@ type BlockDef = InferEditorComponentType<typeof Block.schema>;
  */
 export interface InfiniteCanvasProps {
   // Sync options for persistence, history, and multiplayer
-  syncOptions?: EditorSyncOptions;
+  syncOptions?: CanvasStoreOptions;
 
   // Maximum number of entities (default: 10_000)
   maxEntities?: number;
@@ -122,10 +122,10 @@ export interface InfiniteCanvasProps {
   cursors?: Record<string, CursorDef>;
 
   // Custom components to register
-  components?: AnyEditorComponentDef[];
+  components?: AnyCanvasComponentDef[];
 
   // Custom singletons to register
-  singletons?: AnyEditorSingletonDef[];
+  singletons?: AnyCanvasSingletonDef[];
 
   // Custom systems to register
   systems?: EditorSystem[];
@@ -162,7 +162,7 @@ const props = withDefaults(defineProps<InfiniteCanvasProps>(), {
 });
 
 const emit = defineEmits<{
-  ready: [editor: Editor, store: EditorSync];
+  ready: [editor: Editor, store: CanvasStore];
 }>();
 
 // Define slots - block slots use "block:<tag>" naming, other slots allow overriding built-in UI
@@ -266,7 +266,7 @@ function subscribeComponent(
 function notifySubscribers(
   ctx: Context,
   entityId: EntityId,
-  componentDef: AnyEditorComponentDef,
+  componentDef: AnyCanvasComponentDef,
   removed = false,
 ): void {
   const entitySubs = componentSubscriptions.get(entityId);
@@ -310,7 +310,7 @@ function subscribeSingleton(
 // Notify singleton subscribers
 function notifySingletonSubscribers(
   ctx: Context,
-  singletonDef: AnyEditorSingletonDef,
+  singletonDef: AnyCanvasSingletonDef,
 ): void {
   const callbacks = singletonSubscriptions.get(singletonDef.name);
   if (!callbacks || callbacks.size === 0) return;
@@ -364,7 +364,7 @@ provide(TOOLTIP_KEY, tooltipContext);
 
 let eventIndex = 0;
 let animationFrameId: number | null = null;
-let store: EditorSync | null = null;
+let store: CanvasStore | null = null;
 let assetManager: AssetManager | null = null;
 
 async function tick() {
@@ -381,7 +381,6 @@ async function tick() {
 
     if (store) {
       store.sync(ctx);
-      isOnline.value = store.isOnline;
     }
   });
 
@@ -394,14 +393,29 @@ onMounted(async () => {
   if (!containerRef.value) return;
 
   // Create store (adapters are built lazily in initialize)
-  const syncOpts = props.syncOptions ?? { documentId: "default" };
-  store = new EditorSync({
+  const syncOpts = props.syncOptions ?? {};
+
+  // Build store options, wrapping callbacks to track internal state
+  const storeOptions: CanvasStoreOptions = {
     ...syncOpts,
-    onVersionMismatch: (serverProtocolVersion) => {
-      versionMismatch.value = true;
-      syncOpts.onVersionMismatch?.(serverProtocolVersion);
-    },
-  });
+  };
+
+  // If websocket is configured, wrap the callbacks
+  if (syncOpts.websocket) {
+    storeOptions.websocket = {
+      ...syncOpts.websocket,
+      onVersionMismatch: (serverProtocolVersion) => {
+        versionMismatch.value = true;
+        syncOpts.websocket?.onVersionMismatch?.(serverProtocolVersion);
+      },
+      onConnectivityChange: (online) => {
+        isOnline.value = online;
+        syncOpts.websocket?.onConnectivityChange?.(online);
+      },
+    };
+  }
+
+  store = new CanvasStore(storeOptions);
 
   // Build plugins array with built-in plugins
   const allPlugins: EditorPluginInput[] = [];
@@ -442,9 +456,10 @@ onMounted(async () => {
   });
 
   // Initialize asset manager
+  const documentId = syncOpts.persistence?.documentId ?? "default";
   assetManager = new AssetManager({
     provider: props.assetProvider ?? new LocalAssetProvider(),
-    documentId: store.documentId,
+    documentId,
   });
   await assetManager.init();
   await assetManager.resumePendingUploads();

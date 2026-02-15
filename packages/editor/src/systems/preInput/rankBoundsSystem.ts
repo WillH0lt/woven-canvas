@@ -1,8 +1,8 @@
-import { defineQuery, type Context } from "@infinitecanvas/ecs";
+import { defineQuery, type Context } from "@woven-ecs/core";
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Block } from "../../components";
-import { Synced } from "@infinitecanvas/ecs-sync";
+import { Synced } from "@woven-ecs/canvas-store";
 import { RankBounds } from "../../singletons";
 
 // Query for blocks - tracks added blocks to sync their ranks

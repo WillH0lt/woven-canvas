@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
-import { field } from "@infinitecanvas/ecs";
+import { field } from "@woven-ecs/core";
 import { sortPluginsByDependencies, type EditorPlugin } from "../src/plugin";
 import { defineSystem } from "../src";
-import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 
 describe("Plugin System", () => {
   describe("sortPluginsByDependencies", () => {
@@ -123,7 +123,7 @@ describe("Plugin System", () => {
     });
 
     it("should support plugin with components", () => {
-      const Block = new EditorComponentDef(
+      const Block = new CanvasComponentDef(
         { name: "block" },
         {
           x: field.float32(),
@@ -131,12 +131,12 @@ describe("Plugin System", () => {
         },
       );
 
-      const Selected = new EditorComponentDef(
+      const Selected = new CanvasComponentDef(
         { name: "selected", sync: "ephemeral" },
         {},
       );
 
-      const Camera = new EditorSingletonDef(
+      const Camera = new CanvasSingletonDef(
         { name: "camera", sync: "ephemeral" },
         {
           zoom: field.float64().default(1),
@@ -202,7 +202,7 @@ describe("Plugin System", () => {
     });
 
     it("should support full-featured plugin", () => {
-      const Block = new EditorComponentDef(
+      const Block = new CanvasComponentDef(
         { name: "block" },
         {
           id: field.string().max(36),
@@ -211,12 +211,12 @@ describe("Plugin System", () => {
         },
       );
 
-      const Selected = new EditorComponentDef(
+      const Selected = new CanvasComponentDef(
         { name: "selected", sync: "ephemeral" },
         {},
       );
 
-      const Camera = new EditorSingletonDef(
+      const Camera = new CanvasSingletonDef(
         { name: "camera", sync: "ephemeral" },
         {
           x: field.float64().default(0),
@@ -255,7 +255,7 @@ describe("Plugin System", () => {
 
   describe("real-world plugin scenarios", () => {
     it("should support a core plugin", () => {
-      const Block = new EditorComponentDef(
+      const Block = new CanvasComponentDef(
         { name: "block" },
         {
           id: field.string().max(36),
@@ -278,11 +278,11 @@ describe("Plugin System", () => {
     });
 
     it("should support a selection plugin depending on core", () => {
-      const Selected = new EditorComponentDef(
+      const Selected = new CanvasComponentDef(
         { name: "selected", sync: "ephemeral" },
         {},
       );
-      const Hovered = new EditorComponentDef({ name: "hovered" }, {});
+      const Hovered = new CanvasComponentDef({ name: "hovered" }, {});
 
       const selectionPlugin: EditorPlugin = {
         name: "selection",
@@ -302,8 +302,8 @@ describe("Plugin System", () => {
     });
 
     it("should support a transform plugin depending on selection", () => {
-      const Dragging = new EditorComponentDef({ name: "dragging" }, {});
-      const Resizing = new EditorComponentDef({ name: "resizing" }, {});
+      const Dragging = new CanvasComponentDef({ name: "dragging" }, {});
+      const Resizing = new CanvasComponentDef({ name: "resizing" }, {});
 
       const transformPlugin: EditorPlugin = {
         name: "transform",

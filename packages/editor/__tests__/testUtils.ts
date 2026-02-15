@@ -6,9 +6,9 @@ import {
   type Context,
   createEntity,
   addComponent,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 import { Block, Aabb } from "../src/components";
-import { Synced } from "@infinitecanvas/ecs-sync";
+import { Synced } from "@woven-ecs/canvas-store";
 
 /**
  * Simulate a mouse move event.

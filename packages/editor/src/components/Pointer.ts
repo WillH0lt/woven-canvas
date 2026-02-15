@@ -1,6 +1,6 @@
-import { field, ComponentDef, type Context } from "@infinitecanvas/ecs";
+import { field, ComponentDef, type Context } from "@woven-ecs/core";
 import type { Vec2 } from "@infinitecanvas/math";
-import { EditorComponentDef } from "@infinitecanvas/ecs-sync";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
 
 /**
  * Pointer button types
@@ -71,9 +71,9 @@ const PointerSchema = {
  * using exponentially time-decayed weighted least-squares fitting.
  *
  * Note: This is an internal runtime component using base ComponentDef,
- * not EditorComponentDef, since it doesn't need sync or a string id.
+ * not CanvasComponentDef, since it doesn't need sync or a string id.
  */
-class PointerDef extends EditorComponentDef<typeof PointerSchema> {
+class PointerDef extends CanvasComponentDef<typeof PointerSchema> {
   constructor() {
     super({ name: "pointer" }, PointerSchema);
   }

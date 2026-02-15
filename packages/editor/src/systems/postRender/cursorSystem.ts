@@ -1,4 +1,4 @@
-import { type Context, defineQuery, getResources } from "@infinitecanvas/ecs";
+import { type Context, defineQuery, getResources } from "@woven-ecs/core";
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Cursor, Frame } from "../../singletons";

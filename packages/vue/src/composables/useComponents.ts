@@ -11,12 +11,12 @@ import {
   hasComponent,
   type EntityId,
   type InferEditorComponentType,
-  type AnyEditorComponentDef,
+  type AnyCanvasComponentDef,
 } from "@infinitecanvas/editor";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
 /** Component def with name and schema for type inference */
-type ComponentDefWithSchema = AnyEditorComponentDef & {
+type ComponentDefWithSchema = AnyCanvasComponentDef & {
   name: string;
   schema: any;
 };

@@ -1,4 +1,4 @@
-import { type Context, defineQuery } from "@infinitecanvas/ecs";
+import { type Context, defineQuery } from "@woven-ecs/core";
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Pointer, User } from "../../components";

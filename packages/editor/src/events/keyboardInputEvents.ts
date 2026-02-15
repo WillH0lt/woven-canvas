@@ -1,4 +1,4 @@
-import type { Context } from "@infinitecanvas/ecs";
+import type { Context } from "@woven-ecs/core";
 import { Keyboard } from "../singletons";
 import type { KeyboardInput, KeyboardInputType } from "./types";
 

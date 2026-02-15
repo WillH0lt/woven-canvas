@@ -1,4 +1,4 @@
-import { field, EditorComponentDef } from "@infinitecanvas/editor";
+import { field, CanvasComponentDef } from "@infinitecanvas/editor";
 import { ShapeKind, StrokeKind } from "../types";
 
 const ShapeSchema = {
@@ -41,7 +41,7 @@ const ShapeSchema = {
  *
  * Includes shape type, stroke style/color/width, and fill color.
  */
-class ShapeDef extends EditorComponentDef<typeof ShapeSchema> {
+class ShapeDef extends CanvasComponentDef<typeof ShapeSchema> {
   constructor() {
     super({ name: "shape", sync: "document" }, ShapeSchema);
   }

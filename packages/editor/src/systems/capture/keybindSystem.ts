@@ -3,7 +3,7 @@ import {
   createEntity,
   addComponent,
   getResources,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Keyboard } from "../../singletons";

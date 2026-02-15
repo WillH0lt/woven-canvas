@@ -1,4 +1,4 @@
-import { field, defineEditorComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/editor";
 import { ArrowHandleKind } from "../types";
 
 /**
@@ -7,7 +7,7 @@ import { ArrowHandleKind } from "../types";
  * Arrow handles are visual elements that allow users to drag and
  * modify arrow endpoints and control points.
  */
-export const ArrowHandle = defineEditorComponent(
+export const ArrowHandle = defineCanvasComponent(
   { name: "arrowHandle" },
   {
     /** Kind of handle (start, middle, or end) */

@@ -1,6 +1,6 @@
 import {
-  EditorComponentDef,
-  EditorSingletonDef,
+  CanvasComponentDef,
+  CanvasSingletonDef,
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
@@ -66,11 +66,11 @@ export function createSelectionPlugin(
     resources: SelectionPluginOptionsSchema.parse(options),
 
     components: Object.values(components).filter(
-      (v) => v instanceof EditorComponentDef
+      (v) => v instanceof CanvasComponentDef
     ),
 
     singletons: Object.values(singletons).filter(
-      (v) => v instanceof EditorSingletonDef
+      (v) => v instanceof CanvasSingletonDef
     ),
 
     blockDefs: [

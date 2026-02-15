@@ -1,5 +1,5 @@
-import { field, type Context } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { field, type Context } from "@woven-ecs/core";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
 
 const RankBoundsSchema = {
@@ -13,7 +13,7 @@ const RankBoundsSchema = {
  * Used to generate new ranks when creating blocks that should be
  * at the top or bottom of the z-order.
  */
-class RankBoundsDef extends EditorSingletonDef<typeof RankBoundsSchema> {
+class RankBoundsDef extends CanvasSingletonDef<typeof RankBoundsSchema> {
   constructor() {
     super({ name: "rankBounds" }, RankBoundsSchema);
   }

@@ -1,5 +1,5 @@
-import { field, type Context, type EntityId } from "@infinitecanvas/ecs";
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { field, type Context, type EntityId } from "@woven-ecs/core";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 
 const IntersectSchema = {
   // Store up to 5 intersected entity IDs
@@ -16,7 +16,7 @@ const IntersectSchema = {
  * Updated by the intersect system when the mouse moves.
  * Entities are stored in z-order (top to bottom).
  */
-class IntersectDef extends EditorSingletonDef<typeof IntersectSchema> {
+class IntersectDef extends CanvasSingletonDef<typeof IntersectSchema> {
   constructor() {
     super({ name: "intersect" }, IntersectSchema);
   }

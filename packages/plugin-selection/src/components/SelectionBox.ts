@@ -1,4 +1,4 @@
-import { defineEditorComponent } from "@infinitecanvas/editor";
+import { defineCanvasComponent } from "@infinitecanvas/editor";
 
 /**
  * SelectionBox component - marks an entity as the marquee selection box.
@@ -7,7 +7,7 @@ import { defineEditorComponent } from "@infinitecanvas/editor";
  * to select multiple blocks. It has an associated Block component for
  * its position/size.
  */
-export const SelectionBox = defineEditorComponent(
+export const SelectionBox = defineCanvasComponent(
   { name: "selectionBox" },
   {}
 );

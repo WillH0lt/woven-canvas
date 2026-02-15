@@ -1,5 +1,5 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
 /**
  * Image component - stores image-specific metadata.
@@ -7,7 +7,7 @@ import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
  * Used alongside the Asset component for image blocks.
  * The actual image binary is managed by AssetManager, not stored in ECS.
  */
-export const Image = defineEditorComponent(
+export const Image = defineCanvasComponent(
   { name: "image", sync: "document" },
   {
     /** Image width in pixels */

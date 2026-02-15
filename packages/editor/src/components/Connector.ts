@@ -1,5 +1,5 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
 /**
  * Connector component - defines a line/arrow between two blocks.
@@ -12,7 +12,7 @@ import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
  * - `startUv`/`endUv`: Actual endpoint position as UV coords on this connector's block
  * - `startNeedsUpdate`/`endNeedsUpdate`: Flags to trigger recalculation
  */
-export const Connector = defineEditorComponent(
+export const Connector = defineCanvasComponent(
   { name: "connector", sync: "document" },
   {
     startBlock: field.ref(),

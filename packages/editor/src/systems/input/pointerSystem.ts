@@ -4,7 +4,7 @@ import {
   addComponent,
   getResources,
   type Context,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 import type { Vec2 } from "@infinitecanvas/math";
 
 import { defineEditorSystem } from "../../EditorSystem";

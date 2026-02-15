@@ -5,7 +5,6 @@
     // Specify an output folder for all emitted files.
     "outDir": "build",
     // Only output d.ts files and not JavaScript files.
-    "emitDeclarationOnly": true,
-    "experimentalDecorators": true
+    "emitDeclarationOnly": true
   }
 }

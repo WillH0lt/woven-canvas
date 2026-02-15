@@ -1,3 +1,3 @@
-import { defineEditorComponent } from "@infinitecanvas/editor";
+import { defineCanvasComponent } from "@infinitecanvas/editor";
 
-export const Selected = defineEditorComponent({ name: "selected" }, {});
+export const Selected = defineCanvasComponent({ name: "selected" }, {});

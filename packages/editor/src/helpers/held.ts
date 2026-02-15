@@ -1,4 +1,4 @@
-import { hasComponent, getResources, type Context, type EntityId } from "@infinitecanvas/ecs";
+import { hasComponent, getResources, type Context, type EntityId } from "@woven-ecs/core";
 import { Held } from "../components/Held";
 import type { EditorResources } from "../types";
 

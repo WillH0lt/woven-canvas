@@ -1,6 +1,6 @@
 import {
   field,
-  EditorComponentDef,
+  CanvasComponentDef,
   Block,
   type Context,
   type EntityId,
@@ -43,7 +43,7 @@ const ElbowArrowSchema = {
  * Points are stored in a flat array as UV coordinates (0-1) relative to block bounds.
  * The path consists of horizontal and vertical segments that route around obstacles.
  */
-class ElbowArrowDef extends EditorComponentDef<typeof ElbowArrowSchema> {
+class ElbowArrowDef extends CanvasComponentDef<typeof ElbowArrowSchema> {
   constructor() {
     super({ name: "elbowArrow", sync: "document" }, ElbowArrowSchema);
   }

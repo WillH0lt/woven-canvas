@@ -1,7 +1,7 @@
 import {
   field,
-  defineEditorComponent,
-  defineEditorSingleton,
+  defineCanvasComponent,
+  defineCanvasSingleton,
   defineEditorSystem,
   defineQuery,
   getPointerInput,
@@ -20,7 +20,7 @@ import { Vec2 } from "@infinitecanvas/math";
  * This is a simple example of a user-defined component that stores
  * position, size, and color data for each shape entity.
  */
-export const Shape = defineEditorComponent(
+export const Shape = defineCanvasComponent(
   "shapes",
   {
     /** World position (center of shape) [x, y] */
@@ -40,7 +40,7 @@ export const shapeQuery = defineQuery((q) => q.with(Shape));
  * DragState singleton - tracks the current drag operation.
  * Using a singleton ensures proper ECS integration and supports multiple editor instances.
  */
-export const DragState = defineEditorSingleton(
+export const DragState = defineCanvasSingleton(
   "dragState",
   {
     /** Whether a drag is currently active */

@@ -1,4 +1,4 @@
-import type { Context, EntityId } from "@infinitecanvas/ecs";
+import type { Context, EntityId } from "@woven-ecs/core";
 import type { Vec2 } from "@infinitecanvas/math";
 
 import type { PointerButton, PointerType } from "../components/Pointer";

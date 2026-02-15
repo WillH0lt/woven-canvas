@@ -1,4 +1,4 @@
-import { type Context, type EntityId, hasComponent } from "@infinitecanvas/ecs";
+import { type Context, type EntityId, hasComponent } from "@woven-ecs/core";
 import { Capsule, Vec2, Aabb as AabbNs, Arc, Mat2 } from "@infinitecanvas/math";
 
 import { Aabb as AabbComponent } from "../components/Aabb";

@@ -1,7 +1,7 @@
-import { field, type Context } from "@infinitecanvas/ecs";
+import { field, type Context } from "@woven-ecs/core";
 import type { Vec2 } from "@infinitecanvas/math";
 
-import { EditorSingletonDef } from "@infinitecanvas/ecs-sync";
+import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
 
 const ScreenSchema = {
   /** Width of the editor element in pixels */
@@ -19,7 +19,7 @@ const ScreenSchema = {
  *
  * Updated automatically via ResizeObserver when the element resizes.
  */
-class ScreenDef extends EditorSingletonDef<typeof ScreenSchema> {
+class ScreenDef extends CanvasSingletonDef<typeof ScreenSchema> {
   constructor() {
     super({ name: "screen" }, ScreenSchema);
   }

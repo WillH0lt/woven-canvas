@@ -1,5 +1,5 @@
-import { field } from "@infinitecanvas/ecs";
-import { defineEditorComponent } from "@infinitecanvas/ecs-sync";
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
 /**
  * Upload state for assets.
@@ -21,7 +21,7 @@ export const UploadState = {
  * The identifier is empty until upload completes, at which point it contains
  * the permanent identifier returned by the AssetProvider.
  */
-export const Asset = defineEditorComponent(
+export const Asset = defineCanvasComponent(
   { name: "asset", sync: "document", excludeFromHistory: ["uploadState"] },
   {
     /** Permanent identifier from AssetProvider (empty until upload complete) */

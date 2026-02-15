@@ -1,5 +1,5 @@
 import {
-  EditorComponentDef,
+  CanvasComponentDef,
   Text,
   VerticalAlign,
   type EditorPlugin,
@@ -37,7 +37,7 @@ export function createShapesPlugin(
     name: PLUGIN_NAME,
 
     components: Object.values(components).filter(
-      (v) => v instanceof EditorComponentDef
+      (v) => v instanceof CanvasComponentDef
     ),
 
     blockDefs: [

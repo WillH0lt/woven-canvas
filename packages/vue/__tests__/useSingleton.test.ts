@@ -5,11 +5,11 @@ import {
   INFINITE_CANVAS_KEY,
   type InfiniteCanvasContext,
 } from "../src/injection";
-import { defineEditorSingleton, field } from "@infinitecanvas/editor";
+import { defineCanvasSingleton, field } from "@infinitecanvas/editor";
 
 describe("useSingleton", () => {
   // Create a test singleton definition
-  const TestSingleton = defineEditorSingleton(
+  const TestSingleton = defineCanvasSingleton(
     { name: "TestSingleton" },
     {
       value: field.int32().default(0),
@@ -134,7 +134,7 @@ describe("useSingleton", () => {
   });
 
   describe("multiple singletons", () => {
-    const AnotherSingleton = defineEditorSingleton(
+    const AnotherSingleton = defineCanvasSingleton(
       { name: "AnotherSingleton" },
       {
         count: field.int32().default(0),

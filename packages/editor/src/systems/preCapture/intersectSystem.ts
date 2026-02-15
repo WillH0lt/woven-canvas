@@ -4,7 +4,7 @@ import {
   removeComponent,
   hasComponent,
   type Context,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 
 import { defineEditorSystem } from "../../EditorSystem";
 import { Camera, Mouse, Controls, Intersect } from "../../singletons";
@@ -16,7 +16,7 @@ import {
   HitGeometry,
   Held,
 } from "../../components";
-import { Synced } from "@infinitecanvas/ecs-sync";
+import { Synced } from "@woven-ecs/canvas-store";
 import { computeAabb, intersectPoint, isHeldByRemote } from "../../helpers";
 
 // Query for blocks that have changed (need AABB recalculation)

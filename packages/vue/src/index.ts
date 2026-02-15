@@ -124,17 +124,17 @@ export { CursorKind, CURSORS } from "./cursors";
 
 // ECS Sync
 export {
-  EditorSync,
-  type EditorSyncOptions,
-  EditorComponentDef,
-  EditorSingletonDef,
-  defineEditorComponent,
-  defineEditorSingleton,
+  CanvasStore,
+  type CanvasStoreOptions,
+  CanvasComponentDef,
+  CanvasSingletonDef,
+  defineCanvasComponent,
+  defineCanvasSingleton,
   Synced,
-  type AnyEditorComponentDef,
-  type AnyEditorSingletonDef,
+  type AnyCanvasComponentDef,
+  type AnyCanvasSingletonDef,
   type SyncBehavior,
-} from "@infinitecanvas/ecs-sync";
+} from "@woven-ecs/canvas-store";
 
 // Types
 export type { BlockData, BackgroundOptions } from "./types";

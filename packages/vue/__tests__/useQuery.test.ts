@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { createApp, h } from "vue";
 import { useQuery } from "../src/composables/useQuery";
-import { defineEditorComponent, field } from "@infinitecanvas/editor";
+import { defineCanvasComponent, field } from "@infinitecanvas/editor";
 
 describe("useQuery", () => {
   // Create a test component definition
-  const Block = defineEditorComponent({ name: "Block" }, {
+  const Block = defineCanvasComponent({ name: "Block" }, {
     position: field.tuple(field.float64(), 2).default([0, 0]),
     size: field.tuple(field.float64(), 2).default([100, 100]),
   });

@@ -8,7 +8,7 @@ import {
   getResources,
   type EntityId,
   type Context,
-} from "@infinitecanvas/ecs";
+} from "@woven-ecs/core";
 import type { Editor } from "./Editor";
 import type { EditorResources } from "./types";
 
