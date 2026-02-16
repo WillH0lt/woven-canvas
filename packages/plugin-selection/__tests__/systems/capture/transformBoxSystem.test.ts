@@ -7,18 +7,17 @@ import {
   type EditorPlugin,
   Controls,
   Block,
-  Aabb,
-  Hovered,
-  Intersect,
-  RankBounds,
+  Held,
   BlockDef,
+  Aabb,
+  Intersect,
 } from "@infinitecanvas/core";
-import { TransformBox, TransformHandle, Selected, Held } from "../../../src/components";
+import { TransformBox, TransformHandle, Selected, EditAfterPlacing } from "../../../src/components";
 import { selectBlock } from "../../../src/helpers";
 import { TransformBoxStateSingleton } from "../../../src/singletons";
 import { transformBoxSystem } from "../../../src/systems/capture";
 import {
-  AddOrUpdateTransformBox,
+  AddTransformBox,
   HideTransformBox,
   ShowTransformBox,
   RemoveTransformBox,
@@ -39,16 +38,16 @@ const pointer = createPointerSimulator();
 const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
   cursors: CURSORS,
-  blockDefs: {
-    text: BlockDef.parse({
+  blockDefs: [
+    BlockDef.parse({
       tag: "text",
       editOptions: { canEdit: true },
       resizeMode: "text",
     }),
-  },
-  components: [Block, Aabb, Selected, Held, Hovered, TransformBox, TransformHandle],
-  singletons: [Intersect, RankBounds, TransformBoxStateSingleton],
-  captureSystems: [transformBoxSystem],
+  ],
+  components: [Selected, TransformBox, TransformHandle, EditAfterPlacing],
+  singletons: [TransformBoxStateSingleton],
+  systems: [transformBoxSystem],
   setup(ctx) {
     // Set up select tool on left mouse button
     const controls = Controls.write(ctx);
@@ -120,7 +119,7 @@ describe("CaptureTransformBox", () => {
       expect(state).toBe(TransformBoxState.Idle);
     });
 
-    it("should spawn AddOrUpdateTransformBox when selection is added", async () => {
+    it("should spawn AddTransformBox when selection is added", async () => {
       let commandSpawned = false;
       let entityId: number | undefined;
 
@@ -140,7 +139,7 @@ describe("CaptureTransformBox", () => {
 
       // Check if command was spawned
       editor.nextTick((ctx) => {
-        commandSpawned = AddOrUpdateTransformBox.didSpawnLastFrame(ctx);
+        commandSpawned = AddTransformBox.didSpawnLastFrame(ctx);
       });
 
       await editor.tick();

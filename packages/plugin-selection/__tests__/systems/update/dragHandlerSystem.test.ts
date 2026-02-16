@@ -5,10 +5,8 @@ import {
   addComponent,
   type EditorPlugin,
   Block,
-  Aabb,
-  RankBounds,
 } from "@infinitecanvas/core";
-import { TransformBox, TransformHandle, DragStart, Selected, Held } from "../../../src/components";
+import { TransformBox, TransformHandle, DragStart, Selected } from "../../../src/components";
 import { DragBlock } from "../../../src/commands";
 import { dragHandlerSystem } from "../../../src/systems/update";
 import { TransformHandleKind } from "../../../src/types";
@@ -21,9 +19,8 @@ import { CURSORS } from "../../../src/cursors";
 const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
   cursors: CURSORS,
-  components: [Block, Aabb, Selected, Held, TransformBox, TransformHandle, DragStart],
-  singletons: [RankBounds],
-  updateSystems: [dragHandlerSystem],
+  components: [Selected, TransformBox, TransformHandle, DragStart],
+  systems: [dragHandlerSystem],
 };
 
 describe("UpdateDragHandler", () => {
@@ -279,7 +276,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Rotate,
           vectorX: 1, // Right side
           vectorY: -1, // Top side
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 95],
@@ -332,7 +329,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Rotate,
           vectorX: 1,
           vectorY: -1,
-          transformBoxId: 0,
+          transformBox: 0,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 95],
@@ -405,7 +402,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1, // Right
           vectorY: 1, // Bottom
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 195],
@@ -483,7 +480,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [295, 145],
@@ -533,7 +530,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: 0,
+          transformBox: 0,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 195],
@@ -606,7 +603,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Stretch,
           vectorX: 1, // Right
           vectorY: 0, // Middle (horizontal stretch only)
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 145],
@@ -684,7 +681,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Stretch,
           vectorX: 0, // Middle (vertical stretch only)
           vectorY: 1, // Bottom
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [145, 195],
@@ -769,7 +766,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 195],
@@ -851,7 +848,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 145],
@@ -928,7 +925,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Stretch,
           vectorX: 1,
           vectorY: 0,
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 145],
@@ -1010,7 +1007,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Stretch,
           vectorX: 0,
           vectorY: 1,
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [145, 195],
@@ -1095,7 +1092,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 195],
@@ -1177,7 +1174,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 195],
@@ -1275,7 +1272,7 @@ describe("UpdateDragHandler", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: boxId,
+          transformBox: boxId,
         });
         addComponent(ctx, handleId, DragStart, {
           position: [195, 145],

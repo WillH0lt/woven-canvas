@@ -8,12 +8,11 @@ import {
   Controls,
   Keyboard,
   Block,
-  Aabb,
-  Hovered,
+  Held,
+  Pointer,
   Intersect,
-  RankBounds,
 } from "@infinitecanvas/core";
-import { TransformBox, TransformHandle, Selected, Held } from "../../../src/components";
+import { TransformBox, TransformHandle, Selected } from "../../../src/components";
 import { SelectionStateSingleton } from "../../../src/singletons";
 import { selectSystem } from "../../../src/systems/preCapture";
 import {
@@ -36,16 +35,12 @@ const pointer = createPointerSimulator();
 const testPlugin: EditorPlugin = {
   name: "test",
   components: [
-    Block,
-    Aabb,
     Selected,
-    Held,
-    Hovered,
     TransformBox,
     TransformHandle,
   ],
-  singletons: [Intersect, RankBounds, SelectionStateSingleton],
-  preCaptureSystems: [selectSystem],
+  singletons: [SelectionStateSingleton],
+  systems: [selectSystem],
   setup(ctx) {
     // Set up select tool on left mouse button
     const controls = Controls.write(ctx);

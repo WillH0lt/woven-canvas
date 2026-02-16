@@ -197,9 +197,10 @@ describe("PostRenderCursor", () => {
       const dragCursor = getCursorSvg(TEST_CURSOR_DEFS, CursorKind.Drag, 0);
       expect(document.body.style.cursor).toBe(dragCursor);
 
-      // Clear cursor
+      // Clear both context and base cursor
       editor.nextTick((ctx) => {
         Cursor.clearContextCursor(ctx);
+        Cursor.setCursor(ctx, ""); // Clear base cursor too
       });
 
       await editor.tick();

@@ -6,7 +6,7 @@
       "path": "packages/asset-sync"
     },
     {
-      "path": "packages/editor"
+      "path": "packages/core"
     },
     {
       "path": "packages/math"

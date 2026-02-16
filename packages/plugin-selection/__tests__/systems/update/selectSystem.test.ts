@@ -10,13 +10,9 @@ import {
   defineQuery,
   Synced,
   Block,
-  Aabb,
-  Hovered,
-  Opacity,
-  Intersect,
-  RankBounds,
+  Held,
 } from "@infinitecanvas/core";
-import { SelectionBox, Selected, Held } from "../../../src/components";
+import { SelectionBox, Selected } from "../../../src/components";
 import { selectSystem } from "../../../src/systems/update";
 import {
   AddSelectionBox,
@@ -34,9 +30,8 @@ const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox));
 const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
   cursors: CURSORS,
-  components: [Block, Aabb, Selected, Held, SelectionBox, Hovered, Opacity],
-  singletons: [Intersect, RankBounds],
-  updateSystems: [selectSystem],
+  components: [Selected, Held, SelectionBox],
+  systems: [selectSystem],
 };
 
 describe("UpdateSelectSystem", () => {

@@ -6,10 +6,6 @@ import {
   type EditorPlugin,
   Synced,
   Block,
-  Aabb,
-  HitGeometry,
-  RankBounds,
-  Intersect,
 } from "@infinitecanvas/core";
 
 import { EraserStroke, Erased } from "../../src/components";
@@ -38,10 +34,11 @@ const erasedQuery = defineQuery((q) => q.with(Erased));
 const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced));
 
 // Test plugin with eraser update system
+// Note: Block, Aabb, Synced, HitGeometry, RankBounds, Intersect are provided by CorePlugin
 const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
-  components: [Block, Aabb, Synced, EraserStroke, Erased, HitGeometry],
-  singletons: [EraserStateSingleton, RankBounds, Intersect],
+  components: [EraserStroke, Erased],
+  singletons: [EraserStateSingleton],
   systems: [updateEraserSystem],
 };
 
@@ -119,14 +116,27 @@ describe("updateEraserSystem", () => {
   describe("AddEraserStrokePoint command", () => {
     it("should add points to active stroke", async () => {
       let pointCount = 0;
+      let strokeId: number | null = null;
 
       editor.command(StartEraserStroke, { worldPosition: [0, 0] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [50, 50] });
+      // Get the active stroke ID from the state singleton
+      editor.nextTick((ctx) => {
+        strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [100, 100] });
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [50, 50],
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [100, 100],
+      });
       await editor.tick();
 
       editor.nextTick((ctx) => {
@@ -143,6 +153,7 @@ describe("updateEraserSystem", () => {
 
     it("should mark intersecting blocks as erased", async () => {
       let blockId: number | undefined;
+      let strokeId: number | null = null;
       let isErased = false;
 
       // Create a block at position [100, 100] with size [50, 50]
@@ -158,7 +169,16 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [90, 125] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [160, 125] });
+      // Get the active stroke ID
+      editor.nextTick((ctx) => {
+        strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [160, 125],
+      });
       await editor.tick();
 
       editor.nextTick((ctx) => {
@@ -171,6 +191,7 @@ describe("updateEraserSystem", () => {
 
     it("should not mark non-intersecting blocks as erased", async () => {
       let blockId: number | undefined;
+      let strokeId: number | null = null;
       let isErased = false;
 
       // Create a block far from the stroke
@@ -186,7 +207,16 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [0, 0] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [100, 100] });
+      // Get the active stroke ID
+      editor.nextTick((ctx) => {
+        strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [100, 100],
+      });
       await editor.tick();
 
       editor.nextTick((ctx) => {
@@ -199,9 +229,11 @@ describe("updateEraserSystem", () => {
 
     it("should use HitGeometry for precise intersection when available", async () => {
       let blockId: number | undefined;
+      let strokeId: number | null = null;
       let isErased = false;
 
-      // Create block with diagonal hit geometry (from corner to corner)
+      // Create block with diagonal hit geometry (from top-left corner to bottom-right corner)
+      // Block at [100, 100] with size [100, 100] has diagonal from (100, 100) to (200, 200)
       editor.nextTick((ctx) => {
         blockId = createBlockWithDiagonalHitGeometry(ctx, {
           position: [100, 100],
@@ -211,11 +243,21 @@ describe("updateEraserSystem", () => {
       });
       await editor.tick();
 
-      // Draw stroke that crosses the diagonal
-      editor.command(StartEraserStroke, { worldPosition: [100, 200] });
+      // Draw horizontal stroke through the center that crosses the diagonal
+      // This goes from left to right through the middle of the block at y=150
+      editor.command(StartEraserStroke, { worldPosition: [80, 150] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [200, 100] });
+      // Get the active stroke ID
+      editor.nextTick((ctx) => {
+        strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [220, 150],
+      });
       await editor.tick();
 
       editor.nextTick((ctx) => {
@@ -228,6 +270,7 @@ describe("updateEraserSystem", () => {
 
     it("should skip intersection check for small movements", async () => {
       let blockId: number | undefined;
+      let strokeId: number | null = null;
       let isErased = false;
 
       // Create a block
@@ -243,8 +286,17 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [125, 125] });
       await editor.tick();
 
+      // Get the active stroke ID
+      editor.nextTick((ctx) => {
+        strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
       // Add point with very small movement (less than 1 pixel)
-      editor.command(AddEraserStrokePoint, { worldPosition: [125.5, 125.5] });
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [125.5, 125.5],
+      });
       await editor.tick();
 
       editor.nextTick((ctx) => {
@@ -276,12 +328,15 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [90, 125] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [160, 125] });
-      await editor.tick();
-
-      // Get stroke ID before completing
+      // Get stroke ID before adding point
       editor.nextTick((ctx) => {
         strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [160, 125],
       });
       await editor.tick();
 
@@ -371,12 +426,15 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [90, 125] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [160, 125] });
-      await editor.tick();
-
-      // Get stroke ID before completing
+      // Get stroke ID before adding point
       editor.nextTick((ctx) => {
         strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [160, 125],
       });
       await editor.tick();
 
@@ -415,12 +473,15 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [90, 125] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [160, 125] });
-      await editor.tick();
-
-      // Get stroke ID before cancelling
+      // Get stroke ID before adding point
       editor.nextTick((ctx) => {
         strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [160, 125],
       });
       await editor.tick();
 
@@ -454,12 +515,15 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [90, 125] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [160, 125] });
-      await editor.tick();
-
-      // Get stroke ID before cancelling
+      // Get stroke ID before adding point
       editor.nextTick((ctx) => {
         strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [160, 125],
       });
       await editor.tick();
 
@@ -556,12 +620,15 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [40, 115] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [190, 115] });
-      await editor.tick();
-
-      // Get stroke ID before completing
+      // Get stroke ID before adding point
       editor.nextTick((ctx) => {
         strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [190, 115],
       });
       await editor.tick();
 
@@ -602,12 +669,15 @@ describe("updateEraserSystem", () => {
       editor.command(StartEraserStroke, { worldPosition: [90, 125] });
       await editor.tick();
 
-      editor.command(AddEraserStrokePoint, { worldPosition: [160, 125] });
-      await editor.tick();
-
-      // Get stroke ID before completing
+      // Get stroke ID before adding point
       editor.nextTick((ctx) => {
         strokeId = EraserStateSingleton.read(ctx).activeStroke;
+      });
+      await editor.tick();
+
+      editor.command(AddEraserStrokePoint, {
+        strokeId: strokeId!,
+        worldPosition: [160, 125],
       });
       await editor.tick();
 

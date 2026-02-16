@@ -13,11 +13,12 @@ import {
   Synced,
   Block,
   Aabb,
+  Held,
   RankBounds,
 } from "@infinitecanvas/core";
 
 import { CURSORS } from "../src/cursors";
-import { Selected, Held } from "../src/components";
+import { Selected } from "../src/components";
 
 /**
  * Test resources interface for plugin tests.
@@ -103,7 +104,7 @@ export function createBlock(
   });
   addComponent(ctx, entityId, Aabb, {});
   // Compute actual AABB from block corners
-  Aabb.computeFromBlock(ctx, entityId);
+  Aabb.expandByBlock(ctx, entityId, entityId);
 
   if (synced) {
     addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() });

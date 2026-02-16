@@ -1,6 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
+
+// Mock @floating-ui/vue to avoid getSelection requirement in jsdom
+vi.mock("@floating-ui/vue", () => ({
+  useFloating: () => ({
+    floatingStyles: { value: {} },
+    update: vi.fn(),
+    x: { value: 0 },
+    y: { value: 0 },
+    isPositioned: { value: false },
+    middlewareData: { value: {} },
+    placement: { value: "bottom" },
+    strategy: { value: "absolute" },
+  }),
+  offset: () => ({}),
+  flip: () => ({}),
+  shift: () => ({}),
+  autoUpdate: vi.fn(() => () => {}),
+}));
+
 import InfiniteCanvas from "../src/components/InfiniteCanvas.vue";
 
 // Track all created editor instances
@@ -13,11 +31,28 @@ vi.mock("@infinitecanvas/plugin-canvas-controls", () => ({
   })),
 }));
 
-vi.mock("@infinitecanvas/plugin-selection", () => ({
-  SelectionPlugin: {
-    name: "selection",
-  },
-}));
+vi.mock("@infinitecanvas/plugin-selection", async () => {
+  const actual = await vi.importActual("@infinitecanvas/plugin-selection");
+  return {
+    ...actual,
+    SelectionPlugin: {
+      name: "selection",
+    },
+  };
+});
+
+vi.mock("@infinitecanvas/asset-sync", () => {
+  class MockAssetManager {
+    init = vi.fn().mockResolvedValue(undefined);
+    resumePendingUploads = vi.fn().mockResolvedValue(undefined);
+    close = vi.fn();
+  }
+  class MockLocalAssetProvider {}
+  return {
+    AssetManager: MockAssetManager,
+    LocalAssetProvider: MockLocalAssetProvider,
+  };
+});
 
 // Mock Editor class with factory function
 vi.mock("@infinitecanvas/core", async () => {
@@ -77,6 +112,7 @@ describe("InfiniteCanvas", () => {
 
     vi.stubGlobal("requestAnimationFrame", mockRequestAnimationFrame);
     vi.stubGlobal("cancelAnimationFrame", mockCancelAnimationFrame);
+
   });
 
   afterEach(() => {

@@ -58,7 +58,7 @@ export function createBlock(
   });
   addComponent(ctx, entityId, Aabb, {});
   // Compute actual AABB from block corners
-  Aabb.computeFromBlock(ctx, entityId);
+  Aabb.expandByBlock(ctx, entityId, entityId);
 
   if (synced) {
     addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() });
@@ -81,6 +81,7 @@ export function createBlock(
 /**
  * Create a block with hit geometry matching its bounding box.
  * Creates a single capsule along the diagonal of the block.
+ * HitGeometry uses UV coordinates (0-1 range relative to the block).
  */
 export function createBlockWithDiagonalHitGeometry(
   ctx: Context,
@@ -93,14 +94,9 @@ export function createBlockWithDiagonalHitGeometry(
     ...rest
   } = options;
 
-  // Create diagonal capsule from top-left to bottom-right
-  const capsule = [
-    position[0],
-    position[1],
-    position[0] + size[0],
-    position[1] + size[1],
-    radius,
-  ];
+  // Create diagonal capsule from top-left (0,0) to bottom-right (1,1) in UV space
+  // The intersectCapsule function transforms these UV coordinates to world coordinates
+  const capsule = [0, 0, 1, 1, radius];
 
   return createBlock(ctx, {
     ...rest,
@@ -113,6 +109,7 @@ export function createBlockWithDiagonalHitGeometry(
 /**
  * Create a block with hit geometry along its edges.
  * Creates capsules along each edge of the block.
+ * HitGeometry uses UV coordinates (0-1 range relative to the block).
  */
 export function createBlockWithEdgeHitGeometry(
   ctx: Context,
@@ -125,19 +122,16 @@ export function createBlockWithEdgeHitGeometry(
     ...rest
   } = options;
 
-  const [x, y] = position;
-  const [w, h] = size;
-
-  // Create capsules along each edge
+  // Create capsules along each edge in UV coordinates (0-1 space)
   const capsules = [
     // Top edge
-    [x, y, x + w, y, radius],
+    [0, 0, 1, 0, radius],
     // Right edge
-    [x + w, y, x + w, y + h, radius],
+    [1, 0, 1, 1, radius],
     // Bottom edge
-    [x + w, y + h, x, y + h, radius],
+    [1, 1, 0, 1, radius],
     // Left edge
-    [x, y + h, x, y, radius],
+    [0, 1, 0, 0, radius],
   ];
 
   return createBlock(ctx, {

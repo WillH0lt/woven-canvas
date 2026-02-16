@@ -1,7 +1,7 @@
 {
   "private": true,
   "type": "module",
-  "name": "@infinitecanvas/pnpm-monorepo-example",
+  "name": "@infinitecanvas/monorepo",
   "description": "Practical example of a `TypeScript` monorepo with `pnpm`, `turborepo`, and `vitest`",
   "repository": "https://github.com/jkomyno/pnpm-monorepo-example.git",
   "author": {

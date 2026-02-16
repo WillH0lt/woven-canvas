@@ -28,8 +28,8 @@
     "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
-    "test": "vitest  --config ./vitest.config.ts run",
-    "test:watch": "vitest  --config ./vitest.config.ts run --watch"
+    "test": "vitest --config ../../vitest.config.ts run",
+    "test:watch": "vitest --config ../../vitest.config.ts run --watch"
   },
   "dependencies": {
     "@infinitecanvas/core": "workspace:*",

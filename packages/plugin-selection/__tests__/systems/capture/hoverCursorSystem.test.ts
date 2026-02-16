@@ -26,7 +26,7 @@ const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
   cursors: CURSORS,
   components: [TransformHandle, TransformBox],
-  captureSystems: [hoverCursorSystem],
+  systems: [hoverCursorSystem],
 };
 
 describe("CaptureHoverCursor", () => {
@@ -70,7 +70,7 @@ describe("CaptureHoverCursor", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: transformBoxId,
+          transformBox: transformBoxId,
           cursorKind: CursorKind.NWSE,
         });
       });
@@ -124,7 +124,7 @@ describe("CaptureHoverCursor", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: transformBoxId,
+          transformBox: transformBoxId,
           cursorKind: CursorKind.NWSE,
         });
       });
@@ -197,7 +197,7 @@ describe("CaptureHoverCursor", () => {
             kind: TransformHandleKind.Scale,
             vectorX: 1,
             vectorY: 1,
-            transformBoxId: transformBoxId,
+            transformBox: transformBoxId,
             cursorKind: cursorKind,
           });
         });
@@ -256,7 +256,7 @@ describe("CaptureHoverCursor", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: transformBoxId,
+          transformBox: transformBoxId,
           cursorKind: CursorKind.NS,
         });
       });
@@ -309,7 +309,7 @@ describe("CaptureHoverCursor", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: transformBoxId,
+          transformBox: transformBoxId,
           cursorKind: CursorKind.NS,
         });
       });
@@ -373,7 +373,7 @@ describe("CaptureHoverCursor", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: transformBoxId,
+          transformBox: transformBoxId,
           cursorKind: CursorKind.NS,
         });
       });
@@ -430,7 +430,7 @@ describe("CaptureHoverCursor", () => {
           kind: TransformHandleKind.Scale,
           vectorX: 1,
           vectorY: 1,
-          transformBoxId: transformBoxId,
+          transformBox: transformBoxId,
           cursorKind: CursorKind.NS,
         });
 
@@ -445,7 +445,7 @@ describe("CaptureHoverCursor", () => {
           kind: TransformHandleKind.Scale,
           vectorX: -1,
           vectorY: 1,
-          transformBoxId: transformBoxId,
+          transformBox: transformBoxId,
           cursorKind: CursorKind.EW,
         });
       });

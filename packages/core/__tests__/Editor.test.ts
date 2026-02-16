@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   Editor,
-  defineSystem,
+  defineEditorSystem,
   getResources,
   type EditorPlugin,
   type EditorResources,
@@ -51,23 +51,17 @@ describe("Editor", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        inputSystems: [
-          defineSystem(() => {
+        systems: [
+          defineEditorSystem({ phase: "input" }, () => {
             executionOrder.push("input");
           }),
-        ],
-        captureSystems: [
-          defineSystem(() => {
+          defineEditorSystem({ phase: "capture" }, () => {
             executionOrder.push("capture");
           }),
-        ],
-        updateSystems: [
-          defineSystem(() => {
+          defineEditorSystem({ phase: "update" }, () => {
             executionOrder.push("update");
           }),
-        ],
-        renderSystems: [
-          defineSystem(() => {
+          defineEditorSystem({ phase: "render" }, () => {
             executionOrder.push("render");
           }),
         ],
@@ -86,8 +80,8 @@ describe("Editor", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineSystem(() => {
+        systems: [
+          defineEditorSystem({ phase: "update" }, () => {
             order.push("update");
           }),
         ],

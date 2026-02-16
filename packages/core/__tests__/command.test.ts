@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { Editor, defineCommand, defineSystem, type EditorPlugin } from "../src";
+import { Editor, defineCommand, defineEditorSystem, type EditorPlugin } from "../src";
 
 // Mock DOM element for tests
 const mockDomElement = document.createElement("div");
@@ -38,8 +38,8 @@ describe("Command", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineSystem((ctx) => {
+        systems: [
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const { payload } of SelectAll.iter(ctx)) {
               receivedPayloads.push(payload);
             }
@@ -65,8 +65,8 @@ describe("Command", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineSystem((ctx) => {
+        systems: [
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const _ of Undo.iter(ctx)) {
               undoCount++;
             }
@@ -91,8 +91,8 @@ describe("Command", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineSystem((ctx) => {
+        systems: [
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const { payload } of AddItem.iter(ctx)) {
               receivedIds.push(payload.id);
             }
@@ -122,13 +122,13 @@ describe("Command", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineSystem((ctx) => {
+        systems: [
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const { payload } of CmdA.iter(ctx)) {
               resultsA.push(payload.a);
             }
           }),
-          defineSystem((ctx) => {
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const { payload } of CmdB.iter(ctx)) {
               resultsB.push(payload.b);
             }
@@ -157,8 +157,8 @@ describe("Command", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineSystem((ctx) => {
+        systems: [
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             let count = 0;
             for (const _ of TestCmd.iter(ctx)) {
               count++;
@@ -188,8 +188,8 @@ describe("Command", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineSystem((ctx) => {
+        systems: [
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const { payload } of TestCmd.iter(ctx)) {
               allPayloads.push(payload.data);
             }
@@ -222,9 +222,9 @@ describe("Command", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
+        systems: [
           // First system spawns ResponseCmd when it sees TriggerCmd
-          defineSystem((ctx) => {
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const _ of TriggerCmd.iter(ctx)) {
               // Spawn directly using ctx - this creates the entity mid-frame
               // The .added() query won't see it until next tick's sync
@@ -232,7 +232,7 @@ describe("Command", () => {
             }
           }),
           // Second system collects responses
-          defineSystem((ctx) => {
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const { payload } of ResponseCmd.iter(ctx)) {
               responses.push(payload.triggered);
             }
@@ -259,8 +259,8 @@ describe("Command", () => {
 
       const plugin: EditorPlugin = {
         name: "test",
-        updateSystems: [
-          defineSystem((ctx) => {
+        systems: [
+          defineEditorSystem({ phase: "update" }, (ctx) => {
             for (const { payload } of TestCmd.iter(ctx)) {
               values.push(payload.value);
             }

@@ -6,12 +6,8 @@ import {
   type EditorPlugin,
   Controls,
   Block,
-  Aabb,
   Opacity,
   Edited,
-  ScaleWithZoom,
-  Intersect,
-  RankBounds,
   createEntity,
   type EntityId,
 } from "@infinitecanvas/core";
@@ -75,23 +71,16 @@ const testPlugin: EditorPlugin = {
     },
   ],
   components: [
-    Block,
-    Aabb,
     Selected,
     TransformBox,
     TransformHandle,
     DragStart,
-    Opacity,
-    Edited,
-    ScaleWithZoom,
   ],
   singletons: [
-    Intersect,
-    RankBounds,
     TransformBoxStateSingleton,
     SelectionStateSingleton,
   ],
-  postUpdateSystems: [transformBoxSystem],
+  systems: [transformBoxSystem],
   setup(ctx) {
     const controls = Controls.write(ctx);
     controls.leftMouseTool = "select";

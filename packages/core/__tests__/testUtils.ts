@@ -84,7 +84,7 @@ export function createBlock(
   });
   addComponent(ctx, entityId, Aabb, {});
   // Compute actual AABB from block corners
-  Aabb.computeFromBlock(ctx, entityId);
+  Aabb.expandByBlock(ctx, entityId, entityId);
 
   if (synced) {
     addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() });

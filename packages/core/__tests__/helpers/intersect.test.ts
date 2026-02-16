@@ -38,7 +38,7 @@ describe("intersectAabb", () => {
           size: [100, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -62,7 +62,7 @@ describe("intersectAabb", () => {
           size: [100, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -86,7 +86,7 @@ describe("intersectAabb", () => {
           size: [100, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -113,7 +113,7 @@ describe("intersectAabb", () => {
           size: [100, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -139,7 +139,7 @@ describe("intersectAabb", () => {
           size: [100, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -165,7 +165,7 @@ describe("intersectAabb", () => {
           size: [100, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -190,7 +190,7 @@ describe("intersectAabb", () => {
           size: [100, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -219,7 +219,7 @@ describe("intersectAabb", () => {
           rotateZ: Math.PI / 4, // 45 degrees
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -246,7 +246,7 @@ describe("intersectAabb", () => {
           rotateZ: Math.PI / 4,
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, blockId);
+        Aabb.expandByBlock(ctx, blockId, blockId);
       });
 
       await editor.tick();
@@ -272,21 +272,21 @@ describe("intersectAabb", () => {
           size: [50, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, block1);
+        Aabb.expandByBlock(ctx, block1, block1);
 
         const block2 = createBlock(ctx, {
           position: [100, 0],
           size: [50, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, block2);
+        Aabb.expandByBlock(ctx, block2, block2);
 
         const block3 = createBlock(ctx, {
           position: [200, 0],
           size: [50, 100],
           synced: false,
         });
-        Aabb.computeFromBlock(ctx, block3);
+        Aabb.expandByBlock(ctx, block3, block3);
       });
 
       await editor.tick();

@@ -8,12 +8,10 @@ import {
   Synced,
   type EditorPlugin,
   Block,
-  Aabb,
   Text,
-  RankBounds,
   Cursor,
 } from "@infinitecanvas/core";
-import { Selected, Held } from "../../../src/components";
+import { Selected } from "../../../src/components";
 import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
 import { Clipboard } from "../../../src/singletons";
 import { blockSystem } from "../../../src/systems/update";
@@ -53,9 +51,9 @@ const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected));
 const testPlugin: EditorPlugin = {
   name: PLUGIN_NAME,
   cursors: CURSORS,
-  components: [Block, Aabb, Selected, Held, Text],
-  singletons: [RankBounds, Cursor, Clipboard],
-  updateSystems: [blockSystem],
+  components: [Selected],
+  singletons: [Clipboard],
+  systems: [blockSystem],
 };
 
 describe("UpdateBlock", () => {
