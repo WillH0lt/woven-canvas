@@ -1,8 +1,8 @@
 import { computed, type ComputedRef, type MaybeRefOrGetter } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
+import type { EntityId } from "@infinitecanvas/core";
 
 import { useTextEditorController } from "./useTextEditorController";
-import { type TextAlignment } from "@infinitecanvas/editor";
+import { type TextAlignment } from "@infinitecanvas/core";
 import { useTextBatchController } from "./useTextBatchController";
 
 export interface TextFormattingState {

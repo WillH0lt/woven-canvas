@@ -1,7 +1,0 @@
-export { ICBringForwardButton } from './BringForwardButton'
-export { ICSendBackwardButton } from './SendBackwardButton'
-export { ICDeleteButton } from './DeleteButton'
-export { ICDuplicateButton } from './DuplicateButton'
-export * from './Color'
-export * from './Text'
-export { ICVerticalAlignmentButton } from './VerticalAlignmentButton'

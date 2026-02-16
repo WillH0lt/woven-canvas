@@ -5,7 +5,7 @@ import {
   Keyboard,
   Controls,
   getMouseInput,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 /**
  * Post input scroll system - handles mouse scroll canvas panning.

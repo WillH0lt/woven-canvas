@@ -6,7 +6,7 @@ import {
   Color,
   VerticalAlign,
   VerticalAlignment,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import type { BlockData } from "../../types";
 import EditableText from "../EditableText.vue";
 

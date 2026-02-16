@@ -5,7 +5,7 @@ import {
   INFINITE_CANVAS_KEY,
   type InfiniteCanvasContext,
 } from "../src/injection";
-import { defineCanvasSingleton, field } from "@infinitecanvas/editor";
+import { defineCanvasSingleton, field } from "@infinitecanvas/core";
 
 describe("useSingleton", () => {
   // Create a test singleton definition

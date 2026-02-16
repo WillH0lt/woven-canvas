@@ -1,4 +1,4 @@
-import { field, defineCanvasComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/core";
 
 /**
  * ArrowTerminal component - marks an entity as an arrow snap terminal.

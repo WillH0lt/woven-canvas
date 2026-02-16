@@ -4,7 +4,7 @@ import {
   type ComputedRef,
   type MaybeRefOrGetter,
 } from "vue";
-import { Text, type EntityId } from "@infinitecanvas/editor";
+import { Text, type EntityId } from "@infinitecanvas/core";
 import { generateJSON, generateHTML } from "@tiptap/core";
 import type { JSONContent } from "@tiptap/core";
 import Document from "@tiptap/extension-document";
@@ -20,7 +20,7 @@ import Color from "@tiptap/extension-color";
 import { useComponents } from "./useComponents";
 import { useEditorContext } from "./useEditorContext";
 import { normalizeColor } from "../utils/color";
-import { type TextAlignment } from "@infinitecanvas/editor";
+import { type TextAlignment } from "@infinitecanvas/core";
 
 // Extensions used for parsing - must match EditableText
 const extensions = [

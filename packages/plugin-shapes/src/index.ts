@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { Editor, CorePlugin } from '@infinitecanvas/editor';
+ * import { Editor, CorePlugin } from '@infinitecanvas/core';
  * import { ShapesPlugin } from '@infinitecanvas/plugin-shapes';
  *
  * const editor = new Editor({

@@ -10,7 +10,7 @@ import {
   HitGeometry,
   RankBounds,
   Intersect,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { EraserStroke, Erased } from "../../src/components";
 import { EraserStateSingleton } from "../../src/singletons";

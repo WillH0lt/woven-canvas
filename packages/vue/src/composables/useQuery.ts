@@ -8,10 +8,10 @@ import {
 import {
   defineQuery,
   type EntityId,
-  type InferEditorComponentType,
+  type InferCanvasComponentType,
   type AnyCanvasComponentDef,
   type Context,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
 /** Component def with name and schema for type inference */
@@ -27,7 +27,7 @@ export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
   entityId: EntityId;
 } & {
   [K in T[number] as K["name"]]: ShallowRef<
-    InferEditorComponentType<K["schema"]>
+    InferCanvasComponentType<K["schema"]>
   >;
 };
 
@@ -46,7 +46,7 @@ export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
  * ```vue
  * <script setup lang="ts">
  * import { useQuery } from "@infinitecanvas/vue";
- * import { Block } from "@infinitecanvas/editor";
+ * import { Block } from "@infinitecanvas/core";
  * import { Shape } from "./ShapePlugin";
  *
  * // Query all entities with Block and Shape components

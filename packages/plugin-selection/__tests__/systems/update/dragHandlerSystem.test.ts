@@ -7,7 +7,7 @@ import {
   Block,
   Aabb,
   RankBounds,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { TransformBox, TransformHandle, DragStart, Selected, Held } from "../../../src/components";
 import { DragBlock } from "../../../src/commands";
 import { dragHandlerSystem } from "../../../src/systems/update";

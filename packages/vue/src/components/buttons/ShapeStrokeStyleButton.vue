@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
+import type { EntityId } from "@infinitecanvas/core";
 import { Shape, StrokeKind } from "@infinitecanvas/plugin-shapes";
 
 import MenuDropdown from "./MenuDropdown.vue";

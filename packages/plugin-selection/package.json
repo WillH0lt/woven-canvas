@@ -33,7 +33,7 @@
     "test:watch": "vitest --config ../../vitest.config.ts --watch"
   },
   "dependencies": {
-    "@infinitecanvas/editor": "workspace:^",
+    "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/math": "workspace:^",
     "fractional-indexing-jittered": "^1.0.0",
     "zod": "^3.24.1"

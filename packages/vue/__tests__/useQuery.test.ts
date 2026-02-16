@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createApp, h } from "vue";
 import { useQuery } from "../src/composables/useQuery";
-import { defineCanvasComponent, field } from "@infinitecanvas/editor";
+import { defineCanvasComponent, field } from "@infinitecanvas/core";
 
 describe("useQuery", () => {
   // Create a test component definition

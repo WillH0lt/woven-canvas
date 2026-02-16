@@ -19,7 +19,7 @@ import {
   type EntityId,
   type EditorResources,
   defineQuery,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Vec2, Aabb as AabbNs } from "@infinitecanvas/math";
 import simplify from "simplify-js";
 

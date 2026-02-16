@@ -1,4 +1,4 @@
-import { defineCanvasComponent } from "@infinitecanvas/editor";
+import { defineCanvasComponent } from "@infinitecanvas/core";
 
 /**
  * EditAfterPlacing component - marker for blocks that should enter edit mode after placement.

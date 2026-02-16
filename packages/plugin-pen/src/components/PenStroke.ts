@@ -3,7 +3,7 @@ import {
   CanvasComponentDef,
   type Context,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 /**
  * Maximum number of points that can be stored in the stroke.

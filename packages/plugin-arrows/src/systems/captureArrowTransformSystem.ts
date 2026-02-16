@@ -10,7 +10,7 @@ import {
   type Context,
   hasComponent,
   Block,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Selected } from "@infinitecanvas/plugin-selection";
 
 import { ArrowTransformState } from "../singletons";

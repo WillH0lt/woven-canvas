@@ -11,7 +11,7 @@ import {
   RankBounds,
   Intersect,
   Controls,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { EraserStroke, Erased } from "../../src/components";
 import { EraserStateSingleton } from "../../src/singletons";

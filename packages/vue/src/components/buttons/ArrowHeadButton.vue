@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { shallowRef, computed } from "vue";
-import { hasComponent, type EntityId } from "@infinitecanvas/editor";
+import { hasComponent, type EntityId } from "@infinitecanvas/core";
 import {
   ElbowArrow,
   ArcArrow,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VerticalAlignment, TextAlignment } from "@infinitecanvas/editor";
+import { VerticalAlignment, TextAlignment } from "@infinitecanvas/core";
 import { ShapeKind, StrokeKind } from "@infinitecanvas/plugin-shapes";
 import ToolbarButton from "../ToolbarButton.vue";
 

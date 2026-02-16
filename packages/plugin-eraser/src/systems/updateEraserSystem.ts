@@ -16,7 +16,7 @@ import {
   type Context,
   type EntityId,
   getBackrefs,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Capsule, Vec2, Aabb as AabbNs } from "@infinitecanvas/math";
 
 import {

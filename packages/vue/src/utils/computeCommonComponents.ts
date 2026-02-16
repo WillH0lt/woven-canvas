@@ -1,4 +1,4 @@
-import type { Editor } from "@infinitecanvas/editor";
+import type { Editor } from "@infinitecanvas/core";
 
 /**
  * Compute the set of component names that are common to all selected blocks.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
-import { Color, Block } from "@infinitecanvas/editor";
+import { Color, Block } from "@infinitecanvas/core";
 import { useComponent } from "../../composables/useComponent";
 import { PenStroke } from "@infinitecanvas/plugin-pen";
 import { getStroke } from "perfect-freehand";

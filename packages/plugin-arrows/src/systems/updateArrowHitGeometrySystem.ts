@@ -9,7 +9,7 @@ import {
   MAX_HIT_CAPSULES,
   type Context,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Arc, Capsule, Scalar, type Vec2 } from "@infinitecanvas/math";
 
 import { ArcArrow, ElbowArrow } from "../components";

@@ -3,7 +3,7 @@ import {
   Synced,
   type Context,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 /** Schema type for ref field detection */
 type ComponentSchema = Record<string, { def?: { type?: string } }>;

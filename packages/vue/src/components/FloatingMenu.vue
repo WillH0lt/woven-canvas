@@ -6,7 +6,7 @@ import {
   Camera,
   Screen,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import {
   Selected,
   SelectionStateSingleton,

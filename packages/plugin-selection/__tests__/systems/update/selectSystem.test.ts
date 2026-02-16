@@ -15,7 +15,7 @@ import {
   Opacity,
   Intersect,
   RankBounds,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { SelectionBox, Selected, Held } from "../../../src/components";
 import { selectSystem } from "../../../src/systems/update";
 import {

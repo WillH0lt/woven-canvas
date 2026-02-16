@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from "vue";
-import { Color } from "@infinitecanvas/editor";
+import { Color } from "@infinitecanvas/core";
 import { Arc, type ArcComputed, type Vec2 } from "@infinitecanvas/math";
 import { ArcArrow } from "@infinitecanvas/plugin-arrows";
 

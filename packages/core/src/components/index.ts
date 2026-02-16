@@ -1,47 +1,35 @@
-export { Aabb } from './Aabb'
-export { Block } from './Block'
-export { Command } from './Command'
-export { Hovered } from './Hovered'
-export { Frame } from './Frame'
-export { Intersect } from './Intersect'
-export { Keyboard } from './Keyboard'
-export { Mouse } from './Mouse'
-export { Pointer } from './Pointer'
-export { RankBounds } from './RankBounds'
-export { Screen } from './Screen'
-export { Selected } from './Selected'
-export { Persistent } from './Persistent'
-export { ToBeDeleted } from './ToBeDeleted'
-export { Controls } from './Controls'
-export { Camera } from './Camera'
-export { Edited } from './Edited'
-export { Opacity } from './Opacity'
-export { CommandRef } from './CommandRef'
-export { HitGeometries } from './HitGeometries'
-export { HitCapsule } from './HitCapsule'
-export { Cursor } from './Cursor'
-export { Connector } from './Connector'
-export { DragStart } from './DragStart'
-export { SelectionState } from './SelectionState'
-export { TransformBox } from './TransformBox'
-export { TransformHandle } from './TransformHandle'
-export { TransformBoxState } from './TransformBoxState'
-export { Locked } from './Locked'
-export { SelectionBox } from './SelectionBox'
-export { HitArc } from './HitArc'
-export { Color } from './Color'
-export { Text } from './Text'
-export { FloatingMenuState } from './FloatingMenuState'
-export { Grid } from './Grid'
-export { Background } from './Background'
-export { VerticalAlign } from './VerticalAlign'
-export { ScaleWithZoom } from './ScaleWithZoom'
-export { CameraAnimation } from './CameraAnimation'
-export { CameraState } from './CameraState'
+export {
+  Pointer,
+  PointerButton,
+  PointerType,
+  addPointerSample,
+} from "./Pointer";
 
-import { Aabb } from './Aabb'
-import { Block } from './Block'
-import { HitArc } from './HitArc'
-import { HitCapsule } from './HitCapsule'
-import { HitGeometries } from './HitGeometries'
-export const allHitGeometriesArray = [Aabb, Block, HitGeometries, HitCapsule, HitArc]
+// Core spatial components
+export { Block } from "./Block";
+export { Aabb } from "./Aabb";
+
+// State components
+export { Hovered } from "./Hovered";
+export { Edited } from "./Edited";
+export { Held } from "./Held";
+
+// Transform components
+export { ScaleWithZoom } from "./ScaleWithZoom";
+export { Opacity } from "./Opacity";
+export { Color } from "./Color";
+
+// Content components
+export { Text } from "./Text";
+export { Connector } from "./Connector";
+export { VerticalAlign } from "./VerticalAlign";
+
+// Image/Asset components
+export { Image } from "./Image";
+export { Asset, UploadState } from "./Asset";
+
+// User presence
+export { User } from "./User";
+
+// Hit geometry for collision detection
+export { HitGeometry, MAX_HIT_CAPSULES, MAX_HIT_ARCS } from "./HitGeometry";

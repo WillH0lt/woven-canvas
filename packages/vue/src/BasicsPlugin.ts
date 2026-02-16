@@ -9,7 +9,7 @@ import {
   Undo,
   Redo,
   Key,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { type CanvasStore } from "@woven-ecs/canvas-store";
 import { CURSORS } from "./cursors";

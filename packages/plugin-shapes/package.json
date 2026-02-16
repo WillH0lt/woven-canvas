@@ -32,7 +32,7 @@
     "test:watch": "vitest  --config ./vitest.config.ts run --watch"
   },
   "dependencies": {
-    "@infinitecanvas/editor": "workspace:*",
+    "@infinitecanvas/core": "workspace:*",
     "@infinitecanvas/math": "workspace:*"
   },
   "devDependencies": {

@@ -19,7 +19,7 @@ import {
   getBlockDef,
   type Context,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Rect, type Vec2 } from "@infinitecanvas/math";
 import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
 

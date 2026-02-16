@@ -1,7 +1,7 @@
-import { Color, type InferEditorComponentType } from "@infinitecanvas/editor";
+import { Color, type InferCanvasComponentType } from "@infinitecanvas/core";
 
 export type ColorData = Omit<
-  InferEditorComponentType<typeof Color.schema>,
+  InferCanvasComponentType<typeof Color.schema>,
   "_exists" | "_version"
 >;
 

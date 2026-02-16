@@ -1,4 +1,4 @@
-import { field, defineCanvasComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/core";
 
 /**
  * Maximum number of points that can be stored in the stroke.

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
+import type { EntityId } from "@infinitecanvas/core";
 
 import MenuDropdown from "../MenuDropdown.vue";
 import ColorBubbles from "../ColorBubbles.vue";
 import IconChevronDown from "../../icons/IconChevronDown.vue";
 import { useTextFormatting } from "../../../composables/useTextFormatting";
+import { rgbToHex, type ColorData } from "../../../utils/color";
 
 const props = defineProps<{
   entityIds: EntityId[];
@@ -22,6 +23,10 @@ const currentColorHex = computed(() => {
 const underlineStyle = computed(() => {
   return { backgroundColor: currentColorHex.value };
 });
+
+function handleColorChange(color: ColorData) {
+  commands.setColor(rgbToHex(color));
+}
 </script>
 
 <template>
@@ -49,7 +54,7 @@ const underlineStyle = computed(() => {
       <ColorBubbles
         :currentColor="currentColorHex"
         :withPicker="true"
-        @change="commands.setColor"
+        @change="handleColorChange"
       />
     </template>
   </MenuDropdown>

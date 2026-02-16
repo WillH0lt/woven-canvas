@@ -4,14 +4,14 @@ import {
   Connector,
   Held,
   type EntityId,
-  type InferEditorComponentType,
+  type InferCanvasComponentType,
   type Stratum,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
-type BlockComponentData = InferEditorComponentType<typeof Block.schema>;
-type HeldComponentData = InferEditorComponentType<typeof Held.schema>;
-type OpacityComponentData = InferEditorComponentType<typeof Opacity.schema>;
-type ConnectorComponentData = InferEditorComponentType<typeof Connector.schema>;
+type BlockComponentData = InferCanvasComponentType<typeof Block.schema>;
+type HeldComponentData = InferCanvasComponentType<typeof Held.schema>;
+type OpacityComponentData = InferCanvasComponentType<typeof Opacity.schema>;
+type ConnectorComponentData = InferCanvasComponentType<typeof Connector.schema>;
 
 // Extended block data with state for rendering
 export interface BlockData {

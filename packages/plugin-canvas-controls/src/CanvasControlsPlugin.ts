@@ -1,7 +1,7 @@
 import {
   type EditorPlugin,
   type EditorPluginFactory,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { PanState } from "./components";
 import { PostInputZoom, PostInputScroll, PostInputPan } from "./systems";
@@ -40,7 +40,7 @@ function createControlsPlugin(
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/editor';
+ * import { Editor } from '@infinitecanvas/core';
  * import { CanvasControlsPlugin } from '@infinitecanvas/plugin-canvas-controls';
  *
  * // With default options (no parentheses needed)

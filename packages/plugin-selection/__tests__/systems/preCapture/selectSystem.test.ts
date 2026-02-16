@@ -12,7 +12,7 @@ import {
   Hovered,
   Intersect,
   RankBounds,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { TransformBox, TransformHandle, Selected, Held } from "../../../src/components";
 import { SelectionStateSingleton } from "../../../src/singletons";
 import { selectSystem } from "../../../src/systems/preCapture";

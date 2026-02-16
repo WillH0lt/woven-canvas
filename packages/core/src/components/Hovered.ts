@@ -1,7 +1,6 @@
-import { component } from '@lastolivegames/becsy'
-import { BaseComponent } from '../BaseComponent'
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
-@component
-export class Hovered extends BaseComponent {
-  static persistent = false
-}
+/**
+ * Hovered component - marks an entity as being hovered by the mouse.
+ */
+export const Hovered = defineCanvasComponent({ name: "hovered" }, {});

@@ -2,9 +2,9 @@ import { inject, shallowRef, onUnmounted, type ShallowRef } from "vue";
 import {
   hasComponent,
   type EntityId,
-  type InferEditorComponentType,
+  type InferCanvasComponentType,
   type AnyCanvasComponentDef,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
 /** Component def with name and schema for type inference */
@@ -31,7 +31,7 @@ type ComponentDefWithSchema = AnyCanvasComponentDef & {
  * ```vue
  * <script setup lang="ts">
  * import { useComponent } from "@infinitecanvas/vue";
- * import { Selected, Hovered } from "@infinitecanvas/editor";
+ * import { Selected, Hovered } from "@infinitecanvas/core";
  *
  * const props = defineProps<{ entityId: EntityId }>();
  * const selected = useComponent(props.entityId, Selected);
@@ -50,7 +50,7 @@ type ComponentDefWithSchema = AnyCanvasComponentDef & {
 export function useComponent<T extends ComponentDefWithSchema>(
   entityId: EntityId,
   componentDef: T,
-): ShallowRef<Readonly<InferEditorComponentType<T["schema"]>> | null> {
+): ShallowRef<Readonly<InferCanvasComponentType<T["schema"]>> | null> {
   const canvasContext = inject(INFINITE_CANVAS_KEY);
   if (!canvasContext) {
     throw new Error(
@@ -59,7 +59,7 @@ export function useComponent<T extends ComponentDefWithSchema>(
   }
 
   // Create our own ref for this component
-  const componentRef = shallowRef<InferEditorComponentType<T["schema"]> | null>(
+  const componentRef = shallowRef<InferCanvasComponentType<T["schema"]> | null>(
     null,
   );
 
@@ -77,7 +77,7 @@ export function useComponent<T extends ComponentDefWithSchema>(
     entityId,
     componentDef.name,
     (value) => {
-      componentRef.value = value as InferEditorComponentType<
+      componentRef.value = value as InferCanvasComponentType<
         T["schema"]
       > | null;
     },

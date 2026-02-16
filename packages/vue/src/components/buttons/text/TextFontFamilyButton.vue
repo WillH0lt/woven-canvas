@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
+import type { EntityId } from "@infinitecanvas/core";
 
 import MenuDropdown from "../MenuDropdown.vue";
 import IconChevronDown from "../../icons/IconChevronDown.vue";

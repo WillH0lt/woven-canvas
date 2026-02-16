@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { useComponent } from "../../composables/useComponent";
 import { useEditorContext } from "../../composables/useEditorContext";
-import { Text, VerticalAlign, VerticalAlignment } from "@infinitecanvas/editor";
+import { Text, VerticalAlign, VerticalAlignment } from "@infinitecanvas/core";
 import { Shape, StrokeKind, getShapePath } from "@infinitecanvas/plugin-shapes";
 import type { BlockData } from "../../types";
 import EditableText from "../EditableText.vue";

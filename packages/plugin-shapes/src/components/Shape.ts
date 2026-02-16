@@ -1,4 +1,4 @@
-import { field, CanvasComponentDef } from "@infinitecanvas/editor";
+import { field, CanvasComponentDef } from "@infinitecanvas/core";
 import { ShapeKind, StrokeKind } from "../types";
 
 const ShapeSchema = {

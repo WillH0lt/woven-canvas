@@ -1,4 +1,4 @@
-import { defineCommand, type Vec2 } from "@infinitecanvas/editor";
+import { defineCommand, type Vec2 } from "@infinitecanvas/core";
 
 /**
  * Cut selected blocks to clipboard and remove them.

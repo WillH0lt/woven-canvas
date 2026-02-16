@@ -10,9 +10,9 @@ import {
 import {
   hasComponent,
   type EntityId,
-  type InferEditorComponentType,
+  type InferCanvasComponentType,
   type AnyCanvasComponentDef,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
 /** Component def with name and schema for type inference */
@@ -36,7 +36,7 @@ type ComponentDefWithSchema = AnyCanvasComponentDef & {
  * ```vue
  * <script setup lang="ts">
  * import { useComponents } from "@infinitecanvas/vue";
- * import { Color } from "@infinitecanvas/editor";
+ * import { Color } from "@infinitecanvas/core";
  *
  * const props = defineProps<{ entityIds: EntityId[] }>();
  * const colors = useComponents(() => props.entityIds, Color);
@@ -48,7 +48,7 @@ export function useComponents<T extends ComponentDefWithSchema>(
   entityIds: MaybeRefOrGetter<EntityId[]>,
   componentDef: T,
 ): ShallowRef<
-  Map<EntityId, Readonly<InferEditorComponentType<T["schema"]>> | null>
+  Map<EntityId, Readonly<InferCanvasComponentType<T["schema"]>> | null>
 > {
   const canvasContext = inject(INFINITE_CANVAS_KEY);
   if (!canvasContext) {
@@ -58,7 +58,7 @@ export function useComponents<T extends ComponentDefWithSchema>(
   }
 
   const componentsMap = shallowRef<
-    Map<EntityId, InferEditorComponentType<T["schema"]> | null>
+    Map<EntityId, InferCanvasComponentType<T["schema"]> | null>
   >(new Map());
 
   // Track active subscriptions
@@ -90,7 +90,7 @@ export function useComponents<T extends ComponentDefWithSchema>(
         const newMap = new Map(componentsMap.value);
         newMap.set(
           entityId,
-          value as InferEditorComponentType<T["schema"]> | null,
+          value as InferCanvasComponentType<T["schema"]> | null,
         );
         componentsMap.value = newMap;
       },

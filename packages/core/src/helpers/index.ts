@@ -1,17 +1,26 @@
-export { applyDiff } from './applyDiff'
-// export { setCursorSvg } from './setCursorSvg'
-export { intersectPoint } from './intersectPoint'
-export { uuidToNumber } from './uuidToNumber'
-export { createSnapshot } from './createSnapshot'
-export { binarySearchForId } from './binarySearchForId'
-export { distance } from './distance'
-export { computeExtents } from './computeExtents'
-export { intersectCapsule } from './intersectCapsule'
-export { smoothDamp } from './smoothDamp'
-export { fastIntersectAabb } from './fastIntersectAabb'
-export * from './aabb'
-export * from './string'
-export * from './math'
-export { generateUuidBySeed } from './generateUuidBySeed'
-export { getKeyName } from './keyMap'
-export { transformUuid, reverseTransformUuid } from './transformUuid'
+// Block definition helpers (plugin-specific)
+export {
+  getBlockDefs,
+  getBlockDef,
+  canBlockEdit,
+  canBlockRotate,
+  canBlockScale,
+} from "./blockDefs";
+
+// Intersection helpers
+export {
+  intersectPoint,
+  intersectAabb,
+  getTopmostBlockAtPoint,
+} from "./intersect";
+
+export { intersectCapsule } from "./intersectCapsule";
+
+// AABB computation
+export { computeAabb } from "./computeAabb";
+
+// Held state helpers
+export { isHeldByRemote } from "./held";
+
+// User helpers
+export { getMyUserEntityId } from "./user";

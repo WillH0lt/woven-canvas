@@ -1,10 +1,15 @@
-import { Type, component, field } from '@lastolivegames/becsy'
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
+import { VerticalAlignment } from "../types";
 
-import { VerticalAlign as VerticalAlignEnum } from '../types'
-import { BaseComponent } from '../BaseComponent'
-
-@component
-export class VerticalAlign extends BaseComponent {
-  @field({ type: Type.staticString(Object.values(VerticalAlignEnum)), default: VerticalAlignEnum.Top })
-  public declare value: VerticalAlignEnum
-}
+/**
+ * VerticalAlign component - controls vertical text alignment within a block.
+ *
+ * Values: "top", "center", "bottom"
+ */
+export const VerticalAlign = defineCanvasComponent(
+  { name: "verticalAlign", sync: "document" },
+  {
+    value: field.enum(VerticalAlignment).default(VerticalAlignment.Top),
+  }
+);

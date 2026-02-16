@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Editor } from "@infinitecanvas/editor";
+import { Editor } from "@infinitecanvas/core";
 import { InfiniteCanvas, type CanvasStore, type CanvasStoreOptions } from "@infinitecanvas/vue";
 
 const ONLINE_STORAGE_KEY = "infinitecanvas-online-mode";

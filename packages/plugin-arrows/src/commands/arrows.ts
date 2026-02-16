@@ -1,4 +1,4 @@
-import { defineCommand, type EntityId } from "@infinitecanvas/editor";
+import { defineCommand, type EntityId } from "@infinitecanvas/core";
 import type { Vec2 } from "@infinitecanvas/math";
 import type { ArrowKind } from "../types";
 

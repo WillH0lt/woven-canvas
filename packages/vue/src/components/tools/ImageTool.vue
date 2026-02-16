@@ -10,7 +10,7 @@ import {
   Asset,
   UploadState,
   Grid,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Synced } from "@woven-ecs/canvas-store";
 
 import { useTooltipSingleton } from "../../composables/useTooltipSingleton";

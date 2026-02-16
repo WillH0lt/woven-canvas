@@ -8,7 +8,7 @@ import {
   Block,
   Hovered,
   Cursor,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { CursorKind } from "../../../src/cursors";
 import { TransformHandle, TransformBox } from "../../../src/components";
 import { hoverCursorSystem } from "../../../src/systems/capture";

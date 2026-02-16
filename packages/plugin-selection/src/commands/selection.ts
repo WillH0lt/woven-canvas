@@ -1,4 +1,4 @@
-import { defineCommand, type EntityId } from "@infinitecanvas/editor";
+import { defineCommand, type EntityId } from "@infinitecanvas/core";
 import type { Aabb } from "@infinitecanvas/math";
 
 /**

@@ -14,7 +14,7 @@ import {
   canBlockEdit,
   getBlockDef,
   type PointerInput,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import {
   TransformBox,

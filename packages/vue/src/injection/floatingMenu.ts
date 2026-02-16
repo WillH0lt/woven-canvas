@@ -1,5 +1,5 @@
 import { type InjectionKey, type ComputedRef } from "vue";
-import { type EntityId } from "@infinitecanvas/editor";
+import { type EntityId } from "@infinitecanvas/core";
 
 /** Context provided by FloatingMenu */
 export interface FloatingMenuContext {

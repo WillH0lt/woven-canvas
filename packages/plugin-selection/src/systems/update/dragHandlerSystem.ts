@@ -10,7 +10,7 @@ import {
   Text,
   Grid,
   Keyboard,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Vec2, Scalar } from "@infinitecanvas/math";
 
 import {

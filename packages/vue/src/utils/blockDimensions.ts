@@ -2,11 +2,11 @@ import type { ShallowRef } from "vue";
 import {
   Camera,
   Screen,
-  type InferEditorComponentType,
-} from "@infinitecanvas/editor";
+  type InferCanvasComponentType,
+} from "@infinitecanvas/core";
 
-type CameraValue = InferEditorComponentType<typeof Camera.schema>;
-type ScreenValue = InferEditorComponentType<typeof Screen.schema>;
+type CameraValue = InferCanvasComponentType<typeof Camera.schema>;
+type ScreenValue = InferCanvasComponentType<typeof Screen.schema>;
 
 export interface BlockDimensions {
   width: number;

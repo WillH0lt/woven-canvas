@@ -12,7 +12,7 @@ import {
   Intersect,
   RankBounds,
   BlockDef,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { TransformBox, TransformHandle, Selected, Held } from "../../../src/components";
 import { selectBlock } from "../../../src/helpers";
 import { TransformBoxStateSingleton } from "../../../src/singletons";

@@ -1,4 +1,4 @@
-import { type CursorDef, type CursorDefMap } from "../../editor/src/types";
+import { type CursorDef } from "@infinitecanvas/core";
 
 /**
  * Cursor kinds for transform operations.

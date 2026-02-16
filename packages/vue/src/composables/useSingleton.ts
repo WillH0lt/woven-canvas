@@ -1,8 +1,8 @@
 import { inject, shallowRef, onUnmounted, type ShallowRef } from "vue";
 import {
-  type InferEditorComponentType,
+  type InferCanvasComponentType,
   type AnyCanvasSingletonDef,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
 /** Singleton def with name and schema for type inference */
@@ -25,7 +25,7 @@ type SingletonDefWithSchema = AnyCanvasSingletonDef & {
  * ```vue
  * <script setup lang="ts">
  * import { useSingleton } from "@infinitecanvas/vue";
- * import { Camera, Mouse } from "@infinitecanvas/editor";
+ * import { Camera, Mouse } from "@infinitecanvas/core";
  *
  * const camera = useSingleton(Camera);
  * const mouse = useSingleton(Mouse);
@@ -41,7 +41,7 @@ type SingletonDefWithSchema = AnyCanvasSingletonDef & {
  */
 export function useSingleton<T extends SingletonDefWithSchema>(
   singletonDef: T,
-): ShallowRef<Readonly<InferEditorComponentType<T["schema"]>>> {
+): ShallowRef<Readonly<InferCanvasComponentType<T["schema"]>>> {
   const canvasContext = inject(INFINITE_CANVAS_KEY);
   if (!canvasContext) {
     throw new Error(
@@ -50,7 +50,7 @@ export function useSingleton<T extends SingletonDefWithSchema>(
   }
 
   // Create our own ref for this singleton
-  const singletonRef = shallowRef<InferEditorComponentType<T["schema"]>>(
+  const singletonRef = shallowRef<InferCanvasComponentType<T["schema"]>>(
     singletonDef.default(),
   );
 
@@ -65,7 +65,7 @@ export function useSingleton<T extends SingletonDefWithSchema>(
   const unsubscribe = canvasContext.subscribeSingleton(
     singletonDef.name,
     (value) => {
-      singletonRef.value = (value ?? {}) as InferEditorComponentType<
+      singletonRef.value = (value ?? {}) as InferCanvasComponentType<
         T["schema"]
       >;
     },

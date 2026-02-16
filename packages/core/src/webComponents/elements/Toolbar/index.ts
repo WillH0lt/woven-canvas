@@ -1,1 +1,0 @@
-export { ICToolbar } from './toolbar'

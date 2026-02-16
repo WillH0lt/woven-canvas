@@ -1,4 +1,4 @@
-import { defineCanvasComponent } from "@infinitecanvas/editor";
+import { defineCanvasComponent } from "@infinitecanvas/core";
 
 /**
  * TransformBox component - marks an entity as the transform box.

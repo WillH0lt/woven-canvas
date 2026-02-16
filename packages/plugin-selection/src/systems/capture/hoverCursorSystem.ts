@@ -5,7 +5,7 @@ import {
   Block,
   Hovered,
   Cursor,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { TransformHandle, TransformBox } from "../../components";
 

@@ -1,6 +1,6 @@
 import { shallowRef, computed, type ShallowRef, type ComputedRef } from "vue";
 import type { Editor } from "@tiptap/vue-3";
-import { type TextAlignment } from "@infinitecanvas/editor";
+import { type TextAlignment } from "@infinitecanvas/core";
 
 import { normalizeColor } from "../utils/color";
 

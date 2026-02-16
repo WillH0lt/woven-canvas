@@ -3,13 +3,13 @@ import {
   type EntityId,
   type Editor,
   type Context,
-  type InferEditorComponentType,
+  type InferCanvasComponentType,
   type User,
-} from "@infinitecanvas/editor";
-import type { AssetManager } from "@infinitecanvas/ecs-asset-sync";
+} from "@infinitecanvas/core";
+import type { AssetManager } from "@infinitecanvas/asset-sync";
 
 /** User data stored in the users map */
-export type UserData = InferEditorComponentType<typeof User.schema>;
+export type UserData = InferCanvasComponentType<typeof User.schema>;
 
 /** Context provided by InfiniteCanvas */
 export interface InfiniteCanvasContext {

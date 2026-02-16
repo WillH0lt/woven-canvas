@@ -1,8 +1,9 @@
-import { component } from '@lastolivegames/becsy'
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
-import { BaseComponent } from '../BaseComponent'
-
-@component
-export class Edited extends BaseComponent {
-  static persistent = false
-}
+/**
+ * Edited component - marks an entity as currently being edited.
+ *
+ * When present, the block is in edit mode (e.g., text editing).
+ * The transform box is hidden and click-through is disabled.
+ */
+export const Edited = defineCanvasComponent({ name: "edited" }, {});

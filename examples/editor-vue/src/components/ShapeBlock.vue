@@ -5,7 +5,7 @@ import {
   Text,
   VerticalAlign,
   VerticalAlignment,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import {
   useComponent,
   type BlockData,

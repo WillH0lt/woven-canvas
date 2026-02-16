@@ -1,5 +1,5 @@
 import { computed, inject } from "vue";
-import type { FontFamily } from "@infinitecanvas/editor";
+import type { FontFamily } from "@infinitecanvas/core";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
 /**

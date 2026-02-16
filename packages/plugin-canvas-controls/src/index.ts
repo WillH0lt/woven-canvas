@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { Editor, CorePlugin } from '@infinitecanvas/editor';
+ * import { Editor, CorePlugin } from '@infinitecanvas/core';
  * import { CanvasControlsPlugin } from '@infinitecanvas/plugin-canvas-controls';
  *
  * const editor = new Editor({

@@ -12,7 +12,7 @@ import {
   Screen,
   hasComponent,
   type Context,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import {
   UpdateTransformBox,
   TransformBoxStateSingleton,

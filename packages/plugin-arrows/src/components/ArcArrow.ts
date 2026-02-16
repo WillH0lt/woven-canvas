@@ -4,7 +4,7 @@ import {
   Block,
   type Context,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Arc, Vec2 } from "@infinitecanvas/math";
 import { ArrowHeadKind } from "../types";
 import { DEFAULT_ARROW_THICKNESS } from "../constants";

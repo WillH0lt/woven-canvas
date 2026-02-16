@@ -1,28 +1,45 @@
-import { Type, component, field } from '@lastolivegames/becsy'
+import { field, type Context, type EntityId } from "@woven-ecs/core";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
 
-import { BaseComponent } from '../BaseComponent'
+const ColorSchema = {
+  red: field.uint8().default(0),
+  green: field.uint8().default(0),
+  blue: field.uint8().default(0),
+  alpha: field.uint8().default(255),
+};
 
-@component
-export class Color extends BaseComponent {
-  @field.uint8 declare red: number
-  @field.uint8 declare green: number
-  @field.uint8 declare blue: number
-  @field({ type: Type.uint8, default: 255 }) declare alpha: number
-
-  public toHex(): string {
-    const rHex = this.red.toString(16).padStart(2, '0')
-    const gHex = this.green.toString(16).padStart(2, '0')
-    const bHex = this.blue.toString(16).padStart(2, '0')
-    const aHex = this.alpha.toString(16).padStart(2, '0')
-    return `#${rHex}${gHex}${bHex}${aHex}`
+/**
+ * Color component - stores RGBA color values.
+ *
+ * Each channel is 0-255. Alpha defaults to 255 (fully opaque).
+ */
+class ColorDef extends CanvasComponentDef<typeof ColorSchema> {
+  constructor() {
+    super({ name: "color", sync: "document" }, ColorSchema);
   }
 
-  public fromHex(hex: string): this {
-    this.red = Number.parseInt(hex.slice(1, 3), 16)
-    this.green = Number.parseInt(hex.slice(3, 5), 16)
-    this.blue = Number.parseInt(hex.slice(5, 7), 16)
-    this.alpha = hex.length > 7 ? Number.parseInt(hex.slice(7, 9), 16) : 255
+  /**
+   * Convert a color to a hex string.
+   */
+  toHex(ctx: Context, entityId: EntityId): string {
+    const { red, green, blue, alpha } = this.read(ctx, entityId);
+    const rHex = red.toString(16).padStart(2, "0");
+    const gHex = green.toString(16).padStart(2, "0");
+    const bHex = blue.toString(16).padStart(2, "0");
+    const aHex = alpha.toString(16).padStart(2, "0");
+    return `#${rHex}${gHex}${bHex}${aHex}`;
+  }
 
-    return this
+  /**
+   * Set color from a hex string.
+   */
+  fromHex(ctx: Context, entityId: EntityId, hex: string): void {
+    const color = this.write(ctx, entityId);
+    color.red = Number.parseInt(hex.slice(1, 3), 16);
+    color.green = Number.parseInt(hex.slice(3, 5), 16);
+    color.blue = Number.parseInt(hex.slice(5, 7), 16);
+    color.alpha = hex.length > 7 ? Number.parseInt(hex.slice(7, 9), 16) : 255;
   }
 }
+
+export const Color = new ColorDef();

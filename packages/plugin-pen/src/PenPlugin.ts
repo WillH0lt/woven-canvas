@@ -5,7 +5,7 @@ import {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import * as components from "./components";
 import * as singletons from "./singletons";
@@ -69,7 +69,7 @@ export function createPenPlugin(): EditorPlugin {
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/editor';
+ * import { Editor } from '@infinitecanvas/core';
  * import { PenPlugin } from '@infinitecanvas/plugin-pen';
  *
  * // Use the plugin

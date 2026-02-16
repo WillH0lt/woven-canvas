@@ -5,7 +5,7 @@ import {
   type EditorPluginFactory,
   type EditorSystem,
   Key,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import {
   RemoveSelected,
@@ -171,7 +171,7 @@ export function createSelectionPlugin(
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/editor';
+ * import { Editor } from '@infinitecanvas/core';
  * import { SelectionPlugin } from '@infinitecanvas/plugin-selection';
  *
  * // With default options

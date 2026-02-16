@@ -1,1 +1,0 @@
-export { ICLabel } from './label'

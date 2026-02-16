@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VerticalAlignment, TextAlignment } from "@infinitecanvas/editor";
+import { VerticalAlignment, TextAlignment } from "@infinitecanvas/core";
 import { ToolbarButton } from "@infinitecanvas/vue";
 
 // Create a snapshot for a shape block that can be placed or dragged

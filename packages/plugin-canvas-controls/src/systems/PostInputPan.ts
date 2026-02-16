@@ -10,7 +10,7 @@ import {
   type FrameInput,
   type KeyboardInput,
   type InferStateContext,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { assign, setup } from "xstate";
 
 import { PanState } from "../components";

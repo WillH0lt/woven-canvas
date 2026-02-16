@@ -48,7 +48,7 @@ export { default as EditableText } from "./components/EditableText.vue";
 
 // User Presence
 export { default as UserPresence } from "./components/UserPresence.vue";
-export { User } from "@infinitecanvas/editor";
+export { User } from "@infinitecanvas/core";
 
 // Menu Button Components
 export { default as MenuDropdown } from "./components/buttons/MenuDropdown.vue";
@@ -101,7 +101,7 @@ export {
   type TextEditorState,
   type TextEditorCommands,
 } from "./composables/useTextEditorController";
-export { TextAlignment } from "@infinitecanvas/editor";
+export { TextAlignment } from "@infinitecanvas/core";
 export {
   useTextBatchController,
   type TextBatchController,

@@ -1,216 +1,236 @@
-import { Type, field } from '@lastolivegames/becsy'
+import { field, type Context, type EntityId } from "@woven-ecs/core";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
+import { Vec2, Rect, Aabb, Mat2 } from "@infinitecanvas/math";
 
-import { BaseComponent } from '../BaseComponent'
-import {
-  multiplyMatrices,
-  newRotationMatrix,
-  newRotationMatrixAroundPoint,
-  newTranslationMatrix,
-  transformPoint,
-} from '../helpers'
-import { Aabb } from './Aabb'
-import type { HitCapsule } from './HitCapsule'
+// Pre-allocated arrays for SAT intersection to avoid allocations
+const _aabbCorners: [Vec2, Vec2, Vec2, Vec2] = [
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+];
+const _blockCorners: [Vec2, Vec2, Vec2, Vec2] = [
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+];
+const _blockAxes: [Vec2, Vec2] = [
+  [0, 0],
+  [0, 0],
+];
 
-export class Block extends BaseComponent {
-  @field.dynamicString(36) public declare id: string
-  @field({ type: Type.dynamicString(36), default: 'div' }) public declare tag: string
-  @field.float64 declare top: number
-  @field.float64 declare left: number
-  @field.float64 declare width: number
-  @field.float64 declare height: number
-  @field.float64 declare rotateZ: number
-  @field.dynamicString(36) public declare rank: string
+const BlockSchema = {
+  /** Element tag name (e.g., "div", "img") */
+  tag: field.string().max(36).default("div"),
+  /** Position as [left, top] */
+  position: field.tuple(field.float64(), 2).default([0, 0]),
+  /** Size as [width, height] */
+  size: field.tuple(field.float64(), 2).default([100, 100]),
+  /** Rotation around center in radians */
+  rotateZ: field.float64().default(0),
+  /** Flip state as [flipX, flipY] */
+  flip: field.tuple(field.boolean(), 2).default([false, false]),
+  /** Z-order rank (LexoRank string) */
+  rank: field.string().max(36).default(""),
+};
 
-  public intersectsPoint(point: [number, number]): boolean {
-    const { width, height, left, top, rotateZ } = this
-
-    // Translate point to block's local coordinate system
-    const cx = left + width / 2
-    const cy = top + height / 2
-
-    const dx = point[0] - cx
-    const dy = point[1] - cy
-
-    // Rotate point in opposite direction of block's rotation
-    const rad = -rotateZ
-    const cos = Math.cos(rad)
-    const sin = Math.sin(rad)
-
-    const localX = dx * cos - dy * sin
-    const localY = dx * sin + dy * cos
-
-    // Check if point is within unrotated block bounds
-    return localX >= -width / 2 && localX <= width / 2 && localY >= -height / 2 && localY <= height / 2
+/**
+ * Block component - core spatial data for canvas entities.
+ *
+ * Contains position (left, top), size (width, height), rotation (rotateZ),
+ * z-order (rank), and element tag.
+ */
+class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
+  constructor() {
+    super({ name: "block", sync: "document" }, BlockSchema);
   }
 
-  public getCenter(): [number, number] {
-    const { left, top, width, height } = this
-    return [left + width / 2, top + height / 2]
+  /**
+   * Get the center point of a block.
+   * @param out - Optional output vector to write to (avoids allocation)
+   */
+  getCenter(ctx: Context, entityId: EntityId, out?: Vec2): Vec2 {
+    const { position, size } = this.read(ctx, entityId);
+    const result: Vec2 = out ?? [0, 0];
+    Rect.getCenter(position, size, result);
+    return result;
   }
 
-  public getCorners(): [number, number][] {
-    const { width, height, rotateZ } = this
-    const [cx, cy] = this.getCenter()
-
-    const halfWidth = width / 2
-    const halfHeight = height / 2
-
-    // Local corners (before rotation)
-    const corners: [number, number][] = [
-      [-halfWidth, -halfHeight],
-      [halfWidth, -halfHeight],
-      [halfWidth, halfHeight],
-      [-halfWidth, halfHeight],
-    ]
-
-    const R = newRotationMatrix(rotateZ)
-    const D = newTranslationMatrix(cx, cy)
-    const M = multiplyMatrices(D, R)
-
-    return corners.map((corner) => transformPoint(M, corner))
+  /**
+   * Set the center point of a block (adjusts position accordingly).
+   */
+  setCenter(ctx: Context, entityId: EntityId, center: Vec2): void {
+    const block = this.write(ctx, entityId);
+    Rect.setCenter(block.position, block.size, center);
   }
 
-  public intersectsAabb(aabb: Aabb): boolean {
-    // Use Separating Axis Theorem (SAT) between AABB and oriented rectangle
+  /**
+   * Get the four corner points of a block (accounting for rotation).
+   * Returns corners in order: top-left, top-right, bottom-right, bottom-left.
+   * @param out - Optional output array to write to (avoids allocation)
+   */
+  getCorners(
+    ctx: Context,
+    entityId: EntityId,
+    out?: [Vec2, Vec2, Vec2, Vec2]
+  ): [Vec2, Vec2, Vec2, Vec2] {
+    const { position, size, rotateZ } = this.read(ctx, entityId);
+    const result: [Vec2, Vec2, Vec2, Vec2] = out ?? [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ];
+    Rect.getCorners(position, size, rotateZ, result);
+    return result;
+  }
 
-    // Get corners of the AABB
-    const aabbCorners: [number, number][] = [
-      [aabb.left, aabb.top],
-      [aabb.right, aabb.top],
-      [aabb.right, aabb.bottom],
-      [aabb.left, aabb.bottom],
-    ]
+  /**
+   * Check if a point intersects a block (accounting for rotation).
+   */
+  containsPoint(ctx: Context, entityId: EntityId, point: Vec2): boolean {
+    const { position, size, rotateZ } = this.read(ctx, entityId);
+    return Rect.containsPoint(position, size, rotateZ, point);
+  }
 
-    // Get corners of the oriented block
-    const blockCorners = this.getCorners()
+  /**
+   * Move a block by a delta offset.
+   */
+  translate(ctx: Context, entityId: EntityId, delta: Vec2): void {
+    const block = this.write(ctx, entityId);
+    Rect.translate(block.position, delta);
+  }
 
-    // Test axes from AABB (just X and Y axes since AABB is axis-aligned)
-    const aabbAxes: [number, number][] = [
-      [1, 0],
-      [0, 1],
-    ]
+  /**
+   * Set the position of a block.
+   */
+  setPosition(ctx: Context, entityId: EntityId, position: Vec2): void {
+    const block = this.write(ctx, entityId);
+    Vec2.copy(block.position, position);
+  }
 
-    // Test axes from block (normals of its edges)
-    const blockAxes: [number, number][] = []
-    for (let i = 0; i < 4; i++) {
-      const edge = [
-        blockCorners[(i + 1) % 4][0] - blockCorners[i][0],
-        blockCorners[(i + 1) % 4][1] - blockCorners[i][1],
-      ]
-      // Get perpendicular (normal) and normalize
-      const length = Math.sqrt(edge[1] * edge[1] + edge[0] * edge[0])
-      if (length > 0) {
-        blockAxes.push([-edge[1] / length, edge[0] / length])
-      }
+  /**
+   * Set the size of a block.
+   */
+  setSize(ctx: Context, entityId: EntityId, size: Vec2): void {
+    const block = this.write(ctx, entityId);
+    Vec2.copy(block.size, size);
+  }
+
+  /**
+   * Rotate a block by a delta angle (in radians).
+   */
+  rotateBy(ctx: Context, entityId: EntityId, deltaAngle: number): void {
+    const block = this.write(ctx, entityId);
+    block.rotateZ += deltaAngle;
+  }
+
+  /**
+   * Rotate a block around a pivot point.
+   */
+  rotateAround(
+    ctx: Context,
+    entityId: EntityId,
+    pivot: Vec2,
+    angle: number
+  ): void {
+    const block = this.write(ctx, entityId);
+    block.rotateZ = Rect.rotateAround(
+      block.position,
+      block.size,
+      block.rotateZ,
+      pivot,
+      angle
+    );
+  }
+
+  /**
+   * Scale a block uniformly around its center.
+   */
+  scaleBy(ctx: Context, entityId: EntityId, scaleFactor: number): void {
+    const block = this.write(ctx, entityId);
+    Rect.scaleBy(block.position, block.size, scaleFactor);
+  }
+
+  /**
+   * Scale a block around a pivot point.
+   */
+  scaleAround(
+    ctx: Context,
+    entityId: EntityId,
+    pivot: Vec2,
+    scaleFactor: number
+  ): void {
+    const block = this.write(ctx, entityId);
+    Rect.scaleAround(block.position, block.size, pivot, scaleFactor);
+  }
+
+  /**
+   * Check if an AABB intersects with this block using Separating Axis Theorem.
+   * This handles all intersection cases including narrow AABBs that pass through
+   * the middle of a rotated block without touching any corners.
+   * Optimized to avoid allocations for hot path usage.
+   */
+  intersectsAabb(ctx: Context, entityId: EntityId, aabb: Aabb): boolean {
+    const { position, size, rotateZ } = this.read(ctx, entityId);
+    return Rect.intersectsAabb(
+      position,
+      size,
+      rotateZ,
+      aabb,
+      _blockCorners,
+      _aabbCorners,
+      _blockAxes
+    );
+  }
+
+  worldToUv(ctx: Context, entityId: EntityId, worldPos: Vec2): Vec2 {
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
+    const uv = Rect.worldToUv(position, size, rotateZ, worldPos);
+    // Apply flip to UV coordinates
+    if (flip[0]) uv[0] = 1 - uv[0];
+    if (flip[1]) uv[1] = 1 - uv[1];
+    return uv;
+  }
+
+  uvToWorld(ctx: Context, entityId: EntityId, uv: Vec2): Vec2 {
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
+    // Apply flip to UV coordinates before converting to world
+    const flippedUv: Vec2 = [
+      flip[0] ? 1 - uv[0] : uv[0],
+      flip[1] ? 1 - uv[1] : uv[1],
+    ];
+    return Rect.uvToWorld(position, size, rotateZ, flippedUv);
+  }
+
+  /**
+   * Get the UV-to-world transformation matrix for a block.
+   * More efficient than multiple uvToWorld() calls since sin/cos is computed once.
+   * Use with Mat2.transformPoint() to transform UV coordinates to world.
+   * Note: This matrix does NOT account for flip - use uvToWorld() for flipped blocks.
+   *
+   * @param ctx - ECS context
+   * @param entityId - Entity ID
+   * @param out - Output matrix to write to [a, b, c, d, tx, ty]
+   */
+  getUvToWorldMatrix(ctx: Context, entityId: EntityId, out: Mat2): void {
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
+    Rect.getUvToWorldMatrix(position, size, rotateZ, out);
+    // Apply flip by negating scale and adjusting translation
+    if (flip[0]) {
+      out[0] = -out[0]; // Negate scaleX
+      out[2] = -out[2]; // Negate shearX
+      out[4] += size[0] * Math.cos(rotateZ); // Adjust tx
+      out[5] += size[0] * Math.sin(rotateZ); // Adjust ty
     }
-
-    // Test all axes
-    const allAxes = [...aabbAxes, ...blockAxes]
-
-    for (const axis of allAxes) {
-      // Project AABB onto axis
-      const aabbProjection = projectRectangleOntoAxis(aabbCorners, axis)
-
-      // Project block onto axis
-      const blockProjection = projectRectangleOntoAxis(blockCorners, axis)
-
-      // Check for separation
-      if (aabbProjection.max < blockProjection.min || blockProjection.max < aabbProjection.min) {
-        return false // Separating axis found
-      }
+    if (flip[1]) {
+      out[1] = -out[1]; // Negate shearY
+      out[3] = -out[3]; // Negate scaleY
+      out[4] -= size[1] * Math.sin(rotateZ); // Adjust tx
+      out[5] += size[1] * Math.cos(rotateZ); // Adjust ty
     }
-
-    return true // No separating axis found, shapes intersect
-  }
-
-  public intersectsCapsule(capsule: HitCapsule): boolean {
-    return capsule.intersectsBlock(this)
-  }
-
-  public uvToWorld(uv: [number, number]): [number, number] {
-    const world: [number, number] = [this.left + uv[0] * this.width, this.top + uv[1] * this.height]
-
-    const center = this.getCenter()
-
-    const m = newRotationMatrixAroundPoint(this.rotateZ, center)
-    return transformPoint(m, world)
-  }
-
-  public worldToUv(world: [number, number]): [number, number] {
-    // rotate around center
-    const center = this.getCenter()
-
-    const m = newRotationMatrixAroundPoint(-this.rotateZ, center)
-    const p = transformPoint(m, world)
-
-    const w = Math.max(this.width, 1)
-    const h = Math.max(this.height, 1)
-
-    const x = Math.max(p[0] - this.left, 0)
-    const y = Math.max(p[1] - this.top, 0)
-
-    // Convert to UV coordinates
-    return [x / w, y / h]
-  }
-
-  // update left, top, width, height so that the block bounds the given points
-  public boundPoints(points: [number, number][]): void {
-    if (this.rotateZ === 0) {
-      const aabb = new Aabb().setByPoints(points)
-      this.left = aabb.left
-      this.top = aabb.top
-      this.width = aabb.right - aabb.left
-      this.height = aabb.bottom - aabb.top
-
-      return
-    }
-
-    let minX = Number.POSITIVE_INFINITY
-    let minY = Number.POSITIVE_INFINITY
-    let maxX = Number.NEGATIVE_INFINITY
-    let maxY = Number.NEGATIVE_INFINITY
-
-    const R0 = newRotationMatrix(-this.rotateZ)
-    for (const point of points) {
-      const p = transformPoint(R0, point)
-      minX = Math.min(minX, p[0])
-      minY = Math.min(minY, p[1])
-      maxX = Math.max(maxX, p[0])
-      maxY = Math.max(maxY, p[1])
-    }
-
-    const center: [number, number] = [(minX + maxX) / 2, (minY + maxY) / 2]
-    const width = maxX - minX
-    const height = maxY - minY
-
-    const R1 = newRotationMatrix(this.rotateZ)
-    const newCenter = transformPoint(R1, center)
-    this.left = newCenter[0] - width / 2
-    this.top = newCenter[1] - height / 2
-
-    this.width = width
-    this.height = height
-  }
-
-  public computeAabb(): Aabb {
-    const aabb = new Aabb()
-
-    const corners = this.getCorners()
-    aabb.setByPoints(corners)
-
-    return aabb
   }
 }
 
-function projectRectangleOntoAxis(corners: [number, number][], axis: [number, number]): { min: number; max: number } {
-  let min = Number.POSITIVE_INFINITY
-  let max = Number.NEGATIVE_INFINITY
-
-  for (const corner of corners) {
-    const projection = corner[0] * axis[0] + corner[1] * axis[1]
-    min = Math.min(min, projection)
-    max = Math.max(max, projection)
-  }
-
-  return { min, max }
-}
+export const Block = new BlockDef();

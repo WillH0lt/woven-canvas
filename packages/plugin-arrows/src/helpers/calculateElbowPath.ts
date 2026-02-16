@@ -1,7 +1,7 @@
 import type { RayIntersection } from "@infinitecanvas/math";
 import { Aabb, Mat2, Ray, Rect, Scalar, Vec2 } from "@infinitecanvas/math";
-import type { Context, EntityId } from "@infinitecanvas/editor";
-import { Block } from "@infinitecanvas/editor";
+import type { Context, EntityId } from "@infinitecanvas/core";
+import { Block } from "@infinitecanvas/core";
 import { MinHeap } from "./MinHeap";
 
 interface Node {

@@ -18,7 +18,7 @@ import {
   getBackrefs,
   getBlockDef,
   isAlive,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 // Note: createEntity is still used for creating transform handles
 import { Vec2, Rect } from "@infinitecanvas/math";
 

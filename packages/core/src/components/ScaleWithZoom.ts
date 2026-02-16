@@ -1,11 +1,23 @@
-import { Type, component, field } from '@lastolivegames/becsy'
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
-@component
-export class ScaleWithZoom {
-  @field({ type: Type.vector(Type.float64, 2), default: [0.5, 0.5] }) public declare anchor: [number, number]
-
-  @field.float64 declare startTop: number
-  @field.float64 declare startLeft: number
-  @field.float64 declare startWidth: number
-  @field.float64 declare startHeight: number
-}
+/**
+ * ScaleWithZoom component - marks an entity that should maintain
+ * screen-space size when the camera zooms.
+ *
+ * Used for transform handles so they remain a consistent size
+ * regardless of zoom level.
+ */
+export const ScaleWithZoom = defineCanvasComponent(
+  { name: "scaleWithZoom" },
+  {
+    /** Pivot point for scaling as [x, y] (0-1, default 0.5,0.5 = center) */
+    anchor: field.tuple(field.float64(), 2).default([0.5, 0.5]),
+    /** Initial position as [left, top] at zoom=1 */
+    startPosition: field.tuple(field.float64(), 2).default([0, 0]),
+    /** Initial size as [width, height] at zoom=1 */
+    startSize: field.tuple(field.float64(), 2).default([0, 0]),
+    /** Scale multiplier per dimension: [x, y] (0 = no zoom effect, 1 = full zoom effect, 0.5 = half effect) */
+    scaleMultiplier: field.tuple(field.float64(), 2).default([1, 1]),
+  }
+);

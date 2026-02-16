@@ -34,17 +34,17 @@ import {
   type EditorSystem,
   type EditorPluginInput,
   type FontFamilyInput,
-  type InferEditorComponentType,
+  type InferCanvasComponentType,
   type UserDataInput,
   type GridOptionsInput,
   type Context,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { CanvasStore, type CanvasStoreOptions } from "@woven-ecs/canvas-store";
 import {
   AssetManager,
   LocalAssetProvider,
   type AssetProvider,
-} from "@infinitecanvas/ecs-asset-sync";
+} from "@infinitecanvas/asset-sync";
 import {
   CanvasControlsPlugin,
   type CanvasControlsOptionsInput,
@@ -96,7 +96,7 @@ const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited));
 const opacityQuery = defineQuery((q) => q.with(Block).tracking(Opacity));
 const userQuery = defineQuery((q) => q.tracking(User));
 
-type BlockDef = InferEditorComponentType<typeof Block.schema>;
+type BlockDef = InferCanvasComponentType<typeof Block.schema>;
 
 /**
  * InfiniteCanvas component props

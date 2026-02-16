@@ -1,4 +1,4 @@
-import { defineCanvasComponent, field } from "@infinitecanvas/editor";
+import { defineCanvasComponent, field } from "@infinitecanvas/core";
 
 // Define the Rect component schema
 export const Shape = defineCanvasComponent(

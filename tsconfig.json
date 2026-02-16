@@ -3,16 +3,25 @@
   "files": [],
   "references": [
     {
-      "path": "packages/core"
-    },
-    {
-      "path": "packages/ecs"
+      "path": "packages/asset-sync"
     },
     {
       "path": "packages/editor"
     },
     {
+      "path": "packages/math"
+    },
+    {
+      "path": "packages/plugin-arrows"
+    },
+    {
       "path": "packages/plugin-canvas-controls"
+    },
+    {
+      "path": "packages/plugin-eraser"
+    },
+    {
+      "path": "packages/plugin-pen"
     },
     {
       "path": "packages/plugin-selection"
@@ -21,46 +30,7 @@
       "path": "packages/plugin-shapes"
     },
     {
-      "path": "packages/extension-arrows"
-    },
-    {
-      "path": "packages/extension-controls"
-    },
-    {
-      "path": "packages/extension-eraser"
-    },
-    {
-      "path": "packages/extension-multiplayer"
-    },
-    {
-      "path": "packages/extension-ink"
-    },
-    {
-      "path": "packages/extension-rough-shapes"
-    },
-    {
-      "path": "packages/extension-sticky-notes"
-    },
-    {
-      "path": "packages/store"
-    },
-    {
-      "path": "packages/store-automerge"
-    },
-    {
-      "path": "packages/store-yjs"
-    },
-    {
       "path": "packages/vue"
-    },
-    {
-      "path": "examples/canvas"
-    },
-    {
-      "path": "examples/asciinotes-com"
-    },
-    {
-      "path": "examples/asciinotes-com-new"
     },
     {
       "path": "examples/editor-vue"

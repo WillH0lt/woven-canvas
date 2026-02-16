@@ -20,8 +20,8 @@ vi.mock("@infinitecanvas/plugin-selection", () => ({
 }));
 
 // Mock Editor class with factory function
-vi.mock("@infinitecanvas/editor", async () => {
-  const actual = await vi.importActual("@infinitecanvas/editor");
+vi.mock("@infinitecanvas/core", async () => {
+  const actual = await vi.importActual("@infinitecanvas/core");
 
   class MockEditor {
     components = new Map();

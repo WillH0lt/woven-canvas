@@ -2,7 +2,7 @@ import {
   defineCommand,
   type EntityId,
   type Vec2,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 /**
  * Drag/move a block to a new position.

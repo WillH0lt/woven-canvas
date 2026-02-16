@@ -1,6 +1,0 @@
-export { ICRoughShape } from './RoughShape'
-export { ICStrokeButton } from './StrokeButton'
-export { ICFillButton } from './FillButton'
-export { ICFillMenu } from './FillMenu'
-export { ICStrokeMenu } from './StrokeMenu'
-export * from './toolbar'

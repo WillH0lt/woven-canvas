@@ -9,7 +9,7 @@ import {
   getPluginResources,
   type PointerInput,
   type Context,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import {
   SelectionStateSingleton,

@@ -1,23 +1,26 @@
-import { component, field } from '@lastolivegames/becsy'
-import { BaseComponent } from '../BaseComponent'
+import { field } from "@woven-ecs/core";
+import { defineCanvasComponent } from "@woven-ecs/canvas-store";
 
-@component
-export class Connector extends BaseComponent {
-  @field.dynamicString(36) declare startBlockId: string
-  @field.float64.vector(2) declare startBlockUv: [number, number]
-  @field.float64.vector(2) declare startUv: [number, number]
-  @field.boolean declare startNeedsUpdate: boolean
+/**
+ * Connector component - defines a line/arrow between two blocks.
+ *
+ * Connectors link two blocks together with optional anchor points.
+ * When connected blocks move, the connector endpoints update automatically.
+ *
+ * - `startBlock`/`endBlock`: Ref to connected blocks (null = free endpoint)
+ * - `startBlockUv`/`endBlockUv`: Anchor point on block in UV coords (0-1)
+ * - `startUv`/`endUv`: Actual endpoint position as UV coords on this connector's block
+ * - `startNeedsUpdate`/`endNeedsUpdate`: Flags to trigger recalculation
+ */
+export const Connector = defineCanvasComponent(
+  { name: "connector", sync: "document" },
+  {
+    startBlock: field.ref(),
+    startBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
+    startUv: field.tuple(field.float64(), 2).default([0, 0]),
 
-  @field.dynamicString(36) declare endBlockId: string
-  @field.float64.vector(2) declare endBlockUv: [number, number]
-  @field.float64.vector(2) declare endUv: [number, number]
-  @field.boolean declare endNeedsUpdate: boolean
-
-  public toJson(): Record<string, any> {
-    const data = super.toJson()
-
-    delete data.startNeedsUpdate
-    delete data.endNeedsUpdate
-    return data
+    endBlock: field.ref(),
+    endBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
+    endUv: field.tuple(field.float64(), 2).default([1, 1]),
   }
-}
+);

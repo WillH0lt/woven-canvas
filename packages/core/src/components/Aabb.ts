@@ -1,116 +1,194 @@
-import { component, field } from '@lastolivegames/becsy'
+import { field, type Context, type EntityId } from "@woven-ecs/core";
+import { CanvasComponentDef } from "@woven-ecs/canvas-store";
+import {
+  Aabb as AabbMath,
+  type Vec2,
+} from "@infinitecanvas/math";
+import { Block } from "./Block";
 
-import { BaseComponent } from '../BaseComponent'
-import type { Block } from './Block'
-import type { HitCapsule } from './HitCapsule'
+// Tuple indices for AABB
+const LEFT = 0;
+const TOP = 1;
+const RIGHT = 2;
+const BOTTOM = 3;
 
-@component
-export class Aabb extends BaseComponent {
-  @field.float32 public declare left: number
-  @field.float32 public declare right: number
-  @field.float32 public declare top: number
-  @field.float32 public declare bottom: number
+const AabbSchema = {
+  /** Bounds as [left, top, right, bottom] */
+  value: field.tuple(field.float32(), 4).default([0, 0, 0, 0]),
+};
 
-  public containsPoint(point: [number, number], inclusive = true): boolean {
-    if (inclusive) {
-      return point[0] >= this.left && point[0] <= this.right && point[1] >= this.top && point[1] <= this.bottom
+/**
+ * Axis-aligned bounding box component.
+ *
+ * Stored as a tuple [left, top, right, bottom] for memory efficiency.
+ * Used for fast intersection tests and spatial queries.
+ * Updated automatically when Block transforms change.
+ */
+class AabbDef extends CanvasComponentDef<typeof AabbSchema> {
+  constructor() {
+    super({ name: "aabb" }, AabbSchema);
+  }
+
+  /**
+   * Check if a point is contained within an entity's AABB.
+   */
+  containsPoint(
+    ctx: Context,
+    entityId: EntityId,
+    point: Vec2,
+    inclusive = true
+  ): boolean {
+    const { value } = this.read(ctx, entityId);
+
+    return AabbMath.containsPoint(value, point, inclusive);
+  }
+
+  /**
+   * Expand AABB to include a point.
+   */
+  expandByPoint(ctx: Context, entityId: EntityId, point: Vec2): void {
+    const { value } = this.write(ctx, entityId);
+    AabbMath.expand(value, point);
+  }
+
+  /**
+   * Expand AABB to include another entity's block.
+   */
+  expandByBlock(
+    ctx: Context,
+    entityId: EntityId,
+    blockEntityId: EntityId
+  ): void {
+    const corners = Block.getCorners(ctx, blockEntityId);
+    const { value } = this.write(ctx, entityId);
+    for (const corner of corners) {
+      AabbMath.expand(value, corner);
     }
-    return point[0] > this.left && point[0] < this.right && point[1] > this.top && point[1] < this.bottom
   }
 
-  public expandByPoint(point: [number, number]): this {
-    this.left = Math.min(this.left, point[0])
-    this.right = Math.max(this.right, point[0])
-    this.top = Math.min(this.top, point[1])
-    this.bottom = Math.max(this.bottom, point[1])
-
-    return this
+  /**
+   * Expand AABB to include another AABB.
+   */
+  expandByAabb(ctx: Context, entityId: EntityId, other: AabbMath): void {
+    const { value } = this.write(ctx, entityId);
+    AabbMath.union(value, other);
   }
 
-  public expandByBlock(block: Block): this {
-    const aabb = block.computeAabb()
-    this.expandByPoint([aabb.left, aabb.top])
-    this.expandByPoint([aabb.right, aabb.bottom])
-    return this
+  /**
+   * Copy bounds from another entity's AABB.
+   */
+  copyFrom(ctx: Context, entityId: EntityId, otherEntityId: EntityId): void {
+    const { value: src } = this.read(ctx, otherEntityId);
+    const { value: dst } = this.write(ctx, entityId);
+    AabbMath.copy(dst, src);
   }
 
-  public expandByAabb(aabb: Aabb): this {
-    this.expandByPoint([aabb.left, aabb.top])
-    this.expandByPoint([aabb.right, aabb.bottom])
-    return this
+  /**
+   * Set AABB from an array of points.
+   */
+  setByPoints(ctx: Context, entityId: EntityId, points: Vec2[]): void {
+    if (points.length === 0) return;
+    const { value } = this.write(ctx, entityId);
+    AabbMath.setFromPoints(value, points);
   }
 
-  public copy(other: Aabb): this {
-    this.left = other.left
-    this.right = other.right
-    this.top = other.top
-    this.bottom = other.bottom
-    return this
+  /**
+   * Get the center point of an entity's AABB.
+   */
+  getCenter(ctx: Context, entityId: EntityId): Vec2 {
+    const { value } = this.read(ctx, entityId);
+    return AabbMath.center(value);
   }
 
-  public setByPoints(points: [number, number][]): this {
-    if (points.length === 0) return this
-    const pt = points[0]
-    this.left = pt[0]
-    this.right = pt[0]
-    this.top = pt[1]
-    this.bottom = pt[1]
-
-    for (let i = 1; i < points.length; i++) {
-      this.expandByPoint(points[i])
-    }
-
-    return this
+  /**
+   * Get the width of an entity's AABB.
+   */
+  getWidth(ctx: Context, entityId: EntityId): number {
+    const { value } = this.read(ctx, entityId);
+    return AabbMath.width(value);
   }
 
-  public getCenter(): [number, number] {
-    return [(this.left + this.right) / 2, (this.top + this.bottom) / 2]
+  /**
+   * Get the height of an entity's AABB.
+   */
+  getHeight(ctx: Context, entityId: EntityId): number {
+    const { value } = this.read(ctx, entityId);
+    return AabbMath.height(value);
   }
 
-  public getWidth(): number {
-    return this.right - this.left
+  /**
+   * Get the distance from AABB to a point.
+   */
+  distanceToPoint(ctx: Context, entityId: EntityId, point: Vec2): number {
+    const { value } = this.read(ctx, entityId);
+    return AabbMath.distanceToPoint(value, point);
   }
 
-  public getHeight(): number {
-    return this.bottom - this.top
+  /**
+   * Check if two entity AABBs intersect.
+   */
+  intersectsEntity(
+    ctx: Context,
+    entityIdA: EntityId,
+    entityIdB: EntityId
+  ): boolean {
+    const { value: a } = this.read(ctx, entityIdA);
+    const { value: b } = this.read(ctx, entityIdB);
+    return AabbMath.intersects(a, b);
   }
 
-  public distanceToPoint(point: [number, number]): number {
-    const dx = Math.max(this.left - point[0], 0, point[0] - this.right)
-    const dy = Math.max(this.top - point[1], 0, point[1] - this.bottom)
-    return Math.hypot(dx, dy)
+  /**
+   * Check if entity A's AABB completely surrounds entity B's AABB.
+   */
+  surroundsEntity(
+    ctx: Context,
+    entityIdA: EntityId,
+    entityIdB: EntityId
+  ): boolean {
+    const { value: a } = this.read(ctx, entityIdA);
+    const { value: b } = this.read(ctx, entityIdB);
+    return AabbMath.contains(a, b);
   }
 
-  public intersectsAabb(other: Aabb): boolean {
-    return !(this.right < other.left || this.left > other.right || this.bottom < other.top || this.top > other.bottom)
+  /**
+   * Get the four corner points of an entity's AABB.
+   * Returns corners in order: top-left, top-right, bottom-right, bottom-left.
+   * @param out - Optional output array to write to (avoids allocation)
+   */
+  getCorners(
+    ctx: Context,
+    entityId: EntityId,
+    out?: [Vec2, Vec2, Vec2, Vec2]
+  ): [Vec2, Vec2, Vec2, Vec2] {
+    const { value } = this.read(ctx, entityId);
+    const result: [Vec2, Vec2, Vec2, Vec2] = out ?? [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ];
+    // TL
+    result[0][0] = value[LEFT];
+    result[0][1] = value[TOP];
+    // TR
+    result[1][0] = value[RIGHT];
+    result[1][1] = value[TOP];
+    // BR
+    result[2][0] = value[RIGHT];
+    result[2][1] = value[BOTTOM];
+    // BL
+    result[3][0] = value[LEFT];
+    result[3][1] = value[BOTTOM];
+    return result;
   }
 
-  public surroundsAabb(other: Aabb): boolean {
-    return this.left <= other.left && this.top <= other.top && this.right >= other.right && this.bottom >= other.bottom
-  }
-
-  public intersectsBlock(block: Block): boolean {
-    return block.intersectsAabb(this)
-  }
-
-  public intersectsCapsule(capsule: HitCapsule): boolean {
-    return capsule.intersectsAabb(this)
-  }
-
-  public getCorners(): [number, number][] {
-    return [
-      [this.left, this.top],
-      [this.right, this.top],
-      [this.right, this.bottom],
-      [this.left, this.bottom],
-    ]
-  }
-
-  public applyPadding(padding: number): this {
-    this.left -= padding
-    this.right += padding
-    this.top -= padding
-    this.bottom += padding
-    return this
+  /**
+   * Apply padding to all sides of the AABB.
+   */
+  applyPadding(ctx: Context, entityId: EntityId, padding: number): void {
+    const { value } = this.write(ctx, entityId);
+    AabbMath.pad(value, padding);
   }
 }
+
+export const Aabb = new AabbDef();

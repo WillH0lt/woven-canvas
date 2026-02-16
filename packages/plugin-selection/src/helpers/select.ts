@@ -10,7 +10,7 @@ import {
   Block,
   type Context,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { Selected } from "../components";
 

@@ -14,7 +14,7 @@ import {
   RankBounds,
   createEntity,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import {
   TransformBox,
   TransformHandle,

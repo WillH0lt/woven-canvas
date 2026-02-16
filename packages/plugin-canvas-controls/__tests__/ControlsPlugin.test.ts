@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { Editor, Camera } from "@infinitecanvas/editor";
+import { Editor, Camera } from "@infinitecanvas/core";
 import { CanvasControlsPlugin, PanState, PanStateValue } from "../src";
 
 describe("CanvasControlsPlugin", () => {

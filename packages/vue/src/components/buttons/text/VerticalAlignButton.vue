@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/editor";
-import { VerticalAlign, VerticalAlignment } from "@infinitecanvas/editor";
+import type { EntityId } from "@infinitecanvas/core";
+import { VerticalAlign, VerticalAlignment } from "@infinitecanvas/core";
 
 import MenuButton from "../MenuButton.vue";
 import { useComponents } from "../../../composables/useComponents";

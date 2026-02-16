@@ -32,8 +32,8 @@
   },
   "dependencies": {
     "@floating-ui/vue": "^1.1.6",
-    "@infinitecanvas/ecs-asset-sync": "workspace:^",
-    "@infinitecanvas/editor": "workspace:^",
+    "@infinitecanvas/asset-sync": "workspace:^",
+    "@infinitecanvas/core": "workspace:^",
     "@infinitecanvas/math": "workspace:^",
     "@infinitecanvas/plugin-arrows": "workspace:^",
     "@infinitecanvas/plugin-canvas-controls": "workspace:^",

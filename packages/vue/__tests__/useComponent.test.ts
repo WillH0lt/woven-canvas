@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { provide, createApp, h, defineComponent } from "vue";
 import { useComponent } from "../src/composables/useComponent";
 import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from "../src/injection";
-import { defineCanvasComponent, field } from "@infinitecanvas/editor";
+import { defineCanvasComponent, field } from "@infinitecanvas/core";
 
 describe("useComponent", () => {
   // Create properly typed component definitions
@@ -23,7 +23,8 @@ describe("useComponent", () => {
     mockCanvasContext = {
       hasEntity: (entityId) => mockEntities.has(entityId),
       getEditor: () => null, // No editor = skip eager read
-      getSessionId: () => null,
+      getAssetManager: () => null,
+      getSessionId: () => "abc",
       getUserBySessionId: () => null,
       subscribeComponent: (entityId, componentName, callback) => {
         let entitySubs = mockSubscriptions.get(entityId);

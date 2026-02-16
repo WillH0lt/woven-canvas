@@ -4,7 +4,7 @@ import {
   on,
   Undo,
   Redo,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { deselectAll } from "@infinitecanvas/plugin-selection";
 import type { BasicsPluginResources } from "../BasicsPlugin";
 

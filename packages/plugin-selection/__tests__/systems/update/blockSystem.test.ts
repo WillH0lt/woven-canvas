@@ -12,7 +12,7 @@ import {
   Text,
   RankBounds,
   Cursor,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Selected, Held } from "../../../src/components";
 import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
 import { Clipboard } from "../../../src/singletons";

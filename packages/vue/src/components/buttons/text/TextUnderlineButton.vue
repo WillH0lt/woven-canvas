@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EntityId } from "@infinitecanvas/editor";
+import type { EntityId } from "@infinitecanvas/core";
 
 import MenuButton from "../MenuButton.vue";
 import { useTextFormatting } from "../../../composables/useTextFormatting";

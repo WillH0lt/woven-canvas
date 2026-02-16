@@ -1,4 +1,4 @@
-import { field, defineEditorState } from "@infinitecanvas/editor";
+import { field, defineEditorState } from "@infinitecanvas/core";
 
 import { ScrollEdgesState } from "../types";
 

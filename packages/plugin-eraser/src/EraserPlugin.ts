@@ -4,7 +4,7 @@ import {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import * as components from "./components";
 import * as singletons from "./singletons";
@@ -90,7 +90,7 @@ export function createEraserPlugin(
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/editor';
+ * import { Editor } from '@infinitecanvas/core';
  * import { EraserPlugin } from '@infinitecanvas/plugin-eraser';
  *
  * // With default options (no parentheses needed)

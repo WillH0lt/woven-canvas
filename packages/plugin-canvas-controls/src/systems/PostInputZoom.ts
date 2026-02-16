@@ -8,7 +8,7 @@ import {
   Controls,
   getMouseInput,
   getPluginResources,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import type { CanvasControlsOptions } from "../types";
 

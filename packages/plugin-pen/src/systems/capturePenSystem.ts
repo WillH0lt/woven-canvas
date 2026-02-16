@@ -6,7 +6,7 @@ import {
   getPointerInput,
   type PointerInput,
   PointerType,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { PenStateSingleton } from "../singletons";
 import { PenState } from "../types";

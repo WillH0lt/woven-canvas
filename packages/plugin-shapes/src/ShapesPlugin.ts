@@ -4,7 +4,7 @@ import {
   VerticalAlign,
   type EditorPlugin,
   type EditorPluginFactory,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import * as components from "./components";
 
@@ -68,7 +68,7 @@ export function createShapesPlugin(
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/editor';
+ * import { Editor } from '@infinitecanvas/core';
  * import { ShapesPlugin } from '@infinitecanvas/plugin-shapes';
  *
  * // With default options (no parentheses needed)

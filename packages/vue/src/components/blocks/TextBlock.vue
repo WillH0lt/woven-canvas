@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { Text } from "@infinitecanvas/editor";
+import { Text } from "@infinitecanvas/core";
 
 import type { BlockData } from "../../types";
 import { useComponent } from "../../composables/useComponent";

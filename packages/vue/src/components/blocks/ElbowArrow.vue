@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from "vue";
-import { Color } from "@infinitecanvas/editor";
+import { Color } from "@infinitecanvas/core";
 import { Vec2 } from "@infinitecanvas/math";
 import { ElbowArrow } from "@infinitecanvas/plugin-arrows";
 import { useComponent } from "../../composables/useComponent";

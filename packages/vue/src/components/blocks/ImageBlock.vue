@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, inject, watch, onMounted, onUnmounted } from "vue";
-import { Image, Asset, UploadState } from "@infinitecanvas/editor";
+import { Image, Asset, UploadState } from "@infinitecanvas/core";
 
 import type { BlockData } from "../../types";
 import { useComponent } from "../../composables/useComponent";

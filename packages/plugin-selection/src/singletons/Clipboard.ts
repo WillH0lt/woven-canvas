@@ -4,8 +4,8 @@ import {
   getResources,
   type Context,
   type EditorResources,
-} from "@infinitecanvas/editor";
-import type { Editor } from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
+import type { Editor } from "@infinitecanvas/core";
 
 /**
  * Serialized entity data for clipboard storage.

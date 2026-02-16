@@ -5,7 +5,7 @@ import {
   Color,
   type EditorPlugin,
   type EditorPluginFactory,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import * as components from "./components";
 import * as singletons from "./singletons";
@@ -115,7 +115,7 @@ export function createArrowsPlugin(
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/editor';
+ * import { Editor } from '@infinitecanvas/core';
  * import { ArrowsPlugin } from '@infinitecanvas/plugin-arrows';
  *
  * // With default options (no parentheses needed)

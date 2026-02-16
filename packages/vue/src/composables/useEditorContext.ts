@@ -1,5 +1,5 @@
 import { inject } from "vue";
-import type { Context } from "@infinitecanvas/editor";
+import type { Context } from "@infinitecanvas/core";
 import { INFINITE_CANVAS_KEY } from "../injection";
 
 export interface EditorContext {

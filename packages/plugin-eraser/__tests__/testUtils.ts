@@ -11,7 +11,7 @@ import {
   Aabb,
   Synced,
   HitGeometry,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 /**
  * Options for creating a test block.

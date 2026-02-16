@@ -1,5 +1,0 @@
-export { ICColorPicker } from './ColorPicker'
-export { ICColorBubbles } from './ColorBubbles'
-export { ICColorButton } from './ColorButton'
-export { ICColorMenu } from './ColorMenu'
-export { ICColorButtonContent } from './ColorButtonContent'

@@ -22,7 +22,7 @@ import {
   Cursor,
   Held,
   Grid,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { Aabb as AabbNs, Vec2 } from "@infinitecanvas/math";
 import {

@@ -8,7 +8,7 @@ import {
   createEntity,
   type PointerInput,
   type EntityId,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import { Vec2 } from "@infinitecanvas/math";
 import { DeselectAll } from "@infinitecanvas/plugin-selection";
 

@@ -1,4 +1,4 @@
-import { field, defineCanvasComponent } from "@infinitecanvas/editor";
+import { field, defineCanvasComponent } from "@infinitecanvas/core";
 
 /**
  * DragStart component - stores the initial transform state when a drag begins.

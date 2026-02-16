@@ -1,1 +1,0 @@
-export { ICDivider } from './divider'

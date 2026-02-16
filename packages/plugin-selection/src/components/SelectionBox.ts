@@ -1,4 +1,4 @@
-import { defineCanvasComponent } from "@infinitecanvas/editor";
+import { defineCanvasComponent } from "@infinitecanvas/core";
 
 /**
  * SelectionBox component - marks an entity as the marquee selection box.

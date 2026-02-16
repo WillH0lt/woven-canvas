@@ -1,1 +1,0 @@
-export { ICApp } from './app'

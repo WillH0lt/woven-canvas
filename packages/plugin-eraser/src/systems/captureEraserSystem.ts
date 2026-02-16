@@ -5,7 +5,7 @@ import {
   Controls,
   getPointerInput,
   type PointerInput,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { EraserStateSingleton } from "../singletons";
 import { EraserState } from "../types";

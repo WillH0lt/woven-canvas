@@ -1,7 +1,0 @@
-export { fillSolid } from './fillSolid'
-export { fillHachure } from './fillHachure'
-export { fillCrossHatch } from './fillCrossHatch'
-export { none } from './none'
-export { strokeSolid } from './strokeSolid'
-export { strokeDotted } from './strokeDotted'
-export { strokeDashed } from './strokeDashed'

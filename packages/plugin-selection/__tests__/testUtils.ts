@@ -14,7 +14,7 @@ import {
   Block,
   Aabb,
   RankBounds,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { CURSORS } from "../src/cursors";
 import { Selected, Held } from "../src/components";

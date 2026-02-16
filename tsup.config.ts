@@ -6,10 +6,5 @@ export default defineConfig({
   experimentalDts: true,
   minify: false,
   format: ['esm', 'cjs'],
-  outDir: 'build',
-  esbuildPlugins: [
-    replace({
-      '@lastolivegames/becsy': '@lastolivegames/becsy/perf',
-    }),
-  ],
+  outDir: 'build'
 })

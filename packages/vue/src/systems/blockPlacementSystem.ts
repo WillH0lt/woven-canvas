@@ -19,7 +19,7 @@ import {
   canBlockEdit,
   Edited,
   type EditorResources,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 import {
   SelectionStateSingleton,
   SelectionState,

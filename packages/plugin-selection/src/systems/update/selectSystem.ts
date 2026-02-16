@@ -10,7 +10,7 @@ import {
   Block,
   Aabb,
   intersectAabb,
-} from "@infinitecanvas/editor";
+} from "@infinitecanvas/core";
 
 import { SelectionBox, Selected } from "../../components";
 import {
