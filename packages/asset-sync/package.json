@@ -1,13 +1,22 @@
 {
-  "private": true,
   "name": "@woven-canvas/asset-sync",
   "version": "0.1.0",
   "description": "Asset management for InfiniteCanvas - upload queueing, caching, and URL resolution",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WillH0lt/woven-canvas"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/WillH0lt/woven-canvas",
+  "author": {
+    "name": "Will Holt",
+    "email": "will@william.land"
+  },
   "files": [
-    "build"
+    "build",
+    "LICENSE"
   ],
   "main": "./build/index.js",
-  "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
   "exports": {
     ".": {
@@ -27,18 +36,18 @@
     "clean": "rimraf build .turbo",
     "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
     "build:watch": "pnpm build --watch",
-    "check:exports": "attw --pack ."
+    "check:exports": "attw --pack .",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "idb": "^8.0.3"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "fake-indexeddb": "^6.2.5",
     "vitest": "^4.0.7"
   },
   "type": "module",
   "peerDependencies": {
-    "typescript": "^5.7.3"
+    "typescript": "^5"
   }
 }

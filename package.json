@@ -2,11 +2,11 @@
   "private": true,
   "type": "module",
   "name": "@woven-canvas/monorepo",
-  "description": "Practical example of a `TypeScript` monorepo with `pnpm`, `turborepo`, and `vitest`",
-  "repository": "https://github.com/jkomyno/pnpm-monorepo-example.git",
+  "description": "An infinite canvas framework for TypeScript",
+  "repository": "https://github.com/WillH0lt/woven-canvas",
   "author": {
-    "name": "Alberto Schiabel",
-    "email": "alberto.schiabel@gmail.com"
+    "name": "Will Holt",
+    "email": "will@william.land"
   },
   "license": "MIT",
   "engines": {

@@ -1,15 +1,23 @@
 {
-  "private": true,
   "name": "@woven-canvas/core",
   "version": "0.1.0",
   "description": "Framework-agnostic editor library built on ECS",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WillH0lt/woven-canvas"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/WillH0lt/woven-canvas",
+  "author": {
+    "name": "Will Holt",
+    "email": "will@william.land"
+  },
   "files": [
-    "build"
+    "build",
+    "LICENSE"
   ],
   "main": "./build/index.js",
-  "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
-  "__exports-comment": "// Define output files for Node.js export maps (https://nodejs.org/api/packages.html#exports)",
   "exports": {
     ".": {
       "@woven-canvas/source": "./src/index.ts",
@@ -30,7 +38,8 @@
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
     "test": "vitest --config ../../vitest.config.ts run",
-    "test:watch": "vitest --config ../../vitest.config.ts --watch"
+    "test:watch": "vitest --config ../../vitest.config.ts --watch",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@woven-canvas/math": "workspace:*",
@@ -41,7 +50,6 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "vitest": "^4.0.7"
   },
   "type": "module",

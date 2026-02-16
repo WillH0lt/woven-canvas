@@ -1,11 +1,25 @@
 {
   "name": "@woven-canvas/vue",
-  "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "description": "Vue 3 components for woven-canvas infinite canvas",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WillH0lt/woven-canvas"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/WillH0lt/woven-canvas",
+  "author": {
+    "name": "Will Holt",
+    "email": "will@william.land"
+  },
   "type": "module",
-  "main": "dist/jet-ui.cjs.js",
-  "module": "dist/jet-ui.es.js",
-  "types": "dist/types/index.d.ts",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "files": [
+    "build",
+    "src/theme.css",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
       "@woven-canvas/source": "./src/index.ts",
@@ -18,17 +32,18 @@
         "default": "./build/index.cjs"
       }
     },
+    "./style.css": "./build/style.css",
     "./theme.css": "./src/theme.css",
     "./package.json": "./package.json"
   },
-  "style": "dist/style.css",
   "scripts": {
     "dev": "vite",
     "build": "vite build && vue-tsc --declaration --emitDeclarationOnly",
     "preview": "vite preview",
     "tsc": "vue-tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@floating-ui/vue": "^1.1.6",
@@ -65,5 +80,9 @@
     "vite": "^5.4.21",
     "vitest": "^4.0.7",
     "vue-tsc": "^2.2.12"
+  },
+  "peerDependencies": {
+    "typescript": "^5",
+    "vue": "^3"
   }
 }

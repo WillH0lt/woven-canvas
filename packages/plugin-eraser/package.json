@@ -1,13 +1,22 @@
 {
-  "private": true,
   "name": "@woven-canvas/plugin-eraser",
   "version": "0.1.0",
   "description": "Eraser plugin - erase objects with capsule-based collision detection for infinite canvas",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WillH0lt/woven-canvas"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/WillH0lt/woven-canvas",
+  "author": {
+    "name": "Will Holt",
+    "email": "will@william.land"
+  },
   "files": [
-    "build"
+    "build",
+    "LICENSE"
   ],
   "main": "./build/index.js",
-  "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
   "exports": {
     ".": {
@@ -29,20 +38,20 @@
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
     "test": "vitest --config ../../vitest.config.ts run",
-    "test:watch": "vitest --config ../../vitest.config.ts run --watch"
+    "test:watch": "vitest --config ../../vitest.config.ts run --watch",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@woven-canvas/core": "workspace:*",
-    "@woven-canvas/math": "workspace:*",
-    "xstate": "^5.24.0"
+    "@woven-canvas/math": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "resize-observer-polyfill": "^1.5.1",
     "vitest": "^4.0.7"
   },
   "type": "module",
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5",
+    "xstate": "^5"
   }
 }

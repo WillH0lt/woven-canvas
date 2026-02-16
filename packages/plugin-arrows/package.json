@@ -1,13 +1,22 @@
 {
-  "private": true,
   "name": "@woven-canvas/plugin-arrows",
   "version": "0.1.0",
   "description": "Arrows plugin - draw and edit arc and elbow arrows for infinite canvas",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WillH0lt/woven-canvas"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/WillH0lt/woven-canvas",
+  "author": {
+    "name": "Will Holt",
+    "email": "will@william.land"
+  },
   "files": [
-    "build"
+    "build",
+    "LICENSE"
   ],
   "main": "./build/index.js",
-  "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
   "exports": {
     ".": {
@@ -27,22 +36,22 @@
     "clean": "rimraf build .turbo",
     "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
     "build:watch": "pnpm build --watch",
-    "check:exports": "attw --pack ."
+    "check:exports": "attw --pack .",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@woven-canvas/core": "workspace:*",
     "@woven-canvas/math": "workspace:*",
-    "@woven-canvas/plugin-selection": "workspace:*",
-    "fractional-indexing-jittered": "^1.0.0",
-    "xstate": "^5.24.0"
+    "@woven-canvas/plugin-selection": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "resize-observer-polyfill": "^1.5.1",
     "vitest": "^4.0.7"
   },
   "type": "module",
   "peerDependencies": {
-    "typescript": "^5"
+    "fractional-indexing-jittered": "^1",
+    "typescript": "^5",
+    "xstate": "^5"
   }
 }

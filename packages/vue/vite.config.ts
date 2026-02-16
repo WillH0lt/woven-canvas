@@ -6,10 +6,12 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [vue()],
   build: {
+    outDir: 'build',
     copyPublicDir: false,
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
       name: 'vue',
+      fileName: 'index',
     },
     rollupOptions: {
       external: ['vue'],
