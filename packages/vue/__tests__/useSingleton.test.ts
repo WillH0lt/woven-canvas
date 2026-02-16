@@ -90,16 +90,20 @@ describe('useSingleton', () => {
   })
 
   describe('basic functionality', () => {
-    it('should return empty object when no editor available', () => {
+    it('should return default values when no editor available', () => {
       const result = withSetup(() => useSingleton(TestSingleton))
-      expect(result.value).toEqual({})
+      // When no editor is available, useSingleton returns the singleton's default values
+      expect(result.value.value).toBe(0)
+      expect(result.value.name).toBe('')
     })
   })
 
   describe('reactivity', () => {
     it('should update when singleton value changes via subscription', () => {
       const result = withSetup(() => useSingleton(TestSingleton))
-      expect(result.value).toEqual({})
+      // Initial value is the singleton's default
+      expect(result.value.value).toBe(0)
+      expect(result.value.name).toBe('')
 
       // Simulate singleton change
       notifySubscribers('TestSingleton', { value: 42, name: 'test' })
@@ -118,9 +122,11 @@ describe('useSingleton', () => {
       expect(result.value).toEqual({})
     })
 
-    it('should handle singleton being set from null to value', () => {
+    it('should handle singleton being set from default to value', () => {
       const result = withSetup(() => useSingleton(TestSingleton))
-      expect(result.value).toEqual({})
+      // Initial value is the singleton's default
+      expect(result.value.value).toBe(0)
+      expect(result.value.name).toBe('')
 
       // Set value
       notifySubscribers('TestSingleton', { value: 30, name: 'added' })
@@ -152,10 +158,11 @@ describe('useSingleton', () => {
       const result2 = withSetup(() => useSingleton(AnotherSingleton))
 
       notifySubscribers('TestSingleton', { value: 100, name: 'A' })
-      // AnotherSingleton not notified
+      // AnotherSingleton not notified - stays at default
 
       expect(result1.value).toEqual({ value: 100, name: 'A' })
-      expect(result2.value).toEqual({})
+      // AnotherSingleton keeps its default value
+      expect(result2.value.count).toBe(0)
     })
   })
 

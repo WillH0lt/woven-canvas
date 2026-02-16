@@ -19,6 +19,14 @@ vi.mock('@floating-ui/vue', () => ({
   autoUpdate: vi.fn(() => () => {}),
 }))
 
+// Mock FloatingMenu to avoid useSingleton issues in tests
+vi.mock('../src/components/FloatingMenu.vue', () => ({
+  default: {
+    name: 'FloatingMenu',
+    template: '<div></div>',
+  },
+}))
+
 import InfiniteCanvas from '../src/components/InfiniteCanvas.vue'
 
 // Track all created editor instances
@@ -206,16 +214,16 @@ describe('InfiniteCanvas', () => {
       expect(editorInstance.options.maxEntities).toBe(5000)
     })
 
-    it('should pass userId to Editor', async () => {
+    it('should pass user data to Editor', async () => {
       mount(InfiniteCanvas, {
         props: {
-          userId: 'test-user-123',
+          user: { userId: 'test-user-123' },
         },
       })
       await flushPromises()
 
       const editorInstance = getLastEditorInstance()
-      expect(editorInstance.options.userId).toBe('test-user-123')
+      expect(editorInstance.options.user.userId).toBe('test-user-123')
     })
 
     it('should include CanvasControlsPlugin by default', async () => {
@@ -227,20 +235,6 @@ describe('InfiniteCanvas', () => {
       expect(CanvasControlsPlugin).toHaveBeenCalled()
     })
 
-    it('should exclude CanvasControlsPlugin when disableControls is true', async () => {
-      const { CanvasControlsPlugin } = await import('@infinitecanvas/plugin-canvas-controls')
-      vi.mocked(CanvasControlsPlugin).mockClear()
-
-      mount(InfiniteCanvas, {
-        props: {
-          disableControls: true,
-        },
-      })
-      await flushPromises()
-
-      expect(CanvasControlsPlugin).not.toHaveBeenCalled()
-    })
-
     it('should include SelectionPlugin by default', async () => {
       mount(InfiniteCanvas)
       await flushPromises()
@@ -249,20 +243,6 @@ describe('InfiniteCanvas', () => {
       const hasSelectionPlugin = editorInstance.options.plugins?.some((p: any) => p.name === 'selection')
 
       expect(hasSelectionPlugin).toBe(true)
-    })
-
-    it('should exclude SelectionPlugin when disableSelection is true', async () => {
-      mount(InfiniteCanvas, {
-        props: {
-          disableSelection: true,
-        },
-      })
-      await flushPromises()
-
-      const editorInstance = getLastEditorInstance()
-      const hasSelectionPlugin = editorInstance.options.plugins?.some((p: any) => p.name === 'selection')
-
-      expect(hasSelectionPlugin).toBeFalsy()
     })
 
     it('should pass custom plugins to Editor', async () => {

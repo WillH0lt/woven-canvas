@@ -47,6 +47,18 @@
           }
         }
       }
+    },
+    {
+      // Biome doesn't understand Vue <script setup> - variables used in templates appear unused
+      "includes": ["**/*.vue"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off"
+          }
+        }
+      }
     }
   ],
   "assist": { "actions": { "source": { "organizeImports": "on" } } },

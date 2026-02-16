@@ -285,11 +285,6 @@ describe('Rect UV conversions', () => {
       const world = Rect.uvToWorld(position, size, rotateZ, originalUv)
       const roundTrip = Rect.worldToUv(position, size, rotateZ, world)
 
-      console.log('Original UV:', originalUv)
-      console.log('World coords:', world)
-      console.log('Round-trip UV:', roundTrip)
-      console.log('Difference:', [roundTrip[0] - originalUv[0], roundTrip[1] - originalUv[1]])
-
       expect(roundTrip[0]).toBeCloseTo(originalUv[0], 10)
       expect(roundTrip[1]).toBeCloseTo(originalUv[1], 10)
     })

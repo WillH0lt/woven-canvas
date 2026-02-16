@@ -12,11 +12,11 @@ const isOnline = ref(initialOnline)
 
 let store: CanvasStore | null = null
 
-function _handleReady(_inEditor: Editor, inStore: CanvasStore) {
+function handleReady(_inEditor: Editor, inStore: CanvasStore) {
   store = inStore
 }
 
-async function _toggleOnline() {
+async function toggleOnline() {
   isOnline.value = !isOnline.value
   localStorage.setItem(ONLINE_STORAGE_KEY, String(isOnline.value))
   if (isOnline.value) {
@@ -26,7 +26,7 @@ async function _toggleOnline() {
   }
 }
 
-const _syncOptions = ref<CanvasStoreOptions>({
+const syncOptions = ref<CanvasStoreOptions>({
   persistence: {
     enabled: true,
     documentId: 'editor-vue-test',
