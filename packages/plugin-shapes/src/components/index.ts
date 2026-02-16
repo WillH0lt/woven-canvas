@@ -1,1 +1,1 @@
-export { Shape } from "./Shape";
+export { Shape } from './Shape'

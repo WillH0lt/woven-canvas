@@ -1,25 +1,23 @@
-export { frameSystem } from "./frameSystem";
+export { frameSystem } from './frameSystem'
 
 export {
-  keyboardSystem,
   attachKeyboardListeners,
   detachKeyboardListeners,
-} from "./keyboardSystem";
+  keyboardSystem,
+} from './keyboardSystem'
 
 export {
-  mouseSystem,
   attachMouseListeners,
   detachMouseListeners,
-} from "./mouseSystem";
-
+  mouseSystem,
+} from './mouseSystem'
 export {
-  screenSystem,
-  attachScreenObserver,
-  detachScreenObserver,
-} from "./screenSystem";
-
-export {
-  pointerSystem,
   attachPointerListeners,
   detachPointerListeners,
-} from "./pointerSystem";
+  pointerSystem,
+} from './pointerSystem'
+export {
+  attachScreenObserver,
+  detachScreenObserver,
+  screenSystem,
+} from './screenSystem'

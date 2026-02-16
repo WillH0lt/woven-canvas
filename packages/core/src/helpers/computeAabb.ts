@@ -1,7 +1,7 @@
-import { hasComponent, type Context, type EntityId } from "@woven-ecs/core";
-import { Aabb } from "@infinitecanvas/math";
-import { Block } from "../components/Block";
-import { HitGeometry } from "../components/HitGeometry";
+import { Aabb } from '@infinitecanvas/math'
+import { type Context, type EntityId, hasComponent } from '@woven-ecs/core'
+import { Block } from '../components/Block'
+import { HitGeometry } from '../components/HitGeometry'
 
 /**
  * Compute AABB from block or hit geometry.
@@ -12,16 +12,12 @@ import { HitGeometry } from "../components/HitGeometry";
  * @param entityId - Entity ID with Block component
  * @param out - Output AABB tuple to write to
  */
-export function computeAabb(
-  ctx: Context,
-  entityId: EntityId,
-  out: Aabb
-): void {
+export function computeAabb(ctx: Context, entityId: EntityId, out: Aabb): void {
   if (hasComponent(ctx, entityId, HitGeometry)) {
-    const pts = HitGeometry.getExtremaWorld(ctx, entityId);
-    Aabb.setFromPoints(out, pts);
+    const pts = HitGeometry.getExtremaWorld(ctx, entityId)
+    Aabb.setFromPoints(out, pts)
   } else {
-    const corners = Block.getCorners(ctx, entityId);
-    Aabb.setFromPoints(out, corners);
+    const corners = Block.getCorners(ctx, entityId)
+    Aabb.setFromPoints(out, corners)
   }
 }

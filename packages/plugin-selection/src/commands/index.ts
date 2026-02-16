@@ -1,40 +1,38 @@
 // Selection commands
-export {
-  SelectBlock,
-  DeselectBlock,
-  ToggleSelect,
-  DeselectAll,
-  SelectAll,
-  AddSelectionBox,
-  UpdateSelectionBox,
-  RemoveSelectionBox,
-  AddHeld,
-  RemoveHeld,
-} from "./selection";
 
 // Block manipulation commands
 export {
+  BringForwardSelected,
+  CloneEntities,
   DragBlock,
+  DuplicateSelected,
   RemoveBlock,
   RemoveSelected,
-  DuplicateSelected,
-  BringForwardSelected,
   SendBackwardSelected,
-  CloneEntities,
-  UncloneEntities,
   SetCursor,
-} from "./blocks";
-
+  UncloneEntities,
+} from './blocks'
+// Clipboard commands
+export { Copy, Cut, Paste } from './clipboard'
+export {
+  AddHeld,
+  AddSelectionBox,
+  DeselectAll,
+  DeselectBlock,
+  RemoveHeld,
+  RemoveSelectionBox,
+  SelectAll,
+  SelectBlock,
+  ToggleSelect,
+  UpdateSelectionBox,
+} from './selection'
 // Transform box commands
 export {
   AddTransformBox,
-  UpdateTransformBox,
-  HideTransformBox,
-  ShowTransformBox,
-  RemoveTransformBox,
-  StartTransformBoxEdit,
   EndTransformBoxEdit,
-} from "./transformBox";
-
-// Clipboard commands
-export { Cut, Copy, Paste } from "./clipboard";
+  HideTransformBox,
+  RemoveTransformBox,
+  ShowTransformBox,
+  StartTransformBoxEdit,
+  UpdateTransformBox,
+} from './transformBox'

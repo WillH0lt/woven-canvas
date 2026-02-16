@@ -1,5 +1,6 @@
 // Local singletons
-export { SelectionStateSingleton } from "./SelectionStateSingleton";
-export { TransformBoxStateSingleton } from "./TransformBoxStateSingleton";
-export { ScrollEdgesStateSingleton } from "./ScrollEdgesStateSingleton";
-export { Clipboard } from "./Clipboard";
+
+export { Clipboard } from './Clipboard'
+export { ScrollEdgesStateSingleton } from './ScrollEdgesStateSingleton'
+export { SelectionStateSingleton } from './SelectionStateSingleton'
+export { TransformBoxStateSingleton } from './TransformBoxStateSingleton'

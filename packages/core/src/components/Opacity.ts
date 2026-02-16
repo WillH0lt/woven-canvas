@@ -1,5 +1,5 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasComponent } from "@woven-ecs/canvas-store";
+import { defineCanvasComponent } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * Opacity component - controls visibility of an entity.
@@ -8,8 +8,8 @@ import { defineCanvasComponent } from "@woven-ecs/canvas-store";
  * Used to temporarily hide transform boxes and handles during drag operations.
  */
 export const Opacity = defineCanvasComponent(
-  { name: "opacity" },
+  { name: 'opacity' },
   {
     value: field.uint8().default(255),
-  }
-);
+  },
+)

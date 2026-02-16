@@ -1,190 +1,169 @@
 // Re-export math types
-export type { Vec2 } from "@infinitecanvas/math";
-
-// types
+export type { Vec2 } from '@infinitecanvas/math'
 export type {
-  EditorResources,
-  EditorOptionsInput,
-  KeybindInput,
-  CursorDefMap,
-  ResizeMode,
-  BlockDefInput,
-  UserDataInput,
-  GridOptionsInput,
-} from "./types";
-
-export {
-  getPluginResources,
-  Keybind,
-  CursorDef,
-  VerticalAlignment,
-  TextAlignment,
-  BlockDef,
-  Stratum,
-  UserData,
-  GridOptions,
-} from "./types";
-
-// Font loading
-export { FontLoader, FontFamily, type FontFamilyInput } from "./FontLoader";
-export type { FontFamily as FontFamilyType } from "./FontLoader";
-
+  AnyCanvasComponentDef,
+  AnyCanvasSingletonDef,
+  InferCanvasComponentType,
+  SingletonSyncBehavior,
+  SyncBehavior,
+} from '@woven-ecs/canvas-store'
 // Re-export from ecs-sync
 export {
-  CanvasSingletonDef,
-  defineCanvasSingleton,
-} from "@woven-ecs/canvas-store";
-
-export type {
-  AnyCanvasSingletonDef,
-  SingletonSyncBehavior,
-  AnyCanvasComponentDef,
-  SyncBehavior,
-  InferCanvasComponentType,
-} from "@woven-ecs/canvas-store";
-
-export {
   CanvasComponentDef,
+  CanvasSingletonDef,
   defineCanvasComponent,
+  defineCanvasSingleton,
   Synced,
-} from "@woven-ecs/canvas-store";
-
+} from '@woven-ecs/canvas-store'
+// Re-export useful ECS utilities
+export {
+  addComponent,
+  ComponentDef,
+  type ComponentSchema,
+  type Context,
+  createEntity,
+  defineQuery,
+  defineSystem,
+  type EntityId,
+  EventType,
+  field,
+  getBackrefs,
+  getResources,
+  hasComponent,
+  isAlive,
+  MainThreadSystem,
+  type QueryDef,
+  removeComponent,
+  removeEntity,
+  SINGLETON_ENTITY_ID,
+  type System,
+} from '@woven-ecs/core'
+// Plugin
+export { CorePlugin } from './CorePlugin'
+// Command system
+export {
+  type CommandDef,
+  CommandMarker,
+  defineCommand,
+  on,
+  Redo,
+  Undo,
+} from './command'
+// Components
+export {
+  Aabb,
+  Asset,
+  Block,
+  Color,
+  Connector,
+  Edited,
+  Held,
+  HitGeometry,
+  Hovered,
+  Image,
+  MAX_HIT_ARCS,
+  MAX_HIT_CAPSULES,
+  Opacity,
+  Pointer,
+  PointerButton,
+  PointerType,
+  ScaleWithZoom,
+  Text,
+  UploadState,
+  User,
+  VerticalAlign,
+} from './components'
+// Constants
+export { STRATUM_ORDER } from './constants'
+// Editor class
+export { Editor, type QueryCallback } from './Editor'
 // State machine singleton
 export {
-  EditorStateDef,
   defineEditorState,
-  type StateSchema,
+  EditorStateDef,
   type InferStateContext,
-} from "./EditorStateDef";
-
+  type StateSchema,
+} from './EditorStateDef'
+// Editor system
+export {
+  defineEditorSystem,
+  type EditorSystem,
+  type EditorSystemFunction,
+  type EditorSystemOptions,
+} from './EditorSystem'
+// Events
+export {
+  clearPointerTrackingState,
+  type FrameInput,
+  getFrameInput,
+  getKeyboardInput,
+  getMouseInput,
+  getPointerInput,
+  type KeyboardInput,
+  type KeyboardInputType,
+  type MouseInput,
+  type MouseInputType,
+  // Types
+  type PointerInput,
+  type PointerInputOptions,
+  type PointerInputType,
+} from './events'
+export type { FontFamily as FontFamilyType } from './FontLoader'
+// Font loading
+export { FontFamily, type FontFamilyInput, FontLoader } from './FontLoader'
+// Helpers
+export {
+  canBlockEdit,
+  getBlockDef,
+  getTopmostBlockAtPoint,
+  intersectAabb,
+  intersectCapsule,
+  intersectPoint,
+  isHeldByRemote,
+} from './helpers'
+// State machine utilities
+export { type MachineResult, runMachine } from './machine'
 // Plugin system
 export {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorPluginInput,
   parsePlugin,
-} from "./plugin";
-
-// Editor system
-export {
-  defineEditorSystem,
-  type EditorSystem,
-  type EditorSystemOptions,
-  type EditorSystemFunction,
-} from "./EditorSystem";
-
-// Command system
-export {
-  defineCommand,
-  on,
-  type CommandDef,
-  CommandMarker,
-  Undo,
-  Redo,
-} from "./command";
-
-// Editor class
-export { Editor, type QueryCallback } from "./Editor";
-
-// Re-export useful ECS utilities
-export {
-  field,
-  createEntity,
-  removeEntity,
-  addComponent,
-  removeComponent,
-  hasComponent,
-  defineQuery,
-  getResources,
-  defineSystem,
-  getBackrefs,
-  MainThreadSystem,
-  EventType,
-  SINGLETON_ENTITY_ID,
-  ComponentDef,
-  isAlive,
-  type Context,
-  type EntityId,
-  type QueryDef,
-  type System,
-  type ComponentSchema,
-} from "@woven-ecs/core";
-
-// Plugin
-export { CorePlugin } from "./CorePlugin";
-
-// Constants
-export { STRATUM_ORDER } from "./constants";
-
+} from './plugin'
 // Singletons
 export {
   Camera,
   Controls,
+  Cursor,
   Frame,
   Grid,
-  Keyboard,
-  Key,
-  Mouse,
-  Screen,
-  Cursor,
   Intersect,
+  Key,
+  Keyboard,
+  Mouse,
   RankBounds,
   ScaleWithZoomState,
-} from "./singletons";
-
-// Components
+  Screen,
+} from './singletons'
+// types
+export type {
+  BlockDefInput,
+  CursorDefMap,
+  EditorOptionsInput,
+  EditorResources,
+  GridOptionsInput,
+  KeybindInput,
+  ResizeMode,
+  UserDataInput,
+} from './types'
 export {
-  Pointer,
-  PointerButton,
-  PointerType,
-  Block,
-  Aabb,
-  Hovered,
-  Edited,
-  Held,
-  ScaleWithZoom,
-  Opacity,
-  Text,
-  Connector,
-  Color,
-  VerticalAlign,
-  User,
-  HitGeometry,
-  MAX_HIT_CAPSULES,
-  MAX_HIT_ARCS,
-  Image,
-  Asset,
-  UploadState,
-} from "./components";
-
-// Events
-export {
-  // Types
-  type PointerInput,
-  type PointerInputType,
-  type PointerInputOptions,
-  type MouseInput,
-  type MouseInputType,
-  type FrameInput,
-  type KeyboardInput,
-  type KeyboardInputType,
-  getPointerInput,
-  clearPointerTrackingState,
-  getMouseInput,
-  getFrameInput,
-  getKeyboardInput,
-} from "./events";
-
-// State machine utilities
-export { runMachine, type MachineResult } from "./machine";
-
-// Helpers
-export {
-  intersectPoint,
-  intersectAabb,
-  intersectCapsule,
-  getTopmostBlockAtPoint,
-  canBlockEdit,
-  getBlockDef,
-  isHeldByRemote,
-} from "./helpers";
+  BlockDef,
+  CursorDef,
+  GridOptions,
+  getPluginResources,
+  Keybind,
+  Stratum,
+  TextAlignment,
+  UserData,
+  VerticalAlignment,
+} from './types'

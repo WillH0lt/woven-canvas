@@ -1,8 +1,4 @@
-import {
-  defineCommand,
-  type EntityId,
-  type Vec2,
-} from "@infinitecanvas/core";
+import { defineCommand, type EntityId, type Vec2 } from '@infinitecanvas/core'
 
 /**
  * Drag/move a block to a new position.
@@ -10,42 +6,38 @@ import {
  * @param position - New position [left, top]
  */
 export const DragBlock = defineCommand<{
-  entityId: EntityId;
-  position: Vec2;
-}>("drag-block");
+  entityId: EntityId
+  position: Vec2
+}>('drag-block')
 
 /**
  * Remove a specific block entity.
  * @param entityId - The block entity to remove
  */
 export const RemoveBlock = defineCommand<{
-  entityId: EntityId;
-}>("remove-block");
+  entityId: EntityId
+}>('remove-block')
 
 /**
  * Remove all currently selected blocks.
  */
-export const RemoveSelected = defineCommand<void>("remove-selected");
+export const RemoveSelected = defineCommand<void>('remove-selected')
 
 /**
  * Duplicate all currently selected blocks.
  * Creates copies offset from the originals.
  */
-export const DuplicateSelected = defineCommand<void>("duplicate-selected");
+export const DuplicateSelected = defineCommand<void>('duplicate-selected')
 
 /**
  * Bring selected blocks forward in z-order.
  */
-export const BringForwardSelected = defineCommand<void>(
-  "bring-forward-selected"
-);
+export const BringForwardSelected = defineCommand<void>('bring-forward-selected')
 
 /**
  * Send selected blocks backward in z-order.
  */
-export const SendBackwardSelected = defineCommand<void>(
-  "send-backward-selected"
-);
+export const SendBackwardSelected = defineCommand<void>('send-backward-selected')
 
 /**
  * Clone entities with an offset.
@@ -54,10 +46,10 @@ export const SendBackwardSelected = defineCommand<void>(
  * @param seed - Random seed for consistent cloning
  */
 export const CloneEntities = defineCommand<{
-  entityIds: EntityId[];
-  offset: Vec2;
-  seed: string;
-}>("clone-entities");
+  entityIds: EntityId[]
+  offset: Vec2
+  seed: string
+}>('clone-entities')
 
 /**
  * Remove cloned entities by seed.
@@ -65,9 +57,9 @@ export const CloneEntities = defineCommand<{
  * @param seed - The seed used when cloning
  */
 export const UncloneEntities = defineCommand<{
-  entityIds: EntityId[];
-  seed: string;
-}>("unclone-entities");
+  entityIds: EntityId[]
+  seed: string
+}>('unclone-entities')
 
 /**
  * Set the cursor appearance.
@@ -77,8 +69,8 @@ export const UncloneEntities = defineCommand<{
  * @param contextRotation - Optional context rotation in radians
  */
 export const SetCursor = defineCommand<{
-  cursorKind?: string;
-  rotation?: number;
-  contextCursorKind?: string;
-  contextRotation?: number;
-}>("set-cursor");
+  cursorKind?: string
+  rotation?: number
+  contextCursorKind?: string
+  contextRotation?: number
+}>('set-cursor')

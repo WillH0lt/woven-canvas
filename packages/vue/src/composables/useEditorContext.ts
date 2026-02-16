@@ -1,6 +1,6 @@
-import { inject } from "vue";
-import type { Context } from "@infinitecanvas/core";
-import { INFINITE_CANVAS_KEY } from "../injection";
+import type { Context } from '@infinitecanvas/core'
+import { inject } from 'vue'
+import { INFINITE_CANVAS_KEY } from '../injection'
 
 export interface EditorContext {
   /**
@@ -32,7 +32,7 @@ export interface EditorContext {
    * }
    * ```
    */
-  nextEditorTick(callback?: (ctx: Context) => void): Promise<Context>;
+  nextEditorTick(callback?: (ctx: Context) => void): Promise<Context>
 }
 
 /**
@@ -63,24 +63,22 @@ export interface EditorContext {
  * ```
  */
 export function useEditorContext(): EditorContext {
-  const canvasContext = inject(INFINITE_CANVAS_KEY);
+  const canvasContext = inject(INFINITE_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error(
-      "useEditorContext must be used within an InfiniteCanvas component"
-    );
+    throw new Error('useEditorContext must be used within an InfiniteCanvas component')
   }
 
   return {
     nextEditorTick(callback?: (ctx: Context) => void): Promise<Context> {
       return new Promise((resolve) => {
-        const editor = canvasContext.getEditor();
+        const editor = canvasContext.getEditor()
         if (editor) {
           editor.nextTick((ctx) => {
-            callback?.(ctx);
-            resolve(ctx);
-          });
+            callback?.(ctx)
+            resolve(ctx)
+          })
         }
-      });
+      })
     },
-  };
+  }
 }

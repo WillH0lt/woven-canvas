@@ -1,13 +1,7 @@
-import {
-  field,
-  CanvasComponentDef,
-  Block,
-  type Context,
-  type EntityId,
-} from "@infinitecanvas/core";
-import type { Vec2 } from "@infinitecanvas/math";
-import { ArrowHeadKind } from "../types";
-import { DEFAULT_ARROW_THICKNESS, ELBOW_ARROW_CAPACITY } from "../constants";
+import { Block, CanvasComponentDef, type Context, type EntityId, field } from '@infinitecanvas/core'
+import type { Vec2 } from '@infinitecanvas/math'
+import { DEFAULT_ARROW_THICKNESS, ELBOW_ARROW_CAPACITY } from '../constants'
+import { ArrowHeadKind } from '../types'
 
 const ElbowArrowSchema = {
   /**
@@ -35,7 +29,7 @@ const ElbowArrowSchema = {
 
   /** Parametric end position for trimming (0-1) */
   trimEnd: field.float64().default(1),
-};
+}
 
 /**
  * ElbowArrow component - stores the geometry of an elbow (orthogonal) arrow.
@@ -45,44 +39,44 @@ const ElbowArrowSchema = {
  */
 class ElbowArrowDef extends CanvasComponentDef<typeof ElbowArrowSchema> {
   constructor() {
-    super({ name: "elbowArrow", sync: "document" }, ElbowArrowSchema);
+    super({ name: 'elbowArrow', sync: 'document' }, ElbowArrowSchema)
   }
 
   snapshot(ctx: Context, entityId: EntityId) {
-    const snap = super.snapshot(ctx, entityId);
-    snap.points = snap.points.slice(0, snap.pointCount * 2);
-    return snap;
+    const snap = super.snapshot(ctx, entityId)
+    snap.points = snap.points.slice(0, snap.pointCount * 2)
+    return snap
   }
 
   /**
    * Get a point at the given index in UV coordinates.
    */
   getPoint(ctx: Context, entityId: EntityId, index: number): Vec2 {
-    const { points } = this.read(ctx, entityId);
-    return [points[index * 2], points[index * 2 + 1]];
+    const { points } = this.read(ctx, entityId)
+    return [points[index * 2], points[index * 2 + 1]]
   }
 
   /**
    * Set a point at the given index in UV coordinates.
    */
   setPoint(ctx: Context, entityId: EntityId, index: number, point: Vec2): void {
-    const { points } = this.write(ctx, entityId);
-    points[index * 2] = point[0];
-    points[index * 2 + 1] = point[1];
+    const { points } = this.write(ctx, entityId)
+    points[index * 2] = point[0]
+    points[index * 2 + 1] = point[1]
   }
 
   /**
    * Get all points as an array of UV coordinates.
    */
   getPoints(ctx: Context, entityId: EntityId): Vec2[] {
-    const { points, pointCount } = this.read(ctx, entityId);
-    const result: Vec2[] = [];
+    const { points, pointCount } = this.read(ctx, entityId)
+    const result: Vec2[] = []
 
     for (let i = 0; i < pointCount; i++) {
-      result.push([points[i * 2], points[i * 2 + 1]]);
+      result.push([points[i * 2], points[i * 2 + 1]])
     }
 
-    return result;
+    return result
   }
 
   /**
@@ -90,53 +84,51 @@ class ElbowArrowDef extends CanvasComponentDef<typeof ElbowArrowSchema> {
    */
   setPoints(ctx: Context, entityId: EntityId, uvPoints: Vec2[]): void {
     if (uvPoints.length > ELBOW_ARROW_CAPACITY) {
-      throw new Error(
-        `ElbowArrow points exceed capacity of ${ELBOW_ARROW_CAPACITY}`
-      );
+      throw new Error(`ElbowArrow points exceed capacity of ${ELBOW_ARROW_CAPACITY}`)
     }
 
-    const arrow = this.write(ctx, entityId);
+    const arrow = this.write(ctx, entityId)
 
     for (let i = 0; i < uvPoints.length; i++) {
-      arrow.points[i * 2] = uvPoints[i][0];
-      arrow.points[i * 2 + 1] = uvPoints[i][1];
+      arrow.points[i * 2] = uvPoints[i][0]
+      arrow.points[i * 2 + 1] = uvPoints[i][1]
     }
 
-    arrow.pointCount = uvPoints.length;
+    arrow.pointCount = uvPoints.length
   }
 
   /**
    * Get start point in world coordinates.
    */
   getStartWorld(ctx: Context, entityId: EntityId): Vec2 {
-    const startUv = this.getPoint(ctx, entityId, 0);
-    return Block.uvToWorld(ctx, entityId, startUv);
+    const startUv = this.getPoint(ctx, entityId, 0)
+    return Block.uvToWorld(ctx, entityId, startUv)
   }
 
   /**
    * Get end point in world coordinates.
    */
   getEndWorld(ctx: Context, entityId: EntityId): Vec2 {
-    const { pointCount } = this.read(ctx, entityId);
-    const endUv = this.getPoint(ctx, entityId, pointCount - 1);
-    return Block.uvToWorld(ctx, entityId, endUv);
+    const { pointCount } = this.read(ctx, entityId)
+    const endUv = this.getPoint(ctx, entityId, pointCount - 1)
+    return Block.uvToWorld(ctx, entityId, endUv)
   }
 
   /**
    * Get all points in world coordinates.
    */
   getWorldPoints(ctx: Context, entityId: EntityId): Vec2[] {
-    const uvPoints = this.getPoints(ctx, entityId);
-    return uvPoints.map((uv) => Block.uvToWorld(ctx, entityId, uv));
+    const uvPoints = this.getPoints(ctx, entityId)
+    return uvPoints.map((uv) => Block.uvToWorld(ctx, entityId, uv))
   }
 
   /**
    * Get the thickness of the arrow.
    */
   getThickness(ctx: Context, entityId: EntityId): number {
-    const { thickness } = this.read(ctx, entityId);
-    return thickness;
+    const { thickness } = this.read(ctx, entityId)
+    return thickness
   }
 }
 
-export const ElbowArrow = new ElbowArrowDef();
+export const ElbowArrow = new ElbowArrowDef()

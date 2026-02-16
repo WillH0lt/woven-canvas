@@ -1,25 +1,19 @@
-import { assign, setup } from "xstate";
 import {
-  type InferStateContext,
-  defineEditorSystem,
   Controls,
+  defineEditorSystem,
   getPointerInput,
+  type InferStateContext,
   type PointerInput,
-} from "@infinitecanvas/core";
-
-import { EraserStateSingleton } from "../singletons";
-import { EraserState } from "../types";
-import {
-  StartEraserStroke,
-  AddEraserStrokePoint,
-  CompleteEraserStroke,
-  CancelEraserStroke,
-} from "../commands";
+} from '@infinitecanvas/core'
+import { assign, setup } from 'xstate'
+import { AddEraserStrokePoint, CancelEraserStroke, CompleteEraserStroke, StartEraserStroke } from '../commands'
+import { EraserStateSingleton } from '../singletons'
+import { EraserState } from '../types'
 
 /**
  * Eraser state machine context - derived from EraserStateSingleton schema.
  */
-type EraserContext = InferStateContext<typeof EraserStateSingleton>;
+type EraserContext = InferStateContext<typeof EraserStateSingleton>
 
 /**
  * Eraser state machine - handles pointer events for the eraser tool.
@@ -40,32 +34,32 @@ const eraserMachine = setup({
     startStroke: ({ event }) => {
       StartEraserStroke.spawn(event.ctx, {
         worldPosition: event.worldPosition,
-      });
+      })
     },
 
     addPoint: assign({
       lastWorldPosition: ({ event, context }): [number, number] => {
-        if (!context.activeStroke) return context.lastWorldPosition;
+        if (!context.activeStroke) return context.lastWorldPosition
         AddEraserStrokePoint.spawn(event.ctx, {
           strokeId: context.activeStroke,
           worldPosition: event.worldPosition,
-        });
-        return [event.worldPosition[0], event.worldPosition[1]];
+        })
+        return [event.worldPosition[0], event.worldPosition[1]]
       },
     }),
 
     completeStroke: ({ event, context }) => {
-      if (!context.activeStroke) return;
+      if (!context.activeStroke) return
       CompleteEraserStroke.spawn(event.ctx, {
         strokeId: context.activeStroke,
-      });
+      })
     },
 
     cancelStroke: ({ event, context }) => {
-      if (!context.activeStroke) return;
+      if (!context.activeStroke) return
       CancelEraserStroke.spawn(event.ctx, {
         strokeId: context.activeStroke,
-      });
+      })
     },
 
     resetContext: assign({
@@ -74,7 +68,7 @@ const eraserMachine = setup({
     }),
   },
 }).createMachine({
-  id: "eraser",
+  id: 'eraser',
   initial: EraserState.Idle,
   context: {
     activeStroke: null,
@@ -82,34 +76,34 @@ const eraserMachine = setup({
   },
   states: {
     [EraserState.Idle]: {
-      entry: ["resetContext"],
+      entry: ['resetContext'],
       on: {
         pointerDown: {
           target: EraserState.Erasing,
-          actions: ["startStroke"],
+          actions: ['startStroke'],
         },
       },
     },
     [EraserState.Erasing]: {
       on: {
         pointerMove: {
-          actions: ["addPoint"],
+          actions: ['addPoint'],
         },
         frame: {
-          actions: ["addPoint"],
+          actions: ['addPoint'],
         },
         pointerUp: {
           target: EraserState.Idle,
-          actions: ["completeStroke"],
+          actions: ['completeStroke'],
         },
         cancel: {
           target: EraserState.Idle,
-          actions: ["cancelStroke"],
+          actions: ['cancelStroke'],
         },
       },
     },
   },
-});
+})
 
 /**
  * Capture eraser system - runs the eraser state machine.
@@ -117,17 +111,14 @@ const eraserMachine = setup({
  * Runs in the capture phase to handle pointer events for the eraser tool.
  * Generates commands that are processed by the update system.
  */
-export const captureEraserSystem = defineEditorSystem(
-  { phase: "capture", priority: 100 },
-  (ctx) => {
-    // Get pointer buttons mapped to 'eraser' tool
-    const buttons = Controls.getButtons(ctx, "eraser");
+export const captureEraserSystem = defineEditorSystem({ phase: 'capture', priority: 100 }, (ctx) => {
+  // Get pointer buttons mapped to 'eraser' tool
+  const buttons = Controls.getButtons(ctx, 'eraser')
 
-    // Get pointer events with frame events for continuous erasing
-    const events = getPointerInput(ctx, buttons, { includeFrameEvent: true });
+  // Get pointer events with frame events for continuous erasing
+  const events = getPointerInput(ctx, buttons, { includeFrameEvent: true })
 
-    if (events.length === 0) return;
+  if (events.length === 0) return
 
-    EraserStateSingleton.run(ctx, eraserMachine, events);
-  }
-);
+  EraserStateSingleton.run(ctx, eraserMachine, events)
+})

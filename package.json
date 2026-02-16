@@ -21,11 +21,12 @@
     "lint:ci": "biome ci",
     "lint": "biome check --fix --unsafe",
     "test": "pnpm -r --if-present test",
-    "test:watch": "pnpm -r --if-present test:watch"
+    "test:watch": "pnpm -r --if-present test:watch",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
-    "@biomejs/biome": "^2.3.3",
+    "@biomejs/biome": "^2.3.14",
     "@microsoft/api-extractor": "^7.54.0",
     "@types/node": "24.10.0",
     "@vitest/browser": "^4.0.7",
@@ -44,7 +45,6 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.7"
   },
-  "pre-commit": "lint-staged",
   "lint-staged": {
     "*.{js,ts,cjs,mjs,md,json,jsonc}": "biome ci --no-errors-on-unmatched"
   },

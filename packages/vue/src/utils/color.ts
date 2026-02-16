@@ -1,9 +1,6 @@
-import { Color, type InferCanvasComponentType } from "@infinitecanvas/core";
+import type { Color, InferCanvasComponentType } from '@infinitecanvas/core'
 
-export type ColorData = Omit<
-  InferCanvasComponentType<typeof Color.schema>,
-  "_exists" | "_version"
->;
+export type ColorData = Omit<InferCanvasComponentType<typeof Color.schema>, '_exists' | '_version'>
 
 /**
  * Normalize a color string to uppercase hex format for consistent comparison.
@@ -11,232 +8,232 @@ export type ColorData = Omit<
  */
 export function normalizeColor(color: string): string {
   // Already hex format - just uppercase it
-  if (color.startsWith("#")) {
-    return color.toUpperCase();
+  if (color.startsWith('#')) {
+    return color.toUpperCase()
   }
 
   // Handle rgb/rgba format
-  const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
   if (rgbMatch) {
-    const r = parseInt(rgbMatch[1], 10).toString(16).padStart(2, "0");
-    const g = parseInt(rgbMatch[2], 10).toString(16).padStart(2, "0");
-    const b = parseInt(rgbMatch[3], 10).toString(16).padStart(2, "0");
-    return `#${r}${g}${b}`.toUpperCase();
+    const r = parseInt(rgbMatch[1], 10).toString(16).padStart(2, '0')
+    const g = parseInt(rgbMatch[2], 10).toString(16).padStart(2, '0')
+    const b = parseInt(rgbMatch[3], 10).toString(16).padStart(2, '0')
+    return `#${r}${g}${b}`.toUpperCase()
   }
 
   // Return as-is if we can't parse
-  return color;
+  return color
 }
 
 export function rgbToHex(color: ColorData): string {
-  const r = Math.round(color.red);
-  const g = Math.round(color.green);
-  const b = Math.round(color.blue);
-  const a = Math.round(color.alpha);
+  const r = Math.round(color.red)
+  const g = Math.round(color.green)
+  const b = Math.round(color.blue)
+  const a = Math.round(color.alpha)
 
   if (a < 255) {
     return (
-      "#" +
+      '#' +
       [r, g, b, a]
         .map((x) => {
-          const hex = x.toString(16);
-          return hex.length === 1 ? "0" + hex : hex;
+          const hex = x.toString(16)
+          return hex.length === 1 ? `0${hex}` : hex
         })
-        .join("")
-    );
+        .join('')
+    )
   } else {
     return (
-      "#" +
+      '#' +
       [r, g, b]
         .map((x) => {
-          const hex = x.toString(16);
-          return hex.length === 1 ? "0" + hex : hex;
+          const hex = x.toString(16)
+          return hex.length === 1 ? `0${hex}` : hex
         })
-        .join("")
-    );
+        .join('')
+    )
   }
 }
 
 export function hexToRgb(hex: string): ColorData | null {
   // Remove leading #
-  hex = hex.replace(/^#/, "");
+  hex = hex.replace(/^#/, '')
 
   let r: number,
     g: number,
     b: number,
-    a: number = 255;
+    a: number = 255
 
   if (hex.length === 6) {
-    r = parseInt(hex.slice(0, 2), 16);
-    g = parseInt(hex.slice(2, 4), 16);
-    b = parseInt(hex.slice(4, 6), 16);
+    r = parseInt(hex.slice(0, 2), 16)
+    g = parseInt(hex.slice(2, 4), 16)
+    b = parseInt(hex.slice(4, 6), 16)
   } else if (hex.length === 8) {
-    r = parseInt(hex.slice(0, 2), 16);
-    g = parseInt(hex.slice(2, 4), 16);
-    b = parseInt(hex.slice(4, 6), 16);
-    a = parseInt(hex.slice(6, 8), 16);
+    r = parseInt(hex.slice(0, 2), 16)
+    g = parseInt(hex.slice(2, 4), 16)
+    b = parseInt(hex.slice(4, 6), 16)
+    a = parseInt(hex.slice(6, 8), 16)
   } else {
-    return null; // Invalid format
+    return null // Invalid format
   }
 
-  return { red: r, green: g, blue: b, alpha: a };
+  return { red: r, green: g, blue: b, alpha: a }
 }
 
-export type HSVColor = { h: number; s: number; v: number };
-export type HSVAColor = { h: number; s: number; v: number; a: number };
+export type HSVColor = { h: number; s: number; v: number }
+export type HSVAColor = { h: number; s: number; v: number; a: number }
 
 export function hexToHsva(hex: string): HSVAColor {
-  const rgb = hexToRgb(hex);
+  const rgb = hexToRgb(hex)
   if (!rgb) {
-    return { h: 0, s: 100, v: 100, a: 255 };
+    return { h: 0, s: 100, v: 100, a: 255 }
   }
 
-  const rNorm = rgb.red / 255;
-  const gNorm = rgb.green / 255;
-  const bNorm = rgb.blue / 255;
+  const rNorm = rgb.red / 255
+  const gNorm = rgb.green / 255
+  const bNorm = rgb.blue / 255
 
-  const max = Math.max(rNorm, gNorm, bNorm);
-  const min = Math.min(rNorm, gNorm, bNorm);
-  const d = max - min;
+  const max = Math.max(rNorm, gNorm, bNorm)
+  const min = Math.min(rNorm, gNorm, bNorm)
+  const d = max - min
 
-  let h = 0;
-  const s = max === 0 ? 0 : (d / max) * 100;
-  const v = max * 100;
+  let h = 0
+  const s = max === 0 ? 0 : (d / max) * 100
+  const v = max * 100
 
   if (d !== 0) {
     switch (max) {
       case rNorm:
-        h = ((gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0)) * 60;
-        break;
+        h = ((gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0)) * 60
+        break
       case gNorm:
-        h = ((bNorm - rNorm) / d + 2) * 60;
-        break;
+        h = ((bNorm - rNorm) / d + 2) * 60
+        break
       case bNorm:
-        h = ((rNorm - gNorm) / d + 4) * 60;
-        break;
+        h = ((rNorm - gNorm) / d + 4) * 60
+        break
     }
   }
 
-  return { h, s, v, a: rgb.alpha };
+  return { h, s, v, a: rgb.alpha }
 }
 
 export function hexToHsv(hex: string): HSVColor {
-  const { h, s, v } = hexToHsva(hex);
-  return { h, s, v };
+  const { h, s, v } = hexToHsva(hex)
+  return { h, s, v }
 }
 
 export function hsvToHex(hsv: HSVColor): string {
-  const h = hsv.h / 360;
-  const s = hsv.s / 100;
-  const v = hsv.v / 100;
+  const h = hsv.h / 360
+  const s = hsv.s / 100
+  const v = hsv.v / 100
 
   let r = 0,
     g = 0,
-    b = 0;
+    b = 0
 
-  const i = Math.floor(h * 6);
-  const f = h * 6 - i;
-  const p = v * (1 - s);
-  const q = v * (1 - f * s);
-  const t = v * (1 - (1 - f) * s);
+  const i = Math.floor(h * 6)
+  const f = h * 6 - i
+  const p = v * (1 - s)
+  const q = v * (1 - f * s)
+  const t = v * (1 - (1 - f) * s)
 
   switch (i % 6) {
     case 0:
-      r = v;
-      g = t;
-      b = p;
-      break;
+      r = v
+      g = t
+      b = p
+      break
     case 1:
-      r = q;
-      g = v;
-      b = p;
-      break;
+      r = q
+      g = v
+      b = p
+      break
     case 2:
-      r = p;
-      g = v;
-      b = t;
-      break;
+      r = p
+      g = v
+      b = t
+      break
     case 3:
-      r = p;
-      g = q;
-      b = v;
-      break;
+      r = p
+      g = q
+      b = v
+      break
     case 4:
-      r = t;
-      g = p;
-      b = v;
-      break;
+      r = t
+      g = p
+      b = v
+      break
     case 5:
-      r = v;
-      g = p;
-      b = q;
-      break;
+      r = v
+      g = p
+      b = q
+      break
   }
 
   const toHex = (n: number) =>
     Math.round(n * 255)
       .toString(16)
-      .padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+      .padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }
 
 export function hsvaToHex(hsva: HSVAColor): string {
-  const h = hsva.h / 360;
-  const s = hsva.s / 100;
-  const v = hsva.v / 100;
+  const h = hsva.h / 360
+  const s = hsva.s / 100
+  const v = hsva.v / 100
 
   let r = 0,
     g = 0,
-    b = 0;
+    b = 0
 
-  const i = Math.floor(h * 6);
-  const f = h * 6 - i;
-  const p = v * (1 - s);
-  const q = v * (1 - f * s);
-  const t = v * (1 - (1 - f) * s);
+  const i = Math.floor(h * 6)
+  const f = h * 6 - i
+  const p = v * (1 - s)
+  const q = v * (1 - f * s)
+  const t = v * (1 - (1 - f) * s)
 
   switch (i % 6) {
     case 0:
-      r = v;
-      g = t;
-      b = p;
-      break;
+      r = v
+      g = t
+      b = p
+      break
     case 1:
-      r = q;
-      g = v;
-      b = p;
-      break;
+      r = q
+      g = v
+      b = p
+      break
     case 2:
-      r = p;
-      g = v;
-      b = t;
-      break;
+      r = p
+      g = v
+      b = t
+      break
     case 3:
-      r = p;
-      g = q;
-      b = v;
-      break;
+      r = p
+      g = q
+      b = v
+      break
     case 4:
-      r = t;
-      g = p;
-      b = v;
-      break;
+      r = t
+      g = p
+      b = v
+      break
     case 5:
-      r = v;
-      g = p;
-      b = q;
-      break;
+      r = v
+      g = p
+      b = q
+      break
   }
 
   const toHex = (n: number) =>
     Math.round(n * 255)
       .toString(16)
-      .padStart(2, "0");
+      .padStart(2, '0')
 
-  const aHex = Math.round(hsva.a).toString(16).padStart(2, "0");
+  const aHex = Math.round(hsva.a).toString(16).padStart(2, '0')
 
   if (hsva.a < 255) {
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}${aHex}`;
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}${aHex}`
   }
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }

@@ -1,5 +1,5 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasSingleton } from "@woven-ecs/canvas-store";
+import { defineCanvasSingleton } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * Frame singleton - tracks frame timing information.
@@ -17,7 +17,7 @@ import { defineCanvasSingleton } from "@woven-ecs/canvas-store";
  * ```
  */
 export const Frame = defineCanvasSingleton(
-  { name: "frame" },
+  { name: 'frame' },
   {
     /** Current frame number (increments each tick) */
     number: field.uint32().default(0),
@@ -27,5 +27,5 @@ export const Frame = defineCanvasSingleton(
     time: field.float64().default(0),
     /** Timestamp of previous frame in milliseconds (0 if first frame) */
     lastTime: field.float64().default(0),
-  }
-);
+  },
+)

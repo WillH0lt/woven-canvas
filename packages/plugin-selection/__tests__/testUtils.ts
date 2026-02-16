@@ -3,29 +3,28 @@
  */
 
 import {
-  type Context,
-  type BlockDef,
-  type CursorDefMap,
-  type EditorResources,
-  createEntity,
-  addComponent,
-  getResources,
-  Synced,
-  Block,
   Aabb,
+  addComponent,
+  Block,
+  type BlockDef,
+  type Context,
+  type CursorDefMap,
+  createEntity,
+  type EditorResources,
+  getResources,
   Held,
   RankBounds,
-} from "@infinitecanvas/core";
-
-import { CURSORS } from "../src/cursors";
-import { Selected } from "../src/components";
+  Synced,
+} from '@infinitecanvas/core'
+import { Selected } from '../src/components'
+import { CURSORS } from '../src/cursors'
 
 /**
  * Test resources interface for plugin tests.
  */
 export interface TestResources {
-  blockDefs?: Record<string, BlockDef>;
-  cursors?: CursorDefMap;
+  blockDefs?: Record<string, BlockDef>
+  cursors?: CursorDefMap
 }
 
 /**
@@ -35,7 +34,7 @@ export interface TestResources {
 export const DEFAULT_TEST_RESOURCES: TestResources = {
   blockDefs: {},
   cursors: CURSORS,
-};
+}
 
 /**
  * Create test resources by merging defaults with overrides.
@@ -51,78 +50,73 @@ export const DEFAULT_TEST_RESOURCES: TestResources = {
  * };
  * ```
  */
-export function createTestResources(
-  overrides: Partial<TestResources> = {}
-): TestResources {
+export function createTestResources(overrides: Partial<TestResources> = {}): TestResources {
   return {
     ...DEFAULT_TEST_RESOURCES,
     ...overrides,
-  };
+  }
 }
 
 /**
  * Options for creating a test block.
  */
 export interface CreateBlockOptions {
-  position?: [number, number];
-  size?: [number, number];
-  rank?: string;
-  tag?: string;
-  rotateZ?: number;
-  synced?: boolean;
-  selected?: boolean;
+  position?: [number, number]
+  size?: [number, number]
+  rank?: string
+  tag?: string
+  rotateZ?: number
+  synced?: boolean
+  selected?: boolean
 }
 
 /**
  * Create a block entity for testing.
  * Returns the entity ID.
  */
-export function createBlock(
-  ctx: Context,
-  options: CreateBlockOptions = {}
-): number {
+export function createBlock(ctx: Context, options: CreateBlockOptions = {}): number {
   const {
     position = [100, 100],
     size = [100, 100],
     rank,
-    tag = "text",
+    tag = 'text',
     rotateZ = 0,
     synced = true,
     selected = false,
-  } = options;
+  } = options
 
   // Use provided rank or generate a new one using RankBounds
-  const blockRank = rank ?? RankBounds.genNext(ctx);
+  const blockRank = rank ?? RankBounds.genNext(ctx)
 
-  const entityId = createEntity(ctx);
+  const entityId = createEntity(ctx)
   addComponent(ctx, entityId, Block, {
     position,
     size,
     rank: blockRank,
     tag,
     rotateZ,
-  });
-  addComponent(ctx, entityId, Aabb, {});
+  })
+  addComponent(ctx, entityId, Aabb, {})
   // Compute actual AABB from block corners
-  Aabb.expandByBlock(ctx, entityId, entityId);
+  Aabb.expandByBlock(ctx, entityId, entityId)
 
   if (synced) {
-    addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() });
+    addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() })
   }
 
   if (selected) {
-    const { sessionId } = getResources<EditorResources>(ctx);
-    addComponent(ctx, entityId, Selected, {});
-    addComponent(ctx, entityId, Held, { sessionId });
+    const { sessionId } = getResources<EditorResources>(ctx)
+    addComponent(ctx, entityId, Selected, {})
+    addComponent(ctx, entityId, Held, { sessionId })
   }
 
-  return entityId;
+  return entityId
 }
 
 export interface PointerEventOptions {
-  shiftKey?: boolean;
-  altKey?: boolean;
-  button?: number;
+  shiftKey?: boolean
+  altKey?: boolean
+  button?: number
 }
 
 /**
@@ -131,45 +125,40 @@ export interface PointerEventOptions {
  * pointer events across a test.
  */
 export function createPointerSimulator() {
-  let currentPointerId = 1;
+  let currentPointerId = 1
 
   return {
     /**
      * Reset the pointer ID counter (call in beforeEach).
      */
     reset() {
-      currentPointerId = 1;
+      currentPointerId = 1
     },
 
     /**
      * Get the current pointer ID.
      */
     get pointerId() {
-      return currentPointerId;
+      return currentPointerId
     },
 
     /**
      * Simulate a pointer down event on an element.
      */
-    pointerDown(
-      element: HTMLElement,
-      x: number,
-      y: number,
-      options: PointerEventOptions = {}
-    ): void {
+    pointerDown(element: HTMLElement, x: number, y: number, options: PointerEventOptions = {}): void {
       element.dispatchEvent(
-        new PointerEvent("pointerdown", {
+        new PointerEvent('pointerdown', {
           clientX: x,
           clientY: y,
           button: options.button ?? 0,
           pointerId: currentPointerId,
-          pointerType: "mouse",
+          pointerType: 'mouse',
           pressure: 0.5,
           shiftKey: options.shiftKey ?? false,
           altKey: options.altKey ?? false,
           bubbles: true,
-        })
-      );
+        }),
+      )
     },
 
     /**
@@ -179,19 +168,19 @@ export function createPointerSimulator() {
      */
     pointerUp(x: number, y: number, options: PointerEventOptions = {}): void {
       window.dispatchEvent(
-        new PointerEvent("pointerup", {
+        new PointerEvent('pointerup', {
           clientX: x,
           clientY: y,
           button: options.button ?? 0,
           pointerId: currentPointerId,
-          pointerType: "mouse",
+          pointerType: 'mouse',
           pressure: 0,
           shiftKey: options.shiftKey ?? false,
           altKey: options.altKey ?? false,
           bubbles: true,
-        })
-      );
-      currentPointerId++;
+        }),
+      )
+      currentPointerId++
     },
 
     /**
@@ -201,35 +190,30 @@ export function createPointerSimulator() {
      */
     pointerMove(x: number, y: number, options: PointerEventOptions = {}): void {
       // Also dispatch mouse move for intersection detection
-      simulateMouseMove(x, y);
+      simulateMouseMove(x, y)
       window.dispatchEvent(
-        new PointerEvent("pointermove", {
+        new PointerEvent('pointermove', {
           clientX: x,
           clientY: y,
           button: options.button ?? 0,
           pointerId: currentPointerId,
-          pointerType: "mouse",
+          pointerType: 'mouse',
           pressure: 0.5,
           shiftKey: options.shiftKey ?? false,
           altKey: options.altKey ?? false,
           bubbles: true,
-        })
-      );
+        }),
+      )
     },
 
     /**
      * Simulate a complete click (pointer down + up) at a position.
      */
-    click(
-      element: HTMLElement,
-      x: number,
-      y: number,
-      options: PointerEventOptions = {}
-    ): void {
-      this.pointerDown(element, x, y, options);
-      this.pointerUp(x, y, options);
+    click(element: HTMLElement, x: number, y: number, options: PointerEventOptions = {}): void {
+      this.pointerDown(element, x, y, options)
+      this.pointerUp(x, y, options)
     },
-  };
+  }
 }
 
 /**
@@ -238,12 +222,12 @@ export function createPointerSimulator() {
  */
 export function simulateMouseMove(x: number, y: number): void {
   window.dispatchEvent(
-    new MouseEvent("mousemove", {
+    new MouseEvent('mousemove', {
       clientX: x,
       clientY: y,
       bubbles: true,
-    })
-  );
+    }),
+  )
 }
 
 /**
@@ -251,10 +235,10 @@ export function simulateMouseMove(x: number, y: number): void {
  */
 export function simulateMouseLeave(element: HTMLElement): void {
   element.dispatchEvent(
-    new MouseEvent("mouseleave", {
+    new MouseEvent('mouseleave', {
       bubbles: true,
-    })
-  );
+    }),
+  )
 }
 
 /**
@@ -262,9 +246,9 @@ export function simulateMouseLeave(element: HTMLElement): void {
  * Appends to document body to ensure events work correctly.
  */
 export function createMockElement(): HTMLElement {
-  const element = document.createElement("div");
-  document.body.appendChild(element);
-  return element;
+  const element = document.createElement('div')
+  document.body.appendChild(element)
+  return element
 }
 
 /**
@@ -277,17 +261,17 @@ export function createMockElement(): HTMLElement {
 export function simulateKeyDown(
   element: HTMLElement,
   code: string,
-  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {}
+  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {},
 ): void {
   element.dispatchEvent(
-    new KeyboardEvent("keydown", {
+    new KeyboardEvent('keydown', {
       code,
       shiftKey: options.shiftKey ?? false,
       altKey: options.altKey ?? false,
       ctrlKey: options.ctrlKey ?? false,
       bubbles: true,
-    })
-  );
+    }),
+  )
 }
 
 /**
@@ -300,15 +284,15 @@ export function simulateKeyDown(
 export function simulateKeyUp(
   element: HTMLElement,
   code: string,
-  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {}
+  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {},
 ): void {
   element.dispatchEvent(
-    new KeyboardEvent("keyup", {
+    new KeyboardEvent('keyup', {
       code,
       shiftKey: options.shiftKey ?? false,
       altKey: options.altKey ?? false,
       ctrlKey: options.ctrlKey ?? false,
       bubbles: true,
-    })
-  );
+    }),
+  )
 }

@@ -1,6 +1,6 @@
-import { computed, inject } from "vue";
-import type { FontFamily } from "@infinitecanvas/core";
-import { INFINITE_CANVAS_KEY } from "../injection";
+import type { FontFamily } from '@infinitecanvas/core'
+import { computed, inject } from 'vue'
+import { INFINITE_CANVAS_KEY } from '../injection'
 
 /**
  * Composable for accessing the editor's registered fonts.
@@ -31,18 +31,18 @@ import { INFINITE_CANVAS_KEY } from "../injection";
  * ```
  */
 export function useFonts() {
-  const canvasContext = inject(INFINITE_CANVAS_KEY);
+  const canvasContext = inject(INFINITE_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error("useFonts must be used within an InfiniteCanvas component");
+    throw new Error('useFonts must be used within an InfiniteCanvas component')
   }
 
   return computed<FontFamily[]>(() => {
-    const editor = canvasContext.getEditor();
+    const editor = canvasContext.getEditor()
     if (!editor) {
-      return [];
+      return []
     }
 
     // Return only selectable fonts
-    return editor.fonts.filter((font) => font.selectable);
-  });
+    return editor.fonts.filter((font) => font.selectable)
+  })
 }

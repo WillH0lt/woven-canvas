@@ -1,6 +1,6 @@
-import { field, type Context } from "@woven-ecs/core";
-import type { Vec2 } from "@infinitecanvas/math";
-import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
+import type { Vec2 } from '@infinitecanvas/math'
+import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
+import { type Context, field } from '@woven-ecs/core'
 
 const GridSchema = {
   /** Whether grid snapping is enabled */
@@ -15,7 +15,7 @@ const GridSchema = {
   snapAngleRad: field.float64().default(Math.PI / 36),
   /** Angular snap increment in radians when shift key is held */
   shiftSnapAngleRad: field.float64().default(Math.PI / 12),
-};
+}
 
 /**
  * Grid singleton - controls snap-to-grid behavior for block positioning and resizing.
@@ -28,7 +28,7 @@ const GridSchema = {
  */
 class GridDef extends CanvasSingletonDef<typeof GridSchema> {
   constructor() {
-    super({ name: "grid" }, GridSchema);
+    super({ name: 'grid' }, GridSchema)
   }
 
   /**
@@ -37,14 +37,14 @@ class GridDef extends CanvasSingletonDef<typeof GridSchema> {
    * @param position - Position to snap [x, y] (mutated in place)
    */
   snapPosition(ctx: Context, position: Vec2): void {
-    const grid = this.read(ctx);
-    if (!grid.enabled) return;
+    const grid = this.read(ctx)
+    if (!grid.enabled) return
 
     if (grid.colWidth !== 0) {
-      position[0] = Math.round(position[0] / grid.colWidth) * grid.colWidth;
+      position[0] = Math.round(position[0] / grid.colWidth) * grid.colWidth
     }
     if (grid.rowHeight !== 0) {
-      position[1] = Math.round(position[1] / grid.rowHeight) * grid.rowHeight;
+      position[1] = Math.round(position[1] / grid.rowHeight) * grid.rowHeight
     }
   }
 
@@ -54,20 +54,14 @@ class GridDef extends CanvasSingletonDef<typeof GridSchema> {
    * @param size - Size to snap [width, height] (mutated in place)
    */
   snapSize(ctx: Context, size: Vec2): void {
-    const grid = this.read(ctx);
-    if (!grid.enabled) return;
+    const grid = this.read(ctx)
+    if (!grid.enabled) return
 
     if (grid.colWidth !== 0) {
-      size[0] = Math.max(
-        grid.colWidth,
-        Math.round(size[0] / grid.colWidth) * grid.colWidth
-      );
+      size[0] = Math.max(grid.colWidth, Math.round(size[0] / grid.colWidth) * grid.colWidth)
     }
     if (grid.rowHeight !== 0) {
-      size[1] = Math.max(
-        grid.rowHeight,
-        Math.round(size[1] / grid.rowHeight) * grid.rowHeight
-      );
+      size[1] = Math.max(grid.rowHeight, Math.round(size[1] / grid.rowHeight) * grid.rowHeight)
     }
   }
 
@@ -78,10 +72,10 @@ class GridDef extends CanvasSingletonDef<typeof GridSchema> {
    * @returns Snapped value, or original if grid disabled
    */
   snapX(ctx: Context, value: number): number {
-    const grid = this.read(ctx);
-    if (!grid.enabled || grid.colWidth === 0) return value;
+    const grid = this.read(ctx)
+    if (!grid.enabled || grid.colWidth === 0) return value
 
-    return Math.round(value / grid.colWidth) * grid.colWidth;
+    return Math.round(value / grid.colWidth) * grid.colWidth
   }
 
   /**
@@ -91,11 +85,11 @@ class GridDef extends CanvasSingletonDef<typeof GridSchema> {
    * @returns Snapped value, or original if grid disabled
    */
   snapY(ctx: Context, value: number): number {
-    const grid = this.read(ctx);
-    if (!grid.enabled || grid.rowHeight === 0) return value;
+    const grid = this.read(ctx)
+    if (!grid.enabled || grid.rowHeight === 0) return value
 
-    return Math.round(value / grid.rowHeight) * grid.rowHeight;
+    return Math.round(value / grid.rowHeight) * grid.rowHeight
   }
 }
 
-export const Grid = new GridDef();
+export const Grid = new GridDef()

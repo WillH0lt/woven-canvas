@@ -1,5 +1,5 @@
-import { field, defineEditorState } from "@infinitecanvas/core";
-import { SelectionState } from "../types";
+import { defineEditorState, field } from '@infinitecanvas/core'
+import { SelectionState } from '../types'
 
 /**
  * Selection state singleton - stores the current state of the selection state machine.
@@ -19,13 +19,13 @@ import { SelectionState } from "../types";
  *
  * ```
  */
-export const SelectionStateSingleton = defineEditorState("selectionState", {
+export const SelectionStateSingleton = defineEditorState('selectionState', {
   state: field.enum(SelectionState).default(SelectionState.Idle),
   dragStart: field.tuple(field.float64(), 2).default([0, 0]),
   pointingStartClient: field.tuple(field.float64(), 2).default([0, 0]),
   pointingStartWorld: field.tuple(field.float64(), 2).default([0, 0]),
   draggedEntityStart: field.tuple(field.float64(), 2).default([0, 0]),
   draggedEntity: field.ref(),
-  cloneGeneratorSeed: field.string().max(36).default(""),
+  cloneGeneratorSeed: field.string().max(36).default(''),
   isCloning: field.boolean(),
-});
+})

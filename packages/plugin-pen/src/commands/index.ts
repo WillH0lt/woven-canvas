@@ -1,6 +1,6 @@
 export {
-  StartPenStroke,
   AddPenStrokePoint,
   CompletePenStroke,
   RemovePenStroke,
-} from "./pen";
+  StartPenStroke,
+} from './pen'

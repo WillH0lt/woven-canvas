@@ -1,23 +1,18 @@
-import {
-  type Context,
-  defineQuery,
-  getResources,
-  type EntityId,
-} from "@woven-ecs/core";
-import { User } from "../components/User";
-import type { EditorResources } from "../types";
+import { type Context, defineQuery, type EntityId, getResources } from '@woven-ecs/core'
+import { User } from '../components/User'
+import type { EditorResources } from '../types'
 
-const userQuery = defineQuery((q) => q.with(User));
+const userQuery = defineQuery((q) => q.with(User))
 
 export function getMyUserEntityId(ctx: Context): EntityId | null {
-  const mySessionId = getResources<EditorResources>(ctx).sessionId;
+  const mySessionId = getResources<EditorResources>(ctx).sessionId
 
   for (const eid of userQuery.current(ctx)) {
-    const user = User.read(ctx, eid);
+    const user = User.read(ctx, eid)
     if (user.sessionId === mySessionId) {
-      return eid;
+      return eid
     }
   }
 
-  return null;
+  return null
 }

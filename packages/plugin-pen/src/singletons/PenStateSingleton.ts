@@ -1,5 +1,5 @@
-import { field, defineEditorState } from "@infinitecanvas/core";
-import { PenState } from "../types";
+import { defineEditorState, field } from '@infinitecanvas/core'
+import { PenState } from '../types'
 
 /**
  * Pen state singleton - stores the current state of the pen state machine.
@@ -15,7 +15,7 @@ import { PenState } from "../types";
  * }
  * ```
  */
-export const PenStateSingleton = defineEditorState("penState", {
+export const PenStateSingleton = defineEditorState('penState', {
   /** Current state machine state */
   state: field.string().max(16).default(PenState.Idle),
 
@@ -24,4 +24,4 @@ export const PenStateSingleton = defineEditorState("penState", {
 
   /** Last pointer position in world coordinates [x, y] */
   lastWorldPosition: field.tuple(field.float64(), 2).default([0, 0]),
-});
+})

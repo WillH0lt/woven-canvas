@@ -1,17 +1,14 @@
-import { describe, it, expect, vi } from "vitest";
-import { setup, assign } from "xstate";
+import { describe, expect, it, vi } from 'vitest'
+import { assign, setup } from 'xstate'
 
-import { runMachine } from "../src/machine";
+import { runMachine } from '../src/machine'
 
-describe("runMachine", () => {
+describe('runMachine', () => {
   // Simple counter machine for testing
   const counterMachine = setup({
     types: {
       context: {} as { count: number },
-      events: {} as
-        | { type: "increment" }
-        | { type: "decrement" }
-        | { type: "reset" },
+      events: {} as { type: 'increment' } | { type: 'decrement' } | { type: 'reset' },
     },
     actions: {
       increment: assign({ count: ({ context }) => context.count + 1 }),
@@ -19,124 +16,114 @@ describe("runMachine", () => {
       reset: assign({ count: 0 }),
     },
   }).createMachine({
-    id: "counter",
-    initial: "active",
+    id: 'counter',
+    initial: 'active',
     context: { count: 0 },
     states: {
       active: {
         on: {
-          increment: { actions: "increment" },
-          decrement: { actions: "decrement" },
-          reset: { actions: "reset" },
+          increment: { actions: 'increment' },
+          decrement: { actions: 'decrement' },
+          reset: { actions: 'reset' },
         },
       },
     },
-  });
+  })
 
-  it("should return same state and context when no events", () => {
-    const result = runMachine(counterMachine, "active", { count: 5 }, []);
+  it('should return same state and context when no events', () => {
+    const result = runMachine(counterMachine, 'active', { count: 5 }, [])
 
-    expect(result.value).toBe("active");
-    expect(result.context).toEqual({ count: 5 });
-  });
+    expect(result.value).toBe('active')
+    expect(result.context).toEqual({ count: 5 })
+  })
 
-  it("should process a single event", () => {
-    const result = runMachine(counterMachine, "active", { count: 0 }, [
-      { type: "increment" },
-    ]);
+  it('should process a single event', () => {
+    const result = runMachine(counterMachine, 'active', { count: 0 }, [{ type: 'increment' }])
 
-    expect(result.value).toBe("active");
-    expect(result.context).toEqual({ count: 1 });
-  });
+    expect(result.value).toBe('active')
+    expect(result.context).toEqual({ count: 1 })
+  })
 
-  it("should process multiple events in sequence", () => {
-    const result = runMachine(counterMachine, "active", { count: 0 }, [
-      { type: "increment" },
-      { type: "increment" },
-      { type: "increment" },
-    ]);
+  it('should process multiple events in sequence', () => {
+    const result = runMachine(counterMachine, 'active', { count: 0 }, [
+      { type: 'increment' },
+      { type: 'increment' },
+      { type: 'increment' },
+    ])
 
-    expect(result.value).toBe("active");
-    expect(result.context).toEqual({ count: 3 });
-  });
+    expect(result.value).toBe('active')
+    expect(result.context).toEqual({ count: 3 })
+  })
 
-  it("should handle state transitions", () => {
+  it('should handle state transitions', () => {
     const trafficLightMachine = setup({
       types: {
         context: {} as object,
-        events: {} as { type: "TIMER" },
+        events: {} as { type: 'TIMER' },
       },
     }).createMachine({
-      id: "trafficLight",
-      initial: "green",
+      id: 'trafficLight',
+      initial: 'green',
       context: {},
       states: {
-        green: { on: { TIMER: "yellow" } },
-        yellow: { on: { TIMER: "red" } },
-        red: { on: { TIMER: "green" } },
+        green: { on: { TIMER: 'yellow' } },
+        yellow: { on: { TIMER: 'red' } },
+        red: { on: { TIMER: 'green' } },
       },
-    });
+    })
 
-    const result1 = runMachine(trafficLightMachine, "green", {}, [
-      { type: "TIMER" },
-    ]);
-    expect(result1.value).toBe("yellow");
+    const result1 = runMachine(trafficLightMachine, 'green', {}, [{ type: 'TIMER' }])
+    expect(result1.value).toBe('yellow')
 
-    const result2 = runMachine(trafficLightMachine, "yellow", {}, [
-      { type: "TIMER" },
-    ]);
-    expect(result2.value).toBe("red");
+    const result2 = runMachine(trafficLightMachine, 'yellow', {}, [{ type: 'TIMER' }])
+    expect(result2.value).toBe('red')
 
-    const result3 = runMachine(trafficLightMachine, "red", {}, [
-      { type: "TIMER" },
-    ]);
-    expect(result3.value).toBe("green");
-  });
+    const result3 = runMachine(trafficLightMachine, 'red', {}, [{ type: 'TIMER' }])
+    expect(result3.value).toBe('green')
+  })
 
-  it("should execute actions", () => {
-    const sideEffectFn = vi.fn();
+  it('should execute actions', () => {
+    const sideEffectFn = vi.fn()
 
     const machineWithSideEffect = setup({
       types: {
         context: {} as { value: number },
-        events: {} as { type: "trigger"; payload: number },
+        events: {} as { type: 'trigger'; payload: number },
       },
       actions: {
         sideEffect: ({ event }) => {
-          sideEffectFn((event as { payload: number }).payload);
+          sideEffectFn((event as { payload: number }).payload)
         },
         updateValue: assign({
           value: ({ event }) => (event as { payload: number }).payload,
         }),
       },
     }).createMachine({
-      id: "sideEffect",
-      initial: "idle",
+      id: 'sideEffect',
+      initial: 'idle',
       context: { value: 0 },
       states: {
         idle: {
           on: {
             trigger: {
-              actions: ["sideEffect", "updateValue"],
+              actions: ['sideEffect', 'updateValue'],
             },
           },
         },
       },
-    });
+    })
 
-    const result = runMachine(machineWithSideEffect, "idle", { value: 0 }, [
-      { type: "trigger", payload: 42 },
-    ]);
+    const result = runMachine(machineWithSideEffect, 'idle', { value: 0 }, [{ type: 'trigger', payload: 42 }])
 
-    expect(sideEffectFn).toHaveBeenCalledWith(42);
-    expect(result.context).toEqual({ value: 42 });
-  });
+    expect(sideEffectFn).toHaveBeenCalledWith(42)
+    expect(result.context).toEqual({ value: 42 })
+  })
 
-  it("should work with guards", () => {
+  it('should work with guards', () => {
     const guardedMachine = setup({
       types: {
         context: {} as { count: number },
-        events: {} as { type: "increment" },
+        events: {} as { type: 'increment' },
       },
       guards: {
         canIncrement: ({ context }) => context.count < 3,
@@ -145,39 +132,35 @@ describe("runMachine", () => {
         increment: assign({ count: ({ context }) => context.count + 1 }),
       },
     }).createMachine({
-      id: "guarded",
-      initial: "counting",
+      id: 'guarded',
+      initial: 'counting',
       context: { count: 0 },
       states: {
         counting: {
           on: {
             increment: {
-              guard: "canIncrement",
-              actions: "increment",
+              guard: 'canIncrement',
+              actions: 'increment',
             },
           },
         },
       },
-    });
+    })
 
     // Should increment when count < 3
-    const result1 = runMachine(guardedMachine, "counting", { count: 0 }, [
-      { type: "increment" },
-    ]);
-    expect(result1.context).toEqual({ count: 1 });
+    const result1 = runMachine(guardedMachine, 'counting', { count: 0 }, [{ type: 'increment' }])
+    expect(result1.context).toEqual({ count: 1 })
 
     // Should not increment when count >= 3
-    const result2 = runMachine(guardedMachine, "counting", { count: 3 }, [
-      { type: "increment" },
-    ]);
-    expect(result2.context).toEqual({ count: 3 });
-  });
+    const result2 = runMachine(guardedMachine, 'counting', { count: 3 }, [{ type: 'increment' }])
+    expect(result2.context).toEqual({ count: 3 })
+  })
 
-  it("should preserve existing context with partial updates", () => {
+  it('should preserve existing context with partial updates', () => {
     const multiFieldMachine = setup({
       types: {
         context: {} as { x: number; y: number; z: number },
-        events: {} as { type: "updateX"; value: number },
+        events: {} as { type: 'updateX'; value: number },
       },
       actions: {
         setX: assign({
@@ -185,22 +168,20 @@ describe("runMachine", () => {
         }),
       },
     }).createMachine({
-      id: "multiField",
-      initial: "idle",
+      id: 'multiField',
+      initial: 'idle',
       context: { x: 0, y: 0, z: 0 },
       states: {
         idle: {
           on: {
-            updateX: { actions: "setX" },
+            updateX: { actions: 'setX' },
           },
         },
       },
-    });
+    })
 
-    const result = runMachine(multiFieldMachine, "idle", { x: 1, y: 2, z: 3 }, [
-      { type: "updateX", value: 10 },
-    ]);
+    const result = runMachine(multiFieldMachine, 'idle', { x: 1, y: 2, z: 3 }, [{ type: 'updateX', value: 10 }])
 
-    expect(result.context).toEqual({ x: 10, y: 2, z: 3 });
-  });
-});
+    expect(result.context).toEqual({ x: 10, y: 2, z: 3 })
+  })
+})

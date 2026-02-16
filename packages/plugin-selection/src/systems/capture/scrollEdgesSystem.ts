@@ -1,38 +1,29 @@
-import { assign, not, setup } from "xstate";
 import {
-  type InferStateContext,
-  defineEditorSystem,
-  Controls,
   Camera,
-  Screen,
-  getPointerInput,
-  getPluginResources,
-  type PointerInput,
   type Context,
-} from "@infinitecanvas/core";
-
-import {
-  SelectionStateSingleton,
-  ScrollEdgesStateSingleton,
-} from "../../singletons";
-import {
-  SelectionState,
-  ScrollEdgesState,
-  type SelectionPluginOptions,
-} from "../../types";
-import { PLUGIN_NAME } from "../../constants";
+  Controls,
+  defineEditorSystem,
+  getPluginResources,
+  getPointerInput,
+  type InferStateContext,
+  type PointerInput,
+  Screen,
+} from '@infinitecanvas/core'
+import { assign, not, setup } from 'xstate'
+import { PLUGIN_NAME } from '../../constants'
+import { ScrollEdgesStateSingleton, SelectionStateSingleton } from '../../singletons'
+import { ScrollEdgesState, type SelectionPluginOptions, SelectionState } from '../../types'
 
 /**
  * Scroll edges state machine context - derived from ScrollEdgesStateSingleton schema.
  */
-type ScrollEdgesContext = InferStateContext<typeof ScrollEdgesStateSingleton>;
+type ScrollEdgesContext = InferStateContext<typeof ScrollEdgesStateSingleton>
 
 /**
  * Helper to get edge scrolling options from event context.
  */
 function getEdgeScrollingOptions(ctx: Context) {
-  return getPluginResources<SelectionPluginOptions>(ctx, PLUGIN_NAME)
-    .edgeScrolling;
+  return getPluginResources<SelectionPluginOptions>(ctx, PLUGIN_NAME).edgeScrolling
 }
 
 /**
@@ -45,27 +36,25 @@ const scrollEdgesMachine = setup({
   },
   guards: {
     isPointerNearEdge: ({ event }) => {
-      const { edgeSizePx } = getEdgeScrollingOptions(event.ctx);
-      const screen = Screen.read(event.ctx);
-      const viewportWidth = screen.width;
-      const viewportHeight = screen.height;
+      const { edgeSizePx } = getEdgeScrollingOptions(event.ctx)
+      const screen = Screen.read(event.ctx)
+      const viewportWidth = screen.width
+      const viewportHeight = screen.height
 
-      const cursorX = event.screenPosition[0];
-      const cursorY = event.screenPosition[1];
+      const cursorX = event.screenPosition[0]
+      const cursorY = event.screenPosition[1]
 
       return (
         cursorX < edgeSizePx ||
         cursorX > viewportWidth - edgeSizePx ||
         cursorY < edgeSizePx ||
         cursorY > viewportHeight - edgeSizePx
-      );
+      )
     },
 
     isEdgeScrollDelayPassed: ({ context, event }) => {
-      const { edgeScrollDelayMs } = getEdgeScrollingOptions(event.ctx);
-      return (
-        performance.now() - context.edgeEnterStartTime >= edgeScrollDelayMs
-      );
+      const { edgeScrollDelayMs } = getEdgeScrollingOptions(event.ctx)
+      return performance.now() - context.edgeEnterStartTime >= edgeScrollDelayMs
     },
   },
 
@@ -75,40 +64,38 @@ const scrollEdgesMachine = setup({
     }),
 
     moveCamera: ({ event }) => {
-      const { edgeSizePx, edgeScrollSpeedPxPerFrame } = getEdgeScrollingOptions(
-        event.ctx,
-      );
-      const screen = Screen.read(event.ctx);
-      const camera = Camera.read(event.ctx);
+      const { edgeSizePx, edgeScrollSpeedPxPerFrame } = getEdgeScrollingOptions(event.ctx)
+      const screen = Screen.read(event.ctx)
+      const camera = Camera.read(event.ctx)
 
-      const viewportWidth = screen.width;
-      const viewportHeight = screen.height;
+      const viewportWidth = screen.width
+      const viewportHeight = screen.height
 
-      const cursorX = event.screenPosition[0];
-      const cursorY = event.screenPosition[1];
+      const cursorX = event.screenPosition[0]
+      const cursorY = event.screenPosition[1]
 
-      let shiftX = 0;
-      let shiftY = 0;
+      let shiftX = 0
+      let shiftY = 0
 
-      const shift = edgeScrollSpeedPxPerFrame / camera.zoom;
+      const shift = edgeScrollSpeedPxPerFrame / camera.zoom
 
       if (cursorX < edgeSizePx) {
-        shiftX = -shift;
+        shiftX = -shift
       } else if (cursorX > viewportWidth - edgeSizePx) {
-        shiftX = shift;
+        shiftX = shift
       }
 
       if (cursorY < edgeSizePx) {
-        shiftY = -shift;
+        shiftY = -shift
       } else if (cursorY > viewportHeight - edgeSizePx) {
-        shiftY = shift;
+        shiftY = shift
       }
 
-      if (shiftX === 0 && shiftY === 0) return;
+      if (shiftX === 0 && shiftY === 0) return
 
-      const cam = Camera.write(event.ctx);
-      cam.left += shiftX;
-      cam.top += shiftY;
+      const cam = Camera.write(event.ctx)
+      cam.left += shiftX
+      cam.top += shiftY
     },
 
     resetContext: assign({
@@ -116,30 +103,30 @@ const scrollEdgesMachine = setup({
     }),
   },
 }).createMachine({
-  id: "scrollEdges",
+  id: 'scrollEdges',
   initial: ScrollEdgesState.Idle,
   context: {
     edgeEnterStartTime: 0,
   },
   states: {
     [ScrollEdgesState.Idle]: {
-      entry: "resetContext",
+      entry: 'resetContext',
       on: {
         pointerMove: {
-          guard: "isPointerNearEdge",
+          guard: 'isPointerNearEdge',
           target: ScrollEdgesState.Waiting,
         },
       },
     },
     [ScrollEdgesState.Waiting]: {
-      entry: "setEdgeEnterStartTime",
+      entry: 'setEdgeEnterStartTime',
       on: {
         pointerMove: {
-          guard: not("isPointerNearEdge"),
+          guard: not('isPointerNearEdge'),
           target: ScrollEdgesState.Idle,
         },
         frame: {
-          guard: "isEdgeScrollDelayPassed",
+          guard: 'isEdgeScrollDelayPassed',
           target: ScrollEdgesState.Scrolling,
         },
       },
@@ -148,17 +135,17 @@ const scrollEdgesMachine = setup({
       on: {
         frame: [
           {
-            guard: not("isPointerNearEdge"),
+            guard: not('isPointerNearEdge'),
             target: ScrollEdgesState.Idle,
           },
           {
-            actions: "moveCamera",
+            actions: 'moveCamera',
           },
         ],
       },
     },
   },
-});
+})
 
 /**
  * Scroll edges capture system - auto-scrolls when dragging near viewport edges.
@@ -169,36 +156,28 @@ const scrollEdgesMachine = setup({
  *
  * Only active when the selection state is "dragging" or "selectionBoxDragging".
  */
-export const scrollEdgesSystem = defineEditorSystem(
-  { phase: "capture" },
-  (ctx) => {
-    // Skip if edge scrolling is disabled
-    if (!getEdgeScrollingOptions(ctx).enabled) return;
+export const scrollEdgesSystem = defineEditorSystem({ phase: 'capture' }, (ctx) => {
+  // Skip if edge scrolling is disabled
+  if (!getEdgeScrollingOptions(ctx).enabled) return
 
-    // Only run when actively dragging
-    const selectionState = SelectionStateSingleton.read(ctx).state;
-    if (
-      selectionState !== SelectionState.Dragging &&
-      selectionState !== SelectionState.SelectionBoxDragging
-    ) {
-      return;
-    }
+  // Only run when actively dragging
+  const selectionState = SelectionStateSingleton.read(ctx).state
+  if (selectionState !== SelectionState.Dragging && selectionState !== SelectionState.SelectionBoxDragging) {
+    return
+  }
 
-    const currentState = ScrollEdgesStateSingleton.read(ctx).state;
+  const currentState = ScrollEdgesStateSingleton.read(ctx).state
 
-    // Include frame events when waiting or scrolling (to check delay / drive scrolling)
-    // Frame events from getPointerInput include pointer position data
-    const includeFrameEvent =
-      currentState === ScrollEdgesState.Waiting ||
-      currentState === ScrollEdgesState.Scrolling;
+  // Include frame events when waiting or scrolling (to check delay / drive scrolling)
+  // Frame events from getPointerInput include pointer position data
+  const includeFrameEvent = currentState === ScrollEdgesState.Waiting || currentState === ScrollEdgesState.Scrolling
 
-    // Get pointer events for buttons mapped to the "select" tool
-    const buttons = Controls.getButtons(ctx, "select");
-    const events = getPointerInput(ctx, buttons, { includeFrameEvent });
+  // Get pointer events for buttons mapped to the "select" tool
+  const buttons = Controls.getButtons(ctx, 'select')
+  const events = getPointerInput(ctx, buttons, { includeFrameEvent })
 
-    if (events.length === 0) return;
+  if (events.length === 0) return
 
-    // Run machine through events
-    ScrollEdgesStateSingleton.run(ctx, scrollEdgesMachine, events);
-  },
-);
+  // Run machine through events
+  ScrollEdgesStateSingleton.run(ctx, scrollEdgesMachine, events)
+})

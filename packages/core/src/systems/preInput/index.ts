@@ -1,1 +1,1 @@
-export { rankBoundsSystem } from "./rankBoundsSystem";
+export { rankBoundsSystem } from './rankBoundsSystem'

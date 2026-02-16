@@ -1,10 +1,10 @@
 export {
   AddArrow,
-  DrawArrow,
-  RemoveArrow,
-  CompleteArrow,
   AddOrUpdateTransformHandles,
-  RemoveTransformHandles,
+  CompleteArrow,
+  DrawArrow,
   HideTransformHandles,
+  RemoveArrow,
+  RemoveTransformHandles,
   ShowTransformHandles,
-} from "./arrows";
+} from './arrows'

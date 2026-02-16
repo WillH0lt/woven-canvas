@@ -1,6 +1,6 @@
-import type { Context } from "@woven-ecs/core";
-import { Keyboard } from "../singletons";
-import type { KeyboardInput, KeyboardInputType } from "./types";
+import type { Context } from '@woven-ecs/core'
+import { Keyboard } from '../singletons'
+import type { KeyboardInput } from './types'
 
 /**
  * Get keyboard input events for specific keys.
@@ -22,20 +22,17 @@ import type { KeyboardInput, KeyboardInputType } from "./types";
  * }
  * ```
  */
-export function getKeyboardInput(
-  ctx: Context,
-  keys: number[]
-): KeyboardInput[] {
-  const events: KeyboardInput[] = [];
+export function getKeyboardInput(ctx: Context, keys: number[]): KeyboardInput[] {
+  const events: KeyboardInput[] = []
 
   for (const key of keys) {
     if (Keyboard.isKeyDownTrigger(ctx, key)) {
-      events.push({ type: "keyDown", key, ctx });
+      events.push({ type: 'keyDown', key, ctx })
     }
     if (Keyboard.isKeyUpTrigger(ctx, key)) {
-      events.push({ type: "keyUp", key, ctx });
+      events.push({ type: 'keyUp', key, ctx })
     }
   }
 
-  return events;
+  return events
 }

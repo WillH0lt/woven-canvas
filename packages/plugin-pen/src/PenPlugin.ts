@@ -5,19 +5,18 @@ import {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
-} from "@infinitecanvas/core";
+} from '@infinitecanvas/core'
 
-import * as components from "./components";
-import * as singletons from "./singletons";
-import * as systems from "./systems";
-import { PLUGIN_NAME } from "./constants";
+import * as components from './components'
+import { PLUGIN_NAME } from './constants'
+import * as singletons from './singletons'
+import * as systems from './systems'
 
 // Helper to filter EditorSystem instances from a namespace
 const filterSystems = (ns: object): EditorSystem[] =>
   Object.values(ns).filter(
-    (v): v is EditorSystem =>
-      typeof v === "object" && v !== null && "_system" in v && "phase" in v,
-  );
+    (v): v is EditorSystem => typeof v === 'object' && v !== null && '_system' in v && 'phase' in v,
+  )
 
 /**
  * Create a Pen plugin.
@@ -35,18 +34,14 @@ export function createPenPlugin(): EditorPlugin {
   return {
     name: PLUGIN_NAME,
 
-    components: Object.values(components).filter(
-      (v) => v instanceof CanvasComponentDef,
-    ),
+    components: Object.values(components).filter((v) => v instanceof CanvasComponentDef),
 
-    singletons: Object.values(singletons).filter(
-      (v) => v instanceof CanvasSingletonDef,
-    ),
+    singletons: Object.values(singletons).filter((v) => v instanceof CanvasSingletonDef),
 
     blockDefs: [
       {
-        tag: "pen-stroke",
-        resizeMode: "free",
+        tag: 'pen-stroke',
+        resizeMode: 'free',
         components: [components.PenStroke, Color],
         connectors: { enabled: false },
       },
@@ -55,7 +50,7 @@ export function createPenPlugin(): EditorPlugin {
     systems: filterSystems(systems),
 
     resources: {},
-  };
+  }
 }
 
 /**
@@ -78,4 +73,4 @@ export function createPenPlugin(): EditorPlugin {
  * });
  * ```
  */
-export const PenPlugin: EditorPluginFactory = () => createPenPlugin();
+export const PenPlugin: EditorPluginFactory = () => createPenPlugin()

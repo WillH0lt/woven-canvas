@@ -1,18 +1,18 @@
-import type { Context } from "@woven-ecs/core";
-import { MainThreadSystem } from "@woven-ecs/core";
+import type { Context } from '@woven-ecs/core'
+import { MainThreadSystem } from '@woven-ecs/core'
 
-import type { SystemPhase } from "./types";
+import type { SystemPhase } from './types'
 
 /**
  * Editor system execution function.
  */
-export type EditorSystemFunction = (ctx: Context) => void;
+export type EditorSystemFunction = (ctx: Context) => void
 
 /**
  * Default priority for systems.
  * Systems with higher priority run first within a phase.
  */
-export const DEFAULT_PRIORITY = 0;
+export const DEFAULT_PRIORITY = 0
 
 /**
  * Editor system with phase and priority.
@@ -24,11 +24,11 @@ export const DEFAULT_PRIORITY = 0;
  */
 export interface EditorSystem {
   /** Wrapped ECS system for world.execute() compatibility */
-  readonly _system: MainThreadSystem;
+  readonly _system: MainThreadSystem
   /** Execution phase */
-  readonly phase: SystemPhase;
+  readonly phase: SystemPhase
   /** Priority within phase (higher = runs first). Default: 0 */
-  readonly priority: number;
+  readonly priority: number
 }
 
 /**
@@ -36,9 +36,9 @@ export interface EditorSystem {
  */
 export interface EditorSystemOptions {
   /** Execution phase */
-  phase: SystemPhase;
+  phase: SystemPhase
   /** Priority within phase (higher = runs first). Default: 0 */
-  priority?: number;
+  priority?: number
 }
 
 /**
@@ -78,13 +78,10 @@ export interface EditorSystemOptions {
  * );
  * ```
  */
-export function defineEditorSystem(
-  options: EditorSystemOptions,
-  execute: EditorSystemFunction
-): EditorSystem {
+export function defineEditorSystem(options: EditorSystemOptions, execute: EditorSystemFunction): EditorSystem {
   return {
     _system: new MainThreadSystem(execute),
     phase: options.phase,
     priority: options.priority ?? DEFAULT_PRIORITY,
-  };
+  }
 }

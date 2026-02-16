@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.1/schema.json",
   "formatter": {
     "enabled": true,
     "indentWidth": 2,
@@ -8,23 +8,22 @@
   },
   // Note: UNIX-like glob patterns {a,b,c} aren't supported yet.
   "files": {
-    "ignore": [
-      "./**/node_modules/**",
-      "./public/**",
-      "./build/**",
-      "**/.turbo/**"
-    ],
-    "include": [
-      "./packages/**/*.ts",
-      "./packages/**/*.json",
-      "./examples/**/*.ts",
-      "./examples/**/*.json",
-      "./examples/**/*.vue"
+    "includes": [
+      "**/packages/**/*.ts",
+      "**/packages/**/*.json",
+      "**/examples/**/*.ts",
+      "**/examples/**/*.tsx",
+      "**/examples/**/*.json",
+      "**/examples/**/*.vue",
+      "!**/node_modules",
+      "!public/",
+      "!build/",
+      "!**/.turbo/"
     ]
   },
   "overrides": [
     {
-      "include": ["./**/tsconfig.*.json"],
+      "includes": ["**/tsconfig.*.json"],
       "json": {
         "parser": {
           "allowComments": true
@@ -32,15 +31,25 @@
       }
     },
     {
-      "include": ["./turbo.json"],
+      "includes": ["turbo.json"],
       "json": {
         "parser": {
           "allowComments": true
         }
       }
+    },
+    {
+      "includes": ["**/__tests__/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noEmptyBlockStatements": "off"
+          }
+        }
+      }
     }
   ],
-  "organizeImports": { "enabled": true },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "javascript": {
     "globals": [
       // We need to manually list every test global variable.
@@ -65,11 +74,10 @@
       "recommended": true,
       "complexity": {
         "noExtraBooleanCast": "error",
-        "noMultipleSpacesInRegularExpressionLiterals": "error",
         "noUselessCatch": "error",
-        "noWith": "error",
         "noStaticOnlyClass": "off",
-        "noBannedTypes": "off"
+        "noBannedTypes": "off",
+        "noAdjacentSpacesInRegex": "error"
       },
       "nursery": {
         "useSortedClasses": "error"
@@ -86,7 +94,6 @@
         "noGlobalObjectCalls": "error",
         "noInnerDeclarations": "error",
         "noInvalidConstructorSuper": "error",
-        "noNewSymbol": "error",
         "noNonoctalDecimalEscape": "error",
         "noPrecisionLoss": "error",
         "noSelfAssign": "error",
@@ -102,7 +109,9 @@
         "noUnusedImports": "warn",
         "useIsNan": "error",
         "useValidForDirection": "error",
-        "useYield": "error"
+        "useYield": "error",
+        "noInvalidBuiltinInstantiation": "error",
+        "useValidTypeof": "error"
       },
       "suspicious": {
         "noApproximativeNumericConstant": "off",
@@ -128,8 +137,8 @@
         "noShadowRestrictedNames": "error",
         "noUnsafeNegation": "error",
         "useGetterReturn": "error",
-        "useValidTypeof": "error",
-        "noConfusingLabels": "off"
+        "noConfusingLabels": "off",
+        "noWith": "error"
       },
       "performance": {
         "noDelete": "off"

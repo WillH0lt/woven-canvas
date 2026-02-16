@@ -28,8 +28,9 @@
  */
 
 // Plugin
-export { CanvasControlsPlugin } from "./CanvasControlsPlugin";
-
+export { CanvasControlsPlugin } from './CanvasControlsPlugin'
+// Components (for advanced use cases)
+export { PanState } from './components'
 // Types
 export {
   type CanvasControlsOptions,
@@ -37,7 +38,4 @@ export {
   CanvasControlsOptionsSchema,
   DEFAULT_CONTROLS_OPTIONS,
   PanStateValue,
-} from "./types";
-
-// Components (for advanced use cases)
-export { PanState } from "./components";
+} from './types'

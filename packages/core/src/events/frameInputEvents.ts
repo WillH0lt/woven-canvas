@@ -1,7 +1,6 @@
-import type { Context } from "@woven-ecs/core";
-
-import type { FrameInput } from "./types";
-import { Frame } from "../singletons";
+import type { Context } from '@woven-ecs/core'
+import { Frame } from '../singletons'
+import type { FrameInput } from './types'
 
 /**
  * Generate a frame input event from ECS state for state machine consumption.
@@ -27,13 +26,13 @@ import { Frame } from "../singletons";
  * ```
  */
 export function getFrameInput(ctx: Context): FrameInput {
-  const frame = Frame.read(ctx);
+  const frame = Frame.read(ctx)
 
   return {
-    type: "frame",
+    type: 'frame',
     ctx,
     delta: frame.delta,
     frameNumber: frame.number,
     time: frame.time,
-  };
+  }
 }

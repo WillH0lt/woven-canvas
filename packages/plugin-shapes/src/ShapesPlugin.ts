@@ -1,21 +1,19 @@
 import {
   CanvasComponentDef,
-  Text,
-  VerticalAlign,
   type EditorPlugin,
   type EditorPluginFactory,
-} from "@infinitecanvas/core";
+  Text,
+  VerticalAlign,
+} from '@infinitecanvas/core'
 
-import * as components from "./components";
+import * as components from './components'
 
-const PLUGIN_NAME = "shapes";
+const PLUGIN_NAME = 'shapes'
 
 /**
  * Options for configuring the Shapes plugin.
  */
-export interface ShapesPluginOptions {
-  // Reserved for future options
-}
+export type ShapesPluginOptions = {}
 
 /**
  * Create a Shapes plugin with custom options.
@@ -30,20 +28,16 @@ export interface ShapesPluginOptions {
  * const editor = new Editor(container, { plugins: [plugin] });
  * ```
  */
-export function createShapesPlugin(
-  options: ShapesPluginOptions = {}
-): EditorPlugin<ShapesPluginOptions> {
+export function createShapesPlugin(options: ShapesPluginOptions = {}): EditorPlugin<ShapesPluginOptions> {
   return {
     name: PLUGIN_NAME,
 
-    components: Object.values(components).filter(
-      (v) => v instanceof CanvasComponentDef
-    ),
+    components: Object.values(components).filter((v) => v instanceof CanvasComponentDef),
 
     blockDefs: [
       {
-        tag: "shape",
-        resizeMode: "free",
+        tag: 'shape',
+        resizeMode: 'free',
         components: [components.Shape, Text, VerticalAlign],
         editOptions: {
           canEdit: true,
@@ -52,7 +46,7 @@ export function createShapesPlugin(
     ],
 
     resources: options,
-  };
+  }
 }
 
 /**
@@ -82,6 +76,4 @@ export function createShapesPlugin(
  * });
  * ```
  */
-export const ShapesPlugin: EditorPluginFactory<ShapesPluginOptions> = (
-  options = {}
-) => createShapesPlugin(options);
+export const ShapesPlugin: EditorPluginFactory<ShapesPluginOptions> = (options = {}) => createShapesPlugin(options)

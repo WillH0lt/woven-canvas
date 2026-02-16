@@ -1,57 +1,50 @@
-import {
-  createEntity,
-  removeEntity,
-  addComponent,
-  getResources,
-  type Context,
-} from "@woven-ecs/core";
-import type { Vec2 } from "@infinitecanvas/math";
-
-import { defineEditorSystem } from "../../EditorSystem";
-import type { EditorResources } from "../../types";
-import { Pointer, addPointerSample } from "../../components/Pointer";
-import { Screen } from "../../singletons/Screen";
+import type { Vec2 } from '@infinitecanvas/math'
+import { addComponent, type Context, createEntity, getResources, removeEntity } from '@woven-ecs/core'
+import { addPointerSample, Pointer } from '../../components/Pointer'
+import { defineEditorSystem } from '../../EditorSystem'
+import { Screen } from '../../singletons/Screen'
+import type { EditorResources } from '../../types'
 
 /**
  * Buffered pointer event
  */
 interface BufferedPointerEvent {
-  type: "pointerdown" | "pointermove" | "pointerup" | "pointercancel";
-  pointerId: number;
-  clientX: number;
-  clientY: number;
-  button: number;
-  pointerType: string;
-  pressure: number;
-  target: EventTarget | null;
+  type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel'
+  pointerId: number
+  clientX: number
+  clientY: number
+  button: number
+  pointerType: string
+  pressure: number
+  target: EventTarget | null
 }
 
 /**
  * Per-instance state for pointer input
  */
 interface PointerState {
-  eventsBuffer: BufferedPointerEvent[];
-  frameCount: number;
+  eventsBuffer: BufferedPointerEvent[]
+  frameCount: number
   /** Maps pointerId -> entityId for this instance */
-  pointerEntityMap: Map<number, number>;
-  onPointerDown: (e: PointerEvent) => void;
-  onContextMenu: (e: MouseEvent) => void;
-  onPointerMove: (e: PointerEvent) => void;
-  onPointerUp: (e: PointerEvent) => void;
-  onPointerCancel: (e: PointerEvent) => void;
+  pointerEntityMap: Map<number, number>
+  onPointerDown: (e: PointerEvent) => void
+  onContextMenu: (e: MouseEvent) => void
+  onPointerMove: (e: PointerEvent) => void
+  onPointerUp: (e: PointerEvent) => void
+  onPointerCancel: (e: PointerEvent) => void
 }
 
 /**
  * Per-instance state keyed by DOM element
  */
-const instanceState = new WeakMap<HTMLElement, PointerState>();
+const instanceState = new WeakMap<HTMLElement, PointerState>()
 
 /**
  * Attach pointer event listeners.
  * Called from plugin setup.
  */
 export function attachPointerListeners(domElement: HTMLElement): void {
-  if (instanceState.has(domElement)) return;
+  if (instanceState.has(domElement)) return
 
   const state: PointerState = {
     eventsBuffer: [],
@@ -59,7 +52,7 @@ export function attachPointerListeners(domElement: HTMLElement): void {
     pointerEntityMap: new Map(),
     onPointerDown: (e: PointerEvent) => {
       state.eventsBuffer.push({
-        type: "pointerdown",
+        type: 'pointerdown',
         pointerId: e.pointerId,
         clientX: e.clientX,
         clientY: e.clientY,
@@ -67,32 +60,30 @@ export function attachPointerListeners(domElement: HTMLElement): void {
         pointerType: e.pointerType,
         pressure: e.pressure,
         target: e.target,
-      });
+      })
     },
     onContextMenu: (e: MouseEvent) => {
-      e.preventDefault();
+      e.preventDefault()
 
       // Check if there's already a pointerdown in the buffer for this frame
-      const hasPointerDown = state.eventsBuffer.some(
-        (evt) => evt.type === "pointerdown"
-      );
-      if (hasPointerDown) return;
+      const hasPointerDown = state.eventsBuffer.some((evt) => evt.type === 'pointerdown')
+      if (hasPointerDown) return
 
       // Create a synthetic pointer event for right-click
       state.eventsBuffer.push({
-        type: "pointerdown",
+        type: 'pointerdown',
         pointerId: 0,
         clientX: e.clientX,
         clientY: e.clientY,
         button: 2, // Right button
-        pointerType: "mouse",
+        pointerType: 'mouse',
         pressure: 0.5,
         target: e.target,
-      });
+      })
     },
     onPointerMove: (e: PointerEvent) => {
       state.eventsBuffer.push({
-        type: "pointermove",
+        type: 'pointermove',
         pointerId: e.pointerId,
         clientX: e.clientX,
         clientY: e.clientY,
@@ -100,11 +91,11 @@ export function attachPointerListeners(domElement: HTMLElement): void {
         pointerType: e.pointerType,
         pressure: e.pressure,
         target: e.target,
-      });
+      })
     },
     onPointerUp: (e: PointerEvent) => {
       state.eventsBuffer.push({
-        type: "pointerup",
+        type: 'pointerup',
         pointerId: e.pointerId,
         clientX: e.clientX,
         clientY: e.clientY,
@@ -112,11 +103,11 @@ export function attachPointerListeners(domElement: HTMLElement): void {
         pointerType: e.pointerType,
         pressure: e.pressure,
         target: e.target,
-      });
+      })
     },
     onPointerCancel: (e: PointerEvent) => {
       state.eventsBuffer.push({
-        type: "pointercancel",
+        type: 'pointercancel',
         pointerId: e.pointerId,
         clientX: e.clientX,
         clientY: e.clientY,
@@ -124,20 +115,20 @@ export function attachPointerListeners(domElement: HTMLElement): void {
         pointerType: e.pointerType,
         pressure: e.pressure,
         target: e.target,
-      });
+      })
     },
-  };
+  }
 
-  instanceState.set(domElement, state);
+  instanceState.set(domElement, state)
 
   // Pointer down and context menu on element only
-  domElement.addEventListener("pointerdown", state.onPointerDown);
-  domElement.addEventListener("contextmenu", state.onContextMenu);
+  domElement.addEventListener('pointerdown', state.onPointerDown)
+  domElement.addEventListener('contextmenu', state.onContextMenu)
 
   // Move, up, cancel on window to capture outside movement
-  window.addEventListener("pointermove", state.onPointerMove);
-  window.addEventListener("pointerup", state.onPointerUp);
-  window.addEventListener("pointercancel", state.onPointerCancel);
+  window.addEventListener('pointermove', state.onPointerMove)
+  window.addEventListener('pointerup', state.onPointerUp)
+  window.addEventListener('pointercancel', state.onPointerCancel)
 }
 
 /**
@@ -145,17 +136,17 @@ export function attachPointerListeners(domElement: HTMLElement): void {
  * Called from plugin teardown.
  */
 export function detachPointerListeners(domElement: HTMLElement): void {
-  const state = instanceState.get(domElement);
+  const state = instanceState.get(domElement)
 
-  if (!state) return;
+  if (!state) return
 
-  domElement.removeEventListener("pointerdown", state.onPointerDown);
-  domElement.removeEventListener("contextmenu", state.onContextMenu);
-  window.removeEventListener("pointermove", state.onPointerMove);
-  window.removeEventListener("pointerup", state.onPointerUp);
-  window.removeEventListener("pointercancel", state.onPointerCancel);
+  domElement.removeEventListener('pointerdown', state.onPointerDown)
+  domElement.removeEventListener('contextmenu', state.onContextMenu)
+  window.removeEventListener('pointermove', state.onPointerMove)
+  window.removeEventListener('pointerup', state.onPointerUp)
+  window.removeEventListener('pointercancel', state.onPointerCancel)
 
-  instanceState.delete(domElement);
+  instanceState.delete(domElement)
 }
 
 /**
@@ -164,27 +155,24 @@ export function detachPointerListeners(domElement: HTMLElement): void {
  * Creates a Pointer entity on pointerdown and deletes it on pointerup.
  * This allows multiple simultaneous pointers (for touch).
  */
-export const pointerSystem = defineEditorSystem({ phase: "input" }, (ctx: Context) => {
-  const resources = getResources<EditorResources>(ctx);
-  const { domElement } = resources;
-  const state = instanceState.get(domElement);
-  if (!state) return;
+export const pointerSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context) => {
+  const resources = getResources<EditorResources>(ctx)
+  const { domElement } = resources
+  const state = instanceState.get(domElement)
+  if (!state) return
 
-  state.frameCount++;
-  const screen = Screen.read(ctx);
-  const time = state.frameCount / 60; // Approximate time in seconds
+  state.frameCount++
+  const screen = Screen.read(ctx)
+  const time = state.frameCount / 60 // Approximate time in seconds
 
   // Process buffered events
   for (const event of state.eventsBuffer) {
     switch (event.type) {
-      case "pointerdown": {
-        const position: Vec2 = [
-          event.clientX - screen.left,
-          event.clientY - screen.top,
-        ];
+      case 'pointerdown': {
+        const position: Vec2 = [event.clientX - screen.left, event.clientY - screen.top]
 
         // Create pointer entity
-        const entityId = createEntity(ctx);
+        const entityId = createEntity(ctx)
         addComponent(ctx, entityId, Pointer, {
           pointerId: event.pointerId,
           position: position,
@@ -194,56 +182,50 @@ export const pointerSystem = defineEditorSystem({ phase: "input" }, (ctx: Contex
           pointerType: Pointer.getType(event.pointerType),
           pressure: event.pressure,
           obscured: event.target !== domElement,
-        });
+        })
 
         // Add initial position sample
-        const pointer = Pointer.write(ctx, entityId);
-        addPointerSample(pointer, position, time);
+        const pointer = Pointer.write(ctx, entityId)
+        addPointerSample(pointer, position, time)
 
         // Track in map
-        state.pointerEntityMap.set(event.pointerId, entityId);
-        break;
+        state.pointerEntityMap.set(event.pointerId, entityId)
+        break
       }
 
-      case "pointermove": {
-        const entityId = state.pointerEntityMap.get(event.pointerId);
-        if (entityId === undefined) break;
+      case 'pointermove': {
+        const entityId = state.pointerEntityMap.get(event.pointerId)
+        if (entityId === undefined) break
 
-        const position: Vec2 = [
-          event.clientX - screen.left,
-          event.clientY - screen.top,
-        ];
+        const position: Vec2 = [event.clientX - screen.left, event.clientY - screen.top]
 
-        const pointer = Pointer.write(ctx, entityId);
-        addPointerSample(pointer, position, time);
-        pointer.pressure = event.pressure;
-        pointer.obscured = event.target !== domElement;
-        break;
+        const pointer = Pointer.write(ctx, entityId)
+        addPointerSample(pointer, position, time)
+        pointer.pressure = event.pressure
+        pointer.obscured = event.target !== domElement
+        break
       }
 
-      case "pointerup":
-      case "pointercancel": {
-        const entityId = state.pointerEntityMap.get(event.pointerId);
-        if (entityId === undefined) break;
+      case 'pointerup':
+      case 'pointercancel': {
+        const entityId = state.pointerEntityMap.get(event.pointerId)
+        if (entityId === undefined) break
 
         // Update final position before removal
-        const position: Vec2 = [
-          event.clientX - screen.left,
-          event.clientY - screen.top,
-        ];
+        const position: Vec2 = [event.clientX - screen.left, event.clientY - screen.top]
 
-        const pointer = Pointer.write(ctx, entityId);
-        addPointerSample(pointer, position, time);
+        const pointer = Pointer.write(ctx, entityId)
+        addPointerSample(pointer, position, time)
 
         // Remove entity
-        removeEntity(ctx, entityId);
-        state.pointerEntityMap.delete(event.pointerId);
+        removeEntity(ctx, entityId)
+        state.pointerEntityMap.delete(event.pointerId)
 
-        break;
+        break
       }
     }
   }
 
   // Clear buffer
-  state.eventsBuffer.length = 0;
-});
+  state.eventsBuffer.length = 0
+})

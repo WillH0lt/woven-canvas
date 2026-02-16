@@ -1,16 +1,7 @@
-import type {
-  Context,
-  ComponentSchema,
-  StringFieldDef,
-  EnumFieldDef,
-} from "@woven-ecs/core";
-import type { AnyStateMachine } from "xstate";
-
-import {
-  CanvasSingletonDef,
-  type InferCanvasComponentType,
-} from "@woven-ecs/canvas-store";
-import { runMachine } from "./machine";
+import { CanvasSingletonDef, type InferCanvasComponentType } from '@woven-ecs/canvas-store'
+import type { ComponentSchema, Context, EnumFieldDef, StringFieldDef } from '@woven-ecs/core'
+import type { AnyStateMachine } from 'xstate'
+import { runMachine } from './machine'
 
 /**
  * Schema type for state machine singletons.
@@ -18,16 +9,13 @@ import { runMachine } from "./machine";
  */
 export interface StateSchema extends ComponentSchema {
   /** The current state machine state value (can be string or enum) */
-  state: { def: StringFieldDef | EnumFieldDef<any> };
+  state: { def: StringFieldDef | EnumFieldDef<any> }
 }
 
 /**
  * Internal type: infer machine context from schema (excludes 'state' field).
  */
-type InferMachineContext<T extends StateSchema> = Omit<
-  InferCanvasComponentType<T>,
-  "state"
->;
+type InferMachineContext<T extends StateSchema> = Omit<InferCanvasComponentType<T>, 'state'>
 
 /**
  * Extract the machine context type from an EditorStateDef instance.
@@ -46,9 +34,7 @@ type InferMachineContext<T extends StateSchema> = Omit<
  * ```
  */
 export type InferStateContext<T> =
-  T extends EditorStateDef<infer S>
-    ? Omit<InferMachineContext<S>, "_exists" | "_version">
-    : never;
+  T extends EditorStateDef<infer S> ? Omit<InferMachineContext<S>, '_exists' | '_version'> : never
 
 /**
  * Editor singleton definition for XState state machine state storage.
@@ -74,12 +60,10 @@ export type InferStateContext<T> =
  * }
  * ```
  */
-export class EditorStateDef<
-  T extends StateSchema,
-> extends CanvasSingletonDef<T> {
+export class EditorStateDef<T extends StateSchema> extends CanvasSingletonDef<T> {
   constructor(name: string, schema: T) {
     // State machine state is never synced - it's ephemeral runtime state
-    super({ name, sync: "none" }, schema);
+    super({ name, sync: 'none' }, schema)
   }
 
   /**
@@ -89,7 +73,7 @@ export class EditorStateDef<
    * @returns The current state machine state value
    */
   getState(ctx: Context): string {
-    return this.read(ctx).state as string;
+    return this.read(ctx).state as string
   }
 
   /**
@@ -98,19 +82,17 @@ export class EditorStateDef<
    * @param ctx - The ECS context
    * @returns Plain object with context field values
    */
-  getContext<TContext extends object = InferMachineContext<T>>(
-    ctx: Context,
-  ): TContext {
-    const snapshot = this.snapshot(ctx);
-    const result: Record<string, unknown> = {};
+  getContext<TContext extends object = InferMachineContext<T>>(ctx: Context): TContext {
+    const snapshot = this.snapshot(ctx)
+    const result: Record<string, unknown> = {}
 
     for (const key of Object.keys(snapshot)) {
-      if (key !== "state") {
-        result[key] = snapshot[key as keyof typeof snapshot];
+      if (key !== 'state') {
+        result[key] = snapshot[key as keyof typeof snapshot]
       }
     }
 
-    return result as TContext;
+    return result as TContext
   }
 
   /**
@@ -140,14 +122,10 @@ export class EditorStateDef<
     TState extends string,
     TContext extends object = InferMachineContext<T>,
     TEvent extends { type: string } = { type: string },
-  >(
-    ctx: Context,
-    machine: AnyStateMachine,
-    events: TEvent[],
-  ): { value: TState; context: TContext } {
+  >(ctx: Context, machine: AnyStateMachine, events: TEvent[]): { value: TState; context: TContext } {
     // Read current state
-    const currentState = this.getState(ctx) as TState;
-    const currentContext = this.getContext<TContext>(ctx);
+    const currentState = this.getState(ctx) as TState
+    const currentContext = this.getContext<TContext>(ctx)
 
     // Run machine through events
     const result = runMachine<TState, TContext>(
@@ -155,18 +133,18 @@ export class EditorStateDef<
       currentState,
       currentContext,
       events as unknown as Array<{ type: string; [key: string]: unknown }>,
-    );
+    )
 
     // Write updated state and context
-    const writable = this.write(ctx);
-    (writable as { state: string }).state = result.value;
+    const writable = this.write(ctx)
+    ;(writable as { state: string }).state = result.value
 
     // Copy context fields back
     for (const [key, value] of Object.entries(result.context)) {
-      (writable as Record<string, unknown>)[key] = value;
+      ;(writable as Record<string, unknown>)[key] = value
     }
 
-    return result;
+    return result
   }
 }
 
@@ -189,9 +167,6 @@ export class EditorStateDef<
  * });
  * ```
  */
-export function defineEditorState<T extends StateSchema>(
-  name: string,
-  schema: T,
-): EditorStateDef<T> {
-  return new EditorStateDef(name, schema);
+export function defineEditorState<T extends StateSchema>(name: string, schema: T): EditorStateDef<T> {
+  return new EditorStateDef(name, schema)
 }

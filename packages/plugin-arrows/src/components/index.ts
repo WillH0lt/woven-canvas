@@ -1,4 +1,4 @@
-export { ArcArrow } from "./ArcArrow";
-export { ElbowArrow } from "./ElbowArrow";
-export { ArrowHandle } from "./ArrowHandle";
-export { ArrowTerminal } from "./ArrowTerminal";
+export { ArcArrow } from './ArcArrow'
+export { ArrowHandle } from './ArrowHandle'
+export { ArrowTerminal } from './ArrowTerminal'
+export { ElbowArrow } from './ElbowArrow'

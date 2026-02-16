@@ -1,5 +1,5 @@
-import { field, defineCanvasComponent } from "@infinitecanvas/core";
-import { ArrowHandleKind } from "../types";
+import { defineCanvasComponent, field } from '@infinitecanvas/core'
+import { ArrowHandleKind } from '../types'
 
 /**
  * ArrowHandle component - marks an entity as an arrow transform handle.
@@ -8,12 +8,12 @@ import { ArrowHandleKind } from "../types";
  * modify arrow endpoints and control points.
  */
 export const ArrowHandle = defineCanvasComponent(
-  { name: "arrowHandle" },
+  { name: 'arrowHandle' },
   {
     /** Kind of handle (start, middle, or end) */
     kind: field.enum(ArrowHandleKind).default(ArrowHandleKind.Start),
 
     /** Reference to the arrow entity this handle controls */
     arrowEntity: field.ref(),
-  }
-);
+  },
+)

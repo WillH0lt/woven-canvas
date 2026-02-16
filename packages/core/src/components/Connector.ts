@@ -1,5 +1,5 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasComponent } from "@woven-ecs/canvas-store";
+import { defineCanvasComponent } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * Connector component - defines a line/arrow between two blocks.
@@ -13,7 +13,7 @@ import { defineCanvasComponent } from "@woven-ecs/canvas-store";
  * - `startNeedsUpdate`/`endNeedsUpdate`: Flags to trigger recalculation
  */
 export const Connector = defineCanvasComponent(
-  { name: "connector", sync: "document" },
+  { name: 'connector', sync: 'document' },
   {
     startBlock: field.ref(),
     startBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
@@ -22,5 +22,5 @@ export const Connector = defineCanvasComponent(
     endBlock: field.ref(),
     endBlockUv: field.tuple(field.float64(), 2).default([0, 0]),
     endUv: field.tuple(field.float64(), 2).default([1, 1]),
-  }
-);
+  },
+)

@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { VerticalAlignment, TextAlignment } from "@infinitecanvas/core";
-import { ToolbarButton } from "@infinitecanvas/vue";
+import { TextAlignment, VerticalAlignment } from '@infinitecanvas/core'
 
 // Create a snapshot for a shape block that can be placed or dragged
-const snapshot = JSON.stringify({
+const _snapshot = JSON.stringify({
   block: {
-    tag: "shape",
+    tag: 'shape',
     size: [200, 150],
   },
   shape: { border: 5 },
@@ -20,7 +19,7 @@ const snapshot = JSON.stringify({
   verticalAlign: {
     value: VerticalAlignment.Center,
   },
-});
+})
 </script>
 
 <template>

@@ -1,5 +1,5 @@
-import { field, defineEditorState } from "@infinitecanvas/core";
-import { EraserState } from "../types";
+import { defineEditorState, field } from '@infinitecanvas/core'
+import { EraserState } from '../types'
 
 /**
  * Eraser state singleton - stores the current state of the eraser state machine.
@@ -15,7 +15,7 @@ import { EraserState } from "../types";
  * }
  * ```
  */
-export const EraserStateSingleton = defineEditorState("eraserState", {
+export const EraserStateSingleton = defineEditorState('eraserState', {
   /** Current state machine state */
   state: field.string().max(16).default(EraserState.Idle),
 
@@ -24,4 +24,4 @@ export const EraserStateSingleton = defineEditorState("eraserState", {
 
   /** Last pointer position in world coordinates [x, y] */
   lastWorldPosition: field.tuple(field.float64(), 2).default([0, 0]),
-});
+})

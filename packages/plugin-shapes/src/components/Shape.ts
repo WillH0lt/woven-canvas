@@ -1,5 +1,5 @@
-import { field, CanvasComponentDef } from "@infinitecanvas/core";
-import { ShapeKind, StrokeKind } from "../types";
+import { CanvasComponentDef, field } from '@infinitecanvas/core'
+import { ShapeKind, StrokeKind } from '../types'
 
 const ShapeSchema = {
   /** The kind of shape to render */
@@ -34,7 +34,7 @@ const ShapeSchema = {
 
   /** Fill color - alpha component (0-255) */
   fillAlpha: field.uint8().default(0),
-};
+}
 
 /**
  * Shape component - defines the visual properties of a shape block.
@@ -43,31 +43,21 @@ const ShapeSchema = {
  */
 class ShapeDef extends CanvasComponentDef<typeof ShapeSchema> {
   constructor() {
-    super({ name: "shape", sync: "document" }, ShapeSchema);
+    super({ name: 'shape', sync: 'document' }, ShapeSchema)
   }
 
   /**
    * Get the stroke color as a CSS rgba string.
    */
-  getStrokeColor(
-    strokeRed: number,
-    strokeGreen: number,
-    strokeBlue: number,
-    strokeAlpha: number
-  ): string {
-    return `rgba(${strokeRed}, ${strokeGreen}, ${strokeBlue}, ${strokeAlpha / 255})`;
+  getStrokeColor(strokeRed: number, strokeGreen: number, strokeBlue: number, strokeAlpha: number): string {
+    return `rgba(${strokeRed}, ${strokeGreen}, ${strokeBlue}, ${strokeAlpha / 255})`
   }
 
   /**
    * Get the fill color as a CSS rgba string.
    */
-  getFillColor(
-    fillRed: number,
-    fillGreen: number,
-    fillBlue: number,
-    fillAlpha: number
-  ): string {
-    return `rgba(${fillRed}, ${fillGreen}, ${fillBlue}, ${fillAlpha / 255})`;
+  getFillColor(fillRed: number, fillGreen: number, fillBlue: number, fillAlpha: number): string {
+    return `rgba(${fillRed}, ${fillGreen}, ${fillBlue}, ${fillAlpha / 255})`
   }
 
   /**
@@ -76,14 +66,13 @@ class ShapeDef extends CanvasComponentDef<typeof ShapeSchema> {
   getStrokeDashArray(strokeKind: StrokeKind, strokeWidth: number): string {
     switch (strokeKind) {
       case StrokeKind.Dashed:
-        return `${strokeWidth * 3} ${strokeWidth * 3}`;
+        return `${strokeWidth * 3} ${strokeWidth * 3}`
       case StrokeKind.None:
-        return "";
-      case StrokeKind.Solid:
+        return ''
       default:
-        return "";
+        return ''
     }
   }
 }
 
-export const Shape = new ShapeDef();
+export const Shape = new ShapeDef()

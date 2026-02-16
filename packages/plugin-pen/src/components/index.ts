@@ -1,1 +1,1 @@
-export { PenStroke, POINTS_CAPACITY } from "./PenStroke";
+export { PenStroke, POINTS_CAPACITY } from './PenStroke'

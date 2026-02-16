@@ -1,1 +1,1 @@
-export { EraserStateSingleton } from "./EraserStateSingleton";
+export { EraserStateSingleton } from './EraserStateSingleton'

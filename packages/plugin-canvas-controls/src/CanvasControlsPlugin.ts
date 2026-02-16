@@ -1,31 +1,22 @@
-import {
-  type EditorPlugin,
-  type EditorPluginFactory,
-} from "@infinitecanvas/core";
+import type { EditorPlugin, EditorPluginFactory } from '@infinitecanvas/core'
 
-import { PanState } from "./components";
-import { PostInputZoom, PostInputScroll, PostInputPan } from "./systems";
-import {
-  CanvasControlsOptionsSchema,
-  type CanvasControlsOptions,
-  type CanvasControlsOptionsInput,
-} from "./types";
+import { PanState } from './components'
+import { PostInputPan, PostInputScroll, PostInputZoom } from './systems'
+import { type CanvasControlsOptions, type CanvasControlsOptionsInput, CanvasControlsOptionsSchema } from './types'
 
 /**
  * Create a controls plugin with the given options.
  */
-function createControlsPlugin(
-  options: CanvasControlsOptionsInput = {}
-): EditorPlugin<CanvasControlsOptions> {
+function createControlsPlugin(options: CanvasControlsOptionsInput = {}): EditorPlugin<CanvasControlsOptions> {
   return {
-    name: "controls",
+    name: 'controls',
 
     resources: CanvasControlsOptionsSchema.parse(options),
 
     singletons: [PanState],
 
     systems: [PostInputZoom, PostInputScroll, PostInputPan],
-  };
+  }
 }
 
 /**
@@ -54,7 +45,6 @@ function createControlsPlugin(
  * });
  * ```
  */
-export const CanvasControlsPlugin: EditorPluginFactory<
-  CanvasControlsOptionsInput,
-  CanvasControlsOptions
-> = (options = {}) => createControlsPlugin(options);
+export const CanvasControlsPlugin: EditorPluginFactory<CanvasControlsOptionsInput, CanvasControlsOptions> = (
+  options = {},
+) => createControlsPlugin(options)

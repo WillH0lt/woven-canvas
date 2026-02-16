@@ -3,9 +3,9 @@
  */
 export const EraserState = {
   /** Idle - waiting for user to start erasing */
-  Idle: "idle",
+  Idle: 'idle',
   /** Erasing - actively drawing an eraser stroke */
-  Erasing: "erasing",
-} as const;
+  Erasing: 'erasing',
+} as const
 
-export type EraserState = (typeof EraserState)[keyof typeof EraserState];
+export type EraserState = (typeof EraserState)[keyof typeof EraserState]

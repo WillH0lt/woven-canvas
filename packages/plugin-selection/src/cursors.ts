@@ -1,18 +1,18 @@
-import { type CursorDef } from "@infinitecanvas/core";
+import type { CursorDef } from '@infinitecanvas/core'
 
 /**
  * Cursor kinds for transform operations.
  */
 export enum CursorKind {
-  Drag = "drag",
-  NESW = "nesw",
-  NWSE = "nwse",
-  NS = "ns",
-  EW = "ew",
-  RotateNW = "rotateNW",
-  RotateNE = "rotateNE",
-  RotateSW = "rotateSW",
-  RotateSE = "rotateSE",
+  Drag = 'drag',
+  NESW = 'nesw',
+  NWSE = 'nwse',
+  NS = 'ns',
+  EW = 'ew',
+  RotateNW = 'rotateNW',
+  RotateNE = 'rotateNE',
+  RotateSW = 'rotateSW',
+  RotateSE = 'rotateSE',
 }
 
 // SVG Templates
@@ -29,10 +29,10 @@ const DRAG_SVG = `
     <path d="M19.8,8.49l-2.83-2.83-2.83,2.83"/>
     <path d="M16.97,5.66v15.14"/>
   </g>
-</svg>`;
+</svg>`
 
 function makeResizeSvg(rotateZ: number): string {
-  const degrees = (rotateZ * 180) / Math.PI;
+  const degrees = (rotateZ * 180) / Math.PI
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -41,11 +41,11 @@ function makeResizeSvg(rotateZ: number): string {
     <path d="M8 17l4 4l4 -4"/>
     <path d="M12 3l0 18"/>
   </g>
-</svg>`;
+</svg>`
 }
 
 function makeRotateSvg(rotateZ: number): string {
-  const degrees = (rotateZ * 180) / Math.PI;
+  const degrees = (rotateZ * 180) / Math.PI
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 34 34"
      fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -54,7 +54,7 @@ function makeRotateSvg(rotateZ: number): string {
     <path d="M14.61,1l4,4-4,4"/>
     <path d="M18.61,5h-6.02c-4.19,0-7.59,3.4-7.59,7.59v6.17"/>
   </g>
-</svg>`;
+</svg>`
 }
 
 /**
@@ -107,4 +107,4 @@ export const CURSORS: Record<string, CursorDef> = {
     hotspot: [16, 16],
     rotationOffset: -Math.PI,
   },
-};
+}

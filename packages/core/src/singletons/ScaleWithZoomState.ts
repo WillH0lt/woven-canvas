@@ -1,5 +1,5 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasSingleton } from "@woven-ecs/canvas-store";
+import { defineCanvasSingleton } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * ScaleWithZoomState singleton - tracks state for the ScaleWithZoom system.
@@ -8,9 +8,9 @@ import { defineCanvasSingleton } from "@woven-ecs/canvas-store";
  * and update all ScaleWithZoom entities accordingly.
  */
 export const ScaleWithZoomState = defineCanvasSingleton(
-  { name: "scaleWithZoomState" },
+  { name: 'scaleWithZoomState' },
   {
     /** Last processed zoom level */
     lastZoom: field.float64().default(1),
-  }
-);
+  },
+)

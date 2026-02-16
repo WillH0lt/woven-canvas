@@ -4,19 +4,18 @@ import {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
-} from "@infinitecanvas/core";
+} from '@infinitecanvas/core'
 
-import * as components from "./components";
-import * as singletons from "./singletons";
-import * as systems from "./systems";
-import { PLUGIN_NAME } from "./constants";
+import * as components from './components'
+import { PLUGIN_NAME } from './constants'
+import * as singletons from './singletons'
+import * as systems from './systems'
 
 // Helper to filter EditorSystem instances from a namespace
 const filterSystems = (ns: object): EditorSystem[] =>
   Object.values(ns).filter(
-    (v): v is EditorSystem =>
-      typeof v === "object" && v !== null && "_system" in v && "phase" in v
-  );
+    (v): v is EditorSystem => typeof v === 'object' && v !== null && '_system' in v && 'phase' in v,
+  )
 
 /**
  * Options for configuring the Eraser plugin.
@@ -27,7 +26,7 @@ export interface EraserPluginOptions {
    * Larger values create a bigger eraser area.
    * @default 8
    */
-  strokeRadius?: number;
+  strokeRadius?: number
 }
 
 /**
@@ -45,24 +44,18 @@ export interface EraserPluginOptions {
  * const editor = new Editor(container, { plugins: [plugin] });
  * ```
  */
-export function createEraserPlugin(
-  options: EraserPluginOptions = {}
-): EditorPlugin<EraserPluginOptions> {
+export function createEraserPlugin(options: EraserPluginOptions = {}): EditorPlugin<EraserPluginOptions> {
   return {
     name: PLUGIN_NAME,
 
-    components: Object.values(components).filter(
-      (v) => v instanceof CanvasComponentDef
-    ),
+    components: Object.values(components).filter((v) => v instanceof CanvasComponentDef),
 
-    singletons: Object.values(singletons).filter(
-      (v) => v instanceof CanvasSingletonDef
-    ),
+    singletons: Object.values(singletons).filter((v) => v instanceof CanvasSingletonDef),
 
     blockDefs: [
       {
-        tag: "eraser-stroke",
-        stratum: "overlay",
+        tag: 'eraser-stroke',
+        stratum: 'overlay',
         canRotate: false,
         canScale: false,
         components: [components.EraserStroke],
@@ -74,7 +67,7 @@ export function createEraserPlugin(
     resources: {
       strokeRadius: options.strokeRadius ?? 8,
     },
-  };
+  }
 }
 
 /**
@@ -106,6 +99,4 @@ export function createEraserPlugin(
  * });
  * ```
  */
-export const EraserPlugin: EditorPluginFactory<EraserPluginOptions> = (
-  options = {}
-) => createEraserPlugin(options);
+export const EraserPlugin: EditorPluginFactory<EraserPluginOptions> = (options = {}) => createEraserPlugin(options)

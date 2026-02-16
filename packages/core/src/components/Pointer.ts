@@ -1,36 +1,36 @@
-import { field, ComponentDef, type Context } from "@woven-ecs/core";
-import type { Vec2 } from "@infinitecanvas/math";
-import { CanvasComponentDef } from "@woven-ecs/canvas-store";
+import type { Vec2 } from '@infinitecanvas/math'
+import { CanvasComponentDef } from '@woven-ecs/canvas-store'
+import { type Context, field } from '@woven-ecs/core'
 
 /**
  * Pointer button types
  */
 export const PointerButton = {
-  None: "none",
-  Left: "left",
-  Middle: "middle",
-  Right: "right",
-  Back: "back",
-  Forward: "forward",
-} as const;
+  None: 'none',
+  Left: 'left',
+  Middle: 'middle',
+  Right: 'right',
+  Back: 'back',
+  Forward: 'forward',
+} as const
 
-export type PointerButton = (typeof PointerButton)[keyof typeof PointerButton];
+export type PointerButton = (typeof PointerButton)[keyof typeof PointerButton]
 
 /**
  * Pointer type (input device)
  */
 export const PointerType = {
-  Mouse: "mouse",
-  Pen: "pen",
-  Touch: "touch",
-} as const;
+  Mouse: 'mouse',
+  Pen: 'pen',
+  Touch: 'touch',
+} as const
 
-export type PointerType = (typeof PointerType)[keyof typeof PointerType];
+export type PointerType = (typeof PointerType)[keyof typeof PointerType]
 
 /**
  * Number of position samples to keep for velocity calculation
  */
-const SAMPLE_COUNT = 6;
+const SAMPLE_COUNT = 6
 
 const PointerSchema = {
   /** Unique pointer ID (from PointerEvent.pointerId) */
@@ -58,7 +58,7 @@ const PointerSchema = {
   _sampleCount: field.int32().default(0),
   /** Computed velocity [vx, vy] in pixels per second @internal */
   _velocity: field.tuple(field.float32(), 2).default([0, 0]),
-};
+}
 
 /**
  * Pointer component - represents an active pointer (mouse, touch, or pen).
@@ -75,13 +75,13 @@ const PointerSchema = {
  */
 class PointerDef extends CanvasComponentDef<typeof PointerSchema> {
   constructor() {
-    super({ name: "pointer" }, PointerSchema);
+    super({ name: 'pointer' }, PointerSchema)
   }
 
   /** Get the computed velocity of a pointer */
   getVelocity(ctx: Context, entityId: number): Vec2 {
-    const p = this.read(ctx, entityId);
-    return [p._velocity[0], p._velocity[1]];
+    const p = this.read(ctx, entityId)
+    return [p._velocity[0], p._velocity[1]]
   }
 
   /**
@@ -92,17 +92,17 @@ class PointerDef extends CanvasComponentDef<typeof PointerSchema> {
   getButton(button: number): PointerButton {
     switch (button) {
       case 0:
-        return PointerButton.Left;
+        return PointerButton.Left
       case 1:
-        return PointerButton.Middle;
+        return PointerButton.Middle
       case 2:
-        return PointerButton.Right;
+        return PointerButton.Right
       case 3:
-        return PointerButton.Back;
+        return PointerButton.Back
       case 4:
-        return PointerButton.Forward;
+        return PointerButton.Forward
       default:
-        return PointerButton.None;
+        return PointerButton.None
     }
   }
 
@@ -113,17 +113,17 @@ class PointerDef extends CanvasComponentDef<typeof PointerSchema> {
    */
   getType(pointerType: string): PointerType {
     switch (pointerType) {
-      case "pen":
-        return PointerType.Pen;
-      case "touch":
-        return PointerType.Touch;
+      case 'pen':
+        return PointerType.Pen
+      case 'touch':
+        return PointerType.Touch
       default:
-        return PointerType.Mouse;
+        return PointerType.Mouse
     }
   }
 }
 
-export const Pointer = new PointerDef();
+export const Pointer = new PointerDef()
 
 /**
  * Add a position sample and update velocity calculation.
@@ -133,95 +133,86 @@ export const Pointer = new PointerDef();
  * @param position - Current position [x, y]
  * @param time - Current time in seconds
  */
-export function addPointerSample(
-  pointer: ReturnType<typeof Pointer.write>,
-  position: Vec2,
-  time: number
-): void {
+export function addPointerSample(pointer: ReturnType<typeof Pointer.write>, position: Vec2, time: number): void {
   // Avoid duplicate samples at same time
-  const currentIndex = pointer._sampleCount % SAMPLE_COUNT;
-  const mostRecentTime = pointer._prevTimes[currentIndex] || 0;
-  if (Math.abs(mostRecentTime - time) < 0.001) return;
+  const currentIndex = pointer._sampleCount % SAMPLE_COUNT
+  const mostRecentTime = pointer._prevTimes[currentIndex] || 0
+  if (Math.abs(mostRecentTime - time) < 0.001) return
 
   // Update current position
-  pointer.position = position;
+  pointer.position = position
 
   // Push to ring buffer
-  pointer._sampleCount++;
-  const writeIndex = pointer._sampleCount % SAMPLE_COUNT;
-  pointer._prevPositions[writeIndex * 2] = position[0];
-  pointer._prevPositions[writeIndex * 2 + 1] = position[1];
-  pointer._prevTimes[writeIndex] = time;
+  pointer._sampleCount++
+  const writeIndex = pointer._sampleCount % SAMPLE_COUNT
+  pointer._prevPositions[writeIndex * 2] = position[0]
+  pointer._prevPositions[writeIndex * 2 + 1] = position[1]
+  pointer._prevTimes[writeIndex] = time
 
   // Calculate velocity using weighted least-squares
-  const pointCount = Math.min(pointer._sampleCount, SAMPLE_COUNT);
+  const pointCount = Math.min(pointer._sampleCount, SAMPLE_COUNT)
   if (pointCount <= 1) {
-    pointer._velocity = [0, 0];
-    return;
+    pointer._velocity = [0, 0]
+    return
   }
 
-  const mod = (n: number) => ((n % SAMPLE_COUNT) + SAMPLE_COUNT) % SAMPLE_COUNT;
+  const mod = (n: number) => ((n % SAMPLE_COUNT) + SAMPLE_COUNT) % SAMPLE_COUNT
 
   // Exponentially time-decayed weighted least-squares fit
-  const TAU = 0.04; // seconds, adjust to tune responsiveness vs smoothness
-  const EPS = 1e-6;
+  const TAU = 0.04 // seconds, adjust to tune responsiveness vs smoothness
+  const EPS = 1e-6
 
-  let W = 0;
-  let WU = 0;
-  let WUU = 0;
-  let WX = 0;
-  let WY = 0;
-  let WU_X = 0;
-  let WU_Y = 0;
+  let W = 0
+  let WU = 0
+  let WUU = 0
+  let WX = 0
+  let WY = 0
+  let WU_X = 0
+  let WU_Y = 0
 
   for (let j = 0; j < pointCount; j++) {
-    const idx = mod(pointer._sampleCount - pointCount + 1 + j);
+    const idx = mod(pointer._sampleCount - pointCount + 1 + j)
 
-    const t = pointer._prevTimes[idx] || 0;
-    const u = t - time;
-    const recency = -u;
+    const t = pointer._prevTimes[idx] || 0
+    const u = t - time
+    const recency = -u
 
-    if (recency > 5 * TAU) continue;
+    if (recency > 5 * TAU) continue
 
-    const w = Math.exp(-recency / TAU);
+    const w = Math.exp(-recency / TAU)
 
-    const x = pointer._prevPositions[idx * 2] || 0;
-    const y = pointer._prevPositions[idx * 2 + 1] || 0;
+    const x = pointer._prevPositions[idx * 2] || 0
+    const y = pointer._prevPositions[idx * 2 + 1] || 0
 
-    W += w;
-    WU += w * u;
-    WUU += w * u * u;
+    W += w
+    WU += w * u
+    WUU += w * u * u
 
-    WX += w * x;
-    WY += w * y;
+    WX += w * x
+    WY += w * y
 
-    WU_X += w * u * x;
-    WU_Y += w * u * y;
+    WU_X += w * u * x
+    WU_Y += w * u * y
   }
 
-  const denom = W * WUU - WU * WU;
+  const denom = W * WUU - WU * WU
   if (Math.abs(denom) <= EPS) {
     // Fallback: last-segment velocity
-    const iCurr = pointer._sampleCount % SAMPLE_COUNT;
-    const iPrev = mod(pointer._sampleCount - 1);
-    const dt =
-      (pointer._prevTimes[iCurr] || 0) - (pointer._prevTimes[iPrev] || 0);
+    const iCurr = pointer._sampleCount % SAMPLE_COUNT
+    const iPrev = mod(pointer._sampleCount - 1)
+    const dt = (pointer._prevTimes[iCurr] || 0) - (pointer._prevTimes[iPrev] || 0)
     if (dt > EPS) {
-      const dx =
-        (pointer._prevPositions[iCurr * 2] || 0) -
-        (pointer._prevPositions[iPrev * 2] || 0);
-      const dy =
-        (pointer._prevPositions[iCurr * 2 + 1] || 0) -
-        (pointer._prevPositions[iPrev * 2 + 1] || 0);
-      pointer._velocity = [dx / dt, dy / dt];
+      const dx = (pointer._prevPositions[iCurr * 2] || 0) - (pointer._prevPositions[iPrev * 2] || 0)
+      const dy = (pointer._prevPositions[iCurr * 2 + 1] || 0) - (pointer._prevPositions[iPrev * 2 + 1] || 0)
+      pointer._velocity = [dx / dt, dy / dt]
     } else {
-      pointer._velocity = [0, 0];
+      pointer._velocity = [0, 0]
     }
-    return;
+    return
   }
 
-  const vx = (W * WU_X - WU * WX) / denom;
-  const vy = (W * WU_Y - WU * WY) / denom;
+  const vx = (W * WU_X - WU * WX) / denom
+  const vy = (W * WU_Y - WU * WY) / denom
 
-  pointer._velocity = [vx, vy];
+  pointer._velocity = [vx, vy]
 }

@@ -1,1 +1,1 @@
-export { selectSystem } from "./selectSystem";
+export { selectSystem } from './selectSystem'

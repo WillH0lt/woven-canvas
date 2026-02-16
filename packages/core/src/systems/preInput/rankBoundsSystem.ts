@@ -1,12 +1,11 @@
-import { defineQuery, type Context } from "@woven-ecs/core";
-
-import { defineEditorSystem } from "../../EditorSystem";
-import { Block } from "../../components";
-import { Synced } from "@woven-ecs/canvas-store";
-import { RankBounds } from "../../singletons";
+import { Synced } from '@woven-ecs/canvas-store'
+import { type Context, defineQuery } from '@woven-ecs/core'
+import { Block } from '../../components'
+import { defineEditorSystem } from '../../EditorSystem'
+import { RankBounds } from '../../singletons'
 
 // Query for blocks - tracks added blocks to sync their ranks
-const blocksQuery = defineQuery((q) => q.with(Synced, Block));
+const blocksQuery = defineQuery((q) => q.with(Synced, Block))
 
 /**
  * Pre-input system - synchronizes RankBounds singleton with block ranks.
@@ -16,17 +15,17 @@ const blocksQuery = defineQuery((q) => q.with(Synced, Block));
  * - Blocks added via sync (multiplayer/persistence)
  * - Blocks with ranks that weren't created through RankBounds.genNext/genPrev
  */
-export const rankBoundsSystem = defineEditorSystem({ phase: "input", priority: 100 }, (ctx: Context) => {
-  const added = blocksQuery.added(ctx);
+export const rankBoundsSystem = defineEditorSystem({ phase: 'input', priority: 100 }, (ctx: Context) => {
+  const added = blocksQuery.added(ctx)
 
   // Process newly added blocks
   for (const entityId of added) {
-    const block = Block.read(ctx, entityId);
-    if (block.rank === "") {
-      const writableBlock = Block.write(ctx, entityId);
-      writableBlock.rank = RankBounds.genNext(ctx);
+    const block = Block.read(ctx, entityId)
+    if (block.rank === '') {
+      const writableBlock = Block.write(ctx, entityId)
+      writableBlock.rank = RankBounds.genNext(ctx)
     } else {
-      RankBounds.add(ctx, block.rank);
+      RankBounds.add(ctx, block.rank)
     }
   }
-});
+})

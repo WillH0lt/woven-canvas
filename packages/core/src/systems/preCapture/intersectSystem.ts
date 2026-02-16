@@ -1,37 +1,22 @@
-import {
-  defineQuery,
-  addComponent,
-  removeComponent,
-  hasComponent,
-  type Context,
-} from "@woven-ecs/core";
-
-import { defineEditorSystem } from "../../EditorSystem";
-import { Camera, Mouse, Controls, Intersect } from "../../singletons";
-import {
-  Pointer,
-  Block,
-  Aabb,
-  Hovered,
-  HitGeometry,
-  Held,
-} from "../../components";
-import { Synced } from "@woven-ecs/canvas-store";
-import { computeAabb, intersectPoint, isHeldByRemote } from "../../helpers";
+import { addComponent, type Context, defineQuery, hasComponent, removeComponent } from '@woven-ecs/core'
+import { Aabb, Block, Held, HitGeometry, Hovered, Pointer } from '../../components'
+import { defineEditorSystem } from '../../EditorSystem'
+import { computeAabb, intersectPoint, isHeldByRemote } from '../../helpers'
+import { Camera, Controls, Intersect, Mouse } from '../../singletons'
 
 // Query for blocks that have changed (need AABB recalculation)
-const blocksChanged = defineQuery((q) => q.tracking(Block));
+const blocksChanged = defineQuery((q) => q.tracking(Block))
 
-const hitGeometryChanged = defineQuery((q) => q.tracking(HitGeometry));
+const hitGeometryChanged = defineQuery((q) => q.tracking(HitGeometry))
 
 // Query for held entities - track to re-evaluate hover when Held changes
-const heldQuery = defineQuery((q) => q.with(Held).tracking(Held));
+const heldQuery = defineQuery((q) => q.with(Held).tracking(Held))
 
 // Query for currently hovered entities
-const hoveredQuery = defineQuery((q) => q.with(Hovered));
+const hoveredQuery = defineQuery((q) => q.with(Hovered))
 
 // Query for active pointers
-const pointerQuery = defineQuery((q) => q.with(Pointer));
+const pointerQuery = defineQuery((q) => q.with(Pointer))
 
 /**
  * Clear all Hovered components.
@@ -39,7 +24,7 @@ const pointerQuery = defineQuery((q) => q.with(Pointer));
 function clearHovered(ctx: Context): void {
   for (const entityId of hoveredQuery.current(ctx)) {
     if (hasComponent(ctx, entityId, Hovered)) {
-      removeComponent(ctx, entityId, Hovered);
+      removeComponent(ctx, entityId, Hovered)
     }
   }
 }
@@ -49,19 +34,16 @@ function clearHovered(ctx: Context): void {
  * Returns undefined if the topmost synced entity is held by a remote user,
  * to prevent accidentally grabbing blocks underneath.
  */
-function findValidHoverTarget(
-  ctx: Context,
-  intersected: number[],
-): number | undefined {
+function findValidHoverTarget(ctx: Context, intersected: number[]): number | undefined {
   for (const entityId of intersected) {
     // If the topmost synced entity is held by remote, don't hover anything
     // This prevents accidentally grabbing blocks underneath held blocks
-    if (isHeldByRemote(ctx, entityId)) return undefined;
+    if (isHeldByRemote(ctx, entityId)) return undefined
 
-    return entityId;
+    return entityId
   }
 
-  return undefined;
+  return undefined
 }
 
 /**
@@ -69,20 +51,20 @@ function findValidHoverTarget(
  */
 function updateHovered(ctx: Context, intersected: number[]): void {
   // Only show hover when select tool is active
-  const controls = Controls.read(ctx);
-  const selectToolActive = controls.leftMouseTool === "select";
+  const controls = Controls.read(ctx)
+  const selectToolActive = controls.leftMouseTool === 'select'
 
   // Clear existing hovered entities
-  clearHovered(ctx);
+  clearHovered(ctx)
 
-  if (!selectToolActive) return;
+  if (!selectToolActive) return
 
   // Find first valid hover target (not held by remote)
-  const newHoveredId = findValidHoverTarget(ctx, intersected);
+  const newHoveredId = findValidHoverTarget(ctx, intersected)
 
   // Add hovered to new entity
   if (newHoveredId !== undefined) {
-    addComponent(ctx, newHoveredId, Hovered, {});
+    addComponent(ctx, newHoveredId, Hovered, {})
   }
 }
 
@@ -90,15 +72,15 @@ function updateHovered(ctx: Context, intersected: number[]): void {
  * Check if two arrays are equal.
  */
 function arraysEqual(a: number[], b: number[]): boolean {
-  if (a.length !== b.length) return false;
+  if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
+    if (a[i] !== b[i]) return false
   }
-  return true;
+  return true
 }
 
-const added = new Set<number>();
-const changed = new Set<number>();
+const added = new Set<number>()
+const changed = new Set<number>()
 
 /**
  * Pre-capture intersect system - computes AABBs and detects mouse-block intersections.
@@ -111,96 +93,87 @@ const changed = new Set<number>();
  *
  * Note: For test isolation, use createIntersectSystem() instead to get a fresh instance.
  */
-export const intersectSystem = defineEditorSystem(
-  { phase: "capture", priority: 100 },
-  (ctx: Context) => {
-    // Update AABBs for changed blocks
-    added.clear();
-    for (const entityId of blocksChanged.added(ctx)) {
-      added.add(entityId);
-    }
-    for (const entityId of hitGeometryChanged.added(ctx)) {
-      added.add(entityId);
-    }
+export const intersectSystem = defineEditorSystem({ phase: 'capture', priority: 100 }, (ctx: Context) => {
+  // Update AABBs for changed blocks
+  added.clear()
+  for (const entityId of blocksChanged.added(ctx)) {
+    added.add(entityId)
+  }
+  for (const entityId of hitGeometryChanged.added(ctx)) {
+    added.add(entityId)
+  }
 
-    changed.clear();
-    for (const entityId of blocksChanged.changed(ctx)) {
-      changed.add(entityId);
-    }
-    for (const entityId of hitGeometryChanged.changed(ctx)) {
-      changed.add(entityId);
-    }
+  changed.clear()
+  for (const entityId of blocksChanged.changed(ctx)) {
+    changed.add(entityId)
+  }
+  for (const entityId of hitGeometryChanged.changed(ctx)) {
+    changed.add(entityId)
+  }
 
-    for (const entityId of added) {
-      // Ensure block has Aabb component
-      if (!hasComponent(ctx, entityId, Aabb)) {
-        addComponent(ctx, entityId, Aabb, { value: [0, 0, 0, 0] });
-      }
-
-      const aabb = Aabb.write(ctx, entityId);
-      computeAabb(ctx, entityId, aabb.value);
+  for (const entityId of added) {
+    // Ensure block has Aabb component
+    if (!hasComponent(ctx, entityId, Aabb)) {
+      addComponent(ctx, entityId, Aabb, { value: [0, 0, 0, 0] })
     }
 
-    for (const entityId of changed) {
-      const aabb = Aabb.write(ctx, entityId);
-      computeAabb(ctx, entityId, aabb.value);
-    }
+    const aabb = Aabb.write(ctx, entityId)
+    computeAabb(ctx, entityId, aabb.value)
+  }
 
-    // Check if we need to update intersections
-    const mouseDidMove = Mouse.didMove(ctx);
-    const mouseDidLeave = Mouse.didLeave(ctx);
-    const mouseDidScroll = Mouse.didScroll(ctx);
-    const blocksHaveChanged = added.size > 0 || changed.size > 0;
+  for (const entityId of changed) {
+    const aabb = Aabb.write(ctx, entityId)
+    computeAabb(ctx, entityId, aabb.value)
+  }
 
-    // Check if Held changed (need to re-evaluate hover when blocks are released)
-    const heldAdded = heldQuery.added(ctx);
-    const heldRemoved = heldQuery.removed(ctx);
-    const heldChanged = heldAdded.length > 0 || heldRemoved.length > 0;
+  // Check if we need to update intersections
+  const mouseDidMove = Mouse.didMove(ctx)
+  const mouseDidLeave = Mouse.didLeave(ctx)
+  const mouseDidScroll = Mouse.didScroll(ctx)
+  const blocksHaveChanged = added.size > 0 || changed.size > 0
 
-    // Only update if mouse moved, left, scrolled, blocks changed, or held state changed
-    if (
-      !mouseDidMove &&
-      !mouseDidLeave &&
-      !mouseDidScroll &&
-      !blocksHaveChanged &&
-      !heldChanged
-    ) {
-      return;
-    }
+  // Check if Held changed (need to re-evaluate hover when blocks are released)
+  const heldAdded = heldQuery.added(ctx)
+  const heldRemoved = heldQuery.removed(ctx)
+  const heldChanged = heldAdded.length > 0 || heldRemoved.length > 0
 
-    // Handle mouse leave - clear all intersections and hover
-    if (mouseDidLeave) {
-      Intersect.clear(ctx);
-      clearHovered(ctx);
-      return;
-    }
+  // Only update if mouse moved, left, scrolled, blocks changed, or held state changed
+  if (!mouseDidMove && !mouseDidLeave && !mouseDidScroll && !blocksHaveChanged && !heldChanged) {
+    return
+  }
 
-    // Get mouse position in world coordinates
-    const mousePos = Mouse.getPosition(ctx);
-    const worldPos = Camera.toWorld(ctx, mousePos);
+  // Handle mouse leave - clear all intersections and hover
+  if (mouseDidLeave) {
+    Intersect.clear(ctx)
+    clearHovered(ctx)
+    return
+  }
 
-    // Find intersected blocks (sorted by z-order, topmost first)
-    const intersected = intersectPoint(ctx, worldPos);
+  // Get mouse position in world coordinates
+  const mousePos = Mouse.getPosition(ctx)
+  const worldPos = Camera.toWorld(ctx, mousePos)
 
-    // Check if intersections changed
-    const prevIntersected = Intersect.getAll(ctx);
-    const intersectsChanged = !arraysEqual(intersected, prevIntersected);
+  // Find intersected blocks (sorted by z-order, topmost first)
+  const intersected = intersectPoint(ctx, worldPos)
 
-    if (intersectsChanged) {
-      // Update Intersect singleton
-      Intersect.setAll(ctx, intersected);
-    }
+  // Check if intersections changed
+  const prevIntersected = Intersect.getAll(ctx)
+  const intersectsChanged = !arraysEqual(intersected, prevIntersected)
 
-    // Don't change hover state while pointer is down
-    // This prevents flickering when dragging objects
-    const pointers = pointerQuery.current(ctx);
-    if (pointers.length > 0) {
-      return;
-    }
+  if (intersectsChanged) {
+    // Update Intersect singleton
+    Intersect.setAll(ctx, intersected)
+  }
 
-    // Update hovered entity if intersections or held state changed
-    if (intersectsChanged || heldChanged) {
-      updateHovered(ctx, intersected);
-    }
-  },
-);
+  // Don't change hover state while pointer is down
+  // This prevents flickering when dragging objects
+  const pointers = pointerQuery.current(ctx)
+  if (pointers.length > 0) {
+    return
+  }
+
+  // Update hovered entity if intersections or held state changed
+  if (intersectsChanged || heldChanged) {
+    updateHovered(ctx, intersected)
+  }
+})

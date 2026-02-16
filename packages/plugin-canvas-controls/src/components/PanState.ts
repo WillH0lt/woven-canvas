@@ -1,13 +1,13 @@
-import { field, defineEditorState } from "@infinitecanvas/core";
+import { defineEditorState, field } from '@infinitecanvas/core'
 
-import { PanStateValue } from "../types";
+import { PanStateValue } from '../types'
 
 /**
  * Pan state singleton - stores the state machine state and context for panning.
  *
  * Uses defineEditorState to simplify XState machine integration.
  */
-export const PanState = defineEditorState("panState", {
+export const PanState = defineEditorState('panState', {
   /** Current state of the pan state machine */
   state: field.string().max(16).default(PanStateValue.Idle),
   /** World X coordinate where pan started */
@@ -26,4 +26,4 @@ export const PanState = defineEditorState("panState", {
   expectedLeft: field.float64().default(0),
   /** Expected camera top position (to detect external changes) */
   expectedTop: field.float64().default(0),
-});
+})

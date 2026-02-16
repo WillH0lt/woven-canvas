@@ -1,2 +1,2 @@
-export { scaleWithZoomSystem } from "./scaleWithZoomSystem";
-export { canSeeBlocksSystem } from "./canSeeBlocksSystem";
+export { canSeeBlocksSystem } from './canSeeBlocksSystem'
+export { scaleWithZoomSystem } from './scaleWithZoomSystem'

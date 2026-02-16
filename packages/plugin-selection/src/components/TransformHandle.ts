@@ -1,7 +1,6 @@
-import { field, defineCanvasComponent } from "@infinitecanvas/core";
-
-import { TransformHandleKind } from "../types";
-import { CursorKind } from "../cursors";
+import { defineCanvasComponent, field } from '@infinitecanvas/core'
+import { CursorKind } from '../cursors'
+import { TransformHandleKind } from '../types'
 
 /**
  * TransformHandle component - marks an entity as a transform handle.
@@ -15,12 +14,12 @@ import { CursorKind } from "../cursors";
  * - `cursorKind`: Cursor to show when hovering this handle
  */
 export const TransformHandle = defineCanvasComponent(
-  { name: "transformHandle" },
+  { name: 'transformHandle' },
   {
     kind: field.string().max(16).default(TransformHandleKind.Scale),
     vectorX: field.int8().default(0),
     vectorY: field.int8().default(0),
     transformBox: field.ref(),
     cursorKind: field.string().max(16).default(CursorKind.Drag),
-  }
-);
+  },
+)

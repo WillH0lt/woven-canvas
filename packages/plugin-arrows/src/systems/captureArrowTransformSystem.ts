@@ -1,45 +1,42 @@
-import { assign, not, setup } from "xstate";
 import {
-  type InferStateContext,
+  Block,
+  type Context,
+  Controls,
   defineEditorSystem,
   defineQuery,
-  Controls,
-  getPointerInput,
-  type PointerInput,
   type EntityId,
-  type Context,
+  getPointerInput,
   hasComponent,
-  Block,
-} from "@infinitecanvas/core";
-import { Selected } from "@infinitecanvas/plugin-selection";
-
-import { ArrowTransformState } from "../singletons";
-import { ArrowTransformStateEnum } from "../types";
-import { ArcArrow, ElbowArrow } from "../components";
+  type InferStateContext,
+  type PointerInput,
+} from '@infinitecanvas/core'
+import { Selected } from '@infinitecanvas/plugin-selection'
+import { assign, not, setup } from 'xstate'
 import {
   AddOrUpdateTransformHandles,
-  RemoveTransformHandles,
   HideTransformHandles,
+  RemoveTransformHandles,
   ShowTransformHandles,
-} from "../commands";
+} from '../commands'
+import { ArcArrow, ElbowArrow } from '../components'
+import { ArrowTransformState } from '../singletons'
+import { ArrowTransformStateEnum } from '../types'
 
 // Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) =>
-  q.with(Block).tracking(Selected),
-);
+const selectedBlocksQuery = defineQuery((q) => q.with(Block).tracking(Selected))
 
 /**
  * Arrow transform state machine context - derived from ArrowTransformState schema.
  */
-type ArrowTransformContext = InferStateContext<typeof ArrowTransformState>;
+type ArrowTransformContext = InferStateContext<typeof ArrowTransformState>
 
 type SelectionEvent =
   | PointerInput
   | {
-      type: "selectionChanged";
-      ctx: Context;
-      selectedEntities: EntityId[];
-    };
+      type: 'selectionChanged'
+      ctx: Context
+      selectedEntities: EntityId[]
+    }
 
 /**
  * Arrow transform state machine - handles selection and transform of arrows.
@@ -56,126 +53,120 @@ const arrowTransformMachine = setup({
   },
   guards: {
     selectingSingleArrow: ({ event }) => {
-      if (!("selectedEntities" in event)) return false;
-      if (event.selectedEntities.length !== 1) return false;
+      if (!('selectedEntities' in event)) return false
+      if (event.selectedEntities.length !== 1) return false
 
-      const entityId = event.selectedEntities[0];
-      return (
-        hasComponent(event.ctx, entityId, ArcArrow) ||
-        hasComponent(event.ctx, entityId, ElbowArrow)
-      );
+      const entityId = event.selectedEntities[0]
+      return hasComponent(event.ctx, entityId, ArcArrow) || hasComponent(event.ctx, entityId, ElbowArrow)
     },
   },
   actions: {
     setActiveArrow: assign({
       activeArrow: ({ event }): EntityId | null => {
-        if (!("selectedEntities" in event)) return null;
-        if (event.selectedEntities.length === 0) return null;
-        return event.selectedEntities[0];
+        if (!('selectedEntities' in event)) return null
+        if (event.selectedEntities.length === 0) return null
+        return event.selectedEntities[0]
       },
     }),
 
     addOrUpdateTransformHandles: ({ context, event }) => {
-      if (!context.activeArrow) return;
+      if (!context.activeArrow) return
       AddOrUpdateTransformHandles.spawn(event.ctx, {
         arrowEntityId: context.activeArrow,
-      });
+      })
     },
 
     removeTransformHandles: ({ event }) => {
-      RemoveTransformHandles.spawn(event.ctx, {});
+      RemoveTransformHandles.spawn(event.ctx, {})
     },
 
     hideTransformHandles: ({ event }) => {
-      HideTransformHandles.spawn(event.ctx, {});
+      HideTransformHandles.spawn(event.ctx, {})
     },
 
     showTransformHandles: ({ event }) => {
-      ShowTransformHandles.spawn(event.ctx, {});
+      ShowTransformHandles.spawn(event.ctx, {})
     },
   },
 }).createMachine({
-  id: "arrowTransform",
+  id: 'arrowTransform',
   initial: ArrowTransformStateEnum.None,
   context: {
     activeArrow: null,
   },
   states: {
     [ArrowTransformStateEnum.None]: {
-      entry: "removeTransformHandles",
+      entry: 'removeTransformHandles',
       on: {
         selectionChanged: [
           {
-            guard: "selectingSingleArrow",
-            actions: "setActiveArrow",
+            guard: 'selectingSingleArrow',
+            actions: 'setActiveArrow',
             target: ArrowTransformStateEnum.Idle,
           },
         ],
       },
     },
     [ArrowTransformStateEnum.Idle]: {
-      entry: "addOrUpdateTransformHandles",
+      entry: 'addOrUpdateTransformHandles',
       on: {
         selectionChanged: [
           {
-            guard: not("selectingSingleArrow"),
+            guard: not('selectingSingleArrow'),
             target: ArrowTransformStateEnum.None,
           },
           {
-            actions: ["setActiveArrow", "addOrUpdateTransformHandles"],
+            actions: ['setActiveArrow', 'addOrUpdateTransformHandles'],
           },
         ],
         pointerDown: {
-          actions: "hideTransformHandles",
+          actions: 'hideTransformHandles',
         },
         pointerUp: {
-          actions: "showTransformHandles",
+          actions: 'showTransformHandles',
         },
       },
     },
   },
-});
+})
 
 /**
  * Capture arrow transform system - runs the arrow transform state machine.
  *
  * Runs in the capture phase to handle selection changes and transform operations.
  */
-export const captureArrowTransformSystem = defineEditorSystem(
-  { phase: "capture", priority: 99 },
-  (ctx) => {
-    const events = getSelectionEvents(ctx);
-    if (events.length === 0) return;
+export const captureArrowTransformSystem = defineEditorSystem({ phase: 'capture', priority: 99 }, (ctx) => {
+  const events = getSelectionEvents(ctx)
+  if (events.length === 0) return
 
-    ArrowTransformState.run(ctx, arrowTransformMachine, events);
-  },
-);
+  ArrowTransformState.run(ctx, arrowTransformMachine, events)
+})
 
 /**
  * Get selection-related events for the transform state machine.
  */
 function getSelectionEvents(ctx: Context): SelectionEvent[] {
-  const events: SelectionEvent[] = [];
+  const events: SelectionEvent[] = []
 
   // Check for selection changes using tracking query
-  const added = selectedBlocksQuery.added(ctx);
-  const removed = selectedBlocksQuery.removed(ctx);
+  const added = selectedBlocksQuery.added(ctx)
+  const removed = selectedBlocksQuery.removed(ctx)
 
   if (added.length > 0 || removed.length > 0) {
     // Get blocks selected by the current session only
-    const selectedEntities = [...selectedBlocksQuery.current(ctx)];
+    const selectedEntities = [...selectedBlocksQuery.current(ctx)]
 
     events.push({
-      type: "selectionChanged",
+      type: 'selectionChanged',
       ctx,
       selectedEntities,
-    });
+    })
   }
 
   // Get pointer events for select tool
-  const buttons = Controls.getButtons(ctx, "select");
-  const pointerEvents = getPointerInput(ctx, buttons);
-  events.push(...pointerEvents);
+  const buttons = Controls.getButtons(ctx, 'select')
+  const pointerEvents = getPointerInput(ctx, buttons)
+  events.push(...pointerEvents)
 
-  return events;
+  return events
 }

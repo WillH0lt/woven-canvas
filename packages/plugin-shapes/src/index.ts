@@ -26,15 +26,12 @@
  * @packageDocumentation
  */
 
-// Plugin
-export { ShapesPlugin, createShapesPlugin } from "./ShapesPlugin";
-export type { ShapesPluginOptions } from "./ShapesPlugin";
-
-// Types
-export { ShapeKind, StrokeKind } from "./types";
-
 // Components
-export { Shape } from "./components";
-
+export { Shape } from './components'
+export type { ShapesPluginOptions } from './ShapesPlugin'
+// Plugin
+export { createShapesPlugin, ShapesPlugin } from './ShapesPlugin'
 // Shape data
-export { getShapePath } from "./shapes";
+export { getShapePath } from './shapes'
+// Types
+export { ShapeKind, StrokeKind } from './types'

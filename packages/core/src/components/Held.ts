@@ -1,5 +1,5 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasComponent } from "@woven-ecs/canvas-store";
+import { defineCanvasComponent } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * Held component - marks an entity as being actively held by a user.
@@ -12,8 +12,8 @@ import { defineCanvasComponent } from "@woven-ecs/canvas-store";
  * This syncs ephemerally so remote users can see what's being held.
  */
 export const Held = defineCanvasComponent(
-  { name: "held", sync: "ephemeral" },
+  { name: 'held', sync: 'ephemeral' },
   {
-    sessionId: field.string().max(36).default(""),
-  }
-);
+    sessionId: field.string().max(36).default(''),
+  },
+)

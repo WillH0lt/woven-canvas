@@ -1,18 +1,16 @@
-import type { Context, EntityId } from "@woven-ecs/core";
-export type { Context };
-import { z } from "zod";
-import {
-  type AnyCanvasComponentDef,
-  type AnyCanvasSingletonDef,
-} from "@woven-ecs/canvas-store";
+import type { Context, EntityId } from '@woven-ecs/core'
+export type { Context }
 
-import type { Editor } from "./Editor";
-import type { EditorPluginInput } from "./plugin";
-import type { EditorSystem } from "./EditorSystem";
-import type { FontFamilyInput } from "./FontLoader";
+import type { AnyCanvasComponentDef, AnyCanvasSingletonDef } from '@woven-ecs/canvas-store'
+import { z } from 'zod'
+
+import type { Editor } from './Editor'
+import type { EditorSystem } from './EditorSystem'
+import type { FontFamilyInput } from './FontLoader'
+import type { EditorPluginInput } from './plugin'
 
 // Re-export EntityId for convenience
-export type { EntityId };
+export type { EntityId }
 
 /**
  * Base resources required by the Editor.
@@ -30,18 +28,18 @@ export type { EntityId };
  */
 function generateUserColor(): string {
   const colors = [
-    "#f43f5e", // rose
-    "#ec4899", // pink
-    "#a855f7", // purple
-    "#6366f1", // indigo
-    "#3b82f6", // blue
-    "#0ea5e9", // sky
-    "#14b8a6", // teal
-    "#22c55e", // green
-    "#eab308", // yellow
-    "#f97316", // orange
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
+    '#f43f5e', // rose
+    '#ec4899', // pink
+    '#a855f7', // purple
+    '#6366f1', // indigo
+    '#3b82f6', // blue
+    '#0ea5e9', // sky
+    '#14b8a6', // teal
+    '#22c55e', // green
+    '#eab308', // yellow
+    '#f97316', // orange
+  ]
+  return colors[Math.floor(Math.random() * colors.length)]
 }
 
 /**
@@ -57,65 +55,65 @@ export const UserData = z.object({
     .max(36)
     .default(() => crypto.randomUUID()),
   color: z.string().max(7).default(generateUserColor),
-  name: z.string().max(100).default("Anonymous"),
-  avatar: z.string().max(500).default(""),
-});
+  name: z.string().max(100).default('Anonymous'),
+  avatar: z.string().max(500).default(''),
+})
 
-export type UserData = z.infer<typeof UserData>;
+export type UserData = z.infer<typeof UserData>
 
-export type UserDataInput = z.input<typeof UserData>;
+export type UserDataInput = z.input<typeof UserData>
 
 export interface EditorResources {
   /**
    * The DOM element to attach input listeners and render output to.
    * This should be the editor's main container or canvas element.
    */
-  domElement: HTMLElement;
+  domElement: HTMLElement
 
   /**
    * Reference to the Editor instance.
    * Use this to spawn commands, subscribe to queries, etc.
    */
-  editor: Editor;
+  editor: Editor
 
   /**
    * User identity for the current session.
    * Only stores userId and sessionId - other user data (color, name, avatar)
    * should be read from the ECS User component.
    */
-  userId: string;
-  sessionId: string;
+  userId: string
+  sessionId: string
 
   /**
    * Plugin-specific resources keyed by plugin name.
    * Access via getPluginResources<T>(ctx, pluginName).
    * @internal Populated automatically from plugin.resources
    */
-  pluginResources: Record<string, unknown>;
+  pluginResources: Record<string, unknown>
 
   /**
    * All registered components keyed by name.
    * Use this for fast component lookup by name (e.g., from snapshots).
    */
-  componentsByName: Map<string, AnyCanvasComponentDef>;
+  componentsByName: Map<string, AnyCanvasComponentDef>
 
   /**
    * All registered singletons keyed by name.
    * Use this for fast singleton lookup by name.
    */
-  singletonsByName: Map<string, AnyCanvasSingletonDef>;
+  singletonsByName: Map<string, AnyCanvasSingletonDef>
 
   /**
    * All registered components keyed by componentId.
    * Use this for component lookup by runtime id (e.g., from events).
    */
-  componentsById: Map<number, AnyCanvasComponentDef>;
+  componentsById: Map<number, AnyCanvasComponentDef>
 
   /**
    * All registered singletons keyed by componentId.
    * Use this for singleton lookup by runtime id (e.g., from events).
    */
-  singletonsById: Map<number, AnyCanvasSingletonDef>;
+  singletonsById: Map<number, AnyCanvasSingletonDef>
 }
 
 /**
@@ -130,7 +128,7 @@ export interface EditorResources {
  * Within each phase, systems are sorted by priority (higher = runs first).
  * Ties are broken by registration order.
  */
-export type SystemPhase = "input" | "capture" | "update" | "render";
+export type SystemPhase = 'input' | 'capture' | 'update' | 'render'
 
 /**
  * Get plugin-specific resources from the context.
@@ -161,8 +159,8 @@ export type SystemPhase = "input" | "capture" | "update" | "render";
  * ```
  */
 export function getPluginResources<T>(ctx: Context, pluginName: string): T {
-  const resources = ctx.resources as EditorResources;
-  return resources.pluginResources[pluginName] as T;
+  const resources = ctx.resources as EditorResources
+  return resources.pluginResources[pluginName] as T
 }
 
 /**
@@ -213,10 +211,10 @@ export const GridOptions = z.object({
     .number()
     .nonnegative()
     .default(Math.PI / 12),
-});
+})
 
-export type GridOptions = z.infer<typeof GridOptions>;
-export type GridOptionsInput = z.input<typeof GridOptions>;
+export type GridOptions = z.infer<typeof GridOptions>
+export type GridOptionsInput = z.input<typeof GridOptions>
 
 /**
  * Editor configuration options schema.
@@ -303,11 +301,11 @@ export const EditorOptionsSchema = z.object({
    * Use this when you want full control over fonts.
    */
   omitPluginFonts: z.boolean().default(false),
-});
+})
 
-export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>;
+export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>
 
-export type EditorOptions = z.infer<typeof EditorOptionsSchema>;
+export type EditorOptions = z.infer<typeof EditorOptionsSchema>
 
 /**
  * Keybind definition schema.
@@ -322,10 +320,10 @@ export const Keybind = z.object({
   mod: z.boolean().optional(),
   /** Whether the Shift key must be held */
   shift: z.boolean().optional(),
-});
+})
 
-export type Keybind = z.infer<typeof Keybind>;
-export type KeybindInput = z.input<typeof Keybind>;
+export type Keybind = z.infer<typeof Keybind>
+export type KeybindInput = z.input<typeof Keybind>
 
 /**
  * Cursor definition schema.
@@ -338,34 +336,34 @@ export const CursorDef = z.object({
   hotspot: z.tuple([z.number(), z.number()]),
   /** Base rotation offset applied before the dynamic rotation */
   rotationOffset: z.number(),
-});
+})
 
-export type CursorDef = z.infer<typeof CursorDef>;
+export type CursorDef = z.infer<typeof CursorDef>
 
 /**
  * Map of cursor kind to cursor definition.
  */
-export type CursorDefMap = Partial<Record<string, CursorDef>>;
+export type CursorDefMap = Partial<Record<string, CursorDef>>
 
 /**
  * Block resize modes.
  */
-export type ResizeMode = "scale" | "text" | "free" | "groupOnly";
+export type ResizeMode = 'scale' | 'text' | 'free' | 'groupOnly'
 
 export const VerticalAlignment = {
-  Top: "top",
-  Center: "center",
-  Bottom: "bottom",
-} as const;
+  Top: 'top',
+  Center: 'center',
+  Bottom: 'bottom',
+} as const
 
 export const TextAlignment = {
-  Left: "left",
-  Center: "center",
-  Right: "right",
-  Justify: "justify",
-} as const;
+  Left: 'left',
+  Center: 'center',
+  Right: 'right',
+  Justify: 'justify',
+} as const
 
-export type TextAlignment = (typeof TextAlignment)[keyof typeof TextAlignment];
+export type TextAlignment = (typeof TextAlignment)[keyof typeof TextAlignment]
 
 /**
  * Block definition edit options schema.
@@ -373,7 +371,7 @@ export type TextAlignment = (typeof TextAlignment)[keyof typeof TextAlignment];
 const BlockDefEditOptions = z.object({
   canEdit: z.boolean().default(false),
   removeWhenTextEmpty: z.boolean().default(false),
-});
+})
 
 /**
  * Block definition connectors schema.
@@ -390,33 +388,33 @@ const BlockDefConnectors = z.object({
     [0, 0.5], // left
     [1, 0.5], // right
   ]),
-});
+})
 
 /**
  * Block definition schema with validation and defaults.
  * Defines how different block types behave (editing, resizing, rotation, etc.)
  */
-export const Stratum = z.enum(["background", "content", "overlay"]);
-export type Stratum = z.infer<typeof Stratum>;
+export const Stratum = z.enum(['background', 'content', 'overlay'])
+export type Stratum = z.infer<typeof Stratum>
 
 export const BlockDef = z.object({
   tag: z.string(),
-  stratum: Stratum.default("content"),
+  stratum: Stratum.default('content'),
   editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
   components: z.array(z.custom<AnyCanvasComponentDef>()).default([]),
-  resizeMode: z.enum(["scale", "text", "free", "groupOnly"]).default("scale"),
+  resizeMode: z.enum(['scale', 'text', 'free', 'groupOnly']).default('scale'),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
   connectors: BlockDefConnectors.default(BlockDefConnectors.parse({})),
-});
+})
 
 /**
  * Input type for block definitions (what users provide).
  * All fields except `tag` are optional.
  */
-export type BlockDefInput = z.input<typeof BlockDef>;
+export type BlockDefInput = z.input<typeof BlockDef>
 
 /**
  * Normalized block definition type (after parsing with defaults applied).
  */
-export type BlockDef = z.infer<typeof BlockDef>;
+export type BlockDef = z.infer<typeof BlockDef>

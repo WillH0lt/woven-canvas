@@ -1,3 +1,3 @@
-import { defineCanvasComponent } from "@infinitecanvas/core";
+import { defineCanvasComponent } from '@infinitecanvas/core'
 
-export const Selected = defineCanvasComponent({ name: "selected" }, {});
+export const Selected = defineCanvasComponent({ name: 'selected' }, {})

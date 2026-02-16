@@ -1,8 +1,8 @@
-import { field, type Context } from "@woven-ecs/core";
-import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
+import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
+import { type Context, field } from '@woven-ecs/core'
 
 /** Buffer size for key states (32 bytes = 256 bits = covers all keycodes) */
-const KEY_BUFFER_SIZE = 32;
+const KEY_BUFFER_SIZE = 32
 
 const KeyboardSchema = {
   /**
@@ -26,17 +26,17 @@ const KeyboardSchema = {
   altDown: field.boolean().default(false),
   /** Common modifier - Ctrl (Windows/Linux) or Cmd (Mac) is down */
   modDown: field.boolean().default(false),
-};
+}
 
 /**
  * Get a bit from a buffer field.
  * @internal
  */
 function getBit(buffer: ArrayLike<number>, bitIndex: number): boolean {
-  if (bitIndex < 0 || bitIndex >= buffer.length * 8) return false;
-  const byteIndex = Math.floor(bitIndex / 8);
-  const bitOffset = bitIndex % 8;
-  return (buffer[byteIndex] & (1 << bitOffset)) !== 0;
+  if (bitIndex < 0 || bitIndex >= buffer.length * 8) return false
+  const byteIndex = Math.floor(bitIndex / 8)
+  const bitOffset = bitIndex % 8
+  return (buffer[byteIndex] & (1 << bitOffset)) !== 0
 }
 
 /**
@@ -48,7 +48,7 @@ function getBit(buffer: ArrayLike<number>, bitIndex: number): boolean {
  */
 class KeyboardDef extends CanvasSingletonDef<typeof KeyboardSchema> {
   constructor() {
-    super({ name: "keyboard" }, KeyboardSchema);
+    super({ name: 'keyboard' }, KeyboardSchema)
   }
 
   /**
@@ -57,7 +57,7 @@ class KeyboardDef extends CanvasSingletonDef<typeof KeyboardSchema> {
    * @param key - The key index to check (use Key.A, Key.Space, etc.)
    */
   isKeyDown(ctx: Context, key: number): boolean {
-    return getBit(this.read(ctx).keysDown, key);
+    return getBit(this.read(ctx).keysDown, key)
   }
 
   /**
@@ -66,7 +66,7 @@ class KeyboardDef extends CanvasSingletonDef<typeof KeyboardSchema> {
    * @param key - The key index to check (use Key.A, Key.Space, etc.)
    */
   isKeyDownTrigger(ctx: Context, key: number): boolean {
-    return getBit(this.read(ctx).keysDownTrigger, key);
+    return getBit(this.read(ctx).keysDownTrigger, key)
   }
 
   /**
@@ -75,28 +75,24 @@ class KeyboardDef extends CanvasSingletonDef<typeof KeyboardSchema> {
    * @param key - The key index to check (use Key.A, Key.Space, etc.)
    */
   isKeyUpTrigger(ctx: Context, key: number): boolean {
-    return getBit(this.read(ctx).keysUpTrigger, key);
+    return getBit(this.read(ctx).keysUpTrigger, key)
   }
 }
 
-export const Keyboard = new KeyboardDef();
+export const Keyboard = new KeyboardDef()
 
 /**
  * Set a bit in a buffer field.
  * @internal
  */
-export function setBit(
-  buffer: { [index: number]: number; length: number },
-  bitIndex: number,
-  value: boolean
-): void {
-  if (bitIndex < 0 || bitIndex >= buffer.length * 8) return;
-  const byteIndex = Math.floor(bitIndex / 8);
-  const bitOffset = bitIndex % 8;
+export function setBit(buffer: { [index: number]: number; length: number }, bitIndex: number, value: boolean): void {
+  if (bitIndex < 0 || bitIndex >= buffer.length * 8) return
+  const byteIndex = Math.floor(bitIndex / 8)
+  const bitOffset = bitIndex % 8
   if (value) {
-    buffer[byteIndex] |= 1 << bitOffset;
+    buffer[byteIndex] |= 1 << bitOffset
   } else {
-    buffer[byteIndex] &= ~(1 << bitOffset);
+    buffer[byteIndex] &= ~(1 << bitOffset)
   }
 }
 
@@ -106,7 +102,7 @@ export function setBit(
  */
 export function clearBits(buffer: { [index: number]: number; length: number }): void {
   for (let i = 0; i < buffer.length; i++) {
-    buffer[i] = 0;
+    buffer[i] = 0
   }
 }
 
@@ -227,7 +223,7 @@ export const codeToIndex: Record<string, number> = {
   NumpadDivide: 97,
   NumpadDecimal: 98,
   NumpadEnter: 99,
-};
+}
 
 /**
  * Key codes for use with Keyboard.isKeyDown(), isKeyDownTrigger(), isKeyUpTrigger().
@@ -345,6 +341,6 @@ export const Key = {
   NumpadDivide: codeToIndex.NumpadDivide,
   NumpadDecimal: codeToIndex.NumpadDecimal,
   NumpadEnter: codeToIndex.NumpadEnter,
-} as const;
+} as const
 
-export type Key = (typeof Key)[keyof typeof Key];
+export type Key = (typeof Key)[keyof typeof Key]

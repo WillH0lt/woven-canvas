@@ -1,2 +1,2 @@
-export { captureEraserSystem } from "./captureEraserSystem";
-export { updateEraserSystem } from "./updateEraserSystem";
+export { captureEraserSystem } from './captureEraserSystem'
+export { updateEraserSystem } from './updateEraserSystem'

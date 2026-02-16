@@ -1,5 +1,5 @@
-import { inject, computed } from "vue";
-import { TOOLBAR_KEY } from "../injection";
+import { computed, inject } from 'vue'
+import { TOOLBAR_KEY } from '../injection'
 
 /**
  * Composable for accessing toolbar context from within tool components.
@@ -26,9 +26,9 @@ import { TOOLBAR_KEY } from "../injection";
  * ```
  */
 export function useToolbar() {
-  const context = inject(TOOLBAR_KEY);
+  const context = inject(TOOLBAR_KEY)
   if (!context) {
-    throw new Error("useToolbar must be used within a Toolbar component");
+    throw new Error('useToolbar must be used within a Toolbar component')
   }
 
   return {
@@ -56,5 +56,5 @@ export function useToolbar() {
      * @returns Computed ref that is true when the tool is active
      */
     isActive: (toolName: string) => computed(() => context.activeTool.value === toolName),
-  };
+  }
 }

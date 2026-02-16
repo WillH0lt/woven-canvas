@@ -1,17 +1,16 @@
-import { field, type Context } from "@woven-ecs/core";
-
-import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
+import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
+import { type Context, field } from '@woven-ecs/core'
 
 const CursorSchema = {
   /** Base cursor kind (from current tool) */
-  cursorKind: field.string().max(64).default("select"),
+  cursorKind: field.string().max(64).default('select'),
   /** Base cursor rotation in radians */
   rotation: field.float64().default(0),
   /** Context-specific cursor kind (overrides cursorKind when set, e.g., during drag/hover) */
-  contextCursorKind: field.string().max(64).default(""),
+  contextCursorKind: field.string().max(64).default(''),
   /** Context cursor rotation in radians */
   contextRotation: field.float64().default(0),
-};
+}
 
 /**
  * Cursor singleton - manages the current cursor appearance.
@@ -26,53 +25,49 @@ const CursorSchema = {
  */
 class CursorDef extends CanvasSingletonDef<typeof CursorSchema> {
   constructor() {
-    super({ name: "cursor" }, CursorSchema);
+    super({ name: 'cursor' }, CursorSchema)
   }
 
   /**
    * Get the effective cursor kind and rotation (context if set, otherwise base).
    */
   getEffective(ctx: Context): { cursorKind: string; rotation: number } {
-    const cursor = this.read(ctx);
+    const cursor = this.read(ctx)
     if (cursor.contextCursorKind) {
       return {
         cursorKind: cursor.contextCursorKind,
         rotation: cursor.contextRotation,
-      };
+      }
     }
-    return { cursorKind: cursor.cursorKind, rotation: cursor.rotation };
+    return { cursorKind: cursor.cursorKind, rotation: cursor.rotation }
   }
 
   /**
    * Set the base cursor kind and rotation.
    */
   setCursor(ctx: Context, cursorKind: string, rotation: number = 0): void {
-    const cursor = this.write(ctx);
-    cursor.cursorKind = cursorKind;
-    cursor.rotation = rotation;
+    const cursor = this.write(ctx)
+    cursor.cursorKind = cursorKind
+    cursor.rotation = rotation
   }
 
   /**
    * Set the context cursor kind and rotation (temporary override).
    */
-  setContextCursor(
-    ctx: Context,
-    cursorKind: string,
-    rotation: number = 0
-  ): void {
-    const cursor = this.write(ctx);
-    cursor.contextCursorKind = cursorKind;
-    cursor.contextRotation = rotation;
+  setContextCursor(ctx: Context, cursorKind: string, rotation: number = 0): void {
+    const cursor = this.write(ctx)
+    cursor.contextCursorKind = cursorKind
+    cursor.contextRotation = rotation
   }
 
   /**
    * Clear the context cursor.
    */
   clearContextCursor(ctx: Context): void {
-    const cursor = this.write(ctx);
-    cursor.contextCursorKind = "";
-    cursor.contextRotation = 0;
+    const cursor = this.write(ctx)
+    cursor.contextCursorKind = ''
+    cursor.contextRotation = 0
   }
 }
 
-export const Cursor = new CursorDef();
+export const Cursor = new CursorDef()

@@ -1,6 +1,6 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasComponent } from "@woven-ecs/canvas-store";
-import { VerticalAlignment } from "../types";
+import { defineCanvasComponent } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
+import { VerticalAlignment } from '../types'
 
 /**
  * VerticalAlign component - controls vertical text alignment within a block.
@@ -8,8 +8,8 @@ import { VerticalAlignment } from "../types";
  * Values: "top", "center", "bottom"
  */
 export const VerticalAlign = defineCanvasComponent(
-  { name: "verticalAlign", sync: "document" },
+  { name: 'verticalAlign', sync: 'document' },
   {
     value: field.enum(VerticalAlignment).default(VerticalAlignment.Top),
-  }
-);
+  },
+)

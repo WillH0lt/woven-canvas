@@ -1,18 +1,14 @@
-import type { ShallowRef } from "vue";
-import {
-  Camera,
-  Screen,
-  type InferCanvasComponentType,
-} from "@infinitecanvas/core";
+import type { Camera, InferCanvasComponentType, Screen } from '@infinitecanvas/core'
+import type { ShallowRef } from 'vue'
 
-type CameraValue = InferCanvasComponentType<typeof Camera.schema>;
-type ScreenValue = InferCanvasComponentType<typeof Screen.schema>;
+type CameraValue = InferCanvasComponentType<typeof Camera.schema>
+type ScreenValue = InferCanvasComponentType<typeof Screen.schema>
 
 export interface BlockDimensions {
-  width: number;
-  height: number;
-  left: number;
-  top: number;
+  width: number
+  height: number
+  left: number
+  top: number
 }
 
 /**
@@ -25,20 +21,20 @@ export function getUnrotatedDimensions(
   angle: number,
 ): { width: number; height: number } {
   if (angle === 0) {
-    return { width: aabbWidth, height: aabbHeight };
+    return { width: aabbWidth, height: aabbHeight }
   }
 
   if (Math.abs(angle - Math.PI / 2) < 0.0001) {
-    return { width: aabbHeight, height: aabbWidth };
+    return { width: aabbHeight, height: aabbWidth }
   }
 
-  const c = Math.abs(Math.cos(angle));
-  const s = Math.abs(Math.sin(angle));
+  const c = Math.abs(Math.cos(angle))
+  const s = Math.abs(Math.sin(angle))
 
-  const height = (aabbHeight - (s / c) * aabbWidth) / (c - (s * s) / c);
-  const width = aabbWidth / c - (height * s) / c;
+  const height = (aabbHeight - (s / c) * aabbWidth) / (c - (s * s) / c)
+  const width = aabbWidth / c - (height * s) / c
 
-  return { width, height };
+  return { width, height }
 }
 
 /**
@@ -50,55 +46,44 @@ export function computeBlockDimensions(
   camera: ShallowRef<CameraValue>,
   screen: ShallowRef<ScreenValue>,
 ): BlockDimensions {
-  const blockElement = element.closest(".ic-block") as HTMLElement | null;
+  const blockElement = element.closest('.ic-block') as HTMLElement | null
   if (!blockElement) {
-    const rect = element.getBoundingClientRect();
-    return { width: rect.width, height: rect.height, left: 0, top: 0 };
+    const rect = element.getBoundingClientRect()
+    return { width: rect.width, height: rect.height, left: 0, top: 0 }
   }
 
-  const transform = window.getComputedStyle(blockElement).transform;
-  const matrix = new DOMMatrix(transform);
-  const rotateZ = Math.atan2(matrix.b, matrix.a);
+  const transform = window.getComputedStyle(blockElement).transform
+  const matrix = new DOMMatrix(transform)
+  const rotateZ = Math.atan2(matrix.b, matrix.a)
 
-  const rect = element.getBoundingClientRect();
-  const center = new DOMPoint(
-    rect.left + rect.width / 2,
-    rect.top + rect.height / 2,
-  );
+  const rect = element.getBoundingClientRect()
+  const center = new DOMPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
 
-  const cameraLeft = camera.value.left;
-  const cameraTop = camera.value.top;
-  const cameraZoom = camera.value.zoom;
+  const cameraLeft = camera.value.left
+  const cameraTop = camera.value.top
+  const cameraZoom = camera.value.zoom
 
-  const cameraMatrix = new DOMMatrix();
-  cameraMatrix.translateSelf(-cameraLeft * cameraZoom, -cameraTop * cameraZoom);
-  cameraMatrix.scaleSelf(cameraZoom, cameraZoom);
-  cameraMatrix.invertSelf();
+  const cameraMatrix = new DOMMatrix()
+  cameraMatrix.translateSelf(-cameraLeft * cameraZoom, -cameraTop * cameraZoom)
+  cameraMatrix.scaleSelf(cameraZoom, cameraZoom)
+  cameraMatrix.invertSelf()
 
-  const worldCenter = cameraMatrix.transformPoint(center);
+  const worldCenter = cameraMatrix.transformPoint(center)
 
-  const topLeft = cameraMatrix.transformPoint(
-    new DOMPoint(rect.left, rect.top),
-  );
-  const bottomRight = cameraMatrix.transformPoint(
-    new DOMPoint(rect.right, rect.bottom),
-  );
-  const aabbWidth = bottomRight.x - topLeft.x;
-  const aabbHeight = bottomRight.y - topLeft.y;
+  const topLeft = cameraMatrix.transformPoint(new DOMPoint(rect.left, rect.top))
+  const bottomRight = cameraMatrix.transformPoint(new DOMPoint(rect.right, rect.bottom))
+  const aabbWidth = bottomRight.x - topLeft.x
+  const aabbHeight = bottomRight.y - topLeft.y
 
-  const { width, height } = getUnrotatedDimensions(
-    aabbWidth,
-    aabbHeight,
-    -rotateZ,
-  );
+  const { width, height } = getUnrotatedDimensions(aabbWidth, aabbHeight, -rotateZ)
 
-  const offsetX = screen.value.left;
-  const offsetY = screen.value.top;
+  const offsetX = screen.value.left
+  const offsetY = screen.value.top
 
   return {
     width,
     height,
     left: worldCenter.x - width / 2 - offsetX,
     top: worldCenter.y - height / 2 - offsetY,
-  };
+  }
 }

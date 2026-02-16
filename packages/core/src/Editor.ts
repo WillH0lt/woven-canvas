@@ -1,40 +1,31 @@
+import { type AnyCanvasComponentDef, type AnyCanvasSingletonDef, Synced } from '@woven-ecs/canvas-store'
 import {
-  World,
-  type Context,
-  type QueryDef,
-  ComponentDef,
-  type SingletonDef,
-  createEntity,
   addComponent,
-} from "@woven-ecs/core";
-
+  type ComponentDef,
+  type Context,
+  createEntity,
+  type QueryDef,
+  type SingletonDef,
+  World,
+} from '@woven-ecs/core'
+import { CorePlugin } from './CorePlugin'
+import { type CommandDef, CommandMarker, cleanupCommands } from './command'
+import { User } from './components'
+import type { EditorSystem } from './EditorSystem'
+import { FontFamily, FontLoader } from './FontLoader'
+import { type EditorPlugin, parsePlugin, sortPluginsByDependencies } from './plugin'
+import { Grid } from './singletons'
 import {
-  type SystemPhase,
-  EditorOptionsSchema,
-  type EditorOptionsInput,
-  CursorDef,
-  Keybind,
-  type EditorResources,
   BlockDef,
+  type CursorDef,
+  type EditorOptionsInput,
+  EditorOptionsSchema,
+  type EditorResources,
+  GridOptions,
+  type Keybind,
+  type SystemPhase,
   UserData,
-} from "./types";
-import {
-  type EditorPlugin,
-  parsePlugin,
-  sortPluginsByDependencies,
-} from "./plugin";
-import { CommandMarker, cleanupCommands, type CommandDef } from "./command";
-import { CorePlugin } from "./CorePlugin";
-import {
-  type AnyCanvasComponentDef,
-  type AnyCanvasSingletonDef,
-  Synced,
-} from "@woven-ecs/canvas-store";
-import { User } from "./components";
-import { Grid } from "./singletons";
-import type { EditorSystem } from "./EditorSystem";
-import { FontLoader, FontFamily } from "./FontLoader";
-import { GridOptions } from "./types";
+} from './types'
 
 /**
  * Query subscription callback
@@ -42,16 +33,16 @@ import { GridOptions } from "./types";
 export type QueryCallback = (
   ctx: Context,
   result: {
-    added: number[];
-    changed: number[];
-    removed: number[];
+    added: number[]
+    changed: number[]
+    removed: number[]
   },
-) => void;
+) => void
 
 /**
  * Order of system execution phases
  */
-const PHASE_ORDER: SystemPhase[] = ["input", "capture", "update", "render"];
+const PHASE_ORDER: SystemPhase[] = ['input', 'capture', 'update', 'render']
 
 /**
  * Batch systems by phase and priority.
@@ -64,33 +55,33 @@ const PHASE_ORDER: SystemPhase[] = ["input", "capture", "update", "render"];
  */
 function batchSystems(systems: EditorSystem[]): EditorSystem[][] {
   // Group by phase first
-  const byPhase = new Map<SystemPhase, EditorSystem[]>();
+  const byPhase = new Map<SystemPhase, EditorSystem[]>()
   for (const phase of PHASE_ORDER) {
-    byPhase.set(phase, []);
+    byPhase.set(phase, [])
   }
   for (const system of systems) {
-    byPhase.get(system.phase)!.push(system);
+    byPhase.get(system.phase)!.push(system)
   }
 
   // Then batch each phase by priority and flatten
-  const result: EditorSystem[][] = [];
+  const result: EditorSystem[][] = []
   for (const phase of PHASE_ORDER) {
-    const phaseSystems = byPhase.get(phase)!;
-    const byPriority = new Map<number, EditorSystem[]>();
+    const phaseSystems = byPhase.get(phase)!
+    const byPriority = new Map<number, EditorSystem[]>()
     for (const system of phaseSystems) {
-      const group = byPriority.get(system.priority) ?? [];
-      group.push(system);
-      byPriority.set(system.priority, group);
+      const group = byPriority.get(system.priority) ?? []
+      group.push(system)
+      byPriority.set(system.priority, group)
     }
 
     // Sort priorities descending (higher runs first)
-    const priorities = [...byPriority.keys()].sort((a, b) => b - a);
+    const priorities = [...byPriority.keys()].sort((a, b) => b - a)
     for (const p of priorities) {
-      result.push(byPriority.get(p)!);
+      result.push(byPriority.get(p)!)
     }
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -126,119 +117,116 @@ function batchSystems(systems: EditorSystem[]): EditorSystem[][] {
  * ```
  */
 export class Editor {
-  public cursors: Record<string, CursorDef> = {};
-  public keybinds: Keybind[];
-  public blockDefs: Record<string, BlockDef> = {};
-  public fonts: FontFamily[] = [];
-  public components: AnyCanvasComponentDef[] = [];
-  public singletons: AnyCanvasSingletonDef[] = [];
+  public cursors: Record<string, CursorDef> = {}
+  public keybinds: Keybind[]
+  public blockDefs: Record<string, BlockDef> = {}
+  public fonts: FontFamily[] = []
+  public components: AnyCanvasComponentDef[] = []
+  public singletons: AnyCanvasSingletonDef[] = []
 
-  private world: World;
-  private systemBatches: EditorSystem[][];
-  private plugins: Map<string, EditorPlugin>;
-  private fontLoader: FontLoader;
-  private userData: UserData;
-  private gridOptions: GridOptions;
+  private world: World
+  private systemBatches: EditorSystem[][]
+  private plugins: Map<string, EditorPlugin>
+  private fontLoader: FontLoader
+  private userData: UserData
+  private gridOptions: GridOptions
 
   constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
-    const options = EditorOptionsSchema.parse(optionsInput ?? {});
-    const { plugins: pluginInputs, maxEntities } = options;
+    const options = EditorOptionsSchema.parse(optionsInput ?? {})
+    const { plugins: pluginInputs, maxEntities } = options
 
     // Parse user data with defaults
-    const user = UserData.parse(options.user ?? {});
-    this.userData = user;
+    const user = UserData.parse(options.user ?? {})
+    this.userData = user
 
     // Parse grid options with defaults
-    this.gridOptions = GridOptions.parse(options.grid ?? {});
+    this.gridOptions = GridOptions.parse(options.grid ?? {})
 
     // Parse plugin inputs (handle both direct plugins and factory functions)
-    const plugins = pluginInputs.map(parsePlugin);
+    const plugins = pluginInputs.map(parsePlugin)
 
     // Sort plugins by dependencies, always including CorePlugin first
-    const sortedPlugins = sortPluginsByDependencies([CorePlugin, ...plugins]);
+    const sortedPlugins = sortPluginsByDependencies([CorePlugin, ...plugins])
 
     // Collect all components and singletons from plugins and custom options
     // Always include CommandMarker for the command system
-    const allDefs: (ComponentDef<any> | SingletonDef<any>)[] = [
-      CommandMarker,
-      Synced,
-    ];
+    const allDefs: (ComponentDef<any> | SingletonDef<any>)[] = [CommandMarker, Synced]
     for (const plugin of sortedPlugins) {
       if (plugin.components) {
-        allDefs.push(...plugin.components);
+        allDefs.push(...plugin.components)
       }
       if (plugin.singletons) {
-        allDefs.push(...plugin.singletons);
+        allDefs.push(...plugin.singletons)
       }
     }
     // Add custom components and singletons
-    allDefs.push(...options.components);
-    allDefs.push(...options.singletons);
+    allDefs.push(...options.components)
+    allDefs.push(...options.singletons)
 
     // Setup keybinds
-    const keybinds = options.keybinds;
+    const keybinds = options.keybinds
     if (!options.omitPluginKeybinds) {
       for (const plugin of sortedPlugins) {
         if (plugin.keybinds) {
-          keybinds.push(...plugin.keybinds);
+          keybinds.push(...plugin.keybinds)
         }
       }
     }
-    this.keybinds = keybinds;
+    this.keybinds = keybinds
 
     // Setup block defs (parse inputs to apply defaults)
-    const blockDefs: Record<string, BlockDef> = {};
+    const blockDefs: Record<string, BlockDef> = {}
     for (const input of options.blockDefs) {
-      const parsed = BlockDef.parse(input);
-      blockDefs[parsed.tag] = parsed;
+      const parsed = BlockDef.parse(input)
+      blockDefs[parsed.tag] = parsed
     }
     for (const plugin of sortedPlugins) {
       if (plugin.blockDefs) {
         for (const input of plugin.blockDefs) {
-          const parsed = BlockDef.parse(input);
-          blockDefs[parsed.tag] = parsed;
+          const parsed = BlockDef.parse(input)
+          blockDefs[parsed.tag] = parsed
         }
       }
     }
-    this.blockDefs = blockDefs;
+    this.blockDefs = blockDefs
 
     // Setup cursors
-    const cursors: Record<string, CursorDef> = {};
-    Object.assign(cursors, options.cursors);
+    const cursors: Record<string, CursorDef> = {}
+    Object.assign(cursors, options.cursors)
     if (!options.omitPluginCursors) {
       for (const plugin of sortedPlugins) {
         if (plugin.cursors) {
-          Object.assign(cursors, plugin.cursors);
+          Object.assign(cursors, plugin.cursors)
         }
       }
     }
-    this.cursors = cursors;
+    this.cursors = cursors
 
     // Setup fonts (parse inputs to apply defaults, merge from plugins)
-    this.fontLoader = new FontLoader();
-    const fontInputs = [...options.fonts];
+    this.fontLoader = new FontLoader()
+    const fontInputs = [...options.fonts]
     if (!options.omitPluginFonts) {
       for (const plugin of sortedPlugins) {
         if (plugin.fonts) {
-          fontInputs.push(...plugin.fonts);
+          fontInputs.push(...plugin.fonts)
         }
       }
     }
-    this.fonts = fontInputs.map((input) => FontFamily.parse(input));
+    this.fonts = fontInputs.map((input) => FontFamily.parse(input))
 
     // Collect plugin resources
-    const pluginResources: Record<string, unknown> = {};
+    const pluginResources: Record<string, unknown> = {}
     for (const plugin of sortedPlugins) {
       if (plugin.resources !== undefined) {
-        pluginResources[plugin.name] = plugin.resources;
+        pluginResources[plugin.name] = plugin.resources
       }
     }
 
     // Build component/singleton maps for resources
-    const componentsByName = new Map<string, AnyCanvasComponentDef>();
-    const singletonsByName = new Map<string, AnyCanvasSingletonDef>();
-    const componentsById = new Map<number, AnyCanvasComponentDef>();
-    const singletonsById = new Map<number, AnyCanvasSingletonDef>();
+    const componentsByName = new Map<string, AnyCanvasComponentDef>()
+    const singletonsByName = new Map<string, AnyCanvasSingletonDef>()
+    const componentsById = new Map<number, AnyCanvasComponentDef>()
+    const singletonsById = new Map<number, AnyCanvasSingletonDef>()
 
     // Create ECS World with editor resources
     const allResources: EditorResources = {
@@ -251,64 +239,64 @@ export class Editor {
       singletonsByName,
       componentsById,
       singletonsById,
-    };
+    }
 
     this.world = new World(allDefs, {
       maxEntities,
       resources: allResources,
-    });
+    })
 
     // Collect all systems
-    const allSystems: EditorSystem[] = [];
+    const allSystems: EditorSystem[] = []
 
     // Register systems from plugins (order matters for stable tie-breaking)
     for (const plugin of sortedPlugins) {
       if (plugin.systems) {
-        allSystems.push(...plugin.systems);
+        allSystems.push(...plugin.systems)
       }
     }
 
     // Register custom systems
-    allSystems.push(...options.systems);
+    allSystems.push(...options.systems)
 
     // Batch systems by phase and priority
-    this.systemBatches = batchSystems(allSystems);
+    this.systemBatches = batchSystems(allSystems)
 
     // Build map of plugins
-    this.plugins = new Map(sortedPlugins.map((p) => [p.name, p]));
+    this.plugins = new Map(sortedPlugins.map((p) => [p.name, p]))
 
     // Build maps of all components/singletons (by id and by name)
     for (const plugin of sortedPlugins) {
       if (plugin.components) {
         for (const comp of plugin.components) {
-          const componentId = comp._getComponentId(this.ctx);
-          componentsById.set(componentId, comp);
-          componentsByName.set(comp.name, comp);
+          const componentId = comp._getComponentId(this.ctx)
+          componentsById.set(componentId, comp)
+          componentsByName.set(comp.name, comp)
         }
       }
       if (plugin.singletons) {
         for (const singleton of plugin.singletons) {
-          const componentId = singleton._getComponentId(this.ctx);
-          singletonsById.set(componentId, singleton);
-          singletonsByName.set(singleton.name, singleton);
+          const componentId = singleton._getComponentId(this.ctx)
+          singletonsById.set(componentId, singleton)
+          singletonsByName.set(singleton.name, singleton)
         }
       }
     }
     // Add custom components and singletons to maps
     for (const comp of options.components) {
-      const componentId = comp._getComponentId(this.ctx);
-      componentsById.set(componentId, comp);
-      componentsByName.set(comp.name, comp);
+      const componentId = comp._getComponentId(this.ctx)
+      componentsById.set(componentId, comp)
+      componentsByName.set(comp.name, comp)
     }
     for (const singleton of options.singletons) {
-      const componentId = singleton._getComponentId(this.ctx);
-      singletonsById.set(componentId, singleton);
-      singletonsByName.set(singleton.name, singleton);
+      const componentId = singleton._getComponentId(this.ctx)
+      singletonsById.set(componentId, singleton)
+      singletonsByName.set(singleton.name, singleton)
     }
 
     // Expose collected components/singletons
-    this.components = [...componentsByName.values()];
-    this.singletons = [...singletonsByName.values()];
+    this.components = [...componentsByName.values()]
+    this.singletons = [...singletonsByName.values()]
   }
 
   /**
@@ -316,7 +304,7 @@ export class Editor {
    * Use this to access ECS functions and resources.
    */
   private get ctx(): Context {
-    return this.world._getContext();
+    return this.world._getContext()
   }
 
   /**
@@ -326,33 +314,33 @@ export class Editor {
   async initialize(): Promise<void> {
     // Load custom fonts
     if (this.fonts.length > 0) {
-      await this.fontLoader.loadFonts(this.fonts);
+      await this.fontLoader.loadFonts(this.fonts)
     }
 
     // Initialize grid settings
     this.nextTick((ctx) => {
-      Grid.copy(ctx, this.gridOptions);
-    });
+      Grid.copy(ctx, this.gridOptions)
+    })
 
     // Create the user entity for presence tracking
     this.nextTick((ctx) => {
-      const userEntity = createEntity(ctx);
+      const userEntity = createEntity(ctx)
       addComponent(ctx, userEntity, Synced, {
         id: crypto.randomUUID(),
-      });
+      })
       addComponent(ctx, userEntity, User, {
         userId: this.userData.userId,
         sessionId: this.userData.sessionId,
         color: this.userData.color,
         name: this.userData.name,
         avatar: this.userData.avatar,
-      });
-    });
+      })
+    })
 
     // Run plugin setup
     for (const plugin of this.plugins.values()) {
       if (plugin.setup) {
-        await plugin.setup(this.ctx);
+        await plugin.setup(this.ctx)
       }
     }
   }
@@ -371,20 +359,20 @@ export class Editor {
    */
   async tick(): Promise<void> {
     // Process scheduled callbacks (including command spawns)
-    this.world.sync();
+    this.world.sync()
 
     // Execute system batches in order (already sorted by phase then priority)
     for (const batch of this.systemBatches) {
-      const systems = batch.map((s) => s._system);
-      await this.world.execute(...systems);
+      const systems = batch.map((s) => s._system)
+      await this.world.execute(...systems)
     }
 
-    const currentEventIndex = this.ctx.eventBuffer.getWriteIndex();
-    this.ctx.prevEventIndex = currentEventIndex;
-    this.ctx.currEventIndex = currentEventIndex;
+    const currentEventIndex = this.ctx.eventBuffer.getWriteIndex()
+    this.ctx.prevEventIndex = currentEventIndex
+    this.ctx.currEventIndex = currentEventIndex
 
     // Clean up command entities at end of frame
-    cleanupCommands(this.ctx);
+    cleanupCommands(this.ctx)
   }
 
   /**
@@ -405,8 +393,8 @@ export class Editor {
    */
   nextTick(callback: (ctx: Context) => void): () => void {
     return this.world.nextSync((ctx) => {
-      callback(ctx);
-    });
+      callback(ctx)
+    })
   }
 
   /**
@@ -425,10 +413,10 @@ export class Editor {
    * ```
    */
   command<T>(def: CommandDef<T>, ...args: T extends void ? [] : [T]): void {
-    const payload = args[0] as T;
+    const payload = args[0] as T
     this.nextTick((ctx) => {
-      def.spawn(ctx, payload);
-    });
+      def.spawn(ctx, payload)
+    })
   }
 
   /**
@@ -450,8 +438,8 @@ export class Editor {
    */
   subscribe(query: QueryDef, callback: QueryCallback): () => void {
     return this.world.subscribe(query, (ctx, result) => {
-      callback(ctx, result);
-    });
+      callback(ctx, result)
+    })
   }
 
   /**
@@ -460,7 +448,7 @@ export class Editor {
    * @internal
    */
   _getContext(): Context {
-    return this.ctx;
+    return this.ctx
   }
 
   /**
@@ -469,18 +457,18 @@ export class Editor {
    */
   dispose(): void {
     // Run plugin teardown in reverse order
-    const plugins = Array.from(this.plugins.values()).reverse();
+    const plugins = Array.from(this.plugins.values()).reverse()
     for (const plugin of plugins) {
       if (plugin.teardown) {
-        plugin.teardown(this.ctx);
+        plugin.teardown(this.ctx)
       }
     }
 
     // Dispose ECS World
-    this.world.dispose();
+    this.world.dispose()
 
     // Clear state
-    this.plugins.clear();
-    this.systemBatches = [];
+    this.plugins.clear()
+    this.systemBatches = []
   }
 }

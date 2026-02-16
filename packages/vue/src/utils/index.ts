@@ -1,16 +1,14 @@
 export {
+  type BlockDimensions,
   computeBlockDimensions,
   getUnrotatedDimensions,
-  type BlockDimensions,
-} from "./blockDimensions";
-
-export { computeCommonComponents } from "./computeCommonComponents";
-
+} from './blockDimensions'
 export {
+  type HSVColor,
+  hexToHsv,
+  hexToRgb,
+  hsvToHex,
   normalizeColor,
   rgbToHex,
-  hexToRgb,
-  hexToHsv,
-  hsvToHex,
-  type HSVColor,
-} from "./color";
+} from './color'
+export { computeCommonComponents } from './computeCommonComponents'

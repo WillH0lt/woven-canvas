@@ -1,52 +1,48 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/core";
-import {
-  MenuDropdown,
-  useComponents,
-  useEditorContext,
-} from "@infinitecanvas/vue";
-import { Shape } from "../Shape";
+import type { EntityId } from '@infinitecanvas/core'
+import { useComponents, useEditorContext } from '@infinitecanvas/vue'
+import { computed } from 'vue'
+import { Shape } from '../Shape'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
 // Use useComponents to get Shape component for all selected entities
-const shapesMap = useComponents(() => props.entityIds, Shape);
+const shapesMap = useComponents(() => props.entityIds, Shape)
 
 // Get current border value
-const currentBorder = computed<number>(() => {
-  const first = shapesMap.value.values().next().value;
-  if (!first) return 5;
+const _currentBorder = computed<number>(() => {
+  const first = shapesMap.value.values().next().value
+  if (!first) return 5
 
-  return first.border;
-});
+  return first.border
+})
 
 // Check if there are multiple different border values
-const hasMultipleBorders = computed(() => {
-  const values = new Set<number>();
+const _hasMultipleBorders = computed(() => {
+  const values = new Set<number>()
   for (const shape of shapesMap.value.values()) {
     if (shape) {
-      values.add(shape.border);
+      values.add(shape.border)
     }
   }
-  return values.size > 1;
-});
+  return values.size > 1
+})
 
-function handleBorderChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const newBorder = parseInt(target.value, 10);
+function _handleBorderChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const newBorder = parseInt(target.value, 10)
 
   // Apply border to all selected entities
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const shape = Shape.write(ctx, entityId);
-      shape.border = newBorder;
+      const shape = Shape.write(ctx, entityId)
+      shape.border = newBorder
     }
-  });
+  })
 }
 </script>
 

@@ -1,16 +1,11 @@
-import {
-  field,
-  CanvasComponentDef,
-  type Context,
-  type EntityId,
-} from "@infinitecanvas/core";
+import { CanvasComponentDef, type Context, type EntityId, field } from '@infinitecanvas/core'
 
 /**
  * Maximum number of points that can be stored in the stroke.
  * Points are stored as [x, y] pairs, so actual capacity is POINTS_CAPACITY * 2 floats.
  * Pressures are stored separately with POINTS_CAPACITY floats.
  */
-export const POINTS_CAPACITY = 256;
+export const POINTS_CAPACITY = 256
 
 const PenStrokeSchema = {
   /**
@@ -53,7 +48,7 @@ const PenStrokeSchema = {
    * Whether the stroke has pressure data from a stylus.
    */
   hasPressure: field.boolean().default(false),
-};
+}
 
 /**
  * PenStroke component - stores the geometry of a pen/ink stroke.
@@ -66,18 +61,16 @@ const PenStrokeSchema = {
  */
 class PenStrokeDef extends CanvasComponentDef<typeof PenStrokeSchema> {
   constructor() {
-    super({ name: "penStroke", sync: "document" }, PenStrokeSchema);
+    super({ name: 'penStroke', sync: 'document' }, PenStrokeSchema)
   }
 
   snapshot(ctx: Context, entityId: EntityId) {
-    const snap = super.snapshot(ctx, entityId);
-    const count = snap.pointCount;
-    snap.points = snap.points.slice(0, count * 2);
-    snap.pressures = snap.hasPressure
-      ? snap.pressures.slice(0, count)
-      : new Float32Array(0);
-    return snap;
+    const snap = super.snapshot(ctx, entityId)
+    const count = snap.pointCount
+    snap.points = snap.points.slice(0, count * 2)
+    snap.pressures = snap.hasPressure ? snap.pressures.slice(0, count) : new Float32Array(0)
+    return snap
   }
 }
 
-export const PenStroke = new PenStrokeDef();
+export const PenStroke = new PenStrokeDef()

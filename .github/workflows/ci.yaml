@@ -1,61 +1,33 @@
-name: "  ▶️  CI Workflow"
+name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    paths-ignore:
-      - ".vscode/**"
-      - "LICENSE"
-      - "README.md"
-  workflow_dispatch:
-
-concurrency:
-  group: pull-${{ github.ref }}-1
-  cancel-in-progress: true
-
-env:
-  CI: "true"
-
-permissions:
-  contents: read
-  pull-requests: read
+    branches: [main]
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node: ["20.17.0"]
-        pnpm: ["9.15.0"]
-
-    name: "Build: ${{ matrix.os }}, Node.js ${{ matrix.node }}"
+  test:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Prepare git
-        run: git config --global core.autocrlf false
-
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
+          node-version: 20
+          cache: 'pnpm'
 
-      - name: "💽️ Setup (Node.js)"
-        uses: ./.github/actions/setup-node
-        with:
-          node-version: ${{ matrix.node }}
-          pnpm-version: ${{ matrix.pnpm }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: "🏗️ Build: Transpile TS to JS"
-        run: pnpm check:exports
-
-      - name: "🧪 Verify build"
-        run: pnpm check:exports
-
-      - name: "🚨️ Lint code"
+      - name: Lint
         run: pnpm lint:ci
 
-      - name: "🧳 Run unit tests"
-        run: pnpm test:unit
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test

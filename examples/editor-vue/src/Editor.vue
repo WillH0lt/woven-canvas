@@ -1,47 +1,47 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { Editor } from "@infinitecanvas/core";
-import { InfiniteCanvas, type CanvasStore, type CanvasStoreOptions } from "@infinitecanvas/vue";
+import type { Editor } from '@infinitecanvas/core'
+import type { CanvasStore, CanvasStoreOptions } from '@infinitecanvas/vue'
+import { ref } from 'vue'
 
-const ONLINE_STORAGE_KEY = "infinitecanvas-online-mode";
+const ONLINE_STORAGE_KEY = 'infinitecanvas-online-mode'
 
 // Load online preference from localStorage (default: true)
-const savedOnline = localStorage.getItem(ONLINE_STORAGE_KEY);
-const initialOnline = savedOnline !== null ? savedOnline === "true" : true;
-const isOnline = ref(initialOnline);
+const savedOnline = localStorage.getItem(ONLINE_STORAGE_KEY)
+const initialOnline = savedOnline !== null ? savedOnline === 'true' : true
+const isOnline = ref(initialOnline)
 
-let store: CanvasStore | null = null;
+let store: CanvasStore | null = null
 
-function handleReady(_inEditor: Editor, inStore: CanvasStore) {
-  store = inStore;
+function _handleReady(_inEditor: Editor, inStore: CanvasStore) {
+  store = inStore
 }
 
-async function toggleOnline() {
-  isOnline.value = !isOnline.value;
-  localStorage.setItem(ONLINE_STORAGE_KEY, String(isOnline.value));
+async function _toggleOnline() {
+  isOnline.value = !isOnline.value
+  localStorage.setItem(ONLINE_STORAGE_KEY, String(isOnline.value))
   if (isOnline.value) {
-    await store?.connect();
+    await store?.connect()
   } else {
-    store?.disconnect();
+    store?.disconnect()
   }
 }
 
-const syncOptions = ref<CanvasStoreOptions>({
+const _syncOptions = ref<CanvasStoreOptions>({
   persistence: {
     enabled: true,
-    documentId: "editor-vue-test",
+    documentId: 'editor-vue-test',
   },
   history: {
     enabled: true,
   },
   websocket: {
     enabled: true,
-    documentId: "editor-vue-test",
-    url: "ws://localhost:8087/ws",
+    documentId: 'editor-vue-test',
+    url: 'ws://localhost:8087/ws',
     clientId: crypto.randomUUID(),
     startOffline: !isOnline.value,
   },
-});
+})
 </script>
 
 <template>

@@ -1,8 +1,7 @@
-import type { Context } from "@woven-ecs/core";
-import type { Vec2 } from "@infinitecanvas/math";
-
-import type { MouseInput } from "./types";
-import { Camera, Mouse } from "../singletons";
+import type { Vec2 } from '@infinitecanvas/math'
+import type { Context } from '@woven-ecs/core'
+import { Camera, Mouse } from '../singletons'
+import type { MouseInput } from './types'
 
 /**
  * Generate high-level mouse input events from ECS state for state machine consumption.
@@ -33,38 +32,38 @@ import { Camera, Mouse } from "../singletons";
  * ```
  */
 export function getMouseInput(ctx: Context): MouseInput[] {
-  const events: MouseInput[] = [];
-  const mouse = Mouse.read(ctx);
+  const events: MouseInput[] = []
+  const mouse = Mouse.read(ctx)
 
   // Get screen position
-  const screenPos: Vec2 = [mouse.position[0], mouse.position[1]];
+  const screenPos: Vec2 = [mouse.position[0], mouse.position[1]]
 
   // Get world position using Camera component
-  const worldPos = Camera.toWorld(ctx, screenPos);
+  const worldPos = Camera.toWorld(ctx, screenPos)
 
   // Handle wheel event
   if (mouse.wheelTrigger) {
     events.push({
-      type: "wheel",
+      type: 'wheel',
       ctx,
       screenPosition: screenPos,
       worldPosition: worldPos,
       wheelDeltaX: mouse.wheelDeltaX,
       wheelDeltaY: mouse.wheelDeltaY,
-    });
+    })
   }
 
   // Handle move event
   if (mouse.moveTrigger) {
     events.push({
-      type: "mouseMove",
+      type: 'mouseMove',
       ctx,
       screenPosition: screenPos,
       worldPosition: worldPos,
       wheelDeltaX: 0,
       wheelDeltaY: 0,
-    });
+    })
   }
 
-  return events;
+  return events
 }

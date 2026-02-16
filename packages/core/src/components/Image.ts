@@ -1,5 +1,5 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasComponent } from "@woven-ecs/canvas-store";
+import { defineCanvasComponent } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * Image component - stores image-specific metadata.
@@ -8,13 +8,13 @@ import { defineCanvasComponent } from "@woven-ecs/canvas-store";
  * The actual image binary is managed by AssetManager, not stored in ECS.
  */
 export const Image = defineCanvasComponent(
-  { name: "image", sync: "document" },
+  { name: 'image', sync: 'document' },
   {
     /** Image width in pixels */
     width: field.uint16().default(0),
     /** Image height in pixels */
     height: field.uint16().default(0),
     /** Alt text for accessibility */
-    alt: field.string().max(256).default(""),
+    alt: field.string().max(256).default(''),
   },
-);
+)

@@ -3,13 +3,13 @@
  */
 export interface AssetMetadata {
   /** Original filename */
-  filename?: string;
+  filename?: string
   /** MIME type (e.g., "image/png") */
-  mimeType?: string;
+  mimeType?: string
   /** Image width in pixels (for images) */
-  width?: number;
+  width?: number
   /** Image height in pixels (for images) */
-  height?: number;
+  height?: number
 }
 
 /**
@@ -17,7 +17,7 @@ export interface AssetMetadata {
  */
 export interface AssetUploadResult {
   /** Optional immediate URL if the provider can supply one */
-  url?: string;
+  url?: string
 }
 
 /**
@@ -57,11 +57,7 @@ export interface AssetProvider {
    * @param metadata - Optional metadata about the asset
    * @returns Optionally an immediate URL
    */
-  upload(
-    blob: Blob,
-    identifier: string,
-    metadata?: AssetMetadata,
-  ): Promise<AssetUploadResult>;
+  upload(blob: Blob, identifier: string, metadata?: AssetMetadata): Promise<AssetUploadResult>
 
   /**
    * Resolve an identifier to a displayable URL.
@@ -73,29 +69,29 @@ export interface AssetProvider {
    * @param identifier - The permanent identifier from upload()
    * @returns A URL that can be used to display the asset
    */
-  resolveUrl(identifier: string): Promise<string>;
+  resolveUrl(identifier: string): Promise<string>
 
   /**
    * Optional: Delete an asset from storage.
    *
    * @param identifier - The permanent identifier to delete
    */
-  delete?(identifier: string): Promise<void>;
+  delete?(identifier: string): Promise<void>
 
   // --- Options ---
 
   /** How long to cache resolved URLs in seconds (default: 3600) */
-  urlCacheTtl?: number;
+  urlCacheTtl?: number
 
   /** Whether to cache downloaded assets in IndexedDB (default: false) */
-  cacheDownloads?: boolean;
+  cacheDownloads?: boolean
 
   /** Maximum cache size in bytes for downloaded assets (default: 100MB) */
-  maxCacheSize?: number;
+  maxCacheSize?: number
 
   /** Maximum retry attempts for failed uploads (default: 3) */
-  maxRetries?: number;
+  maxRetries?: number
 
   /** Delay between retry attempts in ms (default: 5000) */
-  retryDelay?: number;
+  retryDelay?: number
 }

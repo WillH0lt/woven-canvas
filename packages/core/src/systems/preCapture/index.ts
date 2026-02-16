@@ -1,1 +1,1 @@
-export { intersectSystem } from "./intersectSystem";
+export { intersectSystem } from './intersectSystem'

@@ -1,7 +1,6 @@
-import { field, type Context } from "@woven-ecs/core";
-import type { Vec2 } from "@infinitecanvas/math";
-
-import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
+import type { Vec2 } from '@infinitecanvas/math'
+import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
+import { type Context, field } from '@woven-ecs/core'
 
 const ScreenSchema = {
   /** Width of the editor element in pixels */
@@ -12,7 +11,7 @@ const ScreenSchema = {
   left: field.float64().default(0),
   /** Top offset of the editor element relative to the viewport */
   top: field.float64().default(0),
-};
+}
 
 /**
  * Screen singleton - tracks the editor element's dimensions and position.
@@ -21,26 +20,26 @@ const ScreenSchema = {
  */
 class ScreenDef extends CanvasSingletonDef<typeof ScreenSchema> {
   constructor() {
-    super({ name: "screen" }, ScreenSchema);
+    super({ name: 'screen' }, ScreenSchema)
   }
 
   /** Get screen dimensions as [width, height] */
   getSize(ctx: Context): Vec2 {
-    const s = this.read(ctx);
-    return [s.width, s.height];
+    const s = this.read(ctx)
+    return [s.width, s.height]
   }
 
   /** Get screen position as [left, top] */
   getPosition(ctx: Context): Vec2 {
-    const s = this.read(ctx);
-    return [s.left, s.top];
+    const s = this.read(ctx)
+    return [s.left, s.top]
   }
 
   /** Get the center point of the screen */
   getCenter(ctx: Context): Vec2 {
-    const s = this.read(ctx);
-    return [s.left + s.width / 2, s.top + s.height / 2];
+    const s = this.read(ctx)
+    return [s.left + s.width / 2, s.top + s.height / 2]
   }
 }
 
-export const Screen = new ScreenDef();
+export const Screen = new ScreenDef()

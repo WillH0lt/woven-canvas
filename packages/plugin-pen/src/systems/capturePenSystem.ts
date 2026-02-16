@@ -1,26 +1,20 @@
-import { assign, setup } from "xstate";
 import {
-  type InferStateContext,
-  defineEditorSystem,
   Controls,
+  defineEditorSystem,
   getPointerInput,
+  type InferStateContext,
   type PointerInput,
   PointerType,
-} from "@infinitecanvas/core";
-
-import { PenStateSingleton } from "../singletons";
-import { PenState } from "../types";
-import {
-  StartPenStroke,
-  AddPenStrokePoint,
-  CompletePenStroke,
-  RemovePenStroke,
-} from "../commands";
+} from '@infinitecanvas/core'
+import { assign, setup } from 'xstate'
+import { AddPenStrokePoint, CompletePenStroke, RemovePenStroke, StartPenStroke } from '../commands'
+import { PenStateSingleton } from '../singletons'
+import { PenState } from '../types'
 
 /**
  * Pen state machine context - derived from PenStateSingleton schema.
  */
-type PenContext = InferStateContext<typeof PenStateSingleton>;
+type PenContext = InferStateContext<typeof PenStateSingleton>
 
 /**
  * Pen state machine - handles pointer events for the pen tool.
@@ -40,44 +34,42 @@ const penMachine = setup({
   actions: {
     startStroke: ({ event }) => {
       // Extract pressure from pen input, null for mouse/touch
-      const pressure =
-        event.pointerType === PointerType.Pen ? event.pressure : null;
+      const pressure = event.pointerType === PointerType.Pen ? event.pressure : null
 
       StartPenStroke.spawn(event.ctx, {
         worldPosition: event.worldPosition,
         pressure,
-      });
+      })
     },
 
     addPoint: assign({
       lastWorldPosition: ({ event, context }): [number, number] => {
-        if (!context.activeStroke) return context.lastWorldPosition;
+        if (!context.activeStroke) return context.lastWorldPosition
 
         // Extract pressure from pen input
-        const pressure =
-          event.pointerType === PointerType.Pen ? event.pressure : null;
+        const pressure = event.pointerType === PointerType.Pen ? event.pressure : null
 
         AddPenStrokePoint.spawn(event.ctx, {
           strokeId: context.activeStroke,
           worldPosition: event.worldPosition,
           pressure,
-        });
-        return [event.worldPosition[0], event.worldPosition[1]];
+        })
+        return [event.worldPosition[0], event.worldPosition[1]]
       },
     }),
 
     completeStroke: ({ event, context }) => {
-      if (!context.activeStroke) return;
+      if (!context.activeStroke) return
       CompletePenStroke.spawn(event.ctx, {
         strokeId: context.activeStroke,
-      });
+      })
     },
 
     removeStroke: ({ event, context }) => {
-      if (!context.activeStroke) return;
+      if (!context.activeStroke) return
       RemovePenStroke.spawn(event.ctx, {
         strokeId: context.activeStroke,
-      });
+      })
     },
 
     resetContext: assign({
@@ -86,7 +78,7 @@ const penMachine = setup({
     }),
   },
 }).createMachine({
-  id: "pen",
+  id: 'pen',
   initial: PenState.Idle,
   context: {
     activeStroke: null,
@@ -94,31 +86,31 @@ const penMachine = setup({
   },
   states: {
     [PenState.Idle]: {
-      entry: ["resetContext"],
+      entry: ['resetContext'],
       on: {
         pointerDown: {
           target: PenState.Drawing,
-          actions: ["startStroke"],
+          actions: ['startStroke'],
         },
       },
     },
     [PenState.Drawing]: {
       on: {
         pointerMove: {
-          actions: ["addPoint"],
+          actions: ['addPoint'],
         },
         pointerUp: {
           target: PenState.Idle,
-          actions: ["completeStroke"],
+          actions: ['completeStroke'],
         },
         cancel: {
           target: PenState.Idle,
-          actions: ["removeStroke"],
+          actions: ['removeStroke'],
         },
       },
     },
   },
-});
+})
 
 /**
  * Capture pen system - runs the pen state machine.
@@ -126,17 +118,14 @@ const penMachine = setup({
  * Runs in the capture phase to handle pointer events for the pen tool.
  * Generates commands that are processed by the update system.
  */
-export const capturePenSystem = defineEditorSystem(
-  { phase: "capture", priority: 100 },
-  (ctx) => {
-    // Get pointer buttons mapped to 'pen' tool
-    const buttons = Controls.getButtons(ctx, "pen");
+export const capturePenSystem = defineEditorSystem({ phase: 'capture', priority: 100 }, (ctx) => {
+  // Get pointer buttons mapped to 'pen' tool
+  const buttons = Controls.getButtons(ctx, 'pen')
 
-    // Get pointer events (no frame events needed for pen unlike eraser)
-    const events = getPointerInput(ctx, buttons);
+  // Get pointer events (no frame events needed for pen unlike eraser)
+  const events = getPointerInput(ctx, buttons)
 
-    if (events.length === 0) return;
+  if (events.length === 0) return
 
-    PenStateSingleton.run(ctx, penMachine, events);
-  }
-);
+  PenStateSingleton.run(ctx, penMachine, events)
+})

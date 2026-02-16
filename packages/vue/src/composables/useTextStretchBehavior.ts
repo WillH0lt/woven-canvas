@@ -1,46 +1,32 @@
+import { Block, Camera, type Context, hasComponent, Screen, Text } from '@infinitecanvas/core'
 import {
-  watch,
-  onUnmounted,
-  toValue,
-  type Ref,
-  type MaybeRefOrGetter,
-} from "vue";
-import {
-  Block,
-  Text,
-  Camera,
-  Screen,
-  hasComponent,
-  type Context,
-} from "@infinitecanvas/core";
-import {
-  UpdateTransformBox,
-  TransformBoxStateSingleton,
-  SelectionStateSingleton,
   SelectionState,
+  SelectionStateSingleton,
+  TransformBoxStateSingleton,
   TransformHandle,
   TransformHandleKind,
-} from "@infinitecanvas/plugin-selection";
-
-import { useSingleton } from "./useSingleton";
-import { useEditorContext } from "./useEditorContext";
-import { computeBlockDimensions } from "../utils/blockDimensions";
-import type { BlockData } from "../types";
+  UpdateTransformBox,
+} from '@infinitecanvas/plugin-selection'
+import { type MaybeRefOrGetter, onUnmounted, type Ref, toValue, watch } from 'vue'
+import type { BlockData } from '../types'
+import { computeBlockDimensions } from '../utils/blockDimensions'
+import { useEditorContext } from './useEditorContext'
+import { useSingleton } from './useSingleton'
 
 export interface TextStretchBehaviorOptions {
-  blockData: MaybeRefOrGetter<BlockData>;
+  blockData: MaybeRefOrGetter<BlockData>
   /**
    * Container ref to observe for size changes.
    */
-  containerRef: Ref<HTMLElement | null>;
+  containerRef: Ref<HTMLElement | null>
   /**
    * Minimum width constraint. Width will not shrink below this value.
    */
-  minWidth?: MaybeRefOrGetter<number>;
+  minWidth?: MaybeRefOrGetter<number>
   /**
    * Minimum height constraint. Height will not shrink below this value.
    */
-  minHeight?: MaybeRefOrGetter<number>;
+  minHeight?: MaybeRefOrGetter<number>
 }
 
 export interface TextStretchBehaviorResult {
@@ -49,13 +35,7 @@ export interface TextStretchBehaviorResult {
    * Handles saving the text content and updating block dimensions
    * using the provided dimensions from EditableText.
    */
-  handleEditEnd: (data: {
-    content: string;
-    width: number;
-    height: number;
-    left: number;
-    top: number;
-  }) => void;
+  handleEditEnd: (data: { content: string; width: number; height: number; left: number; top: number }) => void
 }
 
 /**
@@ -64,136 +44,127 @@ export interface TextStretchBehaviorResult {
  * Observes the element for size changes and updates block dimensions,
  * respecting minWidth/minHeight constraints.
  */
-export function useTextStretchBehavior(
-  options: TextStretchBehaviorOptions,
-): TextStretchBehaviorResult {
-  const camera = useSingleton(Camera);
-  const screen = useSingleton(Screen);
-  const TransformBoxState = useSingleton(TransformBoxStateSingleton);
-  const { nextEditorTick } = useEditorContext();
+export function useTextStretchBehavior(options: TextStretchBehaviorOptions): TextStretchBehaviorResult {
+  const camera = useSingleton(Camera)
+  const screen = useSingleton(Screen)
+  const TransformBoxState = useSingleton(TransformBoxStateSingleton)
+  const { nextEditorTick } = useEditorContext()
 
   // ResizeObserver for content-driven resizes
-  let resizeObserver: ResizeObserver | null = null;
+  let resizeObserver: ResizeObserver | null = null
 
   interface Dimensions {
-    width: number;
-    height: number;
-    left: number;
-    top: number;
+    width: number
+    height: number
+    left: number
+    top: number
   }
 
   /**
    * Updates block dimensions with min constraints applied.
    */
   function applyBlockDimensions(ctx: Context, dimensions: Dimensions): void {
-    const { entityId } = toValue(options.blockData);
+    const { entityId } = toValue(options.blockData)
 
     // Apply min constraints
-    const minW = toValue(options.minWidth) ?? 0;
-    const minH = toValue(options.minHeight) ?? 0;
-    const finalWidth = Math.max(dimensions.width, minW);
-    const finalHeight = Math.max(dimensions.height, minH);
+    const minW = toValue(options.minWidth) ?? 0
+    const minH = toValue(options.minHeight) ?? 0
+    const finalWidth = Math.max(dimensions.width, minW)
+    const finalHeight = Math.max(dimensions.height, minH)
 
     // Only write if dimensions actually changed
-    const block = Block.read(ctx, entityId);
-    const widthChanged = Math.abs(block.size[0] - finalWidth) > 0.5;
-    const heightChanged = Math.abs(block.size[1] - finalHeight) > 0.5;
+    const block = Block.read(ctx, entityId)
+    const widthChanged = Math.abs(block.size[0] - finalWidth) > 0.5
+    const heightChanged = Math.abs(block.size[1] - finalHeight) > 0.5
 
-    if (!widthChanged && !heightChanged) return;
+    if (!widthChanged && !heightChanged) return
 
-    const writableBlock = Block.write(ctx, entityId);
-    writableBlock.size = [finalWidth, finalHeight];
-    writableBlock.position = [dimensions.left, dimensions.top];
+    const writableBlock = Block.write(ctx, entityId)
+    writableBlock.size = [finalWidth, finalHeight]
+    writableBlock.position = [dimensions.left, dimensions.top]
 
     if (TransformBoxState.value.transformBoxId !== null) {
       UpdateTransformBox.spawn(ctx, {
         transformBoxId: TransformBoxState.value.transformBoxId,
-      });
+      })
     }
   }
 
   function startResizeObserver() {
-    if (resizeObserver) return; // Already observing
+    if (resizeObserver) return // Already observing
 
-    const element = options.containerRef.value;
-    if (!element) return;
+    const element = options.containerRef.value
+    if (!element) return
 
     resizeObserver = new ResizeObserver(() => {
       nextEditorTick((ctx) => {
-        if (!isStretching(ctx)) return;
+        if (!isStretching(ctx)) return
 
-        const dimensions = computeBlockDimensions(element, camera, screen);
-        applyBlockDimensions(ctx, dimensions);
-      });
-    });
-    resizeObserver.observe(element);
+        const dimensions = computeBlockDimensions(element, camera, screen)
+        applyBlockDimensions(ctx, dimensions)
+      })
+    })
+    resizeObserver.observe(element)
   }
 
   function stopResizeObserver() {
     if (resizeObserver) {
-      resizeObserver.disconnect();
-      resizeObserver = null;
+      resizeObserver.disconnect()
+      resizeObserver = null
     }
   }
 
   // Watch for selection state changes
   watch(
     () => {
-      const blockData = toValue(options.blockData);
-      return [blockData.selected, blockData.edited] as const;
+      const blockData = toValue(options.blockData)
+      return [blockData.selected, blockData.edited] as const
     },
     ([selected, edited]) => {
       if (selected && !edited) {
-        startResizeObserver();
+        startResizeObserver()
       } else {
-        stopResizeObserver();
+        stopResizeObserver()
       }
     },
     { immediate: true },
-  );
+  )
 
   /**
    * Handle edit end - saves text content and updates block dimensions.
    */
-  function handleEditEnd(data: {
-    content: string;
-    width: number;
-    height: number;
-    left: number;
-    top: number;
-  }): void {
-    const { content, ...dimensions } = data;
+  function handleEditEnd(data: { content: string; width: number; height: number; left: number; top: number }): void {
+    const { content, ...dimensions } = data
 
     nextEditorTick((ctx) => {
-      const { entityId } = toValue(options.blockData);
+      const { entityId } = toValue(options.blockData)
 
       // Save text content
-      const text = Text.read(ctx, entityId);
+      const text = Text.read(ctx, entityId)
       if (text.content !== content) {
-        const writableText = Text.write(ctx, entityId);
-        writableText.content = content;
+        const writableText = Text.write(ctx, entityId)
+        writableText.content = content
       }
 
-      applyBlockDimensions(ctx, dimensions);
-    });
+      applyBlockDimensions(ctx, dimensions)
+    })
   }
 
   onUnmounted(() => {
-    stopResizeObserver();
-  });
+    stopResizeObserver()
+  })
 
   return {
     handleEditEnd,
-  };
+  }
 }
 
 function isStretching(ctx: Context): boolean {
-  const selectionState = SelectionStateSingleton.read(ctx);
+  const selectionState = SelectionStateSingleton.read(ctx)
   return (
     selectionState.state === SelectionState.Dragging &&
     selectionState.draggedEntity !== null &&
     hasComponent(ctx, selectionState.draggedEntity, TransformHandle) &&
-    TransformHandle.read(ctx, selectionState.draggedEntity).kind ===
-      TransformHandleKind.Stretch
-  );
+    TransformHandle.read(ctx, selectionState.draggedEntity).kind === TransformHandleKind.Stretch
+  )
 }

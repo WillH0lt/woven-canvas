@@ -1,5 +1,5 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasComponent } from "@woven-ecs/canvas-store";
+import { defineCanvasComponent } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * ScaleWithZoom component - marks an entity that should maintain
@@ -9,7 +9,7 @@ import { defineCanvasComponent } from "@woven-ecs/canvas-store";
  * regardless of zoom level.
  */
 export const ScaleWithZoom = defineCanvasComponent(
-  { name: "scaleWithZoom" },
+  { name: 'scaleWithZoom' },
   {
     /** Pivot point for scaling as [x, y] (0-1, default 0.5,0.5 = center) */
     anchor: field.tuple(field.float64(), 2).default([0.5, 0.5]),
@@ -19,5 +19,5 @@ export const ScaleWithZoom = defineCanvasComponent(
     startSize: field.tuple(field.float64(), 2).default([0, 0]),
     /** Scale multiplier per dimension: [x, y] (0 = no zoom effect, 1 = full zoom effect, 0.5 = half effect) */
     scaleMultiplier: field.tuple(field.float64(), 2).default([1, 1]),
-  }
-);
+  },
+)

@@ -3,9 +3,9 @@
  */
 export const PenState = {
   /** Idle - waiting for user to start drawing */
-  Idle: "idle",
+  Idle: 'idle',
   /** Drawing - actively drawing a pen stroke */
-  Drawing: "drawing",
-} as const;
+  Drawing: 'drawing',
+} as const
 
-export type PenState = (typeof PenState)[keyof typeof PenState];
+export type PenState = (typeof PenState)[keyof typeof PenState]

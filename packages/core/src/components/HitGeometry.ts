@@ -1,41 +1,39 @@
-import { field, type Context, type EntityId } from "@woven-ecs/core";
-import { CanvasComponentDef } from "@woven-ecs/canvas-store";
-import { Vec2, Aabb, Arc, Capsule, Mat2 } from "@infinitecanvas/math";
-import { Block } from "./Block";
+import { type Aabb, Arc, Capsule, Mat2, type Vec2 } from '@infinitecanvas/math'
+import { CanvasComponentDef } from '@woven-ecs/canvas-store'
+import { type Context, type EntityId, field } from '@woven-ecs/core'
+import { Block } from './Block'
 
 // Pre-allocated matrix for UV-to-world transforms (avoids allocation in hot paths)
-const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0];
+const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0]
 
 /**
  * Maximum number of capsules that can be stored in the hitCapsules array.
  * Each capsule takes 5 floats: ax, ay, bx, by, radius
  */
-export const MAX_HIT_CAPSULES = 64;
+export const MAX_HIT_CAPSULES = 64
 
 /**
  * Number of floats per capsule in the hitCapsules array.
  */
-const FLOATS_PER_CAPSULE = 5;
+const FLOATS_PER_CAPSULE = 5
 
 /**
  * Maximum number of arcs that can be stored in the hitArcs array.
  * Each arc takes 7 floats: ax, ay, bx, by, cx, cy, thickness
  */
-export const MAX_HIT_ARCS = 2;
+export const MAX_HIT_ARCS = 2
 
 /**
  * Number of floats per arc in the hitArcs array.
  */
-const FLOATS_PER_ARC = 7;
+const FLOATS_PER_ARC = 7
 
 const HitGeometrySchema = {
-  hitCapsules: field
-    .buffer(field.float32())
-    .size(MAX_HIT_CAPSULES * FLOATS_PER_CAPSULE),
+  hitCapsules: field.buffer(field.float32()).size(MAX_HIT_CAPSULES * FLOATS_PER_CAPSULE),
   capsuleCount: field.uint16().default(0),
   hitArcs: field.buffer(field.float32()).size(MAX_HIT_ARCS * FLOATS_PER_ARC),
   arcCount: field.uint16().default(0),
-};
+}
 
 /**
  * HitGeometry component - stores collision geometry for an entity in UV coordinates.
@@ -59,7 +57,7 @@ const HitGeometrySchema = {
  */
 class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
   constructor() {
-    super({ name: "hitHeometry" }, HitGeometrySchema);
+    super({ name: 'hitHeometry' }, HitGeometrySchema)
   }
 
   /**
@@ -70,15 +68,15 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @returns Capsule tuple [ax, ay, bx, by, radius]
    */
   getCapsuleAt(ctx: Context, entityId: EntityId, index: number): Capsule {
-    const hitGeometry = this.read(ctx, entityId);
-    const offset = index * FLOATS_PER_CAPSULE;
+    const hitGeometry = this.read(ctx, entityId)
+    const offset = index * FLOATS_PER_CAPSULE
     return [
       hitGeometry.hitCapsules[offset],
       hitGeometry.hitCapsules[offset + 1],
       hitGeometry.hitCapsules[offset + 2],
       hitGeometry.hitCapsules[offset + 3],
       hitGeometry.hitCapsules[offset + 4],
-    ];
+    ]
   }
 
   /**
@@ -88,16 +86,11 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @param index - Index of the capsule (0-based)
    * @param capsule - Capsule tuple [ax, ay, bx, by, radius]
    */
-  setCapsuleAt(
-    ctx: Context,
-    entityId: EntityId,
-    index: number,
-    capsule: Capsule,
-  ): void {
-    const hitGeometry = this.write(ctx, entityId);
-    const offset = index * FLOATS_PER_CAPSULE;
+  setCapsuleAt(ctx: Context, entityId: EntityId, index: number, capsule: Capsule): void {
+    const hitGeometry = this.write(ctx, entityId)
+    const offset = index * FLOATS_PER_CAPSULE
     for (let i = 0; i < FLOATS_PER_CAPSULE; i++) {
-      hitGeometry.hitCapsules[offset + i] = capsule[i];
+      hitGeometry.hitCapsules[offset + i] = capsule[i]
     }
   }
 
@@ -109,8 +102,8 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @returns Arc tuple [ax, ay, bx, by, cx, cy, thickness]
    */
   getArcAt(ctx: Context, entityId: EntityId, index: number): Arc {
-    const hitGeometry = this.read(ctx, entityId);
-    const offset = index * FLOATS_PER_ARC;
+    const hitGeometry = this.read(ctx, entityId)
+    const offset = index * FLOATS_PER_ARC
     return [
       hitGeometry.hitArcs[offset],
       hitGeometry.hitArcs[offset + 1],
@@ -119,7 +112,7 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
       hitGeometry.hitArcs[offset + 4],
       hitGeometry.hitArcs[offset + 5],
       hitGeometry.hitArcs[offset + 6],
-    ];
+    ]
   }
 
   /**
@@ -130,10 +123,10 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @param arc - Arc tuple [ax, ay, bx, by, cx, cy, thickness]
    */
   setArcAt(ctx: Context, entityId: EntityId, index: number, arc: Arc): void {
-    const hitGeometry = this.write(ctx, entityId);
-    const offset = index * FLOATS_PER_ARC;
+    const hitGeometry = this.write(ctx, entityId)
+    const offset = index * FLOATS_PER_ARC
     for (let i = 0; i < FLOATS_PER_ARC; i++) {
-      hitGeometry.hitArcs[offset + i] = arc[i];
+      hitGeometry.hitArcs[offset + i] = arc[i]
     }
   }
 
@@ -148,66 +141,52 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @returns True if the point is inside any of the entity's hit capsules or arc
    */
   containsPointWorld(ctx: Context, entityId: EntityId, point: Vec2): boolean {
-    const hitGeometry = this.read(ctx, entityId);
+    const hitGeometry = this.read(ctx, entityId)
 
     // Build UV-to-world matrix once (computes sin/cos once)
-    Block.getUvToWorldMatrix(ctx, entityId, _uvToWorldMatrix);
+    Block.getUvToWorldMatrix(ctx, entityId, _uvToWorldMatrix)
 
     // Check arc intersections (transform UV arcs to world)
     for (let i = 0; i < hitGeometry.arcCount; i++) {
-      const uvArc = this.getArcAt(ctx, entityId, i);
+      const uvArc = this.getArcAt(ctx, entityId, i)
 
       // Transform 3 UV points to world using matrix
-      const worldA: Vec2 = [uvArc[0], uvArc[1]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldA);
-      const worldB: Vec2 = [uvArc[2], uvArc[3]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldB);
-      const worldC: Vec2 = [uvArc[4], uvArc[5]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldC);
+      const worldA: Vec2 = [uvArc[0], uvArc[1]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldA)
+      const worldB: Vec2 = [uvArc[2], uvArc[3]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldB)
+      const worldC: Vec2 = [uvArc[4], uvArc[5]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldC)
 
-      const thickness = uvArc[6]; // Already in world units
+      const thickness = uvArc[6] // Already in world units
 
-      const worldArc = Arc.create(
-        worldA[0],
-        worldA[1],
-        worldB[0],
-        worldB[1],
-        worldC[0],
-        worldC[1],
-        thickness,
-      );
+      const worldArc = Arc.create(worldA[0], worldA[1], worldB[0], worldB[1], worldC[0], worldC[1], thickness)
 
       if (Arc.containsPoint(worldArc, point)) {
-        return true;
+        return true
       }
     }
 
     // Check capsule intersections (transform UV capsules to world)
     for (let i = 0; i < hitGeometry.capsuleCount; i++) {
-      const uvCapsule = this.getCapsuleAt(ctx, entityId, i);
+      const uvCapsule = this.getCapsuleAt(ctx, entityId, i)
 
       // Transform 2 UV points to world using matrix
-      const worldA: Vec2 = [uvCapsule[0], uvCapsule[1]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldA);
-      const worldB: Vec2 = [uvCapsule[2], uvCapsule[3]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldB);
+      const worldA: Vec2 = [uvCapsule[0], uvCapsule[1]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldA)
+      const worldB: Vec2 = [uvCapsule[2], uvCapsule[3]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldB)
 
-      const radius = uvCapsule[4]; // Already in world units
+      const radius = uvCapsule[4] // Already in world units
 
-      const worldCapsule = Capsule.create(
-        worldA[0],
-        worldA[1],
-        worldB[0],
-        worldB[1],
-        radius,
-      );
+      const worldCapsule = Capsule.create(worldA[0], worldA[1], worldB[0], worldB[1], radius)
 
       if (Capsule.containsPoint(worldCapsule, point)) {
-        return true;
+        return true
       }
     }
 
-    return false;
+    return false
   }
 
   /**
@@ -221,66 +200,52 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @returns True if the AABB intersects any of the entity's hit capsules or arc
    */
   intersectsAabbWorld(ctx: Context, entityId: EntityId, aabb: Aabb): boolean {
-    const hitGeometry = this.read(ctx, entityId);
+    const hitGeometry = this.read(ctx, entityId)
 
     // Build UV-to-world matrix once (computes sin/cos once)
-    Block.getUvToWorldMatrix(ctx, entityId, _uvToWorldMatrix);
+    Block.getUvToWorldMatrix(ctx, entityId, _uvToWorldMatrix)
 
     // Check arc intersections (transform UV arcs to world)
     for (let i = 0; i < hitGeometry.arcCount; i++) {
-      const uvArc = this.getArcAt(ctx, entityId, i);
+      const uvArc = this.getArcAt(ctx, entityId, i)
 
       // Transform 3 UV points to world using matrix
-      const worldA: Vec2 = [uvArc[0], uvArc[1]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldA);
-      const worldB: Vec2 = [uvArc[2], uvArc[3]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldB);
-      const worldC: Vec2 = [uvArc[4], uvArc[5]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldC);
+      const worldA: Vec2 = [uvArc[0], uvArc[1]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldA)
+      const worldB: Vec2 = [uvArc[2], uvArc[3]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldB)
+      const worldC: Vec2 = [uvArc[4], uvArc[5]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldC)
 
-      const thickness = uvArc[6]; // Already in world units
+      const thickness = uvArc[6] // Already in world units
 
-      const worldArc = Arc.create(
-        worldA[0],
-        worldA[1],
-        worldB[0],
-        worldB[1],
-        worldC[0],
-        worldC[1],
-        thickness,
-      );
+      const worldArc = Arc.create(worldA[0], worldA[1], worldB[0], worldB[1], worldC[0], worldC[1], thickness)
 
       if (Arc.intersectsAabb(worldArc, aabb)) {
-        return true;
+        return true
       }
     }
 
     // Check capsule intersections (transform UV capsules to world)
     for (let i = 0; i < hitGeometry.capsuleCount; i++) {
-      const uvCapsule = this.getCapsuleAt(ctx, entityId, i);
+      const uvCapsule = this.getCapsuleAt(ctx, entityId, i)
 
       // Transform 2 UV points to world using matrix
-      const worldA: Vec2 = [uvCapsule[0], uvCapsule[1]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldA);
-      const worldB: Vec2 = [uvCapsule[2], uvCapsule[3]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldB);
+      const worldA: Vec2 = [uvCapsule[0], uvCapsule[1]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldA)
+      const worldB: Vec2 = [uvCapsule[2], uvCapsule[3]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldB)
 
-      const radius = uvCapsule[4]; // Already in world units
+      const radius = uvCapsule[4] // Already in world units
 
-      const worldCapsule = Capsule.create(
-        worldA[0],
-        worldA[1],
-        worldB[0],
-        worldB[1],
-        radius,
-      );
+      const worldCapsule = Capsule.create(worldA[0], worldA[1], worldB[0], worldB[1], radius)
 
       if (Capsule.intersectsAabb(worldCapsule, aabb)) {
-        return true;
+        return true
       }
     }
 
-    return false;
+    return false
   }
 
   /**
@@ -293,61 +258,47 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @returns Array of extrema points in world coordinates
    */
   getExtremaWorld(ctx: Context, entityId: EntityId): Vec2[] {
-    const hitGeometry = this.read(ctx, entityId);
-    const pts: Vec2[] = [];
+    const hitGeometry = this.read(ctx, entityId)
+    const pts: Vec2[] = []
 
     // Build UV-to-world matrix once (computes sin/cos once)
-    Block.getUvToWorldMatrix(ctx, entityId, _uvToWorldMatrix);
+    Block.getUvToWorldMatrix(ctx, entityId, _uvToWorldMatrix)
 
     // Add extrema from capsules (transform UV to world, then compute extrema)
     for (let i = 0; i < hitGeometry.capsuleCount; i++) {
-      const uvCapsule = this.getCapsuleAt(ctx, entityId, i);
+      const uvCapsule = this.getCapsuleAt(ctx, entityId, i)
 
       // Transform 2 UV points to world using matrix
-      const worldA: Vec2 = [uvCapsule[0], uvCapsule[1]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldA);
-      const worldB: Vec2 = [uvCapsule[2], uvCapsule[3]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldB);
+      const worldA: Vec2 = [uvCapsule[0], uvCapsule[1]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldA)
+      const worldB: Vec2 = [uvCapsule[2], uvCapsule[3]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldB)
 
-      const radius = uvCapsule[4]; // Already in world units
+      const radius = uvCapsule[4] // Already in world units
 
-      const worldCapsule = Capsule.create(
-        worldA[0],
-        worldA[1],
-        worldB[0],
-        worldB[1],
-        radius,
-      );
-      pts.push(...Capsule.getExtrema(worldCapsule));
+      const worldCapsule = Capsule.create(worldA[0], worldA[1], worldB[0], worldB[1], radius)
+      pts.push(...Capsule.getExtrema(worldCapsule))
     }
 
     // Add extrema from arcs (transform UV to world, then compute extrema)
     for (let i = 0; i < hitGeometry.arcCount; i++) {
-      const uvArc = this.getArcAt(ctx, entityId, i);
+      const uvArc = this.getArcAt(ctx, entityId, i)
 
       // Transform 3 UV points to world using matrix
-      const worldA: Vec2 = [uvArc[0], uvArc[1]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldA);
-      const worldB: Vec2 = [uvArc[2], uvArc[3]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldB);
-      const worldC: Vec2 = [uvArc[4], uvArc[5]];
-      Mat2.transformPoint(_uvToWorldMatrix, worldC);
+      const worldA: Vec2 = [uvArc[0], uvArc[1]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldA)
+      const worldB: Vec2 = [uvArc[2], uvArc[3]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldB)
+      const worldC: Vec2 = [uvArc[4], uvArc[5]]
+      Mat2.transformPoint(_uvToWorldMatrix, worldC)
 
-      const thickness = uvArc[6]; // Already in world units
+      const thickness = uvArc[6] // Already in world units
 
-      const worldArc = Arc.create(
-        worldA[0],
-        worldA[1],
-        worldB[0],
-        worldB[1],
-        worldC[0],
-        worldC[1],
-        thickness,
-      );
-      pts.push(...Arc.getExtrema(worldArc));
+      const worldArc = Arc.create(worldA[0], worldA[1], worldB[0], worldB[1], worldC[0], worldC[1], thickness)
+      pts.push(...Arc.getExtrema(worldArc))
     }
 
-    return pts;
+    return pts
   }
 
   // ============================================
@@ -363,16 +314,16 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @param capsule - Capsule tuple [ax, ay, bx, by, radius]
    */
   addCapsule(ctx: Context, entityId: EntityId, capsule: Capsule): void {
-    const hitGeometry = this.write(ctx, entityId);
-    const index = hitGeometry.capsuleCount;
+    const hitGeometry = this.write(ctx, entityId)
+    const index = hitGeometry.capsuleCount
 
     if (index >= MAX_HIT_CAPSULES) {
-      console.warn(`HitGeometry: Max capsules (${MAX_HIT_CAPSULES}) reached`);
-      return;
+      console.warn(`HitGeometry: Max capsules (${MAX_HIT_CAPSULES}) reached`)
+      return
     }
 
-    this.setCapsuleAt(ctx, entityId, index, capsule);
-    hitGeometry.capsuleCount = index + 1;
+    this.setCapsuleAt(ctx, entityId, index, capsule)
+    hitGeometry.capsuleCount = index + 1
   }
 
   /**
@@ -385,15 +336,9 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @param uvB - Second endpoint in UV coordinates [0-1, 0-1]
    * @param worldRadius - Radius in world units (pixels)
    */
-  addCapsuleUv(
-    ctx: Context,
-    entityId: EntityId,
-    uvA: Vec2,
-    uvB: Vec2,
-    worldRadius: number,
-  ): void {
-    const capsule: Capsule = [uvA[0], uvA[1], uvB[0], uvB[1], worldRadius];
-    this.addCapsule(ctx, entityId, capsule);
+  addCapsuleUv(ctx: Context, entityId: EntityId, uvA: Vec2, uvB: Vec2, worldRadius: number): void {
+    const capsule: Capsule = [uvA[0], uvA[1], uvB[0], uvB[1], worldRadius]
+    this.addCapsule(ctx, entityId, capsule)
   }
 
   /**
@@ -406,16 +351,10 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @param worldB - Second endpoint in world coordinates
    * @param worldRadius - Radius in world units (pixels)
    */
-  addCapsuleWorld(
-    ctx: Context,
-    entityId: EntityId,
-    worldA: Vec2,
-    worldB: Vec2,
-    worldRadius: number,
-  ): void {
-    const uvA = Block.worldToUv(ctx, entityId, worldA);
-    const uvB = Block.worldToUv(ctx, entityId, worldB);
-    this.addCapsuleUv(ctx, entityId, uvA, uvB, worldRadius);
+  addCapsuleWorld(ctx: Context, entityId: EntityId, worldA: Vec2, worldB: Vec2, worldRadius: number): void {
+    const uvA = Block.worldToUv(ctx, entityId, worldA)
+    const uvB = Block.worldToUv(ctx, entityId, worldB)
+    this.addCapsuleUv(ctx, entityId, uvA, uvB, worldRadius)
   }
 
   /**
@@ -427,16 +366,16 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @param arc - Arc tuple [aX, aY, bX, bY, cX, cY, thickness]
    */
   addArc(ctx: Context, entityId: EntityId, arc: Arc): void {
-    const hitGeometry = this.write(ctx, entityId);
-    const index = hitGeometry.arcCount;
+    const hitGeometry = this.write(ctx, entityId)
+    const index = hitGeometry.arcCount
 
     if (index >= MAX_HIT_ARCS) {
-      console.warn(`HitGeometry: Max arcs (${MAX_HIT_ARCS}) reached`);
-      return;
+      console.warn(`HitGeometry: Max arcs (${MAX_HIT_ARCS}) reached`)
+      return
     }
 
-    this.setArcAt(ctx, entityId, index, arc);
-    hitGeometry.arcCount = index + 1;
+    this.setArcAt(ctx, entityId, index, arc)
+    hitGeometry.arcCount = index + 1
   }
 
   /**
@@ -450,24 +389,9 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @param uvC - End point in UV coordinates
    * @param worldThickness - Thickness in world units (pixels)
    */
-  addArcUv(
-    ctx: Context,
-    entityId: EntityId,
-    uvA: Vec2,
-    uvB: Vec2,
-    uvC: Vec2,
-    worldThickness: number,
-  ): void {
-    const arc: Arc = [
-      uvA[0],
-      uvA[1],
-      uvB[0],
-      uvB[1],
-      uvC[0],
-      uvC[1],
-      worldThickness,
-    ];
-    this.addArc(ctx, entityId, arc);
+  addArcUv(ctx: Context, entityId: EntityId, uvA: Vec2, uvB: Vec2, uvC: Vec2, worldThickness: number): void {
+    const arc: Arc = [uvA[0], uvA[1], uvB[0], uvB[1], uvC[0], uvC[1], worldThickness]
+    this.addArc(ctx, entityId, arc)
   }
 
   /**
@@ -489,10 +413,10 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
     worldC: Vec2,
     worldThickness: number,
   ): void {
-    const uvA = Block.worldToUv(ctx, entityId, worldA);
-    const uvB = Block.worldToUv(ctx, entityId, worldB);
-    const uvC = Block.worldToUv(ctx, entityId, worldC);
-    this.addArcUv(ctx, entityId, uvA, uvB, uvC, worldThickness);
+    const uvA = Block.worldToUv(ctx, entityId, worldA)
+    const uvB = Block.worldToUv(ctx, entityId, worldB)
+    const uvC = Block.worldToUv(ctx, entityId, worldC)
+    this.addArcUv(ctx, entityId, uvA, uvB, uvC, worldThickness)
   }
 
   /**
@@ -502,10 +426,10 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
    * @param entityId - Entity ID
    */
   clear(ctx: Context, entityId: EntityId): void {
-    const hitGeometry = this.write(ctx, entityId);
-    hitGeometry.capsuleCount = 0;
-    hitGeometry.arcCount = 0;
+    const hitGeometry = this.write(ctx, entityId)
+    hitGeometry.capsuleCount = 0
+    hitGeometry.arcCount = 0
   }
 }
 
-export const HitGeometry = new HitGeometryDef();
+export const HitGeometry = new HitGeometryDef()

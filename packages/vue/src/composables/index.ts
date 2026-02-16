@@ -1,30 +1,30 @@
 export { useComponent } from './useComponent'
 export { useComponents } from './useComponents'
-export { useEditorContext, type EditorContext } from './useEditorContext'
-export { useQuery, type QueryResultItem } from './useQuery'
+export { type EditorContext, useEditorContext } from './useEditorContext'
+export { type QueryResultItem, useQuery } from './useQuery'
 export { useSingleton } from './useSingleton'
-export { useToolbar } from './useToolbar'
-export { useTooltipSingleton, createTooltipContext, type TooltipState } from './useTooltipSingleton'
 export {
-  useTextStretchBehavior,
-  type TextStretchBehaviorOptions,
-  type TextStretchBehaviorResult,
-} from './useTextStretchBehavior'
-export {
-  useTextEditorController,
-  type TextEditorController,
-  type TextEditorState,
-  type TextEditorCommands,
-} from './useTextEditorController'
-export {
-  useTextBatchController,
+  type TextBatchCommands,
   type TextBatchController,
   type TextBatchState,
-  type TextBatchCommands,
+  useTextBatchController,
 } from './useTextBatchController'
 export {
-  useTextFormatting,
+  type TextEditorCommands,
+  type TextEditorController,
+  type TextEditorState,
+  useTextEditorController,
+} from './useTextEditorController'
+export {
+  type TextFormattingCommands,
   type TextFormattingController,
   type TextFormattingState,
-  type TextFormattingCommands,
+  useTextFormatting,
 } from './useTextFormatting'
+export {
+  type TextStretchBehaviorOptions,
+  type TextStretchBehaviorResult,
+  useTextStretchBehavior,
+} from './useTextStretchBehavior'
+export { useToolbar } from './useToolbar'
+export { createTooltipContext, type TooltipState, useTooltipSingleton } from './useTooltipSingleton'

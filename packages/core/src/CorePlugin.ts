@@ -1,38 +1,36 @@
-import { getResources } from "@woven-ecs/core";
-
-import type { EditorPlugin } from "./plugin";
-import type { EditorResources } from "./types";
 import {
-  CanvasComponentDef,
   type AnyCanvasComponentDef,
-  CanvasSingletonDef,
   type AnyCanvasSingletonDef,
-} from "@woven-ecs/canvas-store";
+  CanvasComponentDef,
+  CanvasSingletonDef,
+} from '@woven-ecs/canvas-store'
+import { getResources } from '@woven-ecs/core'
+import * as components from './components'
+import { PLUGIN_NAME } from './constants'
+import { cursors } from './cursors'
+import type { EditorPlugin } from './plugin'
+import * as singletons from './singletons'
+import { keybindSystem } from './systems/capture'
 import {
   attachKeyboardListeners,
-  detachKeyboardListeners,
   attachMouseListeners,
-  detachMouseListeners,
-  attachScreenObserver,
-  detachScreenObserver,
   attachPointerListeners,
+  attachScreenObserver,
+  detachKeyboardListeners,
+  detachMouseListeners,
   detachPointerListeners,
+  detachScreenObserver,
   frameSystem,
   keyboardSystem,
   mouseSystem,
-  screenSystem,
   pointerSystem,
-} from "./systems/input";
-import { rankBoundsSystem } from "./systems/preInput";
-import { intersectSystem } from "./systems/preCapture";
-import { keybindSystem } from "./systems/capture";
-import { scaleWithZoomSystem, canSeeBlocksSystem } from "./systems/preRender";
-import { cursorSystem, presenceSystem } from "./systems/postRender";
-import * as components from "./components";
-import * as singletons from "./singletons";
-
-import { PLUGIN_NAME } from "./constants";
-import { cursors } from "./cursors";
+  screenSystem,
+} from './systems/input'
+import { cursorSystem, presenceSystem } from './systems/postRender'
+import { intersectSystem } from './systems/preCapture'
+import { rankBoundsSystem } from './systems/preInput'
+import { canSeeBlocksSystem, scaleWithZoomSystem } from './systems/preRender'
+import type { EditorResources } from './types'
 
 /**
  * Core plugin - handles core input and camera functionality.
@@ -42,13 +40,9 @@ export const CorePlugin: EditorPlugin = {
 
   cursors,
 
-  singletons: Object.values(singletons).filter(
-    (v) => v instanceof CanvasSingletonDef,
-  ) as AnyCanvasSingletonDef[],
+  singletons: Object.values(singletons).filter((v) => v instanceof CanvasSingletonDef) as AnyCanvasSingletonDef[],
 
-  components: Object.values(components).filter(
-    (v) => v instanceof CanvasComponentDef,
-  ) as AnyCanvasComponentDef[],
+  components: Object.values(components).filter((v) => v instanceof CanvasComponentDef) as AnyCanvasComponentDef[],
 
   systems: [
     // Input phase
@@ -71,22 +65,22 @@ export const CorePlugin: EditorPlugin = {
   ],
 
   setup(ctx) {
-    const { domElement } = getResources<EditorResources>(ctx);
+    const { domElement } = getResources<EditorResources>(ctx)
 
     // Attach all event listeners
-    attachKeyboardListeners(domElement);
-    attachMouseListeners(domElement);
-    attachScreenObserver(domElement);
-    attachPointerListeners(domElement);
+    attachKeyboardListeners(domElement)
+    attachMouseListeners(domElement)
+    attachScreenObserver(domElement)
+    attachPointerListeners(domElement)
   },
 
   teardown(ctx) {
-    const { domElement } = getResources<EditorResources>(ctx);
+    const { domElement } = getResources<EditorResources>(ctx)
 
     // Detach all event listeners
-    detachKeyboardListeners(domElement);
-    detachMouseListeners(domElement);
-    detachScreenObserver(domElement);
-    detachPointerListeners(domElement);
+    detachKeyboardListeners(domElement)
+    detachMouseListeners(domElement)
+    detachScreenObserver(domElement)
+    detachPointerListeners(domElement)
   },
-};
+}

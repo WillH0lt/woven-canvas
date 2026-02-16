@@ -1,19 +1,19 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasComponent } from "@woven-ecs/canvas-store";
+import { defineCanvasComponent } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * Upload state for assets.
  */
 export const UploadState = {
   /** Asset queued for upload, not yet started */
-  Pending: "pending",
+  Pending: 'pending',
   /** Upload in progress */
-  Uploading: "uploading",
+  Uploading: 'uploading',
   /** Upload completed successfully */
-  Complete: "complete",
+  Complete: 'complete',
   /** Upload failed */
-  Failed: "failed",
-} as const;
+  Failed: 'failed',
+} as const
 
 /**
  * Asset component - tracks upload state and identifier for binary assets.
@@ -22,11 +22,11 @@ export const UploadState = {
  * the permanent identifier returned by the AssetProvider.
  */
 export const Asset = defineCanvasComponent(
-  { name: "asset", sync: "document", excludeFromHistory: ["uploadState"] },
+  { name: 'asset', sync: 'document', excludeFromHistory: ['uploadState'] },
   {
     /** Permanent identifier from AssetProvider (empty until upload complete) */
-    identifier: field.string().max(512).default(""),
+    identifier: field.string().max(512).default(''),
     /** Current upload state */
     uploadState: field.enum(UploadState).default(UploadState.Pending),
   },
-);
+)

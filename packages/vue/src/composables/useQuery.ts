@@ -1,35 +1,27 @@
 import {
-  inject,
-  shallowRef,
-  onUnmounted,
-  type ShallowRef,
-  type Ref,
-} from "vue";
-import {
+  type AnyCanvasComponentDef,
+  type Context,
   defineQuery,
   type EntityId,
   type InferCanvasComponentType,
-  type AnyCanvasComponentDef,
-  type Context,
-} from "@infinitecanvas/core";
-import { INFINITE_CANVAS_KEY } from "../injection";
+} from '@infinitecanvas/core'
+import { inject, onUnmounted, type Ref, type ShallowRef, shallowRef } from 'vue'
+import { INFINITE_CANVAS_KEY } from '../injection'
 
 /** Component def with name and schema for type inference */
 type ComponentDefWithSchema = AnyCanvasComponentDef & {
-  name: string;
-  schema: any;
-};
+  name: string
+  schema: any
+}
 
 /**
  * Query result item - entity ID plus typed component data (snapshots)
  */
 export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
-  entityId: EntityId;
+  entityId: EntityId
 } & {
-  [K in T[number] as K["name"]]: ShallowRef<
-    InferCanvasComponentType<K["schema"]>
-  >;
-};
+  [K in T[number] as K['name']]: ShallowRef<InferCanvasComponentType<K['schema']>>
+}
 
 /**
  * Composable for querying entities that have specific components.
@@ -61,141 +53,135 @@ export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
  * </template>
  * ```
  */
-export function useQuery<T extends readonly ComponentDefWithSchema[]>(
-  components: T,
-): Ref<QueryResultItem<T>[]> {
-  const canvasContext = inject(INFINITE_CANVAS_KEY);
+export function useQuery<T extends readonly ComponentDefWithSchema[]>(components: T): Ref<QueryResultItem<T>[]> {
+  const canvasContext = inject(INFINITE_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error("useQuery must be used within an InfiniteCanvas component");
+    throw new Error('useQuery must be used within an InfiniteCanvas component')
   }
 
   // Results ref - updated when entity set changes
-  const results = shallowRef<QueryResultItem<T>[]>([]);
+  const results = shallowRef<QueryResultItem<T>[]>([])
 
   // Create ECS query
-  const queryDef = defineQuery((q) => q.with(...components));
+  const queryDef = defineQuery((q) => q.with(...components))
 
   // Track per-entity refs and subscriptions
   // entityId -> { refs, unsubscribes }
   const entityState = new Map<
     EntityId,
     {
-      refs: Record<string, ShallowRef<unknown>>;
-      unsubscribes: (() => void)[];
+      refs: Record<string, ShallowRef<unknown>>
+      unsubscribes: (() => void)[]
     }
-  >();
+  >()
 
   // Track if we've initialized
-  let initialized = false;
+  let initialized = false
 
   // Create refs and subscriptions for an entity
   function createEntityState(entityId: EntityId): {
-    refs: Record<string, ShallowRef<unknown>>;
-    unsubscribes: (() => void)[];
+    refs: Record<string, ShallowRef<unknown>>
+    unsubscribes: (() => void)[]
   } {
-    const editor = canvasContext!.getEditor();
+    const editor = canvasContext!.getEditor()
     if (!editor) {
-      return { refs: {}, unsubscribes: [] };
+      return { refs: {}, unsubscribes: [] }
     }
 
-    const ctx = editor._getContext();
-    const refs: Record<string, ShallowRef<unknown>> = {};
-    const unsubscribes: (() => void)[] = [];
+    const ctx = editor._getContext()
+    const refs: Record<string, ShallowRef<unknown>> = {}
+    const unsubscribes: (() => void)[] = []
 
     for (const componentDef of components) {
       // Create ref with initial snapshot value
-      const componentRef = shallowRef(componentDef.snapshot(ctx, entityId));
-      refs[componentDef.name] = componentRef;
+      const componentRef = shallowRef(componentDef.snapshot(ctx, entityId))
+      refs[componentDef.name] = componentRef
 
       // Subscribe to changes
-      const unsubscribe = canvasContext!.subscribeComponent(
-        entityId,
-        componentDef.name,
-        (value) => {
-          (componentRef as ShallowRef<unknown>).value = value;
-        },
-      );
-      unsubscribes.push(unsubscribe);
+      const unsubscribe = canvasContext!.subscribeComponent(entityId, componentDef.name, (value) => {
+        ;(componentRef as ShallowRef<unknown>).value = value
+      })
+      unsubscribes.push(unsubscribe)
     }
 
-    return { refs, unsubscribes };
+    return { refs, unsubscribes }
   }
 
   // Clean up an entity's subscriptions
   function cleanupEntity(entityId: EntityId) {
-    const state = entityState.get(entityId);
+    const state = entityState.get(entityId)
     if (state) {
       for (const unsubscribe of state.unsubscribes) {
-        unsubscribe();
+        unsubscribe()
       }
-      entityState.delete(entityId);
+      entityState.delete(entityId)
     }
   }
 
   // Build result items from current entity states
   function buildResults(): QueryResultItem<T>[] {
-    const items: QueryResultItem<T>[] = [];
+    const items: QueryResultItem<T>[] = []
 
     for (const [entityId, state] of entityState) {
       items.push({
         entityId,
         ...state.refs,
-      } as QueryResultItem<T>);
+      } as QueryResultItem<T>)
     }
 
-    return items;
+    return items
   }
 
   // Called on each tick by InfiniteCanvas
   function onTick(ctx: Context) {
     // Initialize on first tick with editor available
     if (!initialized) {
-      const currentIds = queryDef.current(ctx);
+      const currentIds = queryDef.current(ctx)
       for (const entityId of currentIds) {
-        entityState.set(entityId, createEntityState(entityId));
+        entityState.set(entityId, createEntityState(entityId))
       }
-      results.value = buildResults();
-      initialized = true;
-      return;
+      results.value = buildResults()
+      initialized = true
+      return
     }
 
     // Check if any entities were added or removed from the query
-    const added = queryDef.added(ctx);
-    const removed = queryDef.removed(ctx);
+    const added = queryDef.added(ctx)
+    const removed = queryDef.removed(ctx)
 
-    let changed = false;
+    let changed = false
 
     // Handle removed entities
     for (const entityId of removed) {
-      cleanupEntity(entityId);
-      changed = true;
+      cleanupEntity(entityId)
+      changed = true
     }
 
     // Handle added entities
     for (const entityId of added) {
       if (!entityState.has(entityId)) {
-        entityState.set(entityId, createEntityState(entityId));
-        changed = true;
+        entityState.set(entityId, createEntityState(entityId))
+        changed = true
       }
     }
 
     // Rebuild results if query changed
     if (changed) {
-      results.value = buildResults();
+      results.value = buildResults()
     }
   }
 
   // Register tick callback with InfiniteCanvas
-  const unregisterTick = canvasContext.registerTickCallback(onTick);
+  const unregisterTick = canvasContext.registerTickCallback(onTick)
 
   // Cleanup on unmount
   onUnmounted(() => {
-    unregisterTick();
+    unregisterTick()
     // Clean up all entity subscriptions
     for (const entityId of entityState.keys()) {
-      cleanupEntity(entityId);
+      cleanupEntity(entityId)
     }
-  });
+  })
 
-  return results;
+  return results
 }

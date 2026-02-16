@@ -1,11 +1,8 @@
-import {
-  type AnyCanvasComponentDef,
-  type AnyCanvasSingletonDef,
-} from "@woven-ecs/canvas-store";
-import type { Context } from "@woven-ecs/core";
-import type { EditorSystem } from "./EditorSystem";
-import type { CursorDef, Keybind, BlockDefInput } from "./types";
-import type { FontFamilyInput } from "./FontLoader";
+import type { AnyCanvasComponentDef, AnyCanvasSingletonDef } from '@woven-ecs/canvas-store'
+import type { Context } from '@woven-ecs/core'
+import type { EditorSystem } from './EditorSystem'
+import type { FontFamilyInput } from './FontLoader'
+import type { BlockDefInput, CursorDef, Keybind } from './types'
 
 /**
  * Editor plugin interface.
@@ -67,65 +64,65 @@ import type { FontFamilyInput } from "./FontLoader";
  */
 export interface EditorPlugin<TResources = unknown> {
   /** Unique plugin identifier */
-  name: string;
+  name: string
 
   /** Keybindings provided by the plugin */
-  keybinds?: Keybind[];
+  keybinds?: Keybind[]
 
   /** Block definitions provided by the plugin (keyed by tag) */
-  blockDefs?: BlockDefInput[];
+  blockDefs?: BlockDefInput[]
 
-  cursors?: Record<string, CursorDef>;
+  cursors?: Record<string, CursorDef>
 
   /**
    * Font families provided by the plugin.
    * Fonts will be loaded automatically during editor initialization.
    */
-  fonts?: FontFamilyInput[];
+  fonts?: FontFamilyInput[]
 
   /**
    * Plugin-specific resources/options.
    * Access in systems via getPluginResources<T>(ctx, pluginName).
    */
-  resources?: TResources;
+  resources?: TResources
 
   /**
    * Names of plugins this one depends on.
    * Dependencies are loaded before this plugin.
    */
-  dependencies?: string[];
+  dependencies?: string[]
 
   /**
    * Components to register.
    * User-defined components should use defineCanvasComponent() with an `id` field.
    * Internal components may use base ComponentDef.
    */
-  components?: AnyCanvasComponentDef[];
+  components?: AnyCanvasComponentDef[]
 
   /**
    * Singletons to register.
    * Create with new CanvasSingletonDef(schema, options).
    */
-  singletons?: AnyCanvasSingletonDef[];
+  singletons?: AnyCanvasSingletonDef[]
 
   /**
    * Systems to register.
    * Each system specifies its phase and priority.
    * Use defineEditorSystem() to create systems.
    */
-  systems?: EditorSystem[];
+  systems?: EditorSystem[]
 
   /**
    * Called when the plugin is initialized.
    * Use this for one-time setup like adding event listeners.
    */
-  setup?: (ctx: Context) => void | Promise<void>;
+  setup?: (ctx: Context) => void | Promise<void>
 
   /**
    * Called when the editor is destroyed.
    * Use this to clean up resources.
    */
-  teardown?: (ctx: Context) => void;
+  teardown?: (ctx: Context) => void
 }
 
 /**
@@ -150,13 +147,13 @@ export interface EditorPlugin<TResources = unknown> {
  */
 export type EditorPluginFactory<TOptions = unknown, TResources = unknown> = (
   options: TOptions,
-) => EditorPlugin<TResources>;
+) => EditorPlugin<TResources>
 
 /**
  * Input type for plugin configuration.
  * Accepts either a plugin object directly or a factory function.
  */
-export type EditorPluginInput = EditorPlugin | EditorPluginFactory<any, any>;
+export type EditorPluginInput = EditorPlugin | EditorPluginFactory<any, any>
 
 /**
  * Parse a plugin input into a plugin object.
@@ -166,50 +163,46 @@ export type EditorPluginInput = EditorPlugin | EditorPluginFactory<any, any>;
  * @returns The resolved plugin object
  */
 export function parsePlugin(input: EditorPluginInput): EditorPlugin {
-  if (typeof input === "function") {
-    return input({});
+  if (typeof input === 'function') {
+    return input({})
   }
-  return input;
+  return input
 }
 
 /**
  * Sort plugins by dependencies (topological sort)
  * @internal
  */
-export function sortPluginsByDependencies(
-  plugins: EditorPlugin[],
-): EditorPlugin[] {
-  const sorted: EditorPlugin[] = [];
-  const visited = new Set<string>();
-  const visiting = new Set<string>();
-  const pluginMap = new Map(plugins.map((p) => [p.name, p]));
+export function sortPluginsByDependencies(plugins: EditorPlugin[]): EditorPlugin[] {
+  const sorted: EditorPlugin[] = []
+  const visited = new Set<string>()
+  const visiting = new Set<string>()
+  const pluginMap = new Map(plugins.map((p) => [p.name, p]))
 
   function visit(plugin: EditorPlugin): void {
-    if (visited.has(plugin.name)) return;
+    if (visited.has(plugin.name)) return
     if (visiting.has(plugin.name)) {
-      throw new Error(`Circular plugin dependency detected: ${plugin.name}`);
+      throw new Error(`Circular plugin dependency detected: ${plugin.name}`)
     }
 
-    visiting.add(plugin.name);
+    visiting.add(plugin.name)
 
     for (const depName of plugin.dependencies ?? []) {
-      const dep = pluginMap.get(depName);
+      const dep = pluginMap.get(depName)
       if (!dep) {
-        throw new Error(
-          `Plugin "${plugin.name}" depends on "${depName}" which is not registered`,
-        );
+        throw new Error(`Plugin "${plugin.name}" depends on "${depName}" which is not registered`)
       }
-      visit(dep);
+      visit(dep)
     }
 
-    visiting.delete(plugin.name);
-    visited.add(plugin.name);
-    sorted.push(plugin);
+    visiting.delete(plugin.name)
+    visited.add(plugin.name)
+    sorted.push(plugin)
   }
 
   for (const plugin of plugins) {
-    visit(plugin);
+    visit(plugin)
   }
 
-  return sorted;
+  return sorted
 }

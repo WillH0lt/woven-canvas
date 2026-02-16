@@ -1,21 +1,21 @@
-import { field, type Context } from "@woven-ecs/core";
-import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
-import { PointerButton } from "../components";
+import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
+import { type Context, field } from '@woven-ecs/core'
+import { PointerButton } from '../components'
 
 const ControlsSchema = {
   /** Tool activated by left mouse button */
-  leftMouseTool: field.string().max(32).default("select"),
+  leftMouseTool: field.string().max(32).default('select'),
   /** Tool activated by middle mouse button */
-  middleMouseTool: field.string().max(32).default("hand"),
+  middleMouseTool: field.string().max(32).default('hand'),
   /** Tool activated by right mouse button */
-  rightMouseTool: field.string().max(32).default("menu"),
+  rightMouseTool: field.string().max(32).default('menu'),
   /** Tool activated by mouse wheel */
-  wheelTool: field.string().max(32).default("scroll"),
+  wheelTool: field.string().max(32).default('scroll'),
   /** Tool activated by mouse wheel with modifier key held */
-  modWheelTool: field.string().max(32).default("zoom"),
+  modWheelTool: field.string().max(32).default('zoom'),
   /** JSON snapshot of block to place on next click (empty string = no placement active) */
-  heldSnapshot: field.string().max(4096).default(""),
-};
+  heldSnapshot: field.string().max(4096).default(''),
+}
 
 /**
  * Controls singleton - maps input methods to tools.
@@ -25,7 +25,7 @@ const ControlsSchema = {
  */
 class ControlsDef extends CanvasSingletonDef<typeof ControlsSchema> {
   constructor() {
-    super({ name: "controls" }, ControlsSchema);
+    super({ name: 'controls' }, ControlsSchema)
   }
 
   /**
@@ -35,20 +35,20 @@ class ControlsDef extends CanvasSingletonDef<typeof ControlsSchema> {
    * @returns Array of PointerButton values that activate any of the given tools
    */
   getButtons(ctx: Context, ...tools: string[]): PointerButton[] {
-    const controls = this.read(ctx);
-    const buttons: PointerButton[] = [];
+    const controls = this.read(ctx)
+    const buttons: PointerButton[] = []
 
     if (tools.includes(controls.leftMouseTool)) {
-      buttons.push(PointerButton.Left);
+      buttons.push(PointerButton.Left)
     }
     if (tools.includes(controls.middleMouseTool)) {
-      buttons.push(PointerButton.Middle);
+      buttons.push(PointerButton.Middle)
     }
     if (tools.includes(controls.rightMouseTool)) {
-      buttons.push(PointerButton.Right);
+      buttons.push(PointerButton.Right)
     }
 
-    return buttons;
+    return buttons
   }
 
   /**
@@ -59,12 +59,9 @@ class ControlsDef extends CanvasSingletonDef<typeof ControlsSchema> {
    * @returns True if the given tool is active for wheel input
    */
   wheelActive(ctx: Context, tool: string, modDown: boolean): boolean {
-    const controls = this.read(ctx);
-    return (
-      (controls.wheelTool === tool && !modDown) ||
-      (controls.modWheelTool === tool && modDown)
-    );
+    const controls = this.read(ctx)
+    return (controls.wheelTool === tool && !modDown) || (controls.modWheelTool === tool && modDown)
   }
 }
 
-export const Controls = new ControlsDef();
+export const Controls = new ControlsDef()

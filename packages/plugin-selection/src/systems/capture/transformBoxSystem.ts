@@ -1,61 +1,53 @@
-import { assign, and, not, setup, raise } from "xstate";
 import {
+  Block,
   type Context,
-  type EntityId,
-  type InferStateContext,
+  Controls,
+  canBlockEdit,
+  createEntity,
   defineEditorSystem,
   defineQuery,
-  Controls,
-  hasComponent,
-  removeComponent,
-  createEntity,
-  Block,
-  getPointerInput,
-  canBlockEdit,
+  type EntityId,
   getBlockDef,
+  getPointerInput,
+  hasComponent,
+  type InferStateContext,
   type PointerInput,
-} from "@infinitecanvas/core";
-
-import {
-  TransformBox,
-  TransformHandle,
-  Selected,
-  EditAfterPlacing,
-} from "../../components";
+  removeComponent,
+} from '@infinitecanvas/core'
+import { and, assign, not, raise, setup } from 'xstate'
 import {
   AddTransformBox,
-  UpdateTransformBox,
   HideTransformBox,
-  ShowTransformBox,
   RemoveTransformBox,
+  ShowTransformBox,
   StartTransformBoxEdit,
-} from "../../commands";
-import { TransformBoxStateSingleton } from "../../singletons";
-import { TransformBoxState } from "../../types";
+  UpdateTransformBox,
+} from '../../commands'
+import { EditAfterPlacing, Selected, TransformBox, TransformHandle } from '../../components'
+import { TransformBoxStateSingleton } from '../../singletons'
+import { TransformBoxState } from '../../types'
 
 /**
  * Selection changed event for transform box state machine.
  */
 interface SelectionChangedEvent {
-  type: "selectionChanged";
-  ctx: Context;
-  selectedEntityIds: EntityId[];
+  type: 'selectionChanged'
+  ctx: Context
+  selectedEntityIds: EntityId[]
 }
 
 /**
  * Union of events the transform box machine handles.
  */
-type TransformBoxEvent = SelectionChangedEvent | PointerInput;
+type TransformBoxEvent = SelectionChangedEvent | PointerInput
 
 /**
  * Transform box state machine context - derived from TransformBoxStateSingleton schema.
  */
-type TransformBoxContext = InferStateContext<typeof TransformBoxStateSingleton>;
+type TransformBoxContext = InferStateContext<typeof TransformBoxStateSingleton>
 
 // Query for selected blocks
-const selectedBlocksQuery = defineQuery((q) =>
-  q.with(Block).tracking(Selected),
-);
+const selectedBlocksQuery = defineQuery((q) => q.with(Block).tracking(Selected))
 
 /**
  * Transform box state machine - created once at module level.
@@ -75,164 +67,151 @@ const transformBoxMachine = setup({
   },
   guards: {
     isSelectionEditable: ({ event }) => {
-      return checkSelectionEditable(event.ctx);
+      return checkSelectionEditable(event.ctx)
     },
     isOverTransformBox: ({ event }) => {
-      if (!("intersects" in event)) return false;
-      if (event.intersects.length === 0) return false;
-      return hasComponent(event.ctx, event.intersects[0], TransformBox);
+      if (!('intersects' in event)) return false
+      if (event.intersects.length === 0) return false
+      return hasComponent(event.ctx, event.intersects[0], TransformBox)
     },
     isOverTransformHandle: ({ event }) => {
-      if (!("intersects" in event)) return false;
-      if (event.intersects.length === 0) return false;
-      return hasComponent(event.ctx, event.intersects[0], TransformHandle);
+      if (!('intersects' in event)) return false
+      if (event.intersects.length === 0) return false
+      return hasComponent(event.ctx, event.intersects[0], TransformHandle)
     },
     selectionIsTransformable: ({ event }) => {
-      if (event.type !== "selectionChanged") return false;
-      if (event.selectedEntityIds.length > 1) return true;
-      if (event.selectedEntityIds.length === 0) return false;
+      if (event.type !== 'selectionChanged') return false
+      if (event.selectedEntityIds.length > 1) return true
+      if (event.selectedEntityIds.length === 0) return false
 
       // Check if single block allows transform (resizeMode !== 'groupOnly')
-      const entityId = event.selectedEntityIds[0];
-      const block = Block.read(event.ctx, entityId);
-      const blockDef = getBlockDef(event.ctx, block.tag);
-      return blockDef.resizeMode !== "groupOnly";
+      const entityId = event.selectedEntityIds[0]
+      const block = Block.read(event.ctx, entityId)
+      const blockDef = getBlockDef(event.ctx, block.tag)
+      return blockDef.resizeMode !== 'groupOnly'
     },
     hasEditAfterPlacing: ({ event }) => {
-      if (event.type !== "selectionChanged") return false;
-      if (event.selectedEntityIds.length !== 1) return false;
-      return hasComponent(
-        event.ctx,
-        event.selectedEntityIds[0],
-        EditAfterPlacing,
-      );
+      if (event.type !== 'selectionChanged') return false
+      if (event.selectedEntityIds.length !== 1) return false
+      return hasComponent(event.ctx, event.selectedEntityIds[0], EditAfterPlacing)
     },
   },
   actions: {
-    addTransformBox: assign(
-      ({ context, event }, params?: { skipHandles?: boolean }) => {
-        if (context.transformBoxId !== null) {
-          RemoveTransformBox.spawn(event.ctx, {
-            transformBoxId: context.transformBoxId,
-          });
-        }
+    addTransformBox: assign(({ context, event }, params?: { skipHandles?: boolean }) => {
+      if (context.transformBoxId !== null) {
+        RemoveTransformBox.spawn(event.ctx, {
+          transformBoxId: context.transformBoxId,
+        })
+      }
 
-        // Create a new entity for the transform box
-        const transformBoxId = createEntity(event.ctx);
+      // Create a new entity for the transform box
+      const transformBoxId = createEntity(event.ctx)
 
-        AddTransformBox.spawn(event.ctx, {
-          transformBoxId,
-          skipHandles: params?.skipHandles,
-        });
+      AddTransformBox.spawn(event.ctx, {
+        transformBoxId,
+        skipHandles: params?.skipHandles,
+      })
 
-        return { transformBoxId };
-      },
-    ),
+      return { transformBoxId }
+    }),
     updateTransformBox: ({ context, event }) => {
-      if (context.transformBoxId === null) return;
+      if (context.transformBoxId === null) return
       UpdateTransformBox.spawn(event.ctx, {
         transformBoxId: context.transformBoxId,
-      });
+      })
     },
     hideTransformBox: ({ context, event }) => {
-      if (context.transformBoxId === null) return;
+      if (context.transformBoxId === null) return
       HideTransformBox.spawn(event.ctx, {
         transformBoxId: context.transformBoxId,
-      });
+      })
     },
     showTransformBox: ({ context, event }) => {
-      if (context.transformBoxId === null) return;
+      if (context.transformBoxId === null) return
       ShowTransformBox.spawn(event.ctx, {
         transformBoxId: context.transformBoxId,
-      });
+      })
     },
     removeTransformBox: ({ context, event }) => {
-      if (context.transformBoxId === null) return;
+      if (context.transformBoxId === null) return
       RemoveTransformBox.spawn(event.ctx, {
         transformBoxId: context.transformBoxId,
-      });
+      })
     },
     clearTransformBoxId: assign({
       transformBoxId: () => null,
     }),
     startTransformBoxEdit: ({ context, event }) => {
-      if (context.transformBoxId === null) return;
+      if (context.transformBoxId === null) return
       StartTransformBoxEdit.spawn(event.ctx, {
         transformBoxId: context.transformBoxId,
-      });
+      })
     },
     removeEditAfterPlacing: ({ event }) => {
-      if (event.type !== "selectionChanged") return;
+      if (event.type !== 'selectionChanged') return
       for (const entityId of event.selectedEntityIds) {
         if (hasComponent(event.ctx, entityId, EditAfterPlacing)) {
-          removeComponent(event.ctx, entityId, EditAfterPlacing);
+          removeComponent(event.ctx, entityId, EditAfterPlacing)
         }
       }
     },
   },
 }).createMachine({
-  id: "transformBox",
+  id: 'transformBox',
   initial: TransformBoxState.None,
   context: {
     transformBoxId: null,
   },
   states: {
     [TransformBoxState.None]: {
-      entry: ["removeTransformBox", "clearTransformBoxId"],
+      entry: ['removeTransformBox', 'clearTransformBoxId'],
       on: {
         selectionChanged: [
           {
-            guard: and([
-              "hasEditAfterPlacing",
-              "selectionIsTransformable",
-              "isSelectionEditable",
-            ]),
-            actions: [
-              { type: "addTransformBox", params: { skipHandles: true } },
-              "removeEditAfterPlacing",
-            ],
+            guard: and(['hasEditAfterPlacing', 'selectionIsTransformable', 'isSelectionEditable']),
+            actions: [{ type: 'addTransformBox', params: { skipHandles: true } }, 'removeEditAfterPlacing'],
             target: TransformBoxState.Editing,
           },
           {
-            guard: "selectionIsTransformable",
+            guard: 'selectionIsTransformable',
             target: TransformBoxState.Idle,
           },
         ],
       },
     },
     [TransformBoxState.Idle]: {
-      entry: ["addTransformBox"],
+      entry: ['addTransformBox'],
       on: {
         selectionChanged: [
           {
-            guard: not("selectionIsTransformable"),
+            guard: not('selectionIsTransformable'),
             target: TransformBoxState.None,
           },
           {
-            guard: "selectionIsTransformable",
-            actions: "showTransformBox",
+            guard: 'selectionIsTransformable',
+            actions: 'showTransformBox',
           },
           {
-            actions: "updateTransformBox",
+            actions: 'updateTransformBox',
           },
         ],
         pointerDown: {
-          actions: "hideTransformBox",
+          actions: 'hideTransformBox',
         },
         pointerUp: {
-          actions: "showTransformBox",
+          actions: 'showTransformBox',
         },
         click: {
-          guard: and(["isOverTransformBox", "isSelectionEditable"]),
+          guard: and(['isOverTransformBox', 'isSelectionEditable']),
           target: TransformBoxState.Editing,
         },
       },
     },
     [TransformBoxState.Editing]: {
-      entry: ["hideTransformBox", "startTransformBoxEdit"],
+      entry: ['hideTransformBox', 'startTransformBoxEdit'],
       on: {
         pointerDown: {
-          guard: and([not("isOverTransformBox"), not("isOverTransformHandle")]),
+          guard: and([not('isOverTransformBox'), not('isOverTransformHandle')]),
           target: TransformBoxState.None,
         },
         selectionChanged: {
@@ -242,19 +221,19 @@ const transformBoxMachine = setup({
       },
     },
   },
-});
+})
 
 /**
  * Check if the current selection is editable.
  */
 function checkSelectionEditable(ctx: Context): boolean {
-  const selected = selectedBlocksQuery.current(ctx);
-  if (selected.length !== 1) return false;
+  const selected = selectedBlocksQuery.current(ctx)
+  if (selected.length !== 1) return false
 
-  const entityId = selected[0];
-  const block = Block.read(ctx, entityId);
+  const entityId = selected[0]
+  const block = Block.read(ctx, entityId)
 
-  return canBlockEdit(ctx, block.tag);
+  return canBlockEdit(ctx, block.tag)
 }
 
 /**
@@ -265,36 +244,33 @@ function checkSelectionEditable(ctx: Context): boolean {
  * - Showing/hiding transform box during pointer interactions
  * - Transitioning to edit mode on click
  */
-export const transformBoxSystem = defineEditorSystem(
-  { phase: "capture" },
-  (ctx) => {
-    const events: TransformBoxEvent[] = [];
+export const transformBoxSystem = defineEditorSystem({ phase: 'capture' }, (ctx) => {
+  const events: TransformBoxEvent[] = []
 
-    // Check for selection changes
-    const added = selectedBlocksQuery.added(ctx);
-    const removed = selectedBlocksQuery.removed(ctx);
+  // Check for selection changes
+  const added = selectedBlocksQuery.added(ctx)
+  const removed = selectedBlocksQuery.removed(ctx)
 
-    if (added.length > 0 || removed.length > 0) {
-      // Only include blocks selected by the current session
-      const selectedEntityIds = [...selectedBlocksQuery.current(ctx)];
+  if (added.length > 0 || removed.length > 0) {
+    // Only include blocks selected by the current session
+    const selectedEntityIds = [...selectedBlocksQuery.current(ctx)]
 
-      const selectionEvent: SelectionChangedEvent = {
-        type: "selectionChanged",
-        ctx,
-        selectedEntityIds,
-      };
-      events.push(selectionEvent);
+    const selectionEvent: SelectionChangedEvent = {
+      type: 'selectionChanged',
+      ctx,
+      selectedEntityIds,
     }
+    events.push(selectionEvent)
+  }
 
-    // Get pointer events with intersection data for select tool
-    const buttons = Controls.getButtons(ctx, "select");
-    const pointerEvents = getPointerInput(ctx, buttons);
-    events.push(...pointerEvents);
+  // Get pointer events with intersection data for select tool
+  const buttons = Controls.getButtons(ctx, 'select')
+  const pointerEvents = getPointerInput(ctx, buttons)
+  events.push(...pointerEvents)
 
-    if (events.length === 0) return;
+  if (events.length === 0) return
 
-    // Run machine through events - TransformBoxStateSingleton.run() handles
-    // reading current state, running the machine, and writing back
-    TransformBoxStateSingleton.run(ctx, transformBoxMachine, events);
-  },
-);
+  // Run machine through events - TransformBoxStateSingleton.run() handles
+  // reading current state, running the machine, and writing back
+  TransformBoxStateSingleton.run(ctx, transformBoxMachine, events)
+})

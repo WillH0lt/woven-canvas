@@ -1,5 +1,5 @@
-import { field, type Context, type EntityId } from "@woven-ecs/core";
-import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
+import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
+import { type Context, type EntityId, field } from '@woven-ecs/core'
 
 const IntersectSchema = {
   // Store up to 5 intersected entity IDs
@@ -8,7 +8,7 @@ const IntersectSchema = {
   entity3: field.ref(),
   entity4: field.ref(),
   entity5: field.ref(),
-};
+}
 
 /**
  * Intersect singleton - stores the entities currently under the mouse cursor.
@@ -18,55 +18,55 @@ const IntersectSchema = {
  */
 class IntersectDef extends CanvasSingletonDef<typeof IntersectSchema> {
   constructor() {
-    super({ name: "intersect" }, IntersectSchema);
+    super({ name: 'intersect' }, IntersectSchema)
   }
 
   /**
    * Get the topmost intersected entity.
    */
   getTop(ctx: Context): EntityId | null {
-    return this.read(ctx).entity1;
+    return this.read(ctx).entity1
   }
 
   /**
    * Get all intersected entities as an array.
    */
   getAll(ctx: Context): EntityId[] {
-    const intersect = this.read(ctx);
-    const result: EntityId[] = [];
+    const intersect = this.read(ctx)
+    const result: EntityId[] = []
 
-    if (intersect.entity1 !== null) result.push(intersect.entity1);
-    if (intersect.entity2 !== null) result.push(intersect.entity2);
-    if (intersect.entity3 !== null) result.push(intersect.entity3);
-    if (intersect.entity4 !== null) result.push(intersect.entity4);
-    if (intersect.entity5 !== null) result.push(intersect.entity5);
+    if (intersect.entity1 !== null) result.push(intersect.entity1)
+    if (intersect.entity2 !== null) result.push(intersect.entity2)
+    if (intersect.entity3 !== null) result.push(intersect.entity3)
+    if (intersect.entity4 !== null) result.push(intersect.entity4)
+    if (intersect.entity5 !== null) result.push(intersect.entity5)
 
-    return result;
+    return result
   }
 
   /**
    * Set intersected entities from an array.
    */
   setAll(ctx: Context, entities: EntityId[]): void {
-    const intersect = this.write(ctx);
-    intersect.entity1 = entities[0] ?? null;
-    intersect.entity2 = entities[1] ?? null;
-    intersect.entity3 = entities[2] ?? null;
-    intersect.entity4 = entities[3] ?? null;
-    intersect.entity5 = entities[4] ?? null;
+    const intersect = this.write(ctx)
+    intersect.entity1 = entities[0] ?? null
+    intersect.entity2 = entities[1] ?? null
+    intersect.entity3 = entities[2] ?? null
+    intersect.entity4 = entities[3] ?? null
+    intersect.entity5 = entities[4] ?? null
   }
 
   /**
    * Clear all intersections.
    */
   clear(ctx: Context): void {
-    const intersect = this.write(ctx);
-    intersect.entity1 = null;
-    intersect.entity2 = null;
-    intersect.entity3 = null;
-    intersect.entity4 = null;
-    intersect.entity5 = null;
+    const intersect = this.write(ctx)
+    intersect.entity1 = null
+    intersect.entity2 = null
+    intersect.entity3 = null
+    intersect.entity4 = null
+    intersect.entity5 = null
   }
 }
 
-export const Intersect = new IntersectDef();
+export const Intersect = new IntersectDef()

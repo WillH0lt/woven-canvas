@@ -1,26 +1,24 @@
 // Types
+
+// Frame input
+export { getFrameInput } from './frameInputEvents'
+// Keyboard input
+export { getKeyboardInput } from './keyboardInputEvents'
+
+// Mouse input
+export { getMouseInput } from './mouseInputEvents'
+// Pointer input
+export {
+  clearPointerTrackingState,
+  getPointerInput,
+} from './pointerInputEvents'
 export type {
-  PointerInput,
-  PointerInputType,
-  PointerInputOptions,
-  MouseInput,
-  MouseInputType,
   FrameInput,
   KeyboardInput,
   KeyboardInputType,
-} from "./types";
-
-// Pointer input
-export {
-  getPointerInput,
-  clearPointerTrackingState,
-} from "./pointerInputEvents";
-
-// Mouse input
-export { getMouseInput } from "./mouseInputEvents";
-
-// Frame input
-export { getFrameInput } from "./frameInputEvents";
-
-// Keyboard input
-export { getKeyboardInput } from "./keyboardInputEvents";
+  MouseInput,
+  MouseInputType,
+  PointerInput,
+  PointerInputOptions,
+  PointerInputType,
+} from './types'

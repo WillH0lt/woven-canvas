@@ -1,7 +1,7 @@
 export {
-  StartEraserStroke,
   AddEraserStrokePoint,
-  CompleteEraserStroke,
   CancelEraserStroke,
+  CompleteEraserStroke,
   MarkAsErased,
-} from "./eraser";
+  StartEraserStroke,
+} from './eraser'

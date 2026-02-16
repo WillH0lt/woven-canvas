@@ -1,21 +1,21 @@
 import {
-  type EditorResources,
   addComponent,
-  removeComponent,
-  hasComponent,
-  getResources,
-  isHeldByRemote,
-  defineQuery,
-  Held,
   Block,
   type Context,
+  defineQuery,
+  type EditorResources,
   type EntityId,
-} from "@infinitecanvas/core";
+  getResources,
+  Held,
+  hasComponent,
+  isHeldByRemote,
+  removeComponent,
+} from '@infinitecanvas/core'
 
-import { Selected } from "../components";
+import { Selected } from '../components'
 
-const selectedQuery = defineQuery((q) => q.with(Selected));
-const blockQuery = defineQuery((q) => q.with(Block));
+const selectedQuery = defineQuery((q) => q.with(Selected))
+const blockQuery = defineQuery((q) => q.with(Block))
 
 /**
  * Add Selected and Held components to an entity.
@@ -27,15 +27,15 @@ const blockQuery = defineQuery((q) => q.with(Block));
  * @param entityId - The entity to select
  */
 export function selectBlock(ctx: Context, entityId: EntityId): void {
-  if (hasComponent(ctx, entityId, Selected)) return;
+  if (hasComponent(ctx, entityId, Selected)) return
   // Don't select if held by a remote user
-  if (isHeldByRemote(ctx, entityId)) return;
+  if (isHeldByRemote(ctx, entityId)) return
 
-  const { sessionId } = getResources<EditorResources>(ctx);
-  addComponent(ctx, entityId, Selected, {});
+  const { sessionId } = getResources<EditorResources>(ctx)
+  addComponent(ctx, entityId, Selected, {})
   // Only add Held if not already held (might be held by us from dragging)
   if (!hasComponent(ctx, entityId, Held)) {
-    addComponent(ctx, entityId, Held, { sessionId });
+    addComponent(ctx, entityId, Held, { sessionId })
   }
 }
 
@@ -46,10 +46,10 @@ export function selectBlock(ctx: Context, entityId: EntityId): void {
  * @param entityId - The entity to deselect
  */
 export function deselectBlock(ctx: Context, entityId: EntityId): void {
-  if (!hasComponent(ctx, entityId, Selected)) return;
+  if (!hasComponent(ctx, entityId, Selected)) return
 
-  removeComponent(ctx, entityId, Selected);
-  removeComponent(ctx, entityId, Held);
+  removeComponent(ctx, entityId, Selected)
+  removeComponent(ctx, entityId, Held)
 }
 
 /**
@@ -59,7 +59,7 @@ export function deselectBlock(ctx: Context, entityId: EntityId): void {
  */
 export function deselectAll(ctx: Context): void {
   for (const entityId of selectedQuery.current(ctx)) {
-    deselectBlock(ctx, entityId);
+    deselectBlock(ctx, entityId)
   }
 }
 
@@ -71,7 +71,6 @@ export function deselectAll(ctx: Context): void {
  */
 export function selectAll(ctx: Context): void {
   for (const entityId of blockQuery.current(ctx)) {
-    selectBlock(ctx, entityId);
+    selectBlock(ctx, entityId)
   }
 }
-

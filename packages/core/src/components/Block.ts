@@ -1,6 +1,6 @@
-import { field, type Context, type EntityId } from "@woven-ecs/core";
-import { CanvasComponentDef } from "@woven-ecs/canvas-store";
-import { Vec2, Rect, Aabb, Mat2 } from "@infinitecanvas/math";
+import { type Aabb, type Mat2, Rect, Vec2 } from '@infinitecanvas/math'
+import { CanvasComponentDef } from '@woven-ecs/canvas-store'
+import { type Context, type EntityId, field } from '@woven-ecs/core'
 
 // Pre-allocated arrays for SAT intersection to avoid allocations
 const _aabbCorners: [Vec2, Vec2, Vec2, Vec2] = [
@@ -8,21 +8,21 @@ const _aabbCorners: [Vec2, Vec2, Vec2, Vec2] = [
   [0, 0],
   [0, 0],
   [0, 0],
-];
+]
 const _blockCorners: [Vec2, Vec2, Vec2, Vec2] = [
   [0, 0],
   [0, 0],
   [0, 0],
   [0, 0],
-];
+]
 const _blockAxes: [Vec2, Vec2] = [
   [0, 0],
   [0, 0],
-];
+]
 
 const BlockSchema = {
   /** Element tag name (e.g., "div", "img") */
-  tag: field.string().max(36).default("div"),
+  tag: field.string().max(36).default('div'),
   /** Position as [left, top] */
   position: field.tuple(field.float64(), 2).default([0, 0]),
   /** Size as [width, height] */
@@ -32,8 +32,8 @@ const BlockSchema = {
   /** Flip state as [flipX, flipY] */
   flip: field.tuple(field.boolean(), 2).default([false, false]),
   /** Z-order rank (LexoRank string) */
-  rank: field.string().max(36).default(""),
-};
+  rank: field.string().max(36).default(''),
+}
 
 /**
  * Block component - core spatial data for canvas entities.
@@ -43,7 +43,7 @@ const BlockSchema = {
  */
 class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
   constructor() {
-    super({ name: "block", sync: "document" }, BlockSchema);
+    super({ name: 'block', sync: 'document' }, BlockSchema)
   }
 
   /**
@@ -51,18 +51,18 @@ class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
    * @param out - Optional output vector to write to (avoids allocation)
    */
   getCenter(ctx: Context, entityId: EntityId, out?: Vec2): Vec2 {
-    const { position, size } = this.read(ctx, entityId);
-    const result: Vec2 = out ?? [0, 0];
-    Rect.getCenter(position, size, result);
-    return result;
+    const { position, size } = this.read(ctx, entityId)
+    const result: Vec2 = out ?? [0, 0]
+    Rect.getCenter(position, size, result)
+    return result
   }
 
   /**
    * Set the center point of a block (adjusts position accordingly).
    */
   setCenter(ctx: Context, entityId: EntityId, center: Vec2): void {
-    const block = this.write(ctx, entityId);
-    Rect.setCenter(block.position, block.size, center);
+    const block = this.write(ctx, entityId)
+    Rect.setCenter(block.position, block.size, center)
   }
 
   /**
@@ -70,100 +70,80 @@ class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
    * Returns corners in order: top-left, top-right, bottom-right, bottom-left.
    * @param out - Optional output array to write to (avoids allocation)
    */
-  getCorners(
-    ctx: Context,
-    entityId: EntityId,
-    out?: [Vec2, Vec2, Vec2, Vec2]
-  ): [Vec2, Vec2, Vec2, Vec2] {
-    const { position, size, rotateZ } = this.read(ctx, entityId);
+  getCorners(ctx: Context, entityId: EntityId, out?: [Vec2, Vec2, Vec2, Vec2]): [Vec2, Vec2, Vec2, Vec2] {
+    const { position, size, rotateZ } = this.read(ctx, entityId)
     const result: [Vec2, Vec2, Vec2, Vec2] = out ?? [
       [0, 0],
       [0, 0],
       [0, 0],
       [0, 0],
-    ];
-    Rect.getCorners(position, size, rotateZ, result);
-    return result;
+    ]
+    Rect.getCorners(position, size, rotateZ, result)
+    return result
   }
 
   /**
    * Check if a point intersects a block (accounting for rotation).
    */
   containsPoint(ctx: Context, entityId: EntityId, point: Vec2): boolean {
-    const { position, size, rotateZ } = this.read(ctx, entityId);
-    return Rect.containsPoint(position, size, rotateZ, point);
+    const { position, size, rotateZ } = this.read(ctx, entityId)
+    return Rect.containsPoint(position, size, rotateZ, point)
   }
 
   /**
    * Move a block by a delta offset.
    */
   translate(ctx: Context, entityId: EntityId, delta: Vec2): void {
-    const block = this.write(ctx, entityId);
-    Rect.translate(block.position, delta);
+    const block = this.write(ctx, entityId)
+    Rect.translate(block.position, delta)
   }
 
   /**
    * Set the position of a block.
    */
   setPosition(ctx: Context, entityId: EntityId, position: Vec2): void {
-    const block = this.write(ctx, entityId);
-    Vec2.copy(block.position, position);
+    const block = this.write(ctx, entityId)
+    Vec2.copy(block.position, position)
   }
 
   /**
    * Set the size of a block.
    */
   setSize(ctx: Context, entityId: EntityId, size: Vec2): void {
-    const block = this.write(ctx, entityId);
-    Vec2.copy(block.size, size);
+    const block = this.write(ctx, entityId)
+    Vec2.copy(block.size, size)
   }
 
   /**
    * Rotate a block by a delta angle (in radians).
    */
   rotateBy(ctx: Context, entityId: EntityId, deltaAngle: number): void {
-    const block = this.write(ctx, entityId);
-    block.rotateZ += deltaAngle;
+    const block = this.write(ctx, entityId)
+    block.rotateZ += deltaAngle
   }
 
   /**
    * Rotate a block around a pivot point.
    */
-  rotateAround(
-    ctx: Context,
-    entityId: EntityId,
-    pivot: Vec2,
-    angle: number
-  ): void {
-    const block = this.write(ctx, entityId);
-    block.rotateZ = Rect.rotateAround(
-      block.position,
-      block.size,
-      block.rotateZ,
-      pivot,
-      angle
-    );
+  rotateAround(ctx: Context, entityId: EntityId, pivot: Vec2, angle: number): void {
+    const block = this.write(ctx, entityId)
+    block.rotateZ = Rect.rotateAround(block.position, block.size, block.rotateZ, pivot, angle)
   }
 
   /**
    * Scale a block uniformly around its center.
    */
   scaleBy(ctx: Context, entityId: EntityId, scaleFactor: number): void {
-    const block = this.write(ctx, entityId);
-    Rect.scaleBy(block.position, block.size, scaleFactor);
+    const block = this.write(ctx, entityId)
+    Rect.scaleBy(block.position, block.size, scaleFactor)
   }
 
   /**
    * Scale a block around a pivot point.
    */
-  scaleAround(
-    ctx: Context,
-    entityId: EntityId,
-    pivot: Vec2,
-    scaleFactor: number
-  ): void {
-    const block = this.write(ctx, entityId);
-    Rect.scaleAround(block.position, block.size, pivot, scaleFactor);
+  scaleAround(ctx: Context, entityId: EntityId, pivot: Vec2, scaleFactor: number): void {
+    const block = this.write(ctx, entityId)
+    Rect.scaleAround(block.position, block.size, pivot, scaleFactor)
   }
 
   /**
@@ -173,35 +153,24 @@ class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
    * Optimized to avoid allocations for hot path usage.
    */
   intersectsAabb(ctx: Context, entityId: EntityId, aabb: Aabb): boolean {
-    const { position, size, rotateZ } = this.read(ctx, entityId);
-    return Rect.intersectsAabb(
-      position,
-      size,
-      rotateZ,
-      aabb,
-      _blockCorners,
-      _aabbCorners,
-      _blockAxes
-    );
+    const { position, size, rotateZ } = this.read(ctx, entityId)
+    return Rect.intersectsAabb(position, size, rotateZ, aabb, _blockCorners, _aabbCorners, _blockAxes)
   }
 
   worldToUv(ctx: Context, entityId: EntityId, worldPos: Vec2): Vec2 {
-    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
-    const uv = Rect.worldToUv(position, size, rotateZ, worldPos);
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId)
+    const uv = Rect.worldToUv(position, size, rotateZ, worldPos)
     // Apply flip to UV coordinates
-    if (flip[0]) uv[0] = 1 - uv[0];
-    if (flip[1]) uv[1] = 1 - uv[1];
-    return uv;
+    if (flip[0]) uv[0] = 1 - uv[0]
+    if (flip[1]) uv[1] = 1 - uv[1]
+    return uv
   }
 
   uvToWorld(ctx: Context, entityId: EntityId, uv: Vec2): Vec2 {
-    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId)
     // Apply flip to UV coordinates before converting to world
-    const flippedUv: Vec2 = [
-      flip[0] ? 1 - uv[0] : uv[0],
-      flip[1] ? 1 - uv[1] : uv[1],
-    ];
-    return Rect.uvToWorld(position, size, rotateZ, flippedUv);
+    const flippedUv: Vec2 = [flip[0] ? 1 - uv[0] : uv[0], flip[1] ? 1 - uv[1] : uv[1]]
+    return Rect.uvToWorld(position, size, rotateZ, flippedUv)
   }
 
   /**
@@ -215,22 +184,22 @@ class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
    * @param out - Output matrix to write to [a, b, c, d, tx, ty]
    */
   getUvToWorldMatrix(ctx: Context, entityId: EntityId, out: Mat2): void {
-    const { position, size, rotateZ, flip } = this.read(ctx, entityId);
-    Rect.getUvToWorldMatrix(position, size, rotateZ, out);
+    const { position, size, rotateZ, flip } = this.read(ctx, entityId)
+    Rect.getUvToWorldMatrix(position, size, rotateZ, out)
     // Apply flip by negating scale and adjusting translation
     if (flip[0]) {
-      out[0] = -out[0]; // Negate scaleX
-      out[2] = -out[2]; // Negate shearX
-      out[4] += size[0] * Math.cos(rotateZ); // Adjust tx
-      out[5] += size[0] * Math.sin(rotateZ); // Adjust ty
+      out[0] = -out[0] // Negate scaleX
+      out[2] = -out[2] // Negate shearX
+      out[4] += size[0] * Math.cos(rotateZ) // Adjust tx
+      out[5] += size[0] * Math.sin(rotateZ) // Adjust ty
     }
     if (flip[1]) {
-      out[1] = -out[1]; // Negate shearY
-      out[3] = -out[3]; // Negate scaleY
-      out[4] -= size[1] * Math.sin(rotateZ); // Adjust tx
-      out[5] += size[1] * Math.cos(rotateZ); // Adjust ty
+      out[1] = -out[1] // Negate shearY
+      out[3] = -out[3] // Negate scaleY
+      out[4] -= size[1] * Math.sin(rotateZ) // Adjust tx
+      out[5] += size[1] * Math.cos(rotateZ) // Adjust ty
     }
   }
 }
 
-export const Block = new BlockDef();
+export const Block = new BlockDef()

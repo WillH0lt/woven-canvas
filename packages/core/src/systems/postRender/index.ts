@@ -1,2 +1,2 @@
-export { cursorSystem } from "./cursorSystem";
-export { presenceSystem } from "./presenceSystem";
+export { cursorSystem } from './cursorSystem'
+export { presenceSystem } from './presenceSystem'

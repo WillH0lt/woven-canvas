@@ -1,4 +1,4 @@
-import { defineCanvasComponent } from "@infinitecanvas/core";
+import { defineCanvasComponent } from '@infinitecanvas/core'
 
 /**
  * EditAfterPlacing component - marker for blocks that should enter edit mode after placement.
@@ -7,7 +7,4 @@ import { defineCanvasComponent } from "@infinitecanvas/core";
  * The capture transformBoxSystem checks for this component on selectionChanged and
  * transitions to Editing state if present, then removes the component.
  */
-export const EditAfterPlacing = defineCanvasComponent(
-  { name: "editAfterPlacing" },
-  {}
-);
+export const EditAfterPlacing = defineCanvasComponent({ name: 'editAfterPlacing' }, {})

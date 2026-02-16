@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 /**
  * Font family definition schema.
@@ -27,17 +27,17 @@ export const FontFamily = z.object({
    * Default: true
    */
   italics: z.boolean().default(true),
-});
+})
 
-export type FontFamily = z.infer<typeof FontFamily>;
-export type FontFamilyInput = z.input<typeof FontFamily>;
+export type FontFamily = z.infer<typeof FontFamily>
+export type FontFamilyInput = z.input<typeof FontFamily>
 
 /**
  * FontLoader handles loading custom fonts from URLs.
  * It tracks which fonts have been loaded to avoid duplicate loading.
  */
 export class FontLoader {
-  private loadedFonts: Set<string> = new Set();
+  private loadedFonts: Set<string> = new Set()
 
   /**
    * Load multiple font families.
@@ -46,18 +46,14 @@ export class FontLoader {
    * @param families - Array of font families to load
    */
   async loadFonts(families: FontFamily[]): Promise<void> {
-    const unloadedFamilies = families.filter(
-      (family) => !this.loadedFonts.has(family.name)
-    );
+    const unloadedFamilies = families.filter((family) => !this.loadedFonts.has(family.name))
 
     if (unloadedFamilies.length === 0) {
-      return;
+      return
     }
 
-    const fontPromises = unloadedFamilies.map((family) =>
-      this.loadSingleFont(family)
-    );
-    await Promise.all(fontPromises);
+    const fontPromises = unloadedFamilies.map((family) => this.loadSingleFont(family))
+    await Promise.all(fontPromises)
   }
 
   /**
@@ -68,48 +64,42 @@ export class FontLoader {
    * @returns The constructed URL with variants
    */
   private buildGoogleFontsUrl(family: FontFamily): string {
-    const baseUrl = family.url;
+    const baseUrl = family.url
 
     // Check if this is a Google Fonts URL
-    if (!baseUrl.includes("fonts.googleapis.com")) {
-      return baseUrl;
+    if (!baseUrl.includes('fonts.googleapis.com')) {
+      return baseUrl
     }
 
     // Extract the font family name from the URL
-    const urlObj = new URL(baseUrl);
-    const familyParam = urlObj.searchParams.get("family");
+    const urlObj = new URL(baseUrl)
+    const familyParam = urlObj.searchParams.get('family')
     if (!familyParam) {
-      return baseUrl;
+      return baseUrl
     }
 
     // Get the base family name (remove any existing weight/style specifiers)
-    const baseFamilyName = familyParam.split(":")[0];
+    const baseFamilyName = familyParam.split(':')[0]
 
     // Build the variant specifier
-    const weights = family.weights;
-    const variants: string[] = [];
+    const weights = family.weights
+    const variants: string[] = []
 
     if (family.italics) {
       // Format: ital,wght@0,400;0,700;1,400;1,700
       for (const weight of weights) {
-        variants.push(`0,${weight}`); // Normal
+        variants.push(`0,${weight}`) // Normal
       }
       for (const weight of weights) {
-        variants.push(`1,${weight}`); // Italic
+        variants.push(`1,${weight}`) // Italic
       }
-      urlObj.searchParams.set(
-        "family",
-        `${baseFamilyName}:ital,wght@${variants.join(";")}`
-      );
+      urlObj.searchParams.set('family', `${baseFamilyName}:ital,wght@${variants.join(';')}`)
     } else {
       // Format: wght@400;700
-      urlObj.searchParams.set(
-        "family",
-        `${baseFamilyName}:wght@${weights.join(";")}`
-      );
+      urlObj.searchParams.set('family', `${baseFamilyName}:wght@${weights.join(';')}`)
     }
 
-    return urlObj.toString();
+    return urlObj.toString()
   }
 
   /**
@@ -119,31 +109,29 @@ export class FontLoader {
    * @param family - Font family to load
    */
   private loadSingleFont(family: FontFamily): Promise<void> {
-    this.loadedFonts.add(family.name);
+    this.loadedFonts.add(family.name)
 
     return new Promise((resolve, reject) => {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = this.buildGoogleFontsUrl(family);
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = this.buildGoogleFontsUrl(family)
       link.onload = async () => {
         try {
           // Wait for all font variants to be loaded
-          const loadPromises = this.getFontLoadPromises(family);
-          await Promise.all(loadPromises);
+          const loadPromises = this.getFontLoadPromises(family)
+          await Promise.all(loadPromises)
           // Ensure all fonts are ready
-          await document.fonts.ready;
-          resolve();
+          await document.fonts.ready
+          resolve()
         } catch (error) {
-          reject(
-            new Error(`Failed to load font face for: ${family.name}. ${error}`)
-          );
+          reject(new Error(`Failed to load font face for: ${family.name}. ${error}`))
         }
-      };
+      }
       link.onerror = () => {
-        reject(new Error(`Failed to load font stylesheet: ${family.name}`));
-      };
-      document.head.appendChild(link);
-    });
+        reject(new Error(`Failed to load font stylesheet: ${family.name}`))
+      }
+      document.head.appendChild(link)
+    })
   }
 
   /**
@@ -153,20 +141,20 @@ export class FontLoader {
    * @returns Array of promises for loading each font variant
    */
   private getFontLoadPromises(family: FontFamily): Promise<FontFace[]>[] {
-    const promises: Promise<FontFace[]>[] = [];
-    const fontName = family.name;
+    const promises: Promise<FontFace[]>[] = []
+    const fontName = family.name
 
     for (const weight of family.weights) {
       // Load normal variant
-      promises.push(document.fonts.load(`${weight} 12px "${fontName}"`));
+      promises.push(document.fonts.load(`${weight} 12px "${fontName}"`))
 
       // Load italic variant if enabled
       if (family.italics) {
-        promises.push(document.fonts.load(`italic ${weight} 12px "${fontName}"`));
+        promises.push(document.fonts.load(`italic ${weight} 12px "${fontName}"`))
       }
     }
 
-    return promises;
+    return promises
   }
 
   /**
@@ -176,13 +164,13 @@ export class FontLoader {
    * @returns True if the font has been loaded
    */
   isLoaded(fontName: string): boolean {
-    return this.loadedFonts.has(fontName);
+    return this.loadedFonts.has(fontName)
   }
 
   /**
    * Get the set of loaded font names.
    */
   getLoadedFonts(): ReadonlySet<string> {
-    return this.loadedFonts;
+    return this.loadedFonts
   }
 }

@@ -1,4 +1,4 @@
-import { defineCanvasComponent } from "@infinitecanvas/core";
+import { defineCanvasComponent } from '@infinitecanvas/core'
 
 /**
  * TransformBox component - marks an entity as the transform box.
@@ -10,7 +10,4 @@ import { defineCanvasComponent } from "@infinitecanvas/core";
  * Transform handles reference their parent transform box via the
  * TransformHandle component's transformBox field.
  */
-export const TransformBox = defineCanvasComponent(
-  { name: "transformBox" },
-  {}
-);
+export const TransformBox = defineCanvasComponent({ name: 'transformBox' }, {})

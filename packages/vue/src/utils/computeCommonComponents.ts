@@ -1,4 +1,4 @@
-import type { Editor } from "@infinitecanvas/core";
+import type { Editor } from '@infinitecanvas/core'
 
 /**
  * Compute the set of component names that are common to all selected blocks.
@@ -10,35 +10,32 @@ import type { Editor } from "@infinitecanvas/core";
  * @param selectedBlocks - Array of selected blocks with their tags
  * @returns Set of component names common to all selected blocks
  */
-export function computeCommonComponents(
-  editor: Editor,
-  selectedBlocks: Array<{ tag: string }>
-): Set<string> {
-  if (selectedBlocks.length === 0) return new Set();
+export function computeCommonComponents(editor: Editor, selectedBlocks: Array<{ tag: string }>): Set<string> {
+  if (selectedBlocks.length === 0) return new Set()
 
   // Get components for first block
-  const firstTag = selectedBlocks[0].tag;
-  const firstDef = editor.blockDefs[firstTag];
-  if (!firstDef) return new Set();
+  const firstTag = selectedBlocks[0].tag
+  const firstDef = editor.blockDefs[firstTag]
+  if (!firstDef) return new Set()
 
-  const common = new Set(firstDef.components.map((c) => c.name));
+  const common = new Set(firstDef.components.map((c) => c.name))
 
   // Intersect with remaining blocks
   for (let i = 1; i < selectedBlocks.length; i++) {
-    const tag = selectedBlocks[i].tag;
-    const def = editor.blockDefs[tag];
+    const tag = selectedBlocks[i].tag
+    const def = editor.blockDefs[tag]
     if (!def) {
-      common.clear();
-      break;
+      common.clear()
+      break
     }
 
-    const componentNames = new Set(def.components.map((c) => c.name));
+    const componentNames = new Set(def.components.map((c) => c.name))
     for (const name of common) {
       if (!componentNames.has(name)) {
-        common.delete(name);
+        common.delete(name)
       }
     }
   }
 
-  return common;
+  return common
 }

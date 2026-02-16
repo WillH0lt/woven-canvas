@@ -1,4 +1,4 @@
-export { captureArrowDrawSystem } from "./captureArrowDrawSystem";
-export { captureArrowTransformSystem } from "./captureArrowTransformSystem";
-export { updateArrowTransformSystem } from "./updateArrowTransformSystem";
-export { updateArrowHitGeometrySystem } from "./updateArrowHitGeometrySystem";
+export { captureArrowDrawSystem } from './captureArrowDrawSystem'
+export { captureArrowTransformSystem } from './captureArrowTransformSystem'
+export { updateArrowHitGeometrySystem } from './updateArrowHitGeometrySystem'
+export { updateArrowTransformSystem } from './updateArrowTransformSystem'

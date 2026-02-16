@@ -1,1 +1,1 @@
-export { keybindSystem } from "./keybindSystem";
+export { keybindSystem } from './keybindSystem'

@@ -1,4 +1,4 @@
-import { field, defineCanvasComponent } from "@infinitecanvas/core";
+import { defineCanvasComponent, field } from '@infinitecanvas/core'
 
 /**
  * Erased component - marks an entity as being erased by an active eraser stroke.
@@ -17,12 +17,12 @@ import { field, defineCanvasComponent } from "@infinitecanvas/core";
  * ```
  */
 export const Erased = defineCanvasComponent(
-  { name: "erased" },
+  { name: 'erased' },
   {
     /**
      * Reference to the eraser stroke entity that is targeting this block.
      * Used to track which stroke caused this entity to be marked for erasure.
      */
     eraserStrokeId: field.ref(),
-  }
-);
+  },
+)

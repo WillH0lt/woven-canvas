@@ -1,1 +1,1 @@
-export { PenStateSingleton } from "./PenStateSingleton";
+export { PenStateSingleton } from './PenStateSingleton'

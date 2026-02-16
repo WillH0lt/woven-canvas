@@ -1,6 +1,6 @@
-import { type Context, getResources } from "@woven-ecs/core";
+import { type Context, getResources } from '@woven-ecs/core'
 
-import { BlockDef, type EditorResources } from "../types";
+import { BlockDef, type EditorResources } from '../types'
 
 /**
  * Get all block definitions from the editor resources.
@@ -9,8 +9,8 @@ import { BlockDef, type EditorResources } from "../types";
  * @returns Map of block tag to normalized block definition
  */
 export function getBlockDefs(ctx: Context): Record<string, BlockDef> {
-  const { editor } = getResources<EditorResources>(ctx);
-  return editor.blockDefs;
+  const { editor } = getResources<EditorResources>(ctx)
+  return editor.blockDefs
 }
 
 /**
@@ -22,8 +22,8 @@ export function getBlockDefs(ctx: Context): Record<string, BlockDef> {
  * @returns Normalized block definition
  */
 export function getBlockDef(ctx: Context, tag: string): BlockDef {
-  const blockDefs = getBlockDefs(ctx);
-  return blockDefs[tag] ?? BlockDef.parse({ tag });
+  const blockDefs = getBlockDefs(ctx)
+  return blockDefs[tag] ?? BlockDef.parse({ tag })
 }
 
 /**
@@ -34,7 +34,7 @@ export function getBlockDef(ctx: Context, tag: string): BlockDef {
  * @returns True if the block can be edited
  */
 export function canBlockEdit(ctx: Context, tag: string): boolean {
-  return getBlockDef(ctx, tag).editOptions.canEdit;
+  return getBlockDef(ctx, tag).editOptions.canEdit
 }
 
 /**
@@ -45,7 +45,7 @@ export function canBlockEdit(ctx: Context, tag: string): boolean {
  * @returns True if the block can be rotated
  */
 export function canBlockRotate(ctx: Context, tag: string): boolean {
-  return getBlockDef(ctx, tag).canRotate;
+  return getBlockDef(ctx, tag).canRotate
 }
 
 /**
@@ -56,5 +56,5 @@ export function canBlockRotate(ctx: Context, tag: string): boolean {
  * @returns True if the block can be scaled
  */
 export function canBlockScale(ctx: Context, tag: string): boolean {
-  return getBlockDef(ctx, tag).canScale;
+  return getBlockDef(ctx, tag).canScale
 }

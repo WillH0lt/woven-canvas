@@ -1,63 +1,59 @@
 import {
+  Asset,
+  Color,
   type EditorPlugin,
   type FontFamilyInput,
-  Color,
-  Text,
-  VerticalAlign,
   Image,
-  Asset,
-  Undo,
-  Redo,
   Key,
-} from "@infinitecanvas/core";
+  Redo,
+  Text,
+  Undo,
+  VerticalAlign,
+} from '@infinitecanvas/core'
 
-import { type CanvasStore } from "@woven-ecs/canvas-store";
-import { CURSORS } from "./cursors";
-import { blockPlacementSystem, undoRedoSystem } from "./systems";
-import { BlockPlacementState } from "./singletons";
+import type { CanvasStore } from '@woven-ecs/canvas-store'
+import { CURSORS } from './cursors'
+import { BlockPlacementState } from './singletons'
+import { blockPlacementSystem, undoRedoSystem } from './systems'
 
 export interface BasicsPluginResources {
-  store: CanvasStore;
+  store: CanvasStore
 }
 
 export interface BasicsPluginOptions {
-  store: CanvasStore;
+  store: CanvasStore
 }
 
 export const DEFAULT_FONTS: FontFamilyInput[] = [
   {
-    name: "Figtree",
-    displayName: "Figtree",
-    url: "https://fonts.googleapis.com/css2?family=Figtree",
-    previewImage:
-      "https://storage.googleapis.com/scrolly-page-fonts/Figtree.png",
+    name: 'Figtree',
+    displayName: 'Figtree',
+    url: 'https://fonts.googleapis.com/css2?family=Figtree',
+    previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/Figtree.png',
   },
   {
-    name: "Shantell Sans",
-    displayName: "Shantell Sans",
-    url: "https://fonts.googleapis.com/css2?family=Shantell+Sans",
-    previewImage:
-      "https://storage.googleapis.com/scrolly-page-fonts/ShantellSans.png",
+    name: 'Shantell Sans',
+    displayName: 'Shantell Sans',
+    url: 'https://fonts.googleapis.com/css2?family=Shantell+Sans',
+    previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/ShantellSans.png',
   },
   {
-    name: "Courier Prime",
-    displayName: "Courier Prime",
-    url: "https://fonts.googleapis.com/css2?family=Courier+Prime",
-    previewImage:
-      "https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png",
+    name: 'Courier Prime',
+    displayName: 'Courier Prime',
+    url: 'https://fonts.googleapis.com/css2?family=Courier+Prime',
+    previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/CourierPrime.png',
   },
   {
-    name: "EB Garamond",
-    displayName: "EB Garamond",
-    url: "https://fonts.googleapis.com/css2?family=EB+Garamond",
-    previewImage:
-      "https://storage.googleapis.com/scrolly-page-fonts/EBGaramond.png",
+    name: 'EB Garamond',
+    displayName: 'EB Garamond',
+    url: 'https://fonts.googleapis.com/css2?family=EB+Garamond',
+    previewImage: 'https://storage.googleapis.com/scrolly-page-fonts/EBGaramond.png',
   },
-];
+]
 
 export function BasicsPlugin(options: BasicsPluginOptions): EditorPlugin {
   return {
-    name: "basics",
+    name: 'basics',
     resources: { store: options.store } satisfies BasicsPluginResources,
     singletons: [BlockPlacementState],
     cursors: CURSORS,
@@ -69,27 +65,27 @@ export function BasicsPlugin(options: BasicsPluginOptions): EditorPlugin {
     ],
     blockDefs: [
       {
-        tag: "sticky-note",
+        tag: 'sticky-note',
         components: [Color, Text, VerticalAlign],
         editOptions: {
           canEdit: true,
         },
       },
       {
-        tag: "text",
+        tag: 'text',
         components: [Text],
-        resizeMode: "text",
+        resizeMode: 'text',
         editOptions: {
           canEdit: true,
           removeWhenTextEmpty: true,
         },
       },
       {
-        tag: "image",
+        tag: 'image',
         components: [Image, Asset],
-        resizeMode: "scale",
+        resizeMode: 'scale',
       },
     ],
     systems: [blockPlacementSystem, undoRedoSystem],
-  };
+  }
 }

@@ -1,21 +1,21 @@
 import {
   CanvasComponentDef,
   CanvasSingletonDef,
-  Connector,
   Color,
+  Connector,
   type EditorPlugin,
   type EditorPluginFactory,
-} from "@infinitecanvas/core";
+} from '@infinitecanvas/core'
 
-import * as components from "./components";
-import * as singletons from "./singletons";
+import * as components from './components'
+import { ELBOW_ARROW_PADDING, PLUGIN_NAME } from './constants'
+import * as singletons from './singletons'
 import {
   captureArrowDrawSystem,
   captureArrowTransformSystem,
-  updateArrowTransformSystem,
   updateArrowHitGeometrySystem,
-} from "./systems";
-import { PLUGIN_NAME, ELBOW_ARROW_PADDING } from "./constants";
+  updateArrowTransformSystem,
+} from './systems'
 
 /**
  * Options for configuring the Arrows plugin.
@@ -25,7 +25,7 @@ export interface ArrowsPluginOptions {
    * Padding around blocks when routing elbow arrows.
    * @default 50
    */
-  elbowArrowPadding?: number;
+  elbowArrowPadding?: number
 }
 
 /**
@@ -43,44 +43,38 @@ export interface ArrowsPluginOptions {
  * const editor = new Editor(container, { plugins: [plugin] });
  * ```
  */
-export function createArrowsPlugin(
-  options: ArrowsPluginOptions = {},
-): EditorPlugin<ArrowsPluginOptions> {
+export function createArrowsPlugin(options: ArrowsPluginOptions = {}): EditorPlugin<ArrowsPluginOptions> {
   return {
     name: PLUGIN_NAME,
 
-    components: Object.values(components).filter(
-      (v) => v instanceof CanvasComponentDef,
-    ),
+    components: Object.values(components).filter((v) => v instanceof CanvasComponentDef),
 
-    singletons: Object.values(singletons).filter(
-      (v) => v instanceof CanvasSingletonDef,
-    ),
+    singletons: Object.values(singletons).filter((v) => v instanceof CanvasSingletonDef),
 
     blockDefs: [
       {
-        tag: "arc-arrow",
-        resizeMode: "groupOnly",
+        tag: 'arc-arrow',
+        resizeMode: 'groupOnly',
         components: [components.ArcArrow, Connector, Color],
         connectors: { enabled: false },
       },
       {
-        tag: "elbow-arrow",
-        resizeMode: "groupOnly",
+        tag: 'elbow-arrow',
+        resizeMode: 'groupOnly',
         components: [components.ElbowArrow, Connector, Color],
         connectors: { enabled: false },
       },
       {
-        tag: "arrow-handle",
-        stratum: "overlay",
+        tag: 'arrow-handle',
+        stratum: 'overlay',
         canRotate: false,
         canScale: false,
         components: [components.ArrowHandle],
         connectors: { enabled: false },
       },
       {
-        tag: "arrow-terminal",
-        stratum: "overlay",
+        tag: 'arrow-terminal',
+        stratum: 'overlay',
         canRotate: false,
         canScale: false,
         components: [components.ArrowTerminal],
@@ -98,7 +92,7 @@ export function createArrowsPlugin(
     resources: {
       elbowArrowPadding: options.elbowArrowPadding ?? ELBOW_ARROW_PADDING,
     },
-  };
+  }
 }
 
 /**
@@ -131,6 +125,4 @@ export function createArrowsPlugin(
  * });
  * ```
  */
-export const ArrowsPlugin: EditorPluginFactory<ArrowsPluginOptions> = (
-  options = {},
-) => createArrowsPlugin(options);
+export const ArrowsPlugin: EditorPluginFactory<ArrowsPluginOptions> = (options = {}) => createArrowsPlugin(options)

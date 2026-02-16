@@ -1,26 +1,22 @@
 // Block definition helpers (plugin-specific)
 export {
-  getBlockDefs,
-  getBlockDef,
   canBlockEdit,
   canBlockRotate,
   canBlockScale,
-} from "./blockDefs";
-
+  getBlockDef,
+  getBlockDefs,
+} from './blockDefs'
+// AABB computation
+export { computeAabb } from './computeAabb'
+// Held state helpers
+export { isHeldByRemote } from './held'
 // Intersection helpers
 export {
-  intersectPoint,
-  intersectAabb,
   getTopmostBlockAtPoint,
-} from "./intersect";
-
-export { intersectCapsule } from "./intersectCapsule";
-
-// AABB computation
-export { computeAabb } from "./computeAabb";
-
-// Held state helpers
-export { isHeldByRemote } from "./held";
+  intersectAabb,
+  intersectPoint,
+} from './intersect'
+export { intersectCapsule } from './intersectCapsule'
 
 // User helpers
-export { getMyUserEntityId } from "./user";
+export { getMyUserEntityId } from './user'

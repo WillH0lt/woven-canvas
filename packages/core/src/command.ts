@@ -1,16 +1,16 @@
 import {
-  defineComponent,
-  field,
-  defineQuery,
-  createEntity,
   addComponent,
-  removeEntity,
-  getResources,
-  type EntityId,
   type Context,
-} from "@woven-ecs/core";
-import type { Editor } from "./Editor";
-import type { EditorResources } from "./types";
+  createEntity,
+  defineComponent,
+  defineQuery,
+  type EntityId,
+  field,
+  getResources,
+  removeEntity,
+} from '@woven-ecs/core'
+import type { Editor } from './Editor'
+import type { EditorResources } from './types'
 
 /**
  * Marker component for all command entities.
@@ -18,27 +18,27 @@ import type { EditorResources } from "./types";
  */
 export const CommandMarker = defineComponent({
   name: field.string().max(128),
-});
+})
 
 /**
  * Per-editor command payload storage.
  * Uses WeakMap keyed by Editor instance for world isolation and automatic cleanup.
  */
-const editorPayloads = new WeakMap<Editor, Map<EntityId, unknown>>();
+const editorPayloads = new WeakMap<Editor, Map<EntityId, unknown>>()
 
 /** Get or create the payload map for an editor */
 function getPayloadMap(ctx: Context): Map<EntityId, unknown> {
-  const { editor } = getResources<EditorResources>(ctx);
-  let map = editorPayloads.get(editor);
+  const { editor } = getResources<EditorResources>(ctx)
+  let map = editorPayloads.get(editor)
   if (!map) {
-    map = new Map();
-    editorPayloads.set(editor, map);
+    map = new Map()
+    editorPayloads.set(editor, map)
   }
-  return map;
+  return map
 }
 
 // Query for commands - we filter by name in iter()
-const commands = defineQuery((q) => q.with(CommandMarker));
+const commands = defineQuery((q) => q.with(CommandMarker))
 
 /**
  * Command definition - provides typed spawn() and iteration.
@@ -47,7 +47,7 @@ const commands = defineQuery((q) => q.with(CommandMarker));
  */
 export interface CommandDef<T> {
   /** Unique command name */
-  readonly name: string;
+  readonly name: string
 
   /**
    * Spawn a command entity with the given payload.
@@ -57,7 +57,7 @@ export interface CommandDef<T> {
    * @param payload - Command payload data
    * @returns Entity ID of the spawned command
    */
-  spawn(ctx: Context, payload: T): EntityId;
+  spawn(ctx: Context, payload: T): EntityId
 
   /**
    * Iterate over commands of this type spawned this frame.
@@ -66,7 +66,7 @@ export interface CommandDef<T> {
    * @param ctx - Editor context
    * @returns Iterable of command entities with their payloads
    */
-  iter(ctx: Context): IterableIterator<{ eid: EntityId; payload: T }>;
+  iter(ctx: Context): IterableIterator<{ eid: EntityId; payload: T }>
 
   /**
    * Check if this command was spawned in the previous frame.
@@ -75,7 +75,7 @@ export interface CommandDef<T> {
    * @param ctx - Editor context
    * @returns True if at least one command of this type was spawned last frame
    */
-  didSpawnLastFrame(ctx: Context): boolean;
+  didSpawnLastFrame(ctx: Context): boolean
 }
 
 /**
@@ -116,38 +116,38 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
     name,
 
     spawn(ctx: Context, payload: T): EntityId {
-      const eid = createEntity(ctx);
-      addComponent(ctx, eid, CommandMarker, { name });
-      getPayloadMap(ctx).set(eid, payload);
+      const eid = createEntity(ctx)
+      addComponent(ctx, eid, CommandMarker, { name })
+      getPayloadMap(ctx).set(eid, payload)
 
       // console.log(
       //   `Spawned command "${name}" with eid ${eid} and payload:`,
       //   payload,
       // );
-      return eid;
+      return eid
     },
 
     *iter(ctx: Context): IterableIterator<{ eid: EntityId; payload: T }> {
-      const payloads = getPayloadMap(ctx);
+      const payloads = getPayloadMap(ctx)
       for (const eid of commands.current(ctx)) {
-        const marker = CommandMarker.read(ctx, eid);
+        const marker = CommandMarker.read(ctx, eid)
         if (marker.name === name) {
-          const payload = payloads.get(eid) as T;
-          yield { eid, payload };
+          const payload = payloads.get(eid) as T
+          yield { eid, payload }
         }
       }
     },
 
     didSpawnLastFrame(ctx: Context): boolean {
       for (const eid of commands.removed(ctx)) {
-        const marker = CommandMarker.read(ctx, eid);
+        const marker = CommandMarker.read(ctx, eid)
         if (marker.name === name) {
-          return true;
+          return true
         }
       }
-      return false;
+      return false
     },
-  };
+  }
 }
 
 /**
@@ -157,10 +157,10 @@ export function defineCommand<T = void>(name: string): CommandDef<T> {
  * @internal
  */
 export function cleanupCommands(ctx: Context): void {
-  const payloads = getPayloadMap(ctx);
+  const payloads = getPayloadMap(ctx)
   for (const eid of commands.current(ctx)) {
-    payloads.delete(eid);
-    removeEntity(ctx, eid);
+    payloads.delete(eid)
+    removeEntity(ctx, eid)
   }
 }
 
@@ -187,13 +187,9 @@ export function cleanupCommands(ctx: Context): void {
  * });
  * ```
  */
-export function on<T>(
-  ctx: Context,
-  def: CommandDef<T>,
-  handler: (ctx: Context, payload: T) => void,
-): void {
+export function on<T>(ctx: Context, def: CommandDef<T>, handler: (ctx: Context, payload: T) => void): void {
   for (const { payload } of def.iter(ctx)) {
-    handler(ctx, payload);
+    handler(ctx, payload)
   }
 }
 
@@ -201,10 +197,10 @@ export function on<T>(
  * Undo command - triggers an undo operation on the store.
  * Only executes if the store supports undo and canUndo() returns true.
  */
-export const Undo = defineCommand<void>("undo");
+export const Undo = defineCommand<void>('undo')
 
 /**
  * Redo command - triggers a redo operation on the store.
  * Only executes if the store supports redo and canRedo() returns true.
  */
-export const Redo = defineCommand<void>("redo");
+export const Redo = defineCommand<void>('redo')

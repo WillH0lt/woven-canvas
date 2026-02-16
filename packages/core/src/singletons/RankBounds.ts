@@ -1,11 +1,11 @@
-import { field, type Context } from "@woven-ecs/core";
-import { CanvasSingletonDef } from "@woven-ecs/canvas-store";
-import { generateJitteredKeyBetween } from "fractional-indexing-jittered";
+import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
+import { type Context, field } from '@woven-ecs/core'
+import { generateJitteredKeyBetween } from 'fractional-indexing-jittered'
 
 const RankBoundsSchema = {
-  minRank: field.string().max(36).default(""),
-  maxRank: field.string().max(36).default(""),
-};
+  minRank: field.string().max(36).default(''),
+  maxRank: field.string().max(36).default(''),
+}
 
 /**
  * RankBounds singleton - tracks the min and max z-order ranks in the document.
@@ -15,7 +15,7 @@ const RankBoundsSchema = {
  */
 class RankBoundsDef extends CanvasSingletonDef<typeof RankBoundsSchema> {
   constructor() {
-    super({ name: "rankBounds" }, RankBoundsSchema);
+    super({ name: 'rankBounds' }, RankBoundsSchema)
   }
 
   /**
@@ -23,18 +23,18 @@ class RankBoundsDef extends CanvasSingletonDef<typeof RankBoundsSchema> {
    * @returns A new rank string that sorts after maxRank
    */
   genNext(ctx: Context): string {
-    const bounds = this.write(ctx);
+    const bounds = this.write(ctx)
 
     // Generate key after current max (or first key if empty)
-    const next = generateJitteredKeyBetween(bounds.maxRank || null, null);
-    bounds.maxRank = next;
+    const next = generateJitteredKeyBetween(bounds.maxRank || null, null)
+    bounds.maxRank = next
 
     // If this is the first key, also set minRank
     if (!bounds.minRank) {
-      bounds.minRank = next;
+      bounds.minRank = next
     }
 
-    return next;
+    return next
   }
 
   /**
@@ -42,18 +42,18 @@ class RankBoundsDef extends CanvasSingletonDef<typeof RankBoundsSchema> {
    * @returns A new rank string that sorts before minRank
    */
   genPrev(ctx: Context): string {
-    const bounds = this.write(ctx);
+    const bounds = this.write(ctx)
 
     // Generate key before current min (or first key if empty)
-    const prev = generateJitteredKeyBetween(null, bounds.minRank || null);
-    bounds.minRank = prev;
+    const prev = generateJitteredKeyBetween(null, bounds.minRank || null)
+    bounds.minRank = prev
 
     // If this is the first key, also set maxRank
     if (!bounds.maxRank) {
-      bounds.maxRank = prev;
+      bounds.maxRank = prev
     }
 
-    return prev;
+    return prev
   }
 
   /**
@@ -63,25 +63,25 @@ class RankBoundsDef extends CanvasSingletonDef<typeof RankBoundsSchema> {
    * @returns A new rank string that sorts between the two
    */
   genBetween(before: string | null, after: string | null): string {
-    return generateJitteredKeyBetween(before, after);
+    return generateJitteredKeyBetween(before, after)
   }
 
   /**
    * Add a rank to tracking (expands bounds if needed).
    */
   add(ctx: Context, rank: string): void {
-    if (!rank) return;
+    if (!rank) return
 
-    const bounds = this.write(ctx);
+    const bounds = this.write(ctx)
 
     if (!bounds.minRank || rank < bounds.minRank) {
-      bounds.minRank = rank;
+      bounds.minRank = rank
     }
 
     if (!bounds.maxRank || rank > bounds.maxRank) {
-      bounds.maxRank = rank;
+      bounds.maxRank = rank
     }
   }
 }
 
-export const RankBounds = new RankBoundsDef();
+export const RankBounds = new RankBoundsDef()

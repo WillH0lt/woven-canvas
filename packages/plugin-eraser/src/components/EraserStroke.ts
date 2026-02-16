@@ -1,10 +1,10 @@
-import { field, defineCanvasComponent } from "@infinitecanvas/core";
+import { defineCanvasComponent, field } from '@infinitecanvas/core'
 
 /**
  * Maximum number of points that can be stored in the stroke.
  * Points are stored as [x, y] pairs, so actual capacity is POINTS_CAPACITY * 2 floats.
  */
-export const POINTS_CAPACITY = 10;
+export const POINTS_CAPACITY = 10
 
 /**
  * EraserStroke component - stores the geometry of an eraser stroke.
@@ -16,7 +16,7 @@ export const POINTS_CAPACITY = 10;
  * consecutive points, with the specified radius.
  */
 export const EraserStroke = defineCanvasComponent(
-  { name: "eraserStroke" },
+  { name: 'eraserStroke' },
   {
     /**
      * Flat buffer of point coordinates [x0, y0, x1, y1, ...]
@@ -41,5 +41,5 @@ export const EraserStroke = defineCanvasComponent(
      * Radius of the eraser stroke in world coordinates.
      */
     radius: field.float32().default(8),
-  }
-);
+  },
+)

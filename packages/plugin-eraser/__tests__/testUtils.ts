@@ -3,79 +3,76 @@
  */
 
 import {
+  Aabb,
+  addComponent,
+  Block,
   type Context,
   createEntity,
-  addComponent,
-  RankBounds,
-  Block,
-  Aabb,
-  Synced,
   HitGeometry,
-} from "@infinitecanvas/core";
+  RankBounds,
+  Synced,
+} from '@infinitecanvas/core'
 
 /**
  * Options for creating a test block.
  */
 export interface CreateBlockOptions {
-  position?: [number, number];
-  size?: [number, number];
-  rank?: string;
-  tag?: string;
-  rotateZ?: number;
-  synced?: boolean;
+  position?: [number, number]
+  size?: [number, number]
+  rank?: string
+  tag?: string
+  rotateZ?: number
+  synced?: boolean
   /** Capsules for hit geometry: [[ax, ay, bx, by, radius], ...] */
-  hitCapsules?: number[][];
+  hitCapsules?: number[][]
 }
 
 /**
  * Create a block entity for testing.
  * Returns the entity ID.
  */
-export function createBlock(
-  ctx: Context,
-  options: CreateBlockOptions = {}
-): number {
+export function createBlock(ctx: Context, options: CreateBlockOptions = {}): number {
   const {
     position = [100, 100],
     size = [100, 100],
     rank,
-    tag = "test-block",
+    tag = 'test-block',
     rotateZ = 0,
     synced = true,
     hitCapsules,
-  } = options;
+  } = options
 
   // Use provided rank or generate a new one
-  const blockRank = rank ?? RankBounds.genNext(ctx);
+  const blockRank = rank ?? RankBounds.genNext(ctx)
 
-  const entityId = createEntity(ctx);
+  const entityId = createEntity(ctx)
   addComponent(ctx, entityId, Block, {
     position,
     size,
     rank: blockRank,
     tag,
     rotateZ,
-  });
-  addComponent(ctx, entityId, Aabb, {});
+  })
+  addComponent(ctx, entityId, Aabb, {})
   // Compute actual AABB from block corners
-  Aabb.expandByBlock(ctx, entityId, entityId);
+  Aabb.expandByBlock(ctx, entityId, entityId)
 
   if (synced) {
-    addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() });
+    addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() })
   }
 
   if (hitCapsules && hitCapsules.length > 0) {
-    const flatCapsules: number[] = [];
+    const flatCapsules: number[] = []
     for (const capsule of hitCapsules) {
-      flatCapsules.push(...capsule);
+      flatCapsules.push(...capsule)
     }
     addComponent(ctx, entityId, HitGeometry, {
       hitCapsules: flatCapsules,
       capsuleCount: hitCapsules.length,
-    });
+    })
   }
 
-  return entityId;
+  return entityId
 }
 
 /**
@@ -85,25 +82,20 @@ export function createBlock(
  */
 export function createBlockWithDiagonalHitGeometry(
   ctx: Context,
-  options: Omit<CreateBlockOptions, "hitCapsules"> & { radius?: number } = {}
+  options: Omit<CreateBlockOptions, 'hitCapsules'> & { radius?: number } = {},
 ): number {
-  const {
-    position = [100, 100],
-    size = [100, 100],
-    radius = 5,
-    ...rest
-  } = options;
+  const { position = [100, 100], size = [100, 100], radius = 5, ...rest } = options
 
   // Create diagonal capsule from top-left (0,0) to bottom-right (1,1) in UV space
   // The intersectCapsule function transforms these UV coordinates to world coordinates
-  const capsule = [0, 0, 1, 1, radius];
+  const capsule = [0, 0, 1, 1, radius]
 
   return createBlock(ctx, {
     ...rest,
     position,
     size,
     hitCapsules: [capsule],
-  });
+  })
 }
 
 /**
@@ -113,14 +105,9 @@ export function createBlockWithDiagonalHitGeometry(
  */
 export function createBlockWithEdgeHitGeometry(
   ctx: Context,
-  options: Omit<CreateBlockOptions, "hitCapsules"> & { radius?: number } = {}
+  options: Omit<CreateBlockOptions, 'hitCapsules'> & { radius?: number } = {},
 ): number {
-  const {
-    position = [100, 100],
-    size = [100, 100],
-    radius = 2,
-    ...rest
-  } = options;
+  const { position = [100, 100], size = [100, 100], radius = 2, ...rest } = options
 
   // Create capsules along each edge in UV coordinates (0-1 space)
   const capsules = [
@@ -132,106 +119,96 @@ export function createBlockWithEdgeHitGeometry(
     [1, 1, 0, 1, radius],
     // Left edge
     [0, 1, 0, 0, radius],
-  ];
+  ]
 
   return createBlock(ctx, {
     ...rest,
     position,
     size,
     hitCapsules: capsules,
-  });
+  })
 }
 
 export interface PointerEventOptions {
-  shiftKey?: boolean;
-  altKey?: boolean;
-  button?: number;
+  shiftKey?: boolean
+  altKey?: boolean
+  button?: number
 }
 
 /**
  * Creates a pointer event simulator with tracked pointer IDs.
  */
 export function createPointerSimulator() {
-  let currentPointerId = 1;
+  let currentPointerId = 1
 
   return {
     reset() {
-      currentPointerId = 1;
+      currentPointerId = 1
     },
 
     get pointerId() {
-      return currentPointerId;
+      return currentPointerId
     },
 
-    pointerDown(
-      element: HTMLElement,
-      x: number,
-      y: number,
-      options: PointerEventOptions = {}
-    ): void {
+    pointerDown(element: HTMLElement, x: number, y: number, options: PointerEventOptions = {}): void {
       element.dispatchEvent(
-        new PointerEvent("pointerdown", {
+        new PointerEvent('pointerdown', {
           clientX: x,
           clientY: y,
           button: options.button ?? 0,
           pointerId: currentPointerId,
-          pointerType: "mouse",
+          pointerType: 'mouse',
           pressure: 0.5,
           shiftKey: options.shiftKey ?? false,
           altKey: options.altKey ?? false,
           bubbles: true,
-        })
-      );
+        }),
+      )
     },
 
     pointerUp(x: number, y: number, options: PointerEventOptions = {}): void {
       window.dispatchEvent(
-        new PointerEvent("pointerup", {
+        new PointerEvent('pointerup', {
           clientX: x,
           clientY: y,
           button: options.button ?? 0,
           pointerId: currentPointerId,
-          pointerType: "mouse",
+          pointerType: 'mouse',
           pressure: 0,
           shiftKey: options.shiftKey ?? false,
           altKey: options.altKey ?? false,
           bubbles: true,
-        })
-      );
-      currentPointerId++;
+        }),
+      )
+      currentPointerId++
     },
 
     pointerMove(x: number, y: number, options: PointerEventOptions = {}): void {
-      simulateMouseMove(x, y);
+      simulateMouseMove(x, y)
       window.dispatchEvent(
-        new PointerEvent("pointermove", {
+        new PointerEvent('pointermove', {
           clientX: x,
           clientY: y,
           button: options.button ?? 0,
           pointerId: currentPointerId,
-          pointerType: "mouse",
+          pointerType: 'mouse',
           pressure: 0.5,
           shiftKey: options.shiftKey ?? false,
           altKey: options.altKey ?? false,
           bubbles: true,
-        })
-      );
+        }),
+      )
     },
 
     /**
      * Simulate a drag gesture from one point to another.
      */
-    drag(
-      element: HTMLElement,
-      from: [number, number],
-      to: [number, number],
-      options: PointerEventOptions = {}
-    ): void {
-      this.pointerDown(element, from[0], from[1], options);
-      this.pointerMove(to[0], to[1], options);
-      this.pointerUp(to[0], to[1], options);
+    drag(element: HTMLElement, from: [number, number], to: [number, number], options: PointerEventOptions = {}): void {
+      this.pointerDown(element, from[0], from[1], options)
+      this.pointerMove(to[0], to[1], options)
+      this.pointerUp(to[0], to[1], options)
     },
-  };
+  }
 }
 
 /**
@@ -239,21 +216,21 @@ export function createPointerSimulator() {
  */
 export function simulateMouseMove(x: number, y: number): void {
   window.dispatchEvent(
-    new MouseEvent("mousemove", {
+    new MouseEvent('mousemove', {
       clientX: x,
       clientY: y,
       bubbles: true,
-    })
-  );
+    }),
+  )
 }
 
 /**
  * Create a mock DOM element for tests with proper dimensions.
  */
 export function createMockElement(): HTMLElement {
-  const element = document.createElement("div");
-  Object.defineProperty(element, "clientWidth", { value: 800 });
-  Object.defineProperty(element, "clientHeight", { value: 600 });
+  const element = document.createElement('div')
+  Object.defineProperty(element, 'clientWidth', { value: 800 })
+  Object.defineProperty(element, 'clientHeight', { value: 600 })
   element.getBoundingClientRect = () =>
     ({
       left: 0,
@@ -265,9 +242,9 @@ export function createMockElement(): HTMLElement {
       x: 0,
       y: 0,
       toJSON: () => {},
-    } as DOMRect);
-  document.body.appendChild(element);
-  return element;
+    }) as DOMRect
+  document.body.appendChild(element)
+  return element
 }
 
 /**
@@ -275,11 +252,11 @@ export function createMockElement(): HTMLElement {
  */
 export function simulateEscape(element: HTMLElement): void {
   element.dispatchEvent(
-    new KeyboardEvent("keydown", {
-      code: "Escape",
-      key: "Escape",
+    new KeyboardEvent('keydown', {
+      code: 'Escape',
+      key: 'Escape',
       keyCode: 27,
       bubbles: true,
-    })
-  );
+    }),
+  )
 }

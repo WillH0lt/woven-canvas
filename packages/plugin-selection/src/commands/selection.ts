@@ -1,5 +1,5 @@
-import { defineCommand, type EntityId } from "@infinitecanvas/core";
-import type { Aabb } from "@infinitecanvas/math";
+import { defineCommand, type EntityId } from '@infinitecanvas/core'
+import type { Aabb } from '@infinitecanvas/math'
 
 /**
  * Select a specific block entity.
@@ -7,40 +7,40 @@ import type { Aabb } from "@infinitecanvas/math";
  * @param deselectOthers - If true, deselect all other blocks first (default: false)
  */
 export const SelectBlock = defineCommand<{
-  entityId: EntityId;
-  deselectOthers?: boolean;
-}>("select-block");
+  entityId: EntityId
+  deselectOthers?: boolean
+}>('select-block')
 
 /**
  * Deselect a specific block entity.
  * @param entityId - The block entity to deselect
  */
 export const DeselectBlock = defineCommand<{
-  entityId: EntityId;
-}>("deselect-block");
+  entityId: EntityId
+}>('deselect-block')
 
 /**
  * Toggle selection state of a block entity.
  * @param entityId - The block entity to toggle
  */
 export const ToggleSelect = defineCommand<{
-  entityId: EntityId;
-}>("toggle-select");
+  entityId: EntityId
+}>('toggle-select')
 
 /**
  * Deselect all currently selected blocks.
  */
-export const DeselectAll = defineCommand<void>("deselect-all");
+export const DeselectAll = defineCommand<void>('deselect-all')
 
 /**
  * Select all blocks in the canvas.
  */
-export const SelectAll = defineCommand<void>("select-all");
+export const SelectAll = defineCommand<void>('select-all')
 
 /**
  * Add a selection box entity for marquee selection.
  */
-export const AddSelectionBox = defineCommand<void>("add-selection-box");
+export const AddSelectionBox = defineCommand<void>('add-selection-box')
 
 /**
  * Update the selection box bounds and select intersecting blocks.
@@ -48,14 +48,14 @@ export const AddSelectionBox = defineCommand<void>("add-selection-box");
  * @param deselectOthers - If true, deselect blocks outside the selection box
  */
 export const UpdateSelectionBox = defineCommand<{
-  bounds: Aabb;
-  deselectOthers?: boolean;
-}>("update-selection-box");
+  bounds: Aabb
+  deselectOthers?: boolean
+}>('update-selection-box')
 
 /**
  * Remove the selection box entity.
  */
-export const RemoveSelectionBox = defineCommand<void>("remove-selection-box");
+export const RemoveSelectionBox = defineCommand<void>('remove-selection-box')
 
 /**
  * Add Held component to an entity (marks it as being interacted with).
@@ -63,8 +63,8 @@ export const RemoveSelectionBox = defineCommand<void>("remove-selection-box");
  * @param entityId - The entity to hold
  */
 export const AddHeld = defineCommand<{
-  entityId: EntityId;
-}>("add-held");
+  entityId: EntityId
+}>('add-held')
 
 /**
  * Remove Held component from an entity (if not selected).
@@ -72,5 +72,5 @@ export const AddHeld = defineCommand<{
  * @param entityId - The entity to release
  */
 export const RemoveHeld = defineCommand<{
-  entityId: EntityId;
-}>("remove-held");
+  entityId: EntityId
+}>('remove-held')

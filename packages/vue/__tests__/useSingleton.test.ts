@@ -1,196 +1,191 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { provide, createApp, h, defineComponent } from "vue";
-import { useSingleton } from "../src/composables/useSingleton";
-import {
-  INFINITE_CANVAS_KEY,
-  type InfiniteCanvasContext,
-} from "../src/injection";
-import { defineCanvasSingleton, field } from "@infinitecanvas/core";
+import { defineCanvasSingleton, field } from '@infinitecanvas/core'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createApp, defineComponent, h, provide } from 'vue'
+import { useSingleton } from '../src/composables/useSingleton'
+import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from '../src/injection'
 
-describe("useSingleton", () => {
+describe('useSingleton', () => {
   // Create a test singleton definition
   const TestSingleton = defineCanvasSingleton(
-    { name: "TestSingleton" },
+    { name: 'TestSingleton' },
     {
       value: field.int32().default(0),
-      name: field.string().max(32).default(""),
+      name: field.string().max(32).default(''),
     },
-  );
+  )
 
-  let mockCanvasContext: InfiniteCanvasContext;
-  let mockSubscriptions: Map<string, Set<(value: unknown) => void>>;
+  let mockCanvasContext: InfiniteCanvasContext
+  let mockSubscriptions: Map<string, Set<(value: unknown) => void>>
 
   beforeEach(() => {
-    mockSubscriptions = new Map();
+    mockSubscriptions = new Map()
 
     // Mock editor returns null so we skip the eager snapshot read
     mockCanvasContext = {
       hasEntity: () => false,
       getEditor: () => null,
       getAssetManager: () => null,
-      getSessionId: () => "",
+      getSessionId: () => '',
       getUserBySessionId: () => null,
       subscribeComponent: () => () => {},
       registerTickCallback: () => () => {},
       subscribeSingleton: (singletonName, callback) => {
-        let callbacks = mockSubscriptions.get(singletonName);
+        let callbacks = mockSubscriptions.get(singletonName)
         if (!callbacks) {
-          callbacks = new Set();
-          mockSubscriptions.set(singletonName, callbacks);
+          callbacks = new Set()
+          mockSubscriptions.set(singletonName, callbacks)
         }
-        callbacks.add(callback);
+        callbacks.add(callback)
         return () => {
-          callbacks!.delete(callback);
-        };
+          callbacks!.delete(callback)
+        }
       },
-    };
-  });
+    }
+  })
 
   // Helper to notify subscribers
   function notifySubscribers(singletonName: string, value: unknown) {
-    const callbacks = mockSubscriptions.get(singletonName);
-    if (!callbacks) return;
+    const callbacks = mockSubscriptions.get(singletonName)
+    if (!callbacks) return
     for (const callback of callbacks) {
-      callback(value);
+      callback(value)
     }
   }
 
   // Helper to run composable with provided context
   function withSetup<T>(composable: () => T): T {
-    let result: T;
+    let result: T
 
     const Provider = defineComponent({
       setup() {
-        provide(INFINITE_CANVAS_KEY, mockCanvasContext);
-        return () => h(Child);
+        provide(INFINITE_CANVAS_KEY, mockCanvasContext)
+        return () => h(Child)
       },
-    });
+    })
 
     const Child = defineComponent({
       setup() {
-        result = composable();
-        return () => h("div");
+        result = composable()
+        return () => h('div')
       },
-    });
+    })
 
-    const app = createApp(Provider);
-    app.mount(document.createElement("div"));
-    return result!;
+    const app = createApp(Provider)
+    app.mount(document.createElement('div'))
+    return result!
   }
 
-  describe("error handling", () => {
-    it("should throw error when used outside InfiniteCanvas", () => {
+  describe('error handling', () => {
+    it('should throw error when used outside InfiniteCanvas', () => {
       expect(() => {
         const app = createApp({
           setup() {
-            useSingleton(TestSingleton);
-            return () => h("div");
+            useSingleton(TestSingleton)
+            return () => h('div')
           },
-        });
-        app.mount(document.createElement("div"));
-      }).toThrow(
-        "useSingleton must be used within an InfiniteCanvas component",
-      );
-    });
-  });
+        })
+        app.mount(document.createElement('div'))
+      }).toThrow('useSingleton must be used within an InfiniteCanvas component')
+    })
+  })
 
-  describe("basic functionality", () => {
-    it("should return empty object when no editor available", () => {
-      const result = withSetup(() => useSingleton(TestSingleton));
-      expect(result.value).toEqual({});
-    });
-  });
+  describe('basic functionality', () => {
+    it('should return empty object when no editor available', () => {
+      const result = withSetup(() => useSingleton(TestSingleton))
+      expect(result.value).toEqual({})
+    })
+  })
 
-  describe("reactivity", () => {
-    it("should update when singleton value changes via subscription", () => {
-      const result = withSetup(() => useSingleton(TestSingleton));
-      expect(result.value).toEqual({});
+  describe('reactivity', () => {
+    it('should update when singleton value changes via subscription', () => {
+      const result = withSetup(() => useSingleton(TestSingleton))
+      expect(result.value).toEqual({})
 
       // Simulate singleton change
-      notifySubscribers("TestSingleton", { value: 42, name: "test" });
-      expect(result.value).toEqual({ value: 42, name: "test" });
-    });
+      notifySubscribers('TestSingleton', { value: 42, name: 'test' })
+      expect(result.value).toEqual({ value: 42, name: 'test' })
+    })
 
-    it("should handle singleton being set to null", () => {
-      const result = withSetup(() => useSingleton(TestSingleton));
+    it('should handle singleton being set to null', () => {
+      const result = withSetup(() => useSingleton(TestSingleton))
 
       // Set initial value
-      notifySubscribers("TestSingleton", { value: 10, name: "initial" });
-      expect(result.value).toEqual({ value: 10, name: "initial" });
+      notifySubscribers('TestSingleton', { value: 10, name: 'initial' })
+      expect(result.value).toEqual({ value: 10, name: 'initial' })
 
       // Set to null - should become empty object
-      notifySubscribers("TestSingleton", null);
-      expect(result.value).toEqual({});
-    });
+      notifySubscribers('TestSingleton', null)
+      expect(result.value).toEqual({})
+    })
 
-    it("should handle singleton being set from null to value", () => {
-      const result = withSetup(() => useSingleton(TestSingleton));
-      expect(result.value).toEqual({});
+    it('should handle singleton being set from null to value', () => {
+      const result = withSetup(() => useSingleton(TestSingleton))
+      expect(result.value).toEqual({})
 
       // Set value
-      notifySubscribers("TestSingleton", { value: 30, name: "added" });
-      expect(result.value).toEqual({ value: 30, name: "added" });
-    });
-  });
+      notifySubscribers('TestSingleton', { value: 30, name: 'added' })
+      expect(result.value).toEqual({ value: 30, name: 'added' })
+    })
+  })
 
-  describe("multiple singletons", () => {
+  describe('multiple singletons', () => {
     const AnotherSingleton = defineCanvasSingleton(
-      { name: "AnotherSingleton" },
+      { name: 'AnotherSingleton' },
       {
         count: field.int32().default(0),
       },
-    );
+    )
 
-    it("should return correct data for different singletons", () => {
-      const result1 = withSetup(() => useSingleton(TestSingleton));
-      const result2 = withSetup(() => useSingleton(AnotherSingleton));
+    it('should return correct data for different singletons', () => {
+      const result1 = withSetup(() => useSingleton(TestSingleton))
+      const result2 = withSetup(() => useSingleton(AnotherSingleton))
 
-      notifySubscribers("TestSingleton", { value: 100, name: "A" });
-      notifySubscribers("AnotherSingleton", { count: 5 });
+      notifySubscribers('TestSingleton', { value: 100, name: 'A' })
+      notifySubscribers('AnotherSingleton', { count: 5 })
 
-      expect(result1.value).toEqual({ value: 100, name: "A" });
-      expect(result2.value).toEqual({ count: 5 });
-    });
+      expect(result1.value).toEqual({ value: 100, name: 'A' })
+      expect(result2.value).toEqual({ count: 5 })
+    })
 
-    it("should handle mixed presence of singletons", () => {
-      const result1 = withSetup(() => useSingleton(TestSingleton));
-      const result2 = withSetup(() => useSingleton(AnotherSingleton));
+    it('should handle mixed presence of singletons', () => {
+      const result1 = withSetup(() => useSingleton(TestSingleton))
+      const result2 = withSetup(() => useSingleton(AnotherSingleton))
 
-      notifySubscribers("TestSingleton", { value: 100, name: "A" });
+      notifySubscribers('TestSingleton', { value: 100, name: 'A' })
       // AnotherSingleton not notified
 
-      expect(result1.value).toEqual({ value: 100, name: "A" });
-      expect(result2.value).toEqual({});
-    });
-  });
+      expect(result1.value).toEqual({ value: 100, name: 'A' })
+      expect(result2.value).toEqual({})
+    })
+  })
 
-  describe("cleanup", () => {
-    it("should unsubscribe on unmount", () => {
+  describe('cleanup', () => {
+    it('should unsubscribe on unmount', () => {
       const Child = defineComponent({
         setup() {
-          useSingleton(TestSingleton);
-          return () => h("div");
+          useSingleton(TestSingleton)
+          return () => h('div')
         },
-      });
+      })
 
       const Provider = defineComponent({
         setup() {
-          provide(INFINITE_CANVAS_KEY, mockCanvasContext);
-          return () => h(Child);
+          provide(INFINITE_CANVAS_KEY, mockCanvasContext)
+          return () => h(Child)
         },
-      });
+      })
 
-      const app = createApp(Provider);
-      app.mount(document.createElement("div"));
+      const app = createApp(Provider)
+      app.mount(document.createElement('div'))
 
       // Should have subscription
-      expect(mockSubscriptions.get("TestSingleton")?.size).toBe(1);
+      expect(mockSubscriptions.get('TestSingleton')?.size).toBe(1)
 
       // Unmount
-      app.unmount();
+      app.unmount()
 
       // Subscription should be removed
-      expect(mockSubscriptions.get("TestSingleton")?.size).toBe(0);
-    });
-  });
-});
+      expect(mockSubscriptions.get('TestSingleton')?.size).toBe(0)
+    })
+  })
+})

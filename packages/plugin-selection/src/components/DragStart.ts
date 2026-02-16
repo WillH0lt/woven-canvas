@@ -1,4 +1,4 @@
-import { field, defineCanvasComponent } from "@infinitecanvas/core";
+import { defineCanvasComponent, field } from '@infinitecanvas/core'
 
 /**
  * DragStart component - stores the initial transform state when a drag begins.
@@ -7,7 +7,7 @@ import { field, defineCanvasComponent } from "@infinitecanvas/core";
  * original position on cancel.
  */
 export const DragStart = defineCanvasComponent(
-  { name: "dragStart" },
+  { name: 'dragStart' },
   {
     /** Initial position as [left, top] */
     position: field.tuple(field.float64(), 2).default([0, 0]),
@@ -19,5 +19,5 @@ export const DragStart = defineCanvasComponent(
     flip: field.tuple(field.boolean(), 2).default([false, false]),
     /** Initial font size */
     fontSize: field.float64().default(16),
-  }
-);
+  },
+)

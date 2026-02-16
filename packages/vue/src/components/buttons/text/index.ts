@@ -1,8 +1,8 @@
-export { default as TextBoldButton } from "./TextBoldButton.vue";
-export { default as TextItalicButton } from "./TextItalicButton.vue";
-export { default as TextUnderlineButton } from "./TextUnderlineButton.vue";
-export { default as TextAlignmentButton } from "./TextAlignmentButton.vue";
-export { default as TextFontSizeButton } from "./TextFontSizeButton.vue";
-export { default as TextFontFamilyButton } from "./TextFontFamilyButton.vue";
-export type { FontOption } from "./TextFontFamilyButton.vue";
-export { default as TextColorButton } from "./TextColorButton.vue";
+export { default as TextAlignmentButton } from './TextAlignmentButton.vue'
+export { default as TextBoldButton } from './TextBoldButton.vue'
+export { default as TextColorButton } from './TextColorButton.vue'
+export type { FontOption } from './TextFontFamilyButton.vue'
+export { default as TextFontFamilyButton } from './TextFontFamilyButton.vue'
+export { default as TextFontSizeButton } from './TextFontSizeButton.vue'
+export { default as TextItalicButton } from './TextItalicButton.vue'
+export { default as TextUnderlineButton } from './TextUnderlineButton.vue'

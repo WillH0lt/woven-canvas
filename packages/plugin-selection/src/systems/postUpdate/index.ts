@@ -1,1 +1,1 @@
-export { transformBoxSystem } from "./transformBoxSystem";
+export { transformBoxSystem } from './transformBoxSystem'

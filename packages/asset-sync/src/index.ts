@@ -1,10 +1,10 @@
 // Asset management
-export {
-  type AssetProvider,
-  type AssetMetadata,
-  type AssetUploadResult,
-} from "./AssetProvider";
 
-export { AssetManager, type AssetManagerOptions } from "./AssetManager";
+export { AssetManager, type AssetManagerOptions } from './AssetManager'
+export type {
+  AssetMetadata,
+  AssetProvider,
+  AssetUploadResult,
+} from './AssetProvider'
 
-export { LocalAssetProvider } from "./LocalAssetProvider";
+export { LocalAssetProvider } from './LocalAssetProvider'

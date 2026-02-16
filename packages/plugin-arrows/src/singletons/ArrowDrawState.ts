@@ -1,5 +1,5 @@
-import { field, defineEditorState } from "@infinitecanvas/core";
-import { ArrowDrawStateEnum, ArrowKind } from "../types";
+import { defineEditorState, field } from '@infinitecanvas/core'
+import { ArrowDrawStateEnum, ArrowKind } from '../types'
 
 /**
  * Arrow draw state singleton - stores the current state of the arrow draw state machine.
@@ -15,7 +15,7 @@ import { ArrowDrawStateEnum, ArrowKind } from "../types";
  * }
  * ```
  */
-export const ArrowDrawState = defineEditorState("arrowDrawState", {
+export const ArrowDrawState = defineEditorState('arrowDrawState', {
   /** Current state machine state */
   state: field.string().max(16).default(ArrowDrawStateEnum.Idle),
 
@@ -30,4 +30,4 @@ export const ArrowDrawState = defineEditorState("arrowDrawState", {
 
   /** Pointing start position in world coordinates [x, y] */
   pointingStartWorld: field.tuple(field.float64(), 2).default([0, 0]),
-});
+})

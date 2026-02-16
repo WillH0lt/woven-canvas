@@ -1,66 +1,66 @@
-import { getResources, type Context } from "@woven-ecs/core";
-import { defineEditorSystem } from "../../EditorSystem";
-import type { EditorResources } from "../../types";
-import { Keyboard, setBit, codeToIndex } from "../../singletons/Keyboard";
+import { type Context, getResources } from '@woven-ecs/core'
+import { defineEditorSystem } from '../../EditorSystem'
+import { codeToIndex, Keyboard, setBit } from '../../singletons/Keyboard'
+import type { EditorResources } from '../../types'
 
 /**
  * Per-instance state for keyboard input
  */
 interface KeyboardState {
-  eventsBuffer: KeyboardEvent[];
-  onKeyDown: (e: KeyboardEvent) => void;
-  onKeyUp: (e: KeyboardEvent) => void;
-  onBlur: () => void;
+  eventsBuffer: KeyboardEvent[]
+  onKeyDown: (e: KeyboardEvent) => void
+  onKeyUp: (e: KeyboardEvent) => void
+  onBlur: () => void
   // Reusable buffers to avoid allocation each frame
-  keysDown: Uint8Array;
-  keysDownTrigger: Uint8Array;
-  keysUpTrigger: Uint8Array;
+  keysDown: Uint8Array
+  keysDownTrigger: Uint8Array
+  keysUpTrigger: Uint8Array
 }
 
 /**
  * Per-instance state keyed by DOM element
  */
-const instanceState = new WeakMap<HTMLElement, KeyboardState>();
+const instanceState = new WeakMap<HTMLElement, KeyboardState>()
 
 /**
  * Attach keyboard event listeners.
  * Called from plugin setup.
  */
 export function attachKeyboardListeners(domElement: HTMLElement): void {
-  if (instanceState.has(domElement)) return;
+  if (instanceState.has(domElement)) return
 
   // Make element focusable if not already
-  if (!domElement.hasAttribute("tabindex")) {
-    domElement.setAttribute("tabindex", "0");
+  if (!domElement.hasAttribute('tabindex')) {
+    domElement.setAttribute('tabindex', '0')
   }
 
   const state: KeyboardState = {
     eventsBuffer: [],
     onKeyDown: (e: KeyboardEvent) => {
       // Prevent default for certain keys
-      if (e.key === "Tab" || e.key === "Alt") {
-        e.preventDefault();
+      if (e.key === 'Tab' || e.key === 'Alt') {
+        e.preventDefault()
       }
-      state.eventsBuffer.push(e);
+      state.eventsBuffer.push(e)
     },
     onKeyUp: (e: KeyboardEvent) => {
-      state.eventsBuffer.push(e);
+      state.eventsBuffer.push(e)
     },
     onBlur: () => {
       // Create a synthetic event to signal blur
-      state.eventsBuffer.push({ type: "blur" } as unknown as KeyboardEvent);
+      state.eventsBuffer.push({ type: 'blur' } as unknown as KeyboardEvent)
     },
     // Reusable buffers - allocated once per instance
     keysDown: new Uint8Array(32),
     keysDownTrigger: new Uint8Array(32),
     keysUpTrigger: new Uint8Array(32),
-  };
+  }
 
-  instanceState.set(domElement, state);
+  instanceState.set(domElement, state)
 
-  domElement.addEventListener("keydown", state.onKeyDown);
-  domElement.addEventListener("keyup", state.onKeyUp);
-  domElement.addEventListener("blur", state.onBlur);
+  domElement.addEventListener('keydown', state.onKeyDown)
+  domElement.addEventListener('keyup', state.onKeyUp)
+  domElement.addEventListener('blur', state.onBlur)
 }
 
 /**
@@ -68,15 +68,15 @@ export function attachKeyboardListeners(domElement: HTMLElement): void {
  * Called from plugin teardown.
  */
 export function detachKeyboardListeners(domElement: HTMLElement): void {
-  const state = instanceState.get(domElement);
+  const state = instanceState.get(domElement)
 
-  if (!state) return;
+  if (!state) return
 
-  domElement.removeEventListener("keydown", state.onKeyDown);
-  domElement.removeEventListener("keyup", state.onKeyUp);
-  domElement.removeEventListener("blur", state.onBlur);
+  domElement.removeEventListener('keydown', state.onKeyDown)
+  domElement.removeEventListener('keyup', state.onKeyUp)
+  domElement.removeEventListener('blur', state.onBlur)
 
-  instanceState.delete(domElement);
+  instanceState.delete(domElement)
 }
 
 /**
@@ -88,81 +88,80 @@ export function detachKeyboardListeners(domElement: HTMLElement): void {
  * - Sets bits in keysUpTrigger for released keys (1 frame)
  * - Updates modifier booleans (shiftDown, altDown, modDown)
  */
-export const keyboardSystem = defineEditorSystem({ phase: "input" }, (ctx: Context) => {
-  const resources = getResources<EditorResources>(ctx);
-  const state = instanceState.get(resources.domElement);
-  if (!state) return;
+export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context) => {
+  const resources = getResources<EditorResources>(ctx)
+  const state = instanceState.get(resources.domElement)
+  if (!state) return
 
-  const hasEvents = state.eventsBuffer.length > 0;
+  const hasEvents = state.eventsBuffer.length > 0
 
   // Check if triggers need to be cleared from previous frame
-  const triggersNeedClearing =
-    !isZeroed(state.keysDownTrigger) || !isZeroed(state.keysUpTrigger);
+  const triggersNeedClearing = !isZeroed(state.keysDownTrigger) || !isZeroed(state.keysUpTrigger)
 
   // Only write if there are events or triggers need clearing
-  if (!hasEvents && !triggersNeedClearing) return;
+  if (!hasEvents && !triggersNeedClearing) return
 
-  const keyboard = Keyboard.write(ctx);
+  const keyboard = Keyboard.write(ctx)
 
-  const keysDown = state.keysDown;
-  const keysDownTrigger = state.keysDownTrigger;
-  const keysUpTrigger = state.keysUpTrigger;
+  const keysDown = state.keysDown
+  const keysDownTrigger = state.keysDownTrigger
+  const keysUpTrigger = state.keysUpTrigger
 
-  keysDownTrigger.fill(0);
-  keysUpTrigger.fill(0);
-  keysDown.set(keyboard.keysDown);
+  keysDownTrigger.fill(0)
+  keysUpTrigger.fill(0)
+  keysDown.set(keyboard.keysDown)
 
   // Process buffered events
   for (const event of state.eventsBuffer) {
-    if (event.type === "blur") {
+    if (event.type === 'blur') {
       // Reset all keys on blur
-      keysDown.fill(0);
-      keyboard.shiftDown = false;
-      keyboard.altDown = false;
-      keyboard.modDown = false;
-      continue;
+      keysDown.fill(0)
+      keyboard.shiftDown = false
+      keyboard.altDown = false
+      keyboard.modDown = false
+      continue
     }
 
-    const keyIndex = codeToIndex[event.code];
-    if (keyIndex === undefined) continue; // Unknown key, skip
+    const keyIndex = codeToIndex[event.code]
+    if (keyIndex === undefined) continue // Unknown key, skip
 
-    if (event.type === "keydown") {
+    if (event.type === 'keydown') {
       // Check if this is a new press (wasn't down before)
-      const wasDown = getBit(keysDown, keyIndex);
+      const wasDown = getBit(keysDown, keyIndex)
       if (!wasDown) {
-        setBit(keysDownTrigger, keyIndex, true);
+        setBit(keysDownTrigger, keyIndex, true)
       }
 
-      setBit(keysDown, keyIndex, true);
-    } else if (event.type === "keyup") {
-      setBit(keysDown, keyIndex, false);
-      setBit(keysUpTrigger, keyIndex, true);
+      setBit(keysDown, keyIndex, true)
+    } else if (event.type === 'keyup') {
+      setBit(keysDown, keyIndex, false)
+      setBit(keysUpTrigger, keyIndex, true)
     }
 
     // Update modifier state from the event
-    keyboard.shiftDown = event.shiftKey;
-    keyboard.altDown = event.altKey;
-    keyboard.modDown = event.ctrlKey || event.metaKey;
+    keyboard.shiftDown = event.shiftKey
+    keyboard.altDown = event.altKey
+    keyboard.modDown = event.ctrlKey || event.metaKey
   }
 
   // Write back the modified buffers
-  keyboard.keysDown = keysDown;
-  keyboard.keysDownTrigger = keysDownTrigger;
-  keyboard.keysUpTrigger = keysUpTrigger;
+  keyboard.keysDown = keysDown
+  keyboard.keysDownTrigger = keysDownTrigger
+  keyboard.keysUpTrigger = keysUpTrigger
 
   // Clear buffer
-  state.eventsBuffer.length = 0;
-});
+  state.eventsBuffer.length = 0
+})
 
 /**
  * Get a bit from a binary field.
  * @internal
  */
 function getBit(buffer: Uint8Array, bitIndex: number): boolean {
-  if (bitIndex < 0 || bitIndex >= buffer.length * 8) return false;
-  const byteIndex = Math.floor(bitIndex / 8);
-  const bitOffset = bitIndex % 8;
-  return (buffer[byteIndex] & (1 << bitOffset)) !== 0;
+  if (bitIndex < 0 || bitIndex >= buffer.length * 8) return false
+  const byteIndex = Math.floor(bitIndex / 8)
+  const bitOffset = bitIndex % 8
+  return (buffer[byteIndex] & (1 << bitOffset)) !== 0
 }
 
 /**
@@ -171,7 +170,7 @@ function getBit(buffer: Uint8Array, bitIndex: number): boolean {
  */
 function isZeroed(buffer: Uint8Array): boolean {
   for (let i = 0; i < buffer.length; i++) {
-    if (buffer[i] !== 0) return false;
+    if (buffer[i] !== 0) return false
   }
-  return true;
+  return true
 }

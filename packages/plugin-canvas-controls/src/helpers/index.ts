@@ -1,1 +1,1 @@
-export { smoothDamp } from "./smoothDamp";
+export { smoothDamp } from './smoothDamp'

@@ -1,5 +1,5 @@
-import { field, defineEditorState } from "@infinitecanvas/core";
-import { ArrowTransformStateEnum } from "../types";
+import { defineEditorState, field } from '@infinitecanvas/core'
+import { ArrowTransformStateEnum } from '../types'
 
 /**
  * Arrow transform state singleton - stores the current state of the arrow transform state machine.
@@ -15,10 +15,10 @@ import { ArrowTransformStateEnum } from "../types";
  * }
  * ```
  */
-export const ArrowTransformState = defineEditorState("arrowTransformState", {
+export const ArrowTransformState = defineEditorState('arrowTransformState', {
   /** Current state machine state */
   state: field.string().max(16).default(ArrowTransformStateEnum.None),
 
   /** Reference to the active arrow entity (while transforming) */
   activeArrow: field.ref(),
-});
+})

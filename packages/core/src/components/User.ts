@@ -1,5 +1,5 @@
-import { field } from "@woven-ecs/core";
-import { defineCanvasComponent } from "@woven-ecs/canvas-store";
+import { defineCanvasComponent } from '@woven-ecs/canvas-store'
+import { field } from '@woven-ecs/core'
 
 /**
  * User component - tracks user presence on the canvas.
@@ -7,7 +7,7 @@ import { defineCanvasComponent } from "@woven-ecs/canvas-store";
  * Used to identify who is currently viewing the document.
  */
 export const User = defineCanvasComponent(
-  { name: "user", sync: "ephemeral" },
+  { name: 'user', sync: 'ephemeral' },
   {
     userId: field.string().max(36),
     sessionId: field.string().max(36),
@@ -16,4 +16,4 @@ export const User = defineCanvasComponent(
     avatar: field.string().max(500),
     position: field.tuple(field.float32(), 2).default([0, 0]),
   },
-);
+)

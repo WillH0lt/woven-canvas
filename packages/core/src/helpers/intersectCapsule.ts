@@ -1,12 +1,12 @@
-import { type Context, type EntityId, hasComponent } from "@woven-ecs/core";
-import { Capsule, Vec2, Aabb as AabbNs, Arc, Mat2 } from "@infinitecanvas/math";
+import { Aabb as AabbNs, Arc, Capsule, Mat2, type Vec2 } from '@infinitecanvas/math'
+import { type Context, type EntityId, hasComponent } from '@woven-ecs/core'
 
-import { Aabb as AabbComponent } from "../components/Aabb";
-import { Block } from "../components/Block";
-import { HitGeometry } from "../components/HitGeometry";
+import { Aabb as AabbComponent } from '../components/Aabb'
+import { Block } from '../components/Block'
+import { HitGeometry } from '../components/HitGeometry'
 
 // Pre-allocated matrix for UV-to-world transforms (avoids allocation in hot paths)
-const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0];
+const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0]
 
 /**
  * Find all blocks that intersect with a capsule.
@@ -30,37 +30,33 @@ const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0];
  * const hits = intersectCapsule(ctx, capsule, syncedBlocksQuery.current(ctx));
  * ```
  */
-export function intersectCapsule(
-  ctx: Context,
-  capsule: Capsule,
-  entityIds: Iterable<EntityId>
-): EntityId[] {
-  const intersects: EntityId[] = [];
+export function intersectCapsule(ctx: Context, capsule: Capsule, entityIds: Iterable<EntityId>): EntityId[] {
+  const intersects: EntityId[] = []
 
   // Get capsule bounds for broad phase
-  const capsuleBounds = Capsule.bounds(capsule);
+  const capsuleBounds = Capsule.bounds(capsule)
 
   for (const entityId of entityIds) {
     // Broad phase: AABB intersection test
-    const aabb = AabbComponent.read(ctx, entityId);
+    const aabb = AabbComponent.read(ctx, entityId)
     if (!AabbNs.intersects(capsuleBounds, aabb.value)) {
-      continue;
+      continue
     }
 
     // Narrow phase: Check against HitGeometry if available
     if (hasComponent(ctx, entityId, HitGeometry)) {
       if (intersectsCapsuleHitGeometry(ctx, entityId, capsule)) {
-        intersects.push(entityId);
+        intersects.push(entityId)
       }
     } else {
       // Fall back to AABB intersection for entities without HitGeometry
       if (Capsule.intersectsAabb(capsule, aabb.value)) {
-        intersects.push(entityId);
+        intersects.push(entityId)
       }
     }
   }
 
-  return intersects;
+  return intersects
 }
 
 /**
@@ -72,78 +68,53 @@ export function intersectCapsule(
  * @param capsule - Capsule to test in world coordinates
  * @returns True if the capsule intersects any of the entity's hit capsules or arc
  */
-function intersectsCapsuleHitGeometry(
-  ctx: Context,
-  entityId: EntityId,
-  capsule: Capsule
-): boolean {
-  const hitGeometry = HitGeometry.read(ctx, entityId);
+function intersectsCapsuleHitGeometry(ctx: Context, entityId: EntityId, capsule: Capsule): boolean {
+  const hitGeometry = HitGeometry.read(ctx, entityId)
 
   // Build UV-to-world matrix once (computes sin/cos once)
-  Block.getUvToWorldMatrix(ctx, entityId, _uvToWorldMatrix);
+  Block.getUvToWorldMatrix(ctx, entityId, _uvToWorldMatrix)
 
   // Check arc intersections (transform UV arcs to world)
   for (let i = 0; i < hitGeometry.arcCount; i++) {
-    const uvArc = HitGeometry.getArcAt(ctx, entityId, i);
+    const uvArc = HitGeometry.getArcAt(ctx, entityId, i)
 
     // Transform 3 UV points to world using matrix
-    const worldA: Vec2 = [uvArc[0], uvArc[1]];
-    Mat2.transformPoint(_uvToWorldMatrix, worldA);
-    const worldB: Vec2 = [uvArc[2], uvArc[3]];
-    Mat2.transformPoint(_uvToWorldMatrix, worldB);
-    const worldC: Vec2 = [uvArc[4], uvArc[5]];
-    Mat2.transformPoint(_uvToWorldMatrix, worldC);
+    const worldA: Vec2 = [uvArc[0], uvArc[1]]
+    Mat2.transformPoint(_uvToWorldMatrix, worldA)
+    const worldB: Vec2 = [uvArc[2], uvArc[3]]
+    Mat2.transformPoint(_uvToWorldMatrix, worldB)
+    const worldC: Vec2 = [uvArc[4], uvArc[5]]
+    Mat2.transformPoint(_uvToWorldMatrix, worldC)
 
-    const thickness = uvArc[6]; // Already in world units
+    const thickness = uvArc[6] // Already in world units
 
-    const worldArc = Arc.create(
-      worldA[0],
-      worldA[1],
-      worldB[0],
-      worldB[1],
-      worldC[0],
-      worldC[1],
-      thickness
-    );
+    const worldArc = Arc.create(worldA[0], worldA[1], worldB[0], worldB[1], worldC[0], worldC[1], thickness)
 
-    const capsuleA = Capsule.pointA(capsule);
-    const capsuleB = Capsule.pointB(capsule);
-    if (
-      Arc.intersectsCapsule(
-        worldArc,
-        capsuleA,
-        capsuleB,
-        Capsule.radius(capsule)
-      )
-    ) {
-      return true;
+    const capsuleA = Capsule.pointA(capsule)
+    const capsuleB = Capsule.pointB(capsule)
+    if (Arc.intersectsCapsule(worldArc, capsuleA, capsuleB, Capsule.radius(capsule))) {
+      return true
     }
   }
 
   // Check capsule intersections (transform UV capsules to world)
   for (let i = 0; i < hitGeometry.capsuleCount; i++) {
-    const uvCapsule = HitGeometry.getCapsuleAt(ctx, entityId, i);
+    const uvCapsule = HitGeometry.getCapsuleAt(ctx, entityId, i)
 
     // Transform 2 UV points to world using matrix
-    const worldA: Vec2 = [uvCapsule[0], uvCapsule[1]];
-    Mat2.transformPoint(_uvToWorldMatrix, worldA);
-    const worldB: Vec2 = [uvCapsule[2], uvCapsule[3]];
-    Mat2.transformPoint(_uvToWorldMatrix, worldB);
+    const worldA: Vec2 = [uvCapsule[0], uvCapsule[1]]
+    Mat2.transformPoint(_uvToWorldMatrix, worldA)
+    const worldB: Vec2 = [uvCapsule[2], uvCapsule[3]]
+    Mat2.transformPoint(_uvToWorldMatrix, worldB)
 
-    const radius = uvCapsule[4]; // Already in world units
+    const radius = uvCapsule[4] // Already in world units
 
-    const worldCapsule = Capsule.create(
-      worldA[0],
-      worldA[1],
-      worldB[0],
-      worldB[1],
-      radius
-    );
+    const worldCapsule = Capsule.create(worldA[0], worldA[1], worldB[0], worldB[1], radius)
 
     if (Capsule.intersectsCapsule(capsule, worldCapsule)) {
-      return true;
+      return true
     }
   }
 
-  return false;
+  return false
 }

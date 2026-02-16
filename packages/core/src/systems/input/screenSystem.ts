@@ -1,38 +1,37 @@
-import { getResources } from "@woven-ecs/core";
-import { defineEditorSystem } from "../../EditorSystem";
-
-import type { EditorResources } from "../../types";
-import { Screen, Frame } from "../../singletons";
+import { getResources } from '@woven-ecs/core'
+import { defineEditorSystem } from '../../EditorSystem'
+import { Frame, Screen } from '../../singletons'
+import type { EditorResources } from '../../types'
 
 /**
  * Per-instance state for screen input
  */
 interface ScreenState {
-  resizePending: boolean;
-  resizeObserver: ResizeObserver;
+  resizePending: boolean
+  resizeObserver: ResizeObserver
 }
 
 /**
  * Per-instance state keyed by DOM element
  */
-const instanceState = new WeakMap<HTMLElement, ScreenState>();
+const instanceState = new WeakMap<HTMLElement, ScreenState>()
 
 /**
  * Attach screen resize observer.
  * Called from plugin setup.
  */
 export function attachScreenObserver(domElement: HTMLElement): void {
-  if (instanceState.has(domElement)) return;
+  if (instanceState.has(domElement)) return
 
   const state: ScreenState = {
     resizePending: false,
     resizeObserver: new ResizeObserver(() => {
-      state.resizePending = true;
+      state.resizePending = true
     }),
-  };
+  }
 
-  instanceState.set(domElement, state);
-  state.resizeObserver.observe(domElement);
+  instanceState.set(domElement, state)
+  state.resizeObserver.observe(domElement)
 }
 
 /**
@@ -40,12 +39,12 @@ export function attachScreenObserver(domElement: HTMLElement): void {
  * Called from plugin teardown.
  */
 export function detachScreenObserver(domElement: HTMLElement): void {
-  const state = instanceState.get(domElement);
+  const state = instanceState.get(domElement)
 
-  if (!state) return;
+  if (!state) return
 
-  state.resizeObserver.disconnect();
-  instanceState.delete(domElement);
+  state.resizeObserver.disconnect()
+  instanceState.delete(domElement)
 }
 
 /**
@@ -54,30 +53,30 @@ export function detachScreenObserver(domElement: HTMLElement): void {
  * Uses ResizeObserver to detect size changes and updates the Screen singleton.
  * Also handles initial sizing on the first frame.
  */
-export const screenSystem = defineEditorSystem({ phase: "input" }, (ctx) => {
-  const resources = getResources<EditorResources>(ctx);
-  const { domElement } = resources;
-  const state = instanceState.get(domElement);
-  if (!state) return;
+export const screenSystem = defineEditorSystem({ phase: 'input' }, (ctx) => {
+  const resources = getResources<EditorResources>(ctx)
+  const { domElement } = resources
+  const state = instanceState.get(domElement)
+  if (!state) return
 
-  const frame = Frame.read(ctx);
+  const frame = Frame.read(ctx)
 
   // Handle initial sizing on first frame
   if (frame.number === 1) {
-    state.resizePending = true;
+    state.resizePending = true
   }
 
   // Update screen dimensions if resize pending
   if (state.resizePending) {
-    const screen = Screen.write(ctx);
+    const screen = Screen.write(ctx)
 
-    screen.width = domElement.clientWidth;
-    screen.height = domElement.clientHeight;
+    screen.width = domElement.clientWidth
+    screen.height = domElement.clientHeight
 
-    const rect = domElement.getBoundingClientRect();
-    screen.left = rect.left;
-    screen.top = rect.top;
+    const rect = domElement.getBoundingClientRect()
+    screen.left = rect.left
+    screen.top = rect.top
 
-    state.resizePending = false;
+    state.resizePending = false
   }
-});
+})

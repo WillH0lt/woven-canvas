@@ -1,17 +1,17 @@
-import { inject, shallowRef, onUnmounted, type ShallowRef } from "vue";
 import {
-  hasComponent,
-  type EntityId,
-  type InferCanvasComponentType,
   type AnyCanvasComponentDef,
-} from "@infinitecanvas/core";
-import { INFINITE_CANVAS_KEY } from "../injection";
+  type EntityId,
+  hasComponent,
+  type InferCanvasComponentType,
+} from '@infinitecanvas/core'
+import { inject, onUnmounted, type ShallowRef, shallowRef } from 'vue'
+import { INFINITE_CANVAS_KEY } from '../injection'
 
 /** Component def with name and schema for type inference */
 type ComponentDefWithSchema = AnyCanvasComponentDef & {
-  name: string;
-  schema: any;
-};
+  name: string
+  schema: any
+}
 
 /**
  * Composable for reactive access to a single component on an entity.
@@ -50,43 +50,33 @@ type ComponentDefWithSchema = AnyCanvasComponentDef & {
 export function useComponent<T extends ComponentDefWithSchema>(
   entityId: EntityId,
   componentDef: T,
-): ShallowRef<Readonly<InferCanvasComponentType<T["schema"]>> | null> {
-  const canvasContext = inject(INFINITE_CANVAS_KEY);
+): ShallowRef<Readonly<InferCanvasComponentType<T['schema']>> | null> {
+  const canvasContext = inject(INFINITE_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error(
-      "useComponent must be used within an InfiniteCanvas component",
-    );
+    throw new Error('useComponent must be used within an InfiniteCanvas component')
   }
 
   // Create our own ref for this component
-  const componentRef = shallowRef<InferCanvasComponentType<T["schema"]> | null>(
-    null,
-  );
+  const componentRef = shallowRef<InferCanvasComponentType<T['schema']> | null>(null)
 
   // Try to eagerly read the initial value
-  const editor = canvasContext.getEditor();
+  const editor = canvasContext.getEditor()
   if (editor) {
-    const ctx = editor._getContext();
+    const ctx = editor._getContext()
     if (hasComponent(ctx, entityId, componentDef)) {
-      componentRef.value = componentDef.snapshot(ctx, entityId);
+      componentRef.value = componentDef.snapshot(ctx, entityId)
     }
   }
 
   // Subscribe to component changes
-  const unsubscribe = canvasContext.subscribeComponent(
-    entityId,
-    componentDef.name,
-    (value) => {
-      componentRef.value = value as InferCanvasComponentType<
-        T["schema"]
-      > | null;
-    },
-  );
+  const unsubscribe = canvasContext.subscribeComponent(entityId, componentDef.name, (value) => {
+    componentRef.value = value as InferCanvasComponentType<T['schema']> | null
+  })
 
   // Cleanup on unmount
   onUnmounted(() => {
-    unsubscribe();
-  });
+    unsubscribe()
+  })
 
-  return componentRef;
+  return componentRef
 }
