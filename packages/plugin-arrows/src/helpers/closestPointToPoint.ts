@@ -1,4 +1,4 @@
-import { Vec2 } from '@infinitecanvas/math'
+import { Vec2 } from '@woven-canvas/math'
 
 /**
  * Find the closest point in an array to a target point.

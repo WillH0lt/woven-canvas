@@ -1,5 +1,5 @@
-import { defineCommand, type EntityId } from '@infinitecanvas/core'
-import type { Aabb } from '@infinitecanvas/math'
+import { defineCommand, type EntityId } from '@woven-canvas/core'
+import type { Aabb } from '@woven-canvas/math'
 
 /**
  * Select a specific block entity.

@@ -19,8 +19,8 @@ import {
   PointerButton,
   RankBounds,
   Synced,
-} from '@infinitecanvas/core'
-import { EditAfterPlacing, SelectionState, SelectionStateSingleton } from '@infinitecanvas/plugin-selection'
+} from '@woven-canvas/core'
+import { EditAfterPlacing, SelectionState, SelectionStateSingleton } from '@woven-canvas/plugin-selection'
 import type { BasicsPluginResources } from '../BasicsPlugin'
 import { BlockPlacementState } from '../singletons'
 

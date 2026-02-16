@@ -1,4 +1,4 @@
-import { defineCanvasSingleton, field } from '@infinitecanvas/core'
+import { defineCanvasSingleton, field } from '@woven-canvas/core'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createApp, defineComponent, h, provide } from 'vue'
 import { useSingleton } from '../src/composables/useSingleton'

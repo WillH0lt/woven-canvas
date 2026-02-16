@@ -1,4 +1,4 @@
-export { TextAlignment, User } from '@infinitecanvas/core'
+export { TextAlignment, User } from '@woven-canvas/core'
 // ECS Sync
 export {
   type AnyCanvasComponentDef,

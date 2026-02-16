@@ -1,4 +1,4 @@
-import { Editor, type EditorPlugin } from '@infinitecanvas/core'
+import { Editor, type EditorPlugin } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Aabb, Block } from '../../src/components'
 import { intersectAabb } from '../../src/helpers/intersect'

@@ -1,4 +1,4 @@
-import { defineQuery, Editor } from '@infinitecanvas/core'
+import { defineQuery, Editor } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Keyboard, Mouse, Pointer, Screen } from '../src'
 

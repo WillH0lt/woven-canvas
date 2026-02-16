@@ -1,4 +1,4 @@
-import { CanvasComponentDef, type Context, type EntityId, field } from '@infinitecanvas/core'
+import { CanvasComponentDef, type Context, type EntityId, field } from '@woven-canvas/core'
 
 /**
  * Maximum number of points that can be stored in the stroke.

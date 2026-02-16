@@ -1,4 +1,4 @@
-import { Vec2 } from '@infinitecanvas/math'
+import { Vec2 } from '@woven-canvas/math'
 import { type Context, defineQuery, type EntityId } from '@woven-ecs/core'
 
 import { Pointer, type PointerButton } from '../components'
@@ -77,7 +77,7 @@ function getTrackingState(ctx: Context): PointerTrackingState {
  *
  * @example
  * ```typescript
- * import { getPointerInput, runMachine } from '@infinitecanvas/plugin-xstate';
+ * import { getPointerInput, runMachine } from '@woven-canvas/plugin-xstate';
  *
  * const panSystem = defineSystem((ctx) => {
  *   const events = getPointerInput(ctx, ['middle']);

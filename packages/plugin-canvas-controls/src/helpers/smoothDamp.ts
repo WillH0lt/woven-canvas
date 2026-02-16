@@ -1,4 +1,4 @@
-import { Vec2 } from '@infinitecanvas/math'
+import { Vec2 } from '@woven-canvas/math'
 
 // Internal temp vectors for smoothDamp calculations
 const _change: Vec2 = [0, 0]

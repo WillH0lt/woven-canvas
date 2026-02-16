@@ -1,4 +1,4 @@
-import { defineCanvasComponent, field } from '@infinitecanvas/core'
+import { defineCanvasComponent, field } from '@woven-canvas/core'
 import { CursorKind } from '../cursors'
 import { TransformHandleKind } from '../types'
 

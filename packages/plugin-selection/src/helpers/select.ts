@@ -10,7 +10,7 @@ import {
   hasComponent,
   isHeldByRemote,
   removeComponent,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 import { Selected } from '../components'
 

@@ -21,7 +21,7 @@ import type { BlockDefInput, CursorDef, Keybind } from './types'
  *   defineCanvasSingleton,
  *   defineEditorSystem,
  *   field,
- * } from '@infinitecanvas/core';
+ * } from '@woven-canvas/core';
  *
  * const Selected = defineCanvasComponent('selected', {}, { sync: 'ephemeral' });
  * const Hovered = defineCanvasComponent('hovered', {}, { sync: 'none' });

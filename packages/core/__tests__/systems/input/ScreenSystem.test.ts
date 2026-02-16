@@ -1,4 +1,4 @@
-import { Editor } from '@infinitecanvas/core'
+import { Editor } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Screen } from '../../../src'
 

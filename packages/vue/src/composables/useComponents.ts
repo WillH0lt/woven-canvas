@@ -3,7 +3,7 @@ import {
   type EntityId,
   hasComponent,
   type InferCanvasComponentType,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { inject, type MaybeRefOrGetter, onUnmounted, type ShallowRef, shallowRef, toValue, watch } from 'vue'
 import { INFINITE_CANVAS_KEY } from '../injection'
 
@@ -27,8 +27,8 @@ type ComponentDefWithSchema = AnyCanvasComponentDef & {
  * @example
  * ```vue
  * <script setup lang="ts">
- * import { useComponents } from "@infinitecanvas/vue";
- * import { Color } from "@infinitecanvas/core";
+ * import { useComponents } from "@woven-canvas/vue";
+ * import { Color } from "@woven-canvas/core";
  *
  * const props = defineProps<{ entityIds: EntityId[] }>();
  * const colors = useComponents(() => props.entityIds, Color);

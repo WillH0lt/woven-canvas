@@ -10,8 +10,8 @@ import {
   Keyboard,
   on,
   Text,
-} from '@infinitecanvas/core'
-import { Scalar, Vec2 } from '@infinitecanvas/math'
+} from '@woven-canvas/core'
+import { Scalar, Vec2 } from '@woven-canvas/math'
 import { DragBlock } from '../../commands'
 import { DragStart, Selected, TransformBox, TransformHandle } from '../../components'
 import { TransformHandleKind } from '../../types'

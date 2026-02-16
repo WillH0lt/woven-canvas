@@ -9,8 +9,8 @@ import {
   HitGeometry,
   hasComponent,
   MAX_HIT_CAPSULES,
-} from '@infinitecanvas/core'
-import { Arc, Capsule, Scalar, type Vec2 } from '@infinitecanvas/math'
+} from '@woven-canvas/core'
+import { Arc, Capsule, Scalar, type Vec2 } from '@woven-canvas/math'
 
 import { ArcArrow, ElbowArrow } from '../components'
 import { closestPointToPoint } from '../helpers'

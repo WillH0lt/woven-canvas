@@ -9,7 +9,7 @@ import {
   hasComponent,
   Synced,
   Text,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { generateJitteredKeyBetween } from 'fractional-indexing-jittered'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {

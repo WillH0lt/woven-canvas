@@ -33,14 +33,14 @@ import InfiniteCanvas from '../src/components/InfiniteCanvas.vue'
 let editorInstances: any[] = []
 
 // Mock the plugins
-vi.mock('@infinitecanvas/plugin-canvas-controls', () => ({
+vi.mock('@woven-canvas/plugin-canvas-controls', () => ({
   CanvasControlsPlugin: vi.fn(() => ({
     name: 'canvas-controls',
   })),
 }))
 
-vi.mock('@infinitecanvas/plugin-selection', async () => {
-  const actual = await vi.importActual('@infinitecanvas/plugin-selection')
+vi.mock('@woven-canvas/plugin-selection', async () => {
+  const actual = await vi.importActual('@woven-canvas/plugin-selection')
   return {
     ...actual,
     SelectionPlugin: {
@@ -49,7 +49,7 @@ vi.mock('@infinitecanvas/plugin-selection', async () => {
   }
 })
 
-vi.mock('@infinitecanvas/asset-sync', () => {
+vi.mock('@woven-canvas/asset-sync', () => {
   class MockAssetManager {
     init = vi.fn().mockResolvedValue(undefined)
     resumePendingUploads = vi.fn().mockResolvedValue(undefined)
@@ -63,8 +63,8 @@ vi.mock('@infinitecanvas/asset-sync', () => {
 })
 
 // Mock Editor class with factory function
-vi.mock('@infinitecanvas/core', async () => {
-  const actual = await vi.importActual('@infinitecanvas/core')
+vi.mock('@woven-canvas/core', async () => {
+  const actual = await vi.importActual('@woven-canvas/core')
 
   class MockEditor {
     components = new Map()
@@ -227,7 +227,7 @@ describe('InfiniteCanvas', () => {
     })
 
     it('should include CanvasControlsPlugin by default', async () => {
-      const { CanvasControlsPlugin } = await import('@infinitecanvas/plugin-canvas-controls')
+      const { CanvasControlsPlugin } = await import('@woven-canvas/plugin-canvas-controls')
 
       mount(InfiniteCanvas)
       await flushPromises()
@@ -262,7 +262,7 @@ describe('InfiniteCanvas', () => {
     })
 
     it('should pass controls options to CanvasControlsPlugin', async () => {
-      const { CanvasControlsPlugin } = await import('@infinitecanvas/plugin-canvas-controls')
+      const { CanvasControlsPlugin } = await import('@woven-canvas/plugin-canvas-controls')
       vi.mocked(CanvasControlsPlugin).mockClear()
 
       mount(InfiniteCanvas, {

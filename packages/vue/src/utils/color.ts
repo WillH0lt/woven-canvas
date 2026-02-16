@@ -1,4 +1,4 @@
-import type { Color, InferCanvasComponentType } from '@infinitecanvas/core'
+import type { Color, InferCanvasComponentType } from '@woven-canvas/core'
 
 export type ColorData = Omit<InferCanvasComponentType<typeof Color.schema>, '_exists' | '_version'>
 

@@ -1,4 +1,4 @@
-import { defineCanvasComponent } from '@infinitecanvas/core'
+import { defineCanvasComponent } from '@woven-canvas/core'
 
 /**
  * SelectionBox component - marks an entity as the marquee selection box.

@@ -1,4 +1,4 @@
-import { addComponent, Camera, createEntity, Editor } from '@infinitecanvas/core'
+import { addComponent, Camera, createEntity, Editor } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Block, ScaleWithZoom } from '../../../src/components'
 import { ScaleWithZoomState } from '../../../src/singletons'

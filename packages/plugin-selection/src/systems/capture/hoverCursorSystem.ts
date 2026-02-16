@@ -1,4 +1,4 @@
-import { Block, type Context, Cursor, defineEditorSystem, defineQuery, Hovered } from '@infinitecanvas/core'
+import { Block, type Context, Cursor, defineEditorSystem, defineQuery, Hovered } from '@woven-canvas/core'
 
 import { TransformBox, TransformHandle } from '../../components'
 

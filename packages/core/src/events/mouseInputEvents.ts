@@ -1,4 +1,4 @@
-import type { Vec2 } from '@infinitecanvas/math'
+import type { Vec2 } from '@woven-canvas/math'
 import type { Context } from '@woven-ecs/core'
 import { Camera, Mouse } from '../singletons'
 import type { MouseInput } from './types'
@@ -20,7 +20,7 @@ import type { MouseInput } from './types'
  *
  * @example
  * ```typescript
- * import { getMouseInput, runMachine } from '@infinitecanvas/plugin-xstate';
+ * import { getMouseInput, runMachine } from '@woven-canvas/plugin-xstate';
  *
  * const zoomSystem = defineSystem((ctx) => {
  *   const events = getMouseInput(ctx);

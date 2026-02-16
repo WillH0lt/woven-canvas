@@ -1,4 +1,4 @@
-import type { Editor } from '@infinitecanvas/core'
+import type { Editor } from '@woven-canvas/core'
 
 /**
  * Compute the set of component names that are common to all selected blocks.

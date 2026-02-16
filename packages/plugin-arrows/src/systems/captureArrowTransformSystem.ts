@@ -9,8 +9,8 @@ import {
   hasComponent,
   type InferStateContext,
   type PointerInput,
-} from '@infinitecanvas/core'
-import { Selected } from '@infinitecanvas/plugin-selection'
+} from '@woven-canvas/core'
+import { Selected } from '@woven-canvas/plugin-selection'
 import { assign, not, setup } from 'xstate'
 import {
   AddOrUpdateTransformHandles,

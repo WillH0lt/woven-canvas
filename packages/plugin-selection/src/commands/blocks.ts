@@ -1,4 +1,4 @@
-import { defineCommand, type EntityId, type Vec2 } from '@infinitecanvas/core'
+import { defineCommand, type EntityId, type Vec2 } from '@woven-canvas/core'
 
 /**
  * Drag/move a block to a new position.

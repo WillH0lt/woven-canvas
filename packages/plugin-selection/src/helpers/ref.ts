@@ -1,4 +1,4 @@
-import { type Context, type EntityId, hasComponent, Synced } from '@infinitecanvas/core'
+import { type Context, type EntityId, hasComponent, Synced } from '@woven-canvas/core'
 
 /** Schema type for ref field detection */
 type ComponentSchema = Record<string, { def?: { type?: string } }>

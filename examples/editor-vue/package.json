@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@infinitecanvas/core": "workspace:^",
-    "@infinitecanvas/plugin-canvas-controls": "workspace:^",
-    "@infinitecanvas/plugin-selection": "workspace:^",
-    "@infinitecanvas/vue": "workspace:^",
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/plugin-canvas-controls": "workspace:^",
+    "@woven-canvas/plugin-selection": "workspace:^",
+    "@woven-canvas/vue": "workspace:^",
     "vue": "^3.5.24"
   },
   "devDependencies": {

@@ -10,7 +10,7 @@ import {
   Key,
   type KeyboardInput,
   type PointerInput,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { assign, setup } from 'xstate'
 
 import { PanState } from '../components'

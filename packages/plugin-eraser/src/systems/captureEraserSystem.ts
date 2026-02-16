@@ -4,7 +4,7 @@ import {
   getPointerInput,
   type InferStateContext,
   type PointerInput,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { assign, setup } from 'xstate'
 import { AddEraserStrokePoint, CancelEraserStroke, CompleteEraserStroke, StartEraserStroke } from '../commands'
 import { EraserStateSingleton } from '../singletons'

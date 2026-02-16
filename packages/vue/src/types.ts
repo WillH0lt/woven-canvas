@@ -1,4 +1,4 @@
-import type { Block, Connector, EntityId, Held, InferCanvasComponentType, Opacity, Stratum } from '@infinitecanvas/core'
+import type { Block, Connector, EntityId, Held, InferCanvasComponentType, Opacity, Stratum } from '@woven-canvas/core'
 
 type BlockComponentData = InferCanvasComponentType<typeof Block.schema>
 type HeldComponentData = InferCanvasComponentType<typeof Held.schema>

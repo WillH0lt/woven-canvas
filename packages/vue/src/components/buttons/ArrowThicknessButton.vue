@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
-import { hasComponent, type EntityId } from "@infinitecanvas/core";
-import { ElbowArrow, ArcArrow } from "@infinitecanvas/plugin-arrows";
+import { hasComponent, type EntityId } from "@woven-canvas/core";
+import { ElbowArrow, ArcArrow } from "@woven-canvas/plugin-arrows";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import IconChevronDown from "../icons/IconChevronDown.vue";

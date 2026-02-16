@@ -11,7 +11,7 @@ import { TOOLBAR_KEY } from '../injection'
  * @example
  * ```vue
  * <script setup lang="ts">
- * import { useToolbar } from "@infinitecanvas/vue";
+ * import { useToolbar } from "@woven-canvas/vue";
  *
  * const { activeTool, setTool, isActive } = useToolbar();
  *

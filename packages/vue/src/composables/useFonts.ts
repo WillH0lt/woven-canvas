@@ -1,4 +1,4 @@
-import type { FontFamily } from '@infinitecanvas/core'
+import type { FontFamily } from '@woven-canvas/core'
 import { computed, inject } from 'vue'
 import { INFINITE_CANVAS_KEY } from '../injection'
 
@@ -15,7 +15,7 @@ import { INFINITE_CANVAS_KEY } from '../injection'
  * @example
  * ```vue
  * <script setup lang="ts">
- * import { useFonts } from "@infinitecanvas/vue";
+ * import { useFonts } from "@woven-canvas/vue";
  *
  * const fonts = useFonts();
  * // fonts.value is an array of FontFamily objects

@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@infinitecanvas/plugin-arrows",
+  "name": "@woven-canvas/plugin-arrows",
   "version": "0.1.0",
   "description": "Arrows plugin - draw and edit arc and elbow arrows for infinite canvas",
   "files": [
@@ -11,7 +11,7 @@
   "types": "./build/index.d.ts",
   "exports": {
     ".": {
-      "@infinitecanvas/source": "./src/index.ts",
+      "@woven-canvas/source": "./src/index.ts",
       "import": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
@@ -30,9 +30,9 @@
     "check:exports": "attw --pack ."
   },
   "dependencies": {
-    "@infinitecanvas/core": "workspace:*",
-    "@infinitecanvas/math": "workspace:*",
-    "@infinitecanvas/plugin-selection": "workspace:*",
+    "@woven-canvas/core": "workspace:*",
+    "@woven-canvas/math": "workspace:*",
+    "@woven-canvas/plugin-selection": "workspace:*",
     "fractional-indexing-jittered": "^1.0.0",
     "xstate": "^5.24.0"
   },

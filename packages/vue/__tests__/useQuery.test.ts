@@ -1,4 +1,4 @@
-import { defineCanvasComponent, field } from '@infinitecanvas/core'
+import { defineCanvasComponent, field } from '@woven-canvas/core'
 import { describe, expect, it } from 'vitest'
 import { createApp, h } from 'vue'
 import { useQuery } from '../src/composables/useQuery'

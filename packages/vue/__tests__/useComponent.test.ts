@@ -1,4 +1,4 @@
-import { defineCanvasComponent, field } from '@infinitecanvas/core'
+import { defineCanvasComponent, field } from '@woven-canvas/core'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createApp, defineComponent, h, provide } from 'vue'
 import { useComponent } from '../src/composables/useComponent'

@@ -18,9 +18,9 @@ import {
   removeEntity,
   ScaleWithZoom,
   Text,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 // Note: createEntity is still used for creating transform handles
-import { Rect, Vec2 } from '@infinitecanvas/math'
+import { Rect, Vec2 } from '@woven-canvas/math'
 import {
   AddTransformBox,
   EndTransformBoxEdit,

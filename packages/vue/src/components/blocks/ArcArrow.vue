@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from "vue";
-import { Color } from "@infinitecanvas/core";
-import { Arc, type ArcComputed, type Vec2 } from "@infinitecanvas/math";
-import { ArcArrow } from "@infinitecanvas/plugin-arrows";
+import { Color } from "@woven-canvas/core";
+import { Arc, type ArcComputed, type Vec2 } from "@woven-canvas/math";
+import { ArcArrow } from "@woven-canvas/plugin-arrows";
 
 import { useComponent } from "../../composables/useComponent";
 import ArrowHead from "./ArrowHead.vue";

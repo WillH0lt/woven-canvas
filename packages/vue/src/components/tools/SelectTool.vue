@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watch } from "vue";
-import { DeselectAll } from "@infinitecanvas/plugin-selection";
+import { DeselectAll } from "@woven-canvas/plugin-selection";
 
 import ToolbarButton from "../ToolbarButton.vue";
 import { CursorKind } from "../../cursors";

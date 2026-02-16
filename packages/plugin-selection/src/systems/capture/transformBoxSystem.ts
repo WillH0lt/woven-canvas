@@ -13,7 +13,7 @@ import {
   type InferStateContext,
   type PointerInput,
   removeComponent,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { and, assign, not, raise, setup } from 'xstate'
 import {
   AddTransformBox,

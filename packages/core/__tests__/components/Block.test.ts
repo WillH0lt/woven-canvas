@@ -1,4 +1,4 @@
-import type { Vec2 } from '@infinitecanvas/math'
+import type { Vec2 } from '@woven-canvas/math'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { addComponent, Block, createEntity, Editor, type EditorPlugin } from '../../src'
 

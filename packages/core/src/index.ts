@@ -1,5 +1,5 @@
 // Re-export math types
-export type { Vec2 } from '@infinitecanvas/math'
+export type { Vec2 } from '@woven-canvas/math'
 export type {
   AnyCanvasComponentDef,
   AnyCanvasSingletonDef,

@@ -8,7 +8,7 @@ import {
   Keyboard,
   Mouse,
   Screen,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 import type { CanvasControlsOptions } from '../types'
 

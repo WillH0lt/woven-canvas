@@ -8,7 +8,7 @@ import {
   hasComponent,
   Intersect,
   Keyboard,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CloneEntities, DeselectAll, UncloneEntities } from '../../../src/commands'
 import { Selected, TransformBox, TransformHandle } from '../../../src/components'

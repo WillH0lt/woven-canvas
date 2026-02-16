@@ -1,4 +1,4 @@
-import type { Vec2 } from '@infinitecanvas/math'
+import type { Vec2 } from '@woven-canvas/math'
 import { addComponent, type Context, createEntity, getResources, removeEntity } from '@woven-ecs/core'
 import { addPointerSample, Pointer } from '../../components/Pointer'
 import { defineEditorSystem } from '../../EditorSystem'

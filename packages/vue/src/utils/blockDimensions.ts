@@ -1,4 +1,4 @@
-import type { Camera, InferCanvasComponentType, Screen } from '@infinitecanvas/core'
+import type { Camera, InferCanvasComponentType, Screen } from '@woven-canvas/core'
 import type { ShallowRef } from 'vue'
 
 type CameraValue = InferCanvasComponentType<typeof Camera.schema>

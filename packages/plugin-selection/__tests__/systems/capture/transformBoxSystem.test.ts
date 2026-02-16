@@ -9,7 +9,7 @@ import {
   type EditorPlugin,
   Intersect,
   removeComponent,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AddTransformBox, HideTransformBox, RemoveTransformBox, ShowTransformBox } from '../../../src/commands'
 import { EditAfterPlacing, Selected, TransformBox, TransformHandle } from '../../../src/components'

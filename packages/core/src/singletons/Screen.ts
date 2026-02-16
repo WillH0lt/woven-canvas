@@ -1,4 +1,4 @@
-import type { Vec2 } from '@infinitecanvas/math'
+import type { Vec2 } from '@woven-canvas/math'
 import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
 import { type Context, field } from '@woven-ecs/core'
 

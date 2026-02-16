@@ -1,4 +1,4 @@
-import { defineCanvasComponent, field } from '@infinitecanvas/core'
+import { defineCanvasComponent, field } from '@woven-canvas/core'
 import { ArrowHandleKind } from '../types'
 
 /**

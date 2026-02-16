@@ -1,4 +1,4 @@
-import { addComponent, Block, createEntity, Editor, type EditorPlugin } from '@infinitecanvas/core'
+import { addComponent, Block, createEntity, Editor, type EditorPlugin } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DragBlock } from '../../../src/commands'
 import { DragStart, Selected, TransformBox, TransformHandle } from '../../../src/components'

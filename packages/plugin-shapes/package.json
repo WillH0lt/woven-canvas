@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@infinitecanvas/plugin-shapes",
+  "name": "@woven-canvas/plugin-shapes",
   "version": "0.1.0",
   "description": "Shapes plugin - SVG polygon shapes for infinite canvas",
   "files": [
@@ -11,7 +11,7 @@
   "types": "./build/index.d.ts",
   "exports": {
     ".": {
-      "@infinitecanvas/source": "./src/index.ts",
+      "@woven-canvas/source": "./src/index.ts",
       "import": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
@@ -30,8 +30,8 @@
     "check:exports": "attw --pack ."
   },
   "dependencies": {
-    "@infinitecanvas/core": "workspace:*",
-    "@infinitecanvas/math": "workspace:*"
+    "@woven-canvas/core": "workspace:*",
+    "@woven-canvas/math": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest",

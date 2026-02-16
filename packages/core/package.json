@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@infinitecanvas/core",
+  "name": "@woven-canvas/core",
   "version": "0.1.0",
   "description": "Framework-agnostic editor library built on ECS",
   "files": [
@@ -12,7 +12,7 @@
   "__exports-comment": "// Define output files for Node.js export maps (https://nodejs.org/api/packages.html#exports)",
   "exports": {
     ".": {
-      "@infinitecanvas/source": "./src/index.ts",
+      "@woven-canvas/source": "./src/index.ts",
       "import": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
@@ -33,7 +33,7 @@
     "test:watch": "vitest --config ../../vitest.config.ts --watch"
   },
   "dependencies": {
-    "@infinitecanvas/math": "workspace:*",
+    "@woven-canvas/math": "workspace:*",
     "@woven-ecs/canvas-store": "^1.0.1",
     "@woven-ecs/core": "^1.0.1",
     "fractional-indexing-jittered": "^1.0.0",

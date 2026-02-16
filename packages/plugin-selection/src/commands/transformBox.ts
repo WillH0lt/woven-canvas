@@ -1,4 +1,4 @@
-import { defineCommand, type EntityId } from '@infinitecanvas/core'
+import { defineCommand, type EntityId } from '@woven-canvas/core'
 
 /**
  * Add transform box components to an entity and update bounds.

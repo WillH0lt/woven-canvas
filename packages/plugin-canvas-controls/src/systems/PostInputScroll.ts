@@ -1,4 +1,4 @@
-import { Camera, type Context, Controls, defineEditorSystem, getMouseInput, Keyboard } from '@infinitecanvas/core'
+import { Camera, type Context, Controls, defineEditorSystem, getMouseInput, Keyboard } from '@woven-canvas/core'
 
 /**
  * Post input scroll system - handles mouse scroll canvas panning.

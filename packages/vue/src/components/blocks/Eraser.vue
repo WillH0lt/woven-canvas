@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
-import { Block, type EntityId } from "@infinitecanvas/core";
+import { Block, type EntityId } from "@woven-canvas/core";
 import { useComponent } from "../../composables/useComponent";
-import { EraserStroke, POINTS_CAPACITY } from "@infinitecanvas/plugin-eraser";
+import { EraserStroke, POINTS_CAPACITY } from "@woven-canvas/plugin-eraser";
 import { getStroke } from "perfect-freehand";
 
 const props = defineProps<{

@@ -1,4 +1,4 @@
-import { ArrowHeadKind } from '@infinitecanvas/plugin-arrows'
+import { ArrowHeadKind } from '@woven-canvas/plugin-arrows'
 
 export interface ArrowHeadDef {
   kind: ArrowHeadKind

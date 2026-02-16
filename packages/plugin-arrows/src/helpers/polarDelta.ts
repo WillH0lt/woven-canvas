@@ -1,4 +1,4 @@
-import type { Vec2 } from '@infinitecanvas/math'
+import type { Vec2 } from '@woven-canvas/math'
 
 /**
  * Calculate the polar delta (angle and distance change) between two points

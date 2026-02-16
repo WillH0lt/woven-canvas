@@ -1,4 +1,4 @@
-import { Aabb as AabbMath, type Vec2 } from '@infinitecanvas/math'
+import { Aabb as AabbMath, type Vec2 } from '@woven-canvas/math'
 import { CanvasComponentDef } from '@woven-ecs/canvas-store'
 import { type Context, type EntityId, field } from '@woven-ecs/core'
 import { Block } from './Block'

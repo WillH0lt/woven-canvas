@@ -9,7 +9,7 @@ import {
   Text,
   Undo,
   VerticalAlign,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 import type { CanvasStore } from '@woven-ecs/canvas-store'
 import { CURSORS } from './cursors'

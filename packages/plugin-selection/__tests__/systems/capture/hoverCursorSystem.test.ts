@@ -7,7 +7,7 @@ import {
   type EditorPlugin,
   Hovered,
   removeComponent,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { TransformBox, TransformHandle } from '../../../src/components'
 import { PLUGIN_NAME } from '../../../src/constants'

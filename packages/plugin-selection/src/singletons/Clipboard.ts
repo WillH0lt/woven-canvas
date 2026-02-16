@@ -1,5 +1,5 @@
-import type { Editor } from '@infinitecanvas/core'
-import { CanvasSingletonDef, type Context, type EditorResources, field, getResources } from '@infinitecanvas/core'
+import type { Editor } from '@woven-canvas/core'
+import { CanvasSingletonDef, type Context, type EditorResources, field, getResources } from '@woven-canvas/core'
 
 /**
  * Serialized entity data for clipboard storage.

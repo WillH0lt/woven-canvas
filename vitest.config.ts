@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   resolve: {
-    conditions: ['@infinitecanvas/source'],
+    conditions: ['@woven-canvas/source'],
   },
   test: {
     environment: 'jsdom',

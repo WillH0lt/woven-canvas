@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { VerticalAlignment, TextAlignment } from "@infinitecanvas/core";
-import { ShapeKind, StrokeKind } from "@infinitecanvas/plugin-shapes";
+import { VerticalAlignment, TextAlignment } from "@woven-canvas/core";
+import { ShapeKind, StrokeKind } from "@woven-canvas/plugin-shapes";
 import ToolbarButton from "../ToolbarButton.vue";
 
 const snapshot = JSON.stringify({

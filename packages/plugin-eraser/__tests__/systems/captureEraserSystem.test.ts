@@ -10,7 +10,7 @@ import {
   Intersect,
   RankBounds,
   Synced,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CompleteEraserStroke } from '../../src/commands'
 import { Erased, EraserStroke } from '../../src/components'

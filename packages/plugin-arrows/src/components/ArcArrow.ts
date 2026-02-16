@@ -1,5 +1,5 @@
-import { Block, CanvasComponentDef, type Context, type EntityId, field } from '@infinitecanvas/core'
-import { Arc, type Vec2 } from '@infinitecanvas/math'
+import { Block, CanvasComponentDef, type Context, type EntityId, field } from '@woven-canvas/core'
+import { Arc, type Vec2 } from '@woven-canvas/math'
 import { DEFAULT_ARROW_THICKNESS } from '../constants'
 import { ArrowHeadKind } from '../types'
 

@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   plugins: [vue()],
   resolve: {
-    conditions: ['@infinitecanvas/source'],
+    conditions: ['@woven-canvas/source'],
   },
   test: {
     environment: 'jsdom',

@@ -1,4 +1,4 @@
-import { Aabb } from '@infinitecanvas/math'
+import { Aabb } from '@woven-canvas/math'
 import { type Context, type EntityId, hasComponent } from '@woven-ecs/core'
 import { Block } from '../components/Block'
 import { HitGeometry } from '../components/HitGeometry'

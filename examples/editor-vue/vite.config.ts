@@ -18,6 +18,6 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    conditions: ['@infinitecanvas/source'],
+    conditions: ['@woven-canvas/source'],
   },
 })

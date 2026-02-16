@@ -1,4 +1,4 @@
-import { CanvasComponentDef, field } from '@infinitecanvas/core'
+import { CanvasComponentDef, field } from '@woven-canvas/core'
 import { ShapeKind, StrokeKind } from '../types'
 
 const ShapeSchema = {

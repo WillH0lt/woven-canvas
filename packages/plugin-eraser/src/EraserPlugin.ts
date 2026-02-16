@@ -4,7 +4,7 @@ import {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 import * as components from './components'
 import { PLUGIN_NAME } from './constants'
@@ -83,8 +83,8 @@ export function createEraserPlugin(options: EraserPluginOptions = {}): EditorPlu
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/core';
- * import { EraserPlugin } from '@infinitecanvas/plugin-eraser';
+ * import { Editor } from '@woven-canvas/core';
+ * import { EraserPlugin } from '@woven-canvas/plugin-eraser';
  *
  * // With default options (no parentheses needed)
  * const editor = new Editor(el, {

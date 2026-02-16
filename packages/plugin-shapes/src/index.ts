@@ -1,5 +1,5 @@
 /**
- * @infinitecanvas/plugin-shapes
+ * @woven-canvas/plugin-shapes
  *
  * Shapes plugin for infinite canvas applications.
  *
@@ -11,8 +11,8 @@
  *
  * @example
  * ```typescript
- * import { Editor, CorePlugin } from '@infinitecanvas/core';
- * import { ShapesPlugin } from '@infinitecanvas/plugin-shapes';
+ * import { Editor, CorePlugin } from '@woven-canvas/core';
+ * import { ShapesPlugin } from '@woven-canvas/plugin-shapes';
  *
  * const editor = new Editor({
  *   domElement: document.getElementById('canvas'),

@@ -4,7 +4,7 @@ import {
   defineQuery,
   type EntityId,
   type InferCanvasComponentType,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { inject, onUnmounted, type Ref, type ShallowRef, shallowRef } from 'vue'
 import { INFINITE_CANVAS_KEY } from '../injection'
 
@@ -37,8 +37,8 @@ export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
  * @example
  * ```vue
  * <script setup lang="ts">
- * import { useQuery } from "@infinitecanvas/vue";
- * import { Block } from "@infinitecanvas/core";
+ * import { useQuery } from "@woven-canvas/vue";
+ * import { Block } from "@woven-canvas/core";
  * import { Shape } from "./ShapePlugin";
  *
  * // Query all entities with Block and Shape components

@@ -1,4 +1,4 @@
-import type { CursorDef } from '@infinitecanvas/core'
+import type { CursorDef } from '@woven-canvas/core'
 
 /**
  * Cursor kinds for transform operations.

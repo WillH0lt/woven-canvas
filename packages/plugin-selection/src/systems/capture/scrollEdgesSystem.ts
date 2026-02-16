@@ -8,7 +8,7 @@ import {
   type InferStateContext,
   type PointerInput,
   Screen,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { assign, not, setup } from 'xstate'
 import { PLUGIN_NAME } from '../../constants'
 import { ScrollEdgesStateSingleton, SelectionStateSingleton } from '../../singletons'

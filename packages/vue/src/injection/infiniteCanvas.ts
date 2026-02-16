@@ -1,5 +1,5 @@
-import type { AssetManager } from '@infinitecanvas/asset-sync'
-import type { Context, Editor, EntityId, InferCanvasComponentType, User } from '@infinitecanvas/core'
+import type { AssetManager } from '@woven-canvas/asset-sync'
+import type { Context, Editor, EntityId, InferCanvasComponentType, User } from '@woven-canvas/core'
 import type { InjectionKey } from 'vue'
 
 /** User data stored in the users map */

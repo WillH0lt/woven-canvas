@@ -1,5 +1,5 @@
-import { defineCommand, type EntityId } from '@infinitecanvas/core'
-import type { Vec2 } from '@infinitecanvas/math'
+import { defineCommand, type EntityId } from '@woven-canvas/core'
+import type { Vec2 } from '@woven-canvas/math'
 import type { ArrowKind } from '../types'
 
 /**

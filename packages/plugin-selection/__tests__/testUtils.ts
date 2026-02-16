@@ -15,7 +15,7 @@ import {
   Held,
   RankBounds,
   Synced,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { Selected } from '../src/components'
 import { CURSORS } from '../src/cursors'
 

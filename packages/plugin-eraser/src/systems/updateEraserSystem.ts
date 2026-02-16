@@ -16,8 +16,8 @@ import {
   removeComponent,
   removeEntity,
   Synced,
-} from '@infinitecanvas/core'
-import { Aabb as AabbNs, Capsule, Vec2 } from '@infinitecanvas/math'
+} from '@woven-canvas/core'
+import { Aabb as AabbNs, Capsule, Vec2 } from '@woven-canvas/math'
 
 import { AddEraserStrokePoint, CancelEraserStroke, CompleteEraserStroke, StartEraserStroke } from '../commands'
 import { Erased, EraserStroke, POINTS_CAPACITY } from '../components'

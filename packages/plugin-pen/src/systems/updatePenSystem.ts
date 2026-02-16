@@ -19,8 +19,8 @@ import {
   removeComponent,
   removeEntity,
   Synced,
-} from '@infinitecanvas/core'
-import { Aabb as AabbNs, Vec2 } from '@infinitecanvas/math'
+} from '@woven-canvas/core'
+import { Aabb as AabbNs, Vec2 } from '@woven-canvas/math'
 import simplify from 'simplify-js'
 
 import { AddPenStrokePoint, CompletePenStroke, RemovePenStroke, StartPenStroke } from '../commands'

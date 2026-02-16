@@ -1,4 +1,4 @@
-import { Camera, Editor } from '@infinitecanvas/core'
+import { Camera, Editor } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CanvasControlsPlugin, PanState, PanStateValue } from '../src'
 

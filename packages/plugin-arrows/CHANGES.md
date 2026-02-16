@@ -8,11 +8,11 @@ ArrowHandle
 ElbowArrow
 * use field.enum for startArrowHead and endArrowHead
 helpers/ArcArrow
-* I'd like to create Arc type in @infinitecanvas/math package which takes length 7 tuple. The logic of this file would be covered by methods on that type.
+* I'd like to create Arc type in @woven-canvas/math package which takes length 7 tuple. The logic of this file would be covered by methods on that type.
 * Move these methods onto the ArcArrow Component. See packages\editor\src\components\Aabb.ts for an example.
 calculateElbowArrowPath
-* I'd also like to make Ray a type in @infinitecanvas/math package. So we can export some useful math functions to that package.
-* instead of AabbRect let's use Aabb from @infinitecanvas/math package
+* I'd also like to make Ray a type in @woven-canvas/math package. So we can export some useful math functions to that package.
+* instead of AabbRect let's use Aabb from @woven-canvas/math package
 closestPointToPoint
 * use methods from math package
 helpers/elbowArrow

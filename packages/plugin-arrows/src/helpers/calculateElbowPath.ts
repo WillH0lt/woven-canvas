@@ -1,7 +1,7 @@
-import type { Context, EntityId } from '@infinitecanvas/core'
-import { Block } from '@infinitecanvas/core'
-import type { RayIntersection } from '@infinitecanvas/math'
-import { Aabb, Mat2, Ray, Rect, Scalar, Vec2 } from '@infinitecanvas/math'
+import type { Context, EntityId } from '@woven-canvas/core'
+import { Block } from '@woven-canvas/core'
+import type { RayIntersection } from '@woven-canvas/math'
+import { Aabb, Mat2, Ray, Rect, Scalar, Vec2 } from '@woven-canvas/math'
 import { MinHeap } from './MinHeap'
 
 interface Node {

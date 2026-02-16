@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ToolbarButton from "../ToolbarButton.vue";
-import { ArrowHeadKind } from "@infinitecanvas/plugin-arrows";
+import { ArrowHeadKind } from "@woven-canvas/plugin-arrows";
 
 const snapshot = JSON.stringify({
   block: {

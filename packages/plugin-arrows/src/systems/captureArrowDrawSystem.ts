@@ -7,9 +7,9 @@ import {
   getPointerInput,
   type InferStateContext,
   type PointerInput,
-} from '@infinitecanvas/core'
-import { Vec2 } from '@infinitecanvas/math'
-import { DeselectAll } from '@infinitecanvas/plugin-selection'
+} from '@woven-canvas/core'
+import { Vec2 } from '@woven-canvas/math'
+import { DeselectAll } from '@woven-canvas/plugin-selection'
 import { assign, setup } from 'xstate'
 import { AddArrow, RemoveArrow } from '../commands'
 import { POINTING_THRESHOLD } from '../constants'

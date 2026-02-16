@@ -24,7 +24,7 @@ Tested with:
 
 ## What's Included
 
-- `pnpm` workspace, whose configuration is stored in [`pnpm-workspace.yaml`](/pnpm-workspace.yaml). Two example packages are included, [`common-utils`](packages/common-utils) and [`example`](packages/example), with the latter importing `common-utils` as a dependency. All local packages are decorated with a `@infinitecanvas/*` scope (you may want to substitute these instances in the `name` entries of any `package.json` with yours or your company's name).
+- `pnpm` workspace, whose configuration is stored in [`pnpm-workspace.yaml`](/pnpm-workspace.yaml). Two example packages are included, [`common-utils`](packages/common-utils) and [`example`](packages/example), with the latter importing `common-utils` as a dependency. All local packages are decorated with a `@woven-canvas/*` scope (you may want to substitute these instances in the `name` entries of any `package.json` with yours or your company's name).
 - `tsup` bundler, whose configuration is stored in [`tsup.config.ts`](./tsup.config.ts).
 - `turborepo`, whose configuration is stored in [`turbo.json`](./turbo.json)
 - an example [`Dockerfile`](./Dockerfile.pnpm) that can be built and used as a base image for your Node.js Docker containers.
@@ -64,8 +64,8 @@ This allows for easily running groups of tests (for instance, you might want to 
 
 Hi, I'm **Alberto Schiabel**, you can follow me on:
 
-- Github: [@infinitecanvas](https://github.com/jkomyno)
-- Twitter: [@infinitecanvas](https://twitter.com/jkomyno)
+- Github: [@woven-canvas](https://github.com/jkomyno)
+- Twitter: [@woven-canvas](https://twitter.com/jkomyno)
 
 ## 🦄 Show your support
 

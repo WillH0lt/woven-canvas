@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/core";
-import { PenStroke } from "@infinitecanvas/plugin-pen";
+import type { EntityId } from "@woven-canvas/core";
+import { PenStroke } from "@woven-canvas/plugin-pen";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import IconChevronDown from "../icons/IconChevronDown.vue";

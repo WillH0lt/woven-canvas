@@ -19,15 +19,15 @@ import {
   removeEntity,
   ScaleWithZoom,
   Synced,
-} from '@infinitecanvas/core'
-import { Rect, type Vec2 } from '@infinitecanvas/math'
+} from '@woven-canvas/core'
+import { Rect, type Vec2 } from '@woven-canvas/math'
 import {
   DragBlock,
   SelectionState,
   SelectionStateSingleton,
   selectBlock,
   TransformHandle,
-} from '@infinitecanvas/plugin-selection'
+} from '@woven-canvas/plugin-selection'
 import { generateJitteredKeyBetween } from 'fractional-indexing-jittered'
 import {
   AddArrow,

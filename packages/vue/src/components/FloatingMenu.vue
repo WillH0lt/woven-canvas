@@ -6,13 +6,13 @@ import {
   Camera,
   Screen,
   type EntityId,
-} from "@infinitecanvas/core";
+} from "@woven-canvas/core";
 import {
   Selected,
   SelectionStateSingleton,
   SelectionState,
-} from "@infinitecanvas/plugin-selection";
-import { Aabb, Rect } from "@infinitecanvas/math";
+} from "@woven-canvas/plugin-selection";
+import { Aabb, Rect } from "@woven-canvas/math";
 import { useElementBounding } from "@vueuse/core";
 
 import { useQuery } from "../composables/useQuery";

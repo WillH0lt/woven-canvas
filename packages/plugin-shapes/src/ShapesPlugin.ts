@@ -4,7 +4,7 @@ import {
   type EditorPluginFactory,
   Text,
   VerticalAlign,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 import * as components from './components'
 
@@ -62,8 +62,8 @@ export function createShapesPlugin(options: ShapesPluginOptions = {}): EditorPlu
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/core';
- * import { ShapesPlugin } from '@infinitecanvas/plugin-shapes';
+ * import { Editor } from '@woven-canvas/core';
+ * import { ShapesPlugin } from '@woven-canvas/plugin-shapes';
  *
  * // With default options (no parentheses needed)
  * const editor = new Editor(el, {

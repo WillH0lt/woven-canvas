@@ -1,4 +1,4 @@
-import type { EntityId } from '@infinitecanvas/core'
+import type { EntityId } from '@woven-canvas/core'
 import type { ComputedRef, InjectionKey } from 'vue'
 
 /** Context provided by FloatingMenu */

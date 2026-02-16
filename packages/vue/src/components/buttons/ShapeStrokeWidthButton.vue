@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/core";
-import { Shape } from "@infinitecanvas/plugin-shapes";
+import type { EntityId } from "@woven-canvas/core";
+import { Shape } from "@woven-canvas/plugin-shapes";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import { useComponents } from "../../composables/useComponents";

@@ -1,4 +1,4 @@
-import { Aabb as AabbMath } from '@infinitecanvas/math'
+import { Aabb as AabbMath } from '@woven-canvas/math'
 import { Synced } from '@woven-ecs/canvas-store'
 import { type Context, defineQuery, type EntityId, hasComponent } from '@woven-ecs/core'
 import { Aabb, Block } from '../../components'

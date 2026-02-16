@@ -1,4 +1,4 @@
-import type { EditorPlugin, EditorPluginFactory } from '@infinitecanvas/core'
+import type { EditorPlugin, EditorPluginFactory } from '@woven-canvas/core'
 
 import { PanState } from './components'
 import { PostInputPan, PostInputScroll, PostInputZoom } from './systems'
@@ -31,8 +31,8 @@ function createControlsPlugin(options: CanvasControlsOptionsInput = {}): EditorP
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/core';
- * import { CanvasControlsPlugin } from '@infinitecanvas/plugin-canvas-controls';
+ * import { Editor } from '@woven-canvas/core';
+ * import { CanvasControlsPlugin } from '@woven-canvas/plugin-canvas-controls';
  *
  * // With default options (no parentheses needed)
  * const editor = new Editor(el, {

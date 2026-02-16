@@ -1,4 +1,4 @@
-import { defineEditorState, field } from '@infinitecanvas/core'
+import { defineEditorState, field } from '@woven-canvas/core'
 import { ArrowTransformStateEnum } from '../types'
 
 /**

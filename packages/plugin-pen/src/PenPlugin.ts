@@ -5,7 +5,7 @@ import {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 import * as components from './components'
 import { PLUGIN_NAME } from './constants'
@@ -64,8 +64,8 @@ export function createPenPlugin(): EditorPlugin {
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/core';
- * import { PenPlugin } from '@infinitecanvas/plugin-pen';
+ * import { Editor } from '@woven-canvas/core';
+ * import { PenPlugin } from '@woven-canvas/plugin-pen';
  *
  * // Use the plugin
  * const editor = new Editor(el, {

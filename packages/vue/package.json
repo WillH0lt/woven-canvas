@@ -1,5 +1,5 @@
 {
-  "name": "@infinitecanvas/vue",
+  "name": "@woven-canvas/vue",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -8,7 +8,7 @@
   "types": "dist/types/index.d.ts",
   "exports": {
     ".": {
-      "@infinitecanvas/source": "./src/index.ts",
+      "@woven-canvas/source": "./src/index.ts",
       "import": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
@@ -32,15 +32,15 @@
   },
   "dependencies": {
     "@floating-ui/vue": "^1.1.6",
-    "@infinitecanvas/asset-sync": "workspace:^",
-    "@infinitecanvas/core": "workspace:^",
-    "@infinitecanvas/math": "workspace:^",
-    "@infinitecanvas/plugin-arrows": "workspace:^",
-    "@infinitecanvas/plugin-canvas-controls": "workspace:^",
-    "@infinitecanvas/plugin-eraser": "workspace:^",
-    "@infinitecanvas/plugin-pen": "workspace:^",
-    "@infinitecanvas/plugin-selection": "workspace:^",
-    "@infinitecanvas/plugin-shapes": "workspace:^",
+    "@woven-canvas/asset-sync": "workspace:^",
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/math": "workspace:^",
+    "@woven-canvas/plugin-arrows": "workspace:^",
+    "@woven-canvas/plugin-canvas-controls": "workspace:^",
+    "@woven-canvas/plugin-eraser": "workspace:^",
+    "@woven-canvas/plugin-pen": "workspace:^",
+    "@woven-canvas/plugin-selection": "workspace:^",
+    "@woven-canvas/plugin-shapes": "workspace:^",
     "@tiptap/core": "^3.15.3",
     "@tiptap/extension-bold": "^3.15.3",
     "@tiptap/extension-color": "^3.10.1",

@@ -1,4 +1,4 @@
-import { Block, Camera, type Context, hasComponent, Screen, Text } from '@infinitecanvas/core'
+import { Block, Camera, type Context, hasComponent, Screen, Text } from '@woven-canvas/core'
 import {
   SelectionState,
   SelectionStateSingleton,
@@ -6,7 +6,7 @@ import {
   TransformHandle,
   TransformHandleKind,
   UpdateTransformBox,
-} from '@infinitecanvas/plugin-selection'
+} from '@woven-canvas/plugin-selection'
 import { type MaybeRefOrGetter, onUnmounted, type Ref, toValue, watch } from 'vue'
 import type { BlockData } from '../types'
 import { computeBlockDimensions } from '../utils/blockDimensions'

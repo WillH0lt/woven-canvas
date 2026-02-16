@@ -1,4 +1,4 @@
-import { field } from '@infinitecanvas/core'
+import { field } from '@woven-canvas/core'
 import { defineCanvasSingleton } from '@woven-ecs/canvas-store'
 
 /**

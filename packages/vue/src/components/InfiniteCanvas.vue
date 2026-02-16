@@ -38,22 +38,22 @@ import {
   type UserDataInput,
   type GridOptionsInput,
   type Context,
-} from "@infinitecanvas/core";
+} from "@woven-canvas/core";
 import { CanvasStore, type CanvasStoreOptions } from "@woven-ecs/canvas-store";
 import {
   AssetManager,
   LocalAssetProvider,
   type AssetProvider,
-} from "@infinitecanvas/asset-sync";
+} from "@woven-canvas/asset-sync";
 import {
   CanvasControlsPlugin,
   type CanvasControlsOptionsInput,
-} from "@infinitecanvas/plugin-canvas-controls";
-import { SelectionPlugin, Selected } from "@infinitecanvas/plugin-selection";
-import { EraserPlugin } from "@infinitecanvas/plugin-eraser";
-import { PenPlugin } from "@infinitecanvas/plugin-pen";
-import { ArrowsPlugin } from "@infinitecanvas/plugin-arrows";
-import { ShapesPlugin } from "@infinitecanvas/plugin-shapes";
+} from "@woven-canvas/plugin-canvas-controls";
+import { SelectionPlugin, Selected } from "@woven-canvas/plugin-selection";
+import { EraserPlugin } from "@woven-canvas/plugin-eraser";
+import { PenPlugin } from "@woven-canvas/plugin-pen";
+import { ArrowsPlugin } from "@woven-canvas/plugin-arrows";
+import { ShapesPlugin } from "@woven-canvas/plugin-shapes";
 
 import {
   INFINITE_CANVAS_KEY,

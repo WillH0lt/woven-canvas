@@ -9,7 +9,7 @@ import {
   type EntityId,
   hasComponent,
   Opacity,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   AddTransformBox,

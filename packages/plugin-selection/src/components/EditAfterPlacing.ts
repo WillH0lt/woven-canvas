@@ -1,4 +1,4 @@
-import { defineCanvasComponent } from '@infinitecanvas/core'
+import { defineCanvasComponent } from '@woven-canvas/core'
 
 /**
  * EditAfterPlacing component - marker for blocks that should enter edit mode after placement.

@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@infinitecanvas/plugin-eraser",
+  "name": "@woven-canvas/plugin-eraser",
   "version": "0.1.0",
   "description": "Eraser plugin - erase objects with capsule-based collision detection for infinite canvas",
   "files": [
@@ -11,7 +11,7 @@
   "types": "./build/index.d.ts",
   "exports": {
     ".": {
-      "@infinitecanvas/source": "./src/index.ts",
+      "@woven-canvas/source": "./src/index.ts",
       "import": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
@@ -32,8 +32,8 @@
     "test:watch": "vitest --config ../../vitest.config.ts run --watch"
   },
   "dependencies": {
-    "@infinitecanvas/core": "workspace:*",
-    "@infinitecanvas/math": "workspace:*",
+    "@woven-canvas/core": "workspace:*",
+    "@woven-canvas/math": "workspace:*",
     "xstate": "^5.24.0"
   },
   "devDependencies": {

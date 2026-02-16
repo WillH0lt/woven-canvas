@@ -1,4 +1,4 @@
-import { defineCommand, type Vec2 } from '@infinitecanvas/core'
+import { defineCommand, type Vec2 } from '@woven-canvas/core'
 
 /**
  * Cut selected blocks to clipboard and remove them.

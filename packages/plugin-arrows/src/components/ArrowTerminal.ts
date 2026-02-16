@@ -1,4 +1,4 @@
-import { defineCanvasComponent, field } from '@infinitecanvas/core'
+import { defineCanvasComponent, field } from '@woven-canvas/core'
 
 /**
  * ArrowTerminal component - marks an entity as an arrow snap terminal.

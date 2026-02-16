@@ -8,7 +8,7 @@ import {
   Synced,
   defineQuery,
   type Context,
-} from "@infinitecanvas/core";
+} from "@woven-canvas/core";
 import { useEditorContext } from "../composables/useEditorContext";
 import { useSingleton } from "../composables/useSingleton";
 

@@ -1,4 +1,4 @@
-import { Aabb as AabbNs, Arc, Capsule, Mat2, type Vec2 } from '@infinitecanvas/math'
+import { Aabb as AabbNs, Arc, Capsule, Mat2, type Vec2 } from '@woven-canvas/math'
 import { type Context, type EntityId, hasComponent } from '@woven-ecs/core'
 
 import { Aabb as AabbComponent } from '../components/Aabb'

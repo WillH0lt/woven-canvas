@@ -1,4 +1,4 @@
-import { type CursorDef, Editor } from '@infinitecanvas/core'
+import { type CursorDef, Editor } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Cursor } from '../../../src/singletons'
 import { getCursorSvg } from '../../../src/systems/postRender/cursorSystem'

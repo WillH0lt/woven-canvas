@@ -1,4 +1,4 @@
-import type { EntityId, TextAlignment } from '@infinitecanvas/core'
+import type { EntityId, TextAlignment } from '@woven-canvas/core'
 import { type ComputedRef, computed, type MaybeRefOrGetter } from 'vue'
 import { useTextBatchController } from './useTextBatchController'
 import { useTextEditorController } from './useTextEditorController'

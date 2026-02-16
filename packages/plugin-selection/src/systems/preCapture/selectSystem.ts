@@ -12,8 +12,8 @@ import {
   isHeldByRemote,
   type PointerInput,
   Synced,
-} from '@infinitecanvas/core'
-import { Vec2 as Vec2Ns } from '@infinitecanvas/math'
+} from '@woven-canvas/core'
+import { Vec2 as Vec2Ns } from '@woven-canvas/math'
 import { and, assign, not, setup } from 'xstate'
 import {
   AddHeld,

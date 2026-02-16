@@ -1,5 +1,5 @@
-import { defineEditorSystem, getPluginResources, on, Redo, Undo } from '@infinitecanvas/core'
-import { deselectAll } from '@infinitecanvas/plugin-selection'
+import { defineEditorSystem, getPluginResources, on, Redo, Undo } from '@woven-canvas/core'
+import { deselectAll } from '@woven-canvas/plugin-selection'
 import type { BasicsPluginResources } from '../BasicsPlugin'
 
 export const undoRedoSystem = defineEditorSystem({ phase: 'update' }, (ctx) => {

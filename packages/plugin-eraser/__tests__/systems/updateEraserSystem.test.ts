@@ -1,4 +1,4 @@
-import { Block, defineQuery, Editor, type EditorPlugin, hasComponent, Synced } from '@infinitecanvas/core'
+import { Block, defineQuery, Editor, type EditorPlugin, hasComponent, Synced } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AddEraserStrokePoint, CancelEraserStroke, CompleteEraserStroke, StartEraserStroke } from '../../src/commands'
 import { Erased, EraserStroke } from '../../src/components'

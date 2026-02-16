@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
-import { Color, Block } from "@infinitecanvas/core";
+import { Color, Block } from "@woven-canvas/core";
 import { useComponent } from "../../composables/useComponent";
-import { PenStroke } from "@infinitecanvas/plugin-pen";
+import { PenStroke } from "@woven-canvas/plugin-pen";
 import { getStroke } from "perfect-freehand";
 import type { BlockData } from "../../types";
 

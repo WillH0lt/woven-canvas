@@ -5,7 +5,7 @@ import {
   type EditorPluginFactory,
   type EditorSystem,
   Key,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 import { BringForwardSelected, Copy, Cut, Paste, RemoveSelected, SelectAll, SendBackwardSelected } from './commands'
 
@@ -150,8 +150,8 @@ export function createSelectionPlugin(options: SelectionPluginOptionsInput = {})
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/core';
- * import { SelectionPlugin } from '@infinitecanvas/plugin-selection';
+ * import { Editor } from '@woven-canvas/core';
+ * import { SelectionPlugin } from '@woven-canvas/plugin-selection';
  *
  * // With default options
  * const editor = new Editor(el, {

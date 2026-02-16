@@ -11,7 +11,7 @@ import {
   HitGeometry,
   RankBounds,
   Synced,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 /**
  * Options for creating a test block.

@@ -1,4 +1,4 @@
-import { Scalar, Vec2 } from '@infinitecanvas/math'
+import { Scalar, Vec2 } from '@woven-canvas/math'
 import { type Context, defineQuery, type EntityId } from '@woven-ecs/core'
 import { Block, ScaleWithZoom } from '../../components'
 import { defineEditorSystem } from '../../EditorSystem'

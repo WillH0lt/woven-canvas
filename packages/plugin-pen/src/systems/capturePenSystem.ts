@@ -5,7 +5,7 @@ import {
   type InferStateContext,
   type PointerInput,
   PointerType,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { assign, setup } from 'xstate'
 import { AddPenStrokePoint, CompletePenStroke, RemovePenStroke, StartPenStroke } from '../commands'
 import { PenStateSingleton } from '../singletons'

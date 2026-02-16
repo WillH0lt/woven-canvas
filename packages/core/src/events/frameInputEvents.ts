@@ -14,7 +14,7 @@ import type { FrameInput } from './types'
  *
  * @example
  * ```typescript
- * import { getFrameInput } from '@infinitecanvas/core';
+ * import { getFrameInput } from '@woven-canvas/core';
  *
  * const glideSystem = defineSystem((ctx) => {
  *   const state = GlideState.read(ctx);

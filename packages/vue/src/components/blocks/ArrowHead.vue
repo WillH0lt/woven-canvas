@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Vec2 } from "@infinitecanvas/math";
-import { ArrowHeadKind } from "@infinitecanvas/plugin-arrows";
+import type { Vec2 } from "@woven-canvas/math";
+import { ArrowHeadKind } from "@woven-canvas/plugin-arrows";
 
 const props = defineProps<{
   position: Vec2;

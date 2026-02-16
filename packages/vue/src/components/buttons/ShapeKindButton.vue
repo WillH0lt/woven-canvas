@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EntityId } from "@infinitecanvas/core";
-import { Shape, ShapeKind, getShapePath } from "@infinitecanvas/plugin-shapes";
+import type { EntityId } from "@woven-canvas/core";
+import { Shape, ShapeKind, getShapePath } from "@woven-canvas/plugin-shapes";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import IconChevronDown from "../icons/IconChevronDown.vue";

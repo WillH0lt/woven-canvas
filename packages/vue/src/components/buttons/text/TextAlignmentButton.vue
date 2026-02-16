@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TextAlignment, type TextAlignment as TextAlignmentType, type EntityId } from "@infinitecanvas/core";
+import { TextAlignment, type TextAlignment as TextAlignmentType, type EntityId } from "@woven-canvas/core";
 
 import MenuButton from "../MenuButton.vue";
 import { useTextFormatting } from "../../../composables/useTextFormatting";

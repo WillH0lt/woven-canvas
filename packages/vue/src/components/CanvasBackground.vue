@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, inject, type Ref } from "vue";
 import { useSingleton } from "../composables/useSingleton";
-import { Camera, Grid } from "@infinitecanvas/core";
+import { Camera, Grid } from "@woven-canvas/core";
 import type { BackgroundOptions } from "../types";
 
 interface Props {

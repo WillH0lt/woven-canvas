@@ -10,7 +10,7 @@ import {
   on,
   removeEntity,
   Synced,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { AddSelectionBox, RemoveSelectionBox, UpdateSelectionBox } from '../../commands'
 import { Selected, SelectionBox } from '../../components'
 import { deselectBlock, selectBlock } from '../../helpers'

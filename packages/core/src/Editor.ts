@@ -95,7 +95,7 @@ function batchSystems(systems: EditorSystem[]): EditorSystem[][] {
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/core';
+ * import { Editor } from '@woven-canvas/core';
  * import { SelectionPlugin, TransformPlugin } from './plugins';
  *
  * const editor = new Editor(document.getElementById('canvas')!, {

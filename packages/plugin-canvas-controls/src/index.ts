@@ -1,5 +1,5 @@
 /**
- * @infinitecanvas/plugin-canvas-controls
+ * @woven-canvas/plugin-canvas-controls
  *
  * Canvas controls plugin for infinite canvas applications.
  *
@@ -10,8 +10,8 @@
  *
  * @example
  * ```typescript
- * import { Editor, CorePlugin } from '@infinitecanvas/core';
- * import { CanvasControlsPlugin } from '@infinitecanvas/plugin-canvas-controls';
+ * import { Editor, CorePlugin } from '@woven-canvas/core';
+ * import { CanvasControlsPlugin } from '@woven-canvas/plugin-canvas-controls';
  *
  * const editor = new Editor({
  *   domElement: document.getElementById('canvas'),

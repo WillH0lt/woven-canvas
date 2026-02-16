@@ -1,5 +1,5 @@
-import type { TextAlignment } from '@infinitecanvas/core'
 import type { Editor } from '@tiptap/vue-3'
+import type { TextAlignment } from '@woven-canvas/core'
 import { type ComputedRef, computed, type ShallowRef, shallowRef } from 'vue'
 
 import { normalizeColor } from '../utils/color'

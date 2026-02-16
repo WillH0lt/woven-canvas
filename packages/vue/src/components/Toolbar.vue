@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, useSlots, provide, onMounted, watch } from "vue";
-import { Controls, Cursor, type Context } from "@infinitecanvas/core";
+import { Controls, Cursor, type Context } from "@woven-canvas/core";
 
 import MenuTooltip from "./buttons/MenuTooltip.vue";
 import SelectTool from "./tools/SelectTool.vue";

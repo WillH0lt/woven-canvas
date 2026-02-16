@@ -6,7 +6,7 @@ import {
   Color,
   VerticalAlign,
   VerticalAlignment,
-} from "@infinitecanvas/core";
+} from "@woven-canvas/core";
 import type { BlockData } from "../../types";
 import EditableText from "../EditableText.vue";
 

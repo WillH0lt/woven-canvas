@@ -5,7 +5,7 @@ import {
   Connector,
   type EditorPlugin,
   type EditorPluginFactory,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
 import * as components from './components'
 import { ELBOW_ARROW_PADDING, PLUGIN_NAME } from './constants'
@@ -109,8 +109,8 @@ export function createArrowsPlugin(options: ArrowsPluginOptions = {}): EditorPlu
  *
  * @example
  * ```typescript
- * import { Editor } from '@infinitecanvas/core';
- * import { ArrowsPlugin } from '@infinitecanvas/plugin-arrows';
+ * import { Editor } from '@woven-canvas/core';
+ * import { ArrowsPlugin } from '@woven-canvas/plugin-arrows';
  *
  * // With default options (no parentheses needed)
  * const editor = new Editor(el, {

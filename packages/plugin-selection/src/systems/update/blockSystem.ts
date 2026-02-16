@@ -22,9 +22,9 @@ import {
   removeComponent,
   removeEntity,
   Synced,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 
-import { Aabb as AabbNs, Vec2 } from '@infinitecanvas/math'
+import { Aabb as AabbNs, Vec2 } from '@woven-canvas/math'
 import {
   AddHeld,
   BringForwardSelected,

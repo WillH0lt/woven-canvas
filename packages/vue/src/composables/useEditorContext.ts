@@ -1,4 +1,4 @@
-import type { Context } from '@infinitecanvas/core'
+import type { Context } from '@woven-canvas/core'
 import { inject } from 'vue'
 import { INFINITE_CANVAS_KEY } from '../injection'
 
@@ -47,7 +47,7 @@ export interface EditorContext {
  * @example
  * ```vue
  * <script setup lang="ts">
- * import { useEditorContext } from "@infinitecanvas/vue";
+ * import { useEditorContext } from "@woven-canvas/vue";
  * import { Shape } from "./Shape";
  *
  * const props = defineProps<{ entityId: EntityId }>();

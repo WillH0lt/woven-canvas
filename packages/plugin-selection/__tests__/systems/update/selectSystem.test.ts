@@ -10,7 +10,7 @@ import {
   Held,
   hasComponent,
   Synced,
-} from '@infinitecanvas/core'
+} from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AddSelectionBox, RemoveSelectionBox, UpdateSelectionBox } from '../../../src/commands'
 import { Selected, SelectionBox } from '../../../src/components'

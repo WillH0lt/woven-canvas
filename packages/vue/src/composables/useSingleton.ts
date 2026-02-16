@@ -1,4 +1,4 @@
-import type { AnyCanvasSingletonDef, InferCanvasComponentType } from '@infinitecanvas/core'
+import type { AnyCanvasSingletonDef, InferCanvasComponentType } from '@woven-canvas/core'
 import { inject, onUnmounted, type ShallowRef, shallowRef } from 'vue'
 import { INFINITE_CANVAS_KEY } from '../injection'
 
@@ -21,8 +21,8 @@ type SingletonDefWithSchema = AnyCanvasSingletonDef & {
  * @example
  * ```vue
  * <script setup lang="ts">
- * import { useSingleton } from "@infinitecanvas/vue";
- * import { Camera, Mouse } from "@infinitecanvas/core";
+ * import { useSingleton } from "@woven-canvas/vue";
+ * import { Camera, Mouse } from "@woven-canvas/core";
  *
  * const camera = useSingleton(Camera);
  * const mouse = useSingleton(Mouse);

@@ -68,16 +68,16 @@ importers:
 
   examples/editor-vue:
     dependencies:
-      '@infinitecanvas/core':
+      '@woven-canvas/core':
         specifier: workspace:^
         version: link:../../packages/core
-      '@infinitecanvas/plugin-canvas-controls':
+      '@woven-canvas/plugin-canvas-controls':
         specifier: workspace:^
         version: link:../../packages/plugin-canvas-controls
-      '@infinitecanvas/plugin-selection':
+      '@woven-canvas/plugin-selection':
         specifier: workspace:^
         version: link:../../packages/plugin-selection
-      '@infinitecanvas/vue':
+      '@woven-canvas/vue':
         specifier: workspace:^
         version: link:../../packages/vue
       vue:
@@ -136,7 +136,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@infinitecanvas/math':
+      '@woven-canvas/math':
         specifier: workspace:*
         version: link:../math
       '@woven-ecs/canvas-store':
@@ -180,13 +180,13 @@ importers:
 
   packages/plugin-arrows:
     dependencies:
-      '@infinitecanvas/core':
+      '@woven-canvas/core':
         specifier: workspace:*
         version: link:../core
-      '@infinitecanvas/math':
+      '@woven-canvas/math':
         specifier: workspace:*
         version: link:../math
-      '@infinitecanvas/plugin-selection':
+      '@woven-canvas/plugin-selection':
         specifier: workspace:*
         version: link:../plugin-selection
       fractional-indexing-jittered:
@@ -211,10 +211,10 @@ importers:
 
   packages/plugin-canvas-controls:
     dependencies:
-      '@infinitecanvas/core':
+      '@woven-canvas/core':
         specifier: workspace:*
         version: link:../core
-      '@infinitecanvas/math':
+      '@woven-canvas/math':
         specifier: workspace:*
         version: link:../math
       typescript:
@@ -239,10 +239,10 @@ importers:
 
   packages/plugin-eraser:
     dependencies:
-      '@infinitecanvas/core':
+      '@woven-canvas/core':
         specifier: workspace:*
         version: link:../core
-      '@infinitecanvas/math':
+      '@woven-canvas/math':
         specifier: workspace:*
         version: link:../math
       typescript:
@@ -264,10 +264,10 @@ importers:
 
   packages/plugin-pen:
     dependencies:
-      '@infinitecanvas/core':
+      '@woven-canvas/core':
         specifier: workspace:*
         version: link:../core
-      '@infinitecanvas/math':
+      '@woven-canvas/math':
         specifier: workspace:*
         version: link:../math
       simplify-js:
@@ -292,10 +292,10 @@ importers:
 
   packages/plugin-selection:
     dependencies:
-      '@infinitecanvas/core':
+      '@woven-canvas/core':
         specifier: workspace:^
         version: link:../core
-      '@infinitecanvas/math':
+      '@woven-canvas/math':
         specifier: workspace:^
         version: link:../math
       fractional-indexing-jittered:
@@ -323,10 +323,10 @@ importers:
 
   packages/plugin-shapes:
     dependencies:
-      '@infinitecanvas/core':
+      '@woven-canvas/core':
         specifier: workspace:*
         version: link:../core
-      '@infinitecanvas/math':
+      '@woven-canvas/math':
         specifier: workspace:*
         version: link:../math
       typescript:
@@ -348,33 +348,6 @@ importers:
       '@floating-ui/vue':
         specifier: ^1.1.6
         version: 1.1.9(vue@3.5.27)
-      '@infinitecanvas/asset-sync':
-        specifier: workspace:^
-        version: link:../asset-sync
-      '@infinitecanvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@infinitecanvas/math':
-        specifier: workspace:^
-        version: link:../math
-      '@infinitecanvas/plugin-arrows':
-        specifier: workspace:^
-        version: link:../plugin-arrows
-      '@infinitecanvas/plugin-canvas-controls':
-        specifier: workspace:^
-        version: link:../plugin-canvas-controls
-      '@infinitecanvas/plugin-eraser':
-        specifier: workspace:^
-        version: link:../plugin-eraser
-      '@infinitecanvas/plugin-pen':
-        specifier: workspace:^
-        version: link:../plugin-pen
-      '@infinitecanvas/plugin-selection':
-        specifier: workspace:^
-        version: link:../plugin-selection
-      '@infinitecanvas/plugin-shapes':
-        specifier: workspace:^
-        version: link:../plugin-shapes
       '@tiptap/core':
         specifier: ^3.15.3
         version: 3.17.0(@tiptap/pm@3.17.0)
@@ -414,6 +387,33 @@ importers:
       '@vueuse/core':
         specifier: ^14.0.0
         version: 14.1.0(vue@3.5.27)
+      '@woven-canvas/asset-sync':
+        specifier: workspace:^
+        version: link:../asset-sync
+      '@woven-canvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@woven-canvas/math':
+        specifier: workspace:^
+        version: link:../math
+      '@woven-canvas/plugin-arrows':
+        specifier: workspace:^
+        version: link:../plugin-arrows
+      '@woven-canvas/plugin-canvas-controls':
+        specifier: workspace:^
+        version: link:../plugin-canvas-controls
+      '@woven-canvas/plugin-eraser':
+        specifier: workspace:^
+        version: link:../plugin-eraser
+      '@woven-canvas/plugin-pen':
+        specifier: workspace:^
+        version: link:../plugin-pen
+      '@woven-canvas/plugin-selection':
+        specifier: workspace:^
+        version: link:../plugin-selection
+      '@woven-canvas/plugin-shapes':
+        specifier: workspace:^
+        version: link:../plugin-shapes
       '@woven-ecs/canvas-store':
         specifier: ^1.0.1
         version: 1.0.1(typescript@5.9.3)

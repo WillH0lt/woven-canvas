@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@infinitecanvas/asset-sync",
+  "name": "@woven-canvas/asset-sync",
   "version": "0.1.0",
   "description": "Asset management for InfiniteCanvas - upload queueing, caching, and URL resolution",
   "files": [
@@ -11,7 +11,7 @@
   "types": "./build/index.d.ts",
   "exports": {
     ".": {
-      "@infinitecanvas/source": "./src/index.ts",
+      "@woven-canvas/source": "./src/index.ts",
       "import": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
