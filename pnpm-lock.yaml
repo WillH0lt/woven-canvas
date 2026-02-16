@@ -121,12 +121,9 @@ importers:
         specifier: ^8.0.3
         version: 8.0.3
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5
         version: 5.9.3
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.9
       fake-indexeddb:
         specifier: ^6.2.5
         version: 6.2.5
@@ -158,9 +155,6 @@ importers:
         specifier: ^4.2.1
         version: 4.3.6
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.9
       vitest:
         specifier: ^4.0.7
         version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
@@ -171,9 +165,6 @@ importers:
         specifier: ^5
         version: 5.9.3
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.6
       vitest:
         specifier: ^4.0.7
         version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
@@ -190,18 +181,15 @@ importers:
         specifier: workspace:*
         version: link:../plugin-selection
       fractional-indexing-jittered:
-        specifier: ^1.0.0
+        specifier: ^1
         version: 1.0.0
       typescript:
         specifier: ^5
         version: 5.9.3
       xstate:
-        specifier: ^5.24.0
+        specifier: ^5
         version: 5.25.1
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.6
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -221,15 +209,12 @@ importers:
         specifier: ^5
         version: 5.9.3
       xstate:
-        specifier: ^5.24.0
+        specifier: ^5
         version: 5.25.1
       zod:
-        specifier: ^3.24.1
-        version: 3.25.76
+        specifier: ^3 || ^4
+        version: 4.3.6
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.6
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -249,12 +234,9 @@ importers:
         specifier: ^5
         version: 5.9.3
       xstate:
-        specifier: ^5.24.0
+        specifier: ^5
         version: 5.25.1
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.6
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -277,12 +259,9 @@ importers:
         specifier: ^5
         version: 5.9.3
       xstate:
-        specifier: ^5.24.0
+        specifier: ^5
         version: 5.25.1
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.6
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -299,7 +278,7 @@ importers:
         specifier: workspace:^
         version: link:../math
       fractional-indexing-jittered:
-        specifier: ^1.0.0
+        specifier: ^1
         version: 1.0.0
       typescript:
         specifier: ^5
@@ -308,12 +287,9 @@ importers:
         specifier: ^5
         version: 5.25.1
       zod:
-        specifier: ^3.24.1
-        version: 3.25.76
+        specifier: ^3 || ^4
+        version: 4.3.6
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.6
       vite:
         specifier: ^7.2.4
         version: 7.3.1(@types/node@24.10.0)(tsx@4.21.0)
@@ -333,9 +309,6 @@ importers:
         specifier: ^5
         version: 5.9.3
     devDependencies:
-      '@types/bun':
-        specifier: latest
-        version: 1.3.8
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -1867,18 +1840,6 @@ packages:
       bun-types: 1.3.6
     dev: true
 
-  /@types/bun@1.3.8:
-    resolution: {integrity: sha512-3LvWJ2q5GerAXYxO2mffLTqOzEu5qnhEAlh48Vnu8WQfnmSwbgagjGZV6BoHKJztENYEDn6QmVd949W4uESRJA==}
-    dependencies:
-      bun-types: 1.3.8
-    dev: true
-
-  /@types/bun@1.3.9:
-    resolution: {integrity: sha512-KQ571yULOdWJiMH+RIWIOZ7B2RXQGpL1YQrBtLIV3FqDcCu6FsbFUBwhdKUlCKUpS3PJDsHlJ1QKlpxoVR+xtw==}
-    dependencies:
-      bun-types: 1.3.9
-    dev: true
-
   /@types/chai@5.2.3:
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
     dependencies:
@@ -2388,18 +2349,6 @@ packages:
 
   /bun-types@1.3.6:
     resolution: {integrity: sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ==}
-    dependencies:
-      '@types/node': 24.10.9
-    dev: true
-
-  /bun-types@1.3.8:
-    resolution: {integrity: sha512-fL99nxdOWvV4LqjmC+8Q9kW3M4QTtTR1eePs94v5ctGqU8OeceWrSUaRw3JYb7tU3FkMIAjkueehrHPPPGKi5Q==}
-    dependencies:
-      '@types/node': 24.10.9
-    dev: true
-
-  /bun-types@1.3.9:
-    resolution: {integrity: sha512-+UBWWOakIP4Tswh0Bt0QD0alpTY8cb5hvgiYeWCMet9YukHbzuruIEeXC2D7nMJPB12kbh8C7XJykSexEqGKJg==}
     dependencies:
       '@types/node': 24.10.9
     dev: true
@@ -4705,10 +4654,6 @@ packages:
       y18n: 5.0.8
       yargs-parser: 20.2.9
     dev: true
-
-  /zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-    dev: false
 
   /zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
