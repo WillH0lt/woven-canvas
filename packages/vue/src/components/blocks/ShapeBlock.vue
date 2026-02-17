@@ -3,7 +3,8 @@ import { computed, ref } from "vue";
 import { useComponent } from "../../composables/useComponent";
 import { useEditorContext } from "../../composables/useEditorContext";
 import { Text, VerticalAlign, VerticalAlignment } from "@woven-canvas/core";
-import { Shape, StrokeKind, getShapePath } from "@woven-canvas/plugin-shapes";
+import { Shape, StrokeKind } from "../../Shape";
+import { SHAPES } from "../../shapes";
 import type { BlockData } from "../../types";
 import EditableText from "../EditableText.vue";
 
@@ -39,8 +40,10 @@ const strokeWidth = computed(() => shape.value?.strokeWidth ?? 2);
 // Stroke kind
 const strokeKind = computed(() => shape.value?.strokeKind ?? StrokeKind.Solid);
 
-// Shape kind
-const shapeKind = computed(() => shape.value?.kind ?? "rectangle");
+// Shape path from SHAPES constant
+const shapePath = computed(
+  () => SHAPES[shape.value?.kind ?? "rectangle"] ?? SHAPES.rectangle
+);
 
 // Stroke dash array
 const strokeDashArray = computed(() => {
@@ -81,7 +84,7 @@ function handleEditEnd(data: { content: string }) {
   <div ref="containerRef" class="ic-shape-block">
     <svg class="ic-shape-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
       <path
-        :d="getShapePath(shapeKind)"
+        :d="shapePath"
         :fill="fillColor"
         :stroke="strokeColor"
         :stroke-width="strokeWidth"

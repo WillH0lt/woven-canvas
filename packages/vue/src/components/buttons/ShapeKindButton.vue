@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { EntityId } from "@woven-canvas/core";
-import { Shape, ShapeKind, getShapePath } from "@woven-canvas/plugin-shapes";
+import { Shape } from "../../Shape";
+import { SHAPES } from "../../shapes";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import IconChevronDown from "../icons/IconChevronDown.vue";
@@ -19,12 +20,12 @@ const shapesMap = useComponents(() => props.entityIds, Shape);
 // Get the current shape kind
 const currentKind = computed(() => {
   const first = shapesMap.value.values().next().value;
-  return first?.kind ?? ShapeKind.Rectangle;
+  return first?.kind ?? "rectangle";
 });
 
 // Check if multiple different kinds are selected
 const hasMultipleKinds = computed(() => {
-  const kinds = new Set<ShapeKind>();
+  const kinds = new Set<string>();
   for (const shape of shapesMap.value.values()) {
     if (shape) {
       kinds.add(shape.kind);
@@ -33,20 +34,15 @@ const hasMultipleKinds = computed(() => {
   return kinds.size > 1;
 });
 
-// Available shape kinds with labels
-const shapeOptions: { kind: ShapeKind; label: string }[] = [
-  { kind: ShapeKind.Rectangle, label: "Rectangle" },
-  { kind: ShapeKind.Ellipse, label: "Ellipse" },
-  { kind: ShapeKind.Triangle, label: "Triangle" },
-  { kind: ShapeKind.Diamond, label: "Diamond" },
-  { kind: ShapeKind.Pentagon, label: "Pentagon" },
-  { kind: ShapeKind.Hexagon, label: "Hexagon" },
-  { kind: ShapeKind.Arrow, label: "Arrow" },
-  { kind: ShapeKind.Star, label: "Star" },
-  { kind: ShapeKind.Heart, label: "Heart" },
-];
+// Available shape kinds with labels (derived from SHAPES constant)
+const shapeOptions = computed(() =>
+  Object.keys(SHAPES).map((kind) => ({
+    kind,
+    label: kind.charAt(0).toUpperCase() + kind.slice(1),
+  }))
+);
 
-function handleKindChange(kind: ShapeKind) {
+function handleKindChange(kind: string) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       const shapeData = Shape.write(ctx, entityId);
@@ -93,7 +89,7 @@ function handleKindChange(kind: ShapeKind) {
             stroke-width="4"
           >
             <path
-              :d="getShapePath(option.kind)"
+              :d="SHAPES[option.kind]"
               transform="translate(2, 2) scale(0.16)"
             />
           </svg>

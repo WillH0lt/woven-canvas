@@ -1,9 +1,17 @@
 import { CanvasComponentDef, field } from '@woven-canvas/core'
-import { ShapeKind, StrokeKind } from '../types'
+
+/**
+ * Stroke style for shapes.
+ */
+export enum StrokeKind {
+  Solid = 'solid',
+  Dashed = 'dashed',
+  None = 'none',
+}
 
 const ShapeSchema = {
-  /** The kind of shape to render */
-  kind: field.enum(ShapeKind).default(ShapeKind.Rectangle),
+  /** The kind of shape to render (e.g. 'rectangle', 'ellipse', or custom shape key) */
+  kind: field.string().default('rectangle'),
 
   /** Stroke style */
   strokeKind: field.enum(StrokeKind).default(StrokeKind.Solid),

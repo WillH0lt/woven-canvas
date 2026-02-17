@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { EntityId } from "@woven-canvas/core";
-import { Shape, StrokeKind } from "@woven-canvas/plugin-shapes";
+import { Shape, StrokeKind } from "../../Shape";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import IconChevronDown from "../icons/IconChevronDown.vue";

@@ -118,6 +118,9 @@ export {
 
 // Cursors
 export { CURSORS, CursorKind } from './cursors'
+// Shapes
+export { Shape, StrokeKind } from './Shape'
+export { SHAPES } from './shapes'
 // Types
 export type { BackgroundOptions, BlockData } from './types'
 // Utilities

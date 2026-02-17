@@ -55,7 +55,6 @@
     "@woven-canvas/plugin-eraser": "workspace:^",
     "@woven-canvas/plugin-pen": "workspace:^",
     "@woven-canvas/plugin-selection": "workspace:^",
-    "@woven-canvas/plugin-shapes": "workspace:^",
     "@tiptap/core": "^3.15.3",
     "@tiptap/extension-bold": "^3.15.3",
     "@tiptap/extension-color": "^3.10.1",

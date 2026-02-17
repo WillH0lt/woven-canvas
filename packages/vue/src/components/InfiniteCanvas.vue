@@ -53,7 +53,6 @@ import { SelectionPlugin, Selected } from "@woven-canvas/plugin-selection";
 import { EraserPlugin } from "@woven-canvas/plugin-eraser";
 import { PenPlugin } from "@woven-canvas/plugin-pen";
 import { ArrowsPlugin } from "@woven-canvas/plugin-arrows";
-import { ShapesPlugin } from "@woven-canvas/plugin-shapes";
 
 import {
   INFINITE_CANVAS_KEY,
@@ -425,7 +424,6 @@ onMounted(async () => {
   allPlugins.push(EraserPlugin);
   allPlugins.push(PenPlugin);
   allPlugins.push(ArrowsPlugin);
-  allPlugins.push(ShapesPlugin);
   allPlugins.push(BasicsPlugin({ store }));
 
   // Add user-provided plugins

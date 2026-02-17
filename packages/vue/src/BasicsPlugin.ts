@@ -13,6 +13,7 @@ import {
 
 import type { CanvasStore } from '@woven-ecs/canvas-store'
 import { CURSORS } from './cursors'
+import { Shape } from './Shape'
 import { BlockPlacementState } from './singletons'
 import { blockPlacementSystem, undoRedoSystem } from './systems'
 
@@ -84,6 +85,14 @@ export function BasicsPlugin(options: BasicsPluginOptions): EditorPlugin {
         tag: 'image',
         components: [Image, Asset],
         resizeMode: 'scale',
+      },
+      {
+        tag: 'shape',
+        components: [Shape, Text, VerticalAlign],
+        resizeMode: 'free',
+        editOptions: {
+          canEdit: true,
+        },
       },
     ],
     systems: [blockPlacementSystem, undoRedoSystem],

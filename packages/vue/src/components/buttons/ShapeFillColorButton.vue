@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { EntityId } from "@woven-canvas/core";
-import { Shape } from "@woven-canvas/plugin-shapes";
+import { Shape } from "../../Shape";
 
 import MenuDropdown from "./MenuDropdown.vue";
 import ColorBubbles from "./ColorBubbles.vue";
