@@ -12,23 +12,6 @@ interface UploadJob {
 }
 
 /**
- * Cached asset entry.
- */
-interface CacheEntry {
-  blob: Blob
-  cachedAt: number
-  size: number
-}
-
-/**
- * URL cache entry (in memory).
- */
-interface UrlCacheEntry {
-  url: string
-  expiresAt: number
-}
-
-/**
  * Options for AssetManager.
  */
 export interface AssetManagerOptions {
@@ -39,29 +22,21 @@ export interface AssetManagerOptions {
 }
 
 /**
- * Manages asset uploads, caching, and URL resolution.
+ * Manages asset uploads and URL resolution.
  *
  * Handles:
  * - Queueing uploads with persistence across sessions
  * - Creating blob URLs for immediate display of pending uploads
- * - Caching resolved URLs with TTL
- * - Optional local caching of downloaded assets
  * - Automatic retry of failed uploads
  */
 export class AssetManager {
   private jobsStore: KeyValueStore | null = null
   private binariesStore: KeyValueStore | null = null
-  private cacheStore: KeyValueStore | null = null
   private provider: AssetProvider
   private documentId: string
-  private urlCacheTtl: number
-  private cacheDownloads: boolean
-  private maxCacheSize: number
   private maxRetries: number
   private retryDelay: number
 
-  /** In-memory URL cache */
-  private urlCache = new Map<string, UrlCacheEntry>()
   /** Active blob URLs mapped by identifier */
   private blobUrls = new Map<string, string>()
   /** Currently uploading identifiers */
@@ -78,9 +53,6 @@ export class AssetManager {
   constructor(options: AssetManagerOptions) {
     this.provider = options.provider
     this.documentId = options.documentId
-    this.urlCacheTtl = options.provider.urlCacheTtl ?? 3600
-    this.cacheDownloads = options.provider.cacheDownloads ?? false
-    this.maxCacheSize = options.provider.maxCacheSize ?? 100 * 1024 * 1024 // 100MB
     this.maxRetries = options.provider.maxRetries ?? 3
     this.retryDelay = options.provider.retryDelay ?? 5000
   }
@@ -93,15 +65,13 @@ export class AssetManager {
     const dbPrefix = `infinitecanvas-assets-${this.documentId}`
 
     // Open all stores in parallel
-    const [jobsStore, binariesStore, cacheStore] = await Promise.all([
+    const [jobsStore, binariesStore] = await Promise.all([
       openStore(`${dbPrefix}-jobs`, 'jobs'),
       openStore(`${dbPrefix}-binaries`, 'binaries'),
-      openStore(`${dbPrefix}-cache`, 'cache'),
     ])
 
     this.jobsStore = jobsStore
     this.binariesStore = binariesStore
-    this.cacheStore = cacheStore
   }
 
   /**
@@ -159,34 +129,9 @@ export class AssetManager {
       return blobUrl
     }
 
-    // Check URL cache
-    const cached = this.urlCache.get(identifier)
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.url
-    }
-
-    // Check if we have a cached blob locally
-    if (this.cacheDownloads && this.cacheStore) {
-      const cachedEntry = await this.cacheStore.get<CacheEntry>(identifier)
-      if (cachedEntry) {
-        const url = URL.createObjectURL(cachedEntry.blob)
-        // Note: This creates a new blob URL each time, which is fine for
-        // occasional use but could be optimized with a blob URL cache
-        return url
-      }
-    }
-
     // Resolve from provider
     try {
-      const url = await this.provider.resolveUrl(identifier)
-
-      // Cache the URL
-      this.urlCache.set(identifier, {
-        url,
-        expiresAt: Date.now() + this.urlCacheTtl * 1000,
-      })
-
-      return url
+      return await this.provider.resolveUrl(identifier)
     } catch (error) {
       console.error(`Failed to resolve URL for ${identifier}:`, error)
       return null
@@ -259,24 +204,6 @@ export class AssetManager {
   }
 
   /**
-   * Cache a downloaded asset locally.
-   * Only works if cacheDownloads is enabled.
-   */
-  async cacheAsset(identifier: string, blob: Blob): Promise<void> {
-    if (!this.cacheDownloads || !this.cacheStore) return
-
-    // Simple LRU eviction - could be more sophisticated
-    await this.evictCacheIfNeeded(blob.size)
-
-    const entry: CacheEntry = {
-      blob,
-      cachedAt: Date.now(),
-      size: blob.size,
-    }
-    await this.cacheStore.put(identifier, entry)
-  }
-
-  /**
    * Clean up resources.
    */
   close(): void {
@@ -285,15 +212,12 @@ export class AssetManager {
       URL.revokeObjectURL(url)
     }
     this.blobUrls.clear()
-    this.urlCache.clear()
 
     this.jobsStore?.close()
     this.binariesStore?.close()
-    this.cacheStore?.close()
 
     this.jobsStore = null
     this.binariesStore = null
-    this.cacheStore = null
   }
 
   // --- Internal ---
@@ -313,16 +237,16 @@ export class AssetManager {
     }
 
     try {
-      const result = await this.provider.upload(blob, identifier, job.metadata)
+      await this.provider.upload(blob, identifier, job.metadata)
 
       // Upload succeeded
-      await this.onUploadSuccess(identifier, result.url)
+      await this.onUploadSuccess(identifier)
     } catch (error) {
       await this.onUploadError(identifier, job, error)
     }
   }
 
-  private async onUploadSuccess(identifier: string, url?: string): Promise<void> {
+  private async onUploadSuccess(identifier: string): Promise<void> {
     if (!this.jobsStore || !this.binariesStore) return
 
     // Clean up blob URL
@@ -335,14 +259,6 @@ export class AssetManager {
     // Remove job and binary from IndexedDB
     await this.jobsStore.delete(identifier)
     await this.binariesStore.delete(identifier)
-
-    // Cache the URL if provided
-    if (url) {
-      this.urlCache.set(identifier, {
-        url,
-        expiresAt: Date.now() + this.urlCacheTtl * 1000,
-      })
-    }
 
     this.uploading.delete(identifier)
 
@@ -383,38 +299,6 @@ export class AssetManager {
         pending.reject(new Error(errorMessage))
         this.uploadPromises.delete(identifier)
       }
-    }
-  }
-
-  private async evictCacheIfNeeded(neededSize: number): Promise<void> {
-    if (!this.cacheStore) return
-
-    const entries = await this.cacheStore.getAllEntries()
-    const cacheEntries: Array<{ key: string; entry: CacheEntry }> = []
-    let totalSize = 0
-
-    for (const [key, value] of entries) {
-      const entry = value as CacheEntry
-      cacheEntries.push({ key, entry })
-      totalSize += entry.size
-    }
-
-    // If we have room, no eviction needed
-    if (totalSize + neededSize <= this.maxCacheSize) {
-      return
-    }
-
-    // Sort by cachedAt (oldest first)
-    cacheEntries.sort((a, b) => a.entry.cachedAt - b.entry.cachedAt)
-
-    // Evict until we have room
-    let evicted = 0
-    for (const { key, entry } of cacheEntries) {
-      if (totalSize - evicted + neededSize <= this.maxCacheSize) {
-        break
-      }
-      await this.cacheStore.delete(key)
-      evicted += entry.size
     }
   }
 }

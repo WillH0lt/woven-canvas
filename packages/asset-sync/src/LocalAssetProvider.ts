@@ -53,9 +53,6 @@ export class LocalAssetProvider implements AssetProvider {
   }
 
   // Options with sensible defaults
-  urlCacheTtl = 3600
-  cacheDownloads = false
-  maxCacheSize = 100 * 1024 * 1024 // 100MB
   maxRetries = 3
   retryDelay = 5000
 

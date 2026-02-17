@@ -126,8 +126,6 @@ async function handleFileSelect(event: Event) {
       await assetManager.upload(identifier, file, {
         filename: file.name,
         mimeType: file.type,
-        width: dimensions.width,
-        height: dimensions.height,
       });
       const ctx = await nextEditorTick();
       const asset = Asset.write(ctx, entityId);

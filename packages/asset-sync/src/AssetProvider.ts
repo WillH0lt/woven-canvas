@@ -6,10 +6,6 @@ export interface AssetMetadata {
   filename?: string
   /** MIME type (e.g., "image/png") */
   mimeType?: string
-  /** Image width in pixels (for images) */
-  width?: number
-  /** Image height in pixels (for images) */
-  height?: number
 }
 
 /**
@@ -42,9 +38,6 @@ export interface AssetUploadResult {
  *     const { url } = await response.json();
  *     return url;
  *   },
- *   // Options
- *   urlCacheTtl: 3600,
- *   cacheDownloads: true,
  * };
  * ```
  */
@@ -79,15 +72,6 @@ export interface AssetProvider {
   delete?(identifier: string): Promise<void>
 
   // --- Options ---
-
-  /** How long to cache resolved URLs in seconds (default: 3600) */
-  urlCacheTtl?: number
-
-  /** Whether to cache downloaded assets in IndexedDB (default: false) */
-  cacheDownloads?: boolean
-
-  /** Maximum cache size in bytes for downloaded assets (default: 100MB) */
-  maxCacheSize?: number
 
   /** Maximum retry attempts for failed uploads (default: 3) */
   maxRetries?: number
