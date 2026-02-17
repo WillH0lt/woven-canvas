@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Editor } from '@woven-canvas/core'
-import type { CanvasStore, CanvasStoreOptions } from '@woven-canvas/vue'
+import { type CanvasStore, type CanvasStoreOptions, InfiniteCanvas } from '@woven-canvas/vue'
 import { ref } from 'vue'
 
 const ONLINE_STORAGE_KEY = 'infinitecanvas-online-mode'

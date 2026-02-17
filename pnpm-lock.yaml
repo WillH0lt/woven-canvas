@@ -243,6 +243,9 @@ importers:
       vitest:
         specifier: ^4.0.7
         version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
+      zod:
+        specifier: ^4.2.1
+        version: 4.3.6
 
   packages/plugin-pen:
     dependencies:
@@ -4657,4 +4660,3 @@ packages:
 
   /zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
-    dev: false

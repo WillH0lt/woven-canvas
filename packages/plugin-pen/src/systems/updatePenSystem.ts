@@ -25,7 +25,6 @@ import simplify from 'simplify-js'
 
 import { AddPenStrokePoint, CompletePenStroke, RemovePenStroke, StartPenStroke } from '../commands'
 import { PenStroke, POINTS_CAPACITY } from '../components'
-import { STROKE_THICKNESS } from '../constants'
 import { PenStateSingleton } from '../singletons'
 
 const penStrokesQuery = defineQuery((q) => q.tracking(PenStroke))
@@ -40,8 +39,8 @@ const penStrokesQuery = defineQuery((q) => q.tracking(PenStroke))
  * - RemovePenStroke: Delete stroke entity
  */
 export const updatePenSystem = defineEditorSystem({ phase: 'update' }, (ctx: Context) => {
-  on(ctx, StartPenStroke, (ctx, { worldPosition, pressure }) => {
-    startStroke(ctx, worldPosition, pressure)
+  on(ctx, StartPenStroke, (ctx, { worldPosition, pressure, thickness }) => {
+    startStroke(ctx, worldPosition, pressure, thickness)
   })
 
   on(ctx, AddPenStrokePoint, (ctx, { strokeId, worldPosition, pressure }) => {
@@ -67,8 +66,8 @@ export const updatePenSystem = defineEditorSystem({ phase: 'update' }, (ctx: Con
 /**
  * Start a new pen stroke at the given position.
  */
-function startStroke(ctx: Context, position: [number, number], pressure: number | null): void {
-  const radius = STROKE_THICKNESS / 2
+function startStroke(ctx: Context, position: [number, number], pressure: number | null, thickness: number): void {
+  const radius = thickness / 2
 
   // Create stroke entity
   const strokeId = createEntity(ctx)
@@ -101,7 +100,7 @@ function startStroke(ctx: Context, position: [number, number], pressure: number 
     points: position,
     pressures: [initialPressure],
     pointCount: 1,
-    thickness: STROKE_THICKNESS,
+    thickness,
     originalLeft: position[0] - radius,
     originalTop: position[1] - radius,
     originalWidth: radius * 2,

@@ -8,6 +8,7 @@ import {
 } from '@woven-canvas/core'
 import { assign, setup } from 'xstate'
 import { AddPenStrokePoint, CompletePenStroke, RemovePenStroke, StartPenStroke } from '../commands'
+import { STROKE_THICKNESS } from '../constants'
 import { PenStateSingleton } from '../singletons'
 import { PenState } from '../types'
 
@@ -39,6 +40,7 @@ const penMachine = setup({
       StartPenStroke.spawn(event.ctx, {
         worldPosition: event.worldPosition,
         pressure,
+        thickness: STROKE_THICKNESS,
       })
     },
 
@@ -54,7 +56,7 @@ const penMachine = setup({
           worldPosition: event.worldPosition,
           pressure,
         })
-        return [event.worldPosition[0], event.worldPosition[1]]
+        return event.worldPosition
       },
     }),
 
