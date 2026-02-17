@@ -1,10 +1,6 @@
 import { defineCanvasComponent, field } from '@woven-canvas/core'
 
-/**
- * Maximum number of points that can be stored in the stroke.
- * Points are stored as [x, y] pairs, so actual capacity is POINTS_CAPACITY * 2 floats.
- */
-export const POINTS_CAPACITY = 10
+import { POINTS_CAPACITY } from '../constants'
 
 /**
  * EraserStroke component - stores the geometry of an eraser stroke.

@@ -20,8 +20,8 @@ import {
 import { Aabb as AabbNs, Capsule, Vec2 } from '@woven-canvas/math'
 
 import { AddEraserStrokePoint, CancelEraserStroke, CompleteEraserStroke, StartEraserStroke } from '../commands'
-import { Erased, EraserStroke, POINTS_CAPACITY } from '../components'
-import { STROKE_RADIUS } from '../constants'
+import { Erased, EraserStroke } from '../components'
+import { POINTS_CAPACITY, STROKE_RADIUS } from '../constants'
 import { EraserStateSingleton } from '../singletons'
 
 // Query for synced blocks with Aabb (for intersection testing)

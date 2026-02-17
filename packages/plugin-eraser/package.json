@@ -47,11 +47,13 @@
   },
   "devDependencies": {
     "resize-observer-polyfill": "^1.5.1",
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.7",
+    "zod": "^4.2.1"
   },
   "type": "module",
   "peerDependencies": {
     "typescript": "^5",
-    "xstate": "^5"
+    "xstate": "^5",
+    "zod": "^4"
   }
 }

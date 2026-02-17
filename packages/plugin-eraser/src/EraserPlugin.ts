@@ -5,9 +5,10 @@ import {
   type EditorPluginFactory,
   type EditorSystem,
 } from '@woven-canvas/core'
+import { z } from 'zod'
 
 import * as components from './components'
-import { PLUGIN_NAME } from './constants'
+import { PLUGIN_NAME, POINTS_CAPACITY } from './constants'
 import * as singletons from './singletons'
 import * as systems from './systems'
 
@@ -18,16 +19,17 @@ const filterSystems = (ns: object): EditorSystem[] =>
   )
 
 /**
+ * Zod schema for validating EraserPluginOptions.
+ */
+export const EraserPluginOptionsSchema = z.object({
+  tailRadius: z.number().positive().optional(),
+  tailLength: z.number().int().min(1).max(POINTS_CAPACITY).optional(),
+})
+
+/**
  * Options for configuring the Eraser plugin.
  */
-export interface EraserPluginOptions {
-  /**
-   * Radius of the eraser stroke in world coordinates.
-   * Larger values create a bigger eraser area.
-   * @default 8
-   */
-  strokeRadius?: number
-}
+export type EraserPluginOptions = z.infer<typeof EraserPluginOptionsSchema>
 
 /**
  * Create an Eraser plugin with custom options.
@@ -38,13 +40,15 @@ export interface EraserPluginOptions {
  * @example
  * ```typescript
  * const plugin = createEraserPlugin({
- *   strokeRadius: 16, // Larger eraser
+ *   tailRadius: 16, // Larger eraser
  * });
  *
  * const editor = new Editor(container, { plugins: [plugin] });
  * ```
  */
 export function createEraserPlugin(options: EraserPluginOptions = {}): EditorPlugin<EraserPluginOptions> {
+  const parsedOptions = EraserPluginOptionsSchema.parse(options)
+
   return {
     name: PLUGIN_NAME,
 
@@ -65,7 +69,8 @@ export function createEraserPlugin(options: EraserPluginOptions = {}): EditorPlu
     systems: filterSystems(systems),
 
     resources: {
-      strokeRadius: options.strokeRadius ?? 8,
+      tailRadius: parsedOptions.tailRadius ?? 8,
+      tailLength: parsedOptions.tailLength ?? POINTS_CAPACITY,
     },
   }
 }
@@ -94,7 +99,7 @@ export function createEraserPlugin(options: EraserPluginOptions = {}): EditorPlu
  * // With custom options
  * const editor = new Editor(el, {
  *   plugins: [EraserPlugin({
- *     strokeRadius: 16,
+ *     tailRadius: 16,
  *   })],
  * });
  * ```
