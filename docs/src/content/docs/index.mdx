@@ -1,16 +1,16 @@
 ---
-title: Woven-ECS
-description: A high-performance, multithreaded Entity Component System for TypeScript
+title: Woven Canvas
+description: A highly customizable infinite canvas SDK for Vue
 template: splash
 hero:
-  title: The Multithreaded ECS Framework for the Web
-  tagline: An approachable, flexible, and high-performance framework for building games, whiteboards, and more.
+  title: The Infinite Canvas SDK for Vue
+  tagline: Build whiteboards, design tools, and collaborative apps with a flexible, extensible foundation.
   actions:
     - text: Get Started
       link: /quick-start/
       icon: right-arrow
     - text: View on GitHub
-      link: https://github.com/WillH0lt/woven-ecs
+      link: https://github.com/WillH0lt/woven-canvas
       icon: external
       variant: minimal
 ---
@@ -21,120 +21,75 @@ import Ribbons from '../../components/Ribbons.astro';
 
 <Ribbons />
 
-## Why Woven-ECS?
+## Why Woven Canvas?
 
 <CardGrid>
-  <Card title="Easy to Use" icon="lucide:lightbulb">
-    Straightforward API for defining components, creating entities, and writing systems. Full type-safety with TypeScript.
+  <Card title="Fully Customizable" icon="lucide:puzzle">
+    Replace any built-in block with your own Vue component. Create custom tools, menus, and interactions that fit your exact needs.
   </Card>
-  <Card title="Reactive Queries" icon="lucide:search">
-    Track all changes to entities and components automatically. Query for entities that were **added**, **removed**, or **changed** since the last frame.
+  <Card title="Built for Vue" icon="lucide:code">
+    First-class Vue 3 integration with reactive composables. Use `useComponent`, `useQuery`, and `useSingleton` to build reactive UI.
   </Card>
-  <Card title="Built-in Multithreading" icon="lucide:spool">
-    Run heavy workloads in parallel without any jank. Effortlessly distribute work across multiple CPU cores, no manual thread management required.
+  <Card title="Plugin Architecture" icon="lucide:layers">
+    Extend the editor with plugins that add components, systems, keybinds, and more. Compose functionality from reusable pieces.
   </Card>
-  <Card title="Open Source" icon="lucide:file-code">
-    Read the source code, create issues, and contribute on GitHub. We welcome contributions and feedback as the project grows.
+  <Card title="Multiplayer Ready" icon="lucide:users">
+    Built-in support for real-time collaboration with conflict resolution, presence awareness, and offline-first architecture.
   </Card>
 </CardGrid>
 
-## What it Looks Like
+## Quick Example
 
-```typescript
-import {
-  addComponent,
-  createEntity,
-  defineComponent,
-  defineQuery,
-  defineSystem,
-  field,
-  World,
-} from '@woven-ecs/core';
+```vue
+<script setup lang="ts">
+import { WovenCanvas } from '@woven-canvas/vue'
+import '@woven-canvas/vue/style.css'
+</script>
 
-// Define components with typed fields
-const Position = defineComponent({
-  x: field.float32(),
-  y: field.float32(),
-});
+<template>
+  <WovenCanvas style="width: 100vw; height: 100vh" />
+</template>
+```
 
-const Velocity = defineComponent({
-  x: field.float32(),
-  y: field.float32(),
-});
+That's it! You now have a fully functional infinite canvas with:
+- Pan and zoom controls
+- Selection and multi-select
+- Built-in shapes, text, images, pen, and arrows
+- Undo/redo support
 
-// Define a query to find entities with both components
-const movingEntities = defineQuery((q) =>
-  q.with(Position, Velocity)
-);
+## Make It Yours
 
-// Define a system to process matching entities
-const movementSystem = defineSystem((ctx) => {
-  for (const eid of movingEntities.current(ctx)) {
-    const pos = Position.write(ctx, eid);
-    const vel = Velocity.read(ctx, eid);
-    pos.x += vel.x;
-    pos.y += vel.y;
-  }
-});
+The real power of Woven Canvas is customization. Override any block with your own component:
 
-// Create the world
-const world = new World([Position, Velocity]);
+```vue
+<template>
+  <WovenCanvas>
+    <!-- Replace the default sticky note with your own -->
+    <template #block:sticky-note="{ entityId, block }">
+      <MyCustomStickyNote :entity-id="entityId" :block="block" />
+    </template>
 
-// Initialize with an entity
-world.execute((ctx) => {
-  const eid = createEntity(ctx);
-  addComponent(ctx, eid, Position, { x: 0, y: 0 });
-  addComponent(ctx, eid, Velocity, { x: 1, y: 1 });
-});
-
-// Game loop
-function loop() {
-  world.execute(movementSystem);
-  requestAnimationFrame(loop);
-}
-
-loop();
+    <!-- Add a completely new block type -->
+    <template #block:kanban-card="{ entityId, block }">
+      <KanbanCard :entity-id="entityId" :block="block" />
+    </template>
+  </WovenCanvas>
+</template>
 ```
 
 ## Features
 
-- **Powerful Queries**: Filter entities by component presence with `with`, `without`, and `any` operators
-- **Change Tracking**: Query for entities that were added, removed, or changed since last frame
-- **Rich Field Types**: Numbers, strings, booleans, arrays, tuples, enums, binary, and entity references
-- **Singletons**: First-class support for global state like time, input, and configuration
-- **Multithreading**: Execute systems in parallel across worker threads with automatic entity partitioning
-- **Entity References**: Reference other entities with automatic validation
-
-## Build Collaborative Applications
-
-The [`@woven-ecs/canvas-store`](/canvas-store/introduction/) and [`@woven-ecs/canvas-store-server`](/canvas-store/server-setup/) packages extend Woven-ECS with everything you need to build multiplayer editor applications like infinite canvases or other creative design tools.
-
-<CardGrid>
-  <Card title="Real-time Sync" icon="lucide:users">
-    WebSocket-based multiplayer with conflict resolution. Multiple users can edit the same document simultaneously.
-  </Card>
-  <Card title="Local-First" icon="lucide:house-heart">
-    Your app works offline by default. Data lives on the client and syncs to the server when connected.
-  </Card>
-  <Card title="Undo/Redo" icon="lucide:undo-2">
-    Full history tracking with configurable depth. Users can undo and redo changes across sessions.
-  </Card>
-  <Card title="Persistence" icon="lucide:database">
-    Automatic IndexedDB storage for offline support. Changes are saved locally and synced when back online.
-  </Card>
-  <Card title="Migrations" icon="lucide:git-branch">
-    Version your component schemas with automatic migrations. Evolve your data model without breaking existing documents.
-  </Card>
-  <Card title="Configurable" icon="lucide:settings-2">
-    Configure sync behavior per component: persist to server, sync ephemerally, store locally, or skip entirely.
-  </Card>
-</CardGrid>
-
-[Learn more about canvas-store →](/canvas-store/introduction/)
+- **Custom Blocks** — Render any Vue component as a canvas block
+- **Custom Tools** — Add toolbar buttons that create your block types
+- **Floating Menus** — Context-sensitive menus for selected blocks
+- **Plugins** — Package components, systems, and keybinds into reusable modules
+- **Persistence** — Local IndexedDB storage with automatic save/restore
+- **Real-time Sync** — WebSocket-based multiplayer with conflict resolution
+- **Presence** — See other users' cursors and selections in real-time
 
 ## Read the Docs
 
-- [Quick Start](/quick-start/) - Install Woven-ECS and create your first project
-- [Components](/docs/components-singletons/) - Learn about defining and using components
-- [Queries](/docs/queries/) - Master the query system for finding entities
-- [Multithreading](/docs/multithreading/) - Understand how to set up multithreaded systems
+- [Quick Start](/quick-start/) — Install and render your first canvas
+- [The Editor](/learn/editor/) — Understand the core architecture
+- [Blocks](/learn/blocks/) — How canvas elements work
+- [Custom Block Example](/examples/custom-block/) — Build your own block type

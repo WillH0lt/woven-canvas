@@ -169,9 +169,9 @@ export function getPluginResources<T>(ctx: Context, pluginName: string): T {
 export const GridOptions = z.object({
   /**
    * Whether grid snapping is enabled.
-   * @default false
+   * @default true
    */
-  enabled: z.boolean().default(false),
+  enabled: z.boolean().default(true),
 
   /**
    * Whether resized/rotated objects must stay aligned to the grid.

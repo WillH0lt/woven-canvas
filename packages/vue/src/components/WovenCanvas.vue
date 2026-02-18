@@ -26,17 +26,10 @@ import {
   type EntityId,
   type EditorOptionsInput,
   type EditorResources,
-  type BlockDefInput,
-  type Keybind,
-  type CursorDef,
   type AnyCanvasComponentDef,
   type AnyCanvasSingletonDef,
-  type EditorSystem,
   type EditorPluginInput,
-  type FontFamilyInput,
   type InferCanvasComponentType,
-  type UserDataInput,
-  type GridOptionsInput,
   type Context,
 } from "@woven-canvas/core";
 import { CanvasStore, type CanvasStoreOptions } from "@woven-ecs/canvas-store";
@@ -49,10 +42,20 @@ import {
   CanvasControlsPlugin,
   type CanvasControlsOptionsInput,
 } from "@woven-canvas/plugin-canvas-controls";
-import { SelectionPlugin, Selected } from "@woven-canvas/plugin-selection";
-import { EraserPlugin } from "@woven-canvas/plugin-eraser";
-import { PenPlugin } from "@woven-canvas/plugin-pen";
-import { ArrowsPlugin } from "@woven-canvas/plugin-arrows";
+import {
+  createSelectionPlugin,
+  Selected,
+  type SelectionPluginOptionsInput,
+} from "@woven-canvas/plugin-selection";
+import {
+  createEraserPlugin,
+  type EraserPluginOptions,
+} from "@woven-canvas/plugin-eraser";
+import { createPenPlugin } from "@woven-canvas/plugin-pen";
+import {
+  createArrowsPlugin,
+  type ArrowsPluginOptions,
+} from "@woven-canvas/plugin-arrows";
 
 import {
   WOVEN_CANVAS_KEY,
@@ -100,66 +103,31 @@ type BlockDef = InferCanvasComponentType<typeof Block.schema>;
 
 /**
  * WovenCanvas component props
- * Mirrors EditorOptionsInput with additional controls/selection customization
  */
 export interface WovenCanvasProps {
-  // Sync options for persistence, history, and multiplayer
-  syncOptions?: CanvasStoreOptions;
+  // Store options for persistence, history, and multiplayer
+  store?: CanvasStoreOptions;
 
-  // Maximum number of entities (default: 10_000)
-  maxEntities?: number;
-
-  // User data for presence tracking (all fields optional, defaults applied)
-  user?: UserDataInput;
-
-  // Custom block definitions
-  blockDefs?: BlockDefInput[];
-
-  // Keybind definitions for keyboard shortcuts
-  keybinds?: Keybind[];
-
-  // Custom cursor definitions
-  cursors?: Record<string, CursorDef>;
-
-  // Custom components to register
-  components?: AnyCanvasComponentDef[];
-
-  // Custom singletons to register
-  singletons?: AnyCanvasSingletonDef[];
-
-  // Custom systems to register
-  systems?: EditorSystem[];
-
-  // Additional plugins (controls and selection are applied automatically)
-  plugins?: EditorPluginInput[];
-
-  // Controls plugin options
-  controls?: CanvasControlsOptionsInput;
-
-  // Grid options for snap-to-grid behavior
-  grid?: GridOptionsInput;
+  // Editor options (passed through to Editor constructor)
+  editor?: EditorOptionsInput;
 
   // Background options (grid, dots, or none)
   background?: BackgroundOptions;
 
-  // Custom fonts to load and make available in the font selector
-  fonts?: FontFamilyInput[];
-
   // Asset provider for image uploads (defaults to LocalAssetProvider)
   assetProvider?: AssetProvider;
+
+  // Options for built-in plugins (pass false to disable a plugin)
+  pluginOptions?: {
+    controls?: CanvasControlsOptionsInput | false;
+    selection?: SelectionPluginOptionsInput | false;
+    eraser?: EraserPluginOptions | false;
+    pen?: false;
+    arrows?: ArrowsPluginOptions | false;
+  };
 }
 
-const props = withDefaults(defineProps<WovenCanvasProps>(), {
-  maxEntities: 10_000,
-  blockDefs: () => [],
-  keybinds: () => [],
-  cursors: () => ({}),
-  components: () => [],
-  singletons: () => [],
-  systems: () => [],
-  plugins: () => [],
-  fonts: () => [],
-});
+const props = defineProps<WovenCanvasProps>();
 
 const emit = defineEmits<{
   ready: [editor: Editor, store: CanvasStore];
@@ -193,7 +161,7 @@ const containerRef = ref<HTMLDivElement | null>(null);
 const editorRef = shallowRef<Editor | null>(null);
 
 // Parse user data from props (userId and sessionId won't change)
-const parsedUser = UserDataZod.parse(props.user ?? {});
+const parsedUser = UserDataZod.parse(props.editor?.user ?? {});
 
 // Track which entities exist (for hasEntity check)
 const entities = new Set<EntityId>();
@@ -397,7 +365,7 @@ onMounted(async () => {
   if (!containerRef.value) return;
 
   // Create store (adapters are built lazily in initialize)
-  const syncOpts = props.syncOptions ?? {};
+  const syncOpts = props.store ?? {};
 
   // Build store options, wrapping callbacks to track internal state
   const storeOptions: CanvasStoreOptions = {
@@ -421,32 +389,37 @@ onMounted(async () => {
 
   store = new CanvasStore(storeOptions);
 
-  // Build plugins array with built-in plugins
+  // Build plugins array with built-in plugins (skip if explicitly disabled with false)
   const allPlugins: EditorPluginInput[] = [];
+  const opts = props.pluginOptions;
 
-  allPlugins.push(CanvasControlsPlugin(props.controls ?? {}));
-  allPlugins.push(SelectionPlugin);
-  allPlugins.push(EraserPlugin);
-  allPlugins.push(PenPlugin);
-  allPlugins.push(ArrowsPlugin);
+  if (opts?.controls !== false) {
+    allPlugins.push(CanvasControlsPlugin(opts?.controls ?? {}));
+  }
+  if (opts?.selection !== false) {
+    allPlugins.push(createSelectionPlugin(opts?.selection || undefined));
+  }
+  if (opts?.eraser !== false) {
+    allPlugins.push(createEraserPlugin(opts?.eraser || undefined));
+  }
+  if (opts?.pen !== false) {
+    allPlugins.push(createPenPlugin());
+  }
+  if (opts?.arrows !== false) {
+    allPlugins.push(createArrowsPlugin(opts?.arrows || undefined));
+  }
   allPlugins.push(EditingPlugin({ store }));
 
-  // Add user-provided plugins
-  allPlugins.push(...props.plugins);
+  // Add user-provided plugins from editorOptions
+  if (props.editor?.plugins) {
+    allPlugins.push(...props.editor.plugins);
+  }
 
   // Create editor (collects all components/singletons from plugins)
   const editorOptions: EditorOptionsInput = {
-    maxEntities: props.maxEntities,
+    ...props.editor,
     user: parsedUser,
-    blockDefs: props.blockDefs,
-    keybinds: props.keybinds,
-    cursors: props.cursors,
-    components: props.components,
-    singletons: props.singletons,
-    systems: props.systems,
     plugins: allPlugins,
-    fonts: props.fonts,
-    grid: props.grid,
   };
 
   const editor = new Editor(containerRef.value, editorOptions);

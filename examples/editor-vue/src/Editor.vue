@@ -1,64 +1,24 @@
 <script setup lang="ts">
-import type { Editor } from '@woven-canvas/core'
-import { type CanvasStore, type CanvasStoreOptions, WovenCanvas } from '@woven-canvas/vue'
-import { ref } from 'vue'
+import { WovenCanvas } from '@woven-canvas/vue'
 
-const ONLINE_STORAGE_KEY = 'wovencanvas-online-mode'
-
-// Load online preference from localStorage (default: true)
-const savedOnline = localStorage.getItem(ONLINE_STORAGE_KEY)
-const initialOnline = savedOnline !== null ? savedOnline === 'true' : true
-const isOnline = ref(initialOnline)
-
-let store: CanvasStore | null = null
-
-function handleReady(_inEditor: Editor, inStore: CanvasStore) {
-  store = inStore
-}
-
-async function toggleOnline() {
-  isOnline.value = !isOnline.value
-  localStorage.setItem(ONLINE_STORAGE_KEY, String(isOnline.value))
-  if (isOnline.value) {
-    await store?.connect()
-  } else {
-    store?.disconnect()
-  }
-}
-
-const syncOptions = ref<CanvasStoreOptions>({
-  persistence: {
-    enabled: true,
-    documentId: 'editor-vue-test',
-  },
-  history: {
-    enabled: true,
-  },
-  websocket: {
-    enabled: true,
-    documentId: 'editor-vue-test',
-    url: 'ws://localhost:8087/ws',
-    clientId: crypto.randomUUID(),
-    startOffline: !isOnline.value,
-  },
-})
+const clientId = crypto.randomUUID()
 </script>
 
 <template>
-  <div class="editor ic-theme-light">
-    <div class="online-toggle">
-      <label>
-        <input type="checkbox" :checked="isOnline" @change="toggleOnline" />
-        {{ isOnline ? "Online" : "Offline" }}
-      </label>
-    </div>
+  <div class="editor">
     <WovenCanvas
-      @ready="handleReady"
-      :sync-options="syncOptions"
-      :controls="{ maxZoom: 3 }"
-      :grid="{
-        enabled: true,
+      :store="{
+        persistence: {
+          documentId: 'editor-vue-test',
+        },
+        history: true,
+        websocket: {
+          documentId: 'editor-vue-test',
+          url: 'ws://localhost:8087/ws',
+          clientId: clientId,
+        },
       }"
+      :plugin-options="{ controls: { maxZoom: 3 } }"
       :background="{
         kind: 'dots',
         color: '#f4f4f4',
@@ -66,18 +26,18 @@ const syncOptions = ref<CanvasStoreOptions>({
         subdivisionStep: 5,
       }"
     >
-      <!--
-      :components="[Shape]"
-      :blockDefs="[
-        {
-          tag: 'shape',
-          components: [Shape, Color, Text, VerticalAlign],
-          resizeMode: 'free',
-          editOptions: {
-            canEdit: true,
+      <!-- Example of custom block definitions:
+      :editor="{
+        components: [Shape],
+        blockDefs: [
+          {
+            tag: 'shape',
+            components: [Shape, Color, Text, VerticalAlign],
+            resizeMode: 'free',
+            editOptions: { canEdit: true },
           },
-        },
-      ]" -->
+        ],
+      }" -->
 
       <!-- <template #block:shape="blockData">
         <ShapeBlock v-bind="blockData" />
@@ -111,28 +71,4 @@ const syncOptions = ref<CanvasStoreOptions>({
   background: white;
 }
 
-.online-toggle {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 1000;
-  background: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  font-size: 14px;
-  user-select: none;
-}
-
-.online-toggle label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: black;
-}
-
-.online-toggle input[type="checkbox"] {
-  cursor: pointer;
-}
 </style>

@@ -1,179 +1,143 @@
 ---
 title: Quick Start
-description: Install Woven-ECS and create your first ECS application
+description: Get up and running with Woven Canvas in minutes
 ---
 
 ## Installation
 
 ```bash
-npm install @woven-ecs/core
+npm install @woven-canvas/vue
 ```
 
 ## Basic Setup
 
-### 1. Define Components
+Create a Vue component that renders the canvas:
 
-Components are data containers that can be attached to entities. Define them using `defineComponent` with typed fields:
+```vue
+<script setup lang="ts">
+import { WovenCanvas } from '@woven-canvas/vue'
+import '@woven-canvas/vue/style.css'
+</script>
 
-```typescript
-import { defineComponent, field } from '@woven-ecs/core';
-
-export const Position = defineComponent({
-  x: field.float32().default(0),
-  y: field.float32().default(0),
-  z: field.float32().default(0),
-});
-
-export const Velocity = defineComponent({
-  x: field.float32(),
-  y: field.float32(),
-  z: field.float32(),
-});
+<template>
+  <WovenCanvas style="width: 100vw; height: 100vh" />
+</template>
 ```
 
-### 2. Create the World
+That's all you need for a fully functional infinite canvas with:
 
-The World is the container that manages all entities, components, and systems:
+- **Pan & Zoom** — Scroll to pan, pinch or ctrl+scroll to zoom
+- **Selection** — Click to select, shift+click for multi-select, drag to box-select
+- **Shapes** — Rectangles, ellipses, triangles, and more
+- **Text** — Rich text with formatting options
+- **Images** — Drag and drop or paste from clipboard
+- **Pen** — Freehand drawing with pressure sensitivity
+- **Arrows** — Connect blocks with elbow arrows
 
-```typescript
-import { World } from '@woven-ecs/core';
-import { Position, Velocity } from './components';
+## Listening for Ready
 
-// Create a world with the defined components
-const world = new World([Position, Velocity]);
-```
+The canvas emits a `ready` event when initialization is complete:
 
-### 3. Create Entities and Add Components
+```vue
+<script setup lang="ts">
+import { WovenCanvas, type Editor } from '@woven-canvas/vue'
+import { Camera } from '@woven-canvas/core'
+import { SelectAll } from '@woven-canvas/plugin-selection'
+import type { CanvasStore } from '@woven-ecs/canvas-store'
 
-```typescript
-import { createEntity, addComponent, type Context } from '@woven-ecs/core';
+function onReady(editor: Editor, store: CanvasStore) {
+  console.log('Canvas is ready!')
 
-// Initialize the world with an entity
-world.execute((ctx: Context) => {
-  // Create an entity
-  const particle = createEntity(ctx);
+  // Pan and zoom the camera
+  editor.nextTick((ctx) => {
+    const camera = Camera.write(ctx)
+    camera.left = 100
+    camera.top = 50
+    camera.zoom = 1.5
 
-  // Add components and set data
-  addComponent(ctx, particle, Position, { x: 100, y: 50, z: 0 });
-  addComponent(ctx, particle, Velocity, { x: 1, y: 1, z: 0 });
-});
-```
-
-### 4. Define Queries
-
-Queries find entities that have specific component combinations:
-
-```typescript
-import { defineQuery, type QueryBuilder } from '@woven-ecs/core';
-
-// Find all entities with Position and Velocity
-const particles = defineQuery((q: QueryBuilder) =>
-  q.with(Position, Velocity)
-);
-
-```
-
-### 5. Define Systems
-
-Systems are functions that process entities:
-
-```typescript
-import { defineSystem, type Context } from '@woven-ecs/core';
-
-const movementSystem = defineSystem((ctx: Context) => {
-  for (const eid of particles.current(ctx)) {
-    const pos = Position.write(ctx, eid);
-    const vel = Velocity.read(ctx, eid);
-
-    pos.x += vel.x;
-    pos.y += vel.y;
-    pos.z += vel.z;
-  }
-});
-```
-
-### 6. Run the Game Loop
-
-```typescript
-function loop() {
-  world.execute(movementSystem);
-  requestAnimationFrame(loop);
+    // Issue a command
+    editor.command(SelectAll)
+  })
 }
+</script>
 
-loop();
+<template>
+  <WovenCanvas @ready="onReady" />
+</template>
 ```
 
-## Complete Example
+## Adding Persistence
 
-Here's a complete example putting it all together:
+Save the canvas state to IndexedDB so it persists across page reloads:
 
-```typescript
-import {
-  World,
-  defineComponent,
-  defineQuery,
-  defineSystem,
-  defineSingleton,
-  field,
-  createEntity,
-  addComponent,
-  type Context,
-  type QueryBuilder,
-} from '@woven-ecs/core';
+```vue
+<script setup lang="ts">
+import { WovenCanvas } from '@woven-canvas/vue'
 
-// Components
-const Position = defineComponent({
-  x: field.float32(),
-  y: field.float32(),
-  z: field.float32(),
-});
-
-const Velocity = defineComponent({
-  x: field.float32(),
-  y: field.float32(),
-  z: field.float32(),
-});
-
-
-// Query
-const particles = defineQuery((q: QueryBuilder) =>
-  q.with(Position, Velocity)
-);
-
-// System
-const movementSystem = defineSystem((ctx: Context) => {
-  for (const eid of particles.current(ctx)) {
-    const pos = Position.write(ctx, eid);
-    const vel = Velocity.read(ctx, eid);
-    
-    pos.x += vel.x;
-    pos.y += vel.y;
-    pos.z += vel.z;
-  }
-});
-
-// World
-const world = new World([Position, Velocity]);
-
-// Initialize with an entity
-world.execute((ctx: Context) => {
-  const particle = createEntity(ctx);
-  addComponent(ctx, particle, Position, { x: 100, y: 50, z: 0 });
-  addComponent(ctx, particle, Velocity, { x: 1, y: 1, z: 0 });
-});
-
-// Game loop
-function loop() {
-  world.execute(movementSystem);
-  requestAnimationFrame(loop);
+const storeOptions = {
+  persistence: {
+    documentId: 'my-canvas',
+  },
 }
+</script>
 
-loop();
+<template>
+  <WovenCanvas :store="storeOptions" />
+</template>
+```
 
+## Customizing the Background
+
+Choose between grid, dots, or a custom background:
+
+```vue
+<template>
+  <!-- Grid background -->
+  <WovenCanvas :background="{ kind: 'grid' }" />
+
+  <!-- Dot pattern -->
+  <WovenCanvas :background="{ kind: 'dots' }" />
+
+  <!-- Custom background via slot -->
+  <WovenCanvas>
+    <template #background>
+      <div class="my-custom-background" />
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+## Accessing Editor Context
+
+Use composables inside the canvas to access reactive ECS data:
+
+```vue
+<script setup lang="ts">
+import { WovenCanvas, useEditorContext, useSingleton } from '@woven-canvas/vue'
+import { Camera } from '@woven-canvas/core'
+
+// Inside a component rendered within WovenCanvas
+const { getEditor, nextEditorTick } = useEditorContext()
+const camera = useSingleton(Camera)
+
+// React to camera changes
+watchEffect(() => {
+  console.log('Zoom level:', camera.value?.zoom)
+})
+</script>
 ```
 
 ## Next Steps
 
-- [Components](/docs/components-singletons/) - Learn about all available field types
-- [Systems](/docs/systems/) - Explore worker systems for multithreading
-- [Queries](/docs/queries/) - Master change tracking queries
+Now that you have a working canvas, learn how it works:
+
+- [The Editor](/learn/editor/) — Understand the core architecture
+- [Blocks](/learn/blocks/) — How canvas elements work
+- [Tools](/learn/tools/) — How toolbar tools work
+- [User Interface](/learn/user-interface/) — Customize the UI
+
+Or jump straight to examples:
+
+- [Custom Block](/examples/custom-block/) — Build your own block type
+- [Custom Tool](/examples/custom-tool/) — Add a toolbar button
+- [Plugin](/examples/plugin/) — Package everything into a reusable module

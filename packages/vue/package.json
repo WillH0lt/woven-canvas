@@ -68,7 +68,7 @@
     "@tiptap/extensions": "^3.15.3",
     "@tiptap/vue-3": "^3.15.3",
     "@vueuse/core": "^14.0.0",
-    "@woven-ecs/canvas-store": "^1.0.1",
+    "@woven-ecs/canvas-store": "^1.0.3",
     "perfect-freehand": "^1.2.2",
     "vue": "^3.5.26"
   },
