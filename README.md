@@ -1,77 +1,83 @@
-# pnpm-monorepo-template
+<p align="center">
+  <img src="docs/src/assets/logo.png" alt="Woven Canvas Logo" width="50" />
+</p>
 
-[![Github Actions](https://github.com/jkomyno/pnpm-monorepo-template/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/jkomyno/pnpm-monorepo-template/actions/workflows/ci.yaml)
+<p align="center">
+  <a href="https://github.com/WillH0lt/woven-canvas/actions/workflows/ci.yaml"><img src="https://github.com/WillH0lt/woven-canvas/actions/workflows/ci.yaml/badge.svg" alt="CI" /></a>
+  <a href="https://www.npmjs.com/package/@woven-canvas/core"><img src="https://img.shields.io/npm/v/@woven-canvas/core" alt="npm" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+</p>
 
-> Pragmatic template for a `TypeScript` monorepo with [`pnpm`](https://pnpm.io), [`turborepo`](https://turborepo.org), and [`vitest`](https://vitest.dev/).
+# Woven Canvas
 
-Tested with:
+An infinite canvas SDK for Vue.
 
-- **Node.js v20.17.0**
-- **pnpm v9.15.0**
-- **vitest v2.1.8**
+- **Plugin Architecture**: Choose from several first-party plugins or create your own for custom tools and features. Powered by [woven-ecs](https://woven-ecs.dev).
+- **Extensible UI**: Customizable toolbars, menus, and canvas controls out of the box.
+- **Data Sync**: Real-time collaboration with live cursors, offline support, and automatic sync when reconnected.
+- **Infinite Canvas Essentials**: Pan, zoom, and navigate a boundless workspace with intuitive controls.
+- **TypeScript & Vue**: Built with modern web technologies for type safety and reactivity.
 
----
+## Packages
 
-## Table of Contents
+| Package | Description |
+|---------|-------------|
+| [@woven-canvas/core](./packages/core) | Framework-agnostic infinite canvas core with ECS-based architecture |
+| [@woven-canvas/vue](./packages/vue) | Vue 3 components for building infinite canvas applications |
+| [@woven-canvas/math](./packages/math) | Math utilities for 2D vector operations |
+| [@woven-canvas/asset-sync](./packages/asset-sync) | Asset management with upload queueing and caching |
 
-- [What's Included](#whats-included)
-- [Available Scripts](#available-scripts)
-- [Test Structure](#test-structure)
-- [FAQ](#faq)
-- [Author](#-author)
-- [Show your support](#-show-your-support)
-- [License](#-license)
+### Plugins
 
-## What's Included
+| Plugin | Description |
+|--------|-------------|
+| [@woven-canvas/plugin-selection](./packages/plugin-selection) | Select, move, and resize objects |
+| [@woven-canvas/plugin-shapes](./packages/plugin-shapes) | Rectangle, ellipse, and other shape tools |
+| [@woven-canvas/plugin-pen](./packages/plugin-pen) | Freehand drawing with pressure sensitivity |
+| [@woven-canvas/plugin-arrows](./packages/plugin-arrows) | Connectors and arrow tools |
+| [@woven-canvas/plugin-eraser](./packages/plugin-eraser) | Eraser tool for removing content |
+| [@woven-canvas/plugin-canvas-controls](./packages/plugin-canvas-controls) | Pan, zoom, and canvas navigation |
 
-- `pnpm` workspace, whose configuration is stored in [`pnpm-workspace.yaml`](/pnpm-workspace.yaml). Two example packages are included, [`common-utils`](packages/common-utils) and [`example`](packages/example), with the latter importing `common-utils` as a dependency. All local packages are decorated with a `@woven-canvas/*` scope (you may want to substitute these instances in the `name` entries of any `package.json` with yours or your company's name).
-- `tsup` bundler, whose configuration is stored in [`tsup.config.ts`](./tsup.config.ts).
-- `turborepo`, whose configuration is stored in [`turbo.json`](./turbo.json)
-- an example [`Dockerfile`](./Dockerfile.pnpm) that can be built and used as a base image for your Node.js Docker containers.
-- the `vitest` test engine, whose configuration is stored in [`vitest.workspace.ts`](./vitest.workspace.ts).
-- opinionated linting setups via [`biome`](https://biomejs.dev/), whose configuration is defined in the [`biome.jsonc`](./biome.jsonc) file.
+## Installation
 
-## Available Scripts
+```bash
+npm install @woven-canvas/core @woven-canvas/vue
+```
 
-- `pnpm install`: install the dependencies needed for each package.
-- `pnpm build`: transpile the local TypeScript packages to JavaScript.
-- `pnpm build:watch`: transpile the local TypeScript packages to JavaScript, and watch for changes.
-- `pnpm check:exports`: check that the `exports` field in the `package.json` files of each exported package is correctly set, using [`@arethetypeswrong/cli`](https://www.npmjs.com/package/@arethetypeswrong/cli).
-- `pnpm lint:ci`: check that the code follows the `biome` guidelines.
-- `pnpm lint`: check that the code follows the `biome` guidelines, and override it to follow them if possible.
-- `pnpm test:unit`: run unit tests.
-- `pnpm test:integration`: run integration tests.
-- `pnpm test`: run all tests.
+## Quick Start
 
-## Test Structure
+```vue
+<script setup lang="ts">
+import { InfiniteCanvas } from '@woven-canvas/vue';
+import '@woven-canvas/vue/style.css';
+</script>
 
-We follow an opinionated convention for storing an running tests.
-All tests should be written in the `__tests__` directory of a local package.
-Moreover, unit tests should be placed in the `__tests__/unit` folder; similarly, integration tests should be placed in the `__tests__/integration` folder.
-This allows for easily running groups of tests (for instance, you might want to run unit tests locally, while deferring integration tests - that will probably need access to external services like Docker containers - to the CI only).
+<template>
+  <InfiniteCanvas />
+</template>
+```
 
-## FAQ
+## Examples
 
-1. How do I add a new package to the local workspace?
+| Example | Description |
+|---------|-------------|
+| [Vue Editor](./examples/editor-vue) | Full-featured whiteboard editor built with Vue |
 
-- Create a new folder `$packageName` in [`packages/`](packages/). Initialize it with a `tsconfig.json` file (which will reference the [`tsconfig.base.node.json`](./tsconfig.base.node.json) file at the root level) and a `package.json` file similarly to how it's done in the [`common-utils`](packages/common-utils) package.
+## Local Development
 
-2. How do I add a new depedency that should be available to each package in the local workspace?
+```bash
+git clone https://github.com/WillH0lt/woven-canvas.git
+cd woven-canvas
+pnpm install
+pnpm build
+pnpm test
+```
 
-> `pnpm add -w $dependencyName`
+## License
 
-## 👤 Author
+MIT License.
 
-Hi, I'm **Alberto Schiabel**, you can follow me on:
+## Community
 
-- Github: [@woven-canvas](https://github.com/jkomyno)
-- Twitter: [@woven-canvas](https://twitter.com/jkomyno)
-
-## 🦄 Show your support
-
-Give a ⭐️ if this project helped or inspired you!
-
-## 📝 License
-
-Built with ❤️ by [Alberto Schiabel](https://github.com/jkomyno).<br />
-This project is [MIT](https://github.com/jkomyno/pnpm-monorepo-example/blob/main/LICENSE) licensed.
+- [GitHub Issues](https://github.com/WillH0lt/woven-canvas/issues) - Bug reports and feature requests
+- [GitHub Discussions](https://github.com/WillH0lt/woven-canvas/discussions) - Questions and ideas

@@ -1,0 +1,37 @@
+# @woven-canvas/vue
+
+Vue 3 components for woven-canvas infinite canvas applications.
+
+## Installation
+
+```bash
+npm install @woven-canvas/core @woven-canvas/vue
+```
+
+## Usage
+
+```vue
+<script setup lang="ts">
+import { InfiniteCanvas } from '@woven-canvas/vue';
+</script>
+
+<template>
+  <InfiniteCanvas />
+</template>
+```
+
+## Styling
+
+Import the default styles:
+
+```typescript
+import '@woven-canvas/vue/style.css';
+```
+
+## Documentation
+
+For full API documentation, see the [documentation site](https://wovencanvas.dev).
+
+## License
+
+MIT
