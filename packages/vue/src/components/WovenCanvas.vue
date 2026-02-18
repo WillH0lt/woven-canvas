@@ -84,6 +84,7 @@ import OfflineIndicator from "./OfflineIndicator.vue";
 import VersionMismatch from "./VersionMismatch.vue";
 import CanvasBackground from "./CanvasBackground.vue";
 import BackToContentButton from "./BackToContentButton.vue";
+import LoadingOverlay from "./LoadingOverlay.vue";
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block));
@@ -167,6 +168,7 @@ const emit = defineEmits<{
 // Define slots - block slots use "block:<tag>" naming, other slots allow overriding built-in UI
 defineSlots<
   {
+    loading?: (props: { isLoading: boolean }) => any;
     background?: (props: { background: BackgroundOptions }) => any;
     "floating-menu"?: () => any;
     toolbar?: () => any;
@@ -225,6 +227,9 @@ const isOnline = ref(true);
 
 // Version mismatch - set when server reports incompatible protocol version
 const versionMismatch = ref(false);
+
+// Loading state - shown until editor is initialized and first tick completes
+const isLoading = ref(true);
 
 // Camera ref for internal rendering - updated via subscription
 const cameraRef = shallowRef(Camera.default());
@@ -466,6 +471,9 @@ onMounted(async () => {
 
   // Start the render loop
   animationFrameId = requestAnimationFrame(tick);
+
+  // Loading complete
+  isLoading.value = false;
 
   // Emit ready event with editor instance
   emit("ready", editor, store);
@@ -882,6 +890,11 @@ function getBlockStyle(data: BlockData) {
     <!-- Back to content button -->
     <slot name="back-to-content">
       <BackToContentButton />
+    </slot>
+
+    <!-- Loading overlay -->
+    <slot name="loading" :is-loading="isLoading">
+      <LoadingOverlay :is-loading="isLoading" />
     </slot>
   </div>
 </template>

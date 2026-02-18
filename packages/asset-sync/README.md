@@ -1,6 +1,6 @@
 # @woven-canvas/asset-sync
 
-Asset management for local-first applications with upload queueing and URL resolution.
+Asset management for local-first applications.
 
 ## Installation
 

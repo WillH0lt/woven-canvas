@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import '@woven-canvas/vue/theme.css'
+import '@woven-canvas/vue/style.css'
 import './style.css'
 import App from './App.vue'
 

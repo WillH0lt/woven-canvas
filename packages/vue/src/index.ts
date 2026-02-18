@@ -1,3 +1,5 @@
+import './theme.css'
+
 export { Shape, StrokeKind, TextAlignment, User } from '@woven-canvas/core'
 // ECS Sync
 export {
@@ -60,6 +62,8 @@ export { default as EditableText } from './components/EditableText.vue'
 // Floating Menu Components
 export { default as FloatingMenu } from './components/FloatingMenu.vue'
 export { default as FloatingMenuBar } from './components/FloatingMenuBar.vue'
+// Loading Overlay
+export { default as LoadingOverlay } from './components/LoadingOverlay.vue'
 // Toolbar Components
 export { default as Toolbar } from './components/Toolbar.vue'
 export { default as ToolbarButton } from './components/ToolbarButton.vue'

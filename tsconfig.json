@@ -33,7 +33,4 @@
       "path": "examples/editor-vue"
     }
   ],
-  "compilerOptions": {
-    "experimentalDecorators": true
-  }
 }
