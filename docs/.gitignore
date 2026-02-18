@@ -1,5 +1,6 @@
+# Astro
 dist/
 .astro/
-node_modules/
+
+# Cloudflare
 .wrangler/
-.vscode/
