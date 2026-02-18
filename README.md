@@ -12,11 +12,29 @@
 
 An infinite canvas SDK for Vue.
 
-- **Plugin Architecture**: Choose from several first-party plugins or create your own for custom tools and features. Powered by [woven-ecs](https://woven-ecs.dev).
-- **Extensible UI**: Customizable toolbars, menus, and canvas controls out of the box.
-- **Data Sync**: Real-time collaboration with live cursors, offline support, and automatic sync when reconnected.
-- **Infinite Canvas Essentials**: Pan, zoom, and navigate a boundless workspace with intuitive controls.
-- **TypeScript & Vue**: Built with modern web technologies for type safety and reactivity.
+- **Plugin Architecture**: Choose from several first-party plugins or create your own for custom tools and features.
+- **Fully Customizable**: Customizable toolbars, menus, and canvas controls out of the box.
+- **Multiplayer Collaboration**: Real-time canvas editing with live cursors, presence indicators, and local-first offline support.
+- **Infinite Canvas Essentials**: Everything you need to build an infinite canvas app, including pan/zoom, selection box, freehand drawing, alt+drag, and more.
+
+## Installation
+
+```bash
+npm install @woven-canvas/vue
+```
+
+## Quick Start
+
+```vue
+<script setup lang="ts">
+import { WovenCanvas } from '@woven-canvas/vue';
+import '@woven-canvas/vue/style.css';
+</script>
+
+<template>
+  <WovenCanvas />
+</template>
+```
 
 ## Packages
 
@@ -36,25 +54,6 @@ An infinite canvas SDK for Vue.
 | [@woven-canvas/plugin-arrows](./packages/plugin-arrows) | Connectors and arrow tools |
 | [@woven-canvas/plugin-eraser](./packages/plugin-eraser) | Eraser tool for removing content |
 | [@woven-canvas/plugin-canvas-controls](./packages/plugin-canvas-controls) | Pan, zoom, and canvas navigation |
-
-## Installation
-
-```bash
-npm install @woven-canvas/core @woven-canvas/vue
-```
-
-## Quick Start
-
-```vue
-<script setup lang="ts">
-import { WovenCanvas } from '@woven-canvas/vue';
-import '@woven-canvas/vue/style.css';
-</script>
-
-<template>
-  <WovenCanvas />
-</template>
-```
 
 ## Examples
 

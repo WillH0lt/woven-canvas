@@ -1,6 +1,6 @@
 # @woven-canvas/vue
 
-Vue 3 components for woven-canvas infinite canvas applications.
+Vue components for woven-canvas infinite canvas applications.
 
 ## Installation
 

@@ -1,6 +1,6 @@
 # @woven-canvas/core
 
-Framework-agnostic infinite canvas editor library built on an Entity Component System (ECS) architecture.
+Framework-agnostic infinite canvas editor library.
 
 ## Installation
 
@@ -11,23 +11,19 @@ npm install @woven-canvas/core
 ## Usage
 
 ```typescript
-import { Editor, CorePlugin } from '@woven-canvas/core';
+import { Editor } from '@woven-canvas/core';
 
-const editor = new Editor({
-  domElement: document.getElementById('canvas'),
-  plugins: [CorePlugin],
-});
+const editor = new Editor(domElement);
 
 await editor.initialize();
-editor.start();
+
+// Run the editor loop
+function loop() {
+  editor.tick();
+  requestAnimationFrame(loop);
+}
+loop();
 ```
-
-## Features
-
-- **ECS Architecture**: High-performance entity management
-- **Plugin System**: Extensible architecture for adding custom functionality
-- **Command System**: Undo/redo support with command definitions
-- **Input Handling**: Unified keyboard, mouse, and pointer input processing
 
 ## Documentation
 
