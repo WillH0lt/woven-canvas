@@ -1,27 +1,15 @@
-import {
-  Asset,
-  Color,
-  type EditorPlugin,
-  type FontFamilyInput,
-  Image,
-  Key,
-  Redo,
-  Text,
-  Undo,
-  VerticalAlign,
-} from '@woven-canvas/core'
+import { type EditorPlugin, type FontFamilyInput, Key, Redo, Undo } from '@woven-canvas/core'
 
 import type { CanvasStore } from '@woven-ecs/canvas-store'
 import { CURSORS } from './cursors'
-import { Shape } from './Shape'
 import { BlockPlacementState } from './singletons'
 import { blockPlacementSystem, undoRedoSystem } from './systems'
 
-export interface BasicsPluginResources {
+export interface EditingPluginResources {
   store: CanvasStore
 }
 
-export interface BasicsPluginOptions {
+export interface EditingPluginOptions {
   store: CanvasStore
 }
 
@@ -52,12 +40,16 @@ export const DEFAULT_FONTS: FontFamilyInput[] = [
   },
 ]
 
-export function BasicsPlugin(options: BasicsPluginOptions): EditorPlugin {
+/**
+ * Editing plugin - provides store integration for undo/redo, block placement,
+ * default cursors, and default fonts.
+ */
+export function EditingPlugin(options: EditingPluginOptions): EditorPlugin {
   return {
-    name: 'basics',
-    resources: { store: options.store } satisfies BasicsPluginResources,
-    components: [Shape],
+    name: 'editing',
+    resources: { store: options.store } satisfies EditingPluginResources,
     singletons: [BlockPlacementState],
+    systems: [blockPlacementSystem, undoRedoSystem],
     cursors: CURSORS,
     fonts: DEFAULT_FONTS,
     keybinds: [
@@ -65,37 +57,5 @@ export function BasicsPlugin(options: BasicsPluginOptions): EditorPlugin {
       { command: Redo.name, key: Key.Y, mod: true },
       { command: Redo.name, key: Key.Z, mod: true, shift: true },
     ],
-    blockDefs: [
-      {
-        tag: 'sticky-note',
-        components: [Color, Text, VerticalAlign],
-        editOptions: {
-          canEdit: true,
-        },
-      },
-      {
-        tag: 'text',
-        components: [Text],
-        resizeMode: 'text',
-        editOptions: {
-          canEdit: true,
-          removeWhenTextEmpty: true,
-        },
-      },
-      {
-        tag: 'image',
-        components: [Image, Asset],
-        resizeMode: 'scale',
-      },
-      {
-        tag: 'shape',
-        components: [Shape, Text, VerticalAlign],
-        resizeMode: 'free',
-        editOptions: {
-          canEdit: true,
-        },
-      },
-    ],
-    systems: [blockPlacementSystem, undoRedoSystem],
   }
 }

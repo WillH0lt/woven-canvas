@@ -2,7 +2,7 @@ import { defineCanvasSingleton, field } from '@woven-canvas/core'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createApp, defineComponent, h, provide } from 'vue'
 import { useSingleton } from '../src/composables/useSingleton'
-import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from '../src/injection'
+import { WOVEN_CANVAS_KEY, type WovenCanvasContext } from '../src/injection'
 
 describe('useSingleton', () => {
   // Create a test singleton definition
@@ -14,7 +14,7 @@ describe('useSingleton', () => {
     },
   )
 
-  let mockCanvasContext: InfiniteCanvasContext
+  let mockCanvasContext: WovenCanvasContext
   let mockSubscriptions: Map<string, Set<(value: unknown) => void>>
 
   beforeEach(() => {
@@ -58,7 +58,7 @@ describe('useSingleton', () => {
 
     const Provider = defineComponent({
       setup() {
-        provide(INFINITE_CANVAS_KEY, mockCanvasContext)
+        provide(WOVEN_CANVAS_KEY, mockCanvasContext)
         return () => h(Child)
       },
     })
@@ -76,7 +76,7 @@ describe('useSingleton', () => {
   }
 
   describe('error handling', () => {
-    it('should throw error when used outside InfiniteCanvas', () => {
+    it('should throw error when used outside WovenCanvas', () => {
       expect(() => {
         const app = createApp({
           setup() {
@@ -85,7 +85,7 @@ describe('useSingleton', () => {
           },
         })
         app.mount(document.createElement('div'))
-      }).toThrow('useSingleton must be used within an InfiniteCanvas component')
+      }).toThrow('useSingleton must be used within a WovenCanvas component')
     })
   })
 
@@ -177,7 +177,7 @@ describe('useSingleton', () => {
 
       const Provider = defineComponent({
         setup() {
-          provide(INFINITE_CANVAS_KEY, mockCanvasContext)
+          provide(WOVEN_CANVAS_KEY, mockCanvasContext)
           return () => h(Child)
         },
       })

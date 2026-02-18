@@ -12,20 +12,20 @@ import {
   Grid,
 } from "@woven-canvas/core";
 import { Synced } from "@woven-ecs/canvas-store";
+import { CursorKind } from "../../cursors";
 
 import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
 import { useEditorContext } from "../../composables/useEditorContext";
 import { useToolbar } from "../../composables/useToolbar";
-import { INFINITE_CANVAS_KEY } from "../../injection";
-import { CursorKind } from "../../cursors";
+import { WOVEN_CANVAS_KEY } from "../../injection";
 
 const { nextEditorTick } = useEditorContext();
 const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
 const { setTool } = useToolbar();
 
-const canvasContext = inject(INFINITE_CANVAS_KEY);
+const canvasContext = inject(WOVEN_CANVAS_KEY);
 if (!canvasContext) {
-  throw new Error("ImageTool must be used within an InfiniteCanvas component");
+  throw new Error("ImageTool must be used within a WovenCanvas component");
 }
 
 const buttonRef = ref<HTMLButtonElement | null>(null);

@@ -300,28 +300,6 @@ importers:
         specifier: ^4.0.7
         version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
 
-  packages/plugin-shapes:
-    dependencies:
-      '@woven-canvas/core':
-        specifier: workspace:*
-        version: link:../core
-      '@woven-canvas/math':
-        specifier: workspace:*
-        version: link:../math
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-    devDependencies:
-      resize-observer-polyfill:
-        specifier: ^1.5.1
-        version: 1.5.1
-      vitest:
-        specifier: ^4.0.7
-        version: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(jsdom@27.4.0)(tsx@4.21.0)
-      zod:
-        specifier: ^4.2.1
-        version: 4.3.6
-
   packages/vue:
     dependencies:
       '@floating-ui/vue':
@@ -390,9 +368,6 @@ importers:
       '@woven-canvas/plugin-selection':
         specifier: workspace:^
         version: link:../plugin-selection
-      '@woven-canvas/plugin-shapes':
-        specifier: workspace:^
-        version: link:../plugin-shapes
       '@woven-ecs/canvas-store':
         specifier: ^1.0.1
         version: 1.0.1(typescript@5.9.3)

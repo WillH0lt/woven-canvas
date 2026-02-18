@@ -9,7 +9,7 @@ const WARMUP_DURATION = 1500 // ms the tooltip stays "warm" after leaving
 
 /**
  * Creates a new tooltip context with its own isolated state.
- * Used by InfiniteCanvas to provide per-instance tooltip state.
+ * Used by WovenCanvas to provide per-instance tooltip state.
  */
 export function createTooltipContext(): TooltipContext {
   const activeTooltip = ref<TooltipState | null>(null)
@@ -90,13 +90,13 @@ export function createTooltipContext(): TooltipContext {
 }
 
 /**
- * Composable to access the tooltip singleton for the current InfiniteCanvas instance.
- * Must be called within a component that is a descendant of InfiniteCanvas.
+ * Composable to access the tooltip singleton for the current WovenCanvas instance.
+ * Must be called within a component that is a descendant of WovenCanvas.
  */
 export function useTooltipSingleton(): TooltipContext {
   const context = inject(TOOLTIP_KEY)
   if (!context) {
-    throw new Error('useTooltipSingleton must be used within an InfiniteCanvas component')
+    throw new Error('useTooltipSingleton must be used within a WovenCanvas component')
   }
   return context
 }

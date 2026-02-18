@@ -1,16 +1,16 @@
 import type { FontFamily } from '@woven-canvas/core'
 import { computed, inject } from 'vue'
-import { INFINITE_CANVAS_KEY } from '../injection'
+import { WOVEN_CANVAS_KEY } from '../injection'
 
 /**
  * Composable for accessing the editor's registered fonts.
- * Must be used within an InfiniteCanvas component.
+ * Must be used within a WovenCanvas component.
  *
  * Returns the list of fonts configured in the editor, filtered to only
  * include selectable fonts (fonts with `selectable: true`).
  *
  * @returns Computed array of selectable FontFamily objects
- * @throws Error if used outside of InfiniteCanvas
+ * @throws Error if used outside of WovenCanvas
  *
  * @example
  * ```vue
@@ -31,9 +31,9 @@ import { INFINITE_CANVAS_KEY } from '../injection'
  * ```
  */
 export function useFonts() {
-  const canvasContext = inject(INFINITE_CANVAS_KEY)
+  const canvasContext = inject(WOVEN_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error('useFonts must be used within an InfiniteCanvas component')
+    throw new Error('useFonts must be used within a WovenCanvas component')
   }
 
   return computed<FontFamily[]>(() => {

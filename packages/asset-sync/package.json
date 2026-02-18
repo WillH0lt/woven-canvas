@@ -1,7 +1,7 @@
 {
   "name": "@woven-canvas/asset-sync",
   "version": "0.1.0",
-  "description": "Asset management for InfiniteCanvas - upload queueing, caching, and URL resolution",
+  "description": "Asset management for WovenCanvas - upload queueing, caching, and URL resolution",
   "repository": {
     "type": "git",
     "url": "https://github.com/WillH0lt/woven-canvas"

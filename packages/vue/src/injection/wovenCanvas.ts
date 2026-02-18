@@ -5,8 +5,8 @@ import type { InjectionKey } from 'vue'
 /** User data stored in the users map */
 export type UserData = InferCanvasComponentType<typeof User.schema>
 
-/** Context provided by InfiniteCanvas */
-export interface InfiniteCanvasContext {
+/** Context provided by WovenCanvas */
+export interface WovenCanvasContext {
   /** Check if an entity exists */
   hasEntity: (entityId: EntityId) => boolean
   /** Get the editor instance */
@@ -25,5 +25,5 @@ export interface InfiniteCanvasContext {
   registerTickCallback: (callback: (ctx: Context) => void) => () => void
 }
 
-/** Injection key for InfiniteCanvas context */
-export const INFINITE_CANVAS_KEY: InjectionKey<InfiniteCanvasContext> = Symbol('infinite-canvas')
+/** Injection key for WovenCanvas context */
+export const WOVEN_CANVAS_KEY: InjectionKey<WovenCanvasContext> = Symbol('woven-canvas')

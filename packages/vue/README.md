@@ -12,11 +12,11 @@ npm install @woven-canvas/core @woven-canvas/vue
 
 ```vue
 <script setup lang="ts">
-import { InfiniteCanvas } from '@woven-canvas/vue';
+import { WovenCanvas } from '@woven-canvas/vue';
 </script>
 
 <template>
-  <InfiniteCanvas />
+  <WovenCanvas />
 </template>
 ```
 

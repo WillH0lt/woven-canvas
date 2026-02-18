@@ -68,6 +68,8 @@ export {
   PointerButton,
   PointerType,
   ScaleWithZoom,
+  Shape,
+  StrokeKind,
   Text,
   UploadState,
   User,

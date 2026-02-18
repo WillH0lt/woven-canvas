@@ -27,7 +27,7 @@ vi.mock('../src/components/FloatingMenu.vue', () => ({
   },
 }))
 
-import InfiniteCanvas from '../src/components/InfiniteCanvas.vue'
+import WovenCanvas from '../src/components/WovenCanvas.vue'
 
 // Track all created editor instances
 let editorInstances: any[] = []
@@ -97,7 +97,7 @@ vi.mock('@woven-canvas/core', async () => {
   }
 })
 
-describe('InfiniteCanvas', () => {
+describe('WovenCanvas', () => {
   let mockRequestAnimationFrame: ReturnType<typeof vi.fn>
   let mockCancelAnimationFrame: ReturnType<typeof vi.fn>
   let animationFrameCallbacks: Map<number, FrameRequestCallback>
@@ -133,14 +133,14 @@ describe('InfiniteCanvas', () => {
 
   describe('mounting', () => {
     it('should mount successfully', async () => {
-      const wrapper = mount(InfiniteCanvas)
+      const wrapper = mount(WovenCanvas)
       await flushPromises()
 
       expect(wrapper.exists()).toBe(true)
     })
 
     it('should create a container div', async () => {
-      const wrapper = mount(InfiniteCanvas)
+      const wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const container = wrapper.find('div')
@@ -148,7 +148,7 @@ describe('InfiniteCanvas', () => {
     })
 
     it('should apply correct styles to container', async () => {
-      const wrapper = mount(InfiniteCanvas)
+      const wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const container = wrapper.find('div')
@@ -161,7 +161,7 @@ describe('InfiniteCanvas', () => {
     })
 
     it('should initialize Editor with container element', async () => {
-      const _wrapper = mount(InfiniteCanvas)
+      const _wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const editorInstance = getLastEditorInstance()
@@ -170,7 +170,7 @@ describe('InfiniteCanvas', () => {
     })
 
     it('should start animation frame loop after initialization', async () => {
-      const _wrapper = mount(InfiniteCanvas)
+      const _wrapper = mount(WovenCanvas)
       await flushPromises()
 
       expect(mockRequestAnimationFrame).toHaveBeenCalled()
@@ -179,7 +179,7 @@ describe('InfiniteCanvas', () => {
 
   describe('unmounting', () => {
     it('should cancel animation frame on unmount', async () => {
-      const wrapper = mount(InfiniteCanvas)
+      const wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const frameIdBeforeUnmount = frameId
@@ -190,7 +190,7 @@ describe('InfiniteCanvas', () => {
     })
 
     it('should dispose editor on unmount', async () => {
-      const wrapper = mount(InfiniteCanvas)
+      const wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const editorInstance = getLastEditorInstance()
@@ -203,7 +203,7 @@ describe('InfiniteCanvas', () => {
 
   describe('props', () => {
     it('should pass maxEntities to Editor', async () => {
-      mount(InfiniteCanvas, {
+      mount(WovenCanvas, {
         props: {
           maxEntities: 5000,
         },
@@ -215,7 +215,7 @@ describe('InfiniteCanvas', () => {
     })
 
     it('should pass user data to Editor', async () => {
-      mount(InfiniteCanvas, {
+      mount(WovenCanvas, {
         props: {
           user: { userId: 'test-user-123' },
         },
@@ -229,14 +229,14 @@ describe('InfiniteCanvas', () => {
     it('should include CanvasControlsPlugin by default', async () => {
       const { CanvasControlsPlugin } = await import('@woven-canvas/plugin-canvas-controls')
 
-      mount(InfiniteCanvas)
+      mount(WovenCanvas)
       await flushPromises()
 
       expect(CanvasControlsPlugin).toHaveBeenCalled()
     })
 
     it('should include SelectionPlugin by default', async () => {
-      mount(InfiniteCanvas)
+      mount(WovenCanvas)
       await flushPromises()
 
       const editorInstance = getLastEditorInstance()
@@ -248,7 +248,7 @@ describe('InfiniteCanvas', () => {
     it('should pass custom plugins to Editor', async () => {
       const customPlugin = { name: 'custom-plugin' }
 
-      mount(InfiniteCanvas, {
+      mount(WovenCanvas, {
         props: {
           plugins: [customPlugin],
         },
@@ -265,7 +265,7 @@ describe('InfiniteCanvas', () => {
       const { CanvasControlsPlugin } = await import('@woven-canvas/plugin-canvas-controls')
       vi.mocked(CanvasControlsPlugin).mockClear()
 
-      mount(InfiniteCanvas, {
+      mount(WovenCanvas, {
         props: {
           controls: {
             minZoom: 0.1,
@@ -284,7 +284,7 @@ describe('InfiniteCanvas', () => {
 
   describe('events', () => {
     it('should emit ready event with editor instance', async () => {
-      const wrapper = mount(InfiniteCanvas)
+      const wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const readyEvents = wrapper.emitted('ready')
@@ -297,7 +297,7 @@ describe('InfiniteCanvas', () => {
 
   describe('tick loop', () => {
     it('should call editor.tick when tick function is invoked', async () => {
-      const _wrapper = mount(InfiniteCanvas)
+      const _wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const editorInstance = getLastEditorInstance()
@@ -311,7 +311,7 @@ describe('InfiniteCanvas', () => {
     })
 
     it('should schedule animation frames continuously', async () => {
-      const _wrapper = mount(InfiniteCanvas)
+      const _wrapper = mount(WovenCanvas)
       await flushPromises()
 
       // After mount, at least one requestAnimationFrame should be called
@@ -323,7 +323,7 @@ describe('InfiniteCanvas', () => {
     it('should provide canvas context with hasEntity and getEditor functions', async () => {
       // We test this indirectly by verifying the editor instance is created
       // and the component provides the expected interface
-      const _wrapper = mount(InfiniteCanvas)
+      const _wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const editorInstance = getLastEditorInstance()
@@ -336,7 +336,7 @@ describe('InfiniteCanvas', () => {
 
     it('should expose editor through getEditor in provided canvas context', async () => {
       // Test by mounting and verifying editor is accessible
-      const _wrapper = mount(InfiniteCanvas)
+      const _wrapper = mount(WovenCanvas)
       await flushPromises()
 
       const editorInstance = getLastEditorInstance()

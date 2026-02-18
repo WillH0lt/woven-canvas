@@ -62,7 +62,7 @@ export class AssetManager {
    * Opens IndexedDB stores and prepares for operations.
    */
   async init(): Promise<void> {
-    const dbPrefix = `infinitecanvas-assets-${this.documentId}`
+    const dbPrefix = `wovencanvas-assets-${this.documentId}`
 
     // Open all stores in parallel
     const [jobsStore, binariesStore] = await Promise.all([

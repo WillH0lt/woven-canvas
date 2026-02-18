@@ -5,7 +5,7 @@ import {
   type InferCanvasComponentType,
 } from '@woven-canvas/core'
 import { inject, onUnmounted, type ShallowRef, shallowRef } from 'vue'
-import { INFINITE_CANVAS_KEY } from '../injection'
+import { WOVEN_CANVAS_KEY } from '../injection'
 
 /** Component def with name and schema for type inference */
 type ComponentDefWithSchema = AnyCanvasComponentDef & {
@@ -15,7 +15,7 @@ type ComponentDefWithSchema = AnyCanvasComponentDef & {
 
 /**
  * Composable for reactive access to a single component on an entity.
- * Must be used within an InfiniteCanvas component.
+ * Must be used within a WovenCanvas component.
  *
  * Returns a shallow ref with the component data or null if not present.
  * The ref updates reactively when the component is added/removed/changed.
@@ -51,9 +51,9 @@ export function useComponent<T extends ComponentDefWithSchema>(
   entityId: EntityId,
   componentDef: T,
 ): ShallowRef<Readonly<InferCanvasComponentType<T['schema']>> | null> {
-  const canvasContext = inject(INFINITE_CANVAS_KEY)
+  const canvasContext = inject(WOVEN_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error('useComponent must be used within an InfiniteCanvas component')
+    throw new Error('useComponent must be used within a WovenCanvas component')
   }
 
   // Create our own ref for this component

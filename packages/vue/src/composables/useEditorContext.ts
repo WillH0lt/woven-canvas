@@ -1,6 +1,6 @@
 import type { Context } from '@woven-canvas/core'
 import { inject } from 'vue'
-import { INFINITE_CANVAS_KEY } from '../injection'
+import { WOVEN_CANVAS_KEY } from '../injection'
 
 export interface EditorContext {
   /**
@@ -37,12 +37,12 @@ export interface EditorContext {
 
 /**
  * Composable for accessing the editor context.
- * Must be used within an InfiniteCanvas component.
+ * Must be used within a WovenCanvas component.
  *
  * Provides methods to schedule changes to the editor state.
  *
  * @returns EditorContext object with nextEditorTick method
- * @throws Error if used outside of InfiniteCanvas
+ * @throws Error if used outside of WovenCanvas
  *
  * @example
  * ```vue
@@ -63,9 +63,9 @@ export interface EditorContext {
  * ```
  */
 export function useEditorContext(): EditorContext {
-  const canvasContext = inject(INFINITE_CANVAS_KEY)
+  const canvasContext = inject(WOVEN_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error('useEditorContext must be used within an InfiniteCanvas component')
+    throw new Error('useEditorContext must be used within a WovenCanvas component')
   }
 
   return {

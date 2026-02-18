@@ -18,12 +18,12 @@ import { useElementBounding } from "@vueuse/core";
 import { useQuery } from "../composables/useQuery";
 import { useSingleton } from "../composables/useSingleton";
 import { useTextEditorController } from "../composables/useTextEditorController";
-import { INFINITE_CANVAS_KEY, FLOATING_MENU_KEY } from "../injection";
+import { WOVEN_CANVAS_KEY, FLOATING_MENU_KEY } from "../injection";
 import { computeCommonComponents } from "../utils/computeCommonComponents";
 import FloatingMenuBar from "./FloatingMenuBar.vue";
 
 // Get editor from context
-const canvasContext = inject(INFINITE_CANVAS_KEY);
+const canvasContext = inject(WOVEN_CANVAS_KEY);
 
 // Query all selected blocks
 const selectedItems = useQuery([Block, Selected] as const);
@@ -98,7 +98,7 @@ const selectionBounds = computed<Aabb | null>(() => {
   return bounds;
 });
 
-// Container element ref (passed from InfiniteCanvas)
+// Container element ref (passed from WovenCanvas)
 const containerRef = inject<{ value: HTMLElement | null }>("containerRef");
 
 // Virtual reference element for floating-ui

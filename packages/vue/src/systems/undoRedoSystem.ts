@@ -1,9 +1,9 @@
 import { defineEditorSystem, getPluginResources, on, Redo, Undo } from '@woven-canvas/core'
 import { deselectAll } from '@woven-canvas/plugin-selection'
-import type { BasicsPluginResources } from '../BasicsPlugin'
+import type { EditingPluginResources } from '../EditingPlugin'
 
 export const undoRedoSystem = defineEditorSystem({ phase: 'update' }, (ctx) => {
-  const { store } = getPluginResources<BasicsPluginResources>(ctx, 'basics')
+  const { store } = getPluginResources<EditingPluginResources>(ctx, 'editing')
   on(ctx, Undo, () => {
     if (store.canUndo()) {
       deselectAll(ctx)

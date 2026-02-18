@@ -27,9 +27,6 @@
       "path": "packages/plugin-selection"
     },
     {
-      "path": "packages/plugin-shapes"
-    },
-    {
       "path": "packages/vue"
     },
     {

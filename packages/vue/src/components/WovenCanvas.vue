@@ -55,9 +55,9 @@ import { PenPlugin } from "@woven-canvas/plugin-pen";
 import { ArrowsPlugin } from "@woven-canvas/plugin-arrows";
 
 import {
-  INFINITE_CANVAS_KEY,
+  WOVEN_CANVAS_KEY,
   TOOLTIP_KEY,
-  type InfiniteCanvasContext,
+  type WovenCanvasContext,
   type UserData,
 } from "../injection";
 import { createTooltipContext } from "../composables/useTooltipSingleton";
@@ -76,7 +76,7 @@ import ArrowHandle from "./blocks/ArrowHandle.vue";
 import ArrowTerminal from "./blocks/ArrowTerminal.vue";
 import ImageBlock from "./blocks/ImageBlock.vue";
 import ShapeBlock from "./blocks/ShapeBlock.vue";
-import { BasicsPlugin } from "../BasicsPlugin";
+import { EditingPlugin } from "../EditingPlugin";
 import type { BlockData, BackgroundOptions } from "../types";
 import UserPresence from "./UserPresence.vue";
 import UserCursors from "./UserCursors.vue";
@@ -98,10 +98,10 @@ const userQuery = defineQuery((q) => q.tracking(User));
 type BlockDef = InferCanvasComponentType<typeof Block.schema>;
 
 /**
- * InfiniteCanvas component props
+ * WovenCanvas component props
  * Mirrors EditorOptionsInput with additional controls/selection customization
  */
-export interface InfiniteCanvasProps {
+export interface WovenCanvasProps {
   // Sync options for persistence, history, and multiplayer
   syncOptions?: CanvasStoreOptions;
 
@@ -148,7 +148,7 @@ export interface InfiniteCanvasProps {
   assetProvider?: AssetProvider;
 }
 
-const props = withDefaults(defineProps<InfiniteCanvasProps>(), {
+const props = withDefaults(defineProps<WovenCanvasProps>(), {
   maxEntities: 10_000,
   blockDefs: () => [],
   keybinds: () => [],
@@ -342,7 +342,7 @@ function getUserBySessionId(sessionId: string): UserData | null {
 }
 
 // Provide context to composables
-const canvasContext: InfiniteCanvasContext = {
+const canvasContext: WovenCanvasContext = {
   hasEntity: (entityId: EntityId) => entities.has(entityId),
   getEditor: () => editorRef.value,
   getAssetManager: () => assetManager,
@@ -352,7 +352,7 @@ const canvasContext: InfiniteCanvasContext = {
   subscribeSingleton,
   registerTickCallback,
 };
-provide(INFINITE_CANVAS_KEY, canvasContext);
+provide(WOVEN_CANVAS_KEY, canvasContext);
 
 // Provide container ref for FloatingMenu positioning
 provide("containerRef", containerRef);
@@ -424,7 +424,7 @@ onMounted(async () => {
   allPlugins.push(EraserPlugin);
   allPlugins.push(PenPlugin);
   allPlugins.push(ArrowsPlugin);
-  allPlugins.push(BasicsPlugin({ store }));
+  allPlugins.push(EditingPlugin({ store }));
 
   // Add user-provided plugins
   allPlugins.push(...props.plugins);

@@ -2,8 +2,7 @@
 import { computed, ref } from "vue";
 import { useComponent } from "../../composables/useComponent";
 import { useEditorContext } from "../../composables/useEditorContext";
-import { Text, VerticalAlign, VerticalAlignment } from "@woven-canvas/core";
-import { Shape, StrokeKind } from "../../Shape";
+import { Text, VerticalAlign, VerticalAlignment, Shape, StrokeKind } from "@woven-canvas/core";
 import { SHAPES } from "../../shapes";
 import type { BlockData } from "../../types";
 import EditableText from "../EditableText.vue";

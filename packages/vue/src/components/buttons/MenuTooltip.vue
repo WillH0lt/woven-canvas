@@ -5,7 +5,7 @@ import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
 
 const { activeTooltip, isVisible } = useTooltipSingleton();
 
-// Get container ref from InfiniteCanvas for teleport
+// Get container ref from WovenCanvas for teleport
 const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
 
 // Tooltip element ref

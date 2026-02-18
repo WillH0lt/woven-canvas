@@ -6,7 +6,7 @@ import {
   type InferCanvasComponentType,
 } from '@woven-canvas/core'
 import { inject, onUnmounted, type Ref, type ShallowRef, shallowRef } from 'vue'
-import { INFINITE_CANVAS_KEY } from '../injection'
+import { WOVEN_CANVAS_KEY } from '../injection'
 
 /** Component def with name and schema for type inference */
 type ComponentDefWithSchema = AnyCanvasComponentDef & {
@@ -54,9 +54,9 @@ export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
  * ```
  */
 export function useQuery<T extends readonly ComponentDefWithSchema[]>(components: T): Ref<QueryResultItem<T>[]> {
-  const canvasContext = inject(INFINITE_CANVAS_KEY)
+  const canvasContext = inject(WOVEN_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error('useQuery must be used within an InfiniteCanvas component')
+    throw new Error('useQuery must be used within a WovenCanvas component')
   }
 
   // Results ref - updated when entity set changes
@@ -132,7 +132,7 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(components
     return items
   }
 
-  // Called on each tick by InfiniteCanvas
+  // Called on each tick by WovenCanvas
   function onTick(ctx: Context) {
     // Initialize on first tick with editor available
     if (!initialized) {
@@ -171,7 +171,7 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(components
     }
   }
 
-  // Register tick callback with InfiniteCanvas
+  // Register tick callback with WovenCanvas
   const unregisterTick = canvasContext.registerTickCallback(onTick)
 
   // Cleanup on unmount

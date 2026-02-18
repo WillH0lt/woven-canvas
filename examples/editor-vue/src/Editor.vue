@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { Editor } from '@woven-canvas/core'
-import { type CanvasStore, type CanvasStoreOptions, InfiniteCanvas } from '@woven-canvas/vue'
+import { type CanvasStore, type CanvasStoreOptions, WovenCanvas } from '@woven-canvas/vue'
 import { ref } from 'vue'
 
-const ONLINE_STORAGE_KEY = 'infinitecanvas-online-mode'
+const ONLINE_STORAGE_KEY = 'wovencanvas-online-mode'
 
 // Load online preference from localStorage (default: true)
 const savedOnline = localStorage.getItem(ONLINE_STORAGE_KEY)
@@ -52,7 +52,7 @@ const syncOptions = ref<CanvasStoreOptions>({
         {{ isOnline ? "Online" : "Offline" }}
       </label>
     </div>
-    <InfiniteCanvas
+    <WovenCanvas
       @ready="handleReady"
       :sync-options="syncOptions"
       :controls="{ maxZoom: 3 }"
@@ -66,7 +66,7 @@ const syncOptions = ref<CanvasStoreOptions>({
         subdivisionStep: 5,
       }"
     >
-      <!-- 
+      <!--
       :components="[Shape]"
       :blockDefs="[
         {
@@ -98,7 +98,7 @@ const syncOptions = ref<CanvasStoreOptions>({
           </template>
         </Toolbar>
       </template> -->
-    </InfiniteCanvas>
+    </WovenCanvas>
   </div>
 </template>
 

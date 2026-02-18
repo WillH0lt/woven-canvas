@@ -25,7 +25,7 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-// Get container ref from InfiniteCanvas for teleport
+// Get container ref from WovenCanvas for teleport
 const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
 
 // Tooltip singleton

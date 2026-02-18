@@ -1,6 +1,6 @@
 import type { AnyCanvasSingletonDef, InferCanvasComponentType } from '@woven-canvas/core'
 import { inject, onUnmounted, type ShallowRef, shallowRef } from 'vue'
-import { INFINITE_CANVAS_KEY } from '../injection'
+import { WOVEN_CANVAS_KEY } from '../injection'
 
 /** Singleton def with name and schema for type inference */
 type SingletonDefWithSchema = AnyCanvasSingletonDef & {
@@ -39,9 +39,9 @@ type SingletonDefWithSchema = AnyCanvasSingletonDef & {
 export function useSingleton<T extends SingletonDefWithSchema>(
   singletonDef: T,
 ): ShallowRef<Readonly<InferCanvasComponentType<T['schema']>>> {
-  const canvasContext = inject(INFINITE_CANVAS_KEY)
+  const canvasContext = inject(WOVEN_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error('useSingleton must be used within an InfiniteCanvas component')
+    throw new Error('useSingleton must be used within a WovenCanvas component')
   }
 
   // Create our own ref for this singleton

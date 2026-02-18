@@ -2,7 +2,7 @@ import { defineCanvasComponent, field } from '@woven-canvas/core'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createApp, defineComponent, h, provide } from 'vue'
 import { useComponent } from '../src/composables/useComponent'
-import { INFINITE_CANVAS_KEY, type InfiniteCanvasContext } from '../src/injection'
+import { WOVEN_CANVAS_KEY, type WovenCanvasContext } from '../src/injection'
 
 describe('useComponent', () => {
   // Create properly typed component definitions
@@ -13,7 +13,7 @@ describe('useComponent', () => {
     },
   )
 
-  let mockCanvasContext: InfiniteCanvasContext
+  let mockCanvasContext: WovenCanvasContext
   let mockSubscriptions: Map<number, Map<string, Set<(value: unknown) => void>>>
   let mockEntities: Set<number>
 
@@ -68,7 +68,7 @@ describe('useComponent', () => {
     // Create a parent component that provides the context
     const Provider = defineComponent({
       setup() {
-        provide(INFINITE_CANVAS_KEY, mockCanvasContext)
+        provide(WOVEN_CANVAS_KEY, mockCanvasContext)
         return () => h(Child)
       },
     })
@@ -87,7 +87,7 @@ describe('useComponent', () => {
   }
 
   describe('error handling', () => {
-    it('should throw error when used outside InfiniteCanvas', () => {
+    it('should throw error when used outside WovenCanvas', () => {
       // Run without providing canvas context
       expect(() => {
         const app = createApp({
@@ -97,7 +97,7 @@ describe('useComponent', () => {
           },
         })
         app.mount(document.createElement('div'))
-      }).toThrow('useComponent must be used within an InfiniteCanvas component')
+      }).toThrow('useComponent must be used within a WovenCanvas component')
     })
   })
 
@@ -193,7 +193,7 @@ describe('useComponent', () => {
 
       const Provider = defineComponent({
         setup() {
-          provide(INFINITE_CANVAS_KEY, mockCanvasContext)
+          provide(WOVEN_CANVAS_KEY, mockCanvasContext)
           return () => h(Child)
         },
       })

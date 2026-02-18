@@ -4,13 +4,13 @@ import { Image, Asset, UploadState } from "@woven-canvas/core";
 
 import type { BlockData } from "../../types";
 import { useComponent } from "../../composables/useComponent";
-import { INFINITE_CANVAS_KEY } from "../../injection";
+import { WOVEN_CANVAS_KEY } from "../../injection";
 
 const props = defineProps<BlockData>();
 
-const injectedContext = inject(INFINITE_CANVAS_KEY);
+const injectedContext = inject(WOVEN_CANVAS_KEY);
 if (!injectedContext) {
-  throw new Error("ImageBlock must be used within an InfiniteCanvas component");
+  throw new Error("ImageBlock must be used within a WovenCanvas component");
 }
 const canvasContext = injectedContext;
 

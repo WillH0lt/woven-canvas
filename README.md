@@ -32,7 +32,6 @@ An infinite canvas SDK for Vue.
 | Plugin | Description |
 |--------|-------------|
 | [@woven-canvas/plugin-selection](./packages/plugin-selection) | Select, move, and resize objects |
-| [@woven-canvas/plugin-shapes](./packages/plugin-shapes) | Rectangle, ellipse, and other shape tools |
 | [@woven-canvas/plugin-pen](./packages/plugin-pen) | Freehand drawing with pressure sensitivity |
 | [@woven-canvas/plugin-arrows](./packages/plugin-arrows) | Connectors and arrow tools |
 | [@woven-canvas/plugin-eraser](./packages/plugin-eraser) | Eraser tool for removing content |
@@ -48,12 +47,12 @@ npm install @woven-canvas/core @woven-canvas/vue
 
 ```vue
 <script setup lang="ts">
-import { InfiniteCanvas } from '@woven-canvas/vue';
+import { WovenCanvas } from '@woven-canvas/vue';
 import '@woven-canvas/vue/style.css';
 </script>
 
 <template>
-  <InfiniteCanvas />
+  <WovenCanvas />
 </template>
 ```
 

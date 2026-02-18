@@ -1,7 +1,7 @@
 import type { AssetMetadata, AssetProvider } from './AssetProvider'
 import { type KeyValueStore, openStore } from './storage'
 
-const DB_NAME = 'infinitecanvas-assets'
+const DB_NAME = 'wovencanvas-assets'
 const STORE_NAME = 'blobs'
 
 interface StoredAsset {

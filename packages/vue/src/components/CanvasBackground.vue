@@ -14,7 +14,7 @@ const props = defineProps<Props>();
 const camera = useSingleton(Camera);
 const grid = useSingleton(Grid);
 
-// Get container ref from InfiniteCanvas
+// Get container ref from WovenCanvas
 const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
 
 // Track screen dimensions via ResizeObserver (immediate updates)

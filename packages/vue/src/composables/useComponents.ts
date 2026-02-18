@@ -5,7 +5,7 @@ import {
   type InferCanvasComponentType,
 } from '@woven-canvas/core'
 import { inject, type MaybeRefOrGetter, onUnmounted, type ShallowRef, shallowRef, toValue, watch } from 'vue'
-import { INFINITE_CANVAS_KEY } from '../injection'
+import { WOVEN_CANVAS_KEY } from '../injection'
 
 /** Component def with name and schema for type inference */
 type ComponentDefWithSchema = AnyCanvasComponentDef & {
@@ -15,7 +15,7 @@ type ComponentDefWithSchema = AnyCanvasComponentDef & {
 
 /**
  * Composable for reactive access to a component across multiple entities.
- * Must be used within an InfiniteCanvas component.
+ * Must be used within a WovenCanvas component.
  *
  * Handles dynamic entity ID arrays - automatically subscribes/unsubscribes
  * as entities are added or removed.
@@ -40,9 +40,9 @@ export function useComponents<T extends ComponentDefWithSchema>(
   entityIds: MaybeRefOrGetter<EntityId[]>,
   componentDef: T,
 ): ShallowRef<Map<EntityId, Readonly<InferCanvasComponentType<T['schema']>> | null>> {
-  const canvasContext = inject(INFINITE_CANVAS_KEY)
+  const canvasContext = inject(WOVEN_CANVAS_KEY)
   if (!canvasContext) {
-    throw new Error('useComponents must be used within an InfiniteCanvas component')
+    throw new Error('useComponents must be used within a WovenCanvas component')
   }
 
   const componentsMap = shallowRef<Map<EntityId, InferCanvasComponentType<T['schema']> | null>>(new Map())

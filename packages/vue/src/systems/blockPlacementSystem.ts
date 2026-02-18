@@ -21,7 +21,7 @@ import {
   Synced,
 } from '@woven-canvas/core'
 import { EditAfterPlacing, SelectionState, SelectionStateSingleton } from '@woven-canvas/plugin-selection'
-import type { BasicsPluginResources } from '../BasicsPlugin'
+import type { EditingPluginResources } from '../EditingPlugin'
 import { BlockPlacementState } from '../singletons'
 
 // Query for edited blocks
@@ -95,7 +95,6 @@ function createBlockFromSnapshot(ctx: Context, snapshot: BlockSnapshot, position
   })
   addComponent(ctx, entityId, Block, blockData)
 
-  console.log(blockDef.components)
   for (const Comp of blockDef.components) {
     if (!(Comp.name in snapshot)) {
       addComponent(ctx, entityId, Comp)
@@ -135,7 +134,7 @@ function placeBlockAndSetupSelection(
     if (mode === 'placement') {
       // Create an undo checkpoint for the placement + edit
       // so we don't end up with un-edited blocks in uhistory
-      const { store } = getPluginResources<BasicsPluginResources>(ctx, 'basics')
+      const { store } = getPluginResources<EditingPluginResources>(ctx, 'editing')
       const checkpointId = store.createCheckpoint()
       if (checkpointId) {
         const placementState = BlockPlacementState.write(ctx)
@@ -172,7 +171,7 @@ function squashUndoHistory(ctx: Context): void {
     BlockPlacementState.write(ctx).editedCheckpoint = ''
 
     // Wait for state to settle before squashing
-    const { store } = getPluginResources<BasicsPluginResources>(ctx, 'basics')
+    const { store } = getPluginResources<EditingPluginResources>(ctx, 'editing')
     store.onSettled(() => store.squashToCheckpoint(cp), { frames: 5 })
   }
 }

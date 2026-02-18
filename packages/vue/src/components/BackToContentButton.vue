@@ -23,9 +23,9 @@ const syncedBlockCount = ref(0);
 
 // Register tick callback to update synced block count
 import { inject } from "vue";
-import { INFINITE_CANVAS_KEY } from "../injection";
+import { WOVEN_CANVAS_KEY } from "../injection";
 
-const canvasContext = inject(INFINITE_CANVAS_KEY);
+const canvasContext = inject(WOVEN_CANVAS_KEY);
 
 if (canvasContext) {
   const unregister = canvasContext.registerTickCallback((ctx: Context) => {

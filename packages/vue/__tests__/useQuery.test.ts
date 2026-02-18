@@ -14,7 +14,7 @@ describe('useQuery', () => {
   )
 
   describe('error handling', () => {
-    it('should throw error when used outside InfiniteCanvas', () => {
+    it('should throw error when used outside WovenCanvas', () => {
       expect(() => {
         const app = createApp({
           setup() {
@@ -23,11 +23,11 @@ describe('useQuery', () => {
           },
         })
         app.mount(document.createElement('div'))
-      }).toThrow('useQuery must be used within an InfiniteCanvas component')
+      }).toThrow('useQuery must be used within a WovenCanvas component')
     })
   })
 
   // Note: Most useQuery functionality tests require a real Editor instance
   // because defineQuery needs the ECS context with registered components.
-  // Integration tests with InfiniteCanvas would cover the full query functionality.
+  // Integration tests with WovenCanvas would cover the full query functionality.
 })

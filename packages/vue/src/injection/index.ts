@@ -1,8 +1,8 @@
 export { FLOATING_MENU_KEY, type FloatingMenuContext } from './floatingMenu'
-export {
-  INFINITE_CANVAS_KEY,
-  type InfiniteCanvasContext,
-  type UserData,
-} from './infiniteCanvas'
 export { TOOLBAR_KEY, type ToolbarContext } from './toolbar'
 export { TOOLTIP_KEY, type TooltipContext, type TooltipState } from './tooltip'
+export {
+  type UserData,
+  WOVEN_CANVAS_KEY,
+  type WovenCanvasContext,
+} from './wovenCanvas'

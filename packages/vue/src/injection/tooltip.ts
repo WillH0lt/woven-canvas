@@ -16,4 +16,4 @@ export interface TooltipContext {
   reset: () => void
 }
 
-export const TOOLTIP_KEY: InjectionKey<TooltipContext> = Symbol('InfiniteCanvasTooltip')
+export const TOOLTIP_KEY: InjectionKey<TooltipContext> = Symbol('WovenCanvasTooltip')

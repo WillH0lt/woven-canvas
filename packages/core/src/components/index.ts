@@ -21,9 +21,10 @@ export {
 } from './Pointer'
 // Transform components
 export { ScaleWithZoom } from './ScaleWithZoom'
+// Shape
+export { Shape, StrokeKind } from './Shape'
 // Content components
 export { Text } from './Text'
-
 // User presence
 export { User } from './User'
 export { VerticalAlign } from './VerticalAlign'

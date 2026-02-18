@@ -6,8 +6,8 @@ import {
 } from '@woven-ecs/canvas-store'
 import { getResources } from '@woven-ecs/core'
 import * as components from './components'
+import { Asset, Color, Image, Shape, Text, VerticalAlign } from './components'
 import { PLUGIN_NAME } from './constants'
-import { cursors } from './cursors'
 import type { EditorPlugin } from './plugin'
 import * as singletons from './singletons'
 import { keybindSystem } from './systems/capture'
@@ -33,16 +33,46 @@ import { canSeeBlocksSystem, scaleWithZoomSystem } from './systems/preRender'
 import type { EditorResources } from './types'
 
 /**
- * Core plugin - handles core input and camera functionality.
+ * Core plugin - handles input, camera, and basic block types.
  */
 export const CorePlugin: EditorPlugin = {
   name: PLUGIN_NAME,
 
-  cursors,
-
   singletons: Object.values(singletons).filter((v) => v instanceof CanvasSingletonDef) as AnyCanvasSingletonDef[],
 
   components: Object.values(components).filter((v) => v instanceof CanvasComponentDef) as AnyCanvasComponentDef[],
+
+  blockDefs: [
+    {
+      tag: 'sticky-note',
+      components: [Color, Text, VerticalAlign],
+      editOptions: {
+        canEdit: true,
+      },
+    },
+    {
+      tag: 'text',
+      components: [Text],
+      resizeMode: 'text',
+      editOptions: {
+        canEdit: true,
+        removeWhenTextEmpty: true,
+      },
+    },
+    {
+      tag: 'image',
+      components: [Image, Asset],
+      resizeMode: 'scale',
+    },
+    {
+      tag: 'shape',
+      components: [Shape, Text, VerticalAlign],
+      resizeMode: 'free',
+      editOptions: {
+        canEdit: true,
+      },
+    },
+  ],
 
   systems: [
     // Input phase

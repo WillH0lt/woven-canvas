@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { VerticalAlignment, TextAlignment } from "@woven-canvas/core";
-import { StrokeKind } from "../../Shape";
+import { VerticalAlignment, TextAlignment, StrokeKind } from "@woven-canvas/core";
 import ToolbarButton from "../ToolbarButton.vue";
 
 const snapshot = JSON.stringify({

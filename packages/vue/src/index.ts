@@ -1,4 +1,4 @@
-export { TextAlignment, User } from '@woven-canvas/core'
+export { Shape, StrokeKind, TextAlignment, User } from '@woven-canvas/core'
 // ECS Sync
 export {
   type AnyCanvasComponentDef,
@@ -60,8 +60,6 @@ export { default as EditableText } from './components/EditableText.vue'
 // Floating Menu Components
 export { default as FloatingMenu } from './components/FloatingMenu.vue'
 export { default as FloatingMenuBar } from './components/FloatingMenuBar.vue'
-export type { InfiniteCanvasProps } from './components/InfiniteCanvas.vue'
-export { default as InfiniteCanvas } from './components/InfiniteCanvas.vue'
 // Toolbar Components
 export { default as Toolbar } from './components/Toolbar.vue'
 export { default as ToolbarButton } from './components/ToolbarButton.vue'
@@ -77,6 +75,8 @@ export { default as StickyNoteTool } from './components/tools/StickyNoteTool.vue
 export { default as TextTool } from './components/tools/TextTool.vue'
 // User Presence
 export { default as UserPresence } from './components/UserPresence.vue'
+export type { WovenCanvasProps } from './components/WovenCanvas.vue'
+export { default as WovenCanvas } from './components/WovenCanvas.vue'
 export { useComponent } from './composables/useComponent'
 export { useComponents } from './composables/useComponents'
 export {
@@ -115,11 +115,9 @@ export {
   createTooltipContext,
   useTooltipSingleton,
 } from './composables/useTooltipSingleton'
-
-// Cursors
 export { CURSORS, CursorKind } from './cursors'
-// Shapes
-export { Shape, StrokeKind } from './Shape'
+// Editing Plugin
+export { EditingPlugin, type EditingPluginOptions, type EditingPluginResources } from './EditingPlugin'
 export { SHAPES } from './shapes'
 // Types
 export type { BackgroundOptions, BlockData } from './types'

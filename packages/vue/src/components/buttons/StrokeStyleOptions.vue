@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { StrokeKind } from "../../Shape";
+import { StrokeKind } from "@woven-canvas/core";
 
 defineProps<{
   currentStyle: StrokeKind;
