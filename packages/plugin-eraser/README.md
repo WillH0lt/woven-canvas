@@ -25,20 +25,9 @@ const editor = new Editor(domElement, {
 });
 ```
 
-## API
+## Documentation
 
-### Components
-
-- `EraserStroke` - Eraser stroke state component
-- `EraserState` - Singleton for eraser configuration
-
-### Commands
-
-- `StartEraserStroke` - Begin erasing
-- `AddEraserStrokePoint` - Add a point to the eraser path
-- `CompleteEraserStroke` - Finish erasing and delete marked entities
-- `CancelEraserStroke` - Cancel erasing without deleting
-- `MarkAsErased` - Mark an entity for deletion
+For full API documentation, see the [documentation site](https://wovencanvas.dev).
 
 ## License
 

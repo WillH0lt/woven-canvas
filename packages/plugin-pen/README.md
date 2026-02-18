@@ -22,19 +22,9 @@ const editor = new Editor(domElement, {
 });
 ```
 
-## API
+## Documentation
 
-### Components
-
-- `PenStroke` - Pen stroke entity component
-- `PenState` - Singleton for current pen state
-
-### Commands
-
-- `StartPenStroke` - Begin a new pen stroke
-- `AddPenStrokePoint` - Add a point to the current stroke
-- `CompletePenStroke` - Finish the current stroke
-- `RemovePenStroke` - Delete a pen stroke
+For full API documentation, see the [documentation site](https://wovencanvas.dev).
 
 ## License
 

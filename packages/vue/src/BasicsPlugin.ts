@@ -56,6 +56,7 @@ export function BasicsPlugin(options: BasicsPluginOptions): EditorPlugin {
   return {
     name: 'basics',
     resources: { store: options.store } satisfies BasicsPluginResources,
+    components: [Shape],
     singletons: [BlockPlacementState],
     cursors: CURSORS,
     fonts: DEFAULT_FONTS,
