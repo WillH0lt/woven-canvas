@@ -63,16 +63,18 @@ function handleColorChange(color: ColorData) {
 <style>
 .ic-text-color-button {
   display: flex;
+  flex-shrink: 0;
   cursor: pointer;
   align-items: center;
   justify-content: center;
   height: 100%;
   gap: 8px;
-  margin: 0 8px;
+  padding: 0 0 0 8px;
 }
 
 .ic-text-icon-container {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;

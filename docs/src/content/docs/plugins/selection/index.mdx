@@ -1,0 +1,169 @@
+---
+title: Selection Plugin
+description: Core selection, transform, clipboard, and z-ordering functionality
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import SelectionExample from './SelectionExample.vue';
+import SelectionExampleRaw from './SelectionExample.vue?raw';
+
+The Selection plugin provides core selection and block manipulation functionality. It's typically included in every Woven Canvas application.
+
+<ExampleContainer>
+  <SelectionExample client:only="vue" />
+</ExampleContainer>
+
+<Code code={SelectionExampleRaw} lang="vue" title="SelectionExample.vue" />
+
+Click and drag to select blocks. Hold Shift to add to selection. Drag selected blocks to move them. Use corner handles to resize.
+
+## Installation
+
+```bash
+npm install @woven-canvas/plugin-selection
+```
+
+## Usage
+
+```typescript
+import { SelectionPlugin } from '@woven-canvas/plugin-selection'
+
+const editor = new Editor(element, {
+  plugins: [SelectionPlugin()]
+})
+```
+
+## Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `edgeScrolling.enabled` | `boolean` | `true` | Enable auto-scroll when dragging near viewport edges |
+| `edgeScrolling.edgeSizePx` | `number` | `10` | Size of the edge zone in pixels |
+| `edgeScrolling.edgeScrollSpeedPxPerFrame` | `number` | `15` | Camera scroll speed in pixels per frame |
+| `edgeScrolling.edgeScrollDelayMs` | `number` | `250` | Delay before scrolling starts in milliseconds |
+
+```typescript
+SelectionPlugin({
+  edgeScrolling: {
+    enabled: true,
+    edgeSizePx: 20,
+    edgeScrollSpeedPxPerFrame: 10,
+    edgeScrollDelayMs: 100,
+  }
+})
+```
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + A` | Select all blocks |
+| `Ctrl/Cmd + X` | Cut selected blocks |
+| `Ctrl/Cmd + C` | Copy selected blocks |
+| `Ctrl/Cmd + V` | Paste blocks |
+| `Delete` | Remove selected blocks |
+| `]` | Bring selected forward (z-order) |
+| `[` | Send selected backward (z-order) |
+
+## Commands
+
+Commands can be dispatched programmatically via `editor.command()`:
+
+### Selection Commands
+
+```typescript
+import {
+  SelectBlock,
+  DeselectBlock,
+  DeselectAll,
+  SelectAll,
+  ToggleSelect,
+} from '@woven-canvas/plugin-selection'
+
+// Select a specific block
+editor.command(SelectBlock, { entityId, deselectOthers: true })
+
+// Deselect all blocks
+editor.command(DeselectAll)
+
+// Select all blocks
+editor.command(SelectAll)
+```
+
+### Block Manipulation Commands
+
+```typescript
+import {
+  RemoveSelected,
+  DuplicateSelected,
+  BringForwardSelected,
+  SendBackwardSelected,
+} from '@woven-canvas/plugin-selection'
+
+// Delete all selected blocks
+editor.command(RemoveSelected)
+
+// Duplicate selected blocks
+editor.command(DuplicateSelected)
+
+// Change z-order
+editor.command(BringForwardSelected)
+editor.command(SendBackwardSelected)
+```
+
+### Clipboard Commands
+
+```typescript
+import { Cut, Copy, Paste } from '@woven-canvas/plugin-selection'
+
+editor.command(Cut)
+editor.command(Copy)
+editor.command(Paste, { position: [100, 100] }) // Optional position
+```
+
+## Components
+
+The plugin exports several ECS components for use in custom systems:
+
+| Component | Description |
+|-----------|-------------|
+| `Selected` | Marks an entity as selected |
+| `DragStart` | Tracks drag initiation position |
+| `EditAfterPlacing` | Triggers edit mode after block creation |
+| `SelectionBox` | Marquee selection rectangle |
+| `TransformBox` | Transform box container |
+| `TransformHandle` | Corner, edge, and rotation handles |
+
+### Using the Selected Component
+
+```typescript
+import { defineQuery } from '@woven-canvas/core'
+import { Selected } from '@woven-canvas/plugin-selection'
+
+// Query for all selected entities
+const selectedQuery = defineQuery((q) => q.with(Selected))
+
+// In a system
+for (const entityId of selectedQuery.current(ctx)) {
+  // Process selected entity
+}
+```
+
+## Vue Components
+
+The Vue package provides toolbar components:
+
+```vue
+<script setup lang="ts">
+import { SelectTool, Toolbar } from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas>
+    <Toolbar>
+      <SelectTool />
+    </Toolbar>
+  </WovenCanvas>
+</template>
+```

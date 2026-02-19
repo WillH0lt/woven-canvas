@@ -15,8 +15,8 @@ Create a Vue component that renders the canvas:
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas } from '@woven-canvas/vue'
-import '@woven-canvas/vue/style.css'
+import { WovenCanvas } from "@woven-canvas/vue";
+import "@woven-canvas/vue/style.css";
 </script>
 
 <template>
@@ -34,96 +34,103 @@ That's all you need for a fully functional infinite canvas with:
 - **Pen** — Freehand drawing with pressure sensitivity
 - **Arrows** — Connect blocks with elbow arrows
 
-## Listening for Ready
+## Local-First Persistence
 
-The canvas emits a `ready` event when initialization is complete:
+Woven Canvas persistence is built to be local-first. All changes are saved instantly locally -- your canvas works offline, survives page reloads, and syncs automatically when connectivity is restored.
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas, type Editor } from '@woven-canvas/vue'
-import { Camera } from '@woven-canvas/core'
-import { SelectAll } from '@woven-canvas/plugin-selection'
-import type { CanvasStore } from '@woven-ecs/canvas-store'
-
-function onReady(editor: Editor, store: CanvasStore) {
-  console.log('Canvas is ready!')
-
-  // Pan and zoom the camera
-  editor.nextTick((ctx) => {
-    const camera = Camera.write(ctx)
-    camera.left = 100
-    camera.top = 50
-    camera.zoom = 1.5
-
-    // Issue a command
-    editor.command(SelectAll)
-  })
-}
+import { WovenCanvas } from "@woven-canvas/vue";
 </script>
 
 <template>
-  <WovenCanvas @ready="onReady" />
+  <WovenCanvas
+    :store="{
+      // Save to IndexedDB for offline persistence
+      persistence: {
+        documentId: 'my-canvas', // Unique ID for this document
+      },
+
+      history: true, // enable undo/redo history
+    }"
+  />
 </template>
 ```
 
-## Adding Persistence
+### Real-Time Multiplayer
 
-Save the canvas state to IndexedDB so it persists across page reloads:
+Add real-time collaboration by connecting to a sync server.
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas } from '@woven-canvas/vue'
+import { WovenCanvas } from "@woven-canvas/vue";
 
-const storeOptions = {
-  persistence: {
-    documentId: 'my-canvas',
-  },
-}
+const clientId = crypto.randomUUID(); // Unique ID for this client
 </script>
 
 <template>
-  <WovenCanvas :store="storeOptions" />
+  <WovenCanvas
+    :store="{
+    ...
+    // Real-time sync with other users
+    websocket: {
+      url: 'wss://your-sync-server.com',  // WebSocket server URL
+      documentId: 'shared-canvas',
+      clientId,
+    },
+  }"
+  />
 </template>
 ```
 
-## Customizing the Background
+With this setup, users can work offline and their changes automatically merge when they reconnect.
 
-Choose between grid, dots, or a custom background:
+## Reactive Composables
 
-```vue
-<template>
-  <!-- Grid background -->
-  <WovenCanvas :background="{ kind: 'grid' }" />
+Woven Canvas exposes Vue composables for reactive access to ECS state. Use these inside components rendered within `<WovenCanvas>`.
 
-  <!-- Dot pattern -->
-  <WovenCanvas :background="{ kind: 'dots' }" />
+### Accessing Editor Context
 
-  <!-- Custom background via slot -->
-  <WovenCanvas>
-    <template #background>
-      <div class="my-custom-background" />
-    </template>
-  </WovenCanvas>
-</template>
-```
-
-## Accessing Editor Context
-
-Use composables inside the canvas to access reactive ECS data:
+Track global state with `useSingleton`, or read a specific entity's component with `useComponent`:
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas, useEditorContext, useSingleton } from '@woven-canvas/vue'
-import { Camera } from '@woven-canvas/core'
+import { watchEffect } from "vue";
+import { useSingleton, useComponent } from "@woven-canvas/vue";
+import { Camera, Block, type EntityId } from "@woven-canvas/core";
 
-// Inside a component rendered within WovenCanvas
-const { getEditor, nextEditorTick } = useEditorContext()
-const camera = useSingleton(Camera)
+const props = defineProps<{ blockId: EntityId }>();
 
-// React to camera changes
+// Track global editor state
+const camera = useSingleton(Camera);
+
+// Track a specific block's data
+const block = useComponent(() => props.blockId, Block);
+
 watchEffect(() => {
-  console.log('Zoom level:', camera.value?.zoom)
-})
+  console.log(`Zoom: ${camera.value.zoom}`);
+  console.log(`Block position: ${block.value?.position}`);
+});
+</script>
+```
+
+### Reactive Queries
+
+Query entities by their components with `useQuery`. The result updates automatically as entities are added, removed, or modified:
+
+```vue
+<script setup lang="ts">
+import { watchEffect } from "vue";
+import { useQuery } from "@woven-canvas/vue";
+import { Block } from "@woven-canvas/core";
+import { Selected } from "@woven-canvas/plugin-selection";
+
+// Query all selected blocks
+const selectedBlocks = useQuery([Block, Selected]);
+
+watchEffect(() => {
+  console.log(`${selectedBlocks.value.length} blocks selected`);
+});
 </script>
 ```
 

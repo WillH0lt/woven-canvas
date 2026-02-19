@@ -1,0 +1,31 @@
+---
+title: Zoom to Fit
+description: Automatically zoom and pan the camera to show all content.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import ZoomToFitExample from './ZoomToFitExample.vue';
+import ZoomToFitExampleRaw from './ZoomToFitExample.vue?raw';
+
+Automatically zoom and pan the camera to show all canvas content.
+
+<ExampleContainer>
+  <ZoomToFitExample client:only="vue" />
+</ExampleContainer>
+
+<Code code={ZoomToFitExampleRaw} lang="vue" title="ZoomToFitExample.vue" />
+
+## How it works
+
+1. **Query all blocks** using `defineQuery` to get entities with `Block` and `Aabb` components
+2. **Calculate bounding box** by iterating through all blocks and finding min/max coordinates
+3. **Compute zoom level** based on viewport size and content bounds
+4. **Set camera position** to center the content with the calculated zoom
+
+## Key APIs
+
+- `Camera.write(ctx)` - Write access to camera position and zoom
+- `Screen.read(ctx)` - Get viewport dimensions
+- `Aabb.read(ctx, entityId)` - Get block bounding box
+- `defineQuery()` - Create an ECS query to find entities

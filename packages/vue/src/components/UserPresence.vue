@@ -98,7 +98,7 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 100;
+  z-index: var(--ic-z-ui);
 }
 
 .ic-user-presence-trigger {

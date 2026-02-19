@@ -59,7 +59,7 @@ const otherUsers = computed(() =>
   height: 100%;
   pointer-events: none;
   overflow: hidden;
-  z-index: 50;
+  z-index: var(--ic-z-cursors);
 }
 
 .ic-user-cursor {

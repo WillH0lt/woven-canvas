@@ -11,8 +11,8 @@ The floating menu automatically shows buttons for components that selected block
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas, FloatingMenuBar } from '@woven-canvas/vue'
-import TaskPriorityButton from './TaskPriorityButton.vue'
+import { WovenCanvas, FloatingMenuBar } from "@woven-canvas/vue";
+import TaskPriorityButton from "./TaskPriorityButton.vue";
 </script>
 
 <template>
@@ -36,58 +36,52 @@ The slot name follows the pattern `button:<component-name>`. It only appears whe
 ```vue
 <!-- TaskPriorityButton.vue -->
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { MenuButton, MenuDropdown, useEditorContext, useComponents } from '@woven-canvas/vue'
-import { TaskData } from './TaskData'
+import { computed, ref } from "vue";
+import { MenuButton, MenuDropdown, useEditorContext, useComponents } from "@woven-canvas/vue";
+import { TaskData } from "./TaskData";
 
 const props = defineProps<{
-  entityIds: number[]
-}>()
+  entityIds: number[];
+}>();
 
 // Get task data for all selected entities
-const tasks = useComponents(props.entityIds, TaskData)
+const tasks = useComponents(props.entityIds, TaskData);
 
 // Compute current priority (use first if mixed)
 const currentPriority = computed(() => {
-  const priorities = tasks.value
-    .filter((t): t is NonNullable<typeof t> => t !== null)
-    .map((t) => t.priority)
+  const priorities = tasks.value.filter((t): t is NonNullable<typeof t> => t !== null).map((t) => t.priority);
 
-  if (priorities.length === 0) return 'medium'
-  const allSame = priorities.every((p) => p === priorities[0])
-  return allSame ? priorities[0] : 'mixed'
-})
+  if (priorities.length === 0) return "medium";
+  const allSame = priorities.every((p) => p === priorities[0]);
+  return allSame ? priorities[0] : "mixed";
+});
 
 // Dropdown state
-const isOpen = ref(false)
+const isOpen = ref(false);
 
 // Editor context for writes
-const { nextEditorTick } = useEditorContext()
+const { nextEditorTick } = useEditorContext();
 
-function setPriority(priority: 'low' | 'medium' | 'high') {
+function setPriority(priority: "low" | "medium" | "high") {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const task = TaskData.write(ctx, entityId)
-      task.priority = priority
+      const task = TaskData.write(ctx, entityId);
+      task.priority = priority;
     }
-  })
-  isOpen.value = false
+  });
+  isOpen.value = false;
 }
 
 const priorityColors = {
-  low: '#22c55e',
-  medium: '#eab308',
-  high: '#ef4444',
-  mixed: '#9ca3af',
-}
+  low: "#22c55e",
+  medium: "#eab308",
+  high: "#ef4444",
+  mixed: "#9ca3af",
+};
 </script>
 
 <template>
-  <MenuButton
-    tooltip="Priority"
-    :menu-open="isOpen"
-    @click="isOpen = !isOpen"
-  >
+  <MenuButton tooltip="Priority" :menu-open="isOpen" @click="isOpen = !isOpen">
     <div
       :style="{
         width: '16px',
@@ -99,7 +93,7 @@ const priorityColors = {
 
     <MenuDropdown v-if="isOpen" @close="isOpen = false">
       <button
-        v-for="priority in (['low', 'medium', 'high'] as const)"
+        v-for="priority in ['low', 'medium', 'high'] as const"
         :key="priority"
         class="ic-menu-option"
         :class="{ 'is-active': currentPriority === priority }"
@@ -148,15 +142,15 @@ Replace the default buttons for built-in components:
 
 ## Available Button Slots
 
-| Slot | Component(s) | Description |
-|------|--------------|-------------|
-| `button:color` | `color` | Fill color picker |
-| `button:shape` | `shape` | Shape kind, fill, stroke |
-| `button:text` | `text` | All text formatting |
-| `button:penStroke` | `penStroke` | Stroke thickness |
-| `button:arrowThickness` | `arcArrow`, `elbowArrow` | Line thickness |
-| `button:arrowHeadStart` | `arcArrow`, `elbowArrow` | Start arrow style |
-| `button:arrowHeadEnd` | `arcArrow`, `elbowArrow` | End arrow style |
+| Slot                    | Component(s)             | Description              |
+| ----------------------- | ------------------------ | ------------------------ |
+| `button:color`          | `color`                  | Fill color picker        |
+| `button:shape`          | `shape`                  | Shape kind, fill, stroke |
+| `button:text`           | `text`                   | All text formatting      |
+| `button:penStroke`      | `penStroke`              | Stroke thickness         |
+| `button:arrowThickness` | `arcArrow`, `elbowArrow` | Line thickness           |
+| `button:arrowHeadStart` | `arcArrow`, `elbowArrow` | Start arrow style        |
+| `button:arrowHeadEnd`   | `arcArrow`, `elbowArrow` | End arrow style          |
 
 ## Building a Complete Button
 
@@ -164,45 +158,39 @@ Here's a more complete example with tooltip support:
 
 ```vue
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import {
-  MenuButton,
-  MenuDropdown,
-  useEditorContext,
-  useComponents,
-  useTooltipSingleton,
-} from '@woven-canvas/vue'
-import { TaskData } from './TaskData'
+import { ref, computed } from "vue";
+import { MenuButton, MenuDropdown, useEditorContext, useComponents, useTooltipSingleton } from "@woven-canvas/vue";
+import { TaskData } from "./TaskData";
 
-const props = defineProps<{ entityIds: number[] }>()
+const props = defineProps<{ entityIds: number[] }>();
 
-const tasks = useComponents(props.entityIds, TaskData)
-const { nextEditorTick } = useEditorContext()
-const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton()
+const tasks = useComponents(props.entityIds, TaskData);
+const { nextEditorTick } = useEditorContext();
+const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
 
-const isOpen = ref(false)
+const isOpen = ref(false);
 
 const currentPriority = computed(() => {
-  const priorities = tasks.value.filter(Boolean).map((t) => t!.priority)
-  if (priorities.length === 0) return 'medium'
-  return priorities.every((p) => p === priorities[0]) ? priorities[0] : 'mixed'
-})
+  const priorities = tasks.value.filter(Boolean).map((t) => t!.priority);
+  if (priorities.length === 0) return "medium";
+  return priorities.every((p) => p === priorities[0]) ? priorities[0] : "mixed";
+});
 
-function setPriority(priority: 'low' | 'medium' | 'high') {
+function setPriority(priority: "low" | "medium" | "high") {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      TaskData.write(ctx, entityId).priority = priority
+      TaskData.write(ctx, entityId).priority = priority;
     }
-  })
-  isOpen.value = false
+  });
+  isOpen.value = false;
 }
 
-const colors = { low: '#22c55e', medium: '#eab308', high: '#ef4444', mixed: '#9ca3af' }
-const labels = { low: 'Low', medium: 'Medium', high: 'High' }
+const colors = { low: "#22c55e", medium: "#eab308", high: "#ef4444", mixed: "#9ca3af" };
+const labels = { low: "Low", medium: "Medium", high: "High" };
 
 function handleMouseEnter(event: MouseEvent, text: string) {
-  const rect = (event.target as HTMLElement).getBoundingClientRect()
-  showTooltip(text, rect.left + rect.width / 2, rect.top)
+  const rect = (event.target as HTMLElement).getBoundingClientRect();
+  showTooltip(text, rect.left + rect.width / 2, rect.top);
 }
 </script>
 
@@ -216,7 +204,7 @@ function handleMouseEnter(event: MouseEvent, text: string) {
 
     <MenuDropdown v-if="isOpen" @close="isOpen = false">
       <button
-        v-for="p in (['low', 'medium', 'high'] as const)"
+        v-for="p in ['low', 'medium', 'high'] as const"
         :key="p"
         class="ic-menu-option"
         @click="setPriority(p)"
@@ -236,13 +224,13 @@ Replace the entire floating menu:
 
 ```vue
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useQuery } from '@woven-canvas/vue'
-import { Block } from '@woven-canvas/core'
-import { Selected } from '@woven-canvas/plugin-selection'
+import { computed } from "vue";
+import { useQuery } from "@woven-canvas/vue";
+import { Block } from "@woven-canvas/core";
+import { Selected } from "@woven-canvas/plugin-selection";
 
-const selected = useQuery([Block, Selected] as const)
-const hasSelection = computed(() => selected.value.length > 0)
+const selected = useQuery([Block, Selected] as const);
+const hasSelection = computed(() => selected.value.length > 0);
 </script>
 
 <template>

@@ -65,7 +65,7 @@ import {
   EraserTool,
   ArcArrowTool,
   ElbowArrowTool,
-} from '@woven-canvas/vue'
+} from "@woven-canvas/vue";
 ```
 
 ## Floating Menu
@@ -116,15 +116,15 @@ Override built-in buttons:
 
 ### Built-in Menu Buttons
 
-| Slot | Components | Description |
-|------|------------|-------------|
-| `button:color` | `color` | Fill color picker |
-| `button:shape` | `shape` | Shape kind, fill, stroke |
-| `button:text` | `text` | Font, size, bold, italic, etc. |
-| `button:penStroke` | `penStroke` | Stroke thickness |
-| `button:arrowThickness` | `arcArrow`, `elbowArrow` | Line thickness |
-| `button:arrowHeadStart` | `arcArrow`, `elbowArrow` | Start arrow style |
-| `button:arrowHeadEnd` | `arcArrow`, `elbowArrow` | End arrow style |
+| Slot                    | Components               | Description                    |
+| ----------------------- | ------------------------ | ------------------------------ |
+| `button:color`          | `color`                  | Fill color picker              |
+| `button:shape`          | `shape`                  | Shape kind, fill, stroke       |
+| `button:text`           | `text`                   | Font, size, bold, italic, etc. |
+| `button:penStroke`      | `penStroke`              | Stroke thickness               |
+| `button:arrowThickness` | `arcArrow`, `elbowArrow` | Line thickness                 |
+| `button:arrowHeadStart` | `arcArrow`, `elbowArrow` | Start arrow style              |
+| `button:arrowHeadEnd`   | `arcArrow`, `elbowArrow` | End arrow style                |
 
 ## User Presence
 
@@ -135,12 +135,7 @@ Shows avatars of connected users in multiplayer mode.
   <WovenCanvas>
     <template #user-presence="{ users }">
       <div class="my-presence">
-        <img
-          v-for="user in users"
-          :key="user.sessionId"
-          :src="user.avatar"
-          :style="{ borderColor: user.color }"
-        />
+        <img v-for="user in users" :key="user.sessionId" :src="user.avatar" :style="{ borderColor: user.color }" />
       </div>
     </template>
   </WovenCanvas>
@@ -155,11 +150,7 @@ Shows other users' cursor positions in real-time.
 <template>
   <WovenCanvas>
     <template #user-cursors="{ users, currentSessionId, camera }">
-      <MyCursors
-        :users="users"
-        :current-session-id="currentSessionId"
-        :camera="camera"
-      />
+      <MyCursors :users="users" :current-session-id="currentSessionId" :camera="camera" />
     </template>
   </WovenCanvas>
 </template>
@@ -188,12 +179,12 @@ Choose between grid, dots, or a custom background:
 
 ## Other UI Slots
 
-| Slot | Props | Description |
-|------|-------|-------------|
-| `loading` | `{ isLoading }` | Loading overlay |
-| `offline-indicator` | `{ isOnline }` | Offline status banner |
-| `version-mismatch` | `{ versionMismatch }` | Protocol version warning |
-| `back-to-content` | — | Button to pan back to content |
+| Slot                | Props                 | Description                   |
+| ------------------- | --------------------- | ----------------------------- |
+| `loading`           | `{ isLoading }`       | Loading overlay               |
+| `offline-indicator` | `{ isOnline }`        | Offline status banner         |
+| `version-mismatch`  | `{ versionMismatch }` | Protocol version warning      |
+| `back-to-content`   | —                     | Button to pan back to content |
 
 Example:
 
@@ -201,15 +192,11 @@ Example:
 <template>
   <WovenCanvas>
     <template #offline-indicator="{ isOnline }">
-      <div v-if="!isOnline" class="offline-banner">
-        Working offline
-      </div>
+      <div v-if="!isOnline" class="offline-banner">Working offline</div>
     </template>
 
     <template #loading="{ isLoading }">
-      <div v-if="isLoading" class="custom-loader">
-        Loading...
-      </div>
+      <div v-if="isLoading" class="custom-loader">Loading...</div>
     </template>
   </WovenCanvas>
 </template>

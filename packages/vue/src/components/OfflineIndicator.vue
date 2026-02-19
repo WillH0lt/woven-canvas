@@ -13,7 +13,7 @@ defineProps<{
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 100;
+  z-index: var(--ic-z-ui);
   padding: 6px 12px;
   color: var(--ic-gray-400);
   border-radius: 6px;

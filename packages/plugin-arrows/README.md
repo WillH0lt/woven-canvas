@@ -11,13 +11,12 @@ npm install @woven-canvas/core @woven-canvas/plugin-arrows
 ## Usage
 
 ```typescript
-import { Editor } from '@woven-canvas/core';
-import { ArrowsPlugin } from '@woven-canvas/plugin-arrows';
+import { Editor } from "@woven-canvas/core";
+import { ArrowsPlugin } from "@woven-canvas/plugin-arrows";
 
 const editor = new Editor(domElement, {
   plugins: [
-    ...
-    ArrowsPlugin({
+    ...ArrowsPlugin({
       elbowArrowPadding: 50, // Padding around blocks when routing elbow arrows (default: 50)
     }),
   ],

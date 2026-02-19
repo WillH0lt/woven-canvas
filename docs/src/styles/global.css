@@ -13,6 +13,8 @@
   --sl-text-h2: var(--sl-text-3xl);
   --sl-text-h3: var(--sl-text-2xl);
   --sl-text-h4: var(--sl-text-xl);
+  --sl-color-accent: #6a58f2;
+  --sl-color-accent-light: #8a76f4;
 }
 
 @theme {
@@ -67,6 +69,11 @@ header.header {
   .sl-anchor-link {
     display: none;
   }
+}
+
+/* Override Starlight's margin on astro-island content in example containers */
+.example-container :is(astro-island, astro-slot) > *:first-child {
+  margin-top: 0;
 }
 
 /* Hero styles for tablet and larger */

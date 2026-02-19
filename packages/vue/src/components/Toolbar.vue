@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, useSlots, provide, onMounted, watch } from "vue";
+import { ref, computed, useSlots, provide } from "vue";
 import { Controls, Cursor, type Context } from "@woven-canvas/core";
 
 import MenuTooltip from "./buttons/MenuTooltip.vue";
@@ -9,7 +9,6 @@ import StickyNoteTool from "./tools/StickyNoteTool.vue";
 import ShapeTool from "./tools/ShapeTool.vue";
 import EraserTool from "./tools/EraserTool.vue";
 import PenTool from "./tools/PenTool.vue";
-import ArcArrowTool from "./tools/ArcArrowTool.vue";
 import TextTool from "./tools/TextTool.vue";
 import ElbowArrowTool from "./tools/ElbowArrowTool.vue";
 import ImageTool from "./tools/ImageTool.vue";
@@ -88,75 +87,27 @@ const toolbarContext: ToolbarContext = {
 };
 provide(TOOLBAR_KEY, toolbarContext);
 
-// Get custom tool slots
-const customTools = computed(() => {
-  const tools: string[] = [];
-  for (const slotName of Object.keys(slots)) {
-    if (slotName.startsWith("tool:")) {
-      const toolName = slotName.slice(5);
-      tools.push(toolName);
-    }
-  }
-  return tools;
-});
 </script>
 
 <template>
   <div class="ic-toolbar-container">
     <div class="ic-toolbar" @mouseleave="handleMouseLeave">
-      <!-- Select tool -->
-      <slot name="tool:select">
+      <!-- If default slot has content, render only that -->
+      <template v-if="slots.default">
+        <slot />
+      </template>
+
+      <!-- Otherwise render the default toolbar -->
+      <template v-else>
         <SelectTool />
-      </slot>
-
-      <!-- Hand tool -->
-      <slot name="tool:hand">
         <HandTool />
-      </slot>
-
-      <!-- Text tool -->
-      <slot name="tool:text">
         <TextTool />
-      </slot>
-
-      <!-- Image tool -->
-      <slot name="tool:image">
         <ImageTool />
-      </slot>
-
-      <!-- Shape tool -->
-      <slot name="tool:shape">
         <ShapeTool />
-      </slot>
-
-      <!-- Elbow Arrow tool  -->
-      <slot name="tool:elbow-arrow">
         <ElbowArrowTool />
-      </slot>
-
-      <!-- Sticky note tool -->
-      <slot name="tool:sticky-note">
         <StickyNoteTool />
-      </slot>
-
-      <!-- Arc Arrow tool -->
-      <!-- <slot name="tool:arc-arrow">
-        <ArcArrowTool />
-      </slot> -->
-
-      <!-- Pen tool -->
-      <slot name="tool:pen">
         <PenTool />
-      </slot>
-
-      <!-- Eraser tool -->
-      <slot name="tool:eraser">
         <EraserTool />
-      </slot>
-
-      <!-- Custom tools via slots -->
-      <template v-for="tool in customTools" :key="tool">
-        <slot :name="`tool:${tool}`" />
       </template>
 
       <!-- Singleton tooltip rendered once for all toolbar items -->
@@ -171,7 +122,7 @@ const customTools = computed(() => {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 100;
+  z-index: var(--ic-z-ui);
 }
 
 .ic-toolbar {
@@ -224,6 +175,8 @@ const customTools = computed(() => {
 .ic-toolbar-button svg {
   width: 20px;
   height: 20px;
+  display: block;
+  flex-shrink: 0;
 }
 
 .menu {

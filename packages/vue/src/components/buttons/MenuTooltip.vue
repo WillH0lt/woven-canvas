@@ -46,7 +46,7 @@ const shouldShow = computed(() => isVisible.value && activeTooltip.value?.text);
 <style>
 .ic-menu-tooltip {
   position: absolute;
-  z-index: 10002;
+  z-index: var(--ic-z-tooltip);
   width: max-content;
   background: var(--ic-gray-700);
   color: var(--ic-gray-100);

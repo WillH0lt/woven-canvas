@@ -123,7 +123,7 @@ function handleClick() {
   position: absolute;
   top: 16px;
   left: 16px;
-  z-index: 100;
+  z-index: var(--ic-z-ui);
   display: flex;
   align-items: center;
   gap: 6px;

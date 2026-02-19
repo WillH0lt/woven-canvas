@@ -26,7 +26,7 @@ import FloatingMenuBar from "./FloatingMenuBar.vue";
 const canvasContext = inject(WOVEN_CANVAS_KEY);
 
 // Query all selected blocks
-const selectedItems = useQuery([Block, Selected] as const);
+const selectedItems = useQuery([Block, Selected]);
 
 // Get camera and screen for coordinate transforms
 const camera = useSingleton(Camera);
@@ -217,7 +217,7 @@ const shouldShow = computed(
 <style>
 .ic-floating-menu {
   position: absolute;
-  z-index: 10000;
+  z-index: var(--ic-z-floating-menu);
   pointer-events: auto;
 }
 

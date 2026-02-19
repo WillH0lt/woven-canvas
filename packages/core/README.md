@@ -11,7 +11,7 @@ npm install @woven-canvas/core
 ## Usage
 
 ```typescript
-import { Editor } from '@woven-canvas/core';
+import { Editor } from "@woven-canvas/core";
 
 const editor = new Editor(domElement);
 

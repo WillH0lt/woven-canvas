@@ -11,7 +11,7 @@ npm install @woven-canvas/asset-sync
 ## Usage
 
 ```typescript
-import { AssetManager, LocalAssetProvider } from '@woven-canvas/asset-sync';
+import { AssetManager, LocalAssetProvider } from "@woven-canvas/asset-sync";
 
 // Create a local asset provider (stores in IndexedDB)
 const provider = new LocalAssetProvider();
@@ -19,7 +19,7 @@ const provider = new LocalAssetProvider();
 // Create the asset manager
 const assetManager = new AssetManager({
   provider,
-  documentId: 'my-document-id',
+  documentId: "my-document-id",
 });
 
 // Initialize (opens IndexedDB stores)
@@ -29,11 +29,11 @@ await assetManager.init();
 await assetManager.resumePendingUploads();
 
 // Upload an asset
-const blob = new Blob(['...'], { type: 'image/png' });
+const blob = new Blob(["..."], { type: "image/png" });
 const identifier = crypto.randomUUID();
 await assetManager.upload(identifier, blob, {
-  filename: 'image.png',
-  mimeType: 'image/png',
+  filename: "image.png",
+  mimeType: "image/png",
 });
 
 // Get display URL (returns blob URL for pending uploads, resolved URL otherwise)
@@ -103,8 +103,8 @@ interface AssetProvider {
   delete?(identifier: string): Promise<void>;
 
   // Configuration options
-  maxRetries?: number;       // Max upload retry attempts (default: 3)
-  retryDelay?: number;       // Retry delay in ms (default: 5000)
+  maxRetries?: number; // Max upload retry attempts (default: 3)
+  retryDelay?: number; // Retry delay in ms (default: 5000)
 }
 
 interface AssetMetadata {
@@ -113,7 +113,7 @@ interface AssetMetadata {
 }
 
 interface AssetUploadResult {
-  url?: string;  // Optional immediate URL
+  url?: string; // Optional immediate URL
 }
 ```
 
@@ -134,11 +134,11 @@ provider.close();
 const myProvider: AssetProvider = {
   async upload(blob, identifier, metadata) {
     const formData = new FormData();
-    formData.append('file', blob, metadata?.filename);
-    formData.append('id', identifier);
+    formData.append("file", blob, metadata?.filename);
+    formData.append("id", identifier);
 
-    const response = await fetch('/api/upload', {
-      method: 'POST',
+    const response = await fetch("/api/upload", {
+      method: "POST",
       body: formData,
     });
 
@@ -151,7 +151,6 @@ const myProvider: AssetProvider = {
     const { url } = await response.json();
     return url;
   },
-
 };
 ```
 

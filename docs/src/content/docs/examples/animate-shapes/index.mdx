@@ -1,0 +1,57 @@
+---
+title: Animate Shapes
+description: Programmatically animate block properties over time.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import AnimateShapesExample from './AnimateShapesExample.vue';
+import AnimateShapesExampleRaw from './AnimateShapesExample.vue?raw';
+
+Animate block position, size, rotation, and colors programmatically.
+
+<ExampleContainer>
+  <AnimateShapesExample client:only="vue" />
+</ExampleContainer>
+
+<Code code={AnimateShapesExampleRaw} lang="vue" title="AnimateShapesExample.vue" />
+
+## How it works
+
+1. **Store entity IDs** when creating shapes to reference them later
+2. **Use requestAnimationFrame** for smooth animations
+3. **Write to components** using `Component.write(ctx, entityId)` to update properties
+4. **Schedule updates** with `editor.nextTick()` to batch changes
+
+```typescript
+function animate() {
+  editor.nextTick((ctx) => {
+    const block = Block.write(ctx, entityId)
+    block.position[0] = newX
+    block.position[1] = newY
+    block.rotateZ = newRotation
+  })
+
+  requestAnimationFrame(animate)
+}
+```
+
+## Key APIs
+
+- `Block.write(ctx, entityId)` - Get mutable block data
+- `Shape.write(ctx, entityId)` - Get mutable shape data
+- `editor.nextTick()` - Schedule changes for next frame
+
+## Animatable properties
+
+| Component | Properties |
+|-----------|------------|
+| `Block` | `position`, `size`, `rotateZ`, `flip` |
+| `Shape` | `fillRed/Green/Blue/Alpha`, `strokeRed/Green/Blue/Alpha`, `strokeWidth` |
+| `Opacity` | `value` (0-255) |
+
+## Performance tips
+
+- Batch multiple property changes in a single `nextTick()` call
+- Keep track of entity IDs to avoid querying on every frame
+- Use `requestAnimationFrame` for smooth 60fps animations

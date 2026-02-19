@@ -135,6 +135,6 @@ onUnmounted(() => {
 
 .ic-menu-dropdown {
   position: absolute;
-  z-index: 10001;
+  z-index: var(--ic-z-dropdown);
 }
 </style>

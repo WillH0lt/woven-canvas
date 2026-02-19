@@ -11,7 +11,7 @@ npm install @woven-canvas/math
 ## Usage
 
 ```typescript
-import { Vec2, Rect, Aabb, Mat2 } from '@woven-canvas/math';
+import { Vec2, Rect, Aabb, Mat2 } from "@woven-canvas/math";
 
 // Vector operations (mutating API - modifies first argument in place)
 const a = Vec2.create(10, 20);
@@ -106,6 +106,7 @@ Ray as tuple `[originX, originY, directionX, directionY]`.
 ### Scalar
 
 Scalar math utilities:
+
 - `clamp`, `lerp`
 - `normalizeAngle`, `normalizeAngleSigned`, `anglesApproxEqual`, `approxEqual`
 - Constant: `TAU` (2π)

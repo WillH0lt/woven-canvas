@@ -11,14 +11,11 @@ npm install @woven-canvas/core @woven-canvas/plugin-pen
 ## Usage
 
 ```typescript
-import { Editor } from '@woven-canvas/core';
-import { PenPlugin } from '@woven-canvas/plugin-pen';
+import { Editor } from "@woven-canvas/core";
+import { PenPlugin } from "@woven-canvas/plugin-pen";
 
 const editor = new Editor(domElement, {
-  plugins: [
-    ...
-    PenPlugin,
-  ],
+  plugins: [...PenPlugin],
 });
 ```
 

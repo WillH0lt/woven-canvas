@@ -1,6 +1,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap");
 
-:root {
+@layer ic-reset {
+  .ic-root :where(*:not(svg, svg *)) {
+    all: revert;
+  }
+}
+
+
+.ic-root {
   /* Brand colors */
   --ic-primary: #6a58f2;
   --ic-primary-light: #8a76f4;
@@ -14,6 +21,15 @@
   --ic-gray-500: #4f5660;
   --ic-gray-600: #2e3338;
   --ic-gray-700: #060607;
+
+  /* Z-index scale (stacking order) */
+  --ic-z-block-content: 1;
+  --ic-z-cursors: 50;
+  --ic-z-ui: 100;              /* toolbar, indicators, presence */
+  --ic-z-floating-menu: 101;
+  --ic-z-overlay: 1000;        /* version mismatch, loading */
+  --ic-z-dropdown: 1001;
+  --ic-z-tooltip: 1002;
 
   /* UI settings */
   --ic-font-family: "Figtree", sans-serif;
@@ -30,6 +46,15 @@
   --ic-selection-box-bg: #5865f222;
   --ic-text-selection-color: var(--ic-primary-light);
 }
+
+.ic-root {
+  font-family: var(--ic-font-family);
+}
+
+.ic-root ::selection {
+  background-color: var(--ic-text-selection-color);
+}
+
 
 /* Block highlight styles for hovered/selected state */
 .ic-block[data-hovered] > *,
@@ -51,12 +76,3 @@
     var(--ic-highlighted-block-border-radius) / var(--ic-zoom, 1)
   );
 }
-
-.ic-root {
-  font-family: var(--ic-font-family);
-}
-
-.ic-root ::selection {
-  background-color: var(--ic-text-selection-color);
-}
-

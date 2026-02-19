@@ -169,7 +169,6 @@ onUnmounted(() => {
 }
 
 .ic-floating-menu-bar > * {
-  width: 100%;
   height: 100%;
   transition-property: background-color;
   transition-timing-function: var(--ic-transition-timing-function);

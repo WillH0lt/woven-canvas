@@ -11,17 +11,17 @@ Connect to a sync server:
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas } from '@woven-canvas/vue'
+import { WovenCanvas } from "@woven-canvas/vue";
 
 const storeOptions = {
   persistence: {
-    documentId: 'shared-canvas',
+    documentId: "shared-canvas",
   },
   websocket: {
-    url: 'wss://your-server.com/sync',
-    documentId: 'shared-canvas',
+    url: "wss://your-server.com/sync",
+    documentId: "shared-canvas",
   },
-}
+};
 </script>
 
 <template>
@@ -36,11 +36,11 @@ Pass user data to identify participants:
 ```vue
 <script setup lang="ts">
 const user = {
-  userId: 'user-123',      // Stable user ID
-  name: 'Alice',           // Display name
-  color: '#3b82f6',        // Cursor/selection color
-  avatar: 'https://...',   // Avatar URL
-}
+  userId: "user-123", // Stable user ID
+  name: "Alice", // Display name
+  color: "#3b82f6", // Cursor/selection color
+  avatar: "https://...", // Avatar URL
+};
 </script>
 
 <template>
@@ -143,9 +143,7 @@ Monitor connection status:
 <template>
   <WovenCanvas :store="storeOptions">
     <template #offline-indicator="{ isOnline }">
-      <div v-if="!isOnline" class="offline-banner">
-        Working offline
-      </div>
+      <div v-if="!isOnline" class="offline-banner">Working offline</div>
     </template>
   </WovenCanvas>
 </template>
@@ -156,14 +154,14 @@ Monitor connection status:
 ```typescript
 const syncOptions = {
   websocket: {
-    url: 'wss://your-server.com/sync',
-    documentId: 'my-document',
+    url: "wss://your-server.com/sync",
+    documentId: "my-document",
     onConnectivityChange: (online: boolean) => {
-      console.log('Connection:', online ? 'online' : 'offline')
+      console.log("Connection:", online ? "online" : "offline");
     },
     onVersionMismatch: (serverVersion: number) => {
-      console.log('Protocol version mismatch')
+      console.log("Protocol version mismatch");
     },
   },
-}
+};
 ```

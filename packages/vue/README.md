@@ -12,7 +12,7 @@ npm install @woven-canvas/core @woven-canvas/vue
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas } from '@woven-canvas/vue';
+import { WovenCanvas } from "@woven-canvas/vue";
 </script>
 
 <template>
@@ -25,7 +25,7 @@ import { WovenCanvas } from '@woven-canvas/vue';
 Import the default styles:
 
 ```typescript
-import '@woven-canvas/vue/style.css';
+import "@woven-canvas/vue/style.css";
 ```
 
 ## Documentation

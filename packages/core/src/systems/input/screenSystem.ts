@@ -7,8 +7,9 @@ import type { EditorResources } from '../../types'
  * Per-instance state for screen input
  */
 interface ScreenState {
-  resizePending: boolean
+  needsUpdate: boolean
   resizeObserver: ResizeObserver
+  onScroll: () => void
 }
 
 /**
@@ -24,14 +25,18 @@ export function attachScreenObserver(domElement: HTMLElement): void {
   if (instanceState.has(domElement)) return
 
   const state: ScreenState = {
-    resizePending: false,
+    needsUpdate: false,
     resizeObserver: new ResizeObserver(() => {
-      state.resizePending = true
+      state.needsUpdate = true
     }),
+    onScroll: () => {
+      state.needsUpdate = true
+    },
   }
 
   instanceState.set(domElement, state)
   state.resizeObserver.observe(domElement)
+  window.addEventListener('scroll', state.onScroll, true)
 }
 
 /**
@@ -44,6 +49,7 @@ export function detachScreenObserver(domElement: HTMLElement): void {
   if (!state) return
 
   state.resizeObserver.disconnect()
+  window.removeEventListener('scroll', state.onScroll, true)
   instanceState.delete(domElement)
 }
 
@@ -63,20 +69,18 @@ export const screenSystem = defineEditorSystem({ phase: 'input' }, (ctx) => {
 
   // Handle initial sizing on first frame
   if (frame.number === 1) {
-    state.resizePending = true
+    state.needsUpdate = true
   }
 
-  // Update screen dimensions if resize pending
-  if (state.resizePending) {
-    const screen = Screen.write(ctx)
+  if (!state.needsUpdate) return
 
-    screen.width = domElement.clientWidth
-    screen.height = domElement.clientHeight
+  const screen = Screen.write(ctx)
+  const rect = domElement.getBoundingClientRect()
 
-    const rect = domElement.getBoundingClientRect()
-    screen.left = rect.left
-    screen.top = rect.top
+  screen.left = rect.left
+  screen.top = rect.top
+  screen.width = rect.width
+  screen.height = rect.height
 
-    state.resizePending = false
-  }
+  state.needsUpdate = false
 })

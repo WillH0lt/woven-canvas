@@ -1,0 +1,113 @@
+---
+title: Canvas Controls Plugin
+description: Pan, zoom, and scroll navigation for the infinite canvas
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import CanvasControlsExample from './CanvasControlsExample.vue';
+import CanvasControlsExampleRaw from './CanvasControlsExample.vue?raw';
+
+The Canvas Controls plugin provides navigation controls for the infinite canvas including zooming, panning, and scrolling.
+
+<ExampleContainer>
+  <CanvasControlsExample client:only="vue" />
+</ExampleContainer>
+
+<Code code={CanvasControlsExampleRaw} lang="vue" title="CanvasControlsExample.vue" />
+
+Use the scroll wheel to pan. Hold Ctrl/Cmd and scroll to zoom. Use the Hand tool or middle mouse button to drag-pan with momentum.
+
+## Installation
+
+```bash
+npm install @woven-canvas/plugin-canvas-controls
+```
+
+## Usage
+
+```typescript
+import { CanvasControlsPlugin } from '@woven-canvas/plugin-canvas-controls'
+
+const editor = new Editor(element, {
+  plugins: [CanvasControlsPlugin()]
+})
+```
+
+## Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minZoom` | `number` | `0.05` | Minimum zoom level (5%) |
+| `maxZoom` | `number` | `2.7` | Maximum zoom level (270%) |
+
+```typescript
+CanvasControlsPlugin({
+  minZoom: 0.1,  // 10% minimum zoom
+  maxZoom: 5,    // 500% maximum zoom
+})
+```
+
+## Controls
+
+| Input | Action |
+|-------|--------|
+| Scroll wheel | Pan the canvas |
+| Ctrl/Cmd + Scroll wheel | Zoom in/out toward cursor |
+| Middle mouse drag | Pan with momentum (glide) |
+| Hand tool drag | Pan with momentum (glide) |
+
+## Pan States
+
+The plugin maintains internal pan state for smooth momentum-based panning:
+
+| State | Description |
+|-------|-------------|
+| `Idle` | No panning in progress |
+| `Panning` | User is actively dragging |
+| `Gliding` | Momentum-based movement after release |
+
+## Programmatic Camera Control
+
+You can control the camera programmatically using the editor API:
+
+```typescript
+import { Camera } from '@woven-canvas/core'
+
+editor.nextTick((ctx) => {
+  const camera = Camera.write(ctx)
+
+  // Set position (world coordinates)
+  camera.position[0] = 500
+  camera.position[1] = 300
+
+  // Set zoom level
+  camera.zoom = 1.5
+})
+```
+
+For more camera control examples, see:
+- [Controlling the Canvas](/examples/controlling-canvas/)
+- [Zoom to Fit](/examples/zoom-to-fit/)
+- [Lock Camera](/examples/lock-camera/)
+
+## Vue Components
+
+The Vue package provides the Hand tool for toolbar integration:
+
+```vue
+<script setup lang="ts">
+import { HandTool, SelectTool, Toolbar } from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas>
+    <Toolbar>
+      <SelectTool />
+      <HandTool />
+    </Toolbar>
+  </WovenCanvas>
+</template>
+```
+
+The Hand tool allows users to pan the canvas by clicking and dragging, without selecting blocks.

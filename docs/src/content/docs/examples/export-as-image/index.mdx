@@ -1,0 +1,87 @@
+---
+title: Export as Image
+description: Render the canvas to a PNG or SVG image.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import ExportAsImageExample from './ExportAsImageExample.vue';
+import ExportAsImageExampleRaw from './ExportAsImageExample.vue?raw';
+
+Export the canvas content as a downloadable PNG image.
+
+<ExampleContainer>
+  <ExportAsImageExample client:only="vue" />
+</ExampleContainer>
+
+<Code code={ExportAsImageExampleRaw} lang="vue" title="ExportAsImageExample.vue" />
+
+## How it works
+
+This example uses [html2canvas](https://html2canvas.hertzen.com/) to capture the canvas DOM as an image:
+
+1. **Find the canvas element** using the `.ic-root` class
+2. **Capture with html2canvas** to render DOM to canvas
+3. **Convert to data URL** for preview and download
+4. **Download** using a temporary anchor element
+
+```typescript
+import html2canvas from 'html2canvas'
+
+async function exportAsImage() {
+  const canvasEl = container.querySelector('.ic-root')
+
+  const canvas = await html2canvas(canvasEl, {
+    backgroundColor: '#1a1a2e',
+    scale: 2, // 2x resolution
+  })
+
+  const dataUrl = canvas.toDataURL('image/png')
+  // Use dataUrl for preview or download
+}
+```
+
+## Installation
+
+```bash
+npm install html2canvas
+```
+
+## Export options
+
+| Option | Description |
+|--------|-------------|
+| `scale` | Resolution multiplier (2 = 2x resolution) |
+| `backgroundColor` | Background color (null for transparent) |
+| `width` / `height` | Custom dimensions |
+| `x` / `y` | Crop offset |
+
+## Alternative: SVG export
+
+For vector export, you can iterate through blocks and generate SVG elements:
+
+```typescript
+function exportAsSVG() {
+  editor.nextTick((ctx) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+
+    for (const entityId of blocksQuery.current(ctx)) {
+      const block = Block.read(ctx, entityId)
+      const shape = Shape.read(ctx, entityId)
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      rect.setAttribute('x', String(block.position[0]))
+      rect.setAttribute('y', String(block.position[1]))
+      rect.setAttribute('width', String(block.size[0]))
+      rect.setAttribute('height', String(block.size[1]))
+      rect.setAttribute('fill', `rgb(${shape.fillRed},${shape.fillGreen},${shape.fillBlue})`)
+
+      svg.appendChild(rect)
+    }
+
+    // Serialize and download
+    const svgData = new XMLSerializer().serializeToString(svg)
+    // ...
+  })
+}
+```

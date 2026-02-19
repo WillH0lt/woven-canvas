@@ -22,7 +22,7 @@ function reloadPage() {
 .ic-version-mismatch-overlay {
   position: absolute;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--ic-z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

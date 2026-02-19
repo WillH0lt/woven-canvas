@@ -1,0 +1,77 @@
+---
+interface Props {
+  height?: string;
+  buttonText?: string;
+}
+
+const { height = "400px", buttonText = "Try it" } = Astro.props;
+---
+
+<div class="example-container" style={`height: ${height}`} data-example-container>
+  <div class="canvas-wrapper" data-canvas-wrapper>
+    <slot />
+  </div>
+  <div class="overlay" data-overlay>
+    <button class="start-button" type="button">
+      {buttonText}
+    </button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll("[data-example-container]").forEach((container) => {
+    const overlay = container.querySelector("[data-overlay]") as HTMLElement;
+
+    overlay?.addEventListener("click", () => {
+      overlay.hidden = true;
+    });
+  });
+</script>
+
+<style>
+  .example-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    background: var(--sl-color-gray-6);
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+    transition: background-color 0.15s;
+    margin-top: 0;
+  }
+
+  .overlay[hidden] {
+    display: none;
+  }
+
+  .start-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+    background: var(--sl-color-accent);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+
+  .start-button:hover {
+    background: var(--sl-color-accent-light);
+  }
+
+  .canvas-wrapper {
+    width: 100%;
+    height: 100%;
+    isolation: isolate;
+  }
+</style>

@@ -27,8 +27,8 @@ npm install @woven-canvas/vue
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas } from '@woven-canvas/vue';
-import '@woven-canvas/vue/style.css';
+import { WovenCanvas } from "@woven-canvas/vue";
+import "@woven-canvas/vue/style.css";
 </script>
 
 <template>
@@ -38,27 +38,27 @@ import '@woven-canvas/vue/style.css';
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| [@woven-canvas/core](./packages/core) | Framework-agnostic infinite canvas core with ECS-based architecture |
-| [@woven-canvas/vue](./packages/vue) | Vue 3 components for building infinite canvas applications |
-| [@woven-canvas/math](./packages/math) | Math utilities for 2D vector operations |
-| [@woven-canvas/asset-sync](./packages/asset-sync) | Asset management with upload queueing and caching |
+| Package                                           | Description                                                         |
+| ------------------------------------------------- | ------------------------------------------------------------------- |
+| [@woven-canvas/core](./packages/core)             | Framework-agnostic infinite canvas core with ECS-based architecture |
+| [@woven-canvas/vue](./packages/vue)               | Vue 3 components for building infinite canvas applications          |
+| [@woven-canvas/math](./packages/math)             | Math utilities for 2D vector operations                             |
+| [@woven-canvas/asset-sync](./packages/asset-sync) | Asset management with upload queueing and caching                   |
 
 ### Plugins
 
-| Plugin | Description |
-|--------|-------------|
-| [@woven-canvas/plugin-selection](./packages/plugin-selection) | Select, move, and resize objects |
-| [@woven-canvas/plugin-pen](./packages/plugin-pen) | Freehand drawing with pressure sensitivity |
-| [@woven-canvas/plugin-arrows](./packages/plugin-arrows) | Connectors and arrow tools |
-| [@woven-canvas/plugin-eraser](./packages/plugin-eraser) | Eraser tool for removing content |
-| [@woven-canvas/plugin-canvas-controls](./packages/plugin-canvas-controls) | Pan, zoom, and canvas navigation |
+| Plugin                                                                    | Description                                |
+| ------------------------------------------------------------------------- | ------------------------------------------ |
+| [@woven-canvas/plugin-selection](./packages/plugin-selection)             | Select, move, and resize objects           |
+| [@woven-canvas/plugin-pen](./packages/plugin-pen)                         | Freehand drawing with pressure sensitivity |
+| [@woven-canvas/plugin-arrows](./packages/plugin-arrows)                   | Connectors and arrow tools                 |
+| [@woven-canvas/plugin-eraser](./packages/plugin-eraser)                   | Eraser tool for removing content           |
+| [@woven-canvas/plugin-canvas-controls](./packages/plugin-canvas-controls) | Pan, zoom, and canvas navigation           |
 
 ## Examples
 
-| Example | Description |
-|---------|-------------|
+| Example                             | Description                                    |
+| ----------------------------------- | ---------------------------------------------- |
 | [Vue Editor](./examples/editor-vue) | Full-featured whiteboard editor built with Vue |
 
 ## Local Development

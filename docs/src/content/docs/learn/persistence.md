@@ -11,13 +11,13 @@ Enable local persistence with a document ID:
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas } from '@woven-canvas/vue'
+import { WovenCanvas } from "@woven-canvas/vue";
 
 const storeOptions = {
   persistence: {
-    documentId: 'my-canvas',
+    documentId: "my-canvas",
   },
-}
+};
 </script>
 
 <template>
@@ -48,50 +48,66 @@ History is automatically tracked. Use keyboard shortcuts or commands:
 Programmatically:
 
 ```typescript
-import { Undo, Redo } from '@woven-canvas/core'
+import { Undo, Redo } from "@woven-canvas/core";
 
 nextEditorTick((ctx) => {
-  Undo.spawn(ctx)  // Undo last action
-  Redo.spawn(ctx)  // Redo last undone action
-})
+  Undo.spawn(ctx); // Undo last action
+  Redo.spawn(ctx); // Redo last undone action
+});
 ```
 
 ## Sync Behaviors
 
 Each component can specify how it should be synchronized:
 
-| Behavior | Persisted | Synced | Use Case |
-|----------|-----------|--------|----------|
-| `persist` | Yes | Yes | Document content |
-| `ephemeral` | No | Yes | Cursor position, selection |
-| `local` | Yes | No | User preferences |
-| `none` | No | No | Temporary UI state |
+| Behavior    | Persisted | Synced | Use Case                   |
+| ----------- | --------- | ------ | -------------------------- |
+| `persist`   | Yes       | Yes    | Document content           |
+| `ephemeral` | No        | Yes    | Cursor position, selection |
+| `local`     | Yes       | No     | User preferences           |
+| `none`      | No        | No     | Temporary UI state         |
 
 Define sync behavior when creating components:
 
 ```typescript
-import { defineCanvasComponent, field } from '@woven-canvas/vue'
+import { defineCanvasComponent, field } from "@woven-canvas/vue";
 
 // Synced and persisted (default)
-const DocumentData = defineCanvasComponent('doc-data', {
-  title: field.string(),
-}, { sync: 'persist' })
+const DocumentData = defineCanvasComponent(
+  "doc-data",
+  {
+    title: field.string(),
+  },
+  { sync: "persist" },
+);
 
 // Synced but not persisted
-const CursorState = defineCanvasComponent('cursor', {
-  x: field.float32(),
-  y: field.float32(),
-}, { sync: 'ephemeral' })
+const CursorState = defineCanvasComponent(
+  "cursor",
+  {
+    x: field.float32(),
+    y: field.float32(),
+  },
+  { sync: "ephemeral" },
+);
 
 // Local only
-const UserPrefs = defineCanvasComponent('prefs', {
-  theme: field.string().default('dark'),
-}, { sync: 'local' })
+const UserPrefs = defineCanvasComponent(
+  "prefs",
+  {
+    theme: field.string().default("dark"),
+  },
+  { sync: "local" },
+);
 
 // Runtime only
-const HoverState = defineCanvasComponent('hover', {
-  entityId: field.uint32(),
-}, { sync: 'none' })
+const HoverState = defineCanvasComponent(
+  "hover",
+  {
+    entityId: field.uint32(),
+  },
+  { sync: "none" },
+);
 ```
 
 ## Server Sync
@@ -102,13 +118,13 @@ Connect to a WebSocket server for backup and collaboration:
 <script setup lang="ts">
 const storeOptions = {
   persistence: {
-    documentId: 'shared-doc',
+    documentId: "shared-doc",
   },
   websocket: {
-    url: 'wss://your-server.com/sync',
-    documentId: 'shared-doc',
+    url: "wss://your-server.com/sync",
+    documentId: "shared-doc",
   },
-}
+};
 </script>
 
 <template>
@@ -126,9 +142,7 @@ Track online/offline state:
 <template>
   <WovenCanvas :store="storeOptions">
     <template #offline-indicator="{ isOnline }">
-      <div v-if="!isOnline" class="offline-badge">
-        Offline - changes will sync when reconnected
-      </div>
+      <div v-if="!isOnline" class="offline-badge">Offline - changes will sync when reconnected</div>
     </template>
   </WovenCanvas>
 </template>
@@ -139,11 +153,11 @@ Or via callbacks:
 ```typescript
 const storeOptions = {
   websocket: {
-    url: 'wss://...',
-    documentId: 'my-doc',
+    url: "wss://...",
+    documentId: "my-doc",
     onConnectivityChange: (online) => {
-      console.log('Online:', online)
+      console.log("Online:", online);
     },
   },
-}
+};
 ```

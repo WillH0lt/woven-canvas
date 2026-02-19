@@ -1,0 +1,500 @@
+---
+title: "Tutorial: Sticker Block"
+description: Build a custom sticker block with tool and floating menu from scratch
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+This tutorial walks through creating a complete custom block type from start to finish. You'll build a "sticker" block—a large emoji that can be placed, rotated, and customized—complete with a toolbar button and floating menu options.
+
+<LinkCard
+  title="Try the Interactive Demo"
+  description="See the finished sticker block in action"
+  href="/examples/sticker-block/"
+/>
+
+## What We're Building
+
+A sticker block that:
+
+- Displays a large emoji that scales with the block size
+- Can be rotated freely on the canvas
+- Has a dedicated toolbar button with a smiley face icon
+- Shows an emoji picker in the floating menu when selected
+
+This tutorial covers:
+
+1. Defining a custom component to store sticker data
+2. Creating a Vue component to render the sticker
+3. Registering the block definition
+4. Building a custom toolbar button
+5. Adding a floating menu button to change emojis
+
+## Step 1: Define the Sticker Component
+
+First, create a canvas component to store which emoji the sticker displays:
+
+```typescript
+// components/StickerData.ts
+import { defineCanvasComponent, field } from "@woven-canvas/vue";
+
+export const StickerData = defineCanvasComponent("sticker-data", {
+  emoji: field.string().max(8).default("😀"),
+});
+```
+
+This component stores a single `emoji` field. We use `max(8)` since emojis can be up to 4 bytes and we want to allow for compound emojis.
+
+## Step 2: Create the Sticker Block Component
+
+Create a Vue component to render the sticker:
+
+```vue
+<!-- components/StickerBlock.vue -->
+<script setup lang="ts">
+import { computed } from "vue";
+import { useComponent } from "@woven-canvas/vue";
+import { StickerData } from "./StickerData";
+
+const props = defineProps<{
+  entityId: number;
+  selected: boolean;
+}>();
+
+// Subscribe to sticker data reactively
+const sticker = useComponent(props.entityId, StickerData);
+
+const style = computed(() => ({
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "min(80%, 80cqmin)", // Scale with container
+  lineHeight: 1,
+  userSelect: "none" as const,
+  containerType: "size" as const,
+  // Optional: subtle shadow when selected
+  filter: props.selected ? "drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))" : "none",
+  transition: "filter 0.15s ease",
+}));
+</script>
+
+<template>
+  <div :style="style">
+    {{ sticker?.emoji }}
+  </div>
+</template>
+```
+
+The sticker uses CSS container queries (`cqmin`) to scale the emoji based on the block's size, so dragging to resize makes the emoji larger or smaller.
+
+## Step 3: Register the Block Definition
+
+Wire everything together in your app:
+
+```vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { WovenCanvas } from "@woven-canvas/vue";
+import "@woven-canvas/vue/style.css";
+import { StickerData } from "./components/StickerData";
+import StickerBlock from "./components/StickerBlock.vue";
+
+// Block definition for stickers
+const blockDefs = [
+  {
+    tag: "sticker",
+    resizeMode: "scale" as const, // Proportional scaling
+    canRotate: true, // Enable rotation
+    components: [StickerData], // Link our component
+  },
+];
+</script>
+
+<template>
+  <WovenCanvas :editor="{ components: [StickerData], blockDefs }" style="width: 100vw; height: 100vh">
+    <!-- Render sticker blocks -->
+    <template #block:sticker="props">
+      <StickerBlock :entity-id="props.entityId" :selected="props.selected" />
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+Key points:
+
+- `tag: "sticker"` identifies this block type
+- `resizeMode: "scale"` keeps the aspect ratio when resizing
+- `canRotate: true` enables the rotation handle
+- `components: [StickerData]` associates our component with this block type
+- The slot `#block:sticker` renders our Vue component for blocks with `tag: "sticker"`
+
+## Step 4: Create the Sticker Tool
+
+Create a toolbar button to add stickers to the canvas:
+
+```vue
+<!-- components/StickerTool.vue -->
+<script setup lang="ts">
+import { ToolbarButton } from "@woven-canvas/vue";
+
+// Snapshot defines what gets created when the tool is used
+const snapshot = JSON.stringify({
+  block: {
+    tag: "sticker",
+    size: [120, 120], // Square by default
+  },
+  "sticker-data": {
+    emoji: "😀",
+  },
+});
+</script>
+
+<template>
+  <ToolbarButton name="sticker" tooltip="Sticker" :placement-snapshot="snapshot" :drag-out-snapshot="snapshot">
+    <!-- Smiley face icon -->
+    <svg viewBox="0 0 20 20" fill="currentColor">
+      <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5" />
+      <circle cx="7" cy="8" r="1.2" />
+      <circle cx="13" cy="8" r="1.2" />
+      <path d="M6 12.5 Q10 15.5 14 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+    </svg>
+  </ToolbarButton>
+</template>
+```
+
+The `snapshot` is a JSON string defining the block and component data to create. The `ToolbarButton` handles:
+
+- Click on canvas → create sticker at click position
+- Drag from toolbar → create sticker where dropped
+
+## Step 5: Add to the Toolbar
+
+Add the sticker tool alongside the built-in tools:
+
+```vue
+<script setup lang="ts">
+import { WovenCanvas, SelectTool, HandTool, ShapeTool } from "@woven-canvas/vue";
+import StickerTool from "./components/StickerTool.vue";
+import StickerBlock from "./components/StickerBlock.vue";
+import { StickerData } from "./components/StickerData";
+
+const blockDefs = [
+  {
+    tag: "sticker",
+    resizeMode: "scale" as const,
+    canRotate: true,
+    components: [StickerData],
+  },
+];
+</script>
+
+<template>
+  <WovenCanvas :editor="{ components: [StickerData], blockDefs }" style="width: 100vw; height: 100vh">
+    <template #toolbar>
+      <div class="toolbar">
+        <SelectTool />
+        <HandTool />
+        <ShapeTool />
+        <div class="divider" />
+        <StickerTool />
+      </div>
+    </template>
+
+    <template #block:sticker="props">
+      <StickerBlock v-bind="props" />
+    </template>
+  </WovenCanvas>
+</template>
+
+<style>
+.toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  background: #374151;
+  border-radius: 8px;
+}
+
+.divider {
+  width: 1px;
+  background: #4b5563;
+  margin: 4px;
+}
+</style>
+```
+
+## Step 6: Create an Emoji Picker Button
+
+Create a floating menu button to change the sticker's emoji:
+
+```vue
+<!-- components/StickerEmojiButton.vue -->
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { MenuButton, MenuDropdown, useEditorContext, useComponents } from "@woven-canvas/vue";
+import { StickerData } from "./StickerData";
+
+const props = defineProps<{
+  entityIds: number[];
+}>();
+
+// Available emojis to choose from
+const emojis = ["😀", "😎", "🎉", "⭐", "❤️", "🔥", "👍", "🚀", "🌈", "🎨", "💡", "✨"];
+
+// Get sticker data for all selected entities
+const stickers = useComponents(() => props.entityIds, StickerData);
+
+// Current emoji (first selected, or mixed indicator)
+const currentEmoji = computed(() => {
+  const values = [...stickers.value.values()].filter(Boolean).map((s) => s!.emoji);
+  if (values.length === 0) return "😀";
+  const allSame = values.every((e) => e === values[0]);
+  return allSame ? values[0] : "🔀";
+});
+
+// Dropdown state
+const isOpen = ref(false);
+
+// Editor context for writes
+const { nextEditorTick } = useEditorContext();
+
+function setEmoji(emoji: string) {
+  nextEditorTick((ctx) => {
+    for (const entityId of props.entityIds) {
+      const sticker = StickerData.write(ctx, entityId);
+      sticker.emoji = emoji;
+    }
+  });
+  isOpen.value = false;
+}
+</script>
+
+<template>
+  <MenuButton tooltip="Change Emoji" :menu-open="isOpen" @click="isOpen = !isOpen">
+    <span style="font-size: 16px; line-height: 1">{{ currentEmoji }}</span>
+
+    <MenuDropdown v-if="isOpen" @close="isOpen = false">
+      <div class="emoji-grid">
+        <button
+          v-for="emoji in emojis"
+          :key="emoji"
+          class="emoji-option"
+          :class="{ 'is-active': currentEmoji === emoji }"
+          @click="setEmoji(emoji)"
+        >
+          {{ emoji }}
+        </button>
+      </div>
+    </MenuDropdown>
+  </MenuButton>
+</template>
+
+<style scoped>
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 8px;
+}
+
+.emoji-option {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.emoji-option:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.emoji-option.is-active {
+  background: rgba(59, 130, 246, 0.2);
+}
+</style>
+```
+
+## Step 7: Add the Button to the Floating Menu
+
+Register the emoji button in the floating menu:
+
+```vue
+<script setup lang="ts">
+import { WovenCanvas, SelectTool, HandTool, FloatingMenuBar } from "@woven-canvas/vue";
+import StickerTool from "./components/StickerTool.vue";
+import StickerBlock from "./components/StickerBlock.vue";
+import StickerEmojiButton from "./components/StickerEmojiButton.vue";
+import { StickerData } from "./components/StickerData";
+
+const blockDefs = [
+  {
+    tag: "sticker",
+    resizeMode: "scale" as const,
+    canRotate: true,
+    components: [StickerData],
+  },
+];
+</script>
+
+<template>
+  <WovenCanvas :editor="{ components: [StickerData], blockDefs }" style="width: 100vw; height: 100vh">
+    <template #toolbar>
+      <div class="toolbar">
+        <SelectTool />
+        <HandTool />
+        <StickerTool />
+      </div>
+    </template>
+
+    <!-- Add emoji button to floating menu -->
+    <template #floating-menu>
+      <FloatingMenuBar>
+        <template #button:sticker-data="{ entityIds }">
+          <StickerEmojiButton :entity-ids="entityIds" />
+        </template>
+      </FloatingMenuBar>
+    </template>
+
+    <template #block:sticker="props">
+      <StickerBlock v-bind="props" />
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+The slot name `#button:sticker-data` matches the component name defined in `defineCanvasComponent`. The button only appears when all selected blocks have this component.
+
+## Complete Example
+
+Here's the full working code in a single file:
+
+```vue
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import {
+  WovenCanvas,
+  ToolbarButton,
+  SelectTool,
+  HandTool,
+  FloatingMenuBar,
+  MenuButton,
+  MenuDropdown,
+  useComponent,
+  useComponents,
+  useEditorContext,
+  defineCanvasComponent,
+  field,
+} from "@woven-canvas/vue";
+import "@woven-canvas/vue/style.css";
+
+// 1. Define component
+const StickerData = defineCanvasComponent("sticker-data", {
+  emoji: field.string().max(8).default("😀"),
+});
+
+// 2. Block definition
+const blockDefs = [
+  {
+    tag: "sticker",
+    resizeMode: "scale" as const,
+    canRotate: true,
+    components: [StickerData],
+  },
+];
+
+// 3. Tool snapshot
+const stickerSnapshot = JSON.stringify({
+  block: { tag: "sticker", size: [120, 120] },
+  "sticker-data": { emoji: "😀" },
+});
+
+// 4. Available emojis
+const emojis = ["😀", "😎", "🎉", "⭐", "❤️", "🔥", "👍", "🚀", "🌈", "🎨", "💡", "✨"];
+</script>
+
+<template>
+  <WovenCanvas :editor="{ components: [StickerData], blockDefs }" style="width: 100vw; height: 100vh">
+    <!-- Toolbar -->
+    <template #toolbar>
+      <div style="display: flex; gap: 4px; padding: 8px; background: #374151; border-radius: 8px">
+        <SelectTool />
+        <HandTool />
+        <ToolbarButton
+          name="sticker"
+          tooltip="Sticker"
+          :placement-snapshot="stickerSnapshot"
+          :drag-out-snapshot="stickerSnapshot"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor">
+            <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <circle cx="7" cy="8" r="1.2" />
+            <circle cx="13" cy="8" r="1.2" />
+            <path
+              d="M6 12.5 Q10 15.5 14 12.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </ToolbarButton>
+      </div>
+    </template>
+
+    <!-- Floating menu with emoji picker -->
+    <template #floating-menu>
+      <FloatingMenuBar>
+        <template #button:sticker-data="{ entityIds }">
+          <StickerEmojiButtonInline :entity-ids="entityIds" :emojis="emojis" />
+        </template>
+      </FloatingMenuBar>
+    </template>
+
+    <!-- Block renderer -->
+    <template #block:sticker="{ entityId, selected }">
+      <StickerBlockInline :entity-id="entityId" :selected="selected" />
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+## How It All Fits Together
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  defineCanvasComponent("sticker-data", { emoji: ... })     │
+│  └── Defines what data is stored                            │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  blockDefs = [{ tag: "sticker", components: [StickerData] }]│
+│  └── Links the component to a block type                    │
+└─────────────────────────────────────────────────────────────┘
+                            │
+            ┌───────────────┼───────────────┐
+            ▼               ▼               ▼
+      ┌───────────┐   ┌───────────┐   ┌───────────┐
+      │ #block:   │   │ Toolbar   │   │ Floating  │
+      │ sticker   │   │ Button    │   │ Menu      │
+      │           │   │           │   │           │
+      │ Renders   │   │ Creates   │   │ Edits     │
+      │ the emoji │   │ stickers  │   │ emoji     │
+      └───────────┘   └───────────┘   └───────────┘
+```
+
+## Next Steps
+
+- [Custom Block](/examples/custom-block/) — More details on block definitions
+- [Custom Tool](/examples/custom-tool/) — Tool lifecycle hooks and options
+- [Custom Floating Menu](/examples/custom-floating-menu/) — Override built-in buttons
+- [Plugin](/examples/plugin/) — Package everything into a reusable plugin

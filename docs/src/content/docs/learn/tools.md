@@ -9,38 +9,37 @@ Tools are the buttons in the toolbar that control how users interact with the ca
 
 Woven Canvas includes these tools:
 
-| Tool | Description |
-|------|-------------|
-| `select` | Select, move, resize, and rotate blocks |
-| `hand` | Pan the canvas by dragging |
-| `shape` | Create shape blocks |
-| `text` | Create text blocks |
-| `sticky-note` | Create sticky notes |
-| `image` | Upload and place images |
-| `pen` | Freehand drawing |
-| `eraser` | Erase pen strokes |
-| `arc-arrow` | Create curved arrow connectors |
-| `elbow-arrow` | Create right-angle arrow connectors |
+| Tool          | Description                             |
+| ------------- | --------------------------------------- |
+| `select`      | Select, move, resize, and rotate blocks |
+| `hand`        | Pan the canvas by dragging              |
+| `shape`       | Create shape blocks                     |
+| `text`        | Create text blocks                      |
+| `sticky-note` | Create sticky notes                     |
+| `image`       | Upload and place images                 |
+| `pen`         | Freehand drawing                        |
+| `eraser`      | Erase pen strokes                       |
+| `elbow-arrow` | Create right-angle arrow connectors     |
 
 ## Active Tool State
 
 Only one tool can be active at a time. Use the `useToolbar` composable to check or change the active tool:
 
 ```typescript
-import { useToolbar } from '@woven-canvas/vue'
+import { useToolbar } from "@woven-canvas/vue";
 
-const { activeTool } = useToolbar()
+const { activeTool } = useToolbar();
 
 // Check the current tool
-console.log('Active tool:', activeTool.value)
+console.log("Active tool:", activeTool.value);
 
 // Change the active tool
-activeTool.value = 'hand'
+activeTool.value = "hand";
 
 // React to tool changes
 watch(activeTool, (newTool, oldTool) => {
-  console.log(`Switched from ${oldTool} to ${newTool}`)
-})
+  console.log(`Switched from ${oldTool} to ${newTool}`);
+});
 ```
 
 ## How Tools Create Blocks
@@ -61,23 +60,18 @@ Tools are Vue components that use `ToolbarButton`:
 
 ```vue
 <script setup lang="ts">
-import { ToolbarButton } from '@woven-canvas/vue'
+import { ToolbarButton } from "@woven-canvas/vue";
 
 const snapshot = JSON.stringify({
   block: {
-    tag: 'my-block',
+    tag: "my-block",
     size: [200, 100],
   },
-})
+});
 </script>
 
 <template>
-  <ToolbarButton
-    name="my-tool"
-    tooltip="My Tool"
-    :placement-snapshot="snapshot"
-    :drag-out-snapshot="snapshot"
-  >
+  <ToolbarButton name="my-tool" tooltip="My Tool" :placement-snapshot="snapshot" :drag-out-snapshot="snapshot">
     <svg><!-- icon --></svg>
   </ToolbarButton>
 </template>
@@ -85,13 +79,13 @@ const snapshot = JSON.stringify({
 
 ### ToolbarButton Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `name` | `string` | Unique tool identifier |
-| `tooltip` | `string` | Tooltip shown on hover |
+| Prop                | Type     | Description                    |
+| ------------------- | -------- | ------------------------------ |
+| `name`              | `string` | Unique tool identifier         |
+| `tooltip`           | `string` | Tooltip shown on hover         |
 | `placementSnapshot` | `string` | JSON for click-to-place blocks |
-| `dragOutSnapshot` | `string` | JSON for drag-to-create blocks |
-| `cursor` | `string` | CSS cursor when tool is active |
+| `dragOutSnapshot`   | `string` | JSON for drag-to-create blocks |
+| `cursor`            | `string` | CSS cursor when tool is active |
 
 ## Snapshots
 
@@ -101,14 +95,14 @@ A snapshot defines the initial state for new blocks. It's a JSON object where ke
 const snapshot = JSON.stringify({
   // Required: Block component
   block: {
-    tag: 'task-card',
+    tag: "task-card",
     size: [200, 120],
   },
 
   // Optional: Your custom components
-  'task-data': {
-    title: 'New Task',
-    priority: 'medium',
+  "task-data": {
+    title: "New Task",
+    priority: "medium",
   },
 
   // Optional: Built-in components
@@ -118,7 +112,7 @@ const snapshot = JSON.stringify({
     blue: 100,
     alpha: 255,
   },
-})
+});
 ```
 
 ## Cursors
@@ -127,15 +121,11 @@ Tools can specify a cursor that appears when the tool is active:
 
 ```vue
 <script setup lang="ts">
-import { ToolbarButton, CursorKind } from '@woven-canvas/vue'
+import { ToolbarButton, CursorKind } from "@woven-canvas/vue";
 </script>
 
 <template>
-  <ToolbarButton
-    name="crosshair-tool"
-    :cursor="CursorKind.Crosshair"
-    :placement-snapshot="snapshot"
-  >
+  <ToolbarButton name="crosshair-tool" :cursor="CursorKind.Crosshair" :placement-snapshot="snapshot">
     <!-- icon -->
   </ToolbarButton>
 </template>
@@ -143,12 +133,12 @@ import { ToolbarButton, CursorKind } from '@woven-canvas/vue'
 
 Built-in cursor kinds:
 
-| Cursor | Description |
-|--------|-------------|
-| `CursorKind.Default` | Default arrow cursor |
-| `CursorKind.Select` | Selection cursor |
-| `CursorKind.Grab` | Open hand for panning |
-| `CursorKind.Grabbing` | Closed hand while panning |
+| Cursor                 | Description                     |
+| ---------------------- | ------------------------------- |
+| `CursorKind.Default`   | Default arrow cursor            |
+| `CursorKind.Select`    | Selection cursor                |
+| `CursorKind.Grab`      | Open hand for panning           |
+| `CursorKind.Grabbing`  | Closed hand while panning       |
 | `CursorKind.Crosshair` | Crosshair for precise placement |
 
 ## Tool Lifecycle
@@ -157,21 +147,21 @@ Tools can run code when activated or deactivated:
 
 ```vue
 <script setup lang="ts">
-import { watch } from 'vue'
-import { ToolbarButton, useToolbar, useEditorContext } from '@woven-canvas/vue'
-import { DeselectAll } from '@woven-canvas/plugin-selection'
+import { watch } from "vue";
+import { ToolbarButton, useToolbar, useEditorContext } from "@woven-canvas/vue";
+import { DeselectAll } from "@woven-canvas/plugin-selection";
 
-const { activeTool } = useToolbar()
-const { nextEditorTick } = useEditorContext()
+const { activeTool } = useToolbar();
+const { nextEditorTick } = useEditorContext();
 
 watch(activeTool, (newTool, oldTool) => {
   // Deselect when switching away from select tool
-  if (oldTool === 'select') {
+  if (oldTool === "select") {
     nextEditorTick((ctx) => {
-      DeselectAll.spawn(ctx)
-    })
+      DeselectAll.spawn(ctx);
+    });
   }
-})
+});
 </script>
 ```
 

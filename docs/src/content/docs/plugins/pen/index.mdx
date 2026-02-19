@@ -1,0 +1,126 @@
+---
+title: Pen Plugin
+description: Freehand drawing with pressure sensitivity
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import PenExample from './PenExample.vue';
+import PenExampleRaw from './PenExample.vue?raw';
+
+The Pen plugin provides freehand drawing functionality with smooth SVG ink strokes and stylus pressure sensitivity.
+
+<ExampleContainer>
+  <PenExample client:only="vue" />
+</ExampleContainer>
+
+<Code code={PenExampleRaw} lang="vue" title="PenExample.vue" />
+
+Select the Pen tool and draw on the canvas. Use the color picker to change ink color. Strokes can be selected, moved, and resized like any other block.
+
+## Installation
+
+```bash
+npm install @woven-canvas/plugin-pen
+```
+
+## Usage
+
+```typescript
+import { PenPlugin } from '@woven-canvas/plugin-pen'
+
+const editor = new Editor(element, {
+  plugins: [PenPlugin()]
+})
+```
+
+## Options
+
+The Pen plugin has no configuration options. Pen strokes automatically inherit the current color from the editor state.
+
+## Features
+
+- **Smooth SVG strokes** — Strokes are rendered as vector paths for crisp display at any zoom level
+- **Pressure sensitivity** — When using a stylus, stroke width varies with pen pressure
+- **Scalable and rotatable** — Strokes behave like regular blocks and can be transformed
+- **Hit geometry** — Precise selection based on stroke path, not bounding box
+
+## Commands
+
+```typescript
+import {
+  StartPenStroke,
+  AddPenStrokePoint,
+  CompletePenStroke,
+  RemovePenStroke,
+} from '@woven-canvas/plugin-pen'
+
+// Start a new stroke
+editor.command(StartPenStroke, {
+  worldPosition: [100, 100],
+  pressure: 0.5,
+  thickness: 4,
+})
+
+// Add points while drawing
+editor.command(AddPenStrokePoint, {
+  strokeId,
+  worldPosition: [150, 120],
+  pressure: 0.7,
+})
+
+// Finalize the stroke
+editor.command(CompletePenStroke, { strokeId })
+
+// Cancel a stroke
+editor.command(RemovePenStroke, { strokeId })
+```
+
+## Components
+
+| Component | Description |
+|-----------|-------------|
+| `PenStroke` | Stores stroke point data and rendering information |
+
+The `PenStroke` component stores up to 1024 points per stroke. Each point includes position and pressure data.
+
+### Accessing Stroke Data
+
+```typescript
+import { PenStroke } from '@woven-canvas/plugin-pen'
+import { defineQuery } from '@woven-canvas/core'
+
+const penStrokeQuery = defineQuery((q) => q.with(PenStroke))
+
+// In a system
+for (const entityId of penStrokeQuery.current(ctx)) {
+  const stroke = PenStroke.read(ctx, entityId)
+  console.log('Point count:', stroke.pointCount)
+}
+```
+
+## Vue Components
+
+The Vue package provides toolbar components for the pen:
+
+```vue
+<script setup lang="ts">
+import { PenTool, ColorButton, Toolbar } from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas>
+    <Toolbar>
+      <PenTool />
+      <ColorButton />
+    </Toolbar>
+  </WovenCanvas>
+</template>
+```
+
+### Toolbar Components
+
+| Component | Description |
+|-----------|-------------|
+| `PenTool` | Toolbar button to activate the pen tool |
+| `ColorButton` | Color picker for stroke color |

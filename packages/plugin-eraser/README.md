@@ -11,15 +11,14 @@ npm install @woven-canvas/core @woven-canvas/plugin-eraser
 ## Usage
 
 ```typescript
-import { Editor } from '@woven-canvas/core';
-import { EraserPlugin } from '@woven-canvas/plugin-eraser';
+import { Editor } from "@woven-canvas/core";
+import { EraserPlugin } from "@woven-canvas/plugin-eraser";
 
 const editor = new Editor(domElement, {
   plugins: [
-    ...
-    EraserPlugin({
-      tailRadius: 8,   // Eraser collision radius in world units (default: 8)
-      tailLength: 20,  // Max stroke points for collision trail (default: 10, range: 1-20)
+    ...EraserPlugin({
+      tailRadius: 8, // Eraser collision radius in world units (default: 8)
+      tailLength: 20, // Max stroke points for collision trail (default: 10, range: 1-20)
     }),
   ],
 });

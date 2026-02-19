@@ -10,27 +10,27 @@ The `Editor` class is the core of Woven Canvas. It manages all state, handles in
 Inside components rendered within `WovenCanvas`, use the `useEditorContext` composable:
 
 ```typescript
-import { useEditorContext } from '@woven-canvas/vue'
+import { useEditorContext } from "@woven-canvas/vue";
 
-const { getEditor, nextEditorTick } = useEditorContext()
+const { getEditor, nextEditorTick } = useEditorContext();
 
 // Get the editor instance (may be null during initialization)
-const editor = getEditor()
+const editor = getEditor();
 
 // Execute code in the next ECS tick
 nextEditorTick((ctx) => {
   // ctx is the ECS context for reading/writing data
-})
+});
 ```
 
 You can also access the editor via the `ready` event:
 
 ```vue
 <script setup lang="ts">
-import { WovenCanvas, type Editor } from '@woven-canvas/vue'
+import { WovenCanvas, type Editor } from "@woven-canvas/vue";
 
 function onReady(editor: Editor) {
-  console.log('Editor ready:', editor)
+  console.log("Editor ready:", editor);
 }
 </script>
 
@@ -69,34 +69,35 @@ The editor runs a continuous loop that processes input and updates state:
 
 Each phase has a specific purpose:
 
-| Phase | Purpose |
-|-------|---------|
-| `input` | Convert DOM events to ECS state (mouse, keyboard, screen) |
-| `capture` | Detect targets, compute intersections, process keybinds |
-| `update` | Modify document state, process commands |
-| `render` | Vue reactivity handles rendering via composables |
+| Phase     | Purpose                                                   |
+| --------- | --------------------------------------------------------- |
+| `input`   | Convert DOM events to ECS state (mouse, keyboard, screen) |
+| `capture` | Detect targets, compute intersections, process keybinds   |
+| `update`  | Modify document state, process commands                   |
+| `render`  | Vue reactivity handles rendering via composables          |
 
 ## Reading and Writing Data
 
 All state lives in the ECS. Use the context to read and write:
 
 ```typescript
-import { Block, Color } from '@woven-canvas/core'
+import { Block, Color } from "@woven-canvas/core";
 
 nextEditorTick((ctx) => {
   // Read component data (immutable)
-  const block = Block.read(ctx, entityId)
-  console.log('Position:', block.position)
+  const block = Block.read(ctx, entityId);
+  console.log("Position:", block.position);
 
   // Write component data (mutable)
-  const color = Color.write(ctx, entityId)
-  color.red = 255
-  color.green = 0
-  color.blue = 0
-})
+  const color = Color.write(ctx, entityId);
+  color.red = 255;
+  color.green = 0;
+  color.blue = 0;
+});
 ```
 
 Changes made during a tick are automatically tracked for:
+
 - Undo/redo history
 - Network synchronization
 - Persistence
@@ -106,18 +107,18 @@ Changes made during a tick are automatically tracked for:
 Vue composables provide reactive access to ECS data:
 
 ```typescript
-import { useComponent, useSingleton, useQuery } from '@woven-canvas/vue'
-import { Block, Camera } from '@woven-canvas/core'
-import { Selected } from '@woven-canvas/plugin-selection'
+import { useComponent, useSingleton, useQuery } from "@woven-canvas/vue";
+import { Block, Camera } from "@woven-canvas/core";
+import { Selected } from "@woven-canvas/plugin-selection";
 
 // Subscribe to a component on a specific entity
-const block = useComponent(entityId, Block)
+const block = useComponent(entityId, Block);
 
 // Subscribe to a singleton (global state)
-const camera = useSingleton(Camera)
+const camera = useSingleton(Camera);
 
 // Subscribe to a query (multiple entities)
-const selectedBlocks = useQuery([Block, Selected] as const)
+const selectedBlocks = useQuery([Block, Selected] as const);
 ```
 
 These composables return Vue refs that update automatically when the underlying data changes.
@@ -127,16 +128,16 @@ These composables return Vue refs that update automatically when the underlying 
 Commands are the primary way to trigger actions. They're spawned in one tick and consumed by systems in the next:
 
 ```typescript
-import { Undo, Redo } from '@woven-canvas/core'
-import { DeselectAll } from '@woven-canvas/plugin-selection'
+import { Undo, Redo } from "@woven-canvas/core";
+import { DeselectAll } from "@woven-canvas/plugin-selection";
 
 nextEditorTick((ctx) => {
   // Undo the last action
-  Undo.spawn(ctx)
+  Undo.spawn(ctx);
 
   // Deselect all blocks
-  DeselectAll.spawn(ctx)
-})
+  DeselectAll.spawn(ctx);
+});
 ```
 
 ## Configuration

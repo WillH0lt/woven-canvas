@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SelectAll } from '@woven-canvas/plugin-selection'
 import { WovenCanvas } from '@woven-canvas/vue'
 
 const clientId = crypto.randomUUID()
@@ -7,6 +8,9 @@ const clientId = crypto.randomUUID()
 <template>
   <div class="editor">
     <WovenCanvas
+      @ready="(editor) => {
+        editor.command(SelectAll)
+      }"
       :store="{
         persistence: {
           documentId: 'editor-vue-test',
