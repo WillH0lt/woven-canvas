@@ -1,6 +1,6 @@
 ---
 title: Arrows Plugin
-description: Arc and elbow arrow connectors
+description: Elbow arrow connectors
 ---
 
 import { Code } from '@astrojs/starlight/components';
@@ -8,31 +8,29 @@ import ExampleContainer from '../../../../components/ExampleContainer.astro';
 import ArrowsExample from './ArrowsExample.vue';
 import ArrowsExampleRaw from './ArrowsExample.vue?raw';
 
-The Arrows plugin provides two types of arrow connectors: curved arc arrows and orthogonal elbow arrows. Arrows can connect to blocks and automatically update when blocks move.
+The Arrows plugin provides elbow arrow connectors. Arrows can connect to blocks and automatically update when blocks move.
 
 <ExampleContainer>
   <ArrowsExample client:only="vue" />
 </ExampleContainer>
 
-<Code code={ArrowsExampleRaw} lang="vue" title="ArrowsExample.vue" />
-
-Select an arrow tool and drag from one shape to another to create a connection. Click on an arrow to select it and show edit handles.
-
-## Installation
-
-```bash
-npm install @woven-canvas/plugin-arrows
-```
+- Select an arrow tool and drag from one shape to another to create a connection
+- Click on an arrow to select it and show edit handles
 
 ## Usage
 
-```typescript
-import { ArrowsPlugin } from '@woven-canvas/plugin-arrows'
+The Arrows plugin is included by default when using `WovenCanvas`. To configure it:
 
-const editor = new Editor(element, {
-  plugins: [ArrowsPlugin()]
-})
+```vue
+<template>
+  <WovenCanvas
+    :plugin-options="{
+      arrows: { elbowArrowPadding: 100 }
+    }"
+  />
+</template>
 ```
+
 
 ## Options
 
@@ -48,10 +46,6 @@ ArrowsPlugin({
 
 ## Arrow Types
 
-### Arc Arrows
-
-Curved arrows with a bezier-like control point. Drag the middle handle to adjust the curve.
-
 ### Elbow Arrows
 
 Orthogonal (right-angle) arrows that automatically route around obstacles. The path adjusts when connected blocks move.
@@ -64,50 +58,40 @@ Orthogonal (right-angle) arrows that automatically route around obstacles. The p
 - **Arrow heads** — Configurable start and end arrow heads
 - **Color support** — Arrows inherit the current color
 
-## Commands
-
-```typescript
-import {
-  AddArrow,
-  DrawArrow,
-  CompleteArrow,
-  RemoveArrow,
-  AddOrUpdateTransformHandles,
-  RemoveTransformHandles,
-} from '@woven-canvas/plugin-arrows'
-
-// Create a new arrow
-editor.command(AddArrow, {
-  entityId,
-  position: [100, 100],
-  kind: 'arc',  // or 'elbow'
-})
-
-// Update arrow geometry while drawing
-editor.command(DrawArrow, {
-  entityId,
-  start: [100, 100],
-  end: [200, 150],
-})
-
-// Finalize the arrow
-editor.command(CompleteArrow, { entityId })
-
-// Delete an arrow
-editor.command(RemoveArrow, { entityId })
-
-// Show edit handles for a selected arrow
-editor.command(AddOrUpdateTransformHandles, { arrowEntityId })
-```
-
 ## Components
 
 | Component | Description |
 |-----------|-------------|
-| `ArcArrow` | Curved arrow with bezier control |
 | `ElbowArrow` | Orthogonal arrow with automatic routing |
 | `ArrowHandle` | Draggable control point for editing |
 | `ArrowTerminal` | Connection snap point indicator |
+
+### Arrow Terminals
+
+Arrow terminals are visual indicators that appear on blocks when dragging arrow handles, showing valid snap points for connections. When you drag an arrow endpoint near a block, terminals appear at predefined positions where the arrow can connect.
+
+Terminals are defined per block type via the `connectors` option in the block definition:
+
+```typescript
+import { defineBlockDef } from '@woven-canvas/core'
+
+defineBlockDef({
+  tag: 'my-block',
+  connectors: {
+    enabled: true,
+    terminals: [
+      [0.5, 0],    // Top center
+      [1, 0.5],    // Right center
+      [0.5, 1],    // Bottom center
+      [0, 0.5],    // Left center
+    ],
+  },
+})
+```
+
+Terminal positions use UV coordinates where `[0, 0]` is the top-left corner and `[1, 1]` is the bottom-right corner of the block.
+
+When an arrow handle is dragged within snap distance of a terminal, it automatically snaps to that position, ensuring consistent connection points.
 
 ### Arrow Head Kinds
 
@@ -125,55 +109,92 @@ ArrowHeadKind.Circle    // Circle
 ### Accessing Arrow Data
 
 ```typescript
-import { ArcArrow, ElbowArrow } from '@woven-canvas/plugin-arrows'
+import { ElbowArrow } from '@woven-canvas/plugin-arrows'
 import { defineQuery } from '@woven-canvas/core'
 
-const arcArrowQuery = defineQuery((q) => q.with(ArcArrow))
+const elbowArrowQuery = defineQuery((q) => q.with(ElbowArrow))
 
 // In a system
-for (const entityId of arcArrowQuery.current(ctx)) {
-  const arrow = ArcArrow.read(ctx, entityId)
+for (const entityId of elbowArrowQuery.current(ctx)) {
+  const arrow = ElbowArrow.read(ctx, entityId)
   console.log('Start:', arrow.startX, arrow.startY)
   console.log('End:', arrow.endX, arrow.endY)
-  console.log('Arc height:', arrow.arcHeight)
 }
 ```
 
 ## Vue Components
 
-The Vue package provides toolbar components for arrows:
+The Vue package provides toolbar and floating menu components for arrows:
+
+| Component | Description |
+|-----------|-------------|
+| `ElbowArrowTool` | Toolbar button for orthogonal arrows |
+| `ArrowThicknessButton` | Floating menu dropdown for stroke thickness (S, M, L) |
+| `ArrowHeadButton` | Floating menu dropdown for arrow head style |
+
+### Toolbar Usage
+
+```vue
+<script setup lang="ts">
+import { WovenCanvas, ElbowArrowTool, Toolbar } from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas>
+    <template #toolbar>
+      <Toolbar>
+        <ElbowArrowTool />
+      </Toolbar>
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+### Floating Menu
+
+When an arrow is selected, the floating menu automatically shows arrow-specific controls. These are included in the default `FloatingMenuBar`. To customize:
 
 ```vue
 <script setup lang="ts">
 import {
-  ArcArrowTool,
-  ElbowArrowTool,
+  WovenCanvas,
+  FloatingMenu,
+  FloatingMenuBar,
   ArrowHeadButton,
   ArrowThicknessButton,
-  ColorButton,
-  Toolbar,
 } from '@woven-canvas/vue'
 </script>
 
 <template>
   <WovenCanvas>
-    <Toolbar>
-      <ArcArrowTool />
-      <ElbowArrowTool />
-      <ArrowHeadButton />
-      <ArrowThicknessButton />
-      <ColorButton />
-    </Toolbar>
+    <template #floating-menu>
+      <FloatingMenu>
+        <FloatingMenuBar>
+          <template #button:arrowThickness="{ entityIds }">
+            <ArrowThicknessButton :entity-ids="entityIds" />
+          </template>
+          <template #button:arrowHeadStart="{ entityIds }">
+            <ArrowHeadButton :entity-ids="entityIds" side="start" />
+          </template>
+          <template #button:arrowHeadEnd="{ entityIds }">
+            <ArrowHeadButton :entity-ids="entityIds" side="end" />
+          </template>
+        </FloatingMenuBar>
+      </FloatingMenu>
+    </template>
   </WovenCanvas>
 </template>
 ```
 
-### Toolbar Components
+#### ArrowHeadButton Props
 
-| Component | Description |
-|-----------|-------------|
-| `ArcArrowTool` | Toolbar button for curved arrows |
-| `ElbowArrowTool` | Toolbar button for orthogonal arrows |
-| `ArrowHeadButton` | Dropdown to select arrow head style |
-| `ArrowThicknessButton` | Dropdown to select arrow thickness |
-| `ColorButton` | Color picker for arrow color |
+| Prop | Type | Description |
+|------|------|-------------|
+| `entityIds` | `EntityId[]` | Selected arrow entity IDs |
+| `side` | `'start' \| 'end'` | Which end of the arrow to configure |
+
+#### ArrowThicknessButton Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `entityIds` | `EntityId[]` | Selected arrow entity IDs |

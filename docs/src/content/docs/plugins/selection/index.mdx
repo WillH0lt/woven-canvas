@@ -14,24 +14,34 @@ The Selection plugin provides core selection and block manipulation functionalit
   <SelectionExample client:only="vue" />
 </ExampleContainer>
 
-<Code code={SelectionExampleRaw} lang="vue" title="SelectionExample.vue" />
-
-Click and drag to select blocks. Hold Shift to add to selection. Drag selected blocks to move them. Use corner handles to resize.
-
-## Installation
-
-```bash
-npm install @woven-canvas/plugin-selection
-```
+- Click and drag to select blocks
+- Hold Shift to add to selection
+- Drag selected blocks to move them
+- Alt + drag to duplicate
+- Use corner handles to resize
 
 ## Usage
 
-```typescript
-import { SelectionPlugin } from '@woven-canvas/plugin-selection'
+The Selection plugin is included by default when using `WovenCanvas`. To configure it:
 
-const editor = new Editor(element, {
-  plugins: [SelectionPlugin()]
-})
+```vue
+<template>
+  <WovenCanvas
+    :plugin-options="{
+      selection: {
+        edgeScrolling: { edgeSizePx: 20 }
+      }
+    }"
+  />
+</template>
+```
+
+To disable it (not recommended):
+
+```vue
+<template>
+  <WovenCanvas :plugin-options="{ selection: false }" />
+</template>
 ```
 
 ## Options
@@ -152,18 +162,20 @@ for (const entityId of selectedQuery.current(ctx)) {
 
 ## Vue Components
 
-The Vue package provides toolbar components:
+The Vue package provides toolbar components. To create a toolbar with only the select tool:
 
 ```vue
 <script setup lang="ts">
-import { SelectTool, Toolbar } from '@woven-canvas/vue'
+import { WovenCanvas, SelectTool, Toolbar } from '@woven-canvas/vue'
 </script>
 
 <template>
   <WovenCanvas>
-    <Toolbar>
-      <SelectTool />
-    </Toolbar>
+    <template #toolbar>
+      <Toolbar>
+        <SelectTool />
+      </Toolbar>
+    </template>
   </WovenCanvas>
 </template>
 ```

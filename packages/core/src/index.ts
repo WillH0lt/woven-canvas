@@ -150,6 +150,7 @@ export {
 // types
 export type {
   BlockDefInput,
+  ControlsOptionsInput,
   CursorDefMap,
   EditorOptionsInput,
   EditorResources,
@@ -160,6 +161,7 @@ export type {
 } from './types'
 export {
   BlockDef,
+  ControlsOptions,
   CursorDef,
   GridOptions,
   getPluginResources,

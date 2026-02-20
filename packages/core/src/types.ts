@@ -217,6 +217,45 @@ export type GridOptions = z.infer<typeof GridOptions>
 export type GridOptionsInput = z.input<typeof GridOptions>
 
 /**
+ * Controls configuration options schema.
+ * Maps input methods (mouse buttons, wheel) to tools.
+ */
+export const ControlsOptions = z.object({
+  /**
+   * Tool activated by left mouse button.
+   * @default 'select'
+   */
+  leftMouseTool: z.string().max(32).default('select'),
+
+  /**
+   * Tool activated by middle mouse button.
+   * @default 'hand'
+   */
+  middleMouseTool: z.string().max(32).default('hand'),
+
+  /**
+   * Tool activated by right mouse button.
+   * @default 'menu'
+   */
+  rightMouseTool: z.string().max(32).default('menu'),
+
+  /**
+   * Tool activated by mouse wheel.
+   * @default 'scroll'
+   */
+  wheelTool: z.string().max(32).default('scroll'),
+
+  /**
+   * Tool activated by mouse wheel with modifier key held.
+   * @default 'zoom'
+   */
+  modWheelTool: z.string().max(32).default('zoom'),
+})
+
+export type ControlsOptions = z.infer<typeof ControlsOptions>
+export type ControlsOptionsInput = z.input<typeof ControlsOptions>
+
+/**
  * Editor configuration options schema.
  */
 export const EditorOptionsSchema = z.object({
@@ -301,6 +340,20 @@ export const EditorOptionsSchema = z.object({
    * Use this when you want full control over fonts.
    */
   omitPluginFonts: z.boolean().default(false),
+
+  /**
+   * Initial controls configuration.
+   * Override default tool mappings for mouse buttons, wheel, etc.
+   *
+   * @example
+   * ```typescript
+   * controls: {
+   *   leftMouseTool: 'pen',      // Start with pen tool active
+   *   middleMouseTool: 'hand',   // Middle mouse pans
+   * }
+   * ```
+   */
+  controls: z.custom<ControlsOptionsInput>().optional(),
 })
 
 export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>

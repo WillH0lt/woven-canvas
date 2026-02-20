@@ -1,0 +1,27 @@
+---
+title: Using the Editor API
+description: Manipulate the contents of the canvas using the editor API.
+---
+
+import { Code, Tabs, TabItem } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import EditorApiExample from './EditorApiExample.vue';
+import EditorApiExampleRaw from './EditorApiExample.vue?raw';
+import PaletteRaw from './Palette.vue?raw';
+
+Manipulate the contents of the canvas using the editor API.
+
+<ExampleContainer>
+  <EditorApiExample client:only="vue" />
+</ExampleContainer>
+
+<Tabs>
+  <TabItem label="EditorApiExample.vue">
+    <Code code={EditorApiExampleRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="Palette.vue">
+    <Code code={PaletteRaw} lang="vue" />
+  </TabItem>
+</Tabs>
+
+This example creates shapes on mount using the `@ready` event. The `Palette` component demonstrates `useEditorContext()` to access the editor from a child component, using `defineQuery` to find all shapes and `Shape.write()` to update their fill colors.

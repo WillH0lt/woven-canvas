@@ -20,7 +20,14 @@ Pre-built block renderers you can use directly or as reference:
 | `Eraser`     | Renders eraser cursor indicator                 |
 
 ```typescript
-import { ShapeBlock, TextBlock, ImageBlock, PenStroke, ArcArrow, ElbowArrow } from "@woven-canvas/vue";
+import {
+  ShapeBlock,
+  TextBlock,
+  ImageBlock,
+  PenStroke,
+  ArcArrow,
+  ElbowArrow,
+} from "@woven-canvas/vue";
 ```
 
 ## Tool Components

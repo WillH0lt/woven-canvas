@@ -84,7 +84,12 @@ const style = computed(() => ({
 <template>
   <div :style="style">
     <div style="display: flex; align-items: center; gap: 8px">
-      <input type="checkbox" :checked="task?.completed" @change="toggleComplete" @pointerdown.stop />
+      <input
+        type="checkbox"
+        :checked="task?.completed"
+        @change="toggleComplete"
+        @pointerdown.stop
+      />
       <span
         :style="{
           width: '8px',
@@ -93,7 +98,9 @@ const style = computed(() => ({
           backgroundColor: priorityColors[task?.priority ?? 'medium'],
         }"
       />
-      <strong :style="{ textDecoration: task?.completed ? 'line-through' : 'none' }">
+      <strong
+        :style="{ textDecoration: task?.completed ? 'line-through' : 'none' }"
+      >
         {{ task?.title }}
       </strong>
     </div>
@@ -128,7 +135,10 @@ const blockDefs = [
 </script>
 
 <template>
-  <WovenCanvas :editor="{ components: [TaskData], blockDefs }" style="width: 100vw; height: 100vh">
+  <WovenCanvas
+    :editor="{ components: [TaskData], blockDefs }"
+    style="width: 100vw; height: 100vh"
+  >
     <template #block:task-card="props">
       <TaskCard :entity-id="props.entityId" :selected="props.selected" />
     </template>
@@ -160,8 +170,18 @@ const snapshot = JSON.stringify({
 </script>
 
 <template>
-  <ToolbarButton name="task" tooltip="Task Card" :placement-snapshot="snapshot" :drag-out-snapshot="snapshot">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+  <ToolbarButton
+    name="task"
+    tooltip="Task Card"
+    :placement-snapshot="snapshot"
+    :drag-out-snapshot="snapshot"
+  >
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
       <rect x="3" y="3" width="14" height="14" rx="2" />
       <path d="M7 10l2 2 4-4" />
     </svg>
@@ -217,23 +237,50 @@ const TaskData = defineCanvasComponent("task-data", {
 });
 
 // 2. Block definition
-const blockDefs = [{ tag: "task-card", resizeMode: "free" as const, canRotate: false, components: [TaskData] }];
+const blockDefs = [
+  {
+    tag: "task-card",
+    resizeMode: "free" as const,
+    canRotate: false,
+    components: [TaskData],
+  },
+];
 
 // 3. Tool snapshot
 const taskSnapshot = JSON.stringify({
   block: { tag: "task-card", size: [240, 100] },
-  "task-data": { title: "New Task", description: "Click to edit", completed: false, priority: "medium" },
+  "task-data": {
+    title: "New Task",
+    description: "Click to edit",
+    completed: false,
+    priority: "medium",
+  },
 });
 </script>
 
 <template>
-  <WovenCanvas :editor="{ components: [TaskData], blockDefs }" style="width: 100vw; height: 100vh">
+  <WovenCanvas
+    :editor="{ components: [TaskData], blockDefs }"
+    style="width: 100vw; height: 100vh"
+  >
     <template #toolbar>
-      <div style="display: flex; gap: 4px; padding: 8px; background: #374151; border-radius: 8px">
+      <div
+        style="display: flex; gap: 4px; padding: 8px; background: #374151; border-radius: 8px"
+      >
         <SelectTool />
         <HandTool />
-        <ToolbarButton name="task" tooltip="Task" :placement-snapshot="taskSnapshot" :drag-out-snapshot="taskSnapshot">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+        <ToolbarButton
+          name="task"
+          tooltip="Task"
+          :placement-snapshot="taskSnapshot"
+          :drag-out-snapshot="taskSnapshot"
+        >
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
             <rect x="3" y="3" width="14" height="14" rx="2" />
             <path d="M7 10l2 2 4-4" />
           </svg>

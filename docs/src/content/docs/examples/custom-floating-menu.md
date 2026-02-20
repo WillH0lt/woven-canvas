@@ -37,7 +37,12 @@ The slot name follows the pattern `button:<component-name>`. It only appears whe
 <!-- TaskPriorityButton.vue -->
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { MenuButton, MenuDropdown, useEditorContext, useComponents } from "@woven-canvas/vue";
+import {
+  MenuButton,
+  MenuDropdown,
+  useEditorContext,
+  useComponents,
+} from "@woven-canvas/vue";
 import { TaskData } from "./TaskData";
 
 const props = defineProps<{
@@ -49,7 +54,9 @@ const tasks = useComponents(props.entityIds, TaskData);
 
 // Compute current priority (use first if mixed)
 const currentPriority = computed(() => {
-  const priorities = tasks.value.filter((t): t is NonNullable<typeof t> => t !== null).map((t) => t.priority);
+  const priorities = tasks.value
+    .filter((t): t is NonNullable<typeof t> => t !== null)
+    .map((t) => t.priority);
 
   if (priorities.length === 0) return "medium";
   const allSame = priorities.every((p) => p === priorities[0]);
@@ -159,7 +166,13 @@ Here's a more complete example with tooltip support:
 ```vue
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { MenuButton, MenuDropdown, useEditorContext, useComponents, useTooltipSingleton } from "@woven-canvas/vue";
+import {
+  MenuButton,
+  MenuDropdown,
+  useEditorContext,
+  useComponents,
+  useTooltipSingleton,
+} from "@woven-canvas/vue";
 import { TaskData } from "./TaskData";
 
 const props = defineProps<{ entityIds: number[] }>();
@@ -185,7 +198,12 @@ function setPriority(priority: "low" | "medium" | "high") {
   isOpen.value = false;
 }
 
-const colors = { low: "#22c55e", medium: "#eab308", high: "#ef4444", mixed: "#9ca3af" };
+const colors = {
+  low: "#22c55e",
+  medium: "#eab308",
+  high: "#ef4444",
+  mixed: "#9ca3af",
+};
 const labels = { low: "Low", medium: "Medium", high: "High" };
 
 function handleMouseEnter(event: MouseEvent, text: string) {
@@ -200,7 +218,14 @@ function handleMouseEnter(event: MouseEvent, text: string) {
     :menu-open="isOpen"
     @click="isOpen = !isOpen"
   >
-    <div :style="{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: colors[currentPriority] }" />
+    <div
+      :style="{
+        width: '16px',
+        height: '16px',
+        borderRadius: '50%',
+        backgroundColor: colors[currentPriority],
+      }"
+    />
 
     <MenuDropdown v-if="isOpen" @close="isOpen = false">
       <button
@@ -211,7 +236,14 @@ function handleMouseEnter(event: MouseEvent, text: string) {
         @mouseenter="handleMouseEnter($event, labels[p])"
         @mouseleave="hideTooltip"
       >
-        <div :style="{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: colors[p] }" />
+        <div
+          :style="{
+            width: '16px',
+            height: '16px',
+            borderRadius: '50%',
+            backgroundColor: colors[p],
+          }"
+        />
       </button>
     </MenuDropdown>
   </MenuButton>

@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import '@woven-canvas/vue/style.css'
 import { type Editor, Block, addComponent, createEntity, RankBounds, Synced, Shape } from '@woven-canvas/core'
 import { SelectAll } from '@woven-canvas/plugin-selection'
 import { WovenCanvas } from '@woven-canvas/vue'
-import '@woven-canvas/vue/style.css'
+import Palette from './Palette.vue'
 
 function handleReady(editor: Editor) {
   // Create 3 shapes in a row
@@ -34,5 +35,6 @@ function handleReady(editor: Editor) {
 
 <template>
   <WovenCanvas @ready="handleReady">
+    <Palette />
   </WovenCanvas>
 </template>

@@ -1,13 +1,118 @@
 ---
-title: Collaboration
-description: Real-time multiplayer and presence awareness
+title: Document Store
+description: Saving canvas state and real-time multiplayer
 ---
 
-Woven Canvas supports real-time collaboration out of the box. Multiple users can edit the same canvas simultaneously with automatic conflict resolution and presence awareness.
+Woven Canvas provides built-in persistence to IndexedDB and optional WebSocket synchronization.
 
-## Quick Setup
+## Local Persistence
 
-Connect to a sync server:
+Enable local persistence with a document ID:
+
+```vue
+<script setup lang="ts">
+import { WovenCanvas } from "@woven-canvas/vue";
+
+const storeOptions = {
+  persistence: {
+    documentId: "my-canvas",
+  },
+};
+</script>
+
+<template>
+  <WovenCanvas :store="storeOptions" />
+</template>
+```
+
+Changes are automatically saved to IndexedDB. When the page reloads, the canvas restores to its previous state.
+
+### Multiple Documents
+
+Use different document IDs for separate canvases:
+
+```vue
+<template>
+  <WovenCanvas :store="{ persistence: { documentId: 'project-a' } }" />
+  <WovenCanvas :store="{ persistence: { documentId: 'project-b' } }" />
+</template>
+```
+
+## Undo/Redo
+
+History is automatically tracked. Use keyboard shortcuts or commands:
+
+- **Undo**: `Ctrl+Z` (or `Cmd+Z` on Mac)
+- **Redo**: `Ctrl+Y` or `Ctrl+Shift+Z`
+
+Programmatically:
+
+```typescript
+import { Undo, Redo } from "@woven-canvas/core";
+
+nextEditorTick((ctx) => {
+  Undo.spawn(ctx); // Undo last action
+  Redo.spawn(ctx); // Redo last undone action
+});
+```
+
+## Sync Behaviors
+
+Each component can specify how it should be synchronized:
+
+| Behavior    | Persisted | Synced | Use Case                   |
+| ----------- | --------- | ------ | -------------------------- |
+| `persist`   | Yes       | Yes    | Document content           |
+| `ephemeral` | No        | Yes    | Cursor position, selection |
+| `local`     | Yes       | No     | User preferences           |
+| `none`      | No        | No     | Temporary UI state         |
+
+Define sync behavior when creating components:
+
+```typescript
+import { defineCanvasComponent, field } from "@woven-canvas/vue";
+
+// Synced and persisted (default)
+const DocumentData = defineCanvasComponent(
+  "doc-data",
+  {
+    title: field.string(),
+  },
+  { sync: "persist" },
+);
+
+// Synced but not persisted
+const CursorState = defineCanvasComponent(
+  "cursor",
+  {
+    x: field.float32(),
+    y: field.float32(),
+  },
+  { sync: "ephemeral" },
+);
+
+// Local only
+const UserPrefs = defineCanvasComponent(
+  "prefs",
+  {
+    theme: field.string().default("dark"),
+  },
+  { sync: "local" },
+);
+
+// Runtime only
+const HoverState = defineCanvasComponent(
+  "hover",
+  {
+    entityId: field.uint32(),
+  },
+  { sync: "none" },
+);
+```
+
+## Server Sync
+
+Connect to a WebSocket server for backup and collaboration:
 
 ```vue
 <script setup lang="ts">
@@ -109,7 +214,9 @@ When another user selects a block, it's highlighted with their color. This uses 
 <template #block:my-block="{ entityId, block, held }">
   <div
     :style="{
-      outline: held?.sessionId ? `2px solid ${getUserColor(held.sessionId)}` : 'none',
+      outline: held?.sessionId
+        ? `2px solid ${getUserColor(held.sessionId)}`
+        : 'none',
     }"
   >
     <!-- block content -->
@@ -152,7 +259,7 @@ Monitor connection status:
 ## WebSocket Options
 
 ```typescript
-const syncOptions = {
+const storeOptions = {
   websocket: {
     url: "wss://your-server.com/sync",
     documentId: "my-document",

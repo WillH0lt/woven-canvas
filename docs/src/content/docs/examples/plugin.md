@@ -73,7 +73,10 @@ import TaskCard from "./components/TaskCard.vue";
 </script>
 
 <template>
-  <WovenCanvas :editor="{ plugins: [TaskPlugin({ defaultPriority: 'high' })] }" style="width: 100vw; height: 100vh">
+  <WovenCanvas
+    :editor="{ plugins: [TaskPlugin({ defaultPriority: 'high' })] }"
+    style="width: 100vw; height: 100vh"
+  >
     <template #block:task-card="props">
       <TaskCard v-bind="props" />
     </template>
@@ -197,7 +200,14 @@ Here's the full task plugin:
 ```typescript
 // plugins/TaskPlugin.ts
 import type { EditorPlugin } from "@woven-canvas/core";
-import { defineCanvasComponent, defineCommand, defineEditorSystem, defineQuery, field, Key } from "@woven-canvas/core";
+import {
+  defineCanvasComponent,
+  defineCommand,
+  defineEditorSystem,
+  defineQuery,
+  field,
+  Key,
+} from "@woven-canvas/core";
 import { Selected } from "@woven-canvas/plugin-selection";
 
 // Component

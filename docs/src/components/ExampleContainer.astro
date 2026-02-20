@@ -1,13 +1,13 @@
 ---
 interface Props {
-  height?: string;
   buttonText?: string;
+  height?: number;
 }
 
-const { height = "400px", buttonText = "Try it" } = Astro.props;
+const { buttonText = "Try it", height = 400 } = Astro.props;
 ---
 
-<div class="example-container" style={`height: ${height}`} data-example-container>
+<div class="example-container" data-example-container style={`height: ${height}px`}>
   <div class="canvas-wrapper" data-canvas-wrapper>
     <slot />
   </div>

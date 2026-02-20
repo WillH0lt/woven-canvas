@@ -20,7 +20,7 @@ import "@woven-canvas/vue/style.css";
 </script>
 
 <template>
-  <WovenCanvas style="width: 100vw; height: 100vh" />
+  <WovenCanvas />
 </template>
 ```
 
@@ -83,7 +83,7 @@ const clientId = crypto.randomUUID(); // Unique ID for this client
 </template>
 ```
 
-With this setup, users can work offline and their changes automatically merge when they reconnect.
+With this setup, users can work offline and their changes automatically merge when they reconnect. Woven Canvas uses [@woven-ecs/canvas-store](https://github.com/WillH0lt/woven-ecs/tree/main/packages/canvas-store) to handle syncing, see the [Canvas Store docs](https://woven-ecs.dev/canvas-store/) for more details on configuring the server and customizing sync behavior.
 
 ## Reactive Composables
 
@@ -138,7 +138,7 @@ watchEffect(() => {
 
 Now that you have a working canvas, learn how it works:
 
-- [The Editor](/learn/editor/) — Understand the core architecture
+- [Architecture](/learn/architecture/) — Understand the core architecture
 - [Blocks](/learn/blocks/) — How canvas elements work
 - [Tools](/learn/tools/) — How toolbar tools work
 - [User Interface](/learn/user-interface/) — Customize the UI

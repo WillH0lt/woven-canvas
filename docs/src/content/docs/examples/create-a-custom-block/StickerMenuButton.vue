@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { MenuButton, MenuDropdown, useEditorContext, useComponents } from '@woven-canvas/vue'
-import { StickerData } from './StickerData'
+import { computed } from 'vue'
+import { IconChevronDown, MenuDropdown, useComponents, useEditorContext } from '@woven-canvas/vue'
+import { Sticker } from './Sticker'
 
 const props = defineProps<{
   entityIds: number[]
@@ -11,59 +11,77 @@ const props = defineProps<{
 const emojis = ['😀', '😎', '🎉', '⭐', '❤️', '🔥', '👍', '🚀', '🌈', '🎨', '💡', '✨']
 
 // Get sticker data for all selected entities
-const stickers = useComponents(() => props.entityIds, StickerData)
+const stickers = useComponents(() => props.entityIds, Sticker)
 
 // Current emoji (first selected, or mixed indicator)
 const currentEmoji = computed(() => {
-  const values = [...stickers.value.values()].filter(Boolean).map((s) => s!.emoji)
+  const values = [...stickers.value.values()].map((s) => s?.emoji)
   if (values.length === 0) return '😀'
   const allSame = values.every((e) => e === values[0])
   return allSame ? values[0] : '🔀'
 })
 
-// Dropdown state
-const isOpen = ref(false)
-
 // Editor context for writes
 const { nextEditorTick } = useEditorContext()
 
-function setEmoji(emoji: string) {
+function setEmoji(emoji: string, close: () => void) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const sticker = StickerData.write(ctx, entityId)
+      const sticker = Sticker.write(ctx, entityId)
       sticker.emoji = emoji
     }
   })
-  isOpen.value = false
+  close()
 }
 </script>
 
 <template>
-  <MenuButton tooltip="Change Emoji" :menu-open="isOpen" @click="isOpen = !isOpen">
-    <span style="font-size: 16px; line-height: 1">{{ currentEmoji }}</span>
+  <MenuDropdown title="Sticker">
+    <template #button>
+      <div class="emoji-button">
+        <span class="emoji-display">{{ currentEmoji }}</span>
+        <IconChevronDown />
+      </div>
+    </template>
 
-    <MenuDropdown v-if="isOpen" @close="isOpen = false">
+    <template #dropdown="{ close }">
       <div class="emoji-grid">
         <button
           v-for="emoji in emojis"
           :key="emoji"
           class="emoji-option"
           :class="{ 'is-active': currentEmoji === emoji }"
-          @click="setEmoji(emoji)"
+          @click="setEmoji(emoji, close)"
         >
           {{ emoji }}
         </button>
       </div>
-    </MenuDropdown>
-  </MenuButton>
+    </template>
+  </MenuDropdown>
 </template>
 
 <style scoped>
+.emoji-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.emoji-display {
+  font-size: 16px;
+  line-height: 1;
+}
+
 .emoji-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
   padding: 8px;
+  background: var(--ic-gray-700);
+  border-radius: var(--ic-menu-border-radius);
 }
 
 .emoji-option {
@@ -81,10 +99,10 @@ function setEmoji(emoji: string) {
 }
 
 .emoji-option:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--ic-gray-600);
 }
 
 .emoji-option.is-active {
-  background: rgba(59, 130, 246, 0.2);
+  background: var(--ic-primary);
 }
 </style>

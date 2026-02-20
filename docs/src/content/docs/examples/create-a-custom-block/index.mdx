@@ -1,0 +1,69 @@
+---
+title: "Create a Custom Block"
+description: Build a custom sticker block with tool and floating menu from scratch
+---
+
+import { Code, Tabs, TabItem } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import StickerBlockExample from './StickerBlockExample.vue';
+
+import AppRaw from './App.vue?raw';
+import StickerRaw from './Sticker.ts?raw';
+import StickerBlockRaw from './StickerBlock.vue?raw';
+import StickerToolRaw from './StickerTool.vue?raw';
+import StickerMenuButtonRaw from './StickerMenuButton.vue?raw';
+
+This example creates a "sticker" block—a large emoji that can be placed, rotated, and resized on the canvas. It includes a custom toolbar button and a floating menu emoji picker.
+
+<ExampleContainer>
+  <StickerBlockExample client:only="vue" />
+</ExampleContainer>
+
+<Tabs>
+  <TabItem label="App.vue">
+    <Code code={AppRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="Sticker.ts">
+    <Code code={StickerRaw} lang="typescript" />
+  </TabItem>
+  <TabItem label="StickerBlock.vue">
+    <Code code={StickerBlockRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="StickerTool.vue">
+    <Code code={StickerToolRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="StickerMenuButton.vue">
+    <Code code={StickerMenuButtonRaw} lang="vue" />
+  </TabItem>
+</Tabs>
+
+## How It Works
+
+### Sticker.ts — Canvas Component
+
+Defines a canvas component to store the sticker's emoji. The `name: "sticker"` is used for slot naming (`#block:sticker`, `#button:sticker`).
+
+### StickerBlock.vue — Block Renderer
+
+Renders the emoji using `useComponent()` to reactively read the sticker data. Uses CSS container queries to scale the emoji with the block size.
+
+### App.vue — Block Definition
+
+Registers the block type with `tag` and `components`. The `#block:sticker` slot renders `StickerBlock` for any block with `tag: "sticker"`.
+
+### StickerTool.vue — Toolbar Button
+
+Creates a toolbar button using `ToolbarButton`. The `placement-snapshot` defines what gets created when the tool is used—a block with `tag: "sticker"` and initial emoji data.
+
+### StickerMenuButton.vue — Floating Menu
+
+Adds an emoji picker to the floating menu using `MenuButton` and `MenuDropdown`. Uses `useComponents()` to read data from all selected stickers, and `nextEditorTick()` to write changes.
+
+The slot `#button:sticker` only appears when all selected blocks have the Sticker component.
+
+## Related
+
+- [Custom Block](/examples/custom-block/) — Block definition options
+- [Custom Tool](/examples/custom-tool/) — Tool lifecycle and options
+- [Custom Floating Menu](/examples/custom-floating-menu/) — Menu customization
+- [Plugin](/examples/plugin/) — Package into a reusable plugin

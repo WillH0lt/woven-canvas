@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useComponent } from '@woven-canvas/vue'
-import { StickerData } from './StickerData'
+import { Sticker } from './Sticker'
 
 const props = defineProps<{
   entityId: number
@@ -9,17 +9,14 @@ const props = defineProps<{
 }>()
 
 // Subscribe to sticker data reactively
-const sticker = useComponent(() => props.entityId, StickerData)
+const sticker = useComponent(props.entityId, Sticker)
 
-const style = computed(() => ({
+const containerStyle = computed(() => ({
   width: '100%',
   height: '100%',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: 'min(80%, 80cqmin)', // Scale with container
-  lineHeight: 1,
-  userSelect: 'none' as const,
   containerType: 'size' as const,
   // Subtle shadow when selected
   filter: props.selected ? 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))' : 'none',
@@ -28,7 +25,15 @@ const style = computed(() => ({
 </script>
 
 <template>
-  <div :style="style">
-    {{ sticker?.emoji }}
+  <div :style="containerStyle">
+    <span class="emoji">{{ sticker?.emoji }}</span>
   </div>
 </template>
+
+<style scoped>
+.emoji {
+  font-size: 90cqmin;
+  line-height: 1;
+  user-select: none;
+}
+</style>

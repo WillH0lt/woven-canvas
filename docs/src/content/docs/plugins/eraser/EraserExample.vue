@@ -38,10 +38,16 @@ function handleReady(editor: Editor) {
 </script>
 
 <template>
-  <WovenCanvas @ready="handleReady">
-    <Toolbar>
-      <SelectTool />
-      <EraserTool />
-    </Toolbar>
+  <WovenCanvas
+    @ready="handleReady"
+    :plugin-options="{ controls: false, pen: false, arrows: false }"
+    :controls="{ leftMouseTool: 'eraser' }"
+  >
+    <template #toolbar>
+      <Toolbar>
+        <SelectTool />
+        <EraserTool />
+      </Toolbar>
+    </template>
   </WovenCanvas>
 </template>

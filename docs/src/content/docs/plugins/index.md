@@ -11,6 +11,7 @@ Woven Canvas includes several built-in plugins that provide core functionality:
 
 | Plugin                                       | Description                                          |
 | -------------------------------------------- | ---------------------------------------------------- |
+| [Core](/plugins/core/)                       | Input handling, block types, and essential systems   |
 | [Selection](/plugins/selection/)             | Core selection, transform, clipboard, and z-ordering |
 | [Canvas Controls](/plugins/canvas-controls/) | Pan, zoom, and scroll navigation                     |
 | [Pen](/plugins/pen/)                         | Freehand drawing with pressure sensitivity           |
@@ -19,40 +20,37 @@ Woven Canvas includes several built-in plugins that provide core functionality:
 
 ## Using Plugins
 
-Plugins are passed to the `WovenCanvas` component via the `editor` prop:
+All built-in plugins are included by default when using `WovenCanvas`. You can configure or disable them via the `pluginOptions` prop:
 
 ```vue
-<script setup lang="ts">
-import { WovenCanvas } from "@woven-canvas/vue";
-import { SelectionPlugin } from "@woven-canvas/plugin-selection";
-import { CanvasControlsPlugin } from "@woven-canvas/plugin-canvas-controls";
-import { PenPlugin } from "@woven-canvas/plugin-pen";
-</script>
-
 <template>
+  <!-- All plugins enabled with defaults -->
+  <WovenCanvas />
+
+  <!-- Disable specific plugins -->
+  <WovenCanvas :plugin-options="{ pen: false, eraser: false }" />
+
+  <!-- Configure plugin options -->
   <WovenCanvas
-    :editor="{
-      plugins: [SelectionPlugin(), CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 5 }), PenPlugin()],
+    :plugin-options="{
+      selection: { edgeScrolling: { edgeSizePx: 20 } },
+      controls: { minZoom: 0.1, maxZoom: 5 },
     }"
   />
 </template>
 ```
 
-Most plugins can be used with default options (no parentheses) or customized:
+To add custom plugins alongside the built-ins, use the `editor` prop:
 
-```typescript
-// Default options
-plugins: [SelectionPlugin()];
+```vue
+<script setup lang="ts">
+import { WovenCanvas } from "@woven-canvas/vue";
+import { MyCustomPlugin } from "./MyCustomPlugin";
+</script>
 
-// Custom options
-plugins: [
-  SelectionPlugin({
-    edgeScrolling: {
-      enabled: true,
-      edgeSizePx: 20,
-    },
-  }),
-];
+<template>
+  <WovenCanvas :editor="{ plugins: [MyCustomPlugin()] }" />
+</template>
 ```
 
 ## Plugin Architecture
@@ -66,6 +64,6 @@ Each plugin can provide:
 - **Commands** — Actions that can be triggered programmatically
 - **Resources** — Configuration options accessible at runtime
 
-For details on building your own plugins, see [Creating Custom Plugins](/plugins/custom-plugin/).
+For details on building your own plugins, see [Creating Plugins](/learn/creating-plugins/).
 
 For a deep dive into the Entity Component System architecture, see the [woven-ecs documentation](https://woven-ecs.dev).

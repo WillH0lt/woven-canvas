@@ -3,8 +3,8 @@ title: Woven Canvas
 description: A highly customizable infinite canvas SDK for Vue
 template: splash
 hero:
-  title: The Infinite Canvas SDK for Vue
-  tagline: Build whiteboards, design tools, and collaborative apps with a flexible, extensible foundation.
+  title: An infinite canvas SDK built for Vue.
+  tagline: Create whiteboards, design tools, and collaborative apps with Woven Canvas
   actions:
     - text: Get Started
       link: /quick-start/
@@ -18,78 +18,84 @@ hero:
 import { CardGrid } from '@astrojs/starlight/components';
 import Card from '../../components/Card.astro';
 import Ribbons from '../../components/Ribbons.astro';
+import ExampleContainer from '../../components/ExampleContainer.astro';
+import HomepageExample from './HomepageExample.vue';
 
 <Ribbons />
 
-## Why Woven Canvas?
+<div style="display: flex; flex-wrap: wrap-reverse; gap: 1.5rem; align-items: stretch;">
+  <div style="flex: 1 1 300px; min-width: 0; height: 400px; overflow: auto; font-size: 0.85em;">
+
+```vue
+<script setup lang="ts">
+import '@woven-canvas/vue/style.css'
+import { WovenCanvas } from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas />
+</template>
+```
+
+  </div>
+  <div style="flex: 2 1 400px;">
+    <ExampleContainer>
+      <HomepageExample client:only="vue" />
+    </ExampleContainer>
+  </div>
+</div>
+
+## Key Features
 
 <CardGrid>
+  <Card title="Open Source" icon="lucide:file-code">
+    Unrestricted MIT license. Read the source code, create issues, and contribute on GitHub.
+  </Card>
   <Card title="Fully Customizable" icon="lucide:puzzle">
     Replace any built-in block with your own Vue component. Create custom tools, menus, and interactions that fit your exact needs.
   </Card>
   <Card title="Built for Vue" icon="lucide:code">
-    First-class Vue 3 integration with reactive composables. Use `useComponent`, `useQuery`, and `useSingleton` to build reactive UI.
+    First-class Vue 3 integration with reactive composables. Access canvas state with `useComponent`, `useQuery`, and `useSingleton`.
   </Card>
   <Card title="Plugin Architecture" icon="lucide:layers">
-    Extend the editor with plugins that add components, systems, keybinds, and more. Compose functionality from reusable pieces.
+    Extend the editor with plugins that add blocks, behaviors, keybinds, and more.
   </Card>
-  <Card title="Multiplayer Ready" icon="lucide:users">
-    Built-in support for real-time collaboration with conflict resolution, presence awareness, and offline-first architecture.
+  <Card title="Real-time Collaboration" icon="lucide:users">
+    Built-in support for multiplayer with simultaneous editing, live cursors, and local-first architecture.
+  </Card>
+  <Card title="Canvas Essentials" icon="lucide:move">
+    Pan, zoom, select, resize, rotate, copy/paste, freehand drawing, arrows, and eraser - all included out of the box.
   </Card>
 </CardGrid>
 
-## Quick Example
+## Easy to Customize
 
-```vue
-<script setup lang="ts">
-import { WovenCanvas } from '@woven-canvas/vue'
-import '@woven-canvas/vue/style.css'
-</script>
-
-<template>
-  <WovenCanvas style="width: 100vw; height: 100vh" />
-</template>
-```
-
-That's it! You now have a fully functional infinite canvas with:
-- Pan and zoom controls
-- Selection and multi-select
-- Built-in shapes, text, images, pen, and arrows
-- Undo/redo support
-
-## Make It Yours
-
-The real power of Woven Canvas is customization. Override any block with your own component:
+Fully customize every aspect of the canvas. Replace built-in blocks with your own Vue components, create custom tools and interactions, and access the full power of the editor through a rich API.
 
 ```vue
 <template>
   <WovenCanvas>
     <!-- Replace the default sticky note with your own -->
-    <template #block:sticky-note="{ entityId, block }">
-      <MyCustomStickyNote :entity-id="entityId" :block="block" />
+    <template #block:sticky-note="props">
+      <MyCustomStickyNote v-bind="props" />
     </template>
 
     <!-- Add a completely new block type -->
-    <template #block:kanban-card="{ entityId, block }">
-      <KanbanCard :entity-id="entityId" :block="block" />
+    <template #block:my-card="props">
+      <MyCard v-bind="props" />
     </template>
   </WovenCanvas>
 </template>
 ```
 
-## Features
-
 - **Custom Blocks** — Render any Vue component as a canvas block
 - **Custom Tools** — Add toolbar buttons that create your block types
-- **Floating Menus** — Context-sensitive menus for selected blocks
-- **Plugins** — Package components, systems, and keybinds into reusable modules
-- **Persistence** — Local IndexedDB storage with automatic save/restore
-- **Real-time Sync** — WebSocket-based multiplayer with conflict resolution
-- **Presence** — See other users' cursors and selections in real-time
+- **Custom Menus** — Context-sensitive menus for selected blocks
+- **Custom Everything** — Full access to canvas state and events for limitless customization
 
 ## Read the Docs
 
 - [Quick Start](/quick-start/) — Install and render your first canvas
-- [The Editor](/learn/editor/) — Understand the core architecture
+- [Architecture](/learn/architecture/) — Understand the core architecture
 - [Blocks](/learn/blocks/) — How canvas elements work
 - [Custom Block Example](/examples/custom-block/) — Build your own block type

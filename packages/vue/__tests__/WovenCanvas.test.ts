@@ -267,9 +267,11 @@ describe('WovenCanvas', () => {
 
       mount(WovenCanvas, {
         props: {
-          controls: {
-            minZoom: 0.1,
-            maxZoom: 10,
+          pluginOptions: {
+            controls: {
+              minZoom: 0.1,
+              maxZoom: 10,
+            },
           },
         },
       })

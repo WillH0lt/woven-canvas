@@ -14,25 +14,27 @@ The Eraser plugin provides an eraser tool that removes objects by drawing over t
   <EraserExample client:only="vue" />
 </ExampleContainer>
 
-<Code code={EraserExampleRaw} lang="vue" title="EraserExample.vue" />
-
-Select the Eraser tool and draw over objects to delete them. Objects turn red when marked for deletion. Release to confirm or press Escape to cancel.
-
-## Installation
-
-```bash
-npm install @woven-canvas/plugin-eraser
-```
+- Select the Eraser tool and draw over objects to delete them
+- Objects turn red when marked for deletion
+- Release to confirm or press Escape to cancel
 
 ## Usage
 
-```typescript
-import { EraserPlugin } from '@woven-canvas/plugin-eraser'
+The Eraser plugin is included by default when using `WovenCanvas`. To configure it:
 
-const editor = new Editor(element, {
-  plugins: [EraserPlugin()]
-})
+```vue
+<template>
+  <WovenCanvas
+    :plugin-options="{
+      eraser: { 
+      tailRadius: 16,
+      tailLength: 10,
+    }
+    }"
+  />
+</template>
 ```
+
 
 ## Options
 
@@ -104,15 +106,17 @@ The Vue package provides the eraser toolbar button:
 
 ```vue
 <script setup lang="ts">
-import { EraserTool, SelectTool, Toolbar } from '@woven-canvas/vue'
+import { WovenCanvas, EraserTool, SelectTool, Toolbar } from '@woven-canvas/vue'
 </script>
 
 <template>
   <WovenCanvas>
-    <Toolbar>
-      <SelectTool />
-      <EraserTool />
-    </Toolbar>
+    <template #toolbar>
+      <Toolbar>
+        <SelectTool />
+        <EraserTool />
+      </Toolbar>
+    </template>
   </WovenCanvas>
 </template>
 ```

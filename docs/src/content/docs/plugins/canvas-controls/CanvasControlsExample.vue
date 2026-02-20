@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { type Editor, Block, addComponent, createEntity, RankBounds, Synced, Shape } from '@woven-canvas/core'
-import { WovenCanvas, HandTool, SelectTool, Toolbar } from '@woven-canvas/vue'
+import { WovenCanvas, HandTool, Toolbar } from '@woven-canvas/vue'
 import '@woven-canvas/vue/style.css'
 
 function handleReady(editor: Editor) {
-  // Create a grid of shapes to navigate around
   editor.nextTick((ctx) => {
+    // Create a grid of shapes to navigate around
     const colors = [
       { r: 99, g: 102, b: 241 },
       { r: 236, g: 72, b: 153 },
@@ -39,10 +39,15 @@ function handleReady(editor: Editor) {
 </script>
 
 <template>
-  <WovenCanvas @ready="handleReady">
-    <Toolbar>
-      <SelectTool />
-      <HandTool />
-    </Toolbar>
+  <WovenCanvas
+    @ready="handleReady"
+    :plugin-options="{ eraser: false, pen: false, arrows: false }"
+    :controls="{ leftMouseTool: 'hand' }"
+  >
+    <template #toolbar>
+      <Toolbar>
+        <HandTool />
+      </Toolbar>
+    </template>
   </WovenCanvas>
 </template>

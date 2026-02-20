@@ -1,8 +1,16 @@
-import type { Context } from '@woven-canvas/core'
+import type { Context, Editor } from '@woven-canvas/core'
 import { inject } from 'vue'
 import { WOVEN_CANVAS_KEY } from '../injection'
 
 export interface EditorContext {
+  /**
+   * Get the editor instance directly.
+   * Returns null if the editor hasn't initialized yet.
+   *
+   * @returns The Editor instance or null
+   */
+  getEditor(): Editor | null
+
   /**
    * Execute a callback on the next editor tick.
    * This is the recommended way to make changes to the editor state.
@@ -69,6 +77,7 @@ export function useEditorContext(): EditorContext {
   }
 
   return {
+    getEditor: () => canvasContext.getEditor(),
     nextEditorTick(callback?: (ctx: Context) => void): Promise<Context> {
       return new Promise((resolve) => {
         const editor = canvasContext.getEditor()

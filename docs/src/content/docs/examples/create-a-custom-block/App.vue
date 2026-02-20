@@ -1,38 +1,35 @@
 <script setup lang="ts">
-import { WovenCanvas, SelectTool, HandTool, FloatingMenuBar } from '@woven-canvas/vue'
+import { WovenCanvas, SelectTool, HandTool, FloatingMenuBar, Toolbar } from '@woven-canvas/vue'
 import '@woven-canvas/vue/style.css'
-import { StickerData } from './StickerData'
+import { Sticker } from './Sticker'
 import StickerBlock from './StickerBlock.vue'
 import StickerTool from './StickerTool.vue'
-import StickerEmojiButton from './StickerEmojiButton.vue'
+import StickerMenuButton from './StickerMenuButton.vue'
 
-// Block definition for stickers
 const blockDefs = [
   {
     tag: 'sticker',
-    resizeMode: 'scale' as const,
-    canRotate: true,
-    components: [StickerData],
+    components: [Sticker],
   },
 ]
 </script>
 
 <template>
-  <WovenCanvas :editor="{ components: [StickerData], blockDefs }" style="width: 100%; height: 100%">
+  <WovenCanvas :editor="{ components: [Sticker], blockDefs }">
     <!-- Toolbar -->
     <template #toolbar>
-      <div style="display: flex; gap: 4px; padding: 8px; background: #374151; border-radius: 8px">
+      <Toolbar>
         <SelectTool />
         <HandTool />
         <StickerTool />
-      </div>
+      </Toolbar>
     </template>
 
     <!-- Floating menu with emoji picker -->
     <template #floating-menu>
       <FloatingMenuBar>
-        <template #button:sticker-data="{ entityIds }">
-          <StickerEmojiButton :entity-ids="entityIds" />
+        <template #button:sticker="{ entityIds }">
+          <StickerMenuButton :entity-ids="entityIds" />
         </template>
       </FloatingMenuBar>
     </template>

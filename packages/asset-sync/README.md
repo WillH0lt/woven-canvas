@@ -70,7 +70,11 @@ class AssetManager {
   resumePendingUploads(): Promise<void>;
 
   // Upload an asset (returns when upload completes)
-  upload(identifier: string, blob: Blob, metadata?: AssetMetadata): Promise<void>;
+  upload(
+    identifier: string,
+    blob: Blob,
+    metadata?: AssetMetadata,
+  ): Promise<void>;
 
   // Get URL for display (blob URL for pending, resolved URL otherwise)
   getDisplayUrl(identifier: string): Promise<string | null>;
@@ -94,7 +98,11 @@ Interface for implementing custom storage backends:
 ```typescript
 interface AssetProvider {
   // Upload a blob to storage
-  upload(blob: Blob, identifier: string, metadata?: AssetMetadata): Promise<AssetUploadResult>;
+  upload(
+    blob: Blob,
+    identifier: string,
+    metadata?: AssetMetadata,
+  ): Promise<AssetUploadResult>;
 
   // Resolve an identifier to a displayable URL
   resolveUrl(identifier: string): Promise<string>;

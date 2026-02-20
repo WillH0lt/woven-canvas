@@ -16,6 +16,7 @@ import {
   Edited,
   Opacity,
   User,
+  type ControlsOptionsInput,
   UserData as UserDataZod,
   EventType,
   SINGLETON_ENTITY_ID,
@@ -125,6 +126,9 @@ export interface WovenCanvasProps {
     pen?: false;
     arrows?: ArrowsPluginOptions | false;
   };
+
+  // Initial controls configuration (tool mappings for mouse buttons, wheel, etc.)
+  controls?: ControlsOptionsInput;
 }
 
 const props = defineProps<WovenCanvasProps>();
@@ -136,6 +140,7 @@ const emit = defineEmits<{
 // Define slots - block slots use "block:<tag>" naming, other slots allow overriding built-in UI
 defineSlots<
   {
+    default?: () => any;
     loading?: (props: { isLoading: boolean }) => any;
     background?: (props: { background: BackgroundOptions }) => any;
     "floating-menu"?: () => any;
@@ -420,6 +425,7 @@ onMounted(async () => {
     ...props.editor,
     user: parsedUser,
     plugins: allPlugins,
+    controls: props.controls,
   };
 
   const editor = new Editor(containerRef.value, editorOptions);
@@ -845,10 +851,13 @@ function getBlockStyle(data: BlockData) {
       <UserPresence :users="usersArray" />
     </slot>
 
-    <!-- Toolbar -->
-    <slot name="toolbar">
+    <!-- Toolbar (wait for editor so Controls has correct initial values) -->
+    <slot v-if="editorRef" name="toolbar">
       <Toolbar />
     </slot>
+
+    <!-- Default slot for custom UI overlays -->
+    <slot v-if="editorRef" />
 
     <!-- Offline indicator -->
     <slot name="offline-indicator" :is-online="isOnline">

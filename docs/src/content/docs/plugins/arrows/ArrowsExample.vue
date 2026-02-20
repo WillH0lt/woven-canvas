@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Editor, Block, addComponent, createEntity, RankBounds, Synced, Shape } from '@woven-canvas/core'
-import { WovenCanvas, ArcArrowTool, ElbowArrowTool, SelectTool, Toolbar, ColorButton } from '@woven-canvas/vue'
+import { WovenCanvas, ElbowArrowTool, SelectTool, Toolbar } from '@woven-canvas/vue'
 import '@woven-canvas/vue/style.css'
 
 function handleReady(editor: Editor) {
@@ -8,8 +8,8 @@ function handleReady(editor: Editor) {
   editor.nextTick((ctx) => {
     const shapes = [
       { pos: [60, 100], color: { r: 99, g: 102, b: 241 } },
-      { pos: [220, 100], color: { r: 236, g: 72, b: 153 } },
-      { pos: [140, 220], color: { r: 34, g: 197, b: 94 } },
+      { pos: [440, 100], color: { r: 236, g: 72, b: 153 } },
+      { pos: [220, 220], color: { r: 34, g: 197, b: 94 } },
     ]
 
     for (const shape of shapes) {
@@ -22,7 +22,6 @@ function handleReady(editor: Editor) {
         fillGreen: shape.color.g,
         fillBlue: shape.color.b,
         fillAlpha: 200,
-        cornerRadius: 8,
       })
       addComponent(ctx, entityId, Block, {
         tag: 'shape',
@@ -36,12 +35,16 @@ function handleReady(editor: Editor) {
 </script>
 
 <template>
-  <WovenCanvas @ready="handleReady">
-    <Toolbar>
-      <SelectTool />
-      <ArcArrowTool />
-      <ElbowArrowTool />
-      <ColorButton />
-    </Toolbar>
+  <WovenCanvas
+    @ready="handleReady"
+    :plugin-options="{ controls: false, eraser: false, pen: false }"
+    :controls="{ leftMouseTool: 'elbow-arrow' }"
+  >
+    <template #toolbar>
+      <Toolbar>
+        <SelectTool />
+        <ElbowArrowTool />
+      </Toolbar>
+    </template>
   </WovenCanvas>
 </template>

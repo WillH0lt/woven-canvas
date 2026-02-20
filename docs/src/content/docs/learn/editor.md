@@ -1,9 +1,9 @@
 ---
 title: The Editor
-description: Understanding the core architecture of Woven Canvas
+description: Working with the Editor runtime
 ---
 
-The `Editor` class is the core of Woven Canvas. It manages all state, handles input, and coordinates rendering. When you use the `WovenCanvas` component, it creates an Editor instance internally.
+The `Editor` class is the runtime that ties everything together. It manages the ECS world, runs the tick loop, and coordinates plugins. When you use the `WovenCanvas` component, it creates an Editor instance internally.
 
 ## Accessing the Editor
 
@@ -38,43 +38,6 @@ function onReady(editor: Editor) {
   <WovenCanvas @ready="onReady" />
 </template>
 ```
-
-## The ECS Architecture
-
-Woven Canvas is built on an Entity Component System (ECS). This means:
-
-- **Entities** are just numeric IDs (like `42` or `1337`)
-- **Components** are data containers attached to entities (like `Block`, `Color`, `Text`)
-- **Systems** are functions that run each frame to update state
-
-This architecture enables:
-
-- Efficient batch operations on many entities
-- Reactive subscriptions to component changes
-- Automatic synchronization across clients
-
-## The Tick Loop
-
-The editor runs a continuous loop that processes input and updates state:
-
-```
-┌─────────────────────────────────────────┐
-│                                         │
-│   Input → Capture → Update → Render     │
-│     ↑                           │       │
-│     └───────────────────────────┘       │
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-Each phase has a specific purpose:
-
-| Phase     | Purpose                                                   |
-| --------- | --------------------------------------------------------- |
-| `input`   | Convert DOM events to ECS state (mouse, keyboard, screen) |
-| `capture` | Detect targets, compute intersections, process keybinds   |
-| `update`  | Modify document state, process commands                   |
-| `render`  | Vue reactivity handles rendering via composables          |
 
 ## Reading and Writing Data
 
@@ -118,18 +81,21 @@ const block = useComponent(entityId, Block);
 const camera = useSingleton(Camera);
 
 // Subscribe to a query (multiple entities)
-const selectedBlocks = useQuery([Block, Selected] as const);
+const selectedBlocks = useQuery([Block, Selected]);
 ```
 
 These composables return Vue refs that update automatically when the underlying data changes.
 
 ## Commands
 
-Commands are the primary way to trigger actions. They're spawned in one tick and consumed by systems in the next:
+Commands are the primary way to trigger actions from user input.
 
 ```typescript
-import { Undo, Redo } from "@woven-canvas/core";
+import { useEditorContext } from "@woven-canvas/vue";
+import { Undo } from "@woven-canvas/core";
 import { DeselectAll } from "@woven-canvas/plugin-selection";
+
+const { nextEditorTick } = useEditorContext();
 
 nextEditorTick((ctx) => {
   // Undo the last action
@@ -138,6 +104,20 @@ nextEditorTick((ctx) => {
   // Deselect all blocks
   DeselectAll.spawn(ctx);
 });
+```
+
+For convenience, you can also dispatch commands directly on the editor:
+
+```typescript
+import { useEditorContext } from "@woven-canvas/vue";
+import { Undo } from "@woven-canvas/core";
+import { DeselectAll } from "@woven-canvas/plugin-selection";
+
+const { getEditor } = useEditorContext();
+
+const editor = getEditor();
+editor?.command(Undo);
+editor?.command(DeselectAll);
 ```
 
 ## Configuration

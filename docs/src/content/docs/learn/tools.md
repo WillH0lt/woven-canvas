@@ -71,7 +71,12 @@ const snapshot = JSON.stringify({
 </script>
 
 <template>
-  <ToolbarButton name="my-tool" tooltip="My Tool" :placement-snapshot="snapshot" :drag-out-snapshot="snapshot">
+  <ToolbarButton
+    name="my-tool"
+    tooltip="My Tool"
+    :placement-snapshot="snapshot"
+    :drag-out-snapshot="snapshot"
+  >
     <svg><!-- icon --></svg>
   </ToolbarButton>
 </template>
@@ -79,13 +84,13 @@ const snapshot = JSON.stringify({
 
 ### ToolbarButton Props
 
-| Prop                | Type     | Description                    |
-| ------------------- | -------- | ------------------------------ |
-| `name`              | `string` | Unique tool identifier         |
-| `tooltip`           | `string` | Tooltip shown on hover         |
-| `placementSnapshot` | `string` | JSON for click-to-place blocks |
-| `dragOutSnapshot`   | `string` | JSON for drag-to-create blocks |
-| `cursor`            | `string` | CSS cursor when tool is active |
+| Prop                | Type     | Description                      |
+| ------------------- | -------- | -------------------------------- |
+| `name`              | `string` | Unique tool identifier           |
+| `tooltip`           | `string` | Tooltip shown on hover           |
+| `placementSnapshot` | `string` | JSON for click-to-place blocks   |
+| `dragOutSnapshot`   | `string` | JSON for drag-to-create blocks   |
+| `cursor`            | `string` | Cursor namne when tool is active |
 
 ## Snapshots
 
@@ -94,18 +99,12 @@ A snapshot defines the initial state for new blocks. It's a JSON object where ke
 ```typescript
 const snapshot = JSON.stringify({
   // Required: Block component
+  // Note: position and rank are set automatically, so we only need tag and size
   block: {
-    tag: "task-card",
+    tag: "color-card",
     size: [200, 120],
   },
 
-  // Optional: Your custom components
-  "task-data": {
-    title: "New Task",
-    priority: "medium",
-  },
-
-  // Optional: Built-in components
   color: {
     red: 255,
     green: 200,
@@ -125,7 +124,11 @@ import { ToolbarButton, CursorKind } from "@woven-canvas/vue";
 </script>
 
 <template>
-  <ToolbarButton name="crosshair-tool" :cursor="CursorKind.Crosshair" :placement-snapshot="snapshot">
+  <ToolbarButton
+    name="crosshair-tool"
+    :cursor="CursorKind.Crosshair"
+    :placement-snapshot="snapshot"
+  >
     <!-- icon -->
   </ToolbarButton>
 </template>
@@ -135,34 +138,8 @@ Built-in cursor kinds:
 
 | Cursor                 | Description                     |
 | ---------------------- | ------------------------------- |
-| `CursorKind.Default`   | Default arrow cursor            |
-| `CursorKind.Select`    | Selection cursor                |
-| `CursorKind.Grab`      | Open hand for panning           |
-| `CursorKind.Grabbing`  | Closed hand while panning       |
+| `CursorKind.Select`    | Selection arrow cursor          |
+| `CursorKind.Hand`      | Open hand for panning           |
 | `CursorKind.Crosshair` | Crosshair for precise placement |
 
-## Tool Lifecycle
-
-Tools can run code when activated or deactivated:
-
-```vue
-<script setup lang="ts">
-import { watch } from "vue";
-import { ToolbarButton, useToolbar, useEditorContext } from "@woven-canvas/vue";
-import { DeselectAll } from "@woven-canvas/plugin-selection";
-
-const { activeTool } = useToolbar();
-const { nextEditorTick } = useEditorContext();
-
-watch(activeTool, (newTool, oldTool) => {
-  // Deselect when switching away from select tool
-  if (oldTool === "select") {
-    nextEditorTick((ctx) => {
-      DeselectAll.spawn(ctx);
-    });
-  }
-});
-</script>
-```
-
-See the [Custom Tool example](/examples/custom-tool/) for a complete walkthrough.
+To register custom SVG cursors, see [Defining Cursors](/learn/creating-plugins/#defining-cursors).

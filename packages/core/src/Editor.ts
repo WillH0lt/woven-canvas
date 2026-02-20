@@ -14,9 +14,10 @@ import { User } from './components'
 import type { EditorSystem } from './EditorSystem'
 import { FontFamily, FontLoader } from './FontLoader'
 import { type EditorPlugin, parsePlugin, sortPluginsByDependencies } from './plugin'
-import { Grid } from './singletons'
+import { Controls, Grid } from './singletons'
 import {
   BlockDef,
+  ControlsOptions,
   type CursorDef,
   type EditorOptionsInput,
   EditorOptionsSchema,
@@ -130,6 +131,7 @@ export class Editor {
   private fontLoader: FontLoader
   private userData: UserData
   private gridOptions: GridOptions
+  private controlsOptions: ControlsOptions
 
   constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
     const options = EditorOptionsSchema.parse(optionsInput ?? {})
@@ -141,6 +143,9 @@ export class Editor {
 
     // Parse grid options with defaults
     this.gridOptions = GridOptions.parse(options.grid ?? {})
+
+    // Parse controls options with defaults
+    this.controlsOptions = ControlsOptions.parse(options.controls ?? {})
 
     // Parse plugin inputs (handle both direct plugins and factory functions)
     const plugins = pluginInputs.map(parsePlugin)
@@ -317,10 +322,8 @@ export class Editor {
       await this.fontLoader.loadFonts(this.fonts)
     }
 
-    // Initialize grid settings
-    this.nextTick((ctx) => {
-      Grid.copy(ctx, this.gridOptions)
-    })
+    Grid.copy(this.ctx, this.gridOptions)
+    Controls.copy(this.ctx, this.controlsOptions)
 
     // Create the user entity for presence tracking
     this.nextTick((ctx) => {

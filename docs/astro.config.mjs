@@ -38,38 +38,26 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: "Introduction",
-          items: [
-            { label: "Quick Start", slug: "quick-start" },
-          ],
+          label: "Quick Start",
+          link: "quick-start",
         },
         {
           label: "Learn",
           items: [
+            { label: "Architecture", slug: "learn/architecture" },
             { label: "The Editor", slug: "learn/editor" },
             { label: "Blocks", slug: "learn/blocks" },
             { label: "Tools", slug: "learn/tools" },
             { label: "User Interface", slug: "learn/user-interface" },
-            { label: "Persistence", slug: "learn/persistence" },
-            { label: "Collaboration", slug: "learn/collaboration" },
-          ],
-        },
-        {
-          label: "Plugins",
-          items: [
-            { label: "Overview", slug: "plugins" },
-            { label: "Selection", slug: "plugins/selection" },
-            { label: "Canvas Controls", slug: "plugins/canvas-controls" },
-            { label: "Pen", slug: "plugins/pen" },
-            { label: "Eraser", slug: "plugins/eraser" },
-            { label: "Arrows", slug: "plugins/arrows" },
-            { label: "Creating Custom Plugins", slug: "plugins/custom-plugin" },
+            { label: "Canvas Store", slug: "learn/canvas-store" },
+            { label: "Creating Plugins", slug: "learn/creating-plugins" },
           ],
         },
         {
           label: "Examples",
           items: [
-            { label: "Controlling the Canvas", slug: "examples/controlling-canvas" },
+            { label: "Using the Editor API", slug: "examples/editor-api" },
+            { label: "Create a Custom Block", slug: "examples/create-a-custom-block" },
             { label: "Zoom to Fit", slug: "examples/zoom-to-fit" },
             { label: "Save & Load Snapshots", slug: "examples/save-load-snapshot" },
             { label: "Read-Only Mode", slug: "examples/read-only-mode" },
@@ -77,15 +65,24 @@ export default defineConfig({
             { label: "Custom Keyboard Shortcuts", slug: "examples/custom-keyboard-shortcuts" },
             { label: "Animate Shapes", slug: "examples/animate-shapes" },
             { label: "External UI State", slug: "examples/external-ui-state" },
-            { label: "Export as Image", slug: "examples/export-as-image" },
             { label: "Multiple Editors", slug: "examples/multiple-editors" },
             { label: "Custom Grid", slug: "examples/custom-grid" },
             { label: "Custom Block", slug: "examples/custom-block" },
             { label: "Custom Tool", slug: "examples/custom-tool" },
             { label: "Custom Floating Menu", slug: "examples/custom-floating-menu" },
-            { label: "Sticker Block Tutorial", slug: "examples/sticker-block-tutorial" },
-            { label: "Sticker Block Demo", slug: "examples/sticker-block" },
             { label: "Plugin", slug: "examples/plugin" },
+          ],
+        },
+        {
+          label: "Plugins Reference",
+          items: [
+            { label: "Overview", slug: "plugins" },
+            { label: "Core", slug: "plugins/core" },
+            { label: "Selection", slug: "plugins/selection" },
+            { label: "Canvas Controls", slug: "plugins/canvas-controls" },
+            { label: "Pen", slug: "plugins/pen" },
+            { label: "Eraser", slug: "plugins/eraser" },
+            { label: "Arrows", slug: "plugins/arrows" },
           ],
         },
         {

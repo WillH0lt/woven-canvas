@@ -40,6 +40,7 @@ export { default as MenuButton } from './components/buttons/MenuButton.vue'
 // Menu Button Components
 export { default as MenuDropdown } from './components/buttons/MenuDropdown.vue'
 export { default as MenuTooltip } from './components/buttons/MenuTooltip.vue'
+export { default as PenStrokeThicknessButton } from './components/buttons/PenStrokeThicknessButton.vue'
 export { default as ShapeFillColorButton } from './components/buttons/ShapeFillColorButton.vue'
 // Shape Menu Button Components
 export { default as ShapeKindButton } from './components/buttons/ShapeKindButton.vue'
@@ -62,6 +63,8 @@ export { default as EditableText } from './components/EditableText.vue'
 // Floating Menu Components
 export { default as FloatingMenu } from './components/FloatingMenu.vue'
 export { default as FloatingMenuBar } from './components/FloatingMenuBar.vue'
+// Icons
+export { default as IconChevronDown } from './components/icons/IconChevronDown.vue'
 // Loading Overlay
 export { default as LoadingOverlay } from './components/LoadingOverlay.vue'
 // Toolbar Components

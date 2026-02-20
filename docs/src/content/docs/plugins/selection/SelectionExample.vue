@@ -35,9 +35,14 @@ function handleReady(editor: Editor) {
 </script>
 
 <template>
-  <WovenCanvas @ready="handleReady">
-    <Toolbar>
-      <SelectTool />
-    </Toolbar>
+  <WovenCanvas
+    @ready="handleReady"
+    :plugin-options="{ controls: false, eraser: false, pen: false, arrows: false }"
+  >
+    <template #toolbar>
+      <Toolbar>
+        <SelectTool />
+      </Toolbar>
+    </template>
   </WovenCanvas>
 </template>

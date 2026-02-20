@@ -8,42 +8,48 @@ Woven Canvas provides a complete UI out of the box — toolbar, floating menu, u
 ## UI Overview
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  [User Presence]                    [Offline Indicator] │
-│                                                         │
-│                                                         │
-│                    ┌───────────────┐                    │
-│                    │ Floating Menu │                    │
-│                    └───────────────┘                    │
-│                    ┌───────────────┐                    │
-│                    │   Selection   │                    │
-│                    └───────────────┘                    │
-│                                                         │
-│                                                         │
-│  ┌──────────┐                                           │
-│  │ Toolbar  │                                           │
-│  └──────────┘                                           │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│[Back to Content]         [Offline Indicator] [User Presence]│
+│                                                             │
+│                                                             │
+│                        ┌───────────────┐                    │
+│      ^                 │ Floating Menu │                    │
+│   cursors              └───────────────┘                    │
+│                        ┌───────────────┐                    │
+│                        │   Selection   │                    │
+│                        │               │                    │
+│                        └───────────────┘                    │
+│                                                             │
+│          ┌──────────────────────────────────────┐           │
+│          │               Toolbar                │           │
+│          └──────────────────────────────────────┘           │
+└─────────────────────────────────────────────────────────────┘
 ```
-
-## Toolbar
-
-The toolbar contains tools for creating and manipulating blocks. It renders in the bottom-left by default.
 
 ### Customizing the Toolbar
 
-Replace the entire toolbar:
+Replace the entire toolbar with your own:
 
 ```vue
+<script setup lang="ts">
+import {
+  WovenCanvas,
+  SelectTool,
+  HandTool,
+  ShapeTool,
+  Toolbar,
+} from "@woven-canvas/vue";
+</script>
+
 <template>
   <WovenCanvas>
     <template #toolbar>
-      <div class="my-toolbar">
+      <Toolbar>
         <SelectTool />
         <HandTool />
         <ShapeTool />
         <MyCustomTool />
-      </div>
+      </Toolbar>
     </template>
   </WovenCanvas>
 </template>
@@ -63,21 +69,13 @@ import {
   ImageTool,
   PenTool,
   EraserTool,
-  ArcArrowTool,
   ElbowArrowTool,
 } from "@woven-canvas/vue";
 ```
 
 ## Floating Menu
 
-The floating menu appears above selected blocks, showing context-sensitive options like color, font, and alignment.
-
-### How It Works
-
-1. When blocks are selected, the menu computes **common components** across all selected blocks
-2. It shows buttons for each common component (e.g., `color`, `text`, `shape`)
-3. It positions itself above the selection bounds
-4. It hides during drag operations
+When blocks are selected, the menu computes **common components** across all selected blocks. It shows buttons for each common component (e.g., `color`, `text`, `shape`) and positions itself above the selection bounds. The menu hides during drag operations.
 
 ### Customizing the Floating Menu
 
@@ -116,15 +114,15 @@ Override built-in buttons:
 
 ### Built-in Menu Buttons
 
-| Slot                    | Components               | Description                    |
-| ----------------------- | ------------------------ | ------------------------------ |
-| `button:color`          | `color`                  | Fill color picker              |
-| `button:shape`          | `shape`                  | Shape kind, fill, stroke       |
-| `button:text`           | `text`                   | Font, size, bold, italic, etc. |
-| `button:penStroke`      | `penStroke`              | Stroke thickness               |
-| `button:arrowThickness` | `arcArrow`, `elbowArrow` | Line thickness                 |
-| `button:arrowHeadStart` | `arcArrow`, `elbowArrow` | Start arrow style              |
-| `button:arrowHeadEnd`   | `arcArrow`, `elbowArrow` | End arrow style                |
+| Slot                    | Components   | Description                    |
+| ----------------------- | ------------ | ------------------------------ |
+| `button:color`          | `color`      | Fill color picker              |
+| `button:shape`          | `shape`      | Shape kind, fill, stroke       |
+| `button:text`           | `text`       | Font, size, bold, italic, etc. |
+| `button:penStroke`      | `penStroke`  | Stroke thickness               |
+| `button:arrowThickness` | `elbowArrow` | Line thickness                 |
+| `button:arrowHeadStart` | `elbowArrow` | Start arrow style              |
+| `button:arrowHeadEnd`   | `elbowArrow` | End arrow style                |
 
 ## User Presence
 
@@ -135,7 +133,12 @@ Shows avatars of connected users in multiplayer mode.
   <WovenCanvas>
     <template #user-presence="{ users }">
       <div class="my-presence">
-        <img v-for="user in users" :key="user.sessionId" :src="user.avatar" :style="{ borderColor: user.color }" />
+        <img
+          v-for="user in users"
+          :key="user.sessionId"
+          :src="user.avatar"
+          :style="{ borderColor: user.color }"
+        />
       </div>
     </template>
   </WovenCanvas>
@@ -144,13 +147,24 @@ Shows avatars of connected users in multiplayer mode.
 
 ## User Cursors
 
-Shows other users' cursor positions in real-time.
+Shows other users' cursor positions in real-time. The slot provides camera data for positioning:
 
 ```vue
 <template>
   <WovenCanvas>
     <template #user-cursors="{ users, currentSessionId, camera }">
-      <MyCursors :users="users" :current-session-id="currentSessionId" :camera="camera" />
+      <div
+        v-for="u in users"
+        :key="u.sessionId"
+        v-show="u.sessionId !== currentSessionId"
+        :style="{
+          position: 'absolute',
+          left: `${(u.cursorX - camera.left) * camera.zoom}px`,
+          top: `${(u.cursorY - camera.top) * camera.zoom}px`,
+        }"
+      >
+        <MyCursorIcon :color="u.color" :name="u.name" />
+      </div>
     </template>
   </WovenCanvas>
 </template>
@@ -202,7 +216,7 @@ Example:
 </template>
 ```
 
-## Theming
+## Theme
 
 Woven Canvas uses CSS custom properties for styling. Override them to match your design:
 
@@ -217,4 +231,4 @@ Woven Canvas uses CSS custom properties for styling. Override them to match your
 }
 ```
 
-See the [Custom Floating Menu example](/examples/custom-floating-menu/) for a complete walkthrough.
+See [theme.css](https://github.com/WillH0lt/woven-canvas/blob/main/packages/vue/src/theme.css) for the full list of variables.

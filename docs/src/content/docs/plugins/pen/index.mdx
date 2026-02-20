@@ -14,27 +14,19 @@ The Pen plugin provides freehand drawing functionality with smooth SVG ink strok
   <PenExample client:only="vue" />
 </ExampleContainer>
 
-<Code code={PenExampleRaw} lang="vue" title="PenExample.vue" />
-
-Select the Pen tool and draw on the canvas. Use the color picker to change ink color. Strokes can be selected, moved, and resized like any other block.
-
-## Installation
-
-```bash
-npm install @woven-canvas/plugin-pen
-```
+- Select the Pen tool and draw on the canvas
+- Strokes inherit the current color from the toolbar color picker
+- Strokes can be selected, moved, and resized like any other block
 
 ## Usage
 
-```typescript
-import { PenPlugin } from '@woven-canvas/plugin-pen'
+The Pen plugin is included by default when using `WovenCanvas`. To disable it:
 
-const editor = new Editor(element, {
-  plugins: [PenPlugin()]
-})
+```vue
+<template>
+  <WovenCanvas :plugin-options="{ pen: false }" />
+</template>
 ```
-
-## Options
 
 The Pen plugin has no configuration options. Pen strokes automatically inherit the current color from the editor state.
 
@@ -101,26 +93,62 @@ for (const entityId of penStrokeQuery.current(ctx)) {
 
 ## Vue Components
 
-The Vue package provides toolbar components for the pen:
-
-```vue
-<script setup lang="ts">
-import { PenTool, ColorButton, Toolbar } from '@woven-canvas/vue'
-</script>
-
-<template>
-  <WovenCanvas>
-    <Toolbar>
-      <PenTool />
-      <ColorButton />
-    </Toolbar>
-  </WovenCanvas>
-</template>
-```
-
-### Toolbar Components
+The Vue package provides toolbar and floating menu components for pen strokes:
 
 | Component | Description |
 |-----------|-------------|
 | `PenTool` | Toolbar button to activate the pen tool |
-| `ColorButton` | Color picker for stroke color |
+| `PenStrokeThicknessButton` | Floating menu dropdown for stroke thickness (S, M, L) |
+
+### Toolbar Usage
+
+```vue
+<script setup lang="ts">
+import { WovenCanvas, PenTool, Toolbar } from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas>
+    <template #toolbar>
+      <Toolbar>
+        <PenTool />
+      </Toolbar>
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+### Floating Menu
+
+When a pen stroke is selected, the floating menu automatically shows color and thickness controls. These are included in the default `FloatingMenuBar`. To customize:
+
+```vue
+<script setup lang="ts">
+import {
+  WovenCanvas,
+  FloatingMenu,
+  FloatingMenuBar,
+  PenStrokeThicknessButton,
+} from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas>
+    <template #floating-menu>
+      <FloatingMenu>
+        <FloatingMenuBar>
+          <template #button:penStroke="{ entityIds }">
+            <PenStrokeThicknessButton :entity-ids="entityIds" />
+          </template>
+        </FloatingMenuBar>
+      </FloatingMenu>
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+#### PenStrokeThicknessButton Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `entityIds` | `EntityId[]` | Selected pen stroke entity IDs |

@@ -97,13 +97,18 @@ const text = useComponent(props.entityId, Text);
 // React to changes
 watchEffect(() => {
   console.log("Position:", block.value?.position);
-  console.log("Color:", color.value?.red, color.value?.green, color.value?.blue);
+  console.log(
+    "Color:",
+    color.value?.red,
+    color.value?.green,
+    color.value?.blue,
+  );
 });
 ```
 
 ## Writing Block Data
 
-Use `nextEditorTick` to modify blocks, this ensures your changes are applied at the start of the next editor tick, in sync with other editor updates:
+Use `nextEditorTick` to modify blocks, this ensures your changes are applied at the start of the next editor tick. It's important to use `nextEditorTick` to apply updates, otherwise the update may be applied mid-frame, potentially causing visual glitches and inconsistent state.
 
 ```typescript
 import { useEditorContext } from "@woven-canvas/vue";
@@ -149,5 +154,3 @@ watchEffect(() => {
   console.log("Selected count:", selectedBlocks.value.length);
 });
 ```
-
-See the [Custom Block example](/examples/custom-block/) for a complete walkthrough.

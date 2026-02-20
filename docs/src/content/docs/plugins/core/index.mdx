@@ -1,0 +1,365 @@
+---
+title: Core Plugin
+description: Input handling, block types, and essential editor systems
+---
+
+The Core plugin provides the foundational systems that power Woven Canvas. It handles input processing, block intersection detection, cursor management, and includes built-in block types like sticky notes, text, images, and shapes.
+
+## Overview
+
+The Core plugin is always included automatically and cannot be disabled. It provides:
+
+- **Input handling** — Keyboard, mouse, pointer, and screen events
+- **Block systems** — Intersection detection, z-ordering, visibility culling
+- **Cursor management** — Visual cursor state
+- **Keybind processing** — Converts key presses to commands
+- **Built-in block types** — Sticky notes, text, images, and shapes
+
+## Built-in Block Types
+
+The Core plugin registers four block types:
+
+### Sticky Note
+
+A colored note block with editable text and vertical alignment.
+
+```typescript
+{
+  tag: 'sticky-note',
+  components: [Color, Text, VerticalAlign],
+  editOptions: { canEdit: true }
+}
+```
+
+### Text
+
+A text-only block that auto-sizes and can be removed when empty.
+
+```typescript
+{
+  tag: 'text',
+  components: [Text],
+  resizeMode: 'text',
+  editOptions: {
+    canEdit: true,
+    removeWhenTextEmpty: true
+  }
+}
+```
+
+### Image
+
+An image block with asset loading support.
+
+```typescript
+{
+  tag: 'image',
+  components: [Image, Asset],
+  resizeMode: 'scale'
+}
+```
+
+### Shape
+
+A geometric shape with optional text content.
+
+```typescript
+{
+  tag: 'shape',
+  components: [Shape, Text, VerticalAlign],
+  resizeMode: 'free',
+  editOptions: { canEdit: true }
+}
+```
+
+## Components
+
+The Core plugin provides essential ECS components:
+
+### Spatial Components
+
+| Component | Description |
+|-----------|-------------|
+| `Block` | Core block data (position, size, rotation, stratum, rank) |
+| `Aabb` | Axis-aligned bounding box for collision detection |
+| `HitGeometry` | Hit detection geometry (arcs, capsules) |
+| `ScaleWithZoom` | Marks entities that scale with camera zoom |
+
+### Content Components
+
+| Component | Description |
+|-----------|-------------|
+| `Text` | Text content and styling |
+| `Color` | Color values (hue, saturation, lightness) |
+| `Shape` | Shape type and stroke configuration |
+| `Image` | Image dimensions and source |
+| `Asset` | Asset upload state and URL |
+| `VerticalAlign` | Vertical text alignment |
+| `Opacity` | Entity opacity |
+
+### State Components
+
+| Component | Description |
+|-----------|-------------|
+| `Hovered` | Marks an entity as hovered |
+| `Held` | Marks an entity as held/pressed |
+| `Edited` | Marks an entity as being edited |
+| `Connector` | Arrow connection point data |
+| `Pointer` | Pointer input state with sample history |
+| `User` | User presence information |
+
+### Using Components
+
+```typescript
+import { defineQuery } from '@woven-canvas/core'
+import { Block, Hovered, Text } from '@woven-canvas/core'
+
+// Query for hovered text blocks
+const hoveredText = defineQuery((q) => q.with(Block, Text, Hovered))
+
+// In a system
+for (const entityId of hoveredText.current(ctx)) {
+  const text = Text.read(ctx, entityId)
+  console.log(text.content)
+}
+```
+
+## Singletons
+
+Singleton components store global editor state (one instance per world):
+
+| Singleton | Description |
+|-----------|-------------|
+| `Camera` | Viewport position and zoom level |
+| `Screen` | Screen dimensions and device pixel ratio |
+| `Cursor` | Current cursor style |
+| `Frame` | Frame timing and delta time |
+| `Keyboard` | Keyboard state bitmask |
+| `Mouse` | Mouse position and button state |
+| `Controls` | Active tool and control mode |
+| `Grid` | Grid snapping configuration |
+| `Intersect` | Block intersection results |
+| `RankBounds` | Min/max block z-order values |
+| `ScaleWithZoomState` | Zoom-based scaling state |
+
+### Accessing Singletons
+
+```typescript
+import { defineEditorSystem } from '@woven-canvas/core'
+import { Camera, Mouse } from '@woven-canvas/core'
+
+const mySystem = defineEditorSystem({ phase: 'update' }, (ctx) => {
+  const camera = Camera.read(ctx)
+  const mouse = Mouse.read(ctx)
+
+  console.log(`Camera at (${camera.x}, ${camera.y}), zoom: ${camera.zoom}`)
+  console.log(`Mouse at (${mouse.x}, ${mouse.y})`)
+})
+```
+
+## Systems
+
+The Core plugin runs these systems automatically:
+
+### Input Phase
+
+| System | Description |
+|--------|-------------|
+| `frameSystem` | Updates frame timing and delta time |
+| `rankBoundsSystem` | Computes min/max block z-order |
+| `keyboardSystem` | Processes keyboard events |
+| `mouseSystem` | Processes mouse events |
+| `screenSystem` | Monitors screen/viewport changes |
+| `pointerSystem` | Processes pointer events with pressure |
+
+### Capture Phase
+
+| System | Description |
+|--------|-------------|
+| `intersectSystem` | Detects which block is under the pointer |
+| `keybindSystem` | Matches key presses to registered keybinds |
+
+### Render Phase
+
+| System | Description |
+|--------|-------------|
+| `scaleWithZoomSystem` | Updates scale for zoom-dependent entities |
+| `canSeeBlocksSystem` | Culls blocks outside the viewport |
+| `cursorSystem` | Applies cursor style to the DOM |
+| `presenceSystem` | Renders user presence indicators |
+
+## Keyboard Input
+
+The `Keyboard` singleton tracks which keys are currently pressed:
+
+```typescript
+import { defineEditorSystem } from '@woven-canvas/core'
+import { Keyboard, Key } from '@woven-canvas/core'
+
+const mySystem = defineEditorSystem({ phase: 'update' }, (ctx) => {
+  const keyboard = Keyboard.read(ctx)
+
+  // Check if a key is pressed
+  if (keyboard.isDown(Key.Space)) {
+    console.log('Space is held')
+  }
+
+  // Check modifier keys
+  if (keyboard.mod) {
+    console.log('Ctrl/Cmd is held')
+  }
+})
+```
+
+### Key Constants
+
+```typescript
+import { Key } from '@woven-canvas/core'
+
+Key.Space
+Key.Enter
+Key.Escape
+Key.Backspace
+Key.Delete
+Key.ArrowUp
+Key.ArrowDown
+Key.ArrowLeft
+Key.ArrowRight
+// ... and all alphanumeric keys
+```
+
+## Camera Control
+
+The `Camera` singleton controls the viewport:
+
+```typescript
+import { Camera } from '@woven-canvas/core'
+
+// Read camera state
+const camera = Camera.read(ctx)
+console.log(camera.x, camera.y, camera.zoom)
+
+// Modify camera (in a system)
+const cam = Camera.write(ctx)
+cam.x = 100
+cam.y = 200
+cam.zoom = 1.5
+```
+
+## Coordinate Conversion
+
+Convert between screen and world coordinates:
+
+```typescript
+import { screenToWorld, worldToScreen } from '@woven-canvas/core'
+
+// Screen pixel to world coordinate
+const worldPos = screenToWorld(ctx, screenX, screenY)
+
+// World coordinate to screen pixel
+const screenPos = worldToScreen(ctx, worldX, worldY)
+```
+
+## Vue Components
+
+The Vue package provides toolbar and floating menu components for core block types:
+
+| Component | Description |
+|-----------|-------------|
+| `StickyNoteTool` | Toolbar button to create sticky notes |
+| `TextTool` | Toolbar button to create text blocks |
+| `ImageTool` | Toolbar button to upload images |
+| `ShapeTool` | Toolbar button to create shapes |
+| `ColorButton` | Color picker for block color |
+| `ShapeKindButton` | Floating menu dropdown for shape type |
+| `ShapeFillColorButton` | Floating menu dropdown for shape fill |
+| `ShapeStrokeColorButton` | Floating menu dropdown for shape stroke |
+
+### Toolbar Usage
+
+```vue
+<script setup lang="ts">
+import {
+  WovenCanvas,
+  StickyNoteTool,
+  TextTool,
+  ImageTool,
+  ShapeTool,
+  Toolbar,
+} from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas>
+    <template #toolbar>
+      <Toolbar>
+        <StickyNoteTool />
+        <TextTool />
+        <ImageTool />
+        <ShapeTool />
+      </Toolbar>
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+### Floating Menu
+
+When blocks are selected, the floating menu automatically shows contextual controls based on block type. These are included in the default `FloatingMenuBar`. To customize:
+
+```vue
+<script setup lang="ts">
+import {
+  WovenCanvas,
+  FloatingMenu,
+  FloatingMenuBar,
+  ColorButton,
+  ShapeKindButton,
+  ShapeFillColorButton,
+  ShapeStrokeColorButton,
+} from '@woven-canvas/vue'
+</script>
+
+<template>
+  <WovenCanvas>
+    <template #floating-menu>
+      <FloatingMenu>
+        <FloatingMenuBar>
+          <template #button:color="{ entityIds }">
+            <ColorButton :entity-ids="entityIds" />
+          </template>
+          <template #button:shape="{ entityIds }">
+            <ShapeKindButton :entity-ids="entityIds" />
+            <ShapeFillColorButton :entity-ids="entityIds" />
+            <ShapeStrokeColorButton :entity-ids="entityIds" />
+          </template>
+        </FloatingMenuBar>
+      </FloatingMenu>
+    </template>
+  </WovenCanvas>
+</template>
+```
+
+#### ColorButton Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `entityIds` | `EntityId[]` | Selected entity IDs |
+
+#### ShapeKindButton Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `entityIds` | `EntityId[]` | Selected shape entity IDs |
+
+#### ShapeFillColorButton Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `entityIds` | `EntityId[]` | Selected shape entity IDs |
+
+#### ShapeStrokeColorButton Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `entityIds` | `EntityId[]` | Selected shape entity IDs |

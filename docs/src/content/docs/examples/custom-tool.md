@@ -28,8 +28,18 @@ const snapshot = JSON.stringify({
 </script>
 
 <template>
-  <ToolbarButton name="task" tooltip="Task Card" :placement-snapshot="snapshot" :drag-out-snapshot="snapshot">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+  <ToolbarButton
+    name="task"
+    tooltip="Task Card"
+    :placement-snapshot="snapshot"
+    :drag-out-snapshot="snapshot"
+  >
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
       <rect x="3" y="3" width="14" height="14" rx="2" />
       <path d="M7 10l2 2 4-4" />
     </svg>
@@ -140,7 +150,12 @@ const priorityColors = {
       :drag-out-snapshot="snapshot"
       @contextmenu.prevent="showOptions = !showOptions"
     >
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+      <svg
+        viewBox="0 0 20 20"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+      >
         <rect x="3" y="3" width="14" height="14" rx="2" />
         <path d="M7 10l2 2 4-4" />
       </svg>
