@@ -89,6 +89,9 @@ importers:
       '@woven-canvas/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@woven-canvas/math':
+        specifier: workspace:^
+        version: link:../packages/math
       '@woven-canvas/plugin-selection':
         specifier: workspace:*
         version: link:../packages/plugin-selection

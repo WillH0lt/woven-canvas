@@ -32,7 +32,7 @@ const resolvedFonts = computed<FontOption[]>(() => {
 });
 
 // Get current font family (null if mixed)
-const currentFontFamily = computed<string | null>(() => state.fontFamily.value);
+const currentFontFamily = computed<string | null>(() => state.fontFamily);
 
 // Label for the button
 const buttonLabel = computed(() => {
@@ -53,7 +53,7 @@ function handleWheelStop(e: Event) {
 </script>
 
 <template>
-  <MenuDropdown title="Font Family">
+  <MenuDropdown v-if="state.showTextMenuButtons" title="Font Family">
     <template #button>
       <div class="ic-font-family-button">
         <span class="ic-font-family-label">{{ buttonLabel }}</span>

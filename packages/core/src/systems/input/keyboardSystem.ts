@@ -37,8 +37,8 @@ export function attachKeyboardListeners(domElement: HTMLElement): void {
   const state: KeyboardState = {
     eventsBuffer: [],
     onKeyDown: (e: KeyboardEvent) => {
-      // Prevent default for certain keys
-      if (e.key === 'Tab' || e.key === 'Alt') {
+      // Prevent default for certain keys that interfere with canvas interaction
+      if (e.key === 'Tab' || e.key === 'Alt' || e.key === ' ') {
         e.preventDefault()
       }
       state.eventsBuffer.push(e)

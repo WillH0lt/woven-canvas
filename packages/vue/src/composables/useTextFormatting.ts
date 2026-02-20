@@ -1,25 +1,31 @@
 import type { EntityId, TextAlignment } from '@woven-canvas/core'
-import { type ComputedRef, computed, type MaybeRefOrGetter } from 'vue'
+import { computed, type MaybeRefOrGetter, reactive } from 'vue'
 import { useTextBatchController } from './useTextBatchController'
 import { useTextEditorController } from './useTextEditorController'
 
 export interface TextFormattingState {
   /** Whether there is an active editor or text entities to edit */
-  hasTextToFormat: ComputedRef<boolean>
+  hasTextToFormat: boolean
+  /** Whether there is an active text editor (edit mode) */
+  hasEditor: boolean
+  /** Whether any text entity has non-empty content */
+  hasTextContent: boolean
+  /** Whether to show text menu buttons (in edit mode OR has text content) */
+  showTextMenuButtons: boolean
   /** Whether the current text is bold */
-  isBold: ComputedRef<boolean>
+  isBold: boolean
   /** Whether the current text is italic */
-  isItalic: ComputedRef<boolean>
+  isItalic: boolean
   /** Whether the current text is underlined */
-  isUnderline: ComputedRef<boolean>
+  isUnderline: boolean
   /** Current text alignment */
-  alignment: ComputedRef<TextAlignment>
+  alignment: TextAlignment
   /** Current text color (null if mixed or none) */
-  color: ComputedRef<string | null>
+  color: string | null
   /** Current font size (null if mixed) */
-  fontSize: ComputedRef<number | null>
+  fontSize: number | null
   /** Current font family (null if mixed) */
-  fontFamily: ComputedRef<string | null>
+  fontFamily: string | null
 }
 
 export interface TextFormattingCommands {
@@ -62,7 +68,7 @@ export interface TextFormattingController {
  * </script>
  *
  * <template>
- *   <button :class="{ active: state.isBold.value }" @click="commands.toggleBold">
+ *   <button :class="{ active: state.isBold }" @click="commands.toggleBold">
  *     Bold
  *   </button>
  * </template>
@@ -74,9 +80,19 @@ export function useTextFormatting(entityIds: MaybeRefOrGetter<EntityId[]>): Text
 
   const hasEditor = editorController.state.hasEditor
 
-  const state: TextFormattingState = {
+  const state = reactive({
     hasTextToFormat: computed(() => {
       return hasEditor.value || batchController.state.hasTextEntities.value
+    }),
+
+    hasEditor,
+
+    hasTextContent: computed(() => {
+      return batchController.state.hasTextContent.value
+    }),
+
+    showTextMenuButtons: computed(() => {
+      return hasEditor.value || batchController.state.hasTextContent.value
     }),
 
     isBold: computed(() => {
@@ -118,7 +134,7 @@ export function useTextFormatting(entityIds: MaybeRefOrGetter<EntityId[]>): Text
     fontSize: computed(() => batchController.state.fontSize.value),
 
     fontFamily: computed(() => batchController.state.fontFamily.value),
-  }
+  })
 
   const commands: TextFormattingCommands = {
     toggleBold() {
@@ -172,7 +188,7 @@ export function useTextFormatting(entityIds: MaybeRefOrGetter<EntityId[]>): Text
   }
 
   return {
-    state,
+    state: state as TextFormattingState,
     commands,
   }
 }

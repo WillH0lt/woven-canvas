@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { IconChevronDown, MenuDropdown, useComponents, useEditorContext } from '@woven-canvas/vue'
+import { MenuDropdown, useComponents, useEditorContext } from '@woven-canvas/vue'
 import { Sticker } from './Sticker'
 
 const props = defineProps<{
@@ -40,7 +40,7 @@ function setEmoji(emoji: string, close: () => void) {
     <template #button>
       <div class="emoji-button">
         <span class="emoji-display">{{ currentEmoji }}</span>
-        <IconChevronDown />
+        <span class="chevron">▾</span>
       </div>
     </template>
 
@@ -72,6 +72,11 @@ function setEmoji(emoji: string, close: () => void) {
 
 .emoji-display {
   font-size: 16px;
+  line-height: 1;
+}
+
+.chevron {
+  font-size: 12px;
   line-height: 1;
 }
 

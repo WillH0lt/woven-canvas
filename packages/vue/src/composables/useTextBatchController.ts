@@ -35,6 +35,8 @@ const extensions = [
 export interface TextBatchState {
   /** Whether there are any text entities to edit */
   hasTextEntities: ComputedRef<boolean>
+  /** Whether any text entity has non-empty content */
+  hasTextContent: ComputedRef<boolean>
   /** Whether all text content is bold (null if mixed) */
   isBold: ComputedRef<boolean | null>
   /** Whether all text content is italic (null if mixed) */
@@ -322,6 +324,24 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
     hasTextEntities: computed(() => {
       for (const text of textsMap.value.values()) {
         if (text) return true
+      }
+      return false
+    }),
+
+    hasTextContent: computed(() => {
+      for (const text of textsMap.value.values()) {
+        if (!text) continue
+        // Check if content has actual text (not just empty HTML tags)
+        const doc = text.content ? generateJSON(text.content, extensions) : null
+        if (doc) {
+          let hasText = false
+          walkTextNodes(doc, (node) => {
+            if (node.text?.trim()) {
+              hasText = true
+            }
+          })
+          if (hasText) return true
+        }
       }
       return false
     }),

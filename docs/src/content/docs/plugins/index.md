@@ -64,6 +64,6 @@ Each plugin can provide:
 - **Commands** — Actions that can be triggered programmatically
 - **Resources** — Configuration options accessible at runtime
 
-For details on building your own plugins, see [Creating Plugins](/learn/creating-plugins/).
+For details on building your own plugins, see [Plugins](/learn/plugins/) and the [Create a Plugin example](/examples/create-a-plugin/).
 
 For a deep dive into the Entity Component System architecture, see the [woven-ecs documentation](https://woven-ecs.dev).

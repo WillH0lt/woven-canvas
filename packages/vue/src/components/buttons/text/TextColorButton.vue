@@ -16,7 +16,7 @@ const { state, commands } = useTextFormatting(() => props.entityIds);
 
 // Get the current color from state
 const currentColorHex = computed(() => {
-  return state.color.value ?? "#000000";
+  return state.color ?? "#000000";
 });
 
 // Style for the color underline
@@ -30,7 +30,7 @@ function handleColorChange(color: ColorData) {
 </script>
 
 <template>
-  <MenuDropdown title="Text Color">
+  <MenuDropdown v-if="state.showTextMenuButtons" title="Text Color">
     <template #button>
       <div class="ic-text-color-button">
         <div class="ic-text-icon-container">

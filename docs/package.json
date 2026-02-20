@@ -18,6 +18,7 @@
     "@iconify-json/lucide": "^1.2.90",
     "@tailwindcss/postcss": "^4.1.18",
     "@woven-canvas/core": "workspace:*",
+    "@woven-canvas/math": "workspace:^",
     "@woven-canvas/plugin-selection": "workspace:*",
     "@woven-canvas/vue": "workspace:*",
     "astro": "^5.16.9",

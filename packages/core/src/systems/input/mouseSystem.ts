@@ -141,7 +141,6 @@ export const mouseSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context)
         mouse.wheelDeltaY = normalizeWheelDelta(event.deltaY!, event.deltaMode!)
         mouse.wheelTrigger = true
 
-        console.log(`Wheel event: deltaX=${mouse.wheelDeltaX}, deltaY=${mouse.wheelDeltaY}`)
         break
 
       case 'mouseenter':

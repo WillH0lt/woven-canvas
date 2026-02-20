@@ -1,5 +1,6 @@
 ---
-title: Creating Plugins
+title: Plugins
+slug: learn/plugins
 description: Package your customizations into reusable plugins
 ---
 
@@ -374,4 +375,4 @@ import PotionTool from "./PotionTool.vue";
 </template>
 ```
 
-See the [Custom Block](/examples/custom-block/) and [Custom Tool](/examples/custom-tool/) examples for more practical patterns.
+See the [Create a Custom Block](/examples/create-a-custom-block/) and [Create a Plugin](/examples/create-a-plugin/) examples for more practical patterns.

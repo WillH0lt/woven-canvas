@@ -142,4 +142,4 @@ Built-in cursor kinds:
 | `CursorKind.Hand`      | Open hand for panning           |
 | `CursorKind.Crosshair` | Crosshair for precise placement |
 
-To register custom SVG cursors, see [Defining Cursors](/learn/creating-plugins/#defining-cursors).
+To register custom SVG cursors, see [Defining Cursors](/learn/plugins/#defining-cursors).

@@ -145,6 +145,6 @@ Now that you have a working canvas, learn how it works:
 
 Or jump straight to examples:
 
-- [Custom Block](/examples/custom-block/) — Build your own block type
-- [Custom Tool](/examples/custom-tool/) — Add a toolbar button
-- [Plugin](/examples/plugin/) — Package everything into a reusable module
+- [Create a Custom Block](/examples/create-a-custom-block/) — Build your own block type
+- [Using the Editor API](/examples/editor-api/) — Programmatically create and update blocks
+- [Create a Plugin](/examples/create-a-plugin/) — Package behavior into a reusable module

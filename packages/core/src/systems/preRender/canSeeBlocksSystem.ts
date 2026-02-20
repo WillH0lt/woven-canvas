@@ -26,8 +26,8 @@ const _cameraAabb: AabbMath = [0, 0, 0, 0]
  * other render systems.
  */
 export const canSeeBlocksSystem = defineEditorSystem({ phase: 'render', priority: 90 }, (ctx: Context) => {
-  if (camerasQuery.changed(ctx).length === 0 && syncedBlocksQuery.removed(ctx).length === 0) {
-    // No camera changes, skip expensive block intersection checks
+  if (camerasQuery.changed(ctx).length === 0 && syncedBlocksQuery.addedOrRemoved(ctx).length === 0) {
+    // No camera or block changes, skip expensive block intersection checks
     return
   }
 

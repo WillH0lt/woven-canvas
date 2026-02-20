@@ -6,12 +6,14 @@ import { VerticalAlign, VerticalAlignment } from "@woven-canvas/core";
 import MenuButton from "../MenuButton.vue";
 import { useComponents } from "../../../composables/useComponents";
 import { useEditorContext } from "../../../composables/useEditorContext";
+import { useTextFormatting } from "../../../composables/useTextFormatting";
 
 const props = defineProps<{
   entityIds: EntityId[];
 }>();
 
 const { nextEditorTick } = useEditorContext();
+const { state: textState } = useTextFormatting(() => props.entityIds);
 
 type VerticalAlignType =
   (typeof VerticalAlignment)[keyof typeof VerticalAlignment];
@@ -55,7 +57,7 @@ function cycleAlignment() {
 </script>
 
 <template>
-  <MenuButton title="Vertical Align" @click="cycleAlignment">
+  <MenuButton v-if="textState.showTextMenuButtons" title="Vertical Align" @click="cycleAlignment">
     <!-- Top align -->
     <svg
       v-if="

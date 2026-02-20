@@ -124,4 +124,4 @@ Components specify how their data synchronizes:
 | `local`     | Yes       | No     | User preferences           |
 | `none`      | No        | No     | Temporary UI state         |
 
-Set sync behavior when [defining components](/learn/creating-plugins/#defining-components).
+Set sync behavior when [defining components](/learn/plugins/#defining-components).

@@ -1,0 +1,193 @@
+---
+title: "Create a Plugin"
+description: Build a plugin with custom blocks, commands, systems, and keybindings
+---
+
+import { Code, Tabs, TabItem } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import App from './App.vue';
+
+import AppRaw from './App.vue?raw';
+import TntPluginRaw from './TntPlugin.ts?raw';
+import TntBlockRaw from './TntBlock.vue?raw';
+import RockBlockRaw from './RockBlock.vue?raw';
+import TntToolRaw from './TntTool.vue?raw';
+import RockToolRaw from './RockTool.vue?raw';
+import ExplodeButtonRaw from './ExplodeButton.vue?raw';
+
+This example creates a TNT plugin that demonstrates custom blocks, commands, systems, and keybindings. Place TNT and rocks on the canvas, then press **Space** or click the **Explode** button to blow up the TNT and any nearby rocks.
+
+<ExampleContainer>
+  <App client:only="vue" />
+</ExampleContainer>
+
+<Tabs>
+  <TabItem label="App.vue">
+    <Code code={AppRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="TntPlugin.ts">
+    <Code code={TntPluginRaw} lang="typescript" />
+  </TabItem>
+  <TabItem label="TntBlock.vue">
+    <Code code={TntBlockRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="RockBlock.vue">
+    <Code code={RockBlockRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="TntTool.vue">
+    <Code code={TntToolRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="RockTool.vue">
+    <Code code={RockToolRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="ExplodeButton.vue">
+    <Code code={ExplodeButtonRaw} lang="vue" />
+  </TabItem>
+</Tabs>
+
+## How It Works
+
+### TntPlugin.ts — The Plugin
+
+Defines the complete plugin with:
+
+- **Components**: `Tnt` and `Rock` marker components to identify block types
+- **Command**: `Explode` command that can be spawned from UI or keybinds
+- **System**: `explodeSystem` runs in the update phase, queries for TNT blocks, finds nearby rocks using `intersectAabb`, and deletes them
+- **Keybind**: Binds Space to the "explode" command
+
+The system demonstrates spatial queries using `intersectAabb` to find all rocks within a blast radius around each TNT block.
+
+### TntBlock.vue & RockBlock.vue — Block Renderers
+
+Simple block renderers that display TNT and rocks. `TntBlock.vue` uses `useComponent()` to reactively read block and TNT data (including blast radius), while `RockBlock.vue` is a lightweight visual renderer.
+
+### TntTool.vue & RockTool.vue — Toolbar Buttons
+
+Toolbar buttons that use `placement-snapshot` to create blocks with the appropriate tag and components when clicked or dragged.
+
+### ExplodeButton.vue — External UI
+
+A button outside the canvas that:
+- Uses `useQuery` to track all TNT blocks on the canvas
+- Disables itself when no TNT exists
+- Spawns the `Explode` command via `editor.command()` when clicked
+
+### App.vue — Integration
+
+Registers the plugin with the editor:
+- Passes `TntPlugin` to the editor's `plugins` option
+- Sets up block definitions with tags and components
+- Renders the toolbar, block slots, and external UI
+
+## Key Concepts
+
+### Commands
+
+Commands are ephemeral entities that exist for one frame. External code spawns them, and systems react to them:
+
+```typescript
+import { defineCommand, on } from '@woven-canvas/core'
+
+// Define a command
+const Explode = defineCommand<void>('explode')
+
+// Spawn from UI
+editor.command(Explode)
+
+// React in a system using on()
+on(ctx, Explode, (ctx) => {
+  // Handle explosion
+})
+```
+
+### Keybinds
+
+Keybinds map key combinations to commands:
+
+```typescript
+import { Key } from '@woven-canvas/core'
+
+const keybinds = [
+  { command: 'explode', key: Key.Space }
+]
+```
+
+### Custom Components
+
+Define data that gets synced with the document using `defineCanvasComponent`:
+
+```typescript
+import { field } from '@woven-canvas/core'
+import { defineCanvasComponent } from '@woven-canvas/vue'
+
+export const Tnt = defineCanvasComponent(
+  { name: 'tnt', sync: 'document' },
+  {
+    blastRadius: field.float64().default(100),
+  },
+)
+```
+
+### Systems
+
+Systems run every frame in a specific phase. Use `on()` to react to commands:
+
+```typescript
+import { defineEditorSystem, on, type Context } from '@woven-canvas/core'
+
+const explodeSystem = defineEditorSystem(
+  { phase: 'update' },
+  (ctx: Context) => {
+    on(ctx, Explode, handleExplode)
+  }
+)
+```
+
+### Queries
+
+Queries efficiently find entities with specific components:
+
+```typescript
+import { defineQuery, Block } from '@woven-canvas/core'
+
+const tntQuery = defineQuery((q) => q.with(Block, Tnt))
+
+// In a system
+for (const entityId of tntQuery.current(ctx)) {
+  const tnt = Tnt.read(ctx, entityId)
+}
+```
+
+### Bounding Box
+
+Find entities within a bounding box using `intersectAabb`:
+
+```typescript
+import { intersectAabb } from '@woven-canvas/core'
+import type { Aabb } from '@woven-canvas/math'
+
+const blastBounds: Aabb = [
+  center[0] - radius, center[1] - radius,
+  center[0] + radius, center[1] + radius
+]
+const nearby = intersectAabb(ctx, blastBounds, rockEntities)
+```
+
+### useComponent
+
+Reactively read ECS component data in Vue:
+
+```typescript
+import { useComponent } from '@woven-canvas/vue'
+
+const tnt = useComponent(props.entityId, Tnt)
+
+// Access reactively
+const radius = tnt.value?.blastRadius
+```
+
+## Related
+
+- [Create a Custom Block](/examples/create-a-custom-block/) — Block definition basics
+- [Editor API](/examples/editor-api/) — Using editor.command() and editor.nextTick()

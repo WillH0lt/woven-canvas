@@ -20,7 +20,7 @@ const FONT_SIZE_OPTIONS = [
 ];
 
 // Get current font size (null if mixed)
-const currentFontSize = computed<number | null>(() => state.fontSize.value);
+const currentFontSize = computed<number | null>(() => state.fontSize);
 
 // Label for the button
 const buttonLabel = computed(() => {
@@ -64,7 +64,7 @@ function handleWheelStop(e: Event) {
 </script>
 
 <template>
-  <MenuDropdown title="Font Size">
+  <MenuDropdown v-if="state.showTextMenuButtons" title="Font Size">
     <template #button>
       <div class="ic-font-size-button">
         <span class="ic-font-size-label">{{ buttonLabel }}</span>

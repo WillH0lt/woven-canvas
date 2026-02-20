@@ -13,8 +13,9 @@ const { state, commands } = useTextFormatting(() => props.entityIds);
 
 <template>
   <MenuButton
+    v-if="state.showTextMenuButtons"
     title="Underline"
-    :class="{ 'ic-active': state.isUnderline.value }"
+    :class="{ 'ic-active': state.isUnderline }"
     @click="commands.toggleUnderline"
   >
     <svg

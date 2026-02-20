@@ -18,17 +18,17 @@ const alignments: TextAlignmentType[] = [
 ];
 
 function cycleAlignment() {
-  const currentIndex = alignments.indexOf(state.alignment.value);
+  const currentIndex = alignments.indexOf(state.alignment);
   const nextAlignment = alignments[(currentIndex + 1) % alignments.length];
   commands.setAlignment(nextAlignment);
 }
 </script>
 
 <template>
-  <MenuButton title="Text Align" @click="cycleAlignment">
+  <MenuButton v-if="state.showTextMenuButtons" title="Text Align" @click="cycleAlignment">
     <!-- Left align -->
     <svg
-      v-if="state.alignment.value === TextAlignment.Left"
+      v-if="state.alignment === TextAlignment.Left"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 448 512"
       fill="currentColor"
@@ -39,7 +39,7 @@ function cycleAlignment() {
     </svg>
     <!-- Center align -->
     <svg
-      v-else-if="state.alignment.value === TextAlignment.Center"
+      v-else-if="state.alignment === TextAlignment.Center"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 448 512"
       fill="currentColor"
@@ -50,7 +50,7 @@ function cycleAlignment() {
     </svg>
     <!-- Right align -->
     <svg
-      v-else-if="state.alignment.value === TextAlignment.Right"
+      v-else-if="state.alignment === TextAlignment.Right"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 448 512"
       fill="currentColor"
