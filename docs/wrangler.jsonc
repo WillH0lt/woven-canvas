@@ -1,6 +1,6 @@
 {
-  "name": "woven-ecs",
-  "compatibility_date": "2026-02-13",
+  "name": "woven-canvas",
+  "compatibility_date": "2026-02-21",
   "assets": {
     "directory": "./dist"
   }

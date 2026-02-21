@@ -15,10 +15,7 @@ const cursorQuery = defineQuery((q) => q.tracking(Cursor))
  */
 export function getCursorSvg(cursors: Record<string, CursorDef>, kind: string, rotateZ: number): string {
   const def = cursors[kind]
-  if (!def) {
-    console.warn(`No cursor definition found for kind: ${kind}`)
-    return 'auto'
-  }
+  if (!def) return 'auto'
 
   const svg = def.makeSvg(rotateZ + def.rotationOffset)
   return `url("data:image/svg+xml,${encodeURIComponent(svg.trim())}") ${def.hotspot[0]} ${def.hotspot[1]}, auto`
