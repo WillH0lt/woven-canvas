@@ -7,9 +7,9 @@ function handleReady(editor: Editor) {
   // Create some shapes to demonstrate selection
   editor.nextTick((ctx) => {
     const colors = [
-      { r: 99, g: 102, b: 241 },  // Indigo
-      { r: 236, g: 72, b: 153 },  // Pink
-      { r: 34, g: 197, b: 94 },   // Green
+      { r: 99, g: 102, b: 241 }, // Indigo
+      { r: 236, g: 72, b: 153 }, // Pink
+      { r: 34, g: 197, b: 94 }, // Green
     ]
 
     for (let i = 0; i < 3; i++) {
