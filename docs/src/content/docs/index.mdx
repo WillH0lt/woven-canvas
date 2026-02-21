@@ -20,11 +20,15 @@ import Card from '../../components/Card.astro';
 import Ribbons from '../../components/Ribbons.astro';
 import ExampleContainer from '../../components/ExampleContainer.astro';
 import HomepageExample from './HomepageExample.vue';
+import HandDrawnArrow from '../../components/HandDrawnArrow.astro';
 
 <Ribbons />
 
-<div style="display: flex; flex-wrap: wrap-reverse; gap: 1.5rem; align-items: stretch;">
-  <div style="flex: 1 1 300px; min-width: 0; height: 400px; overflow: auto; font-size: 0.85em;">
+<div class="demo-section">
+  <div class="demo-code">
+```bash
+npm install @woven-canvas/vue
+```
 
 ```vue
 <script setup lang="ts">
@@ -36,14 +40,55 @@ import { WovenCanvas } from '@woven-canvas/vue'
   <WovenCanvas />
 </template>
 ```
-
   </div>
-  <div style="flex: 2 1 400px;">
-    <ExampleContainer>
+  <div class="demo-canvas">
+    <ExampleContainer height="500">
       <HomepageExample client:only="vue" />
     </ExampleContainer>
   </div>
 </div>
+
+<style>{`
+  .demo-section {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2rem;
+    align-items: center;
+    margin: 2rem 0 3rem;
+  }
+
+  .demo-code {
+    position: relative;
+    max-width: 390px;
+  }
+
+  .demo-code pre,
+  .demo-code pre code {
+    font-size: 0.8rem !important;
+  }
+
+  .demo-canvas {
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  @media (max-width: 900px) {
+    .demo-section {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .demo-code,
+    .demo-canvas {
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .demo-arrow {
+      display: none;
+    }
+  }
+`}</style>
 
 ## Key Features
 
