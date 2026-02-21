@@ -9,11 +9,14 @@ import TiptapText from '@tiptap/extension-text'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import Underline from '@tiptap/extension-underline'
-import { type EntityId, Text, type TextAlignment } from '@woven-canvas/core'
-import { type ComputedRef, computed, type MaybeRefOrGetter, toValue } from 'vue'
+import { Block, Camera, type EntityId, Screen, Text, type TextAlignment } from '@woven-canvas/core'
+import { type ComputedRef, computed, type MaybeRefOrGetter, nextTick, type ShallowRef, toValue } from 'vue'
+import { type BlockDimensions, computeBlockDimensions } from '../utils/blockDimensions'
 import { normalizeColor } from '../utils/color'
 import { useComponents } from './useComponents'
 import { useEditorContext } from './useEditorContext'
+import { useSingleton } from './useSingleton'
+import { useTextEditorController } from './useTextEditorController'
 
 // Extensions used for parsing - must match EditableText
 const extensions = [
@@ -316,9 +319,71 @@ function setColorInHtml(html: string, color: string): string {
  * </script>
  * ```
  */
+type MeasuredUpdate = BlockDimensions & { entityId: EntityId }
+
+/**
+ * Find the text element for an entity by querying the DOM.
+ */
+function findTextElement(entityId: EntityId): HTMLElement | null {
+  const blockElement = document.querySelector(`[data-entity-id="${entityId}"]`)
+  if (!blockElement) return null
+  return blockElement.querySelector('.ic-editable-text') as HTMLElement | null
+}
+
+type CameraRef = ShallowRef<{ left: number; top: number; zoom: number }>
+type ScreenRef = ShallowRef<{ left: number; top: number }>
+
+/**
+ * Measure text dimensions using an off-screen clone.
+ * This allows us to measure the effect of style/content changes synchronously.
+ */
+function measureWithClone(
+  element: HTMLElement,
+  camera: CameraRef,
+  screen: ScreenRef,
+  text: { content: string; fontSizePx: number; fontFamily: string },
+): BlockDimensions {
+  // Clone the element
+  const clone = element.cloneNode(true) as HTMLElement
+
+  // Make invisible but measurable - position at same location as original
+  clone.style.position = 'absolute'
+  clone.style.visibility = 'hidden'
+  clone.style.pointerEvents = 'none'
+  clone.style.top = '0'
+  clone.style.left = '0'
+
+  // Apply style changes from the text clone
+  clone.style.fontSize = `${text.fontSizePx}px`
+  clone.style.fontFamily = text.fontFamily
+
+  // Apply content
+  const proseMirror = clone.querySelector('.ProseMirror, .tiptap')
+  if (proseMirror) {
+    proseMirror.innerHTML = text.content
+  } else {
+    clone.innerHTML = text.content
+  }
+
+  // Insert as sibling to preserve .ic-block rotation context
+  element.parentElement?.appendChild(clone)
+
+  // Measure using computeBlockDimensions (handles rotation and camera transform)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dims = computeBlockDimensions(clone, camera as any, screen as any)
+
+  // Cleanup
+  clone.remove()
+
+  return dims
+}
+
 export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>): TextBatchController {
   const { nextEditorTick } = useEditorContext()
   const textsMap = useComponents(entityIds, Text)
+  const camera = useSingleton(Camera)
+  const screen = useSingleton(Screen)
+  const textEditorController = useTextEditorController()
 
   const state: TextBatchState = {
     hasTextEntities: computed(() => {
@@ -455,55 +520,140 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
 
   const commands: TextBatchCommands = {
     toggleBold() {
-      // If all are bold, remove from all. Otherwise add to all.
-      const shouldAdd = state.isBold.value !== true
-      applyToAll((content) => (shouldAdd ? addMarkInHtml(content, 'bold') : removeMarkInHtml(content, 'bold')))
+      applyContentChange((content) =>
+        state.isBold.value ? removeMarkInHtml(content, 'bold') : addMarkInHtml(content, 'bold'),
+      )
     },
 
     toggleItalic() {
-      const shouldAdd = state.isItalic.value !== true
-      applyToAll((content) => (shouldAdd ? addMarkInHtml(content, 'italic') : removeMarkInHtml(content, 'italic')))
+      applyContentChange((content) =>
+        state.isItalic.value ? removeMarkInHtml(content, 'italic') : addMarkInHtml(content, 'italic'),
+      )
     },
 
     toggleUnderline() {
-      const shouldAdd = state.isUnderline.value !== true
-      applyToAll((content) =>
-        shouldAdd ? addMarkInHtml(content, 'underline') : removeMarkInHtml(content, 'underline'),
+      applyContentChange((content) =>
+        state.isUnderline.value ? removeMarkInHtml(content, 'underline') : addMarkInHtml(content, 'underline'),
       )
     },
 
     setAlignment(alignment: TextAlignment) {
-      applyToAll((content) => setAlignmentInHtml(content, alignment))
+      // Alignment doesn't affect dimensions, no measurement needed
+      applyContentOnly((content) => setAlignmentInHtml(content, alignment))
     },
 
     setColor(color: string) {
-      applyToAll((content) => setColorInHtml(content, color))
+      // Color doesn't affect dimensions, no measurement needed
+      applyContentOnly((content) => setColorInHtml(content, color))
     },
 
     setFontSize(size: number) {
-      const ids = toValue(entityIds)
-
-      nextEditorTick((ctx) => {
-        for (const entityId of ids) {
-          const text = Text.write(ctx, entityId)
+      applyTextStyleChange(
+        (text) => ({ ...text, fontSizePx: size }),
+        (text) => {
           text.fontSizePx = size
-        }
-      })
+        },
+      )
     },
 
     setFontFamily(family: string) {
-      const ids = toValue(entityIds)
-
-      nextEditorTick((ctx) => {
-        for (const entityId of ids) {
-          const text = Text.write(ctx, entityId)
+      applyTextStyleChange(
+        (text) => ({ ...text, fontFamily: family }),
+        (text) => {
           text.fontFamily = family
-        }
-      })
+        },
+      )
     },
   }
 
-  function applyToAll(transform: (content: string) => string): void {
+  type TextSnapshot = { content: string; fontSizePx: number; fontFamily: string }
+
+  /**
+   * Apply a text style change (font size/family) and update block dimensions.
+   */
+  function applyTextStyleChange(
+    getCloneText: (text: TextSnapshot) => TextSnapshot,
+    applyChange: (text: ReturnType<typeof Text.write>) => void,
+  ): void {
+    const ids = toValue(entityIds)
+    const updates: MeasuredUpdate[] = []
+
+    for (const entityId of ids) {
+      const text = textsMap.value.get(entityId)
+      if (!text) continue
+
+      const element = findTextElement(entityId)
+      if (element) {
+        const dims = measureWithClone(element, camera, screen, getCloneText(text))
+        updates.push({ entityId, ...dims })
+      }
+    }
+
+    nextEditorTick((ctx) => {
+      for (const entityId of ids) {
+        applyChange(Text.write(ctx, entityId))
+      }
+
+      // Update block dimensions and position
+      for (const { entityId, width, height, left, top } of updates) {
+        const block = Block.write(ctx, entityId)
+        block.size = [width, height]
+        block.position = [left, top]
+      }
+
+      // Trigger floating menu position update after Vue re-renders
+      nextTick(() => {
+        textEditorController.updateCounter.value++
+      })
+    })
+  }
+
+  /**
+   * Apply content transformation and update block dimensions.
+   * Used for changes that affect text layout (bold, italic, underline).
+   */
+  function applyContentChange(transform: (content: string) => string): void {
+    const ids = toValue(entityIds)
+
+    // Compute new content and measure dimensions
+    const updates: (MeasuredUpdate & { content: string })[] = []
+
+    for (const entityId of ids) {
+      const text = textsMap.value.get(entityId)
+      if (!text) continue
+
+      const newContent = transform(text.content)
+      const element = findTextElement(entityId)
+
+      if (element) {
+        const dims = measureWithClone(element, camera, screen, { ...text, content: newContent })
+        updates.push({ entityId, content: newContent, ...dims })
+      } else {
+        // No element found, just update content without dimensions
+        updates.push({ entityId, content: newContent, width: 0, height: 0, left: 0, top: 0 })
+      }
+    }
+
+    nextEditorTick((ctx) => {
+      for (const { entityId, content, width, height, left, top } of updates) {
+        const text = Text.write(ctx, entityId)
+        text.content = content
+
+        // Update block dimensions and position if we measured them
+        if (width > 0 && height > 0) {
+          const block = Block.write(ctx, entityId)
+          block.size = [width, height]
+          block.position = [left, top]
+        }
+      }
+    })
+  }
+
+  /**
+   * Apply content transformation without updating dimensions.
+   * Used for changes that don't affect text layout (color, alignment).
+   */
+  function applyContentOnly(transform: (content: string) => string): void {
     const ids = toValue(entityIds)
 
     nextEditorTick((ctx) => {

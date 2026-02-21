@@ -8,7 +8,7 @@ const { buttonText = "Try it", height = 400 } = Astro.props;
 ---
 
 <div class="example-container" data-example-container style={`height: ${height}px`}>
-  <div class="canvas-wrapper" data-canvas-wrapper>
+  <div class="canvas-wrapper not-content" data-canvas-wrapper>
     <slot />
   </div>
   <div class="overlay" data-overlay>

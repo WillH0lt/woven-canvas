@@ -51,6 +51,11 @@
   font-family: var(--ic-font-family);
 }
 
+/* Normalize SVG display to prevent style leakage from parent document */
+.ic-root svg {
+  display: block;
+}
+
 .ic-root ::selection {
   background-color: var(--ic-text-selection-color);
 }

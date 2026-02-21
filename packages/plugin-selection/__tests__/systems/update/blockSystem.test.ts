@@ -64,7 +64,7 @@ describe('UpdateBlock', () => {
     domElement = document.createElement('div')
     document.body.appendChild(domElement)
 
-    editor = new Editor(domElement, { plugins: [testPlugin] })
+    editor = new Editor(domElement, { plugins: [testPlugin], grid: { enabled: false } })
     await editor.initialize()
   })
 

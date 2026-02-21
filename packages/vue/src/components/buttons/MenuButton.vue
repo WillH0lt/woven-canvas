@@ -64,5 +64,6 @@ function handleMouseLeave() {
 .ic-menu-button svg {
   width: 22px;
   height: 18px;
+  flex-shrink: 0;
 }
 </style>

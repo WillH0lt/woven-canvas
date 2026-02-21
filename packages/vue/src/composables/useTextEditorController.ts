@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/vue-3'
 import type { TextAlignment } from '@woven-canvas/core'
-import { type ComputedRef, computed, type ShallowRef, shallowRef } from 'vue'
+import { type ComputedRef, computed, type Ref, ref, type ShallowRef, shallowRef } from 'vue'
 
 import { normalizeColor } from '../utils/color'
 
@@ -41,6 +41,8 @@ export interface TextEditorController {
   state: TextEditorState
   /** Commands to manipulate the active editor */
   commands: TextEditorCommands
+  /** Counter that increments on each transaction (for triggering updates) */
+  updateCounter: Ref<number>
   /** Register an editor and element as active (called by EditableText) */
   register(editor: Editor, blockElement: HTMLElement): void
   /** Unregister the active editor and element (called by EditableText) */
@@ -52,7 +54,7 @@ const activeEditor = shallowRef<Editor | null>(null)
 const activeBlockElement = shallowRef<HTMLElement | null>(null)
 
 // Track selection/transaction updates to trigger reactivity
-const updateCounter = shallowRef(0)
+const updateCounter = ref(0)
 
 /**
  * Composable for controlling text editors from the floating menu.
@@ -227,6 +229,7 @@ export function useTextEditorController(): TextEditorController {
     blockElement: activeBlockElement,
     state,
     commands,
+    updateCounter,
     register,
     unregister,
   }

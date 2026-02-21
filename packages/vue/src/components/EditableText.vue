@@ -26,6 +26,12 @@ import { computeBlockDimensions } from "../utils/blockDimensions";
 
 interface Props extends BlockData {
   blockElement: HTMLElement | null;
+  /**
+   * Element to use for measuring dimensions when editing ends.
+   * For blocks with padding around the text (e.g., StickyNote), pass the padded container.
+   * For blocks where text is the full content, omit this to use the internal text element.
+   */
+  measureElement?: HTMLElement | null;
 }
 
 const props = defineProps<Props>();
@@ -112,9 +118,8 @@ watch(
       await handleEditStart(editor.value);
 
       // Register editor and element (used by FloatingMenu for bounds)
-      if (props.blockElement) {
-        textEditorController.register(editor.value, props.blockElement);
-      }
+      // Use editableTextRef since it's the element that grows with text content
+      textEditorController.register(editor.value, editableTextRef.value);
     } else if (editor.value) {
       // Save content and destroy editor when exiting edit mode
       textEditorController.unregister();
@@ -173,13 +178,14 @@ function handleEditEnd(editor: Editor): void {
       return;
     }
 
-    if (!editableTextRef.value) {
-      console.warn("EditableText: element not found");
+    const elementToMeasure = props.measureElement ?? editableTextRef.value;
+    if (!elementToMeasure) {
+      console.warn("EditableText: no element to measure");
       return;
     }
 
     const dimensions = computeBlockDimensions(
-      editableTextRef.value,
+      elementToMeasure,
       camera,
       screen,
     );

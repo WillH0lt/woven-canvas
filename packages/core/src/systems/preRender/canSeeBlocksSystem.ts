@@ -10,7 +10,7 @@ const camerasQuery = defineQuery((q) => q.tracking(Camera))
 // Query for synced blocks with Aabb (persistent blocks)
 const blocksQuery = defineQuery((q) => q.with(Synced, Block, Aabb))
 
-const syncedBlocksQuery = defineQuery((q) => q.with(Synced, Block))
+const syncedBlocksQuery = defineQuery((q) => q.with(Synced, Block, Aabb))
 
 // Re-usable AABB for camera viewport (avoids allocation)
 const _cameraAabb: AabbMath = [0, 0, 0, 0]

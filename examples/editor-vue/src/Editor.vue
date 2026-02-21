@@ -16,11 +16,11 @@ const clientId = crypto.randomUUID()
           documentId: 'editor-vue-test',
         },
         history: true,
-        websocket: {
-          documentId: 'editor-vue-test',
-          url: 'ws://localhost:8087/ws',
-          clientId: clientId,
-        },
+        // websocket: {
+        //   documentId: 'editor-vue-test',
+        //   url: 'ws://localhost:8087/ws',
+        //   clientId: clientId,
+        // },
       }"
       :plugin-options="{ controls: { maxZoom: 3 } }"
       :background="{

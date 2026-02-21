@@ -710,6 +710,7 @@ function getHeldByColor(data: BlockData): string | null {
 function getBlockStyle(data: BlockData) {
   const { block, stratum, opacity } = data;
   const heldByColor = getHeldByColor(data);
+  const opacityValue = opacity !== null ? opacity.value / 255 : 1;
 
   return {
     position: "absolute" as const,
@@ -719,10 +720,12 @@ function getBlockStyle(data: BlockData) {
     height: `${block.size[1]}px`,
     zIndex: STRATUM_ORDER[stratum] * 1000,
     transform: getBlockTransform(block),
-    opacity: opacity !== null ? opacity.value / 255 : undefined,
+    opacity: opacityValue,
     pointerEvents: "none" as const,
     userSelect: "none" as const,
     "--ic-held-by-color": heldByColor ?? undefined,
+    // Delay fade-in (0→1) to allow dimensions to settle, but hide immediately (1→0)
+    transition: opacityValue === 1 ? "opacity 0ms 32ms" : undefined,
   };
 }
 </script>
@@ -755,6 +758,7 @@ function getBlockStyle(data: BlockData) {
       <div
         v-for="blockData in sortedBlocks"
         :key="blockData.value.entityId"
+        :data-entity-id="blockData.value.entityId"
         :style="getBlockStyle(blockData.value)"
         :data-selected="blockData.value.selected || undefined"
         :data-held-by-other="

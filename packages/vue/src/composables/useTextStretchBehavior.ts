@@ -7,9 +7,9 @@ import {
   TransformHandleKind,
   UpdateTransformBox,
 } from '@woven-canvas/plugin-selection'
-import { type MaybeRefOrGetter, onUnmounted, type Ref, toValue, watch } from 'vue'
+import { type MaybeRefOrGetter, type Ref, toValue, watch } from 'vue'
 import type { BlockData } from '../types'
-import { computeBlockDimensions } from '../utils/blockDimensions'
+import { type BlockDimensions, computeBlockDimensions } from '../utils/blockDimensions'
 import { useEditorContext } from './useEditorContext'
 import { useSingleton } from './useSingleton'
 
@@ -41,29 +41,23 @@ export interface TextStretchBehaviorResult {
 /**
  * Composable for handling text stretch behavior on blocks.
  *
- * Observes the element for size changes and updates block dimensions,
- * respecting minWidth/minHeight constraints.
+ * Watches selection state reactively and updates block dimensions once
+ * when stretching ends, respecting minWidth/minHeight constraints.
  */
 export function useTextStretchBehavior(options: TextStretchBehaviorOptions): TextStretchBehaviorResult {
   const camera = useSingleton(Camera)
   const screen = useSingleton(Screen)
   const TransformBoxState = useSingleton(TransformBoxStateSingleton)
+  const selectionState = useSingleton(SelectionStateSingleton)
   const { nextEditorTick } = useEditorContext()
 
-  // ResizeObserver for content-driven resizes
-  let resizeObserver: ResizeObserver | null = null
-
-  interface Dimensions {
-    width: number
-    height: number
-    left: number
-    top: number
-  }
+  let wasStretching = false
+  let pendingDimensions: BlockDimensions | null = null
 
   /**
    * Updates block dimensions with min constraints applied.
    */
-  function applyBlockDimensions(ctx: Context, dimensions: Dimensions): void {
+  function applyBlockDimensions(ctx: Context, dimensions: BlockDimensions): void {
     const { entityId } = toValue(options.blockData)
 
     // Apply min constraints
@@ -90,44 +84,30 @@ export function useTextStretchBehavior(options: TextStretchBehaviorOptions): Tex
     }
   }
 
-  function startResizeObserver() {
-    if (resizeObserver) return // Already observing
-
-    const element = options.containerRef.value
-    if (!element) return
-
-    resizeObserver = new ResizeObserver(() => {
-      nextEditorTick((ctx) => {
-        if (!isStretching(ctx)) return
-
-        const dimensions = computeBlockDimensions(element, camera, screen)
-        applyBlockDimensions(ctx, dimensions)
-      })
-    })
-    resizeObserver.observe(element)
-  }
-
-  function stopResizeObserver() {
-    if (resizeObserver) {
-      resizeObserver.disconnect()
-      resizeObserver = null
-    }
-  }
-
-  // Watch for selection state changes
+  // Watch selection state for stretch end
+  // Use flush: 'sync' to run immediately when state changes
   watch(
+    () => selectionState.value,
     () => {
-      const blockData = toValue(options.blockData)
-      return [blockData.selected, blockData.edited] as const
-    },
-    ([selected, edited]) => {
-      if (selected && !edited) {
-        startResizeObserver()
-      } else {
-        stopResizeObserver()
+      // Compute dimensions synchronously (DOM measurement doesn't need ECS context)
+      const element = options.containerRef.value
+      if (element && wasStretching) {
+        pendingDimensions = computeBlockDimensions(element, camera, screen)
       }
+
+      nextEditorTick((ctx) => {
+        const currentlyStretching = isStretching(ctx)
+
+        // If stretch just ended, apply pre-computed dimensions
+        if (wasStretching && !currentlyStretching && pendingDimensions) {
+          applyBlockDimensions(ctx, pendingDimensions)
+          pendingDimensions = null
+        }
+
+        wasStretching = currentlyStretching
+      })
     },
-    { immediate: true },
+    { flush: 'sync' },
   )
 
   /**
@@ -149,10 +129,6 @@ export function useTextStretchBehavior(options: TextStretchBehaviorOptions): Tex
       applyBlockDimensions(ctx, dimensions)
     })
   }
-
-  onUnmounted(() => {
-    stopResizeObserver()
-  })
 
   return {
     handleEditEnd,

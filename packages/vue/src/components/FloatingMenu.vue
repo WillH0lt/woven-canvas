@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, inject, provide, watch } from "vue";
+import { computed, ref, inject, provide } from "vue";
 import { useFloating, offset, flip, shift } from "@floating-ui/vue";
 import {
   Block,
@@ -13,7 +13,6 @@ import {
   SelectionState,
 } from "@woven-canvas/plugin-selection";
 import { Aabb, Rect } from "@woven-canvas/math";
-import { useElementBounding } from "@vueuse/core";
 
 import { useQuery } from "../composables/useQuery";
 import { useSingleton } from "../composables/useSingleton";
@@ -35,21 +34,6 @@ const selectionState = useSingleton(SelectionStateSingleton);
 
 // Get text editor controller for live editing bounds
 const textEditorController = useTextEditorController();
-
-// Reactive bounds for the editing element (updates on resize)
-const editingBounds = useElementBounding(textEditorController.blockElement);
-
-// Force bounds update when element changes (fixes initial position)
-watch(textEditorController.blockElement, () => {
-  editingBounds.update();
-});
-
-// Update editing bounds when camera changes (scroll/zoom) while editing
-watch(camera, () => {
-  if (textEditorController.blockElement.value) {
-    editingBounds.update();
-  }
-});
 
 // Selected entity IDs
 const selectedIds = computed<EntityId[]>(() =>
@@ -107,27 +91,19 @@ const virtualReference = computed(() => {
   const container = containerRef?.value;
   if (!container) return null;
 
+  // Dependencies for reactivity
   void camera.value;
+  void textEditorController.updateCounter.value;
 
-  // Use live element bounds if editing (text element may have changed size)
-  // Only use if bounds are valid (non-zero) - otherwise fall through to ECS bounds
-  if (
-    textEditorController.blockElement.value &&
-    editingBounds.width.value > 0
-  ) {
-    const rect = {
-      x: editingBounds.x.value,
-      y: editingBounds.y.value,
-      width: editingBounds.width.value,
-      height: editingBounds.height.value,
-      top: editingBounds.top.value,
-      left: editingBounds.left.value,
-      right: editingBounds.right.value,
-      bottom: editingBounds.bottom.value,
-    };
-    return {
-      getBoundingClientRect: () => rect,
-    };
+  // Use live element bounds if editing (read directly from DOM)
+  const blockElement = textEditorController.blockElement.value;
+  if (blockElement) {
+    const rect = blockElement.getBoundingClientRect();
+    if (rect.width > 0) {
+      return {
+        getBoundingClientRect: () => rect,
+      };
+    }
   }
 
   // Fall back to ECS-based selection bounds

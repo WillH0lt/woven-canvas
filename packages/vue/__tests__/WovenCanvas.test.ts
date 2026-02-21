@@ -27,6 +27,14 @@ vi.mock('../src/components/FloatingMenu.vue', () => ({
   },
 }))
 
+// Mock Toolbar to avoid useSingleton issues in tests
+vi.mock('../src/components/Toolbar.vue', () => ({
+  default: {
+    name: 'Toolbar',
+    template: '<div></div>',
+  },
+}))
+
 import WovenCanvas from '../src/components/WovenCanvas.vue'
 
 // Track all created editor instances
@@ -205,7 +213,9 @@ describe('WovenCanvas', () => {
     it('should pass maxEntities to Editor', async () => {
       mount(WovenCanvas, {
         props: {
-          maxEntities: 5000,
+          editor: {
+            maxEntities: 5000,
+          },
         },
       })
       await flushPromises()
@@ -217,7 +227,9 @@ describe('WovenCanvas', () => {
     it('should pass user data to Editor', async () => {
       mount(WovenCanvas, {
         props: {
-          user: { userId: 'test-user-123' },
+          editor: {
+            user: { userId: 'test-user-123' },
+          },
         },
       })
       await flushPromises()
@@ -250,7 +262,9 @@ describe('WovenCanvas', () => {
 
       mount(WovenCanvas, {
         props: {
-          plugins: [customPlugin],
+          editor: {
+            plugins: [customPlugin],
+          },
         },
       })
       await flushPromises()
