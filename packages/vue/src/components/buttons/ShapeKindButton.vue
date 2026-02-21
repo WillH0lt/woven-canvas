@@ -54,27 +54,27 @@ function handleKindChange(kind: string) {
 <template>
   <MenuDropdown title="Shape Type">
     <template #button>
-      <div class="ic-shape-kind-button">
+      <div class="wov-shape-kind-button">
         <svg
           viewBox="0 0 20 20"
-          class="ic-shape-kind-icon"
+          class="wov-shape-kind-icon"
           fill="none"
           stroke="currentColor"
           stroke-width="1.5"
         >
           <circle cx="6" cy="6" r="5" />
-          <rect x="6" y="6" width="10" height="10" fill="var(--ic-gray-600)" />
+          <rect x="6" y="6" width="10" height="10" fill="var(--wov-gray-600)" />
         </svg>
-        <IconChevronDown class="ic-chevron-down" />
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
     <template #dropdown>
-      <div class="ic-shape-kind-dropdown">
+      <div class="wov-shape-kind-dropdown">
         <button
           v-for="option in shapeOptions"
           :key="option.kind"
-          class="ic-shape-kind-option"
+          class="wov-shape-kind-option"
           :class="{
             'is-selected': !hasMultipleKinds && option.kind === currentKind,
           }"
@@ -82,7 +82,7 @@ function handleKindChange(kind: string) {
         >
           <svg
             viewBox="0 0 20 20"
-            class="ic-shape-option-icon"
+            class="wov-shape-option-icon"
             fill="none"
             stroke="currentColor"
             stroke-width="4"
@@ -100,7 +100,7 @@ function handleKindChange(kind: string) {
 </template>
 
 <style>
-.ic-shape-kind-button {
+.wov-shape-kind-button {
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -110,22 +110,22 @@ function handleKindChange(kind: string) {
   margin: 0 8px;
 }
 
-.ic-shape-kind-icon {
+.wov-shape-kind-icon {
   width: 18px;
   height: 18px;
 }
 
-.ic-shape-kind-dropdown {
+.wov-shape-kind-dropdown {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   padding: 8px;
-  background: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+  background: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
   min-width: 200px;
 }
 
-.ic-shape-kind-option {
+.wov-shape-kind-option {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -134,21 +134,21 @@ function handleKindChange(kind: string) {
   padding: 8px;
   border: none;
   background: transparent;
-  color: var(--ic-gray-100);
+  color: var(--wov-gray-100);
   cursor: pointer;
   border-radius: 4px;
   font-size: 10px;
 }
 
-.ic-shape-kind-option:hover {
-  background: var(--ic-gray-600);
+.wov-shape-kind-option:hover {
+  background: var(--wov-gray-600);
 }
 
-.ic-shape-kind-option.is-selected {
-  background: var(--ic-primary-600);
+.wov-shape-kind-option.is-selected {
+  background: var(--wov-primary-600);
 }
 
-.ic-shape-option-icon {
+.wov-shape-option-icon {
   width: 24px;
   height: 24px;
 }

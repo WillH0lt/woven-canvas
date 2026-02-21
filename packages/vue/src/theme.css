@@ -1,83 +1,83 @@
 @import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap");
 
-@layer ic-reset {
-  .ic-root :where(*:not(svg, svg *)) {
+@layer wov-reset {
+  .wov-root :where(*:not(svg, svg *)) {
     all: revert;
   }
 }
 
 
-.ic-root {
+.wov-root {
   /* Brand colors */
-  --ic-primary: #6a58f2;
-  --ic-primary-light: #8a76f4;
-  --ic-error: #ff4d4f;
+  --wov-primary: #6a58f2;
+  --wov-primary-light: #8a76f4;
+  --wov-error: #ff4d4f;
 
   /* Grayscale */
-  --ic-gray-100: #f8f9f9;
-  --ic-gray-200: #e3e5e8;
-  --ic-gray-300: #c7ccd1;
-  --ic-gray-400: #9099a4;
-  --ic-gray-500: #4f5660;
-  --ic-gray-600: #2e3338;
-  --ic-gray-700: #060607;
+  --wov-gray-100: #f8f9f9;
+  --wov-gray-200: #e3e5e8;
+  --wov-gray-300: #c7ccd1;
+  --wov-gray-400: #9099a4;
+  --wov-gray-500: #4f5660;
+  --wov-gray-600: #2e3338;
+  --wov-gray-700: #060607;
 
   /* Z-index scale (stacking order) */
-  --ic-z-block-content: 1;
-  --ic-z-cursors: 50;
-  --ic-z-ui: 100;              /* toolbar, indicators, presence */
-  --ic-z-floating-menu: 101;
-  --ic-z-overlay: 1000;        /* version mismatch, loading */
-  --ic-z-dropdown: 1001;
-  --ic-z-tooltip: 1002;
+  --wov-z-block-content: 1;
+  --wov-z-cursors: 50;
+  --wov-z-ui: 100;              /* toolbar, indicators, presence */
+  --wov-z-floating-menu: 101;
+  --wov-z-overlay: 1000;        /* version mismatch, loading */
+  --wov-z-dropdown: 1001;
+  --wov-z-tooltip: 1002;
 
   /* UI settings */
-  --ic-font-family: "Figtree", sans-serif;
-  --ic-menu-border-radius: 12px;
-  --ic-menu-tooltip-border-radius: 6px;
-  --ic-transition-duration: 150ms;
-  --ic-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  --wov-font-family: "Figtree", sans-serif;
+  --wov-menu-border-radius: 12px;
+  --wov-menu-tooltip-border-radius: 6px;
+  --wov-transition-duration: 150ms;
+  --wov-transition-timing-function: cubwov-bezier(0.4, 0, 0.2, 1);
 
   /* Selection/highlight styles */
-  --ic-highlighted-block-outline-color: var(--ic-primary);
-  --ic-highlighted-block-outline-width: 1.5px;
-  --ic-highlighted-block-outline-offset: -1px;
-  --ic-highlighted-block-border-radius: 2px;
-  --ic-selection-box-bg: #5865f222;
-  --ic-text-selection-color: var(--ic-primary-light);
+  --wov-highlighted-block-outline-color: var(--wov-primary);
+  --wov-highlighted-block-outline-width: 1.5px;
+  --wov-highlighted-block-outline-offset: -1px;
+  --wov-highlighted-block-border-radius: 2px;
+  --wov-selection-box-bg: #5865f222;
+  --wov-text-selection-color: var(--wov-primary-light);
 }
 
-.ic-root {
-  font-family: var(--ic-font-family);
+.wov-root {
+  font-family: var(--wov-font-family);
 }
 
 /* Normalize SVG display to prevent style leakage from parent document */
-.ic-root svg {
+.wov-root svg {
   display: block;
 }
 
-.ic-root ::selection {
-  background-color: var(--ic-text-selection-color);
+.wov-root ::selection {
+  background-color: var(--wov-text-selection-color);
 }
 
 
 /* Block highlight styles for hovered/selected state */
-.ic-block[data-hovered] > *,
-.ic-block[data-selected] > * {
-  outline: calc(var(--ic-highlighted-block-outline-width) / var(--ic-zoom, 1))
-    solid var(--ic-highlighted-block-outline-color);
+.wov-block[data-hovered] > *,
+.wov-block[data-selected] > * {
+  outline: calc(var(--wov-highlighted-block-outline-width) / var(--wov-zoom, 1))
+    solid var(--wov-highlighted-block-outline-color);
   outline-offset: calc(
-    var(--ic-highlighted-block-outline-offset) / var(--ic-zoom, 1)
+    var(--wov-highlighted-block-outline-offset) / var(--wov-zoom, 1)
   );
   border-radius: calc(
-    var(--ic-highlighted-block-border-radius) / var(--ic-zoom, 1)
+    var(--wov-highlighted-block-border-radius) / var(--wov-zoom, 1)
   );
 }
 
-.ic-block[data-held-by-other] > * {
-  outline: calc(3px / var(--ic-zoom, 1)) solid var(--ic-held-by-color);
-  outline-offset: calc(2px / var(--ic-zoom, 1));
+.wov-block[data-held-by-other] > * {
+  outline: calc(3px / var(--wov-zoom, 1)) solid var(--wov-held-by-color);
+  outline-offset: calc(2px / var(--wov-zoom, 1));
   border-radius: calc(
-    var(--ic-highlighted-block-border-radius) / var(--ic-zoom, 1)
+    var(--wov-highlighted-block-border-radius) / var(--wov-zoom, 1)
   );
 }

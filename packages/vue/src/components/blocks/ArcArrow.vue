@@ -160,7 +160,7 @@ function flipDirection(dir: Vec2): Vec2 {
 </script>
 
 <template>
-  <div ref="containerRef" class="ic-arc-arrow">
+  <div ref="containerRef" class="wov-arc-arrow">
     <svg class="arrow-svg" preserveAspectRatio="none">
       <!-- Curved arc path -->
       <template v-if="isCurved && curvedPath">
@@ -215,7 +215,7 @@ function flipDirection(dir: Vec2): Vec2 {
             :d="curvedPath"
             class="highlight-overlay"
             fill="none"
-            style="stroke-width: calc(2px / var(--ic-zoom))"
+            style="stroke-width: calc(2px / var(--wov-zoom))"
             stroke-linecap="round"
           />
           <line
@@ -226,25 +226,25 @@ function flipDirection(dir: Vec2): Vec2 {
             :y2="straightLinePoints.y2"
             class="highlight-overlay"
             fill="none"
-            style="stroke-width: calc(2px / var(--ic-zoom))"
+            style="stroke-width: calc(2px / var(--wov-zoom))"
             stroke-linecap="round"
           />
           <ArrowHead
             v-if="pathData.startHead !== 'none'"
             :position="pathData.start"
             :direction="pathData.startDir"
-            thickness="calc(2px / var(--ic-zoom))"
+            thickness="calc(2px / var(--wov-zoom))"
             :arrow-thickness="baseThickness"
-            color="var(--ic-highlighted-block-outline-color)"
+            color="var(--wov-highlighted-block-outline-color)"
             :kind="pathData.startHead"
           />
           <ArrowHead
             v-if="pathData.endHead !== 'none'"
             :position="pathData.end"
             :direction="pathData.endDir"
-            thickness="calc(2px / var(--ic-zoom))"
+            thickness="calc(2px / var(--wov-zoom))"
             :arrow-thickness="baseThickness"
-            color="var(--ic-highlighted-block-outline-color)"
+            color="var(--wov-highlighted-block-outline-color)"
             :kind="pathData.endHead"
           />
         </template>
@@ -254,7 +254,7 @@ function flipDirection(dir: Vec2): Vec2 {
 </template>
 
 <style scoped>
-.ic-arc-arrow {
+.wov-arc-arrow {
   display: flex;
   position: relative;
   align-items: center;
@@ -272,13 +272,13 @@ function flipDirection(dir: Vec2): Vec2 {
 }
 
 .highlight-overlay {
-  stroke: var(--ic-highlighted-block-outline-color);
+  stroke: var(--wov-highlighted-block-outline-color);
 }
 </style>
 
 <style>
-.ic-block[data-hovered] > .ic-arc-arrow,
-.ic-block[data-selected] > .ic-arc-arrow {
+.wov-block[data-hovered] > .wov-arc-arrow,
+.wov-block[data-selected] > .wov-arc-arrow {
   outline: none;
 }
 </style>

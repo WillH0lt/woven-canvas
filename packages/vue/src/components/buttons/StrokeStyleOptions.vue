@@ -34,11 +34,11 @@ function handleClick(kind: StrokeKind) {
 </script>
 
 <template>
-  <div class="ic-stroke-style-section">
+  <div class="wov-stroke-style-section">
     <button
       v-for="option in strokeOptions"
       :key="option.kind"
-      class="ic-stroke-style-option"
+      class="wov-stroke-style-option"
       :class="{
         'is-active': !hasMultipleStyles && option.kind === currentStyle,
       }"
@@ -67,14 +67,14 @@ function handleClick(kind: StrokeKind) {
 </template>
 
 <style>
-.ic-stroke-style-section {
+.wov-stroke-style-section {
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
   margin-bottom: -2px;
 }
 
-.ic-stroke-style-option {
+.wov-stroke-style-option {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -85,27 +85,27 @@ function handleClick(kind: StrokeKind) {
   background: transparent;
   cursor: pointer;
   border-radius: 0;
-  color: var(--ic-gray-100);
+  color: var(--wov-gray-100);
   font-size: 11px;
 }
 
-.ic-stroke-style-option:first-child {
+.wov-stroke-style-option:first-child {
   border-top-left-radius: 8px;
 }
 
-.ic-stroke-style-option:last-child {
+.wov-stroke-style-option:last-child {
   border-top-right-radius: 8px;
 }
 
-.ic-stroke-style-option:hover {
-  background: var(--ic-gray-700);
+.wov-stroke-style-option:hover {
+  background: var(--wov-gray-700);
 }
 
-.ic-stroke-style-option.is-active {
-  background: var(--ic-gray-600);
+.wov-stroke-style-option.is-active {
+  background: var(--wov-gray-600);
 }
 
-.ic-stroke-style-option svg {
+.wov-stroke-style-option svg {
   width: 32px;
   height: 12px;
 }

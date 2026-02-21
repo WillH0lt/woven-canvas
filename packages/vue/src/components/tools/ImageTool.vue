@@ -169,7 +169,7 @@ function handleMouseLeave() {
 <template>
   <button
     ref="buttonRef"
-    class="ic-toolbar-button"
+    class="wov-toolbar-button"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"

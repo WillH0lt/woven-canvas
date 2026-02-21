@@ -55,31 +55,31 @@ function handleWheelStop(e: Event) {
 <template>
   <MenuDropdown v-if="state.showTextMenuButtons" title="Font Family">
     <template #button>
-      <div class="ic-font-family-button">
-        <span class="ic-font-family-label">{{ buttonLabel }}</span>
-        <IconChevronDown class="ic-chevron-down" />
+      <div class="wov-font-family-button">
+        <span class="wov-font-family-label">{{ buttonLabel }}</span>
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
     <template #dropdown>
-      <div class="ic-font-family-menu" @wheel="handleWheelStop" @click.stop>
-        <div class="ic-font-list">
+      <div class="wov-font-family-menu" @wheel="handleWheelStop" @click.stop>
+        <div class="wov-font-list">
           <div
             v-for="font in resolvedFonts"
             :key="font.name"
-            class="ic-font-item"
+            class="wov-font-item"
             :class="{ active: currentFontFamily === font.name }"
             @click="setFontFamily(font.name)"
           >
             <img
               v-if="font.previewImage"
-              class="ic-font-preview"
+              class="wov-font-preview"
               :src="font.previewImage"
               :alt="font.name"
             />
             <span
               v-else
-              class="ic-font-name"
+              class="wov-font-name"
               :style="{ fontFamily: font.name }"
             >
               {{ font.displayName }}
@@ -92,7 +92,7 @@ function handleWheelStop(e: Event) {
 </template>
 
 <style>
-.ic-font-family-button {
+.wov-font-family-button {
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -103,7 +103,7 @@ function handleWheelStop(e: Event) {
   padding: 0 12px;
 }
 
-.ic-font-family-label {
+.wov-font-family-label {
   font-size: 14px;
   white-space: nowrap;
   max-width: 120px;
@@ -111,8 +111,8 @@ function handleWheelStop(e: Event) {
   text-overflow: ellipsis;
 }
 
-.ic-font-family-menu {
-  background-color: var(--ic-gray-700);
+.wov-font-family-menu {
+  background-color: var(--wov-gray-700);
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -121,7 +121,7 @@ function handleWheelStop(e: Event) {
   width: 200px;
 }
 
-.ic-font-list {
+.wov-font-list {
   max-height: 200px;
   color: white;
   overflow-y: auto;
@@ -129,17 +129,17 @@ function handleWheelStop(e: Event) {
   border-radius: 8px;
 }
 
-.ic-font-list > *:first-child {
+.wov-font-list > *:first-child {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 }
 
-.ic-font-list > *:last-child {
+.wov-font-list > *:last-child {
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
 
-.ic-font-item {
+.wov-font-item {
   display: flex;
   align-items: center;
   height: 32px;
@@ -149,15 +149,15 @@ function handleWheelStop(e: Event) {
   cursor: pointer;
 }
 
-.ic-font-item.active {
-  background-color: var(--ic-primary);
+.wov-font-item.active {
+  background-color: var(--wov-primary);
 }
 
-.ic-font-item:not(.active):hover {
-  background-color: var(--ic-gray-600);
+.wov-font-item:not(.active):hover {
+  background-color: var(--wov-gray-600);
 }
 
-.ic-font-preview {
+.wov-font-preview {
   filter: invert(1);
   height: 50%;
   overflow: hidden;
@@ -165,7 +165,7 @@ function handleWheelStop(e: Event) {
   object-position: left;
 }
 
-.ic-font-name {
+.wov-font-name {
   font-size: 14px;
 }
 </style>

@@ -80,8 +80,8 @@ function handleEditEnd(data: { content: string }) {
 </script>
 
 <template>
-  <div ref="containerRef" class="ic-shape-block">
-    <svg class="ic-shape-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+  <div ref="containerRef" class="wov-shape-block">
+    <svg class="wov-shape-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
       <path
         :d="shapePath"
         :fill="fillColor"
@@ -93,7 +93,7 @@ function handleEditEnd(data: { content: string }) {
         vector-effect="non-scaling-stroke"
       />
     </svg>
-    <div class="ic-shape-content" :style="contentStyle">
+    <div class="wov-shape-content" :style="contentStyle">
       <EditableText
         v-bind="props"
         :block-element="containerRef"
@@ -104,7 +104,7 @@ function handleEditEnd(data: { content: string }) {
 </template>
 
 <style>
-.ic-shape-block {
+.wov-shape-block {
   position: relative;
   width: 100%;
   height: 100%;
@@ -112,7 +112,7 @@ function handleEditEnd(data: { content: string }) {
   box-sizing: border-box;
 }
 
-.ic-shape-svg {
+.wov-shape-svg {
   position: absolute;
   top: 0;
   left: 0;
@@ -123,7 +123,7 @@ function handleEditEnd(data: { content: string }) {
   z-index: -1;
 }
 
-.ic-shape-content {
+.wov-shape-content {
   width: 100%;
   height: 100%;
   display: flex;

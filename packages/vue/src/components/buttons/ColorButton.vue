@@ -69,9 +69,9 @@ function handleColorChange(color: ColorData) {
 <template>
   <MenuDropdown title="Color">
     <template #button>
-      <div class="ic-color-button">
-        <div class="ic-color-swatch" :style="swatchStyle" />
-        <IconChevronDown class="ic-chevron-down" />
+      <div class="wov-color-button">
+        <div class="wov-color-swatch" :style="swatchStyle" />
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
@@ -87,7 +87,7 @@ function handleColorChange(color: ColorData) {
 </template>
 
 <style>
-.ic-color-button {
+.wov-color-button {
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -97,7 +97,7 @@ function handleColorChange(color: ColorData) {
   margin: 0 8px;
 }
 
-.ic-color-swatch {
+.wov-color-swatch {
   width: 20px;
   height: 20px;
   border-radius: 9999px;

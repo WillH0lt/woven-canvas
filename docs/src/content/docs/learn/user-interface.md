@@ -221,13 +221,13 @@ Example:
 Woven Canvas uses CSS custom properties for styling. Override them to match your design:
 
 ```css
-.ic-root {
-  --ic-primary: #3b82f6;
-  --ic-primary-light: #60a5fa;
-  --ic-gray-100: #f3f4f6;
-  --ic-gray-600: #4b5563;
-  --ic-gray-700: #374151;
-  --ic-menu-border-radius: 8px;
+.wov-root {
+  --wov-primary: #3b82f6;
+  --wov-primary-light: #60a5fa;
+  --wov-gray-100: #f3f4f6;
+  --wov-gray-600: #4b5563;
+  --wov-gray-700: #374151;
+  --wov-menu-border-radius: 8px;
 }
 ```
 

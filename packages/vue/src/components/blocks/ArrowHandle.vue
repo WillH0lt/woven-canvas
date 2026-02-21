@@ -1,18 +1,18 @@
 <template>
-  <div class="ic-arrow-handle">
-    <div class="ic-arrow-handle-inner"></div>
+  <div class="wov-arrow-handle">
+    <div class="wov-arrow-handle-inner"></div>
   </div>
 </template>
 
 <style>
-.ic-arrow-handle {
+.wov-arrow-handle {
   position: relative;
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.ic-arrow-handle-inner {
+.wov-arrow-handle-inner {
   position: absolute;
   inset: 0;
   box-sizing: border-box;
@@ -22,26 +22,26 @@
 
 /*
   Sub-pixel shrinking border: draw at zoom scale then inverse-scale.
-  Pre-scale: size * var(--ic-zoom) with a 2px border & 2px radius.
+  Pre-scale: size * var(--wov-zoom) with a 2px border & 2px radius.
   After transform scale(1/zoom): apparent border width & radius become 2px / zoom.
 */
-.ic-arrow-handle-inner::before {
+.wov-arrow-handle-inner::before {
   content: "";
   position: absolute;
   left: 50%;
   top: 50%;
   border-radius: 50%;
   box-sizing: border-box;
-  background-color: var(--ic-primary-light);
-  transform: translate(-50%, -50%) scale(calc(1 / var(--ic-zoom)));
+  background-color: var(--wov-primary-light);
+  transform: translate(-50%, -50%) scale(calc(1 / var(--wov-zoom)));
   transform-origin: center center;
   transition-property: background-color;
-  transition-timing-function: var(--ic-transition-timing-function);
-  transition-duration: var(--ic-transition-duration);
+  transition-timing-function: var(--wov-transition-timing-function);
+  transition-duration: var(--wov-transition-duration);
   opacity: 0;
 }
 
-.ic-arrow-handle-inner::after {
+.wov-arrow-handle-inner::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -50,20 +50,20 @@
   height: 50%;
   border-radius: 50%;
   box-sizing: border-box;
-  border: calc(2px / var(--ic-zoom)) solid var(--ic-primary);
-  background-color: var(--ic-gray-100);
+  border: calc(2px / var(--wov-zoom)) solid var(--wov-primary);
+  background-color: var(--wov-gray-100);
   transform: translate(-50%, -50%);
   transform-origin: center center;
   transition-property: background-color;
-  transition-timing-function: var(--ic-transition-timing-function);
-  transition-duration: var(--ic-transition-duration);
+  transition-timing-function: var(--wov-transition-timing-function);
+  transition-duration: var(--wov-transition-duration);
 }
 
-.ic-block[data-hovered] > .ic-arrow-handle {
+.wov-block[data-hovered] > .wov-arrow-handle {
   outline: none;
 }
 
-.ic-block[data-hovered] > .ic-arrow-handle > .ic-arrow-handle-inner::before {
+.wov-block[data-hovered] > .wov-arrow-handle > .wov-arrow-handle-inner::before {
   opacity: 0.4;
 }
 </style>

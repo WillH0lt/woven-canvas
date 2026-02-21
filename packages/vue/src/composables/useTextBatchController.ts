@@ -327,7 +327,7 @@ type MeasuredUpdate = BlockDimensions & { entityId: EntityId }
 function findTextElement(entityId: EntityId): HTMLElement | null {
   const blockElement = document.querySelector(`[data-entity-id="${entityId}"]`)
   if (!blockElement) return null
-  return blockElement.querySelector('.ic-editable-text') as HTMLElement | null
+  return blockElement.querySelector('.wov-editable-text') as HTMLElement | null
 }
 
 type CameraRef = ShallowRef<{ left: number; top: number; zoom: number }>
@@ -365,7 +365,7 @@ function measureWithClone(
     clone.innerHTML = text.content
   }
 
-  // Insert as sibling to preserve .ic-block rotation context
+  // Insert as sibling to preserve .wov-block rotation context
   element.parentElement?.appendChild(clone)
 
   // Measure using computeBlockDimensions (handles rotation and camera transform)

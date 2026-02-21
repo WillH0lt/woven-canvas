@@ -104,14 +104,14 @@ const imageStyle = computed(() => ({
 </script>
 
 <template>
-  <div class="ic-image-block">
+  <div class="wov-image-block">
     <!-- Loading state -->
-    <div v-if="isLoading && !displayUrl" class="ic-image-placeholder">
+    <div v-if="isLoading && !displayUrl" class="wov-image-placeholder">
       <span>Loading...</span>
     </div>
 
     <!-- Error state -->
-    <div v-else-if="hasError" class="ic-image-placeholder ic-image-error">
+    <div v-else-if="hasError" class="wov-image-placeholder wov-image-error">
       <span>Failed to load image</span>
     </div>
 
@@ -125,14 +125,14 @@ const imageStyle = computed(() => ({
     />
 
     <!-- Upload progress overlay -->
-    <div v-if="uploadProgress" class="ic-image-upload-overlay">
-      <span class="ic-image-upload-status">{{ uploadProgress }}</span>
+    <div v-if="uploadProgress" class="wov-image-upload-overlay">
+      <span class="wov-image-upload-status">{{ uploadProgress }}</span>
     </div>
   </div>
 </template>
 
 <style>
-.ic-image-block {
+.wov-image-block {
   width: 100%;
   height: 100%;
   position: relative;
@@ -142,11 +142,11 @@ const imageStyle = computed(() => ({
   overflow: hidden;
 }
 
-.ic-image-block img {
+.wov-image-block img {
   display: block;
 }
 
-.ic-image-placeholder {
+.wov-image-placeholder {
   width: 100%;
   height: 100%;
   display: flex;
@@ -159,13 +159,13 @@ const imageStyle = computed(() => ({
   font-size: 14px;
 }
 
-.ic-image-error {
+.wov-image-error {
   background-color: rgba(255, 0, 0, 0.05);
   border-color: rgba(255, 0, 0, 0.2);
   color: rgba(255, 0, 0, 0.7);
 }
 
-.ic-image-upload-overlay {
+.wov-image-upload-overlay {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -177,7 +177,7 @@ const imageStyle = computed(() => ({
   text-align: center;
 }
 
-.ic-image-upload-status {
+.wov-image-upload-status {
   display: inline-block;
 }
 </style>

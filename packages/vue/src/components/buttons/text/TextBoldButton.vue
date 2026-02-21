@@ -15,7 +15,7 @@ const { state, commands } = useTextFormatting(() => props.entityIds);
   <MenuButton
     v-if="state.showTextMenuButtons"
     title="Bold"
-    :class="{ 'ic-active': state.isBold }"
+    :class="{ 'wov-active': state.isBold }"
     @click="commands.toggleBold"
   >
     <svg

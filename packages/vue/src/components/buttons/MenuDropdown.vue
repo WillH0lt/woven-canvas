@@ -102,7 +102,7 @@ onUnmounted(() => {
 <template>
   <div
     ref="buttonRef"
-    class="ic-menu-dropdown-trigger"
+    class="wov-menu-dropdown-trigger"
     :class="{ 'is-open': isOpen }"
     :menu-open="isOpen || undefined"
     @mousedown.prevent
@@ -117,7 +117,7 @@ onUnmounted(() => {
     <div
       v-if="isOpen"
       ref="dropdownRef"
-      class="ic-menu-dropdown"
+      class="wov-menu-dropdown"
       :style="floatingStyles"
     >
       <slot name="dropdown" :close="close" />
@@ -126,15 +126,15 @@ onUnmounted(() => {
 </template>
 
 <style>
-.ic-menu-dropdown-trigger {
+.wov-menu-dropdown-trigger {
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
-.ic-menu-dropdown {
+.wov-menu-dropdown {
   position: absolute;
-  z-index: var(--ic-z-dropdown);
+  z-index: var(--wov-z-dropdown);
 }
 </style>

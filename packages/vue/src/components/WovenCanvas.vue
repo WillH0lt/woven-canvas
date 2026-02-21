@@ -723,7 +723,7 @@ function getBlockStyle(data: BlockData) {
     opacity: opacityValue,
     pointerEvents: "none" as const,
     userSelect: "none" as const,
-    "--ic-held-by-color": heldByColor ?? undefined,
+    "--wov-held-by-color": heldByColor ?? undefined,
     // Delay fade-in (0→1) to allow dimensions to settle, but hide immediately (1→0)
     transition: opacityValue === 1 ? "opacity 0ms 32ms" : undefined,
   };
@@ -733,7 +733,7 @@ function getBlockStyle(data: BlockData) {
 <template>
   <div
     ref="containerRef"
-    class="ic-root"
+    class="wov-root"
     :style="{
       position: 'relative',
       width: '100%',
@@ -747,12 +747,12 @@ function getBlockStyle(data: BlockData) {
     </slot>
 
     <div
-      class="ic-canvas"
+      class="wov-canvas"
       :style="{
         position: 'absolute',
         transformOrigin: '0 0',
         transform: `scale(${cameraRef.zoom}) translate(${-cameraRef.left}px, ${-cameraRef.top}px)`,
-        '--ic-zoom': cameraRef.zoom,
+        '--wov-zoom': cameraRef.zoom,
       }"
     >
       <div
@@ -765,7 +765,7 @@ function getBlockStyle(data: BlockData) {
           getHeldByColor(blockData.value) !== null || undefined
         "
         :data-hovered="blockData.value.hovered || undefined"
-        class="ic-block"
+        class="wov-block"
       >
         <slot
           :name="`block:${blockData.value.block.tag}`"
@@ -887,7 +887,7 @@ function getBlockStyle(data: BlockData) {
 
 <style>
 /* Shared menu button styles */
-.ic-menu-button {
+.wov-menu-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -896,10 +896,10 @@ function getBlockStyle(data: BlockData) {
   padding: 0 8px;
 }
 
-.ic-menu-dropdown {
+.wov-menu-dropdown {
   display: flex;
-  background-color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+  background-color: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
   overflow: hidden;
   box-shadow:
     0px 0px 0.5px rgba(0, 0, 0, 0.18),
@@ -907,7 +907,7 @@ function getBlockStyle(data: BlockData) {
     0px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.ic-menu-option {
+.wov-menu-option {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -915,16 +915,16 @@ function getBlockStyle(data: BlockData) {
   height: 36px;
   border: none;
   background: transparent;
-  color: var(--ic-gray-100);
+  color: var(--wov-gray-100);
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
-.ic-menu-option:hover {
-  background-color: var(--ic-gray-600);
+.wov-menu-option:hover {
+  background-color: var(--wov-gray-600);
 }
 
-.ic-menu-option.is-active {
-  background-color: var(--ic-primary);
+.wov-menu-option.is-active {
+  background-color: var(--wov-primary);
 }
 </style>

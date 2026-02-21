@@ -67,8 +67,8 @@ const blockDefs = [
 
 .hint {
   font-size: 12px;
-  color: var(--ic-gray-400);
-  background: var(--ic-gray-800);
+  color: var(--wov-gray-400);
+  background: var(--wov-gray-800);
   padding: 4px 8px;
   border-radius: 4px;
 }

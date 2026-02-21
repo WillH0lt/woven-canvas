@@ -141,18 +141,18 @@ function stopSelectorDrag() {
 </script>
 
 <template>
-  <div class="ic-color-picker">
+  <div class="wov-color-picker">
     <ColorInput :modelValue="pickedColor" @update:modelValue="handleHexInput" />
-    <div class="ic-color-picker-area">
+    <div class="wov-color-picker-area">
       <div
         ref="selectorRef"
-        class="ic-color-picker-selector"
+        class="wov-color-picker-selector"
         :style="{ backgroundColor: trackHueColor }"
         @pointerdown.prevent="startSelectorDrag"
       >
-        <div class="ic-color-picker-selector-gradient">
+        <div class="wov-color-picker-selector-gradient">
           <div
-            class="ic-color-picker-selector-thumb"
+            class="wov-color-picker-selector-thumb"
             :style="{
               left: `${selectorPosition.x}%`,
               top: `${selectorPosition.y}%`,
@@ -173,19 +173,19 @@ function stopSelectorDrag() {
         v-model="opacityPosition"
         :thumbColor="pickedColorRgb"
         :background="opacityGradient"
-        class="ic-color-picker-opacity"
+        class="wov-color-picker-opacity"
       />
     </div>
   </div>
 </template>
 
 <style>
-.ic-color-picker {
+.wov-color-picker {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
-  background-color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+  background-color: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
   box-shadow:
     0px 0px 0.5px rgba(0, 0, 0, 0.18),
     0px 3px 8px rgba(0, 0, 0, 0.1),
@@ -193,12 +193,12 @@ function stopSelectorDrag() {
   padding: 8px;
 }
 
-.ic-color-picker-area {
+.wov-color-picker-area {
   display: flex;
   gap: 8px;
 }
 
-.ic-color-picker-selector {
+.wov-color-picker-selector {
   width: 160px;
   height: 160px;
   border-radius: 6px;
@@ -206,7 +206,7 @@ function stopSelectorDrag() {
   cursor: crosshair;
 }
 
-.ic-color-picker-selector-gradient {
+.wov-color-picker-selector-gradient {
   position: absolute;
   inset: 0;
   border-radius: 6px;
@@ -215,7 +215,7 @@ function stopSelectorDrag() {
     linear-gradient(to right, #fff 0%, rgba(255, 255, 255, 0) 100%);
 }
 
-.ic-color-picker-selector-thumb {
+.wov-color-picker-selector-thumb {
   position: absolute;
   width: 14px;
   height: 14px;
@@ -226,7 +226,7 @@ function stopSelectorDrag() {
   pointer-events: none;
 }
 
-.ic-color-picker-opacity {
+.wov-color-picker-opacity {
   background-image:
     linear-gradient(45deg, #808080 25%, transparent 25%),
     linear-gradient(-45deg, #808080 25%, transparent 25%),

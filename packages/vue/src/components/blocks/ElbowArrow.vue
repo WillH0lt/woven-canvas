@@ -156,7 +156,7 @@ const pathData = computed(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="ic-elbow-arrow">
+  <div ref="containerRef" class="wov-elbow-arrow">
     <svg class="arrow-svg" preserveAspectRatio="none">
       <!-- Highlight background (dashed, untrimmed) -->
       <template v-if="isEmphasized && untrimmedLines.length > 0">
@@ -170,8 +170,8 @@ const pathData = computed(() => {
           class="highlight-bg"
           fill="none"
           style="
-            stroke-width: calc(2px / var(--ic-zoom));
-            stroke-dasharray: calc(12px / var(--ic-zoom));
+            stroke-width: calc(2px / var(--wov-zoom));
+            stroke-dasharray: calc(12px / var(--wov-zoom));
           "
           stroke-linecap="round"
         ></line>
@@ -223,25 +223,25 @@ const pathData = computed(() => {
             :y2="line.end[1]"
             class="highlight-overlay"
             fill="none"
-            style="stroke-width: calc(2px / var(--ic-zoom))"
+            style="stroke-width: calc(2px / var(--wov-zoom))"
             stroke-linecap="round"
           ></line>
           <ArrowHead
             v-if="pathData.startHead !== 'none'"
             :position="pathData.startPos"
             :direction="pathData.startDir"
-            thickness="calc(2px / var(--ic-zoom))"
+            thickness="calc(2px / var(--wov-zoom))"
             :arrow-thickness="baseThickness"
-            color="var(--ic-highlighted-block-outline-color)"
+            color="var(--wov-highlighted-block-outline-color)"
             :kind="pathData.startHead"
           />
           <ArrowHead
             v-if="pathData.endHead !== 'none'"
             :position="pathData.endPos"
             :direction="pathData.endDir"
-            thickness="calc(2px / var(--ic-zoom))"
+            thickness="calc(2px / var(--wov-zoom))"
             :arrow-thickness="baseThickness"
-            color="var(--ic-highlighted-block-outline-color)"
+            color="var(--wov-highlighted-block-outline-color)"
             :kind="pathData.endHead"
           />
         </template>
@@ -251,7 +251,7 @@ const pathData = computed(() => {
 </template>
 
 <style scoped>
-.ic-elbow-arrow {
+.wov-elbow-arrow {
   display: flex;
   position: relative;
   align-items: center;
@@ -269,17 +269,17 @@ const pathData = computed(() => {
 }
 
 .highlight-bg {
-  stroke: var(--ic-gray-600);
+  stroke: var(--wov-gray-600);
 }
 
 .highlight-overlay {
-  stroke: var(--ic-highlighted-block-outline-color);
+  stroke: var(--wov-highlighted-block-outline-color);
 }
 </style>
 
 <style>
-.ic-block[data-hovered] > .ic-elbow-arrow,
-.ic-block[data-selected] > .ic-elbow-arrow {
+.wov-block[data-hovered] > .wov-elbow-arrow,
+.wov-block[data-selected] > .wov-elbow-arrow {
   outline: none;
 }
 </style>

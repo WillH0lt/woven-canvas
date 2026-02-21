@@ -79,8 +79,8 @@ function handleKeyDown(event: KeyboardEvent) {
 
 <template>
   <input
-    id="ic-color-input"
-    class="ic-color-input"
+    id="wov-color-input"
+    class="wov-color-input"
     type="text"
     size="1"
     aria-label="Hex color value"
@@ -96,21 +96,21 @@ function handleKeyDown(event: KeyboardEvent) {
 </template>
 
 <style>
-input.ic-color-input {
+input.wov-color-input {
   margin-bottom: 8px;
   box-sizing: border-box;
   padding: 6px 8px;
   font-size: 18px;
   text-align: center;
   font-family: inherit;
-  color: var(--ic-gray-100);
-  background-color: var(--ic-gray-600);
-  border: 1px solid var(--ic-gray-600);
+  color: var(--wov-gray-100);
+  background-color: var(--wov-gray-600);
+  border: 1px solid var(--wov-gray-600);
   border-radius: 4px;
   outline: none;
 }
 
-input.ic-color-input:focus {
-  border-color: var(--ic-primary);
+input.wov-color-input:focus {
+  border-color: var(--wov-primary);
 }
 </style>

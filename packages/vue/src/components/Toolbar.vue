@@ -90,8 +90,8 @@ provide(TOOLBAR_KEY, toolbarContext);
 </script>
 
 <template>
-  <div class="ic-toolbar-container">
-    <div class="ic-toolbar" @mouseleave="handleMouseLeave">
+  <div class="wov-toolbar-container">
+    <div class="wov-toolbar" @mouseleave="handleMouseLeave">
       <!-- If default slot has content, render only that -->
       <template v-if="slots.default">
         <slot />
@@ -117,22 +117,22 @@ provide(TOOLBAR_KEY, toolbarContext);
 </template>
 
 <style>
-.ic-toolbar-container {
+.wov-toolbar-container {
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--ic-z-ui);
+  z-index: var(--wov-z-ui);
 }
 
-.ic-toolbar {
+.wov-toolbar {
   display: flex;
   gap: 8px;
   padding: 8px 10px;
   overflow: hidden;
   cursor: pointer;
-  color: var(--ic-gray-100);
-  background-color: var(--ic-gray-100);
+  color: var(--wov-gray-100);
+  background-color: var(--wov-gray-100);
   border-radius: 12px;
   box-shadow:
     0px 0px 0.5px rgba(0, 0, 0, 0.18),
@@ -140,17 +140,17 @@ provide(TOOLBAR_KEY, toolbarContext);
     0px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.ic-toolbar * {
+.wov-toolbar * {
   transition-property: background-color;
-  transition-timing-function: var(--ic-transition-timing-function);
-  transition-duration: var(--ic-transition-duration);
+  transition-timing-function: var(--wov-transition-timing-function);
+  transition-duration: var(--wov-transition-duration);
 }
 
-.ic-toolbar *[menu-open] {
-  background-color: var(--ic-gray-600);
+.wov-toolbar *[menu-open] {
+  background-color: var(--wov-gray-600);
 }
 
-.ic-toolbar-button {
+.wov-toolbar-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,20 +159,20 @@ provide(TOOLBAR_KEY, toolbarContext);
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+  color: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
 }
 
-.ic-toolbar-button:hover {
-  background-color: var(--ic-gray-200);
+.wov-toolbar-button:hover {
+  background-color: var(--wov-gray-200);
 }
 
-.ic-toolbar-button.selected {
-  background-color: var(--ic-primary);
-  color: var(--ic-gray-100);
+.wov-toolbar-button.selected {
+  background-color: var(--wov-primary);
+  color: var(--wov-gray-100);
 }
 
-.ic-toolbar-button svg {
+.wov-toolbar-button svg {
   width: 20px;
   height: 20px;
   display: block;
@@ -180,8 +180,8 @@ provide(TOOLBAR_KEY, toolbarContext);
 }
 
 .menu {
-  background-color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+  background-color: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);

@@ -98,7 +98,7 @@ function handleClick() {
 </script>
 
 <template>
-  <button v-if="visible" class="ic-back-to-content" @click="handleClick">
+  <button v-if="visible" class="wov-back-to-content" @click="handleClick">
     <svg
       width="16"
       height="16"
@@ -119,20 +119,20 @@ function handleClick() {
 </template>
 
 <style>
-.ic-back-to-content {
+.wov-back-to-content {
   position: absolute;
   top: 16px;
   left: 16px;
-  z-index: var(--ic-z-ui);
+  z-index: var(--wov-z-ui);
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--ic-gray-700, #374151);
-  background-color: var(--ic-gray-100, #ffffff);
-  border: 1px solid var(--ic-gray-300, #d1d5db);
+  color: var(--wov-gray-700, #374151);
+  background-color: var(--wov-gray-100, #ffffff);
+  border: 1px solid var(--wov-gray-300, #d1d5db);
   border-radius: 8px;
   cursor: pointer;
   box-shadow:
@@ -143,16 +143,16 @@ function handleClick() {
     border-color 0.15s ease;
 }
 
-.ic-back-to-content:hover {
-  background-color: var(--ic-gray-200, #f3f4f6);
-  border-color: var(--ic-gray-400, #9ca3af);
+.wov-back-to-content:hover {
+  background-color: var(--wov-gray-200, #f3f4f6);
+  border-color: var(--wov-gray-400, #9ca3af);
 }
 
-.ic-back-to-content:active {
-  background-color: var(--ic-gray-300, #e5e7eb);
+.wov-back-to-content:active {
+  background-color: var(--wov-gray-300, #e5e7eb);
 }
 
-.ic-back-to-content svg {
+.wov-back-to-content svg {
   flex-shrink: 0;
 }
 </style>

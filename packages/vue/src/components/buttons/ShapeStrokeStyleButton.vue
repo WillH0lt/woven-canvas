@@ -64,8 +64,8 @@ function getDashArray(kind: StrokeKind): string {
 <template>
   <MenuDropdown title="Stroke Style">
     <template #button>
-      <div class="ic-stroke-style-button">
-        <svg viewBox="0 0 24 8" class="ic-stroke-style-icon" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="wov-stroke-style-button">
+        <svg viewBox="0 0 24 8" class="wov-stroke-style-icon" fill="none" stroke="currentColor" stroke-width="2">
           <line
             x1="2"
             y1="4"
@@ -76,20 +76,20 @@ function getDashArray(kind: StrokeKind): string {
             :stroke-opacity="currentStyle === StrokeKind.None ? 0.3 : 1"
           />
         </svg>
-        <IconChevronDown class="ic-chevron-down" />
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
     <template #dropdown>
-      <div class="ic-stroke-style-dropdown">
+      <div class="wov-stroke-style-dropdown">
         <button
           v-for="option in strokeOptions"
           :key="option.kind"
-          class="ic-stroke-style-option"
+          class="wov-stroke-style-option"
           :class="{ 'is-selected': !hasMultipleStyles && option.kind === currentStyle }"
           @click="handleStyleChange(option.kind)"
         >
-          <svg viewBox="0 0 40 8" class="ic-stroke-style-preview" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 40 8" class="wov-stroke-style-preview" fill="none" stroke="currentColor" stroke-width="2">
             <line
               x1="4"
               y1="4"
@@ -108,7 +108,7 @@ function getDashArray(kind: StrokeKind): string {
 </template>
 
 <style>
-.ic-stroke-style-button {
+.wov-stroke-style-button {
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -118,43 +118,43 @@ function getDashArray(kind: StrokeKind): string {
   margin: 0 8px;
 }
 
-.ic-stroke-style-icon {
+.wov-stroke-style-icon {
   width: 24px;
   height: 8px;
 }
 
-.ic-stroke-style-dropdown {
+.wov-stroke-style-dropdown {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 8px;
-  background: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+  background: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
   min-width: 140px;
 }
 
-.ic-stroke-style-option {
+.wov-stroke-style-option {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
   border: none;
   background: transparent;
-  color: var(--ic-gray-100);
+  color: var(--wov-gray-100);
   cursor: pointer;
   border-radius: 4px;
   font-size: 12px;
 }
 
-.ic-stroke-style-option:hover {
-  background: var(--ic-gray-600);
+.wov-stroke-style-option:hover {
+  background: var(--wov-gray-600);
 }
 
-.ic-stroke-style-option.is-selected {
-  background: var(--ic-primary-600);
+.wov-stroke-style-option.is-selected {
+  background: var(--wov-primary-600);
 }
 
-.ic-stroke-style-preview {
+.wov-stroke-style-preview {
   width: 40px;
   height: 8px;
 }

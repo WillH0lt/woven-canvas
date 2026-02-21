@@ -4,23 +4,23 @@
  * Rendered while dragging on empty canvas space to select multiple blocks.
  *
  * Uses CSS variables:
- * --ic-zoom: Current zoom level (for scaling border width)
- * --ic-primary: Primary color for the border
+ * --wov-zoom: Current zoom level (for scaling border width)
+ * --wov-primary: Primary color for the border
  */
 </script>
 
 <template>
-  <div class="ic-selection-box" />
+  <div class="wov-selection-box" />
 </template>
 
 <style>
-.ic-selection-box {
+.wov-selection-box {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  background-color: var(--ic-selection-box-bg);
+  background-color: var(--wov-selection-box-bg);
   border-style: solid;
-  border-width: calc(3px / var(--ic-zoom));
-  border-color: var(--ic-primary);
+  border-width: calc(3px / var(--wov-zoom));
+  border-color: var(--wov-primary);
 }
 </style>

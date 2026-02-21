@@ -104,22 +104,22 @@ const pickerOpen = ref(false);
 <template>
   <MenuDropdown title="Fill Color">
     <template #button>
-      <div class="ic-fill-color-button">
-        <svg viewBox="0 0 20 20" class="ic-fill-color-icon" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <div class="wov-fill-color-button">
+        <svg viewBox="0 0 20 20" class="wov-fill-color-icon" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5.879,2.625L14.121,2.625C15.906,2.625 17.375,4.094 17.375,5.879L17.375,14.121C17.375,15.906 15.906,17.375 14.121,17.375L5.88,17.375C4.095,17.375 2.626,15.906 2.626,14.121L2.626,5.88C2.626,4.095 4.095,2.626 5.88,2.626L5.879,2.625Z" stroke-width="1.25"/>
           <path d="M2.779,14.655L14.543,2.871M10.238,17.308L17.318,10.229M2.876,9.577L9.853,2.6M5.397,17.239L17.16,5.476" stroke-width="1.25"/>
         </svg>
-        <IconChevronDown class="ic-chevron-down" />
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
     <template #dropdown>
-      <div class="ic-fill-dropdown">
-        <div v-if="!pickerOpen" class="ic-fill-mode-section">
+      <div class="wov-fill-dropdown">
+        <div v-if="!pickerOpen" class="wov-fill-mode-section">
           <button
             v-for="option in fillModes"
             :key="option.mode"
-            class="ic-fill-mode-option"
+            class="wov-fill-mode-option"
             :class="{
               'is-active': !hasMultipleModes && option.mode === currentFillMode,
             }"
@@ -157,7 +157,7 @@ const pickerOpen = ref(false);
 </template>
 
 <style>
-.ic-fill-color-button {
+.wov-fill-color-button {
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -167,26 +167,26 @@ const pickerOpen = ref(false);
   margin: 0 8px;
 }
 
-.ic-fill-color-icon {
+.wov-fill-color-icon {
   width: 18px;
   height: 18px;
 }
 
-.ic-fill-dropdown {
+.wov-fill-dropdown {
   display: flex;
   flex-direction: column;
 }
 
-.ic-fill-mode-section {
+.wov-fill-mode-section {
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
-  background-color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius) var(--ic-menu-border-radius) 0 0;
+  background-color: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius) var(--wov-menu-border-radius) 0 0;
   margin-bottom: -2px;
 }
 
-.ic-fill-mode-option {
+.wov-fill-mode-option {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -197,27 +197,27 @@ const pickerOpen = ref(false);
   background: transparent;
   cursor: pointer;
   border-radius: 0;
-  color: var(--ic-gray-100);
+  color: var(--wov-gray-100);
   font-size: 11px;
 }
 
-.ic-fill-mode-option:first-child {
+.wov-fill-mode-option:first-child {
   border-top-left-radius: 8px;
 }
 
-.ic-fill-mode-option:last-child {
+.wov-fill-mode-option:last-child {
   border-top-right-radius: 8px;
 }
 
-.ic-fill-mode-option:hover {
-  background: var(--ic-gray-600);
+.wov-fill-mode-option:hover {
+  background: var(--wov-gray-600);
 }
 
-.ic-fill-mode-option.is-active {
-  background: var(--ic-gray-600);
+.wov-fill-mode-option.is-active {
+  background: var(--wov-gray-600);
 }
 
-.ic-fill-mode-option svg {
+.wov-fill-mode-option svg {
   width: 24px;
   height: 24px;
 }

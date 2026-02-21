@@ -66,24 +66,24 @@ function handleWheelStop(e: Event) {
 <template>
   <MenuDropdown v-if="state.showTextMenuButtons" title="Font Size">
     <template #button>
-      <div class="ic-font-size-button">
-        <span class="ic-font-size-label">{{ buttonLabel }}</span>
-        <IconChevronDown class="ic-chevron-down" />
+      <div class="wov-font-size-button">
+        <span class="wov-font-size-label">{{ buttonLabel }}</span>
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
     <template #dropdown>
-      <div class="ic-font-size-menu" @wheel="handleWheelStop" @click.stop>
+      <div class="wov-font-size-menu" @wheel="handleWheelStop" @click.stop>
         <div
           v-for="option in FONT_SIZE_OPTIONS"
           :key="option.value"
-          class="ic-font-size-option"
+          class="wov-font-size-option"
           :class="{ active: currentFontSize === option.value }"
           @click="setFontSize(option.value)"
         >
           <svg
             v-if="currentFontSize === option.value"
-            class="ic-check-icon"
+            class="wov-check-icon"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 448 512"
             fill="currentColor"
@@ -93,24 +93,24 @@ function handleWheelStop(e: Event) {
             />
           </svg>
           <span
-            class="ic-option-label"
+            class="wov-option-label"
             :style="{ fontSize: `${option.displayValue}px` }"
           >
             {{ option.label }}
           </span>
         </div>
 
-        <div class="ic-separator" />
+        <div class="wov-separator" />
 
-        <div class="ic-input-container">
+        <div class="wov-input-container">
           <input
-            class="ic-custom-input"
+            class="wov-custom-input"
             :value="inputDisplayValue"
             @input="handleInputChange"
             @keydown="handleInputKeyDown"
             placeholder="Custom size"
           />
-          <span class="ic-px-suffix">px</span>
+          <span class="wov-px-suffix">px</span>
         </div>
       </div>
     </template>
@@ -118,7 +118,7 @@ function handleWheelStop(e: Event) {
 </template>
 
 <style>
-.ic-font-size-button {
+.wov-font-size-button {
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -129,13 +129,13 @@ function handleWheelStop(e: Event) {
   padding: 0 12px;
 }
 
-.ic-font-size-label {
+.wov-font-size-label {
   font-size: 14px;
   white-space: nowrap;
 }
 
-.ic-font-size-menu {
-  background-color: var(--ic-gray-700);
+.wov-font-size-menu {
+  background-color: var(--wov-gray-700);
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -144,12 +144,12 @@ function handleWheelStop(e: Event) {
   width: 150px;
 }
 
-.ic-font-size-menu > *:first-child {
+.wov-font-size-menu > *:first-child {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 }
 
-.ic-font-size-option {
+.wov-font-size-option {
   display: flex;
   align-items: center;
   height: 40px;
@@ -157,41 +157,41 @@ function handleWheelStop(e: Event) {
   transition: background-color 0.2s;
 }
 
-.ic-font-size-option.active {
-  background-color: var(--ic-primary);
+.wov-font-size-option.active {
+  background-color: var(--wov-primary);
 }
 
-.ic-font-size-option:not(.active):hover {
-  background-color: var(--ic-gray-600);
+.wov-font-size-option:not(.active):hover {
+  background-color: var(--wov-gray-600);
 }
 
-.ic-check-icon {
+.wov-check-icon {
   color: white;
   width: 16px;
   margin-right: 8px;
   margin-left: -24px;
 }
 
-.ic-option-label {
+.wov-option-label {
   color: white;
 }
 
-.ic-separator {
+.wov-separator {
   margin: 4px 0;
   width: 100%;
   height: 0.75px;
-  background-color: var(--ic-gray-600);
+  background-color: var(--wov-gray-600);
 }
 
-.ic-input-container {
+.wov-input-container {
   display: flex;
   position: relative;
   align-items: center;
   justify-content: center;
 }
 
-.ic-custom-input {
-  background-color: var(--ic-gray-700);
+.wov-custom-input {
+  background-color: var(--wov-gray-700);
   width: 100%;
   margin: 8px;
   border-radius: 6px;
@@ -199,21 +199,21 @@ function handleWheelStop(e: Event) {
   padding: 8px;
   color: white;
   font-size: 14px;
-  outline: 1px solid var(--ic-gray-600);
+  outline: 1px solid var(--wov-gray-600);
 }
 
-.ic-custom-input:hover {
-  outline: 1px solid var(--ic-gray-500);
+.wov-custom-input:hover {
+  outline: 1px solid var(--wov-gray-500);
 }
 
-.ic-custom-input:focus {
-  outline: 2px solid var(--ic-primary);
+.wov-custom-input:focus {
+  outline: 2px solid var(--wov-primary);
 }
 
-.ic-px-suffix {
+.wov-px-suffix {
   position: absolute;
   right: 16px;
-  color: var(--ic-gray-400);
+  color: var(--wov-gray-400);
   font-size: 14px;
 }
 </style>

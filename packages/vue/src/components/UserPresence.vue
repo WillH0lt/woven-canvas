@@ -41,39 +41,39 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
 </script>
 
 <template>
-  <div v-if="users.length > 1" ref="containerRef" class="ic-user-presence">
+  <div v-if="users.length > 1" ref="containerRef" class="wov-user-presence">
     <button
-      class="ic-user-presence-trigger"
+      class="wov-user-presence-trigger"
       :class="{ 'is-open': isOpen }"
       @click="isOpen = !isOpen"
     >
-      <div class="ic-user-presence-avatars">
+      <div class="wov-user-presence-avatars">
         <div
           v-for="user in visibleUsers"
           :key="user.sessionId"
-          class="ic-user-avatar"
+          class="wov-user-avatar"
           :style="{ backgroundColor: user.avatar ? 'transparent' : user.color }"
         >
           <img
             v-if="user.avatar"
             :src="user.avatar"
             :alt="user.name"
-            class="ic-user-avatar-img"
+            class="wov-user-avatar-img"
           />
           <template v-else>{{ user.initials }}</template>
         </div>
       </div>
     </button>
 
-    <div v-if="isOpen" class="ic-user-presence-dropdown" @wheel.stop>
-      <div class="ic-user-presence-list">
+    <div v-if="isOpen" class="wov-user-presence-dropdown" @wheel.stop>
+      <div class="wov-user-presence-list">
         <div
           v-for="user in userList"
           :key="user.sessionId"
-          class="ic-user-presence-item"
+          class="wov-user-presence-item"
         >
           <div
-            class="ic-user-avatar ic-user-avatar-small"
+            class="wov-user-avatar wov-user-avatar-small"
             :style="{
               backgroundColor: user.avatar ? 'transparent' : user.color,
             }"
@@ -82,11 +82,11 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
               v-if="user.avatar"
               :src="user.avatar"
               :alt="user.name"
-              class="ic-user-avatar-img"
+              class="wov-user-avatar-img"
             />
             <template v-else>{{ user.initials }}</template>
           </div>
-          <span class="ic-user-presence-name">{{ user.name }}</span>
+          <span class="wov-user-presence-name">{{ user.name }}</span>
         </div>
       </div>
     </div>
@@ -94,14 +94,14 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
 </template>
 
 <style>
-.ic-user-presence {
+.wov-user-presence {
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: var(--ic-z-ui);
+  z-index: var(--wov-z-ui);
 }
 
-.ic-user-presence-trigger {
+.wov-user-presence-trigger {
   display: flex;
   align-items: center;
   padding: 4px;
@@ -112,21 +112,21 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
   transition: background-color 0.15s ease;
 }
 
-.ic-user-presence-trigger:hover,
-.ic-user-presence-trigger.is-open {
+.wov-user-presence-trigger:hover,
+.wov-user-presence-trigger.is-open {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-.ic-user-presence-avatars {
+.wov-user-presence-avatars {
   display: flex;
   flex-direction: row-reverse;
 }
 
-.ic-user-presence-avatars .ic-user-avatar:not(:first-child) {
+.wov-user-presence-avatars .wov-user-avatar:not(:first-child) {
   margin-right: -12px;
 }
 
-.ic-user-avatar {
+.wov-user-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -140,21 +140,21 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
   user-select: none;
 }
 
-.ic-user-avatar-small {
+.wov-user-avatar-small {
   width: 28px;
   height: 28px;
   font-size: 11px;
   flex-shrink: 0;
 }
 
-.ic-user-avatar-img {
+.wov-user-avatar-img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.ic-user-presence-dropdown {
+.wov-user-presence-dropdown {
   position: absolute;
   top: 100%;
   right: 0;
@@ -166,23 +166,23 @@ const visibleUsers = computed(() => userList.value.slice(0, MAX_VISIBLE));
   overflow: hidden;
 }
 
-.ic-user-presence-list {
+.wov-user-presence-list {
   max-height: 240px;
   overflow-y: auto;
 }
 
-.ic-user-presence-item {
+.wov-user-presence-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
 }
 
-.ic-user-presence-item:hover {
+.wov-user-presence-item:hover {
   background-color: #f9fafb;
 }
 
-.ic-user-presence-name {
+.wov-user-presence-name {
   font-size: 13px;
   color: #374151;
   font-family:

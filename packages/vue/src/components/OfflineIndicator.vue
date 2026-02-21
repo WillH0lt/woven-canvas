@@ -5,17 +5,17 @@ defineProps<{
 </script>
 
 <template>
-  <div v-if="!isOnline" class="ic-offline-indicator">Working Offline</div>
+  <div v-if="!isOnline" class="wov-offline-indicator">Working Offline</div>
 </template>
 
 <style>
-.ic-offline-indicator {
+.wov-offline-indicator {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: var(--ic-z-ui);
+  z-index: var(--wov-z-ui);
   padding: 6px 12px;
-  color: var(--ic-gray-400);
+  color: var(--wov-gray-400);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;

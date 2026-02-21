@@ -46,7 +46,7 @@ export function computeBlockDimensions(
   camera: ShallowRef<CameraValue>,
   screen: ShallowRef<ScreenValue>,
 ): BlockDimensions {
-  const blockElement = element.closest('.ic-block') as HTMLElement | null
+  const blockElement = element.closest('.wov-block') as HTMLElement | null
   if (!blockElement) {
     const rect = element.getBoundingClientRect()
     return { width: rect.width, height: rect.height, left: 0, top: 0 }

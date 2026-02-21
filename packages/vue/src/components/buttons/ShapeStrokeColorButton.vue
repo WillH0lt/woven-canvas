@@ -88,23 +88,23 @@ function handleStyleChange(kind: StrokeKind) {
 <template>
   <MenuDropdown title="Stroke Color">
     <template #button>
-      <div class="ic-stroke-color-button">
-        <svg viewBox="0 0 20 20" class="ic-stroke-color-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <div class="wov-stroke-color-button">
+        <svg viewBox="0 0 20 20" class="wov-stroke-color-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2.5 12.563c1.655-.886 5.9-3.293 8.568-4.355 2.668-1.062.101 2.822 1.32 3.105 1.218.283 5.112-1.814 5.112-1.814m-13.469 2.23c2.963-1.586 6.13-5.62 7.468-4.998 1.338.623-1.153 4.11-.132 5.595 1.02 1.487 6.133-1.43 6.133-1.43" stroke-width="1.25" />
         </svg>
-        <IconChevronDown class="ic-chevron-down" />
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
     <template #dropdown>
-      <div class="ic-stroke-dropdown">
+      <div class="wov-stroke-dropdown">
         <StrokeStyleOptions
           v-if="!pickerOpen"
           :currentStyle="currentStyle"
           :hasMultipleStyles="hasMultipleStyles"
           @change="handleStyleChange"
         />
-        <div v-if="!pickerOpen" class="ic-stroke-divider" />
+        <div v-if="!pickerOpen" class="wov-stroke-divider" />
         <ColorBubbles
           :currentColor="currentColorHex"
           :hideHighlight="hasMultipleColors"
@@ -118,7 +118,7 @@ function handleStyleChange(kind: StrokeKind) {
 </template>
 
 <style>
-.ic-stroke-color-button {
+.wov-stroke-color-button {
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -128,19 +128,19 @@ function handleStyleChange(kind: StrokeKind) {
   margin: 0 8px;
 }
 
-.ic-stroke-color-icon {
+.wov-stroke-color-icon {
   width: 18px;
   height: 18px;
 }
 
-.ic-stroke-dropdown {
+.wov-stroke-dropdown {
   display: flex;
   flex-direction: column;
 }
 
-.ic-stroke-divider {
+.wov-stroke-divider {
   height: 1px;
-  background: var(--ic-gray-600);
+  background: var(--wov-gray-600);
   margin: 0 8px;
 }
 </style>

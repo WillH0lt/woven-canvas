@@ -28,7 +28,7 @@ const { handleEditEnd } = useTextStretchBehavior({
 <template>
   <div
     ref="containerRef"
-    class="ic-text-block"
+    class="wov-text-block"
     :data-text-empty="isEmpty || undefined"
   >
     <EditableText
@@ -40,11 +40,11 @@ const { handleEditEnd } = useTextStretchBehavior({
 </template>
 
 <style>
-.ic-block[data-selected] > .ic-text-block {
+.wov-block[data-selected] > .wov-text-block {
   outline: none;
 }
 
-.ic-block[data-held-by-other] > .ic-text-block[data-text-empty] {
+.wov-block[data-held-by-other] > .wov-text-block[data-text-empty] {
   outline: none;
 }
 </style>

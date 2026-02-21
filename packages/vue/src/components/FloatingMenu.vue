@@ -174,14 +174,14 @@ const shouldShow = computed(
 </script>
 
 <template>
-  <Transition name="ic-fade">
+  <Transition name="wov-fade">
     <div
       v-if="shouldShow"
       ref="floatingRef"
-      class="ic-floating-menu"
+      class="wov-floating-menu"
       :style="floatingStyles"
     >
-      <div class="ic-floating-menu-inner">
+      <div class="wov-floating-menu-inner">
         <slot>
           <FloatingMenuBar />
         </slot>
@@ -191,25 +191,25 @@ const shouldShow = computed(
 </template>
 
 <style>
-.ic-floating-menu {
+.wov-floating-menu {
   position: absolute;
-  z-index: var(--ic-z-floating-menu);
+  z-index: var(--wov-z-floating-menu);
   pointer-events: auto;
 }
 
-.ic-floating-menu-inner {
+.wov-floating-menu-inner {
   transition: transform 0.15s ease-out;
 }
 
-.ic-fade-enter-active {
+.wov-fade-enter-active {
   transition: opacity 0.15s ease-out;
 }
 
-.ic-fade-enter-from {
+.wov-fade-enter-from {
   opacity: 0;
 }
 
-.ic-fade-enter-from .ic-floating-menu-inner {
+.wov-fade-enter-from .wov-floating-menu-inner {
   transform: translateY(10px);
 }
 </style>

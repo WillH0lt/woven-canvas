@@ -31,7 +31,7 @@ function handleMouseLeave() {
 <template>
   <button
     ref="buttonRef"
-    class="ic-menu-button"
+    class="wov-menu-button"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
@@ -41,7 +41,7 @@ function handleMouseLeave() {
 </template>
 
 <style>
-.ic-menu-button {
+.wov-menu-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,19 +49,19 @@ function handleMouseLeave() {
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--ic-gray-100);
+  color: var(--wov-gray-100);
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.ic-menu-button:hover {
+.wov-menu-button:hover {
   background: rgba(0, 0, 0, 0.05);
 }
 
-.ic-active {
-  background: var(--ic-primary);
+.wov-active {
+  background: var(--wov-primary);
 }
 
-.ic-menu-button svg {
+.wov-menu-button svg {
   width: 22px;
   height: 18px;
   flex-shrink: 0;

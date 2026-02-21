@@ -105,7 +105,7 @@ function getSvg(def: ArrowHeadDef | undefined): string {
     :title="side === 'start' ? 'Start Arrow Head' : 'End Arrow Head'"
   >
     <template #button>
-      <div class="ic-menu-button">
+      <div class="wov-menu-button">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -114,7 +114,7 @@ function getSvg(def: ArrowHeadDef | undefined): string {
           fill="none"
           v-html="getSvg(currentHeadDef)"
         ></svg>
-        <IconChevronDown class="ic-chevron-down" />
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
@@ -122,7 +122,7 @@ function getSvg(def: ArrowHeadDef | undefined): string {
       <button
         v-for="headDef in ARROW_HEADS"
         :key="headDef.kind"
-        class="ic-menu-option"
+        class="wov-menu-option"
         :class="{ 'is-active': currentHead === headDef.kind }"
         @click="handleSelect(headDef.kind)"
       >

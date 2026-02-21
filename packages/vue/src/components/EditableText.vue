@@ -260,7 +260,7 @@ onUnmounted(() => {
 <template>
   <div
     ref="editableTextRef"
-    class="ic-editable-text"
+    class="wov-editable-text"
     :style="containerStyle"
     @keydown="handleKeyDown"
     @pointerdown="handlePointerEvent"
@@ -277,28 +277,28 @@ onUnmounted(() => {
 </template>
 
 <style>
-.ic-editable-text {
+.wov-editable-text {
   width: 100%;
   display: block;
   color: #000000;
 }
 
-.ic-editable-text p {
+.wov-editable-text p {
   margin: 0;
 }
 
-.ic-editable-text p:empty::before {
+.wov-editable-text p:empty::before {
   content: "";
   display: inline-block;
 }
 
-.ic-editable-text .ProseMirror {
+.wov-editable-text .ProseMirror {
   outline: none;
   white-space: inherit;
   word-wrap: break-word;
 }
 
-.ic-editable-text .ProseMirror-focused {
+.wov-editable-text .ProseMirror-focused {
   outline: none;
 }
 </style>

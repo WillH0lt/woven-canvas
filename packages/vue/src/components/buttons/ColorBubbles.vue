@@ -96,18 +96,18 @@ function onPickerChange(color: string) {
 </script>
 
 <template>
-  <div class="ic-color-bubbles-container">
+  <div class="wov-color-bubbles-container">
     <ColorPicker
       v-if="pickerOpen"
       v-model="pickerColor"
       :withOpacity="withOpacity"
       @update:model-value="onPickerChange"
     />
-    <div v-else class="ic-color-bubbles">
+    <div v-else class="wov-color-bubbles">
       <div
         v-for="color in colors"
         :key="color"
-        class="ic-color-bubble"
+        class="wov-color-bubble"
         :class="{ selected: isSelected(color) }"
         :style="{ backgroundColor: color }"
         @mousedown.prevent
@@ -115,7 +115,7 @@ function onPickerChange(color: string) {
       />
       <div
         v-if="withPicker"
-        class="ic-color-bubble ic-rainbow-bubble"
+        class="wov-color-bubble wov-rainbow-bubble"
         :class="{ selected: isRainbowSelected() }"
         @mousedown.prevent
         @click="togglePicker"
@@ -125,10 +125,10 @@ function onPickerChange(color: string) {
 </template>
 
 <style>
-.ic-color-bubbles {
-  color: var(--ic-gray-100);
-  background-color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+.wov-color-bubbles {
+  color: var(--wov-gray-100);
+  background-color: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
   box-shadow: 0px 0px 0.5px rgba(0, 0, 0, 0.18), 0px 3px 8px rgba(0, 0, 0, 0.1),
     0px 1px 3px rgba(0, 0, 0, 0.1);
   display: grid;
@@ -139,7 +139,7 @@ function onPickerChange(color: string) {
   justify-content: center;
 }
 
-.ic-color-bubble {
+.wov-color-bubble {
   width: 20px;
   height: 20px;
   border-radius: 9999px;
@@ -149,15 +149,15 @@ function onPickerChange(color: string) {
   cursor: pointer;
 }
 
-.ic-color-bubble.selected {
+.wov-color-bubble.selected {
   outline-width: 2px;
-  outline-color: var(--ic-primary);
+  outline-color: var(--wov-primary);
   outline-offset: 2px;
 }
 
-.ic-rainbow-bubble {
+.wov-rainbow-bubble {
   background: radial-gradient(50% 50% at 50% 50%, #ffffff 0%, transparent 100%),
-    conic-gradient(
+    conwov-gradient(
       from 0deg at 50% 50%,
       red,
       #ffa800 47.73deg,

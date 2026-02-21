@@ -135,7 +135,7 @@ const isEmphasized = computed(() => props.selected || props.hovered);
 
 <template>
   <div
-    class="ic-pen-stroke"
+    class="wov-pen-stroke"
     :data-complete="penStroke?.isComplete || undefined"
   >
     <svg preserveAspectRatio="none">
@@ -144,8 +144,8 @@ const isEmphasized = computed(() => props.selected || props.hovered);
     <svg v-if="isEmphasized" class="highlight" preserveAspectRatio="none">
       <path
         :d="highlightPath"
-        stroke="var(--ic-highlighted-block-outline-color)"
-        style="stroke-width: calc(1px / var(--ic-zoom))"
+        stroke="var(--wov-highlighted-block-outline-color)"
+        style="stroke-width: calc(1px / var(--wov-zoom))"
         fill="none"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -155,38 +155,38 @@ const isEmphasized = computed(() => props.selected || props.hovered);
 </template>
 
 <style scoped>
-.ic-pen-stroke {
+.wov-pen-stroke {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.ic-pen-stroke * {
+.wov-pen-stroke * {
   box-sizing: border-box;
   overflow: visible;
   display: block;
 }
 
-.ic-pen-stroke svg {
+.wov-pen-stroke svg {
   width: 100%;
   height: 100%;
   overflow: visible;
 }
 
-.ic-pen-stroke .highlight {
+.wov-pen-stroke .highlight {
   position: absolute;
   inset: 0;
 }
 </style>
 
 <style>
-.ic-block[data-hovered] > .ic-pen-stroke,
-.ic-block[data-selected] > .ic-pen-stroke {
+.wov-block[data-hovered] > .wov-pen-stroke,
+.wov-block[data-selected] > .wov-pen-stroke {
   outline: none;
 }
 
 /* Hide held-by-other outline while stroke is being drawn */
-.ic-block[data-held-by-other] > .ic-pen-stroke:not([data-complete]) {
+.wov-block[data-held-by-other] > .wov-pen-stroke:not([data-complete]) {
   outline: none;
 }
 </style>

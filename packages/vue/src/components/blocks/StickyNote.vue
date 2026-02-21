@@ -43,7 +43,7 @@ const { handleEditEnd } = useTextStretchBehavior({
 </script>
 
 <template>
-  <div ref="containerRef" class="ic-sticky-note" :style="containerStyle">
+  <div ref="containerRef" class="wov-sticky-note" :style="containerStyle">
     <EditableText
       v-bind="props"
       :block-element="containerRef"
@@ -54,7 +54,7 @@ const { handleEditEnd } = useTextStretchBehavior({
 </template>
 
 <style>
-.ic-sticky-note {
+.wov-sticky-note {
   width: 100%;
   height: fit-content;
   display: flex;

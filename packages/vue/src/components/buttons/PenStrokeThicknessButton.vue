@@ -49,7 +49,7 @@ function handleSelect(thickness: number) {
 <template>
   <MenuDropdown title="Thickness">
     <template #button>
-      <div class="ic-menu-button">
+      <div class="wov-menu-button">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -63,7 +63,7 @@ function handleSelect(thickness: number) {
           <line x1="4" y1="11" x2="20" y2="11" stroke-width="2.5" />
           <line x1="4" y1="19" x2="20" y2="19" stroke-width="4" />
         </svg>
-        <IconChevronDown class="ic-chevron-down" />
+        <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
 
@@ -71,7 +71,7 @@ function handleSelect(thickness: number) {
       <button
         v-for="option in THICKNESS_OPTIONS"
         :key="option.value"
-        class="ic-menu-option ic-pen-thickness-option"
+        class="wov-menu-option wov-pen-thickness-option"
         :class="{ 'is-active': currentThickness === option.value }"
         @click="handleSelect(option.value)"
       >

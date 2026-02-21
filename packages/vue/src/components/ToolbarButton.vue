@@ -60,7 +60,7 @@ function handleMouseLeave() {
 <template>
   <button
     ref="buttonRef"
-    class="ic-toolbar-button"
+    class="wov-toolbar-button"
     :class="{ selected: isSelected }"
     @click="handleClick"
     @pointerdown="handlePointerDown"
@@ -73,7 +73,7 @@ function handleMouseLeave() {
 </template>
 
 <style>
-.ic-toolbar-button {
+.wov-toolbar-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,21 +82,21 @@ function handleMouseLeave() {
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--ic-gray-100);
+  color: var(--wov-gray-100);
   transition-property: background-color;
-  transition-timing-function: var(--ic-transition-timing-function);
-  transition-duration: var(--ic-transition-duration);
+  transition-timing-function: var(--wov-transition-timing-function);
+  transition-duration: var(--wov-transition-duration);
 }
 
-.ic-toolbar-button:hover {
-  background-color: var(--ic-gray-600);
+.wov-toolbar-button:hover {
+  background-color: var(--wov-gray-600);
 }
 
-.ic-toolbar-button.selected {
-  background-color: var(--ic-primary);
+.wov-toolbar-button.selected {
+  background-color: var(--wov-primary);
 }
 
-.ic-toolbar-button svg {
+.wov-toolbar-button svg {
   width: 20px;
   height: 20px;
 }

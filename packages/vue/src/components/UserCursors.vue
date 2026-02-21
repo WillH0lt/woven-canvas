@@ -25,16 +25,16 @@ const otherUsers = computed(() =>
 </script>
 
 <template>
-  <div class="ic-user-cursors">
+  <div class="wov-user-cursors">
     <div
       v-for="user in otherUsers"
       :key="user.sessionId"
-      class="ic-user-cursor"
+      class="wov-user-cursor"
       :style="{
         transform: `translate(${user.screenX}px, ${user.screenY}px)`,
       }"
     >
-      <svg class="ic-cursor-svg" viewBox="0 0 4.35 4.75" width="20" height="20">
+      <svg class="wov-cursor-svg" viewBox="0 0 4.35 4.75" width="20" height="20">
         <path
           :fill="user.color"
           stroke="#fff"
@@ -43,7 +43,7 @@ const otherUsers = computed(() =>
           :d="CURSOR_PATH"
         />
       </svg>
-      <span class="ic-cursor-label" :style="{ backgroundColor: user.color }">
+      <span class="wov-cursor-label" :style="{ backgroundColor: user.color }">
         {{ user.name }}
       </span>
     </div>
@@ -51,7 +51,7 @@ const otherUsers = computed(() =>
 </template>
 
 <style>
-.ic-user-cursors {
+.wov-user-cursors {
   position: absolute;
   top: 0;
   left: 0;
@@ -59,10 +59,10 @@ const otherUsers = computed(() =>
   height: 100%;
   pointer-events: none;
   overflow: hidden;
-  z-index: var(--ic-z-cursors);
+  z-index: var(--wov-z-cursors);
 }
 
-.ic-user-cursor {
+.wov-user-cursor {
   position: absolute;
   top: 0;
   left: 0;
@@ -71,11 +71,11 @@ const otherUsers = computed(() =>
   transition: transform 100ms ease-out;
 }
 
-.ic-cursor-svg {
+.wov-cursor-svg {
   display: block;
 }
 
-.ic-cursor-label {
+.wov-cursor-label {
   position: absolute;
   top: 16px;
   left: 10px;

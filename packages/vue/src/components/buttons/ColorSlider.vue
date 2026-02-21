@@ -43,12 +43,12 @@ defineExpose({ isDragging });
 <template>
   <div
     ref="sliderRef"
-    class="ic-color-slider"
+    class="wov-color-slider"
     @pointerdown.prevent="startDrag"
   >
-    <div v-if="background" class="ic-color-slider-gradient" :style="{ background }" />
+    <div v-if="background" class="wov-color-slider-gradient" :style="{ background }" />
     <div
-      class="ic-color-slider-thumb"
+      class="wov-color-slider-thumb"
       :style="{
         top: `${modelValue}%`,
         backgroundColor: thumbColor,
@@ -58,7 +58,7 @@ defineExpose({ isDragging });
 </template>
 
 <style>
-.ic-color-slider {
+.wov-color-slider {
   width: 16px;
   height: 160px;
   border-radius: 6px;
@@ -66,13 +66,13 @@ defineExpose({ isDragging });
   cursor: pointer;
 }
 
-.ic-color-slider-gradient {
+.wov-color-slider-gradient {
   position: absolute;
   inset: 0;
   border-radius: 6px;
 }
 
-.ic-color-slider-thumb {
+.wov-color-slider-thumb {
   position: absolute;
   left: 50%;
   width: 16px;

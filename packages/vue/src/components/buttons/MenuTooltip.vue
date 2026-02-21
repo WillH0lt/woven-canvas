@@ -30,11 +30,11 @@ const shouldShow = computed(() => isVisible.value && activeTooltip.value?.text);
 
 <template>
   <Teleport v-if="containerRef" :to="containerRef">
-    <Transition name="ic-tooltip-fade">
+    <Transition name="wov-tooltip-fade">
       <div
         v-if="shouldShow"
         ref="tooltipRef"
-        class="ic-menu-tooltip"
+        class="wov-menu-tooltip"
         :style="floatingStyles"
       >
         {{ activeTooltip?.text }}
@@ -44,29 +44,29 @@ const shouldShow = computed(() => isVisible.value && activeTooltip.value?.text);
 </template>
 
 <style>
-.ic-menu-tooltip {
+.wov-menu-tooltip {
   position: absolute;
-  z-index: var(--ic-z-tooltip);
+  z-index: var(--wov-z-tooltip);
   width: max-content;
-  background: var(--ic-gray-700);
-  color: var(--ic-gray-100);
+  background: var(--wov-gray-700);
+  color: var(--wov-gray-100);
   font-weight: bold;
   padding: 5px 10px;
-  border-radius: var(--ic-menu-tooltip-border-radius);
+  border-radius: var(--wov-menu-tooltip-border-radius);
   font-size: 70%;
   pointer-events: none;
 }
 
-.ic-tooltip-fade-enter-active {
+.wov-tooltip-fade-enter-active {
   transition: opacity 0.15s ease-out;
 }
 
-.ic-tooltip-fade-leave-active {
+.wov-tooltip-fade-leave-active {
   transition: opacity 0.1s ease-out;
 }
 
-.ic-tooltip-fade-enter-from,
-.ic-tooltip-fade-leave-to {
+.wov-tooltip-fade-enter-from,
+.wov-tooltip-fade-leave-to {
   opacity: 0;
 }
 </style>

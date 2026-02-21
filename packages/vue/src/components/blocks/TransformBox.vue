@@ -4,21 +4,21 @@
  * Shows a border around the selection, handles are rendered separately.
  *
  * Uses CSS variables:
- * --ic-primary: Primary color for the border
+ * --wov-primary: Primary color for the border
  */
 </script>
 
 <template>
-  <div class="ic-transform-box" />
+  <div class="wov-transform-box" />
 </template>
 
 <style>
-.ic-transform-box {
+.wov-transform-box {
   position: relative;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  border: calc(2px / var(--ic-zoom)) solid var(--ic-primary);
+  border: calc(2px / var(--wov-zoom)) solid var(--wov-primary);
   pointer-events: none;
 }
 </style>

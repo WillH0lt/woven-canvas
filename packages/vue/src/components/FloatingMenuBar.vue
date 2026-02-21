@@ -58,7 +58,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="ic-floating-menu-bar" @mouseleave="handleMouseLeave">
+  <div class="wov-floating-menu-bar" @mouseleave="handleMouseLeave">
     <!-- Custom buttons via slots -->
     <template v-for="component in customButtons" :key="component">
       <slot :name="`button:${component}`" :entityIds="selectedIds" />
@@ -124,11 +124,11 @@ onUnmounted(() => {
       <template v-if="commonComponents.has('text')">
         <TextFontFamilyButton :entityIds="selectedIds" />
         <TextFontSizeButton :entityIds="selectedIds" />
-        <div divider class="ic-divider" />
+        <div divider class="wov-divider" />
         <TextBoldButton :entityIds="selectedIds" />
         <TextItalicButton :entityIds="selectedIds" />
         <TextUnderlineButton :entityIds="selectedIds" />
-        <div divider class="ic-divider" />
+        <div divider class="wov-divider" />
         <TextColorButton :entityIds="selectedIds" />
         <TextAlignmentButton :entityIds="selectedIds" />
         <VerticalAlignButton
@@ -144,54 +144,54 @@ onUnmounted(() => {
 </template>
 
 <style>
-.ic-floating-menu-bar {
+.wov-floating-menu-bar {
   display: flex;
   overflow: hidden;
   cursor: pointer;
   height: 40px;
-  color: var(--ic-gray-100);
-  background-color: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+  color: var(--wov-gray-100);
+  background-color: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
   box-shadow:
     0px 0px 0.5px rgba(0, 0, 0, 0.18),
     0px 3px 8px rgba(0, 0, 0, 0.1),
     0px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.ic-floating-menu-bar > *:first-child {
-  border-top-left-radius: var(--ic-menu-border-radius);
-  border-bottom-left-radius: var(--ic-menu-border-radius);
+.wov-floating-menu-bar > *:first-child {
+  border-top-left-radius: var(--wov-menu-border-radius);
+  border-bottom-left-radius: var(--wov-menu-border-radius);
 }
 
-.ic-floating-menu-bar > *:last-child {
-  border-top-right-radius: var(--ic-menu-border-radius);
-  border-bottom-right-radius: var(--ic-menu-border-radius);
+.wov-floating-menu-bar > *:last-child {
+  border-top-right-radius: var(--wov-menu-border-radius);
+  border-bottom-right-radius: var(--wov-menu-border-radius);
 }
 
-.ic-floating-menu-bar > * {
+.wov-floating-menu-bar > * {
   height: 100%;
   transition-property: background-color;
-  transition-timing-function: var(--ic-transition-timing-function);
-  transition-duration: var(--ic-transition-duration);
+  transition-timing-function: var(--wov-transition-timing-function);
+  transition-duration: var(--wov-transition-duration);
 }
 
-.ic-floating-menu-bar > *:hover:not([divider]) {
-  background-color: var(--ic-gray-600);
+.wov-floating-menu-bar > *:hover:not([divider]) {
+  background-color: var(--wov-gray-600);
 }
 
-.ic-floating-menu-bar > *[menu-open] {
-  background-color: var(--ic-gray-600);
+.wov-floating-menu-bar > *[menu-open] {
+  background-color: var(--wov-gray-600);
 }
 
-.ic-floating-menu-bar > .ic-active:hover {
-  background: var(--ic-primary-light);
+.wov-floating-menu-bar > .wov-active:hover {
+  background: var(--wov-primary-light);
 }
 
-.ic-divider {
+.wov-divider {
   width: 1px !important;
   height: 24px !important;
   margin: auto 0;
-  background-color: var(--ic-gray-600);
+  background-color: var(--wov-gray-600);
   flex-shrink: 0;
 }
 </style>

@@ -15,7 +15,7 @@ const { state, commands } = useTextFormatting(() => props.entityIds);
   <MenuButton
     v-if="state.showTextMenuButtons"
     title="Italic"
-    :class="{ 'ic-active': state.isItalic }"
+    :class="{ 'wov-active': state.isItalic }"
     @click="commands.toggleItalic"
   >
     <svg

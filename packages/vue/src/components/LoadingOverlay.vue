@@ -24,18 +24,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Transition name="ic-loading-fade">
-    <div v-if="isLoading" class="ic-loading-overlay">
-      <div class="ic-loading-spinner">{{ spinnerChar }}</div>
+  <Transition name="wov-loading-fade">
+    <div v-if="isLoading" class="wov-loading-overlay">
+      <div class="wov-loading-spinner">{{ spinnerChar }}</div>
     </div>
   </Transition>
 </template>
 
 <style>
-.ic-loading-overlay {
+.wov-loading-overlay {
   position: absolute;
   inset: 0;
-  z-index: var(--ic-z-overlay);
+  z-index: var(--wov-z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -43,20 +43,20 @@ onUnmounted(() => {
   pointer-events: all;
 }
 
-.ic-loading-spinner {
+.wov-loading-spinner {
   font-size: 24px;
   font-family: monospace;
-  color: var(--ic-gray-100, #f5f5f5);
+  color: var(--wov-gray-100, #f5f5f5);
 }
 
 /* Fade transition */
-.ic-loading-fade-enter-active,
-.ic-loading-fade-leave-active {
+.wov-loading-fade-enter-active,
+.wov-loading-fade-leave-active {
   transition: opacity 0.3s ease;
 }
 
-.ic-loading-fade-enter-from,
-.ic-loading-fade-leave-to {
+.wov-loading-fade-enter-from,
+.wov-loading-fade-leave-to {
   opacity: 0;
 }
 </style>

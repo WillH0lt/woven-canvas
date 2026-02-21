@@ -105,7 +105,7 @@ const fillColor = "#88888833";
 </script>
 
 <template>
-  <div class="ic-eraser-stroke">
+  <div class="wov-eraser-stroke">
     <svg preserveAspectRatio="none">
       <path :d="path" :fill="fillColor" />
     </svg>
@@ -113,19 +113,19 @@ const fillColor = "#88888833";
 </template>
 
 <style>
-.ic-eraser-stroke {
+.wov-eraser-stroke {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.ic-eraser-stroke * {
+.wov-eraser-stroke * {
   box-sizing: border-box;
   overflow: visible;
   display: block;
 }
 
-.ic-eraser-stroke svg {
+.wov-eraser-stroke svg {
   width: 100%;
   height: 100%;
   overflow: visible;

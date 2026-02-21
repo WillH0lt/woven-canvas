@@ -85,8 +85,8 @@ function setEmoji(emoji: string, close: () => void) {
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
   padding: 8px;
-  background: var(--ic-gray-700);
-  border-radius: var(--ic-menu-border-radius);
+  background: var(--wov-gray-700);
+  border-radius: var(--wov-menu-border-radius);
 }
 
 .emoji-option {
@@ -104,10 +104,10 @@ function setEmoji(emoji: string, close: () => void) {
 }
 
 .emoji-option:hover {
-  background: var(--ic-gray-600);
+  background: var(--wov-gray-600);
 }
 
 .emoji-option.is-active {
-  background: var(--ic-primary);
+  background: var(--wov-primary);
 }
 </style>
