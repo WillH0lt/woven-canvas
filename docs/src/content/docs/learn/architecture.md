@@ -3,7 +3,7 @@ title: Architecture
 description: Understanding the ECS architecture of Woven Canvas
 ---
 
-Woven Canvas is built with an **Entity Component System (ECS)** framework called [woven-ecs](https://github.com/willwillems/woven-ecs). ECS architecture separates data from behavior, enabling high-performance updates and clean plugin composition.
+Woven Canvas is built with an **Entity Component System (ECS)** framework called [woven-ecs](https://github.com/WillH0lt/woven-ecs). ECS architecture separates data from behavior, enabling high-performance updates and clean plugin composition.
 
 ## Why ECS?
 
@@ -23,7 +23,7 @@ This separation provides several benefits for a canvas editor:
 | **Networking**  | Component changes are easily serialized for real-time collaboration                         |
 | **Undo/Redo**   | Automatic change tracking makes history management trivial                                  |
 
-For a deep dive into the ECS implementation, see the [woven-ecs documentation](https://github.com/willwillems/woven-ecs).
+For a deep dive into the ECS implementation, see the [woven-ecs documentation](https://github.com/WillH0lt/woven-ecs).
 
 ## Blocks as Component Composition
 
