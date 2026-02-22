@@ -57,6 +57,41 @@ provide(FLOATING_MENU_KEY, { selectedIds, commonComponents });
 // Pre-allocated array for calculations
 const _aabb: Aabb = [0, 0, 0, 0];
 
+// Helper to combine multiple element bounds into a union
+function getCombinedBounds(...elements: (HTMLElement | null)[]): DOMRect | null {
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  let hasValidBounds = false;
+
+  for (const el of elements) {
+    if (!el) continue;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0) continue;
+
+    hasValidBounds = true;
+    left = Math.min(left, rect.left);
+    top = Math.min(top, rect.top);
+    right = Math.max(right, rect.right);
+    bottom = Math.max(bottom, rect.bottom);
+  }
+
+  if (!hasValidBounds) return null;
+
+  return {
+    x: left,
+    y: top,
+    left,
+    top,
+    right,
+    bottom,
+    width: right - left,
+    height: bottom - top,
+    toJSON: () => ({}),
+  };
+}
+
 // Compute selection bounds in screen coordinates (accounting for rotation)
 const selectionBounds = computed<Aabb | null>(() => {
   if (selectedItems.value.length === 0) return null;
@@ -96,14 +131,14 @@ const virtualReference = computed(() => {
   void textEditorController.updateCounter.value;
 
   // Use live element bounds if editing (read directly from DOM)
+  // Combine block element (outer bounds) with text element (grows with content)
   const blockElement = textEditorController.blockElement.value;
-  if (blockElement) {
-    const rect = blockElement.getBoundingClientRect();
-    if (rect.width > 0) {
-      return {
-        getBoundingClientRect: () => rect,
-      };
-    }
+  const textElement = textEditorController.textElement.value;
+  const combinedRect = getCombinedBounds(blockElement, textElement);
+  if (combinedRect) {
+    return {
+      getBoundingClientRect: () => combinedRect,
+    };
   }
 
   // Fall back to ECS-based selection bounds

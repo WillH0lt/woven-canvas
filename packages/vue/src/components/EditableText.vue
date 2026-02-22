@@ -25,13 +25,10 @@ import { useTextEditorController } from "../composables/useTextEditorController"
 import { computeBlockDimensions } from "../utils/blockDimensions";
 
 interface Props extends BlockData {
+  /** The block's outer container element (for floating menu positioning) */
   blockElement: HTMLElement | null;
-  /**
-   * Element to use for measuring dimensions when editing ends.
-   * For blocks with padding around the text (e.g., StickyNote), pass the padded container.
-   * For blocks where text is the full content, omit this to use the internal text element.
-   */
-  measureElement?: HTMLElement | null;
+  /** Element to measure dimensions from when editing ends */
+  measureElement: HTMLElement | null;
 }
 
 const props = defineProps<Props>();
@@ -117,9 +114,15 @@ watch(
       editor.value = createEditor();
       await handleEditStart(editor.value);
 
-      // Register editor and element (used by FloatingMenu for bounds)
-      // Use editableTextRef since it's the element that grows with text content
-      textEditorController.register(editor.value, editableTextRef.value);
+      if (!props.blockElement) return;
+
+      // Register editor and elements (used by FloatingMenu for bounds)
+      // textElement grows with content, blockElement defines the outer bounds
+      textEditorController.register(
+        editor.value,
+        editableTextRef.value,
+        props.blockElement
+      );
     } else if (editor.value) {
       // Save content and destroy editor when exiting edit mode
       textEditorController.unregister();
@@ -178,7 +181,7 @@ function handleEditEnd(editor: Editor): void {
       return;
     }
 
-    const elementToMeasure = props.measureElement ?? editableTextRef.value;
+    const elementToMeasure = props.measureElement;
     if (!elementToMeasure) {
       console.warn("EditableText: no element to measure");
       return;

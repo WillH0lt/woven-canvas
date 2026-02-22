@@ -34,6 +34,7 @@ const { handleEditEnd } = useTextStretchBehavior({
     <EditableText
       v-bind="props"
       :block-element="containerRef"
+      :measure-element="containerRef"
       @edit-end="handleEditEnd"
     />
   </div>

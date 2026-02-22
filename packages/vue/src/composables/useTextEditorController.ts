@@ -35,23 +35,26 @@ export interface TextEditorCommands {
 export interface TextEditorController {
   /** Reference to the active editor (null if none) */
   editor: ShallowRef<Editor | null>
-  /** Reference to the active editing element (null if none) */
+  /** Reference to the block element for positioning (null if none) */
   blockElement: ShallowRef<HTMLElement | null>
+  /** Reference to the text element that grows with content (null if none) */
+  textElement: ShallowRef<HTMLElement | null>
   /** Reactive state computed from the active editor */
   state: TextEditorState
   /** Commands to manipulate the active editor */
   commands: TextEditorCommands
   /** Counter that increments on each transaction (for triggering updates) */
   updateCounter: Ref<number>
-  /** Register an editor and element as active (called by EditableText) */
-  register(editor: Editor, blockElement: HTMLElement): void
-  /** Unregister the active editor and element (called by EditableText) */
+  /** Register an editor and elements as active (called by EditableText) */
+  register(editor: Editor, textElement: HTMLElement, blockElement: HTMLElement): void
+  /** Unregister the active editor and elements (called by EditableText) */
   unregister(): void
 }
 
 // Module-level singleton state
 const activeEditor = shallowRef<Editor | null>(null)
 const activeBlockElement = shallowRef<HTMLElement | null>(null)
+const activeTextElement = shallowRef<HTMLElement | null>(null)
 
 // Track selection/transaction updates to trigger reactivity
 const updateCounter = ref(0)
@@ -206,8 +209,9 @@ export function useTextEditorController(): TextEditorController {
     },
   }
 
-  function register(editor: Editor, blockElement: HTMLElement): void {
+  function register(editor: Editor, textElement: HTMLElement, blockElement: HTMLElement): void {
     activeEditor.value = editor
+    activeTextElement.value = textElement
     activeBlockElement.value = blockElement
 
     // Listen for selection/transaction updates to trigger reactivity
@@ -221,12 +225,14 @@ export function useTextEditorController(): TextEditorController {
 
   function unregister(): void {
     activeEditor.value = null
+    activeTextElement.value = null
     activeBlockElement.value = null
   }
 
   return {
     editor: activeEditor,
     blockElement: activeBlockElement,
+    textElement: activeTextElement,
     state,
     commands,
     updateCounter,
