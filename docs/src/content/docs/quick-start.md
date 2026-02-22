@@ -83,7 +83,7 @@ const clientId = crypto.randomUUID(); // Unique ID for this client
 </template>
 ```
 
-With this setup, users can work offline and their changes automatically merge when they reconnect. Woven Canvas uses [@woven-ecs/canvas-store](https://github.com/WillH0lt/woven-ecs/tree/main/packages/canvas-store) to handle syncing, see the [Canvas Store docs](https://woven-ecs.dev/canvas-store/) for more details on configuring the server and customizing sync behavior.
+With this setup, users can work offline and their changes automatically merge when they reconnect. Woven Canvas uses [@woven-ecs/canvas-store](https://github.com/WillH0lt/woven-ecs/tree/main/packages/canvas-store) to handle syncing, see the [Canvas Store docs](https://woven-ecs.dev/canvas-store/introduction/) for more details on configuring the server and customizing sync behavior.
 
 ## Reactive Composables
 

@@ -27,8 +27,8 @@ import { computeBlockDimensions } from "../utils/blockDimensions";
 interface Props extends BlockData {
   /** The block's outer container element (for floating menu positioning) */
   blockElement: HTMLElement | null;
-  /** Element to measure dimensions from when editing ends */
-  measureElement: HTMLElement | null;
+  /** Element to measure dimensions from when editing ends. Defaults to editableTextRef. */
+  measureElement?: HTMLElement | null;
 }
 
 const props = defineProps<Props>();
@@ -181,7 +181,8 @@ function handleEditEnd(editor: Editor): void {
       return;
     }
 
-    const elementToMeasure = props.measureElement;
+    // Use editableTextRef by default if measureElement is not provided
+    const elementToMeasure = props.measureElement ?? editableTextRef.value;
     if (!elementToMeasure) {
       console.warn("EditableText: no element to measure");
       return;

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { SelectAll } from '@woven-canvas/plugin-selection'
 import { WovenCanvas } from '@woven-canvas/vue'
 
 const clientId = crypto.randomUUID()
@@ -8,18 +7,15 @@ const clientId = crypto.randomUUID()
 <template>
   <div class="editor">
     <WovenCanvas
-      @ready="(editor) => {
-        editor.command(SelectAll)
-      }"
       :store="{
         persistence: {
-          documentId: 'editor-vue-test',
+          documentId: 'editor-vue-test-22',
         },
         history: true,
         // websocket: {
-        //   documentId: 'editor-vue-test',
-        //   url: 'ws://localhost:8087/ws',
-        //   clientId: clientId,
+        //   documentId: 'editor-vue-test-22',
+        //   clientId,
+        //   url: 'ws://localhost:8087',
         // },
       }"
       :plugin-options="{ controls: { maxZoom: 3 } }"

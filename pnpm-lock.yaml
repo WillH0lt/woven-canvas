@@ -427,8 +427,8 @@ importers:
         specifier: workspace:^
         version: link:../plugin-selection
       '@woven-ecs/canvas-store':
-        specifier: ^1.0.3
-        version: 1.0.3(typescript@5.9.3)
+        specifier: ^1.0.4
+        version: 1.0.4(typescript@5.9.3)
       perfect-freehand:
         specifier: ^1.2.2
         version: 1.2.2
@@ -4032,6 +4032,16 @@ packages:
 
   /@woven-ecs/canvas-store@1.0.3(typescript@5.9.3):
     resolution: {integrity: sha512-HrgCbDdFRe/HQ/I1LS0+/NGOacWN6q/rM+5T2OPkMHSotkx8WxHgXgOtGsH+8HeKTQ1UBoX1G8gIBDW9Y4eguA==}
+    peerDependencies:
+      typescript: ^5
+    dependencies:
+      '@woven-ecs/core': 1.0.1(typescript@5.9.3)
+      idb: 8.0.3
+      typescript: 5.9.3
+    dev: false
+
+  /@woven-ecs/canvas-store@1.0.4(typescript@5.9.3):
+    resolution: {integrity: sha512-xI1wZOYfZ3r1kNXN8sYbvMLFZqC7TisrbcGsqacWpXU9fFXFRN8gmLoaCU0VMu0opw0CJAkOJZyz6v8k+PBlgA==}
     peerDependencies:
       typescript: ^5
     dependencies:
