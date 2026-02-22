@@ -204,3 +204,8 @@ export const Undo = defineCommand<void>('undo')
  * Only executes if the store supports redo and canRedo() returns true.
  */
 export const Redo = defineCommand<void>('redo')
+
+/**
+ * ResetKeyboard command - resets all keyboard state.
+ */
+export const ResetKeyboard = defineCommand<void>('reset-keyboard')

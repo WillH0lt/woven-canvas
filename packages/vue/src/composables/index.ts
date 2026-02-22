@@ -1,6 +1,7 @@
 export { useComponent } from './useComponent'
 export { useComponents } from './useComponents'
 export { type EditorContext, useEditorContext } from './useEditorContext'
+export { type ImageCreationOptions, type UseImageCreationReturn, useImageCreation } from './useImageCreation'
 export { type QueryResultItem, useQuery } from './useQuery'
 export { useSingleton } from './useSingleton'
 export {

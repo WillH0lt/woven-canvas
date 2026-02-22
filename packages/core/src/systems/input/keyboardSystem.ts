@@ -1,6 +1,7 @@
 import { type Context, getResources } from '@woven-ecs/core'
+import { on, ResetKeyboard } from '../../command'
 import { defineEditorSystem } from '../../EditorSystem'
-import { codeToIndex, Keyboard, setBit } from '../../singletons/Keyboard'
+import { clearBits, codeToIndex, Keyboard, setBit } from '../../singletons/Keyboard'
 import type { EditorResources } from '../../types'
 
 /**
@@ -11,10 +12,6 @@ interface KeyboardState {
   onKeyDown: (e: KeyboardEvent) => void
   onKeyUp: (e: KeyboardEvent) => void
   onBlur: () => void
-  // Reusable buffers to avoid allocation each frame
-  keysDown: Uint8Array
-  keysDownTrigger: Uint8Array
-  keysUpTrigger: Uint8Array
 }
 
 /**
@@ -50,10 +47,6 @@ export function attachKeyboardListeners(domElement: HTMLElement): void {
       // Create a synthetic event to signal blur
       state.eventsBuffer.push({ type: 'blur' } as unknown as KeyboardEvent)
     },
-    // Reusable buffers - allocated once per instance
-    keysDown: new Uint8Array(32),
-    keysDownTrigger: new Uint8Array(32),
-    keysUpTrigger: new Uint8Array(32),
   }
 
   instanceState.set(domElement, state)
@@ -93,29 +86,31 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
   const state = instanceState.get(resources.domElement)
   if (!state) return
 
+  // Handle ResetKeyboard command - clears all keyboard state
+  on(ctx, ResetKeyboard, () => {
+    Keyboard.reset(ctx)
+  })
+
   const hasEvents = state.eventsBuffer.length > 0
 
   // Check if triggers need to be cleared from previous frame
-  const triggersNeedClearing = !isZeroed(state.keysDownTrigger) || !isZeroed(state.keysUpTrigger)
+  const keyboardRead = Keyboard.read(ctx)
+  const triggersNeedClearing = !isZeroed(keyboardRead.keysDownTrigger) || !isZeroed(keyboardRead.keysUpTrigger)
 
   // Only write if there are events or triggers need clearing
   if (!hasEvents && !triggersNeedClearing) return
 
   const keyboard = Keyboard.write(ctx)
 
-  const keysDown = state.keysDown
-  const keysDownTrigger = state.keysDownTrigger
-  const keysUpTrigger = state.keysUpTrigger
-
-  keysDownTrigger.fill(0)
-  keysUpTrigger.fill(0)
-  keysDown.set(keyboard.keysDown)
+  // Clear triggers from previous frame
+  clearBits(keyboard.keysDownTrigger)
+  clearBits(keyboard.keysUpTrigger)
 
   // Process buffered events
   for (const event of state.eventsBuffer) {
     if (event.type === 'blur') {
       // Reset all keys on blur
-      keysDown.fill(0)
+      clearBits(keyboard.keysDown)
       keyboard.shiftDown = false
       keyboard.altDown = false
       keyboard.modDown = false
@@ -127,15 +122,14 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
 
     if (event.type === 'keydown') {
       // Check if this is a new press (wasn't down before)
-      const wasDown = getBit(keysDown, keyIndex)
+      const wasDown = getBit(keyboard.keysDown, keyIndex)
       if (!wasDown) {
-        setBit(keysDownTrigger, keyIndex, true)
+        setBit(keyboard.keysDownTrigger, keyIndex, true)
       }
-
-      setBit(keysDown, keyIndex, true)
+      setBit(keyboard.keysDown, keyIndex, true)
     } else if (event.type === 'keyup') {
-      setBit(keysDown, keyIndex, false)
-      setBit(keysUpTrigger, keyIndex, true)
+      setBit(keyboard.keysDown, keyIndex, false)
+      setBit(keyboard.keysUpTrigger, keyIndex, true)
     }
 
     // Update modifier state from the event
@@ -143,11 +137,6 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
     keyboard.altDown = event.altKey
     keyboard.modDown = event.ctrlKey || event.metaKey
   }
-
-  // Write back the modified buffers
-  keyboard.keysDown = keysDown
-  keyboard.keysDownTrigger = keysDownTrigger
-  keyboard.keysUpTrigger = keysUpTrigger
 
   // Clear buffer
   state.eventsBuffer.length = 0

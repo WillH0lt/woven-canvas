@@ -82,6 +82,7 @@ import ImageBlock from "./blocks/ImageBlock.vue";
 import ShapeBlock from "./blocks/ShapeBlock.vue";
 import { EditingPlugin } from "../EditingPlugin";
 import type { BlockData, BackgroundOptions } from "../types";
+import FileDropZone from "./FileDropZone.vue";
 import UserPresence from "./UserPresence.vue";
 import UserCursors from "./UserCursors.vue";
 import OfflineIndicator from "./OfflineIndicator.vue";
@@ -154,6 +155,8 @@ defineSlots<
     "offline-indicator"?: (props: { isOnline: boolean }) => any;
     "version-mismatch"?: (props: { versionMismatch: boolean }) => any;
     "back-to-content"?: () => any;
+    /** Slot for file drag-drop zone. Currently handles images. Set to empty to disable. */
+    "file-drop-zone"?: () => any;
   } & {
     [slotName: `block:${string}`]: (props: BlockData) => any;
   }
@@ -366,8 +369,18 @@ async function tick() {
   animationFrameId = requestAnimationFrame(tick);
 }
 
+// Scroll prevention handler - stored for cleanup
+let scrollHandler: (() => void) | null = null;
+
 onMounted(async () => {
   if (!containerRef.value) return;
+
+  // Prevent scrolling on the canvas container
+  // Scrolling can happen when text input extends beyond the viewport
+  scrollHandler = () => {
+    containerRef.value?.scrollTo(0, 0);
+  };
+  containerRef.value.addEventListener("scroll", scrollHandler);
 
   // Create store (adapters are built lazily in initialize)
   const syncOpts = props.store ?? {};
@@ -881,6 +894,11 @@ function getBlockStyle(data: BlockData) {
     <!-- Loading overlay -->
     <slot name="loading" :is-loading="isLoading">
       <LoadingOverlay :is-loading="isLoading" />
+    </slot>
+
+    <!-- File drag-drop zone (set slot to empty to disable) -->
+    <slot v-if="editorRef" name="file-drop-zone">
+      <FileDropZone />
     </slot>
   </div>
 </template>

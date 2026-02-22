@@ -77,6 +77,20 @@ class KeyboardDef extends CanvasSingletonDef<typeof KeyboardSchema> {
   isKeyUpTrigger(ctx: Context, key: number): boolean {
     return getBit(this.read(ctx).keysUpTrigger, key)
   }
+
+  /**
+   * Reset all keyboard state.
+   * Clears all key states and modifier flags.
+   */
+  reset(ctx: Context): void {
+    const keyboard = this.write(ctx)
+    clearBits(keyboard.keysDown)
+    clearBits(keyboard.keysDownTrigger)
+    clearBits(keyboard.keysUpTrigger)
+    keyboard.shiftDown = false
+    keyboard.altDown = false
+    keyboard.modDown = false
+  }
 }
 
 export const Keyboard = new KeyboardDef()

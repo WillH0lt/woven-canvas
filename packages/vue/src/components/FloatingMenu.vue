@@ -167,6 +167,19 @@ const virtualReference = computed(() => {
 // Floating menu element ref
 const floatingRef = ref<HTMLElement | null>(null);
 
+// Custom middleware to clamp menu to viewport when it would go off-screen
+const clampToViewport = {
+  name: "clampToViewport",
+  fn({ y, rects }: { y: number; rects: { floating: { height: number } } }) {
+    const padding = 8;
+    const viewportHeight = window.innerHeight;
+    const maxY = viewportHeight - rects.floating.height - padding;
+    return {
+      y: Math.max(padding, Math.min(y, maxY)),
+    };
+  },
+};
+
 // Use floating-ui for positioning
 const { floatingStyles } = useFloating(virtualReference, floatingRef, {
   placement: "top",
@@ -175,7 +188,8 @@ const { floatingStyles } = useFloating(virtualReference, floatingRef, {
     flip({
       fallbackPlacements: ["bottom"],
     }),
-    shift({ padding: 8 }), // Keep menu within viewport
+    shift({ padding: 8 }), // Keep menu within viewport horizontally
+    clampToViewport, // Clamp to top of screen if it would go above
   ],
 });
 

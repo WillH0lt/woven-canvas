@@ -2,11 +2,14 @@
 import { computed, ref, shallowRef, watch, onUnmounted, nextTick } from "vue";
 import {
   Text,
+  Block,
   Camera,
   Screen,
+  ResetKeyboard,
   removeEntity,
   getBlockDef,
 } from "@woven-canvas/core";
+import { DeselectAll } from "@woven-canvas/plugin-selection";
 import { Editor, EditorContent } from "@tiptap/vue-3";
 import Document from "@tiptap/extension-document";
 import Paragraph from "@tiptap/extension-paragraph";
@@ -63,6 +66,44 @@ const displayContent = ref(text.value?.content ?? "");
 // Lazy-initialized Tiptap editor (only created when editing)
 const editor = shallowRef<Editor | null>(null);
 
+// Threshold for auto-wrapping on paste: if pasted text exceeds this many characters, enable constrainWidth
+const PASTE_WRAP_CHAR_THRESHOLD = 50;
+// Minimum width when auto-wrapping is enabled
+const MIN_WRAP_WIDTH = 300;
+
+/**
+ * Handle paste events. If pasting a large amount of text and constrainWidth is false,
+ * enable constrainWidth so the text wraps instead of extending infinitely.
+ */
+function handlePaste(_view: unknown, event: ClipboardEvent): boolean {
+  const t = text.value;
+  if (!t || t.constrainWidth) return false; // Already wrapping, let default handle it
+
+  const pastedText = event.clipboardData?.getData("text/plain") ?? "";
+
+  if (pastedText.length > PASTE_WRAP_CHAR_THRESHOLD) {
+    nextEditorTick((ctx) => {
+      // Enable constrainWidth so pasted text wraps
+      const writableText = Text.write(ctx, props.entityId);
+      writableText.constrainWidth = true;
+
+      // Set block width to max of current width or minimum
+      const block = Block.read(ctx, props.entityId);
+      const newWidth = Math.max(block.size[0], MIN_WRAP_WIDTH);
+      const writableBlock = Block.write(ctx, props.entityId);
+      writableBlock.size = [newWidth, block.size[1]];
+
+      // Reset keyboard state (Ctrl may be stuck from paste shortcut)
+      ResetKeyboard.spawn(ctx);
+
+      // Deselect to commit to undo/redo history
+      DeselectAll.spawn(ctx);
+    });
+  }
+
+  return false; // Let Tiptap handle the actual paste
+}
+
 function createEditor(): Editor {
   return new Editor({
     extensions: [
@@ -85,6 +126,9 @@ function createEditor(): Editor {
     editable: true,
     parseOptions: {
       preserveWhitespace: true,
+    },
+    editorProps: {
+      handlePaste,
     },
   });
 }

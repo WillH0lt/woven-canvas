@@ -47,6 +47,7 @@ export {
   defineCommand,
   on,
   Redo,
+  ResetKeyboard,
   Undo,
 } from './command'
 // Components

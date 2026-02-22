@@ -199,6 +199,7 @@ Choose between grid, dots, or a custom background:
 | `offline-indicator` | `{ isOnline }`        | Offline status banner         |
 | `version-mismatch`  | `{ versionMismatch }` | Protocol version warning      |
 | `back-to-content`   | —                     | Button to pan back to content |
+| `file-drop-zone`    | —                     | Drag-drop zone for files      |
 
 Example:
 
@@ -212,6 +213,9 @@ Example:
     <template #loading="{ isLoading }">
       <div v-if="isLoading" class="custom-loader">Loading...</div>
     </template>
+
+    <!-- Disable file drag-drop -->
+    <template #file-drop-zone />
   </WovenCanvas>
 </template>
 ```
