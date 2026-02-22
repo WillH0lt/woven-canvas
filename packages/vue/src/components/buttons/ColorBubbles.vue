@@ -157,7 +157,7 @@ function onPickerChange(color: string) {
 
 .wov-rainbow-bubble {
   background: radial-gradient(50% 50% at 50% 50%, #ffffff 0%, transparent 100%),
-    conwov-gradient(
+    conic-gradient(
       from 0deg at 50% 50%,
       red,
       #ffa800 47.73deg,
