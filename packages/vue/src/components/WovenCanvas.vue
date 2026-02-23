@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import {
   ref,
+  computed,
   onMounted,
   onUnmounted,
   shallowRef,
   provide,
   type Ref,
 } from "vue";
+import { useElementBounding, useWindowSize } from "@vueuse/core";
 import {
   Editor,
   Camera,
@@ -165,6 +167,10 @@ defineSlots<
 // Container ref for editor DOM element
 const containerRef = ref<HTMLDivElement | null>(null);
 
+// Track container bounds and window size for safe area detection
+const containerBounds = useElementBounding(containerRef);
+const windowSize = useWindowSize();
+
 // Editor instance
 const editorRef = shallowRef<Editor | null>(null);
 
@@ -209,6 +215,17 @@ const isLoading = ref(true);
 
 // Camera ref for internal rendering - updated via subscription
 const cameraRef = shallowRef(Camera.default());
+
+// Computed CSS value for safe area - only apply when canvas is at viewport bottom
+const safeAreaBottom = computed(() => {
+  if (containerBounds.height.value === 0 || windowSize.height.value === 0) {
+    return "0px";
+  }
+  // Consider "at bottom" if within 20px of viewport bottom
+  const threshold = 20;
+  const isAtBottom = Math.abs(containerBounds.bottom.value - windowSize.height.value) < threshold;
+  return isAtBottom ? "env(safe-area-inset-bottom, 0px)" : "0px";
+});
 
 // Subscribe to component changes for an entity
 function subscribeComponent(
@@ -752,6 +769,7 @@ function getBlockStyle(data: BlockData) {
       width: '100%',
       height: '100%',
       overflow: 'hidden',
+      '--wov-safe-area-bottom': safeAreaBottom,
     }"
   >
     <!-- Background layer -->

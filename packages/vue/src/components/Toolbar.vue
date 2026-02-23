@@ -328,7 +328,7 @@ provide(TOOLBAR_KEY, toolbarContext);
 <style>
 .wov-toolbar-container {
   position: absolute;
-  bottom: calc(var(--wov-toolbar-bottom-offset, 20px) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(20px + var(--wov-safe-area-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--wov-z-ui);
