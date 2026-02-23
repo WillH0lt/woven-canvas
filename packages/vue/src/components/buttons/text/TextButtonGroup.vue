@@ -120,6 +120,7 @@ provide(DROPDOWN_ACTIVE_KEY, activeByLevel);
   border-radius: 12px;
   padding: 8px;
   gap: 4px;
+  color: var(--wov-gray-100);
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);

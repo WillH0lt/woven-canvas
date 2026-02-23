@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/vue",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Vue 3 components for woven-canvas infinite canvas",
   "repository": {
     "type": "git",
@@ -68,7 +68,7 @@
     "@tiptap/extensions": "^3.15.3",
     "@tiptap/vue-3": "^3.15.3",
     "@vueuse/core": "^14.0.0",
-    "@woven-ecs/canvas-store": "^1.0.4",
+    "@woven-ecs/canvas-store": "catalog:",
     "perfect-freehand": "^1.2.2",
     "vue": "^3.5.26"
   },
