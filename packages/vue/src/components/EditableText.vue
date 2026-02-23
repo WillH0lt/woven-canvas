@@ -5,6 +5,7 @@ import {
   Block,
   Camera,
   Screen,
+  Mouse,
   ResetKeyboard,
   removeEntity,
   getBlockDef,
@@ -30,8 +31,6 @@ import { computeBlockDimensions } from "../utils/blockDimensions";
 interface Props extends BlockData {
   /** The block's outer container element (for floating menu positioning) */
   blockElement: HTMLElement | null;
-  /** Element to measure dimensions from when editing ends. Defaults to editableTextRef. */
-  measureElement?: HTMLElement | null;
 }
 
 const props = defineProps<Props>();
@@ -53,6 +52,7 @@ const camera = useSingleton(Camera);
 const screen = useSingleton(Screen);
 const textEditorController = useTextEditorController();
 const { nextEditorTick } = useEditorContext();
+const mouse = useSingleton(Mouse);
 
 // Template ref for measuring text dimensions
 const editableTextRef = ref<HTMLElement | null>(null);
@@ -133,22 +133,6 @@ function createEditor(): Editor {
   });
 }
 
-// Position caret under mouse when entering edit mode
-function handlePointerEnter(event: PointerEvent): void {
-  if (!editor.value) return;
-
-  const position = editor.value.view.posAtCoords({
-    left: event.clientX,
-    top: event.clientY,
-  });
-
-  editor.value
-    .chain()
-    .focus()
-    .setTextSelection(position?.pos ?? 0)
-    .run();
-}
-
 // Watch for edited state changes - create/destroy editor lazily
 watch(
   () => props.edited,
@@ -179,23 +163,29 @@ watch(
 );
 
 async function handleEditStart(editor: Editor): Promise<void> {
+  // Capture mouse position before any async waits
+  const mousePos = mouse.value?.position;
+  const screenPos = screen.value;
+
   await nextTick();
 
-  // Add one-time listener to position caret under mouse
-  const element = editableTextRef.value;
-  if (element) {
-    const onPointerEnter = (e: PointerEvent) => handlePointerEnter(e);
-    element.addEventListener("pointerenter", onPointerEnter, {
-      once: true,
-    });
+  // Wait for browser to paint the editor content
+  await new Promise((resolve) => requestAnimationFrame(resolve));
 
-    // Remove listener after short delay to prevent cursor jumping
-    setTimeout(() => {
-      element.removeEventListener("pointerenter", onPointerEnter);
-    }, 50);
+  const element = editableTextRef.value;
+  if (mousePos && screenPos && element) {
+    // Convert canvas-relative to viewport coordinates
+    const clientX = mousePos[0] + screenPos.left;
+    const clientY = mousePos[1] + screenPos.top;
+
+    const position = editor.view.posAtCoords({ left: clientX, top: clientY });
+    if (position) {
+      editor.chain().focus().setTextSelection(position.pos).run();
+      return;
+    }
   }
 
-  // Default focus at start if pointer doesn't enter
+  // Fallback: focus at start
   editor.commands.focus("start");
 }
 
@@ -225,8 +215,12 @@ function handleEditEnd(editor: Editor): void {
       return;
     }
 
-    // Use editableTextRef by default if measureElement is not provided
-    const elementToMeasure = props.measureElement ?? editableTextRef.value;
+    // Find the measure element: the block component's root (first child of .wov-block)
+    // This automatically captures any padding/styling the block adds around the text
+    const blockEl = editableTextRef.value?.closest(".wov-block");
+    const elementToMeasure =
+      (blockEl?.firstElementChild as HTMLElement | null) ??
+      editableTextRef.value;
     if (!elementToMeasure) {
       console.warn("EditableText: no element to measure");
       return;

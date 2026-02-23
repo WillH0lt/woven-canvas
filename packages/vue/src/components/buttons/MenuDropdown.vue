@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, inject, watch, onUnmounted, type Ref } from "vue";
+import { ref, inject, provide, watch, onUnmounted, type Ref } from "vue";
 import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
+import { DROPDOWN_ACTIVE_KEY, DROPDOWN_LEVEL_KEY } from "../../injection";
 import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
 
 const props = withDefaults(
@@ -28,11 +29,31 @@ const emit = defineEmits<{
 // Get container ref from WovenCanvas for teleport
 const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
 
+// Dropdown level coordination - only one dropdown open per level
+const activeByLevel = inject(DROPDOWN_ACTIVE_KEY, null);
+const level = inject(DROPDOWN_LEVEL_KEY, 0);
+const instanceId = Math.random().toString(36).slice(2);
+
+// Provide incremented level for nested dropdowns
+provide(DROPDOWN_LEVEL_KEY, level + 1);
+
 // Tooltip singleton
 const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
 
 // Dropdown state
 const isOpen = ref(false);
+
+// Close this dropdown if another one at the same level becomes active
+if (activeByLevel) {
+  watch(
+    () => activeByLevel.value.get(level),
+    (activeId) => {
+      if (activeId !== undefined && activeId !== instanceId && isOpen.value) {
+        isOpen.value = false;
+      }
+    }
+  );
+}
 const buttonRef = ref<HTMLElement | null>(null);
 const dropdownRef = ref<HTMLElement | null>(null);
 
@@ -61,12 +82,14 @@ function close() {
 function handleClickOutside(event: MouseEvent) {
   const target = event.target as Node;
 
-  if (
-    buttonRef.value &&
-    !buttonRef.value.contains(target) &&
-    dropdownRef.value &&
-    !dropdownRef.value.contains(target)
-  ) {
+  // Check if click is inside this dropdown's button or content
+  const isInsideButton = buttonRef.value?.contains(target);
+  const isInsideDropdown = dropdownRef.value?.contains(target);
+
+  // Check if click is inside any nested dropdown (teleported elsewhere)
+  const isInsideAnyDropdown = (target as Element).closest?.(".wov-menu-dropdown");
+
+  if (!isInsideButton && !isInsideDropdown && !isInsideAnyDropdown) {
     close();
   }
 }
@@ -87,9 +110,20 @@ watch(isOpen, (open) => {
   if (open) {
     hideTooltip(); // Hide tooltip when dropdown opens
     document.addEventListener("click", handleClickOutside, true);
+    // Set this dropdown as active at its level (closes others at same level)
+    if (activeByLevel) {
+      activeByLevel.value.set(level, instanceId);
+      // Trigger reactivity
+      activeByLevel.value = new Map(activeByLevel.value);
+    }
     emit("open");
   } else {
     document.removeEventListener("click", handleClickOutside, true);
+    // Clear active at this level if this was the active dropdown
+    if (activeByLevel?.value.get(level) === instanceId) {
+      activeByLevel.value.delete(level);
+      activeByLevel.value = new Map(activeByLevel.value);
+    }
     emit("close");
   }
 });

@@ -6,14 +6,7 @@ import PenStrokeThicknessButton from "./buttons/PenStrokeThicknessButton.vue";
 import ArrowThicknessButton from "./buttons/ArrowThicknessButton.vue";
 import ArrowHeadButton from "./buttons/ArrowHeadButton.vue";
 import MenuTooltip from "./buttons/MenuTooltip.vue";
-import TextBoldButton from "./buttons/text/TextBoldButton.vue";
-import TextItalicButton from "./buttons/text/TextItalicButton.vue";
-import TextUnderlineButton from "./buttons/text/TextUnderlineButton.vue";
-import TextAlignmentButton from "./buttons/text/TextAlignmentButton.vue";
-import TextFontSizeButton from "./buttons/text/TextFontSizeButton.vue";
-import TextFontFamilyButton from "./buttons/text/TextFontFamilyButton.vue";
-import TextColorButton from "./buttons/text/TextColorButton.vue";
-import VerticalAlignButton from "./buttons/text/VerticalAlignButton.vue";
+import TextButtonGroup from "./buttons/text/TextButtonGroup.vue";
 import ShapeKindButton from "./buttons/ShapeKindButton.vue";
 import ShapeFillColorButton from "./buttons/ShapeFillColorButton.vue";
 import ShapeStrokeColorButton from "./buttons/ShapeStrokeColorButton.vue";
@@ -121,21 +114,11 @@ onUnmounted(() => {
 
     <!-- Text formatting buttons -->
     <slot name="button:text" :entityIds="selectedIds">
-      <template v-if="commonComponents.has('text')">
-        <TextFontFamilyButton :entityIds="selectedIds" />
-        <TextFontSizeButton :entityIds="selectedIds" />
-        <div divider class="wov-divider" />
-        <TextBoldButton :entityIds="selectedIds" />
-        <TextItalicButton :entityIds="selectedIds" />
-        <TextUnderlineButton :entityIds="selectedIds" />
-        <div divider class="wov-divider" />
-        <TextColorButton :entityIds="selectedIds" />
-        <TextAlignmentButton :entityIds="selectedIds" />
-        <VerticalAlignButton
-          v-if="commonComponents.has('verticalAlign')"
-          :entityIds="selectedIds"
-        />
-      </template>
+      <TextButtonGroup
+        v-if="commonComponents.has('text')"
+        :entityIds="selectedIds"
+        :showVerticalAlign="commonComponents.has('verticalAlign')"
+      />
     </slot>
 
     <!-- Singleton tooltip rendered once for all menu items -->

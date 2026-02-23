@@ -40,6 +40,11 @@ const { handleEditEnd } = useTextStretchBehavior({
 </template>
 
 <style>
+.wov-text-block {
+  width: fit-content;
+  height: fit-content;
+}
+
 .wov-block[data-selected] > .wov-text-block {
   outline: none;
 }

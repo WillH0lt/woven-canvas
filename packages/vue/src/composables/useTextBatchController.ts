@@ -322,11 +322,20 @@ function setColorInHtml(html: string, color: string): string {
 type MeasuredUpdate = BlockDimensions & { entityId: EntityId }
 
 /**
- * Find the text element for an entity by querying the DOM.
+ * Find the block element by querying the DOM.
+ * Returns the block component's root element (first child of .wov-block),
+ * which may include padding/styling that should be part of the measurement.
  */
-function findTextElement(entityId: EntityId): HTMLElement | null {
+function findBlockElement(entityId: EntityId): HTMLElement | null {
   const blockElement = document.querySelector(`[data-entity-id="${entityId}"]`)
   if (!blockElement) return null
+
+  // The first child of .wov-block is the block component's root element
+  // (e.g., .wov-sticky-note, .wov-text-block) which defines the visual bounds
+  const firstChild = blockElement.firstElementChild as HTMLElement | null
+  if (firstChild) return firstChild
+
+  // Fallback to finding the editable text directly
   return blockElement.querySelector('.wov-editable-text') as HTMLElement | null
 }
 
@@ -353,14 +362,23 @@ function measureWithClone(
   clone.style.top = '0'
   clone.style.left = '0'
 
-  // Apply style changes from the text clone
-  clone.style.fontSize = `${text.fontSizePx}px`
-  clone.style.fontFamily = text.fontFamily
+  // Find the text element within the clone (may be the clone itself or a child)
+  const textElement = clone.classList.contains('wov-editable-text')
+    ? clone
+    : (clone.querySelector('.wov-editable-text') as HTMLElement | null)
 
-  // Apply content
+  // Apply style changes to the text element
+  if (textElement) {
+    textElement.style.fontSize = `${text.fontSizePx}px`
+    textElement.style.fontFamily = text.fontFamily
+  }
+
+  // Apply content to ProseMirror element
   const proseMirror = clone.querySelector('.ProseMirror, .tiptap')
   if (proseMirror) {
     proseMirror.innerHTML = text.content
+  } else if (textElement) {
+    textElement.innerHTML = text.content
   } else {
     clone.innerHTML = text.content
   }
@@ -582,7 +600,7 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
       const text = textsMap.value.get(entityId)
       if (!text) continue
 
-      const element = findTextElement(entityId)
+      const element = findBlockElement(entityId)
       if (element) {
         const dims = measureWithClone(element, camera, screen, getCloneText(text))
         updates.push({ entityId, ...dims })
@@ -623,7 +641,7 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
       if (!text) continue
 
       const newContent = transform(text.content)
-      const element = findTextElement(entityId)
+      const element = findBlockElement(entityId)
 
       if (element) {
         const dims = measureWithClone(element, camera, screen, { ...text, content: newContent })
