@@ -49,6 +49,7 @@
 
 .wov-root {
   font-family: var(--wov-font-family);
+  touch-action: none;
 }
 
 /* Normalize SVG display to prevent style leakage from parent document */
@@ -80,4 +81,11 @@
   border-radius: calc(
     var(--wov-highlighted-block-border-radius) / var(--wov-zoom, 1)
   );
+}
+
+/* Hide tooltips on touch/mobile devices */
+@media (hover: none) {
+  .wov-menu-tooltip {
+    display: none !important;
+  }
 }

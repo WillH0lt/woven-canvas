@@ -2,7 +2,8 @@ import { Vec2 } from '@woven-canvas/math'
 import { type Context, defineQuery, type EntityId } from '@woven-ecs/core'
 
 import { Pointer, type PointerButton } from '../components'
-import { Camera, Frame, Intersect, Key, Keyboard } from '../singletons'
+import { intersectPoint } from '../helpers'
+import { Camera, Frame, Key, Keyboard } from '../singletons'
 import type { PointerInput, PointerInputOptions } from './types'
 
 // Default thresholds for click detection
@@ -123,14 +124,13 @@ export function getPointerInput(
     return buttons.includes(pointer.button)
   }
 
-  // Get current intersects
-  const intersects = Intersect.getAll(ctx)
-
   // Helper to create event from pointer
   const createEvent = (type: PointerInput['type'], entityId: EntityId): PointerInput => {
     const pointer = Pointer.read(ctx, entityId)
     const screenPos: Vec2 = [pointer.position[0], pointer.position[1]]
     const worldPos = Camera.toWorld(ctx, screenPos)
+
+    const intersects = intersectPoint(ctx, worldPos)
 
     return {
       type,

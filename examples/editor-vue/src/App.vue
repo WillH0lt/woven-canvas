@@ -14,6 +14,7 @@ import Editor from './Editor.vue'
   display: flex;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
 }
 
 .studio {

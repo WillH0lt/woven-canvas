@@ -13,7 +13,7 @@ import {
 } from '@woven-canvas/core'
 import { assign, setup } from 'xstate'
 
-import { PanState } from '../components'
+import { PanState, PinchState } from '../components'
 import { smoothDamp } from '../helpers'
 import { PanStateValue } from '../types'
 
@@ -224,6 +224,16 @@ const panMachine = setup({
  */
 export const PostInputPan = defineEditorSystem({ phase: 'input', priority: -100 }, (ctx) => {
   const currentState = PanState.read(ctx).state
+  const pinchActive = PinchState.read(ctx).active
+
+  // When pinch gesture is active, defer to PostInputPinch system.
+  // Reset pan state to Idle so when pinch ends, we start fresh without a jump.
+  if (pinchActive) {
+    if (currentState !== PanStateValue.Idle) {
+      PanState.copy(ctx, PanState.default())
+    }
+    return
+  }
 
   // Get pointer events for buttons mapped to the "hand" tool
   const buttons = Controls.getButtons(ctx, 'hand')
