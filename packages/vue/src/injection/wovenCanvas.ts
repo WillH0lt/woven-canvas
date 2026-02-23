@@ -26,4 +26,4 @@ export interface WovenCanvasContext {
 }
 
 /** Injection key for WovenCanvas context */
-export const WOVEN_CANVAS_KEY: InjectionKey<WovenCanvasContext> = Symbol('woven-canvas')
+export const WOVEN_CANVAS_KEY: InjectionKey<WovenCanvasContext> = Symbol.for('__woven_canvas__')

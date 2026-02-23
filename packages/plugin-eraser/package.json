@@ -42,8 +42,8 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@woven-canvas/core": "workspace:*",
-    "@woven-canvas/math": "workspace:*"
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/math": "workspace:^"
   },
   "devDependencies": {
     "resize-observer-polyfill": "^1.5.1",

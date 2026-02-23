@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/vue",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Vue 3 components for woven-canvas infinite canvas",
   "repository": {
     "type": "git",

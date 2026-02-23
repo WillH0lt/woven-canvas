@@ -17,4 +17,4 @@ export interface ToolbarContext {
 }
 
 /** Injection key for Toolbar context */
-export const TOOLBAR_KEY: InjectionKey<ToolbarContext> = Symbol('toolbar')
+export const TOOLBAR_KEY: InjectionKey<ToolbarContext> = Symbol.for('__woven_canvas_toolbar__')

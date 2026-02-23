@@ -8,4 +8,4 @@ export interface FloatingMenuContext {
 }
 
 /** Injection key for FloatingMenu context */
-export const FLOATING_MENU_KEY: InjectionKey<FloatingMenuContext> = Symbol('floating-menu')
+export const FLOATING_MENU_KEY: InjectionKey<FloatingMenuContext> = Symbol.for('__woven_canvas_floating_menu__')

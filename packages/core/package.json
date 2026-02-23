@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Framework-agnostic editor library built on ECS",
   "repository": {
     "type": "git",
@@ -42,9 +42,9 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@woven-canvas/math": "workspace:*",
+    "@woven-canvas/math": "workspace:^",
     "@woven-ecs/canvas-store": "^1.0.3",
-    "@woven-ecs/core": "^1.0.1",
+    "@woven-ecs/core": "^1.0.3",
     "fractional-indexing-jittered": "^1.0.0",
     "xstate": "^5.24.0",
     "zod": "^4.2.1"

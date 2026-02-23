@@ -196,10 +196,10 @@ importers:
         version: link:../math
       '@woven-ecs/canvas-store':
         specifier: ^1.0.3
-        version: 1.0.3(typescript@5.9.3)
+        version: 1.0.4(typescript@5.9.3)
       '@woven-ecs/core':
-        specifier: ^1.0.1
-        version: 1.0.1(typescript@5.9.3)
+        specifier: ^1.0.3
+        version: 1.0.3(typescript@5.9.3)
       fractional-indexing-jittered:
         specifier: ^1.0.0
         version: 1.0.0
@@ -4030,16 +4030,6 @@ packages:
       vue: 3.5.27(typescript@5.9.3)
     dev: false
 
-  /@woven-ecs/canvas-store@1.0.3(typescript@5.9.3):
-    resolution: {integrity: sha512-HrgCbDdFRe/HQ/I1LS0+/NGOacWN6q/rM+5T2OPkMHSotkx8WxHgXgOtGsH+8HeKTQ1UBoX1G8gIBDW9Y4eguA==}
-    peerDependencies:
-      typescript: ^5
-    dependencies:
-      '@woven-ecs/core': 1.0.1(typescript@5.9.3)
-      idb: 8.0.3
-      typescript: 5.9.3
-    dev: false
-
   /@woven-ecs/canvas-store@1.0.4(typescript@5.9.3):
     resolution: {integrity: sha512-xI1wZOYfZ3r1kNXN8sYbvMLFZqC7TisrbcGsqacWpXU9fFXFRN8gmLoaCU0VMu0opw0CJAkOJZyz6v8k+PBlgA==}
     peerDependencies:
@@ -4052,6 +4042,14 @@ packages:
 
   /@woven-ecs/core@1.0.1(typescript@5.9.3):
     resolution: {integrity: sha512-RM6VTMzGvaTl70VuMhPfTa6lINvMfZeJ7wlKWUOEBm16D0iU5Ov5v6FIg9snmGLPMacr6zd9Ufp8Eqp9jygfkg==}
+    peerDependencies:
+      typescript: ^5
+    dependencies:
+      typescript: 5.9.3
+    dev: false
+
+  /@woven-ecs/core@1.0.3(typescript@5.9.3):
+    resolution: {integrity: sha512-ITjJCOy2b79FFAn7KEB+ZioZkX12umuWBJ7obukWAuviIjbd3KRlcI8XIHRSnZ1wy70AzC5Z8fhghGVhENOZOQ==}
     peerDependencies:
       typescript: ^5
     dependencies:

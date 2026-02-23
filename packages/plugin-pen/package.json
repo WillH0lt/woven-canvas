@@ -40,8 +40,8 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@woven-canvas/core": "workspace:*",
-    "@woven-canvas/math": "workspace:*",
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/math": "workspace:^",
     "simplify-js": "^1.2.4"
   },
   "devDependencies": {
