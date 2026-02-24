@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Framework-agnostic editor library built on ECS",
   "repository": {
     "type": "git",

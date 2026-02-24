@@ -5,6 +5,7 @@ export {
   canBlockScale,
   getBlockDef,
   getBlockDefs,
+  getBlockResizeMode,
 } from './blockDefs'
 // AABB computation
 export { computeAabb } from './computeAabb'

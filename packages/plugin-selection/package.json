@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-selection",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Selection plugin - select, move, and resize objects on infinite canvas",
   "repository": {
     "type": "git",

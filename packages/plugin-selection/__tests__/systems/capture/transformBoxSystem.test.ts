@@ -8,6 +8,7 @@ import {
   Editor,
   type EditorPlugin,
   Intersect,
+  ResizeMode,
   removeComponent,
 } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -32,7 +33,7 @@ const testPlugin: EditorPlugin = {
     BlockDef.parse({
       tag: 'text',
       editOptions: { canEdit: true },
-      resizeMode: 'text',
+      resizeMode: ResizeMode.Text,
     }),
   ],
   components: [Selected, TransformBox, TransformHandle, EditAfterPlacing],

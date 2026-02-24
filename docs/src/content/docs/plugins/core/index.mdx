@@ -39,7 +39,7 @@ A text-only block that auto-sizes and can be removed when empty.
 {
   tag: 'text',
   components: [Text],
-  resizeMode: 'text',
+  resizeMode: ResizeMode.Text,
   editOptions: {
     canEdit: true,
     removeWhenTextEmpty: true
@@ -49,13 +49,13 @@ A text-only block that auto-sizes and can be removed when empty.
 
 ### Image
 
-An image block with asset loading support.
+An image block with asset loading support. The `resizeMode` can be overridden per-block to allow unlocking aspect ratio.
 
 ```typescript
 {
   tag: 'image',
   components: [Image, Asset],
-  resizeMode: 'scale'
+  resizeMode: ResizeMode.Scale
 }
 ```
 
@@ -67,7 +67,7 @@ A geometric shape with optional text content.
 {
   tag: 'shape',
   components: [Shape, Text, VerticalAlign],
-  resizeMode: 'free',
+  resizeMode: ResizeMode.Free,
   editOptions: { canEdit: true }
 }
 ```

@@ -53,12 +53,8 @@ function handleMouseLeave() {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.wov-menu-button:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.wov-active {
-  background: var(--wov-primary);
+.wov-menu-button.wov-active {
+  background-color: var(--wov-primary);
 }
 
 .wov-menu-button svg {

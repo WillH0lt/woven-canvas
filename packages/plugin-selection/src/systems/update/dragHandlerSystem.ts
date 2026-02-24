@@ -5,10 +5,11 @@ import {
   defineQuery,
   type EntityId,
   Grid,
-  getBlockDef,
+  getBlockResizeMode,
   hasComponent,
   Keyboard,
   on,
+  ResizeMode,
   Text,
 } from '@woven-canvas/core'
 import { Scalar, Vec2 } from '@woven-canvas/math'
@@ -293,8 +294,7 @@ function onScaleHandleDrag(ctx: Context, handleId: EntityId, position: Vec2, mai
     Vec2.multiply(newBlockSize, scaleFactor)
 
     // Check if this is a text block that should maintain aspect ratio
-    const blockDef = getBlockDef(ctx, block.tag)
-    const isTextResize = blockDef?.resizeMode === 'text'
+    const isTextResize = getBlockResizeMode(ctx, blockId) === ResizeMode.Text
 
     // Apply grid snapping to size only in strict mode
     if (grid.strict) {

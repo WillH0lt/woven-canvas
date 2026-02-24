@@ -40,12 +40,12 @@ Use different document IDs for separate canvases:
 
 ## Undo/Redo
 
-Enable undo/redo history with the `history` option:
+Undo/redo history is enabled by default. To disable it:
 
 ```typescript
 const storeOptions = {
   ...
-  history: true,
+  history: false,
 };
 ```
 

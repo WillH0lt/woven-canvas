@@ -5,6 +5,7 @@ import {
   type EditorPlugin,
   type EditorPluginFactory,
   type EditorSystem,
+  ResizeMode,
 } from '@woven-canvas/core'
 
 import * as components from './components'
@@ -41,7 +42,7 @@ export function createPenPlugin(): EditorPlugin {
     blockDefs: [
       {
         tag: 'pen-stroke',
-        resizeMode: 'free',
+        resizeMode: ResizeMode.Free,
         components: [components.PenStroke, Color],
         connectors: { enabled: false },
       },

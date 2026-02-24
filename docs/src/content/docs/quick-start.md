@@ -50,8 +50,6 @@ import { WovenCanvas } from "@woven-canvas/vue";
       persistence: {
         documentId: 'my-canvas', // Unique ID for this document
       },
-
-      history: true, // enable undo/redo history
     }"
   />
 </template>

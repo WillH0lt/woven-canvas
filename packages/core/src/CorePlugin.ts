@@ -30,7 +30,7 @@ import { cursorSystem, presenceSystem } from './systems/postRender'
 import { intersectSystem } from './systems/preCapture'
 import { rankBoundsSystem } from './systems/preInput'
 import { canSeeBlocksSystem, scaleWithZoomSystem } from './systems/preRender'
-import type { EditorResources } from './types'
+import { type EditorResources, ResizeMode } from './types'
 
 /**
  * Core plugin - handles input, camera, and basic block types.
@@ -53,7 +53,7 @@ export const CorePlugin: EditorPlugin = {
     {
       tag: 'text',
       components: [Text],
-      resizeMode: 'text',
+      resizeMode: ResizeMode.Text,
       editOptions: {
         canEdit: true,
         removeWhenTextEmpty: true,
@@ -62,12 +62,12 @@ export const CorePlugin: EditorPlugin = {
     {
       tag: 'image',
       components: [Image, Asset],
-      resizeMode: 'scale',
+      resizeMode: ResizeMode.Scale,
     },
     {
       tag: 'shape',
       components: [Shape, Text, VerticalAlign],
-      resizeMode: 'free',
+      resizeMode: ResizeMode.Free,
       editOptions: {
         canEdit: true,
       },

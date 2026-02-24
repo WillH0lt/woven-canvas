@@ -5,6 +5,7 @@ import {
   Connector,
   type EditorPlugin,
   type EditorPluginFactory,
+  ResizeMode,
 } from '@woven-canvas/core'
 
 import * as components from './components'
@@ -54,13 +55,13 @@ export function createArrowsPlugin(options: ArrowsPluginOptions = {}): EditorPlu
     blockDefs: [
       {
         tag: 'arc-arrow',
-        resizeMode: 'groupOnly',
+        resizeMode: ResizeMode.GroupOnly,
         components: [components.ArcArrow, Connector, Color],
         connectors: { enabled: false },
       },
       {
         tag: 'elbow-arrow',
-        resizeMode: 'groupOnly',
+        resizeMode: ResizeMode.GroupOnly,
         components: [components.ElbowArrow, Connector, Color],
         connectors: { enabled: false },
       },

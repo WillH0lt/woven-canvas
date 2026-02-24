@@ -118,6 +118,7 @@ export { FontFamily, type FontFamilyInput, FontLoader } from './FontLoader'
 export {
   canBlockEdit,
   getBlockDef,
+  getBlockResizeMode,
   getTopmostBlockAtPoint,
   intersectAabb,
   intersectCapsule,
@@ -157,7 +158,6 @@ export type {
   EditorResources,
   GridOptionsInput,
   KeybindInput,
-  ResizeMode,
   UserDataInput,
 } from './types'
 export {
@@ -167,6 +167,7 @@ export {
   GridOptions,
   getPluginResources,
   Keybind,
+  ResizeMode,
   Stratum,
   TextAlignment,
   UserData,

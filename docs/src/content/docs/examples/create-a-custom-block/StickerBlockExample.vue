@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import '@woven-canvas/vue/style.css'
+import { ResizeMode } from '@woven-canvas/core'
 import { WovenCanvas, SelectTool, HandTool, FloatingMenuBar, Toolbar } from '@woven-canvas/vue'
 import { Sticker } from './Sticker'
 import StickerBlock from './StickerBlock.vue'
@@ -10,7 +11,7 @@ import StickerMenuButton from './StickerMenuButton.vue'
 const blockDefs = [
   {
     tag: 'sticker',
-    resizeMode: 'scale' as const,
+    resizeMode: ResizeMode.Scale,
     canRotate: true,
     components: [Sticker],
   },

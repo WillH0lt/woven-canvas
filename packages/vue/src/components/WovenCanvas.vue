@@ -387,7 +387,9 @@ onMounted(async () => {
   const syncOpts = props.store ?? {};
 
   // Build store options, wrapping callbacks to track internal state
+  // Default history to true (enable undo/redo) unless explicitly disabled
   const storeOptions: CanvasStoreOptions = {
+    history: true,
     ...syncOpts,
   };
 

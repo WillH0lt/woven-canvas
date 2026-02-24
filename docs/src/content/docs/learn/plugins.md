@@ -102,13 +102,15 @@ Components can also specify a `sync` behavior to control how data is persisted a
 Block definitions configure how blocks behave:
 
 ```typescript
+import { ResizeMode } from "@woven-canvas/core";
+
 blockDefs: [
   {
     tag: "potion-card", // Block type identifier
-    resizeMode: "free", // 'free', 'aspectRatio', or 'none'
+    resizeMode: ResizeMode.Free, // Free transform resizing
     canRotate: true, // Allow rotation
     canScale: true, // Allow scaling
-    stratum: "content", // 'content' or 'overlay'
+    stratum: "content", // 'background', 'content', or 'overlay'
     components: [HslColor, Potion], // Additional components for this block type
     connectors: { enabled: true }, // Arrow connection support
   },
@@ -117,15 +119,15 @@ blockDefs: [
 
 ### Block Options
 
-| Option       | Type      | Default             | Description                    |
-| ------------ | --------- | ------------------- | ------------------------------ |
-| `tag`        | `string`  | required            | Unique block type identifier   |
-| `resizeMode` | `string`  | `'free'`            | Resize behavior                |
-| `canRotate`  | `boolean` | `true`              | Allow rotation                 |
-| `canScale`   | `boolean` | `true`              | Allow scaling                  |
-| `stratum`    | `string`  | `'content'`         | Render layer                   |
-| `components` | `array`   | `[]`                | Components added to new blocks |
-| `connectors` | `object`  | `{ enabled: true }` | Arrow connection config        |
+| Option       | Type         | Default             | Description                                 |
+| ------------ | ------------ | ------------------- | ------------------------------------------- |
+| `tag`        | `string`     | required            | Unique block type identifier                |
+| `resizeMode` | `ResizeMode` | `ResizeMode.Scale`  | `Scale` (maintain aspect), `Free` (stretch) |
+| `canRotate`  | `boolean`    | `true`              | Allow rotation                              |
+| `canScale`   | `boolean`    | `true`              | Allow scaling                               |
+| `stratum`    | `string`     | `'content'`         | Render layer                                |
+| `components` | `array`      | `[]`                | Components added to new blocks              |
+| `connectors` | `object`     | `{ enabled: true }` | Arrow connection config                     |
 
 The `Block` component is always included automatically on every block entity.
 
@@ -340,7 +342,7 @@ export function PotionPlugin(): EditorPlugin {
     blockDefs: [
       {
         tag: "potion-card",
-        resizeMode: "free",
+        resizeMode: ResizeMode.Free,
         canRotate: false,
         components: [HslColor, Potion],
       },

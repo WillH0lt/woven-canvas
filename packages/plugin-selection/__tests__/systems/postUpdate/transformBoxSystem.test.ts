@@ -9,6 +9,7 @@ import {
   type EntityId,
   hasComponent,
   Opacity,
+  ResizeMode,
 } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
@@ -39,11 +40,11 @@ const testPlugin: EditorPlugin = {
     {
       tag: 'text',
       editOptions: { canEdit: true },
-      resizeMode: 'text',
+      resizeMode: ResizeMode.Text,
     },
     {
       tag: 'image',
-      resizeMode: 'scale',
+      resizeMode: ResizeMode.Scale,
       canRotate: true,
       canScale: true,
     },
@@ -59,7 +60,7 @@ const testPlugin: EditorPlugin = {
     },
     {
       tag: 'groupOnly',
-      resizeMode: 'groupOnly',
+      resizeMode: ResizeMode.GroupOnly,
     },
   ],
   components: [Selected, TransformBox, TransformHandle, DragStart],

@@ -400,8 +400,21 @@ export type CursorDefMap = Partial<Record<string, CursorDef>>
 
 /**
  * Block resize modes.
+ * - `default`: Use the blockDef's resizeMode (only valid on Block component)
+ * - `scale`: Maintain aspect ratio when resizing
+ * - `text`: Text mode - stretch horizontally, scale vertically
+ * - `free`: Free resize in both dimensions
+ * - `groupOnly`: Only resizable as part of a group
  */
-export type ResizeMode = 'scale' | 'text' | 'free' | 'groupOnly'
+export const ResizeMode = {
+  Default: 'default',
+  Scale: 'scale',
+  Text: 'text',
+  Free: 'free',
+  GroupOnly: 'groupOnly',
+} as const
+
+export type ResizeMode = (typeof ResizeMode)[keyof typeof ResizeMode]
 
 export const VerticalAlignment = {
   Top: 'top',
@@ -455,7 +468,9 @@ export const BlockDef = z.object({
   stratum: Stratum.default('content'),
   editOptions: BlockDefEditOptions.default(BlockDefEditOptions.parse({})),
   components: z.array(z.custom<AnyCanvasComponentDef>()).default([]),
-  resizeMode: z.enum(['scale', 'text', 'free', 'groupOnly']).default('scale'),
+  resizeMode: z
+    .enum([ResizeMode.Scale, ResizeMode.Text, ResizeMode.Free, ResizeMode.GroupOnly])
+    .default(ResizeMode.Scale),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
   connectors: BlockDefConnectors.default(BlockDefConnectors.parse({})),

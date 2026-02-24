@@ -7,11 +7,12 @@ import {
   defineEditorSystem,
   defineQuery,
   type EntityId,
-  getBlockDef,
+  getBlockResizeMode,
   getPointerInput,
   hasComponent,
   type InferStateContext,
   type PointerInput,
+  ResizeMode,
   removeComponent,
 } from '@woven-canvas/core'
 import { and, assign, not, raise, setup } from 'xstate'
@@ -84,11 +85,9 @@ const transformBoxMachine = setup({
       if (event.selectedEntityIds.length > 1) return true
       if (event.selectedEntityIds.length === 0) return false
 
-      // Check if single block allows transform (resizeMode !== 'groupOnly')
+      // Check if single block allows transform
       const entityId = event.selectedEntityIds[0]
-      const block = Block.read(event.ctx, entityId)
-      const blockDef = getBlockDef(event.ctx, block.tag)
-      return blockDef.resizeMode !== 'groupOnly'
+      return getBlockResizeMode(event.ctx, entityId) !== ResizeMode.GroupOnly
     },
     hasEditAfterPlacing: ({ event }) => {
       if (event.type !== 'selectionChanged') return false

@@ -2,6 +2,8 @@ import { type Aabb, type Mat2, Rect, Vec2 } from '@woven-canvas/math'
 import { CanvasComponentDef } from '@woven-ecs/canvas-store'
 import { type Context, type EntityId, field } from '@woven-ecs/core'
 
+import { ResizeMode } from '../types'
+
 // Pre-allocated arrays for SAT intersection to avoid allocations
 const _aabbCorners: [Vec2, Vec2, Vec2, Vec2] = [
   [0, 0],
@@ -33,6 +35,8 @@ const BlockSchema = {
   flip: field.tuple(field.boolean(), 2).default([false, false]),
   /** Z-order rank (LexoRank string) */
   rank: field.string().max(36).default(''),
+  /** How the block can be resized */
+  resizeMode: field.enum(ResizeMode).default(ResizeMode.Default),
 }
 
 /**

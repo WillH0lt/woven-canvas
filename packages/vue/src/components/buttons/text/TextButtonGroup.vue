@@ -143,8 +143,8 @@ provide(DROPDOWN_ACTIVE_KEY, activeByLevel);
   flex: 1;
 }
 
-.wov-text-group-row > *:hover:not(.wov-text-group-spacer) {
-  background-color: var(--wov-gray-500);
+.wov-text-group-row > .wov-menu-button.wov-active {
+  background-color: var(--wov-primary);
 }
 
 .wov-text-group-spacer {

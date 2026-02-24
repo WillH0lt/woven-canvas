@@ -1,6 +1,7 @@
-import { type Context, getResources } from '@woven-ecs/core'
+import { type Context, type EntityId, getResources } from '@woven-ecs/core'
 
-import { BlockDef, type EditorResources } from '../types'
+import { Block } from '../components/Block'
+import { BlockDef, type EditorResources, ResizeMode } from '../types'
 
 /**
  * Get all block definitions from the editor resources.
@@ -57,4 +58,21 @@ export function canBlockRotate(ctx: Context, tag: string): boolean {
  */
 export function canBlockScale(ctx: Context, tag: string): boolean {
   return getBlockDef(ctx, tag).canScale
+}
+
+/**
+ * Get the effective resize mode for a block entity.
+ * Returns the block's resizeMode if set, otherwise falls back to blockDef's resizeMode.
+ *
+ * @param ctx - The ECS context
+ * @param entityId - The block entity ID
+ * @returns The effective resize mode ('scale', 'text', 'free', or 'groupOnly')
+ */
+export function getBlockResizeMode(ctx: Context, entityId: EntityId): ResizeMode {
+  const block = Block.read(ctx, entityId)
+  if (block.resizeMode !== ResizeMode.Default) {
+    return block.resizeMode
+  }
+  const blockDef = getBlockDef(ctx, block.tag)
+  return blockDef.resizeMode
 }

@@ -10,10 +10,12 @@ import {
   type EntityId,
   getBackrefs,
   getBlockDef,
+  getBlockResizeMode,
   hasComponent,
   isAlive,
   Opacity,
   on,
+  ResizeMode,
   removeComponent,
   removeEntity,
   ScaleWithZoom,
@@ -247,19 +249,13 @@ function addOrUpdateTransformHandles(ctx: Context, transformBoxId: EntityId): vo
   // Get selected blocks and determine capabilities
   const selectedBlocks = selectedBlocksQuery.current(ctx)
 
-  let resizeMode = 'scale'
+  let resizeMode: ResizeMode = ResizeMode.Scale
   if (selectedBlocks.length === 1) {
-    const block = Block.read(ctx, selectedBlocks[0])
-    const blockDef = getBlockDef(ctx, block.tag)
-    resizeMode = blockDef.resizeMode
+    resizeMode = getBlockResizeMode(ctx, selectedBlocks[0])
   } else if (selectedBlocks.length > 1) {
     // If all blocks are "free" resize mode, use "free" for the transform box
-    const allFree = selectedBlocks.every((id) => {
-      const block = Block.read(ctx, id)
-      const blockDef = getBlockDef(ctx, block.tag)
-      return blockDef.resizeMode === 'free'
-    })
-    if (allFree) resizeMode = 'free'
+    const allFree = selectedBlocks.every((id) => getBlockResizeMode(ctx, id) === ResizeMode.Free)
+    if (allFree) resizeMode = ResizeMode.Free
   }
 
   // Check if all selected blocks can rotate/scale
@@ -370,11 +366,11 @@ function addOrUpdateTransformHandles(ctx: Context, transformBoxId: EntityId): vo
   }
 
   // Left & right edge handles
-  if (canScale || resizeMode === 'text') {
+  if (canScale || resizeMode === ResizeMode.Text) {
     for (let xi = 0; xi < 2; xi++) {
       handles.push({
         tag: 'transform-edge',
-        kind: resizeMode === 'text' ? TransformHandleKind.Stretch : handleKind,
+        kind: resizeMode === ResizeMode.Text ? TransformHandleKind.Stretch : handleKind,
         vectorX: xi * 2 - 1,
         vectorY: 0,
         left: left + width * xi - sideHandleSize / 2,
@@ -494,9 +490,7 @@ function showTransformBox(ctx: Context, transformBoxId: EntityId): void {
   const selectedBlocks = selectedBlocksQuery.current(ctx)
   if (selectedBlocks.length === 0) return
   if (selectedBlocks.length === 1) {
-    const block = Block.read(ctx, selectedBlocks[0])
-    const blockDef = getBlockDef(ctx, block.tag)
-    if (blockDef.resizeMode === 'groupOnly') return
+    if (getBlockResizeMode(ctx, selectedBlocks[0]) === ResizeMode.GroupOnly) return
   }
 
   if (hasComponent(ctx, transformBoxId, Opacity)) {

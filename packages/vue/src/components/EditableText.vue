@@ -263,6 +263,12 @@ const containerStyle = computed(() => {
   const t = text.value;
   if (!t) return {};
 
+  // Counter-flip the text so it always reads left-to-right, top-to-bottom
+  const [flipX, flipY] = props.block.flip;
+  const scaleX = flipX ? -1 : 1;
+  const scaleY = flipY ? -1 : 1;
+  const needsFlip = flipX || flipY;
+
   return {
     fontFamily: t.fontFamily,
     fontSize: `${t.fontSizePx}px`,
@@ -274,6 +280,7 @@ const containerStyle = computed(() => {
     wordBreak: "break-word" as const,
     pointerEvents: props.edited ? ("auto" as const) : ("none" as const),
     userSelect: props.edited ? ("auto" as const) : ("none" as const),
+    transform: needsFlip ? `scale(${scaleX}, ${scaleY})` : undefined,
   };
 });
 

@@ -5,7 +5,6 @@ import '@woven-canvas/vue/style.css'
 
 <template>
   <WovenCanvas :store="{
-    history: true,
     persistence: {
       documentId: 'homepage'
     }
