@@ -20,7 +20,7 @@ import "@woven-canvas/vue/style.css";
 </script>
 
 <template>
-  <WovenCanvas />
+  <WovenCanvas style="width: 100%; height: 100vh" />
 </template>
 ```
 
