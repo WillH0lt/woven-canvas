@@ -76,6 +76,7 @@ vi.mock('@woven-canvas/core', async () => {
 
   class MockEditor {
     components = new Map()
+    singletons = new Map()
     container: HTMLElement
     options: any
     private mockContext = {

@@ -14,7 +14,7 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      external: ['vue'],
+      external: ['vue', '@woven-canvas/core', '@woven-canvas/math', '@woven-ecs/core', '@woven-ecs/canvas-store'],
       output: {
         globals: {
           vue: 'Vue',

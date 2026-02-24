@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-selection",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Selection plugin - select, move, and resize objects on infinite canvas",
   "repository": {
     "type": "git",
@@ -41,16 +41,16 @@
     "test:watch": "vitest --config ../../vitest.config.ts --watch",
     "prepublishOnly": "pnpm build"
   },
-  "dependencies": {
-    "@woven-canvas/core": "workspace:^",
-    "@woven-canvas/math": "workspace:^"
-  },
   "devDependencies": {
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/math": "workspace:^",
     "vite": "^7.2.4",
     "vitest": "^4.0.7"
   },
   "type": "module",
   "peerDependencies": {
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/math": "workspace:^",
     "fractional-indexing-jittered": "^1",
     "typescript": "^5",
     "xstate": "^5",

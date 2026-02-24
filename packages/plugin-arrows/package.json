@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-arrows",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Arrows plugin - draw and edit arc and elbow arrows for infinite canvas",
   "repository": {
     "type": "git",
@@ -39,17 +39,18 @@
     "check:exports": "attw --pack .",
     "prepublishOnly": "pnpm build"
   },
-  "dependencies": {
+  "devDependencies": {
     "@woven-canvas/core": "workspace:^",
     "@woven-canvas/math": "workspace:^",
-    "@woven-canvas/plugin-selection": "workspace:^"
-  },
-  "devDependencies": {
+    "@woven-canvas/plugin-selection": "workspace:^",
     "resize-observer-polyfill": "^1.5.1",
     "vitest": "^4.0.7"
   },
   "type": "module",
   "peerDependencies": {
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/math": "workspace:^",
+    "@woven-canvas/plugin-selection": "workspace:^",
     "fractional-indexing-jittered": "^1",
     "typescript": "^5",
     "xstate": "^5"

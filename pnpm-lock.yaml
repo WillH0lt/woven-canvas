@@ -247,15 +247,6 @@ importers:
 
   packages/plugin-arrows:
     dependencies:
-      '@woven-canvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@woven-canvas/math':
-        specifier: workspace:^
-        version: link:../math
-      '@woven-canvas/plugin-selection':
-        specifier: workspace:^
-        version: link:../plugin-selection
       fractional-indexing-jittered:
         specifier: ^1
         version: 1.0.0
@@ -266,6 +257,15 @@ importers:
         specifier: ^5
         version: 5.28.0
     devDependencies:
+      '@woven-canvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@woven-canvas/math':
+        specifier: workspace:^
+        version: link:../math
+      '@woven-canvas/plugin-selection':
+        specifier: workspace:^
+        version: link:../plugin-selection
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -275,12 +275,6 @@ importers:
 
   packages/plugin-canvas-controls:
     dependencies:
-      '@woven-canvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@woven-canvas/math':
-        specifier: workspace:^
-        version: link:../math
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -291,6 +285,12 @@ importers:
         specifier: ^3 || ^4
         version: 3.24.4
     devDependencies:
+      '@woven-canvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@woven-canvas/math':
+        specifier: workspace:^
+        version: link:../math
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -300,12 +300,6 @@ importers:
 
   packages/plugin-eraser:
     dependencies:
-      '@woven-canvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@woven-canvas/math':
-        specifier: workspace:^
-        version: link:../math
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -313,6 +307,12 @@ importers:
         specifier: ^5
         version: 5.28.0
     devDependencies:
+      '@woven-canvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@woven-canvas/math':
+        specifier: workspace:^
+        version: link:../math
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -325,12 +325,6 @@ importers:
 
   packages/plugin-pen:
     dependencies:
-      '@woven-canvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@woven-canvas/math':
-        specifier: workspace:^
-        version: link:../math
       simplify-js:
         specifier: ^1.2.4
         version: 1.2.4
@@ -341,6 +335,12 @@ importers:
         specifier: ^5
         version: 5.28.0
     devDependencies:
+      '@woven-canvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@woven-canvas/math':
+        specifier: workspace:^
+        version: link:../math
       resize-observer-polyfill:
         specifier: ^1.5.1
         version: 1.5.1
@@ -350,12 +350,6 @@ importers:
 
   packages/plugin-selection:
     dependencies:
-      '@woven-canvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@woven-canvas/math':
-        specifier: workspace:^
-        version: link:../math
       fractional-indexing-jittered:
         specifier: ^1
         version: 1.0.0
@@ -369,6 +363,12 @@ importers:
         specifier: ^3 || ^4
         version: 3.24.4
     devDependencies:
+      '@woven-canvas/core':
+        specifier: workspace:^
+        version: link:../core
+      '@woven-canvas/math':
+        specifier: workspace:^
+        version: link:../math
       vite:
         specifier: ^7.2.4
         version: 7.3.1(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)
@@ -426,9 +426,6 @@ importers:
       '@woven-canvas/core':
         specifier: workspace:^
         version: link:../core
-      '@woven-canvas/math':
-        specifier: workspace:^
-        version: link:../math
       '@woven-canvas/plugin-arrows':
         specifier: workspace:^
         version: link:../plugin-arrows
@@ -444,14 +441,14 @@ importers:
       '@woven-canvas/plugin-selection':
         specifier: workspace:^
         version: link:../plugin-selection
-      '@woven-ecs/canvas-store':
+      '@woven-ecs/core':
         specifier: 'catalog:'
-        version: 1.0.5(typescript@5.9.3)
+        version: 1.0.4(typescript@5.9.3)
       perfect-freehand:
         specifier: ^1.2.2
         version: 1.2.3
       vue:
-        specifier: ^3.5.26
+        specifier: ^3
         version: 3.5.28(typescript@5.9.3)
     devDependencies:
       '@vitejs/plugin-vue':
@@ -460,6 +457,12 @@ importers:
       '@vue/test-utils':
         specifier: ^2.4.6
         version: 2.4.6
+      '@woven-canvas/math':
+        specifier: workspace:^
+        version: link:../math
+      '@woven-ecs/canvas-store':
+        specifier: 'catalog:'
+        version: 1.0.5(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

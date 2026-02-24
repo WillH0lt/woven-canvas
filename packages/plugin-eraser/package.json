@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-eraser",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Eraser plugin - erase objects with capsule-based collision detection for infinite canvas",
   "repository": {
     "type": "git",
@@ -41,17 +41,17 @@
     "test:watch": "vitest --config ../../vitest.config.ts run --watch",
     "prepublishOnly": "pnpm build"
   },
-  "dependencies": {
-    "@woven-canvas/core": "workspace:^",
-    "@woven-canvas/math": "workspace:^"
-  },
   "devDependencies": {
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/math": "workspace:^",
     "resize-observer-polyfill": "^1.5.1",
     "vitest": "^4.0.7",
     "zod": "catalog:"
   },
   "type": "module",
   "peerDependencies": {
+    "@woven-canvas/core": "workspace:^",
+    "@woven-canvas/math": "workspace:^",
     "typescript": "^5",
     "xstate": "^5",
     "zod": "^4"
