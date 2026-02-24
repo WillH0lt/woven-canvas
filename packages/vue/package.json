@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/vue",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Vue 3 components for woven-canvas infinite canvas",
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
         "default": "./build/index.js"
       },
       "require": {
-        "types": "./build/index.d.cts",
+        "types": "./build/index.d.ts",
         "default": "./build/index.cjs"
       }
     },
@@ -38,7 +38,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vue-tsc --declaration --emitDeclarationOnly",
+    "build": "vite build && vue-tsc -p tsconfig.build.json --declaration --emitDeclarationOnly",
     "preview": "vite preview",
     "tsc": "vue-tsc --noEmit",
     "test": "vitest run",
