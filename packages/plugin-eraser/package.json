@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-eraser",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Eraser plugin - erase objects with capsule-based collision detection for infinite canvas",
   "repository": {
     "type": "git",

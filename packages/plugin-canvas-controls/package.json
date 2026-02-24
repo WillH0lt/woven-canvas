@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-canvas-controls",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Canvas controls plugin - pan, zoom, and scroll for infinite canvas",
   "repository": {
     "type": "git",

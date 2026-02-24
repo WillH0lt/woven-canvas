@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/vue",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Vue 3 components for woven-canvas infinite canvas",
   "repository": {
     "type": "git",
@@ -48,7 +48,6 @@
   "dependencies": {
     "@floating-ui/vue": "^1.1.6",
     "@woven-canvas/asset-sync": "workspace:^",
-    "@woven-canvas/core": "workspace:^",
     "@woven-canvas/math": "workspace:^",
     "@woven-canvas/plugin-arrows": "workspace:^",
     "@woven-canvas/plugin-canvas-controls": "workspace:^",
@@ -81,6 +80,7 @@
     "vue-tsc": "^2.2.12"
   },
   "peerDependencies": {
+    "@woven-canvas/core": "workspace:^",
     "typescript": "^5",
     "vue": "^3"
   }

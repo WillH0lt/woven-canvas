@@ -1,6 +1,5 @@
 import './theme.css'
 
-export { Shape, StrokeKind, TextAlignment, User } from '@woven-canvas/core'
 // ECS Sync
 export {
   type AnyCanvasComponentDef,
