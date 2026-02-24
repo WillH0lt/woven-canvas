@@ -4,11 +4,10 @@
 @import "@astrojs/starlight-tailwind";
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
-@import url('https://fonts.googleapis.com/css2?family=Cascadia+Mono:ital,wght@0,200..700;1,200..700&family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
 
 :root {
-  --sl-font: 'Figtree', sans-serif;
-  --sl-font-mono: 'Cascadia Mono', monospace;
+  --sl-font: 'Figtree', system-ui, sans-serif;
+  --sl-font-mono: 'Cascadia Mono', ui-monospace, monospace;
   --sl-text-h1: var(--sl-text-4xl);
   --sl-text-h2: var(--sl-text-3xl);
   --sl-text-h3: var(--sl-text-2xl);

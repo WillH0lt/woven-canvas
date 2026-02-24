@@ -84,6 +84,7 @@ export default defineConfig({
       ],
       customCss: ["./src/styles/global.css"],
       components: {
+        Head: "./src/components/Head.astro",
         Footer: "./src/components/Footer.astro",
         ThemeProvider: "./src/components/ThemeProvider.astro",
         ThemeSelect: "./src/components/ThemeSelect.astro",
