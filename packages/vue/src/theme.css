@@ -33,6 +33,11 @@
 
   /* UI settings */
   --wov-font-family: "Figtree", sans-serif;
+
+  /* Safe area inset for mobile devices with notches/home bars.
+   * Set this to env(safe-area-inset-bottom, 0px) for full-screen mobile apps.
+   * Example: .wov-root { --wov-safe-area-bottom: env(safe-area-inset-bottom, 0px); } */
+  --wov-safe-area-bottom: 0px;
   --wov-menu-border-radius: 12px;
   --wov-menu-tooltip-border-radius: 6px;
   --wov-transition-duration: 150ms;

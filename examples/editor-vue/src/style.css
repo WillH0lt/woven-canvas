@@ -16,3 +16,7 @@ body {
   margin: 0;
   padding: 0;
 }
+
+.wov-root {
+  --wov-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
