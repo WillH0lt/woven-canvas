@@ -57,7 +57,11 @@ export function computeBlockDimensions(
   const rotateZ = Math.atan2(matrix.b, matrix.a)
 
   const rect = element.getBoundingClientRect()
-  const center = new DOMPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+
+  // Convert viewport coordinates to container-relative coordinates BEFORE camera transform
+  const containerLeft = screen.value.left
+  const containerTop = screen.value.top
+  const center = new DOMPoint(rect.left + rect.width / 2 - containerLeft, rect.top + rect.height / 2 - containerTop)
 
   const cameraLeft = camera.value.left
   const cameraTop = camera.value.top
@@ -70,20 +74,17 @@ export function computeBlockDimensions(
 
   const worldCenter = cameraMatrix.transformPoint(center)
 
-  const topLeft = cameraMatrix.transformPoint(new DOMPoint(rect.left, rect.top))
-  const bottomRight = cameraMatrix.transformPoint(new DOMPoint(rect.right, rect.bottom))
+  const topLeft = cameraMatrix.transformPoint(new DOMPoint(rect.left - containerLeft, rect.top - containerTop))
+  const bottomRight = cameraMatrix.transformPoint(new DOMPoint(rect.right - containerLeft, rect.bottom - containerTop))
   const aabbWidth = bottomRight.x - topLeft.x
   const aabbHeight = bottomRight.y - topLeft.y
 
   const { width, height } = getUnrotatedDimensions(aabbWidth, aabbHeight, -rotateZ)
 
-  const offsetX = screen.value.left
-  const offsetY = screen.value.top
-
   return {
     width,
     height,
-    left: worldCenter.x - width / 2 - offsetX,
-    top: worldCenter.y - height / 2 - offsetY,
+    left: worldCenter.x - width / 2,
+    top: worldCenter.y - height / 2,
   }
 }
