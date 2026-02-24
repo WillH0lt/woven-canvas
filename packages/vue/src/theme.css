@@ -50,6 +50,7 @@
 .wov-root {
   font-family: var(--wov-font-family);
   touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Normalize SVG display to prevent style leakage from parent document */
