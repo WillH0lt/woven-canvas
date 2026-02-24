@@ -20,7 +20,7 @@ An infinite canvas SDK for Vue.
 ## Installation
 
 ```bash
-npm install @woven-canvas/vue
+npm install @woven-canvas/core @woven-canvas/vue
 ```
 
 ## Quick Start
