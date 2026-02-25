@@ -43,8 +43,6 @@
     "simplify-js": "^1.2.4"
   },
   "devDependencies": {
-    "@woven-canvas/core": "workspace:^",
-    "@woven-canvas/math": "workspace:^",
     "resize-observer-polyfill": "^1.5.1",
     "vitest": "^4.0.7"
   },

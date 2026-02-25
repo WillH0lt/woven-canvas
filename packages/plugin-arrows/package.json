@@ -40,9 +40,6 @@
     "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
-    "@woven-canvas/core": "workspace:^",
-    "@woven-canvas/math": "workspace:^",
-    "@woven-canvas/plugin-selection": "workspace:^",
     "resize-observer-polyfill": "^1.5.1",
     "vitest": "^4.0.7"
   },

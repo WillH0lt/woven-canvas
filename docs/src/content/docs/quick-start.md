@@ -6,7 +6,7 @@ description: Get up and running with Woven Canvas in minutes
 ## Installation
 
 ```bash
-npm install @woven-canvas/core @woven-canvas/vue
+npm install @woven-canvas/vue
 ```
 
 ## Basic Setup

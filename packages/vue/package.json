@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/vue",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Vue 3 components for woven-canvas infinite canvas",
   "repository": {
     "type": "git",
@@ -48,11 +48,6 @@
   "dependencies": {
     "@floating-ui/vue": "^1.1.6",
     "@woven-canvas/asset-sync": "workspace:^",
-    "@woven-canvas/plugin-arrows": "workspace:^",
-    "@woven-canvas/plugin-canvas-controls": "workspace:^",
-    "@woven-canvas/plugin-eraser": "workspace:^",
-    "@woven-canvas/plugin-pen": "workspace:^",
-    "@woven-canvas/plugin-selection": "workspace:^",
     "@tiptap/core": "^3.15.3",
     "@tiptap/extension-bold": "^3.15.3",
     "@tiptap/extension-color": "^3.10.1",
@@ -71,9 +66,6 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
     "@vue/test-utils": "^2.4.6",
-    "@woven-canvas/math": "workspace:^",
-    "@woven-ecs/canvas-store": "catalog:",
-    "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vitest": "^4.0.7",
     "vue-tsc": "^2.2.12"
@@ -81,6 +73,11 @@
   "peerDependencies": {
     "@woven-canvas/core": "workspace:^",
     "@woven-canvas/math": "workspace:^",
+    "@woven-canvas/plugin-arrows": "workspace:^",
+    "@woven-canvas/plugin-canvas-controls": "workspace:^",
+    "@woven-canvas/plugin-eraser": "workspace:^",
+    "@woven-canvas/plugin-pen": "workspace:^",
+    "@woven-canvas/plugin-selection": "workspace:^",
     "@woven-ecs/canvas-store": "catalog:",
     "@woven-ecs/core": "catalog:",
     "typescript": "^5",

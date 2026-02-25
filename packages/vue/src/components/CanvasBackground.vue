@@ -52,6 +52,9 @@ function createDotPattern(
   const width = colWidth * background.subdivisionStep;
   const height = rowHeight * background.subdivisionStep;
 
+  // Guard against 0-dimension canvas (causes createPattern to throw)
+  if (width <= 0 || height <= 0) return null;
+
   patternCanvas.width = width;
   patternCanvas.height = height;
 
@@ -103,6 +106,9 @@ function createGridPattern(
   const lineSize = background.gridSize ?? 1;
   const width = colWidth * background.subdivisionStep;
   const height = rowHeight * background.subdivisionStep;
+
+  // Guard against 0-dimension canvas (causes createPattern to throw)
+  if (width <= 0 || height <= 0) return null;
 
   patternCanvas.width = width;
   patternCanvas.height = height;

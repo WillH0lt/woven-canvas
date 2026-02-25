@@ -5,7 +5,7 @@ Vue components for woven-canvas infinite canvas applications.
 ## Installation
 
 ```bash
-npm install @woven-canvas/core @woven-canvas/vue
+npm install @woven-canvas/vue
 ```
 
 ## Usage

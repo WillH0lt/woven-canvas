@@ -42,8 +42,6 @@
     "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
-    "@woven-canvas/core": "workspace:^",
-    "@woven-canvas/math": "workspace:^",
     "vite": "^7.2.4",
     "vitest": "^4.0.7"
   },
