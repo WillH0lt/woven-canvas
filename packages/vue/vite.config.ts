@@ -18,6 +18,10 @@ export default defineConfig({
       output: {
         globals: {
           vue: 'Vue',
+          '@woven-canvas/core': 'WovenCanvasCore',
+          '@woven-canvas/math': 'WovenCanvasMath',
+          '@woven-ecs/core': 'WovenEcsCore',
+          '@woven-ecs/canvas-store': 'WovenEcsCanvasStore',
         },
       },
     },
