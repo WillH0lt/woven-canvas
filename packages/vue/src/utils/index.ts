@@ -1,7 +1,6 @@
 export {
   type BlockDimensions,
   computeBlockDimensions,
-  getUnrotatedDimensions,
 } from './blockDimensions'
 export {
   type HSVColor,

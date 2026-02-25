@@ -18,6 +18,8 @@ const isEmpty = computed(() => {
   return stripped.length === 0;
 });
 
+const constrainWidth = computed(() => text.value?.constrainWidth ?? false);
+
 // Use the text stretch behavior composable
 const { handleEditEnd } = useTextStretchBehavior({
   blockData: props,
@@ -30,6 +32,7 @@ const { handleEditEnd } = useTextStretchBehavior({
     ref="containerRef"
     class="wov-text-block"
     :data-text-empty="isEmpty || undefined"
+    :style="{ width: constrainWidth ? '100%' : 'fit-content' }"
   >
     <EditableText
       v-bind="props"
@@ -41,7 +44,6 @@ const { handleEditEnd } = useTextStretchBehavior({
 
 <style>
 .wov-text-block {
-  width: fit-content;
   height: fit-content;
 }
 

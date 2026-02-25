@@ -89,17 +89,15 @@ export function useTextStretchBehavior(options: TextStretchBehaviorOptions): Tex
   watch(
     () => selectionState.value,
     () => {
-      // Compute dimensions synchronously (DOM measurement doesn't need ECS context)
-      const element = options.containerRef.value
-      if (element && wasStretching) {
-        pendingDimensions = computeBlockDimensions(element, camera, screen)
-      }
-
       nextEditorTick((ctx) => {
         const currentlyStretching = isStretching(ctx)
 
         // If stretch just ended, apply pre-computed dimensions
-        if (wasStretching && !currentlyStretching && pendingDimensions) {
+        if (wasStretching && !currentlyStretching) {
+          const element = options.containerRef.value
+          if (!element) return
+
+          pendingDimensions = computeBlockDimensions(element, camera, screen)
           applyBlockDimensions(ctx, pendingDimensions)
           pendingDimensions = null
         }
