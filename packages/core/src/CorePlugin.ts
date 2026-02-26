@@ -7,7 +7,7 @@ import {
 import { getResources } from '@woven-ecs/core'
 import * as components from './components'
 import { Asset, Color, Image, Shape, Text, VerticalAlign } from './components'
-import { PLUGIN_NAME } from './constants'
+import { CORE_PLUGIN_NAME } from './constants'
 import type { EditorPlugin } from './plugin'
 import * as singletons from './singletons'
 import { keybindSystem } from './systems/capture'
@@ -36,7 +36,7 @@ import { type EditorResources, ResizeMode } from './types'
  * Core plugin - handles input, camera, and basic block types.
  */
 export const CorePlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: CORE_PLUGIN_NAME,
 
   singletons: Object.values(singletons).filter((v) => v instanceof CanvasSingletonDef) as AnyCanvasSingletonDef[],
 

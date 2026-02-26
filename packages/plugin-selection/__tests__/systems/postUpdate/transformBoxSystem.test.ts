@@ -21,7 +21,7 @@ import {
   StartTransformBoxEdit,
 } from '../../../src/commands'
 import { DragStart, Selected, TransformBox, TransformHandle } from '../../../src/components'
-import { PLUGIN_NAME } from '../../../src/constants'
+import { SELECTION_PLUGIN_NAME } from '../../../src/constants'
 import { CURSORS } from '../../../src/cursors'
 import { SelectionStateSingleton, TransformBoxStateSingleton } from '../../../src/singletons'
 import { transformBoxSystem } from '../../../src/systems/postUpdate'
@@ -34,7 +34,7 @@ const transformHandleQuery = defineQuery((q) => q.with(Block, TransformHandle))
 
 // Test plugin with UpdateTransformBox system
 const testPlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: SELECTION_PLUGIN_NAME,
   cursors: CURSORS,
   blockDefs: [
     {

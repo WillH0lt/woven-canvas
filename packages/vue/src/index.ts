@@ -122,7 +122,7 @@ export {
   useTooltipSingleton,
 } from './composables/useTooltipSingleton'
 // Editing Plugin
-export { PLUGIN_NAME as EDITING_PLUGIN_NAME } from './constants'
+export { EDITING_PLUGIN_NAME } from './constants'
 export { CURSORS, CursorKind } from './cursors'
 export { EditingPlugin, type EditingPluginOptions, type EditingPluginResources } from './EditingPlugin'
 export { SHAPES } from './shapes'

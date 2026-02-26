@@ -9,7 +9,7 @@ import {
 } from '@woven-canvas/core'
 
 import * as components from './components'
-import { ELBOW_ARROW_PADDING, PLUGIN_NAME } from './constants'
+import { ARROWS_PLUGIN_NAME, ELBOW_ARROW_PADDING } from './constants'
 import * as singletons from './singletons'
 import {
   captureArrowDrawSystem,
@@ -46,7 +46,7 @@ export interface ArrowsPluginOptions {
  */
 export function createArrowsPlugin(options: ArrowsPluginOptions = {}): EditorPlugin<ArrowsPluginOptions> {
   return {
-    name: PLUGIN_NAME,
+    name: ARROWS_PLUGIN_NAME,
 
     components: Object.values(components).filter((v) => v instanceof CanvasComponentDef),
 

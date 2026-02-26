@@ -14,7 +14,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CompleteEraserStroke } from '../../src/commands'
 import { Erased, EraserStroke } from '../../src/components'
-import { PLUGIN_NAME } from '../../src/constants'
+import { ERASER_PLUGIN_NAME } from '../../src/constants'
 import { EraserStateSingleton } from '../../src/singletons'
 import { captureEraserSystem } from '../../src/systems/captureEraserSystem'
 import { updateEraserSystem } from '../../src/systems/updateEraserSystem'
@@ -26,7 +26,7 @@ const eraserStrokeQuery = defineQuery((q) => q.with(EraserStroke))
 
 // Test plugin with both eraser systems
 const testPlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: ERASER_PLUGIN_NAME,
   components: [Block, Aabb, Synced, EraserStroke, Erased, HitGeometry],
   singletons: [EraserStateSingleton, RankBounds, Intersect, Controls],
   systems: [captureEraserSystem, updateEraserSystem],

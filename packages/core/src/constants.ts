@@ -1,4 +1,4 @@
-export const PLUGIN_NAME = 'core'
+export const CORE_PLUGIN_NAME = 'core'
 
 export const STRATUM_ORDER = {
   background: 0,

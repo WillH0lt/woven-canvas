@@ -22,7 +22,7 @@ import {
 } from '@woven-canvas/core'
 import { EditAfterPlacing, SelectionState, SelectionStateSingleton } from '@woven-canvas/plugin-selection'
 
-import { PLUGIN_NAME } from '../constants'
+import { EDITING_PLUGIN_NAME } from '../constants'
 import type { EditingPluginResources } from '../EditingPlugin'
 import { BlockPlacementState } from '../singletons'
 
@@ -136,7 +136,7 @@ function placeBlockAndSetupSelection(
     if (mode === 'placement') {
       // Create an undo checkpoint for the placement + edit
       // so we don't end up with un-edited blocks in uhistory
-      const { store } = getPluginResources<EditingPluginResources>(ctx, PLUGIN_NAME)
+      const { store } = getPluginResources<EditingPluginResources>(ctx, EDITING_PLUGIN_NAME)
       const checkpointId = store.createCheckpoint()
       if (checkpointId) {
         const placementState = BlockPlacementState.write(ctx)
@@ -173,7 +173,7 @@ function squashUndoHistory(ctx: Context): void {
     BlockPlacementState.write(ctx).editedCheckpoint = ''
 
     // Wait for state to settle before squashing
-    const { store } = getPluginResources<EditingPluginResources>(ctx, PLUGIN_NAME)
+    const { store } = getPluginResources<EditingPluginResources>(ctx, EDITING_PLUGIN_NAME)
     store.onSettled(() => store.squashToCheckpoint(cp), { frames: 5 })
   }
 }

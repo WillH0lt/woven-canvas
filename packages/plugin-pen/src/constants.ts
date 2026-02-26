@@ -7,4 +7,4 @@ export const STROKE_THICKNESS = 8
 /**
  * Plugin name used for registration and resource lookup.
  */
-export const PLUGIN_NAME = 'pen'
+export const PEN_PLUGIN_NAME = 'pen'

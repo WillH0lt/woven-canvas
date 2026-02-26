@@ -1,1 +1,1 @@
-export const PLUGIN_NAME = 'editing'
+export const EDITING_PLUGIN_NAME = 'editing'

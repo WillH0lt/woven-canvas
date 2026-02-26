@@ -9,7 +9,7 @@ import {
 } from '@woven-canvas/core'
 
 import * as components from './components'
-import { PLUGIN_NAME } from './constants'
+import { PEN_PLUGIN_NAME } from './constants'
 import * as singletons from './singletons'
 import * as systems from './systems'
 
@@ -33,7 +33,7 @@ const filterSystems = (ns: object): EditorSystem[] =>
  */
 export function createPenPlugin(): EditorPlugin {
   return {
-    name: PLUGIN_NAME,
+    name: PEN_PLUGIN_NAME,
 
     components: Object.values(components).filter((v) => v instanceof CanvasComponentDef),
 

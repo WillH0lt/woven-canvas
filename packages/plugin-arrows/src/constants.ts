@@ -1,7 +1,7 @@
 /**
  * Plugin name used for registration and resource lookup.
  */
-export const PLUGIN_NAME = 'arrows'
+export const ARROWS_PLUGIN_NAME = 'arrows'
 
 /**
  * Rank value for transform handles (should render on top).

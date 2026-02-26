@@ -10,7 +10,7 @@ import {
   Screen,
 } from '@woven-canvas/core'
 
-import { PLUGIN_NAME } from '../constants'
+import { CONTROLS_PLUGIN_NAME } from '../constants'
 import type { CanvasControlsOptions } from '../types'
 
 /**
@@ -25,7 +25,7 @@ import type { CanvasControlsOptions } from '../types'
  * Active when: Mouse wheel scrolled and "zoom" tool is active for wheel input.
  */
 export const PostInputZoom = defineEditorSystem({ phase: 'input', priority: -100 }, (ctx: Context) => {
-  const options = getPluginResources<CanvasControlsOptions>(ctx, PLUGIN_NAME)
+  const options = getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME)
   const keyboard = Keyboard.read(ctx)
 
   // Only zoom when the zoom tool is active for wheel input

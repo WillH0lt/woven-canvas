@@ -8,7 +8,7 @@ import {
 import { z } from 'zod'
 
 import * as components from './components'
-import { PLUGIN_NAME, POINTS_CAPACITY } from './constants'
+import { ERASER_PLUGIN_NAME, POINTS_CAPACITY } from './constants'
 import * as singletons from './singletons'
 import * as systems from './systems'
 
@@ -50,7 +50,7 @@ export function createEraserPlugin(options: EraserPluginOptions = {}): EditorPlu
   const parsedOptions = EraserPluginOptionsSchema.parse(options)
 
   return {
-    name: PLUGIN_NAME,
+    name: ERASER_PLUGIN_NAME,
 
     components: Object.values(components).filter((v) => v instanceof CanvasComponentDef),
 

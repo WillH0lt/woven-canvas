@@ -1,1 +1,1 @@
-export const PLUGIN_NAME = 'controls'
+export const CONTROLS_PLUGIN_NAME = 'controls'

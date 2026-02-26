@@ -10,7 +10,7 @@ import {
 import { BringForwardSelected, Copy, Cut, Paste, RemoveSelected, SelectAll, SendBackwardSelected } from './commands'
 
 import * as components from './components'
-import { PLUGIN_NAME } from './constants'
+import { SELECTION_PLUGIN_NAME } from './constants'
 import { CURSORS } from './cursors'
 import * as singletons from './singletons'
 import * as systems from './systems'
@@ -44,7 +44,7 @@ const filterSystems = (ns: object): EditorSystem[] =>
  */
 export function createSelectionPlugin(options: SelectionPluginOptionsInput = {}): EditorPlugin<SelectionPluginOptions> {
   return {
-    name: PLUGIN_NAME,
+    name: SELECTION_PLUGIN_NAME,
 
     resources: SelectionPluginOptionsSchema.parse(options),
 

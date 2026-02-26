@@ -10,7 +10,7 @@ import {
 } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { TransformBox, TransformHandle } from '../../../src/components'
-import { PLUGIN_NAME } from '../../../src/constants'
+import { SELECTION_PLUGIN_NAME } from '../../../src/constants'
 import { CURSORS, CursorKind } from '../../../src/cursors'
 import { hoverCursorSystem } from '../../../src/systems/capture'
 import { TransformHandleKind } from '../../../src/types'
@@ -22,7 +22,7 @@ const mockDomElement = createMockElement()
 // Test plugin with only CaptureHoverCursor system and its dependencies
 // Note: Block, Hovered, and Cursor are already provided by CorePlugin
 const testPlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: SELECTION_PLUGIN_NAME,
   cursors: CURSORS,
   components: [TransformHandle, TransformBox],
   systems: [hoverCursorSystem],

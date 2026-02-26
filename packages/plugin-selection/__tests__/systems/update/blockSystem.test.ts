@@ -31,7 +31,7 @@ import {
   UncloneEntities,
 } from '../../../src/commands'
 import { Selected } from '../../../src/components'
-import { PLUGIN_NAME } from '../../../src/constants'
+import { SELECTION_PLUGIN_NAME } from '../../../src/constants'
 import { CURSORS } from '../../../src/cursors'
 import { Clipboard } from '../../../src/singletons'
 import { blockSystem } from '../../../src/systems/update'
@@ -49,7 +49,7 @@ const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected))
 
 // Factory function to create test plugin
 const testPlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: SELECTION_PLUGIN_NAME,
   cursors: CURSORS,
   components: [Selected],
   singletons: [Clipboard],

@@ -14,7 +14,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AddTransformBox, HideTransformBox, RemoveTransformBox, ShowTransformBox } from '../../../src/commands'
 import { EditAfterPlacing, Selected, TransformBox, TransformHandle } from '../../../src/components'
-import { PLUGIN_NAME } from '../../../src/constants'
+import { SELECTION_PLUGIN_NAME } from '../../../src/constants'
 import { CURSORS } from '../../../src/cursors'
 import { selectBlock } from '../../../src/helpers'
 import { TransformBoxStateSingleton } from '../../../src/singletons'
@@ -27,7 +27,7 @@ const pointer = createPointerSimulator()
 
 // Test plugin with only CaptureTransformBox system - no selection flow dependencies
 const testPlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: SELECTION_PLUGIN_NAME,
   cursors: CURSORS,
   blockDefs: [
     BlockDef.parse({

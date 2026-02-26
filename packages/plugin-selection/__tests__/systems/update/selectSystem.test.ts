@@ -14,7 +14,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AddSelectionBox, RemoveSelectionBox, UpdateSelectionBox } from '../../../src/commands'
 import { Selected, SelectionBox } from '../../../src/components'
-import { PLUGIN_NAME } from '../../../src/constants'
+import { SELECTION_PLUGIN_NAME } from '../../../src/constants'
 import { CURSORS } from '../../../src/cursors'
 import { selectSystem } from '../../../src/systems/update'
 
@@ -24,7 +24,7 @@ const selectionBoxQuery = defineQuery((q) => q.with(Block, SelectionBox))
 // Factory function to create test plugin
 // Note: Don't include intersectSystem here - CorePlugin already provides it
 const testPlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: SELECTION_PLUGIN_NAME,
   cursors: CURSORS,
   components: [Selected, Held, SelectionBox],
   systems: [selectSystem],

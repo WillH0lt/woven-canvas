@@ -2,7 +2,7 @@ import { Block, defineQuery, Editor, type EditorPlugin, hasComponent, Synced } f
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AddEraserStrokePoint, CancelEraserStroke, CompleteEraserStroke, StartEraserStroke } from '../../src/commands'
 import { Erased, EraserStroke } from '../../src/components'
-import { PLUGIN_NAME } from '../../src/constants'
+import { ERASER_PLUGIN_NAME } from '../../src/constants'
 import { EraserStateSingleton } from '../../src/singletons'
 import { updateEraserSystem } from '../../src/systems/updateEraserSystem'
 import { createBlock, createBlockWithDiagonalHitGeometry, createMockElement } from '../testUtils'
@@ -19,7 +19,7 @@ const _syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced))
 // Test plugin with eraser update system
 // Note: Block, Aabb, Synced, HitGeometry, RankBounds, Intersect are provided by CorePlugin
 const testPlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: ERASER_PLUGIN_NAME,
   components: [EraserStroke, Erased],
   singletons: [EraserStateSingleton],
   systems: [updateEraserSystem],

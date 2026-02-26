@@ -11,7 +11,7 @@ import {
 import { Vec2 } from '@woven-canvas/math'
 
 import { PinchState } from '../components'
-import { PLUGIN_NAME } from '../constants'
+import { CONTROLS_PLUGIN_NAME } from '../constants'
 import type { CanvasControlsOptions } from '../types'
 
 /**
@@ -30,7 +30,7 @@ const pointerQuery = defineQuery((q) => q.with(Pointer))
  * core input systems have updated singletons.
  */
 export const PostInputPinch = defineEditorSystem({ phase: 'input', priority: -100 }, (ctx: Context) => {
-  const options = getPluginResources<CanvasControlsOptions>(ctx, PLUGIN_NAME)
+  const options = getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME)
 
   // Get all pointer entities
   const pointers = pointerQuery.current(ctx)

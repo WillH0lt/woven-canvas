@@ -1,7 +1,7 @@
 import { type EditorPlugin, type FontFamilyInput, Key, Redo, Undo } from '@woven-canvas/core'
 
 import type { CanvasStore } from '@woven-ecs/canvas-store'
-import { PLUGIN_NAME } from './constants'
+import { EDITING_PLUGIN_NAME } from './constants'
 import { CURSORS } from './cursors'
 import { BlockPlacementState } from './singletons'
 import { blockPlacementSystem, undoRedoSystem } from './systems'
@@ -47,7 +47,7 @@ export const DEFAULT_FONTS: FontFamilyInput[] = [
  */
 export function EditingPlugin(options: EditingPluginOptions): EditorPlugin {
   return {
-    name: PLUGIN_NAME,
+    name: EDITING_PLUGIN_NAME,
     resources: { store: options.store } satisfies EditingPluginResources,
     singletons: [BlockPlacementState],
     systems: [blockPlacementSystem, undoRedoSystem],

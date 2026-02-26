@@ -2,7 +2,7 @@ import { addComponent, Block, createEntity, Editor, type EditorPlugin } from '@w
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DragBlock } from '../../../src/commands'
 import { DragStart, Selected, TransformBox, TransformHandle } from '../../../src/components'
-import { PLUGIN_NAME } from '../../../src/constants'
+import { SELECTION_PLUGIN_NAME } from '../../../src/constants'
 import { CURSORS } from '../../../src/cursors'
 import { dragHandlerSystem } from '../../../src/systems/update'
 import { TransformHandleKind } from '../../../src/types'
@@ -11,7 +11,7 @@ import { createBlock } from '../../testUtils'
 // Factory function to create test plugin
 // Note: Only includes UpdateDragHandler to test it in isolation
 const testPlugin: EditorPlugin = {
-  name: PLUGIN_NAME,
+  name: SELECTION_PLUGIN_NAME,
   cursors: CURSORS,
   components: [Selected, TransformBox, TransformHandle, DragStart],
   systems: [dragHandlerSystem],

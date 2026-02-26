@@ -10,7 +10,7 @@ import {
   Screen,
 } from '@woven-canvas/core'
 import { assign, not, setup } from 'xstate'
-import { PLUGIN_NAME } from '../../constants'
+import { SELECTION_PLUGIN_NAME } from '../../constants'
 import { ScrollEdgesStateSingleton, SelectionStateSingleton } from '../../singletons'
 import { ScrollEdgesState, type SelectionPluginOptions, SelectionState } from '../../types'
 
@@ -23,7 +23,7 @@ type ScrollEdgesContext = InferStateContext<typeof ScrollEdgesStateSingleton>
  * Helper to get edge scrolling options from event context.
  */
 function getEdgeScrollingOptions(ctx: Context) {
-  return getPluginResources<SelectionPluginOptions>(ctx, PLUGIN_NAME).edgeScrolling
+  return getPluginResources<SelectionPluginOptions>(ctx, SELECTION_PLUGIN_NAME).edgeScrolling
 }
 
 /**
