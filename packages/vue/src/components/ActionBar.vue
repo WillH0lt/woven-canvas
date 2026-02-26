@@ -2,9 +2,11 @@
 import { ref, inject, onUnmounted } from "vue";
 import { Undo, Redo, getPluginResources, type Context } from "@woven-canvas/core";
 import { RemoveSelected } from "@woven-canvas/plugin-selection";
+
 import { useEditorContext } from "../composables/useEditorContext";
-import { WOVEN_CANVAS_KEY } from "../injection";
+import { PLUGIN_NAME } from "../constants";
 import type { EditingPluginResources } from "../EditingPlugin";
+import { WOVEN_CANVAS_KEY } from "../injection";
 
 const { getEditor } = useEditorContext();
 const canvasContext = inject(WOVEN_CANVAS_KEY);
@@ -16,7 +18,7 @@ const canRedo = ref(false);
 // Register tick callback to update undo/redo state
 if (canvasContext) {
   const unregister = canvasContext.registerTickCallback((ctx: Context) => {
-    const { store } = getPluginResources<EditingPluginResources>(ctx, 'editing');
+    const { store } = getPluginResources<EditingPluginResources>(ctx, PLUGIN_NAME);
     canUndo.value = store.canUndo();
     canRedo.value = store.canRedo();
   });

@@ -31,6 +31,8 @@
 export { CanvasControlsPlugin } from './CanvasControlsPlugin'
 // Components (for advanced use cases)
 export { PanState } from './components'
+// Constants
+export { PLUGIN_NAME } from './constants'
 // Types
 export {
   type CanvasControlsOptions,

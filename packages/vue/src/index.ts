@@ -121,8 +121,9 @@ export {
   createTooltipContext,
   useTooltipSingleton,
 } from './composables/useTooltipSingleton'
-export { CURSORS, CursorKind } from './cursors'
 // Editing Plugin
+export { PLUGIN_NAME as EDITING_PLUGIN_NAME } from './constants'
+export { CURSORS, CursorKind } from './cursors'
 export { EditingPlugin, type EditingPluginOptions, type EditingPluginResources } from './EditingPlugin'
 export { SHAPES } from './shapes'
 // Types
