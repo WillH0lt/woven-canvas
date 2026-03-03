@@ -2,7 +2,7 @@
 
 @layer wov-reset {
   .wov-root :where(*:not(svg, svg *)) {
-    all: revert;
+    box-sizing: border-box;
   }
 }
 

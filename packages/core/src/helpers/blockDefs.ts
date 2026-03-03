@@ -61,6 +61,17 @@ export function canBlockScale(ctx: Context, tag: string): boolean {
 }
 
 /**
+ * Check if a block definition allows selection.
+ *
+ * @param ctx - The ECS context
+ * @param tag - The block tag to check
+ * @returns True if the block can be selected
+ */
+export function canBlockSelect(ctx: Context, tag: string): boolean {
+  return getBlockDef(ctx, tag).selectable
+}
+
+/**
  * Get the effective resize mode for a block entity.
  * Returns the block's resizeMode if set, otherwise falls back to blockDef's resizeMode.
  *

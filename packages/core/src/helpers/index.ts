@@ -3,6 +3,7 @@ export {
   canBlockEdit,
   canBlockRotate,
   canBlockScale,
+  canBlockSelect,
   getBlockDef,
   getBlockDefs,
   getBlockResizeMode,

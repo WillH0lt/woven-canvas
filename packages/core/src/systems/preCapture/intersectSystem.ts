@@ -1,8 +1,9 @@
-import { addComponent, type Context, defineQuery, hasComponent, removeComponent } from '@woven-ecs/core'
+import { addComponent, type Context, defineQuery, getResources, hasComponent, removeComponent } from '@woven-ecs/core'
 import { Aabb, Block, Held, HitGeometry, Hovered, Pointer } from '../../components'
 import { defineEditorSystem } from '../../EditorSystem'
 import { computeAabb, intersectPoint, isHeldByRemote } from '../../helpers'
 import { Camera, Controls, Intersect, Mouse } from '../../singletons'
+import type { EditorResources } from '../../types'
 
 // Query for blocks that have changed (need AABB recalculation)
 const blocksChanged = defineQuery((q) => q.tracking(Block))
@@ -82,6 +83,9 @@ function arraysEqual(a: number[], b: number[]): boolean {
 const added = new Set<number>()
 const changed = new Set<number>()
 
+// Track previous obscured state per editor instance to detect when mouse returns to canvas
+const prevObscuredByElement = new WeakMap<HTMLElement, boolean>()
+
 /**
  * Pre-capture intersect system - computes AABBs and detects mouse-block intersections.
  *
@@ -149,6 +153,19 @@ export const intersectSystem = defineEditorSystem({ phase: 'capture', priority: 
     return
   }
 
+  // Track obscured state changes
+  const resources = getResources<EditorResources>(ctx)
+  const isObscured = Mouse.isObscured(ctx)
+  const wasObscured = prevObscuredByElement.get(resources.domElement) ?? false
+  const obscuredChanged = isObscured !== wasObscured
+  prevObscuredByElement.set(resources.domElement, isObscured)
+
+  // Handle mouse over UI element - clear hover but keep intersections
+  if (isObscured) {
+    clearHovered(ctx)
+    return
+  }
+
   // Get mouse position in world coordinates
   const mousePos = Mouse.getPosition(ctx)
   const worldPos = Camera.toWorld(ctx, mousePos)
@@ -172,8 +189,8 @@ export const intersectSystem = defineEditorSystem({ phase: 'capture', priority: 
     return
   }
 
-  // Update hovered entity if intersections or held state changed
-  if (intersectsChanged || heldChanged) {
+  // Update hovered entity if intersections, held state, or obscured state changed
+  if (intersectsChanged || heldChanged || obscuredChanged) {
     updateHovered(ctx, intersected)
   }
 })

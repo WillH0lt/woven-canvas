@@ -255,7 +255,16 @@ function addOrUpdateTransformHandles(ctx: Context, transformBoxId: EntityId): vo
   } else if (selectedBlocks.length > 1) {
     // If all blocks are "free" resize mode, use "free" for the transform box
     const allFree = selectedBlocks.every((id) => getBlockResizeMode(ctx, id) === ResizeMode.Free)
-    if (allFree) resizeMode = ResizeMode.Free
+    if (allFree) {
+      // Check if blocks have different rotations - if so, use scale mode instead
+      // to avoid visual distortion from stretching rotated blocks differently
+      const firstRotation = Block.read(ctx, selectedBlocks[0]).rotateZ
+      const hasMixedRotations = selectedBlocks.some((id) => {
+        const rotation = Block.read(ctx, id).rotateZ
+        return Math.abs(rotation - firstRotation) > 0.01
+      })
+      resizeMode = hasMixedRotations ? ResizeMode.Scale : ResizeMode.Free
+    }
   }
 
   // Check if all selected blocks can rotate/scale

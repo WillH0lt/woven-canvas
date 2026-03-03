@@ -1,6 +1,7 @@
 import {
   Block,
   Controls,
+  canBlockSelect,
   defineEditorSystem,
   defineQuery,
   Edited,
@@ -79,6 +80,11 @@ const selectionMachine = setup({
 
       for (const entityId of event.intersects) {
         if (hasComponent(ctx, entityId, Synced)) {
+          // Skip non-selectable blocks
+          if (hasComponent(ctx, entityId, Block)) {
+            const block = Block.read(ctx, entityId)
+            if (!canBlockSelect(ctx, block.tag)) continue
+          }
           return true
         }
       }
@@ -262,6 +268,11 @@ const selectionMachine = setup({
 
       for (const entityId of event.intersects) {
         if (hasComponent(ctx, entityId, Synced)) {
+          // Skip non-selectable blocks
+          if (hasComponent(ctx, entityId, Block)) {
+            const block = Block.read(ctx, entityId)
+            if (!canBlockSelect(ctx, block.tag)) continue
+          }
           intersectId = entityId
           break
         }

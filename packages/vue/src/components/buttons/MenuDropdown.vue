@@ -170,5 +170,6 @@ onUnmounted(() => {
 .wov-menu-dropdown {
   position: absolute;
   z-index: var(--wov-z-dropdown);
+  pointer-events: auto;
 }
 </style>

@@ -16,6 +16,7 @@ interface BufferedMouseEvent {
   deltaX?: number
   deltaY?: number
   deltaMode?: number
+  target?: EventTarget | null
 }
 
 /**
@@ -48,6 +49,7 @@ export function attachMouseListeners(domElement: HTMLElement): void {
         type: 'mousemove',
         clientX: e.clientX,
         clientY: e.clientY,
+        target: e.target,
       })
     },
     onWheel: (e: WheelEvent) => {
@@ -134,6 +136,8 @@ export const mouseSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context)
         // Convert to element-relative coordinates
         mouse.position = [event.clientX! - screen.left, event.clientY! - screen.top]
         mouse.moveTrigger = true
+        // Check if mouse is over a UI element (not the canvas)
+        mouse.obscured = event.target !== resources.domElement
         break
 
       case 'wheel':

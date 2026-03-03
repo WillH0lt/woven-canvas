@@ -58,68 +58,54 @@ onUnmounted(() => {
     </template>
 
     <!-- Built-in buttons with slot overrides -->
-    <slot name="button:color" :entityIds="selectedIds">
-      <ColorButton
-        v-if="commonComponents.has('color')"
-        :entityIds="selectedIds"
-      />
-    </slot>
+    <template v-if="commonComponents.has('color')">
+      <slot name="button:color" :entityIds="selectedIds">
+        <ColorButton :entityIds="selectedIds" />
+      </slot>
+    </template>
 
     <!-- Shape buttons -->
-    <slot name="button:shape" :entityIds="selectedIds">
-      <template v-if="commonComponents.has('shape')">
+    <template v-if="commonComponents.has('shape')">
+      <slot name="button:shape" :entityIds="selectedIds">
         <ShapeKindButton :entityIds="selectedIds" />
         <ShapeFillColorButton :entityIds="selectedIds" />
         <ShapeStrokeColorButton :entityIds="selectedIds" />
-      </template>
-    </slot>
+      </slot>
+    </template>
 
     <!-- Pen stroke thickness button -->
-    <slot name="button:penStroke" :entityIds="selectedIds">
-      <PenStrokeThicknessButton
-        v-if="commonComponents.has('penStroke')"
-        :entityIds="selectedIds"
-      />
-    </slot>
+    <template v-if="commonComponents.has('penStroke')">
+      <slot name="button:penStroke" :entityIds="selectedIds">
+        <PenStrokeThicknessButton :entityIds="selectedIds" />
+      </slot>
+    </template>
 
-    <!-- Arrow thickness button -->
-    <slot name="button:arrowThickness" :entityIds="selectedIds">
-      <ArrowThicknessButton
-        v-if="
-          commonComponents.has('elbowArrow') || commonComponents.has('arcArrow')
-        "
-        :entityIds="selectedIds"
-      />
-    </slot>
-
-    <!-- Arrow head buttons -->
-    <slot name="button:arrowHeadStart" :entityIds="selectedIds">
-      <ArrowHeadButton
-        v-if="
-          commonComponents.has('elbowArrow') || commonComponents.has('arcArrow')
-        "
-        :entityIds="selectedIds"
-        side="start"
-      />
-    </slot>
-    <slot name="button:arrowHeadEnd" :entityIds="selectedIds">
-      <ArrowHeadButton
-        v-if="
-          commonComponents.has('elbowArrow') || commonComponents.has('arcArrow')
-        "
-        :entityIds="selectedIds"
-        side="end"
-      />
-    </slot>
+    <!-- Arrow buttons -->
+    <template
+      v-if="
+        commonComponents.has('elbowArrow') || commonComponents.has('arcArrow')
+      "
+    >
+      <slot name="button:arrowThickness" :entityIds="selectedIds">
+        <ArrowThicknessButton :entityIds="selectedIds" />
+      </slot>
+      <slot name="button:arrowHeadStart" :entityIds="selectedIds">
+        <ArrowHeadButton :entityIds="selectedIds" side="start" />
+      </slot>
+      <slot name="button:arrowHeadEnd" :entityIds="selectedIds">
+        <ArrowHeadButton :entityIds="selectedIds" side="end" />
+      </slot>
+    </template>
 
     <!-- Text formatting buttons -->
-    <slot name="button:text" :entityIds="selectedIds">
-      <TextButtonGroup
-        v-if="commonComponents.has('text')"
-        :entityIds="selectedIds"
-        :showVerticalAlign="commonComponents.has('verticalAlign')"
-      />
-    </slot>
+    <template v-if="commonComponents.has('text')">
+      <slot name="button:text" :entityIds="selectedIds">
+        <TextButtonGroup
+          :entityIds="selectedIds"
+          :showVerticalAlign="commonComponents.has('verticalAlign')"
+        />
+      </slot>
+    </template>
 
     <!-- Singleton tooltip rendered once for all menu items -->
     <MenuTooltip />

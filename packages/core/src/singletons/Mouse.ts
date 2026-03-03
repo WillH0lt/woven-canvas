@@ -17,6 +17,8 @@ const MouseSchema = {
   enterTrigger: field.boolean().default(false),
   /** True for 1 frame when mouse leaves the editor element */
   leaveTrigger: field.boolean().default(false),
+  /** Whether the mouse is over a UI element (not the canvas) */
+  obscured: field.boolean().default(false),
 }
 
 /**
@@ -60,6 +62,11 @@ class MouseDef extends CanvasSingletonDef<typeof MouseSchema> {
   getWheelDelta(ctx: Context): Vec2 {
     const m = this.read(ctx)
     return [m.wheelDeltaX, m.wheelDeltaY]
+  }
+
+  /** Check if mouse is over a UI element (not the canvas) */
+  isObscured(ctx: Context): boolean {
+    return this.read(ctx).obscured
   }
 }
 
