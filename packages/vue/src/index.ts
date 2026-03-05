@@ -109,6 +109,7 @@ export {
   type TextFormattingCommands,
   type TextFormattingController,
   type TextFormattingState,
+  type TextStyleOptions,
   useTextFormatting,
 } from './composables/useTextFormatting'
 export {

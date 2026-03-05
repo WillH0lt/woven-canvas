@@ -26,7 +26,6 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
-    "prettier": "^3.5.3",
     "@biomejs/biome": "^2.3.14",
     "@microsoft/api-extractor": "^7.54.0",
     "@types/node": "24.10.0",
@@ -37,6 +36,7 @@
     "is-ci": "^4.1.0",
     "jsdom": "^27.3.0",
     "lint-staged": "^16.2.6",
+    "prettier": "^3.5.3",
     "resize-observer-polyfill": "^1.5.1",
     "rimraf": "^6.1.0",
     "taze": "^19.9.0",

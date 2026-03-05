@@ -1,7 +1,9 @@
 import type { EntityId, TextAlignment } from '@woven-canvas/core'
 import { computed, type MaybeRefOrGetter, reactive } from 'vue'
-import { useTextBatchController } from './useTextBatchController'
+import { type TextStyleOptions, useTextBatchController } from './useTextBatchController'
 import { useTextEditorController } from './useTextEditorController'
+
+export type { TextStyleOptions }
 
 export interface TextFormattingState {
   /** Whether there is an active editor or text entities to edit */
@@ -43,6 +45,8 @@ export interface TextFormattingCommands {
   setFontSize(size: number): void
   /** Set font family */
   setFontFamily(family: string): void
+  /** Set multiple text style properties at once */
+  setTextStyle(options: TextStyleOptions): void
 }
 
 export interface TextFormattingController {
@@ -184,6 +188,10 @@ export function useTextFormatting(entityIds: MaybeRefOrGetter<EntityId[]>): Text
 
     setFontFamily(family: string) {
       batchController.commands.setFontFamily(family)
+    },
+
+    setTextStyle(options: TextStyleOptions) {
+      batchController.commands.setTextStyle(options)
     },
   }
 

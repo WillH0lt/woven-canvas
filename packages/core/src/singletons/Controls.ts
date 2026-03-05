@@ -14,7 +14,7 @@ const ControlsSchema = {
   /** Tool activated by mouse wheel with modifier key held */
   modWheelTool: field.string().max(32).default('zoom'),
   /** JSON snapshot of block to place on next click (empty string = no placement active) */
-  heldSnapshot: field.string().max(4096).default(''),
+  heldSnapshot: field.string().max(65536).default(''),
 }
 
 /**

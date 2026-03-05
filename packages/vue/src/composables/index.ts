@@ -8,6 +8,7 @@ export {
   type TextBatchCommands,
   type TextBatchController,
   type TextBatchState,
+  type TextStyleOptions,
   useTextBatchController,
 } from './useTextBatchController'
 export {
@@ -20,6 +21,7 @@ export {
   type TextFormattingCommands,
   type TextFormattingController,
   type TextFormattingState,
+  type TextStyleOptions as TextFormattingStyleOptions,
   useTextFormatting,
 } from './useTextFormatting'
 export {

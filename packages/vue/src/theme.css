@@ -58,6 +58,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.wov-root:focus {
+  outline: none;
+}
+
 /* Normalize SVG display to prevent style leakage from parent document */
 .wov-root svg {
   display: block;

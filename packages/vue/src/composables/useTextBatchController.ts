@@ -56,6 +56,13 @@ export interface TextBatchState {
   fontFamily: ComputedRef<string | null>
 }
 
+export interface TextStyleOptions {
+  fontFamily?: string
+  fontSizePx?: number
+  lineHeight?: number
+  letterSpacingEm?: number
+}
+
 export interface TextBatchCommands {
   /** Toggle bold on all selected text entities */
   toggleBold(): void
@@ -71,6 +78,8 @@ export interface TextBatchCommands {
   setFontSize(size: number): void
   /** Set font family on all selected text entities */
   setFontFamily(family: string): void
+  /** Set multiple text style properties at once */
+  setTextStyle(options: TextStyleOptions): void
 }
 
 export interface TextBatchController {
@@ -350,7 +359,7 @@ function measureWithClone(
   element: HTMLElement,
   camera: CameraRef,
   screen: ScreenRef,
-  text: { content: string; fontSizePx: number; fontFamily: string },
+  text: { content: string; fontSizePx: number; fontFamily: string; lineHeight: number; letterSpacingEm: number },
 ): BlockDimensions {
   // Clone the element
   const clone = element.cloneNode(true) as HTMLElement
@@ -371,6 +380,8 @@ function measureWithClone(
   if (textElement) {
     textElement.style.fontSize = `${text.fontSizePx}px`
     textElement.style.fontFamily = text.fontFamily
+    textElement.style.lineHeight = String(text.lineHeight)
+    textElement.style.letterSpacing = `${text.letterSpacingEm}em`
   }
 
   // Apply content to ProseMirror element
@@ -582,9 +593,33 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
         },
       )
     },
+
+    setTextStyle(options: TextStyleOptions) {
+      applyTextStyleChange(
+        (text) => ({
+          ...text,
+          fontFamily: options.fontFamily ?? text.fontFamily,
+          fontSizePx: options.fontSizePx ?? text.fontSizePx,
+          lineHeight: options.lineHeight ?? text.lineHeight,
+          letterSpacingEm: options.letterSpacingEm ?? text.letterSpacingEm,
+        }),
+        (text) => {
+          if (options.fontFamily !== undefined) text.fontFamily = options.fontFamily
+          if (options.fontSizePx !== undefined) text.fontSizePx = options.fontSizePx
+          if (options.lineHeight !== undefined) text.lineHeight = options.lineHeight
+          if (options.letterSpacingEm !== undefined) text.letterSpacingEm = options.letterSpacingEm
+        },
+      )
+    },
   }
 
-  type TextSnapshot = { content: string; fontSizePx: number; fontFamily: string }
+  type TextSnapshot = {
+    content: string
+    fontSizePx: number
+    fontFamily: string
+    lineHeight: number
+    letterSpacingEm: number
+  }
 
   /**
    * Apply a text style change (font size/family) and update block dimensions.
@@ -620,8 +655,10 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
       }
 
       // Trigger floating menu position update after Vue re-renders
+      // and restore focus to the editor if it exists (may have lost focus due to DOM changes)
       nextTick(() => {
         textEditorController.updateCounter.value++
+        textEditorController.editor.value?.commands.focus()
       })
     })
   }
