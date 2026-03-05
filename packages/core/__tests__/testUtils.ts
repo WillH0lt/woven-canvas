@@ -8,10 +8,15 @@ import { Aabb, Block } from '../src/components'
 
 /**
  * Simulate a mouse move event.
- * Dispatches on window since mouseInputSystem listens there.
+ * Dispatches on the target element so event.target is set correctly.
+ * The event bubbles to window where mouseInputSystem listens.
+ *
+ * @param x - clientX coordinate
+ * @param y - clientY coordinate
+ * @param target - Element to dispatch on (defaults to document.body, use domElement for canvas events)
  */
-export function simulateMouseMove(x: number, y: number): void {
-  window.dispatchEvent(
+export function simulateMouseMove(x: number, y: number, target: EventTarget = document.body): void {
+  target.dispatchEvent(
     new MouseEvent('mousemove', {
       clientX: x,
       clientY: y,

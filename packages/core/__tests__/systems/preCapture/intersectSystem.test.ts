@@ -175,7 +175,7 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Simulate mouse move to center of block
-      simulateMouseMove(50, 50)
+      simulateMouseMove(50, 50, mockDomElement)
 
       // This tick processes the mouse event and runs intersectSystem
       await editor.tick()
@@ -206,7 +206,7 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Simulate mouse move outside the block
-      simulateMouseMove(200, 200)
+      simulateMouseMove(200, 200, mockDomElement)
 
       await editor.tick()
 
@@ -246,7 +246,7 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Simulate mouse move to overlapping area
-      simulateMouseMove(50, 50)
+      simulateMouseMove(50, 50, mockDomElement)
 
       await editor.tick()
 
@@ -279,7 +279,7 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Move mouse over block
-      simulateMouseMove(50, 50)
+      simulateMouseMove(50, 50, mockDomElement)
 
       await editor.tick()
 
@@ -326,7 +326,7 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Simulate mouse move over block
-      simulateMouseMove(50, 50)
+      simulateMouseMove(50, 50, mockDomElement)
 
       await editor.tick()
 
@@ -359,7 +359,7 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Simulate mouse move over block
-      simulateMouseMove(50, 50)
+      simulateMouseMove(50, 50, mockDomElement)
 
       await editor.tick()
 
@@ -402,12 +402,12 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Move mouse over block 1
-      simulateMouseMove(50, 50)
+      simulateMouseMove(50, 50, mockDomElement)
 
       await editor.tick()
 
       // Move mouse over block 2
-      simulateMouseMove(250, 50)
+      simulateMouseMove(250, 50, mockDomElement)
 
       await editor.tick()
 
@@ -442,7 +442,7 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Move mouse over block
-      simulateMouseMove(50, 50)
+      simulateMouseMove(50, 50, mockDomElement)
 
       await editor.tick()
 
@@ -492,7 +492,7 @@ describe('preCaptureIntersect', () => {
       await editor.tick()
 
       // Mouse at screen position (50, 50) should hit block at world (500, 500)
-      simulateMouseMove(50, 50)
+      simulateMouseMove(50, 50, mockDomElement)
 
       await editor.tick()
 
@@ -529,7 +529,7 @@ describe('preCaptureIntersect', () => {
 
       // At 2x zoom, screen position (100, 100) = world position (50, 50)
       // This should be inside the block
-      simulateMouseMove(100, 100)
+      simulateMouseMove(100, 100, mockDomElement)
 
       await editor.tick()
 
