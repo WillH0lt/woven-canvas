@@ -7,8 +7,14 @@ import {
   Screen,
   Synced,
   defineQuery,
+  getPluginResources,
   type Context,
 } from "@woven-canvas/core";
+import {
+  CONTROLS_PLUGIN_NAME,
+  DEFAULT_CONTROLS_OPTIONS,
+  type CanvasControlsOptions,
+} from "@woven-canvas/plugin-canvas-controls";
 import { useEditorContext } from "../composables/useEditorContext";
 import { useSingleton } from "../composables/useSingleton";
 
@@ -46,8 +52,25 @@ watchEffect(() => {
 });
 
 /**
+ * Check if an AABB intersects with the camera viewport.
+ */
+function aabbIntersectsViewport(
+  aabb: readonly [number, number, number, number],
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): boolean {
+  const right = left + width;
+  const bottom = top + height;
+  return aabb[0] < right && aabb[2] > left && aabb[1] < bottom && aabb[3] > top;
+}
+
+/**
  * Frame camera to show all synced blocks.
  * Computes the bounding box of all blocks and centers the camera on it.
+ * If no block is visible at the resulting position (due to zoom limits),
+ * centers on a random block instead.
  */
 function handleClick() {
   // TODO: Emit backToContent command when implemented
@@ -74,6 +97,11 @@ function handleClick() {
     const screen = Screen.read(ctx);
     const cam = Camera.read(ctx);
 
+    // Get zoom bounds from controls plugin (or use defaults)
+    const controlsOptions =
+      getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME) ??
+      DEFAULT_CONTROLS_OPTIONS;
+
     // Calculate target zoom to fit all blocks with padding
     let targetZoom = Math.min(
       screen.width / (maxX - minX),
@@ -81,12 +109,50 @@ function handleClick() {
     );
     targetZoom /= 1.1; // Add padding
     targetZoom = Math.min(targetZoom, cam.zoom); // Don't zoom in, only out
+    // Clamp to zoom bounds
+    targetZoom = Math.max(
+      controlsOptions.minZoom,
+      Math.min(controlsOptions.maxZoom, targetZoom),
+    );
 
     // Calculate target position to center the content
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
-    const targetLeft = centerX - screen.width / targetZoom / 2;
-    const targetTop = centerY - screen.height / targetZoom / 2;
+    let targetLeft = centerX - screen.width / targetZoom / 2;
+    let targetTop = centerY - screen.height / targetZoom / 2;
+
+    // Calculate viewport dimensions at target zoom
+    const viewportWidth = screen.width / targetZoom;
+    const viewportHeight = screen.height / targetZoom;
+
+    // Check if any block is visible in the target viewport
+    let anyBlockVisible = false;
+    for (const entityId of blockIds) {
+      const aabb = Aabb.read(ctx, entityId);
+      if (
+        aabbIntersectsViewport(
+          aabb.value,
+          targetLeft,
+          targetTop,
+          viewportWidth,
+          viewportHeight,
+        )
+      ) {
+        anyBlockVisible = true;
+        break;
+      }
+    }
+
+    // If no block is visible, pick a random block and center on it
+    if (!anyBlockVisible) {
+      const randomIndex = Math.floor(Math.random() * blockIds.length);
+      const randomBlockId = blockIds[randomIndex];
+      const aabb = Aabb.read(ctx, randomBlockId);
+      const blockCenterX = (aabb.value[0] + aabb.value[2]) / 2;
+      const blockCenterY = (aabb.value[1] + aabb.value[3]) / 2;
+      targetLeft = blockCenterX - viewportWidth / 2;
+      targetTop = blockCenterY - viewportHeight / 2;
+    }
 
     // Update camera
     const writableCamera = Camera.write(ctx);

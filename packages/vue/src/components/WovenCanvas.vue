@@ -105,6 +105,17 @@ const userQuery = defineQuery((q) => q.tracking(User));
 type BlockDef = InferCanvasComponentType<typeof Block.schema>;
 
 /**
+ * Options for built-in plugins (pass false to disable a plugin)
+ */
+export interface WovenCanvasPluginOptions {
+  controls?: CanvasControlsOptionsInput | false;
+  selection?: SelectionPluginOptionsInput | false;
+  eraser?: EraserPluginOptions | false;
+  pen?: false;
+  arrows?: ArrowsPluginOptions | false;
+}
+
+/**
  * WovenCanvas component props
  */
 export interface WovenCanvasProps {
@@ -121,13 +132,7 @@ export interface WovenCanvasProps {
   assetProvider?: AssetProvider;
 
   // Options for built-in plugins (pass false to disable a plugin)
-  pluginOptions?: {
-    controls?: CanvasControlsOptionsInput | false;
-    selection?: SelectionPluginOptionsInput | false;
-    eraser?: EraserPluginOptions | false;
-    pen?: false;
-    arrows?: ArrowsPluginOptions | false;
-  };
+  pluginOptions?: WovenCanvasPluginOptions;
 
   // Initial controls configuration (tool mappings for mouse buttons, wheel, etc.)
   controls?: ControlsOptionsInput;
