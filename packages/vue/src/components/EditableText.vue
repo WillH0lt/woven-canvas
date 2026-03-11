@@ -72,33 +72,76 @@ const PASTE_WRAP_CHAR_THRESHOLD = 50;
 const MIN_WRAP_WIDTH = 300;
 
 /**
- * Handle paste events. If pasting a large amount of text and constrainWidth is false,
- * enable constrainWidth so the text wraps instead of extending infinitely.
+ * Strip inline styles and class attributes from pasted HTML so external content
+ * adopts the app's default styling rather than bringing its own.
+ */
+function stripExternalStyles(html: string): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  doc.body.querySelectorAll("[style], [class]").forEach((el) => {
+    el.removeAttribute("style");
+    el.removeAttribute("class");
+  });
+  return doc.body.innerHTML;
+}
+
+/**
+ * Enable constrainWidth on the current block so pasted text wraps instead of
+ * extending infinitely.
+ */
+function enableConstrainWidth() {
+  nextEditorTick((ctx) => {
+    const writableText = Text.write(ctx, props.entityId);
+    writableText.constrainWidth = true;
+
+    const block = Block.read(ctx, props.entityId);
+    const newWidth = Math.max(block.size[0], MIN_WRAP_WIDTH);
+    const writableBlock = Block.write(ctx, props.entityId);
+    writableBlock.size = [newWidth, block.size[1]];
+
+    // Reset keyboard state (Ctrl may be stuck from paste shortcut)
+    ResetKeyboard.spawn(ctx);
+
+    // Deselect to commit to undo/redo history
+    DeselectAll.spawn(ctx);
+  });
+}
+
+/**
+ * Handle paste events.
+ *
+ * - External content (no `data-pm-slice` marker): strip inline styles so the
+ *   pasted text adopts the app's styling instead of bringing its own.
+ * - Internal content (copied from this app): keep styles as-is.
+ * - In both cases, auto-enable constrainWidth when pasting a large amount of text.
  */
 function handlePaste(_view: unknown, event: ClipboardEvent): boolean {
   const t = text.value;
-  if (!t || t.constrainWidth) return false; // Already wrapping, let default handle it
+  if (!t) return false;
 
-  const pastedText = event.clipboardData?.getData("text/plain") ?? "";
+  const html = event.clipboardData?.getData("text/html") ?? "";
+  const plainText = event.clipboardData?.getData("text/plain") ?? "";
 
-  if (pastedText.length > PASTE_WRAP_CHAR_THRESHOLD) {
-    nextEditorTick((ctx) => {
-      // Enable constrainWidth so pasted text wraps
-      const writableText = Text.write(ctx, props.entityId);
-      writableText.constrainWidth = true;
+  // ProseMirror/Tiptap always adds `data-pm-slice` when serialising for the
+  // clipboard, so its absence means the content came from an external source.
+  const isFromApp = html.includes("data-pm-slice");
 
-      // Set block width to max of current width or minimum
-      const block = Block.read(ctx, props.entityId);
-      const newWidth = Math.max(block.size[0], MIN_WRAP_WIDTH);
-      const writableBlock = Block.write(ctx, props.entityId);
-      writableBlock.size = [newWidth, block.size[1]];
-
-      // Reset keyboard state (Ctrl may be stuck from paste shortcut)
-      ResetKeyboard.spawn(ctx);
-
-      // Deselect to commit to undo/redo history
-      DeselectAll.spawn(ctx);
+  if (!isFromApp && html) {
+    // External paste: strip styles then insert cleaned HTML ourselves.
+    event.preventDefault();
+    editor.value?.commands.insertContent(stripExternalStyles(html), {
+      parseOptions: { preserveWhitespace: true },
     });
+
+    if (!t.constrainWidth && plainText.length > PASTE_WRAP_CHAR_THRESHOLD) {
+      enableConstrainWidth();
+    }
+    return true;
+  }
+
+  // Internal paste: keep styles, but still check constrainWidth.
+  if (!t.constrainWidth && plainText.length > PASTE_WRAP_CHAR_THRESHOLD) {
+    enableConstrainWidth();
   }
 
   return false; // Let Tiptap handle the actual paste
