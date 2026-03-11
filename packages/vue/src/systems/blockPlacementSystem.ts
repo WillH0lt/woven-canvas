@@ -11,6 +11,7 @@ import {
   Edited,
   type EditorResources,
   type EntityId,
+  Grid,
   getBlockDef,
   getPluginResources,
   getPointerInput,
@@ -72,9 +73,10 @@ function createBlockFromSnapshot(ctx: Context, snapshot: BlockSnapshot, position
   // Get size from snapshot or use defaults
   const size: [number, number] = snapshot.block.size ?? [100, 100]
 
-  // Calculate position to center the block on click point
-  const left = position[0] - size[0] / 2
-  const top = position[1] - size[1] / 2
+  // Calculate position to center the block on click point, then snap to grid
+  const placedPosition: [number, number] = [position[0] - size[0] / 2, position[1] - size[1] / 2]
+  Grid.snapPosition(ctx, placedPosition)
+  const [left, top] = placedPosition
 
   // Generate a rank for the new block (place at front)
   const rank = snapshot.block.rank ?? RankBounds.genNext(ctx)
