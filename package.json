@@ -14,7 +14,7 @@
     "pnpm": ">=10"
   },
   "scripts": {
-    "build": "turbo run build",
+    "build": "turbo run build --filter=!./examples/*",
     "build:watch": "turbo run build:watch",
     "check:exports": "turbo run check:exports",
     "clean": "turbo run clean",

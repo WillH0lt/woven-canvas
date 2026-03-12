@@ -236,10 +236,6 @@ importers:
       vue-tsc:
         specifier: ^3.2.5
         version: 3.2.5(typescript@5.9.3)
-    optionalDependencies:
-      '@oxc-parser/binding-linux-x64-gnu':
-        specifier: 0.112.0
-        version: 0.112.0
 
   packages/asset-sync:
     dependencies:
