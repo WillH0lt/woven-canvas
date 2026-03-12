@@ -16,6 +16,16 @@ import { FontFamily, FontLoader } from './FontLoader'
 import { type EditorPlugin, parsePlugin, sortPluginsByDependencies } from './plugin'
 import { Controls, Grid } from './singletons'
 import {
+  attachKeyboardListeners,
+  attachMouseListeners,
+  attachPointerListeners,
+  attachScreenObserver,
+  detachKeyboardListeners,
+  detachMouseListeners,
+  detachPointerListeners,
+  detachScreenObserver,
+} from './systems/input'
+import {
   BlockDef,
   ControlsOptions,
   type CursorDef,
@@ -133,7 +143,7 @@ export class Editor {
   private gridOptions: GridOptions
   private controlsOptions: ControlsOptions
 
-  constructor(domElement: HTMLElement, optionsInput?: EditorOptionsInput) {
+  constructor(domElement: HTMLElement | null, optionsInput?: EditorOptionsInput) {
     const options = EditorOptionsSchema.parse(optionsInput ?? {})
     const { plugins: pluginInputs, maxEntities } = options
 
@@ -455,10 +465,63 @@ export class Editor {
   }
 
   /**
+   * Attach a DOM element to a headless editor.
+   * Use this after SSR to connect input listeners and enable rendering.
+   *
+   * @param domElement - The DOM element to attach to
+   *
+   * @example
+   * ```typescript
+   * // SSR: create headless editor
+   * const editor = new Editor(null, { plugins: [...] });
+   * await editor.initialize();
+   * editor.tick(); // process initial state
+   *
+   * // Client hydration: attach the DOM
+   * editor.attachDom(document.getElementById('canvas')!);
+   * ```
+   */
+  attachDom(domElement: HTMLElement): void {
+    const resources = this.ctx.resources as EditorResources
+    if (resources.domElement) {
+      throw new Error('Editor already has a DOM element attached. Call detachDom() first.')
+    }
+
+    resources.domElement = domElement
+
+    // Attach input listeners
+    attachKeyboardListeners(domElement)
+    attachMouseListeners(domElement)
+    attachScreenObserver(domElement)
+    attachPointerListeners(domElement)
+  }
+
+  /**
+   * Detach the current DOM element.
+   * Removes all input listeners. The editor continues to run headless.
+   */
+  detachDom(): void {
+    const resources = this.ctx.resources as EditorResources
+    const { domElement } = resources
+    if (!domElement) return
+
+    // Detach input listeners
+    detachKeyboardListeners(domElement)
+    detachMouseListeners(domElement)
+    detachScreenObserver(domElement)
+    detachPointerListeners(domElement)
+
+    resources.domElement = null
+  }
+
+  /**
    * Clean up the editor.
    * Call this when done to release resources.
    */
   dispose(): void {
+    // Detach DOM if attached
+    this.detachDom()
+
     // Run plugin teardown in reverse order
     const plugins = Array.from(this.plugins.values()).reverse()
     for (const plugin of plugins) {

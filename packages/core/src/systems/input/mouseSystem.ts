@@ -107,6 +107,7 @@ export function detachMouseListeners(domElement: HTMLElement): void {
  */
 export const mouseSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context) => {
   const resources = getResources<EditorResources>(ctx)
+  if (!resources.domElement) return
   const state = instanceState.get(resources.domElement)
   if (!state) return
 

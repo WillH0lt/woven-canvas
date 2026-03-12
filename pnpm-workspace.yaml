@@ -5,7 +5,7 @@ packages:
   - "docs"
 
 catalog:
-  "@woven-ecs/canvas-store": "^1.0.5"
+  "@woven-ecs/canvas-store": "^1.0.8"
   "@woven-ecs/core": "^1.0.4"
   "fractional-indexing-jittered": "^1.0.0"
   "xstate": "^5.24.0"

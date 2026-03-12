@@ -62,6 +62,7 @@ export function detachScreenObserver(domElement: HTMLElement): void {
 export const screenSystem = defineEditorSystem({ phase: 'input' }, (ctx) => {
   const resources = getResources<EditorResources>(ctx)
   const { domElement } = resources
+  if (!domElement) return
   const state = instanceState.get(domElement)
   if (!state) return
 

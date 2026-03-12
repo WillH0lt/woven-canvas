@@ -156,9 +156,11 @@ export const intersectSystem = defineEditorSystem({ phase: 'capture', priority: 
   // Track obscured state changes
   const resources = getResources<EditorResources>(ctx)
   const isObscured = Mouse.isObscured(ctx)
-  const wasObscured = prevObscuredByElement.get(resources.domElement) ?? false
+  const wasObscured = resources.domElement ? (prevObscuredByElement.get(resources.domElement) ?? false) : false
   const obscuredChanged = isObscured !== wasObscured
-  prevObscuredByElement.set(resources.domElement, isObscured)
+  if (resources.domElement) {
+    prevObscuredByElement.set(resources.domElement, isObscured)
+  }
 
   // Handle mouse over UI element - clear hover but keep intersections
   if (isObscured) {

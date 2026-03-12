@@ -81,8 +81,8 @@ export { default as StickyNoteTool } from './components/tools/StickyNoteTool.vue
 export { default as TextTool } from './components/tools/TextTool.vue'
 // User Presence
 export { default as UserPresence } from './components/UserPresence.vue'
-export type { WovenCanvasPluginOptions, WovenCanvasProps } from './components/WovenCanvas.vue'
 export { default as WovenCanvas } from './components/WovenCanvas.vue'
+export type { WovenCanvasPluginOptions, WovenCanvasProps } from './components/WovenCanvasCore.vue'
 export { useComponent } from './composables/useComponent'
 export { useComponents } from './composables/useComponents'
 export {

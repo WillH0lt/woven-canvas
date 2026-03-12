@@ -20,7 +20,9 @@
       "!**/node_modules",
       "!public/",
       "!build/",
-      "!**/.turbo/"
+      "!**/.turbo/",
+      "!**/.nuxt/",
+      "!**/.nuxt"
     ]
   },
   "overrides": [

@@ -111,6 +111,11 @@ export class FontLoader {
   private loadSingleFont(family: FontFamily): Promise<void> {
     this.loadedFonts.add(family.name)
 
+    // Skip actual font loading in SSR/headless — fonts are loaded client-side
+    if (typeof document === 'undefined') {
+      return Promise.resolve()
+    }
+
     return new Promise((resolve, reject) => {
       const link = document.createElement('link')
       link.rel = 'stylesheet'

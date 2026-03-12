@@ -158,6 +158,7 @@ export function detachPointerListeners(domElement: HTMLElement): void {
 export const pointerSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context) => {
   const resources = getResources<EditorResources>(ctx)
   const { domElement } = resources
+  if (!domElement) return
   const state = instanceState.get(domElement)
   if (!state) return
 

@@ -33,6 +33,9 @@ export function getCursorSvg(cursors: Record<string, CursorDef>, kind: string, r
  * allowing cursor definitions to be changed dynamically.
  */
 export const cursorSystem = defineEditorSystem({ phase: 'render', priority: -100 }, (ctx: Context) => {
+  // Skip in SSR/headless — no DOM to apply cursor to
+  if (typeof document === 'undefined') return
+
   const changedCursors = cursorQuery.changed(ctx)
 
   const frame = Frame.read(ctx)

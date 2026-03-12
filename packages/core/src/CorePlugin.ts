@@ -96,6 +96,7 @@ export const CorePlugin: EditorPlugin = {
 
   setup(ctx) {
     const { domElement } = getResources<EditorResources>(ctx)
+    if (!domElement) return // Headless/SSR mode — no DOM to attach to
 
     // Attach all event listeners
     attachKeyboardListeners(domElement)
@@ -106,6 +107,7 @@ export const CorePlugin: EditorPlugin = {
 
   teardown(ctx) {
     const { domElement } = getResources<EditorResources>(ctx)
+    if (!domElement) return
 
     // Detach all event listeners
     detachKeyboardListeners(domElement)

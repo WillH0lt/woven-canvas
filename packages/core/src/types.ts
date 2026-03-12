@@ -67,8 +67,9 @@ export interface EditorResources {
   /**
    * The DOM element to attach input listeners and render output to.
    * This should be the editor's main container or canvas element.
+   * Pass `null` for headless/SSR mode — call `editor.attachDom()` later to connect.
    */
-  domElement: HTMLElement
+  domElement: HTMLElement | null
 
   /**
    * Reference to the Editor instance.

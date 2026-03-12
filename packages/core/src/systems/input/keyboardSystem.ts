@@ -83,6 +83,7 @@ export function detachKeyboardListeners(domElement: HTMLElement): void {
  */
 export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context) => {
   const resources = getResources<EditorResources>(ctx)
+  if (!resources.domElement) return
   const state = instanceState.get(resources.domElement)
   if (!state) return
 
