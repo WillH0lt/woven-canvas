@@ -27,6 +27,9 @@
     "nuxt": "^4.3.1",
     "tailwindcss": "^4.2.1"
   },
+  "optionalDependencies": {
+    "@oxc-parser/binding-linux-x64-gnu": "0.112.0"
+  },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
