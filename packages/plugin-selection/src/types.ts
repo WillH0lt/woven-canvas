@@ -29,6 +29,7 @@ export const TransformHandleKind = {
   Scale: 'scale',
   Stretch: 'stretch',
   Rotate: 'rotate',
+  RotateScale: 'rotateScale',
 } as const
 
 export type TransformHandleKind = (typeof TransformHandleKind)[keyof typeof TransformHandleKind]

@@ -61,6 +61,7 @@ import {
   createArrowsPlugin,
   type ArrowsPluginOptions,
 } from "@woven-canvas/plugin-arrows";
+import { createTapesPlugin } from "@woven-canvas/plugin-tapes";
 
 import {
   WOVEN_CANVAS_KEY,
@@ -82,8 +83,10 @@ import ArcArrow from "./blocks/ArcArrow.vue";
 import ElbowArrow from "./blocks/ElbowArrow.vue";
 import ArrowHandle from "./blocks/ArrowHandle.vue";
 import ArrowTerminal from "./blocks/ArrowTerminal.vue";
+import EmbedBlock from "./blocks/EmbedBlock.vue";
 import ImageBlock from "./blocks/ImageBlock.vue";
 import ShapeBlock from "./blocks/ShapeBlock.vue";
+import TapeBlock from "./blocks/TapeBlock.vue";
 import { EditingPlugin } from "../EditingPlugin";
 import type { BlockData, BackgroundOptions } from "../types";
 import FileDropZone from "./FileDropZone.vue";
@@ -116,6 +119,7 @@ export interface WovenCanvasPluginOptions {
   eraser?: EraserPluginOptions | false;
   pen?: false;
   arrows?: ArrowsPluginOptions | false;
+  tapes?: false;
 }
 
 /**
@@ -381,6 +385,9 @@ function buildPlugins(storeInstance: CanvasStore): EditorPluginInput[] {
   }
   if (opts?.arrows !== false) {
     allPlugins.push(createArrowsPlugin(opts?.arrows || undefined));
+  }
+  if (opts?.tapes !== false) {
+    allPlugins.push(createTapesPlugin());
   }
   allPlugins.push(EditingPlugin({ store: storeInstance }));
 
@@ -900,6 +907,14 @@ function getBlockStyle(data: BlockData) {
           />
           <ShapeBlock
             v-else-if="blockData.value.block.tag === 'shape'"
+            v-bind="blockData.value"
+          />
+          <EmbedBlock
+            v-else-if="blockData.value.block.tag === 'embed'"
+            v-bind="blockData.value"
+          />
+          <TapeBlock
+            v-else-if="blockData.value.block.tag === 'tape'"
             v-bind="blockData.value"
           />
         </slot>

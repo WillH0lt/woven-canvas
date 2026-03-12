@@ -11,6 +11,7 @@ import TextFontSizeButton from "./TextFontSizeButton.vue";
 import TextBoldButton from "./TextBoldButton.vue";
 import TextItalicButton from "./TextItalicButton.vue";
 import TextUnderlineButton from "./TextUnderlineButton.vue";
+import TextLinkButton from "./TextLinkButton.vue";
 import TextColorButton from "./TextColorButton.vue";
 import TextAlignmentButton from "./TextAlignmentButton.vue";
 import VerticalAlignButton from "./VerticalAlignButton.vue";
@@ -66,6 +67,7 @@ provide(DROPDOWN_ACTIVE_KEY, activeByLevel);
             <TextBoldButton :entityIds="entityIds" />
             <TextItalicButton :entityIds="entityIds" />
             <TextUnderlineButton :entityIds="entityIds" />
+            <TextLinkButton :entityIds="entityIds" />
             <div class="wov-text-group-spacer" />
             <TextColorButton :entityIds="entityIds" />
             <TextAlignmentButton :entityIds="entityIds" />
@@ -86,6 +88,7 @@ provide(DROPDOWN_ACTIVE_KEY, activeByLevel);
       <TextBoldButton :entityIds="entityIds" />
       <TextItalicButton :entityIds="entityIds" />
       <TextUnderlineButton :entityIds="entityIds" />
+      <TextLinkButton :entityIds="entityIds" />
       <div divider class="wov-divider" />
       <TextColorButton :entityIds="entityIds" />
       <TextAlignmentButton :entityIds="entityIds" />

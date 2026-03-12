@@ -33,12 +33,14 @@ import {
   AddArrow,
   AddOrUpdateTransformHandles,
   HideTransformHandles,
+  PlaceArrow,
   RemoveArrow,
   RemoveTransformHandles,
   ShowTransformHandles,
 } from '../commands'
 import { ArcArrow, ArrowHandle, ArrowTerminal, ElbowArrow } from '../components'
 import {
+  DEFAULT_ARROW_LENGTH,
   DEFAULT_ARROW_THICKNESS,
   ELBOW_ARROW_PADDING,
   TERMINAL_SIZE,
@@ -71,6 +73,10 @@ const terminalsQuery = defineQuery((q) => q.with(ArrowTerminal, Block))
 export const updateArrowTransformSystem = defineEditorSystem({ phase: 'update' }, (ctx: Context) => {
   on(ctx, AddArrow, (ctx, { entityId, position, kind }) => {
     addArrow(ctx, entityId, position, kind)
+  })
+
+  on(ctx, PlaceArrow, (ctx, { entityId, position, kind }) => {
+    placeArrow(ctx, entityId, position, kind)
   })
 
   on(ctx, RemoveArrow, (ctx, { entityId }) => {
@@ -252,6 +258,55 @@ function addArrow(ctx: Context, entityId: EntityId, position: Vec2, kind: ArrowK
     // Hide handles during initial draw
     hideTransformHandles(ctx)
   }
+}
+
+/**
+ * Place a default-sized arrow at the given position (simple click).
+ * Creates a horizontal arrow of DEFAULT_ARROW_LENGTH centered on the click point.
+ */
+function placeArrow(ctx: Context, entityId: EntityId, position: Vec2, kind: ArrowKind): void {
+  const thickness = DEFAULT_ARROW_THICKNESS
+  const arrowTag = kind === ArrowKind.Elbow ? 'elbow-arrow' : 'arc-arrow'
+  const halfLength = DEFAULT_ARROW_LENGTH / 2
+
+  const startPos: Vec2 = [position[0] - halfLength, position[1]]
+  const _endPos: Vec2 = [position[0] + halfLength, position[1]]
+
+  // Block bounds from start to end
+  const blockPos: Vec2 = [startPos[0], startPos[1] - thickness / 2]
+  const blockSize: Vec2 = [DEFAULT_ARROW_LENGTH, thickness]
+
+  addComponent(ctx, entityId, Block, {
+    tag: arrowTag,
+    rank: RankBounds.genNext(ctx),
+    position: blockPos,
+    size: blockSize,
+  })
+
+  addComponent(ctx, entityId, Synced, {
+    id: crypto.randomUUID(),
+  })
+
+  if (kind === ArrowKind.Arc) {
+    addComponent(ctx, entityId, ArcArrow, {
+      value: [0, 0.5, 0.5, 0.5, 1, 0.5, thickness],
+      startArrowHead: ArrowHeadKind.None,
+      endArrowHead: ArrowHeadKind.V,
+    })
+  } else {
+    addComponent(ctx, entityId, ElbowArrow, {
+      points: [0, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 0.5],
+      pointCount: 4,
+      thickness,
+      startArrowHead: ArrowHeadKind.None,
+      endArrowHead: ArrowHeadKind.V,
+    })
+  }
+
+  addComponent(ctx, entityId, Connector)
+
+  selectBlock(ctx, entityId)
+  addOrUpdateTransformHandles(ctx, entityId)
 }
 
 /**

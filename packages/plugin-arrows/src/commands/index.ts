@@ -4,6 +4,7 @@ export {
   CompleteArrow,
   DrawArrow,
   HideTransformHandles,
+  PlaceArrow,
   RemoveArrow,
   RemoveTransformHandles,
   ShowTransformHandles,

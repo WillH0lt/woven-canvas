@@ -58,6 +58,8 @@ export {
   Color,
   Connector,
   Edited,
+  Embed,
+  EmbedProvider,
   Held,
   HitGeometry,
   Hovered,
@@ -118,6 +120,7 @@ export { FontFamily, type FontFamilyInput, FontLoader } from './FontLoader'
 export {
   canBlockEdit,
   canBlockSelect,
+  detectEmbedProvider,
   getBlockDef,
   getBlockResizeMode,
   getTopmostBlockAtPoint,
@@ -125,6 +128,8 @@ export {
   intersectCapsule,
   intersectPoint,
   isHeldByRemote,
+  resolveEmbedUrl,
+  validateEmbedUrl,
 } from './helpers'
 // State machine utilities
 export { type MachineResult, runMachine } from './machine'

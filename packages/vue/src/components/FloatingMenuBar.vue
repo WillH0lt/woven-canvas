@@ -6,6 +6,7 @@ import PenStrokeThicknessButton from "./buttons/PenStrokeThicknessButton.vue";
 import ArrowThicknessButton from "./buttons/ArrowThicknessButton.vue";
 import ArrowHeadButton from "./buttons/ArrowHeadButton.vue";
 import MenuTooltip from "./buttons/MenuTooltip.vue";
+import TapeImageButton from "./buttons/TapeImageButton.vue";
 import TextButtonGroup from "./buttons/text/TextButtonGroup.vue";
 import ShapeKindButton from "./buttons/ShapeKindButton.vue";
 import ShapeFillColorButton from "./buttons/ShapeFillColorButton.vue";
@@ -27,6 +28,7 @@ const builtInComponentNames = new Set([
   "elbowArrow",
   "arcArrow",
   "shape",
+  "tape",
 ]);
 
 // Custom slots for components not covered by built-ins
@@ -94,6 +96,13 @@ onUnmounted(() => {
       </slot>
       <slot name="button:arrowHeadEnd" :entityIds="selectedIds">
         <ArrowHeadButton :entityIds="selectedIds" side="end" />
+      </slot>
+    </template>
+
+    <!-- Tape image button -->
+    <template v-if="commonComponents.has('tape')">
+      <slot name="button:tape" :entityIds="selectedIds">
+        <TapeImageButton :entityIds="selectedIds" />
       </slot>
     </template>
 

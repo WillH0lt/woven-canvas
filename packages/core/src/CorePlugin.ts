@@ -6,7 +6,7 @@ import {
 } from '@woven-ecs/canvas-store'
 import { getResources } from '@woven-ecs/core'
 import * as components from './components'
-import { Asset, Color, Image, Shape, Text, VerticalAlign } from './components'
+import { Asset, Color, Embed, Image, Shape, Text, VerticalAlign } from './components'
 import { CORE_PLUGIN_NAME } from './constants'
 import type { EditorPlugin } from './plugin'
 import * as singletons from './singletons'
@@ -67,6 +67,14 @@ export const CorePlugin: EditorPlugin = {
     {
       tag: 'shape',
       components: [Shape, Text, VerticalAlign],
+      resizeMode: ResizeMode.Free,
+      editOptions: {
+        canEdit: true,
+      },
+    },
+    {
+      tag: 'embed',
+      components: [Embed],
       resizeMode: ResizeMode.Free,
       editOptions: {
         canEdit: true,

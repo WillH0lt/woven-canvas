@@ -249,6 +249,15 @@ function addOrUpdateTransformHandles(ctx: Context, transformBoxId: EntityId): vo
   // Get selected blocks and determine capabilities
   const selectedBlocks = selectedBlocksQuery.current(ctx)
 
+  // Check if this is a single tape block — use rotateScale handles instead
+  if (selectedBlocks.length === 1) {
+    const singleBlock = Block.read(ctx, selectedBlocks[0])
+    if (singleBlock.tag === 'tape') {
+      addTapeHandles(ctx, transformBoxId, left, top, width, height, rotateZ, center, handleSize)
+      return
+    }
+  }
+
   let resizeMode: ResizeMode = ResizeMode.Scale
   if (selectedBlocks.length === 1) {
     resizeMode = getBlockResizeMode(ctx, selectedBlocks[0])
@@ -428,6 +437,124 @@ function addOrUpdateTransformHandles(ctx: Context, transformBoxId: EntityId): vo
     }
 
     // Set handle parameters from definition
+    const block = Block.write(ctx, handleId)
+    block.tag = def.tag
+    block.position = [finalLeft, finalTop]
+    block.size = [def.width, def.height]
+    block.rotateZ = def.rotateZ
+    block.rank = def.rank
+
+    const handle = TransformHandle.write(ctx, handleId)
+    handle.transformBox = transformBoxId
+    handle.kind = def.kind
+    handle.vectorX = def.vectorX
+    handle.vectorY = def.vectorY
+    handle.cursorKind = def.cursorKind
+
+    const dragStart = DragStart.write(ctx, handleId)
+    dragStart.position = [finalLeft, finalTop]
+    dragStart.size = [def.width, def.height]
+    dragStart.rotateZ = def.rotateZ
+
+    const swz = ScaleWithZoom.write(ctx, handleId)
+    swz.startPosition = [finalLeft, finalTop]
+    swz.startSize = [def.width, def.height]
+    Vec2.copy(swz.scaleMultiplier, def.scaleMultiplier)
+    Vec2.copy(swz.anchor, def.anchor)
+
+    usedHandleIds.add(handleId)
+  }
+
+  // Remove unused handles
+  for (const handleId of existingHandles) {
+    if (!usedHandleIds.has(handleId)) {
+      removeEntity(ctx, handleId)
+    }
+  }
+}
+
+/**
+ * Add rotateScale handles at each end of a tape block.
+ * These handles allow the user to simultaneously rotate and scale the tape
+ * by dragging either endpoint.
+ */
+function addTapeHandles(
+  ctx: Context,
+  transformBoxId: EntityId,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  rotateZ: number,
+  center: Vec2,
+  handleSize: number,
+): void {
+  const handles: TransformHandleDef[] = []
+
+  // Left endpoint handle (vectorX=-1, vectorY=0)
+  handles.push({
+    tag: 'transform-handle',
+    kind: TransformHandleKind.RotateScale,
+    vectorX: -1,
+    vectorY: 0,
+    left: left - handleSize / 2,
+    top: top + height / 2 - handleSize / 2,
+    width: handleSize,
+    height: handleSize,
+    rotateZ,
+    rank: TRANSFORM_HANDLE_CORNER_RANK,
+    cursorKind: CursorKind.Drag,
+    scaleMultiplier: [1, 1],
+    anchor: [0.5, 0.5],
+  })
+
+  // Right endpoint handle (vectorX=1, vectorY=0)
+  handles.push({
+    tag: 'transform-handle',
+    kind: TransformHandleKind.RotateScale,
+    vectorX: 1,
+    vectorY: 0,
+    left: left + width - handleSize / 2,
+    top: top + height / 2 - handleSize / 2,
+    width: handleSize,
+    height: handleSize,
+    rotateZ,
+    rank: TRANSFORM_HANDLE_CORNER_RANK,
+    cursorKind: CursorKind.Drag,
+    scaleMultiplier: [1, 1],
+    anchor: [0.5, 0.5],
+  })
+
+  // Get existing handles and build a map for reuse
+  const existingHandles = getBackrefs(ctx, transformBoxId, TransformHandle, 'transformBox')
+  const handleMap = new Map<string, EntityId>()
+  for (const handleId of existingHandles) {
+    const handle = TransformHandle.read(ctx, handleId)
+    const key = `${handle.kind}-${handle.vectorX}-${handle.vectorY}`
+    handleMap.set(key, handleId)
+  }
+
+  const usedHandleIds = new Set<EntityId>()
+
+  for (const def of handles) {
+    const key = `${def.kind}-${def.vectorX}-${def.vectorY}`
+    let handleId = handleMap.get(key)
+
+    // Calculate rotated position
+    const handleCenter: Vec2 = [def.left + def.width / 2, def.top + def.height / 2]
+    const rotatedCenter = Vec2.clone(handleCenter)
+    Vec2.rotateAround(rotatedCenter, center, rotateZ)
+    const finalLeft = rotatedCenter[0] - def.width / 2
+    const finalTop = rotatedCenter[1] - def.height / 2
+
+    if (!handleId) {
+      handleId = createEntity(ctx)
+      addComponent(ctx, handleId, Block)
+      addComponent(ctx, handleId, TransformHandle)
+      addComponent(ctx, handleId, DragStart)
+      addComponent(ctx, handleId, ScaleWithZoom)
+    }
+
     const block = Block.write(ctx, handleId)
     block.tag = def.tag
     block.position = [finalLeft, finalTop]

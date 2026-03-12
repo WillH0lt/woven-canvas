@@ -75,6 +75,10 @@ const selectionMachine = setup({
     isOverBlock: ({ event }) => {
       return event.intersects.length > 0
     },
+    hasDraggedEntity: ({ context, event }) => {
+      if (context.draggedEntity === null) return false
+      return hasComponent(event.ctx, context.draggedEntity, Synced)
+    },
     isOverSyncedBlock: ({ event }) => {
       const ctx = event.ctx
 
@@ -351,6 +355,13 @@ const selectionMachine = setup({
           {
             guard: 'isOverSyncedBlock',
             actions: 'selectIntersect',
+            target: SelectionState.Idle,
+          },
+          {
+            // Fallback: select the draggedEntity even if cursor isn't over it
+            // (e.g. block was grid-snapped away from click point during placement)
+            guard: 'hasDraggedEntity',
+            actions: 'selectDragged',
             target: SelectionState.Idle,
           },
           {

@@ -15,6 +15,8 @@ import PenTool from "./tools/PenTool.vue";
 import TextTool from "./tools/TextTool.vue";
 import ElbowArrowTool from "./tools/ElbowArrowTool.vue";
 import ImageTool from "./tools/ImageTool.vue";
+import EmbedTool from "./tools/EmbedTool.vue";
+import TapeTool from "./tools/TapeTool.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { TOOLBAR_KEY, type ToolbarContext } from "../injection";
 import { useSingleton } from "../composables/useSingleton";
@@ -37,9 +39,11 @@ const defaultTools = [
   HandTool,
   TextTool,
   ImageTool,
+  EmbedTool,
   ShapeTool,
   ElbowArrowTool,
   StickyNoteTool,
+  TapeTool,
   PenTool,
   EraserTool,
 ];

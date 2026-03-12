@@ -28,6 +28,8 @@ export interface TextFormattingState {
   fontSize: number | null
   /** Current font family (null if mixed) */
   fontFamily: string | null
+  /** Current link href (null if no link) */
+  linkHref: string | null
 }
 
 export interface TextFormattingCommands {
@@ -47,6 +49,10 @@ export interface TextFormattingCommands {
   setFontFamily(family: string): void
   /** Set multiple text style properties at once */
   setTextStyle(options: TextStyleOptions): void
+  /** Set link on current selection */
+  setLink(href: string): void
+  /** Remove link from current selection */
+  removeLink(): void
 }
 
 export interface TextFormattingController {
@@ -138,6 +144,13 @@ export function useTextFormatting(entityIds: MaybeRefOrGetter<EntityId[]>): Text
     fontSize: computed(() => batchController.state.fontSize.value),
 
     fontFamily: computed(() => batchController.state.fontFamily.value),
+
+    linkHref: computed(() => {
+      if (hasEditor.value) {
+        return editorController.state.linkHref.value
+      }
+      return batchController.state.linkHref.value
+    }),
   })
 
   const commands: TextFormattingCommands = {
@@ -192,6 +205,22 @@ export function useTextFormatting(entityIds: MaybeRefOrGetter<EntityId[]>): Text
 
     setTextStyle(options: TextStyleOptions) {
       batchController.commands.setTextStyle(options)
+    },
+
+    setLink(href: string) {
+      if (hasEditor.value) {
+        editorController.commands.setLink(href)
+      } else {
+        batchController.commands.setLink(href)
+      }
+    },
+
+    removeLink() {
+      if (hasEditor.value) {
+        editorController.commands.removeLink()
+      } else {
+        batchController.commands.removeLink()
+      }
     },
   }
 

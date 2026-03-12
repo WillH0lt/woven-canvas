@@ -123,6 +123,14 @@ export class AssetManager {
    * @returns The URL to display, or null if not available
    */
   async getDisplayUrl(identifier: string): Promise<string | null> {
+    if (!identifier) return null
+
+    // If the identifier is already a URL, return it directly
+    // This supports assets with known URLs (e.g., default tape textures)
+    if (identifier.startsWith('http://') || identifier.startsWith('https://')) {
+      return identifier
+    }
+
     // If we have a blob URL for this identifier, use it (pending upload)
     const blobUrl = this.blobUrls.get(identifier)
     if (blobUrl) {

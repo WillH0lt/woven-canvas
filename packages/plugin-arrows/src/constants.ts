@@ -24,6 +24,11 @@ export const ELBOW_ARROW_PADDING = 50
 export const DEFAULT_ARROW_THICKNESS = 4
 
 /**
+ * Default arrow length in world units (for click-to-place).
+ */
+export const DEFAULT_ARROW_LENGTH = 150
+
+/**
  * Minimum pointer move distance to start dragging (in pixels).
  */
 export const POINTING_THRESHOLD = 4

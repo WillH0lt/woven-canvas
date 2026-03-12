@@ -1,3 +1,5 @@
+// Embed helpers
+
 // Block definition helpers (plugin-specific)
 export {
   canBlockEdit,
@@ -10,6 +12,7 @@ export {
 } from './blockDefs'
 // AABB computation
 export { computeAabb } from './computeAabb'
+export { detectEmbedProvider, resolveEmbedUrl, validateEmbedUrl } from './embed'
 // Held state helpers
 export { isHeldByRemote } from './held'
 // Intersection helpers

@@ -11,7 +11,7 @@ import {
 import { Vec2 } from '@woven-canvas/math'
 import { DeselectAll } from '@woven-canvas/plugin-selection'
 import { assign, setup } from 'xstate'
-import { AddArrow, RemoveArrow } from '../commands'
+import { AddArrow, PlaceArrow, RemoveArrow } from '../commands'
 import { POINTING_THRESHOLD } from '../constants'
 import { ArrowDrawState } from '../singletons'
 import { ArrowDrawStateEnum, ArrowKind } from '../types'
@@ -75,6 +75,17 @@ const arrowDrawMachine = setup({
       },
     }),
 
+    placeArrow: ({ context, event }) => {
+      const startWorld = context.pointingStartWorld as [number, number]
+      const kind = context.kind as ArrowKind
+      const entityId = createEntity(event.ctx)
+      PlaceArrow.spawn(event.ctx, {
+        entityId,
+        position: startWorld,
+        kind,
+      })
+    },
+
     exitArrowControl: ({ event }) => {
       const controls = Controls.write(event.ctx)
       controls.leftMouseTool = 'select'
@@ -116,6 +127,7 @@ const arrowDrawMachine = setup({
           target: ArrowDrawStateEnum.Dragging,
         },
         pointerUp: {
+          actions: ['placeArrow', 'exitArrowControl'],
           target: ArrowDrawStateEnum.Idle,
         },
         cancel: {

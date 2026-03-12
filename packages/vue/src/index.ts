@@ -24,12 +24,16 @@ export { default as ArrowHandle } from './components/blocks/ArrowHandle.vue'
 export { default as ArrowHead } from './components/blocks/ArrowHead.vue'
 export { default as ArrowTerminal } from './components/blocks/ArrowTerminal.vue'
 export { default as ElbowArrow } from './components/blocks/ElbowArrow.vue'
+// Embed Components
+export { default as EmbedBlock } from './components/blocks/EmbedBlock.vue'
 export { default as Eraser } from './components/blocks/Eraser.vue'
 // Image Components
 export { default as ImageBlock } from './components/blocks/ImageBlock.vue'
 export { default as PenStroke } from './components/blocks/PenStroke.vue'
 // Shape Components
 export { default as ShapeBlock } from './components/blocks/ShapeBlock.vue'
+// Tape Components
+export { default as TapeBlock } from './components/blocks/TapeBlock.vue'
 export { default as TextBlock } from './components/blocks/TextBlock.vue'
 export { default as ArrowHeadButton } from './components/buttons/ArrowHeadButton.vue'
 export { default as ArrowThicknessButton } from './components/buttons/ArrowThicknessButton.vue'
@@ -44,6 +48,7 @@ export { default as ShapeFillColorButton } from './components/buttons/ShapeFillC
 // Shape Menu Button Components
 export { default as ShapeKindButton } from './components/buttons/ShapeKindButton.vue'
 export { default as ShapeStrokeColorButton } from './components/buttons/ShapeStrokeColorButton.vue'
+export { default as TapeImageButton } from './components/buttons/TapeImageButton.vue'
 // Text Formatting Button Components
 export {
   type FontOption,
@@ -53,6 +58,7 @@ export {
   TextFontFamilyButton,
   TextFontSizeButton,
   TextItalicButton,
+  TextLinkButton,
   TextUnderlineButton,
 } from './components/buttons/text'
 // Background Components
@@ -71,6 +77,7 @@ export { default as Toolbar } from './components/Toolbar.vue'
 export { default as ToolbarButton } from './components/ToolbarButton.vue'
 export { default as ArcArrowTool } from './components/tools/ArcArrowTool.vue'
 export { default as ElbowArrowTool } from './components/tools/ElbowArrowTool.vue'
+export { default as EmbedTool } from './components/tools/EmbedTool.vue'
 export { default as EraserTool } from './components/tools/EraserTool.vue'
 export { default as HandTool } from './components/tools/HandTool.vue'
 export { default as ImageTool } from './components/tools/ImageTool.vue'
@@ -78,6 +85,7 @@ export { default as PenTool } from './components/tools/PenTool.vue'
 export { default as SelectTool } from './components/tools/SelectTool.vue'
 export { default as ShapeTool } from './components/tools/ShapeTool.vue'
 export { default as StickyNoteTool } from './components/tools/StickyNoteTool.vue'
+export { default as TapeTool } from './components/tools/TapeTool.vue'
 export { default as TextTool } from './components/tools/TextTool.vue'
 // User Presence
 export { default as UserPresence } from './components/UserPresence.vue'

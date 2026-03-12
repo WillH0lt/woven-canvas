@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/math",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Math utilities for 2D vector operations",
   "repository": {
     "type": "git",
@@ -47,6 +47,6 @@
   },
   "type": "module",
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "catalog:"
   }
 }

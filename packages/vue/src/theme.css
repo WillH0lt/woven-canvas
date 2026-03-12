@@ -50,6 +50,7 @@
   --wov-highlighted-block-border-radius: 2px;
   --wov-selection-box-bg: #5865f222;
   --wov-text-selection-color: var(--wov-primary-light);
+  --wov-link-color: var(--wov-primary);
 }
 
 .wov-root {

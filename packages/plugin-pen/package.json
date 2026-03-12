@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-pen",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pen plugin - draw SVG ink strokes with pressure sensitivity for infinite canvas",
   "repository": {
     "type": "git",
@@ -50,7 +50,7 @@
   "peerDependencies": {
     "@woven-canvas/core": "workspace:^",
     "@woven-canvas/math": "workspace:^",
-    "typescript": "^5",
-    "xstate": "^5"
+    "typescript": "catalog:",
+    "xstate": "catalog:"
   }
 }

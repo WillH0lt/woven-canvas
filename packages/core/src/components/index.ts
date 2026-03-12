@@ -5,6 +5,7 @@ export { Block } from './Block'
 export { Color } from './Color'
 export { Connector } from './Connector'
 export { Edited } from './Edited'
+export { Embed, EmbedProvider } from './Embed'
 export { Held } from './Held'
 // Hit geometry for collision detection
 export { HitGeometry, MAX_HIT_ARCS, MAX_HIT_CAPSULES } from './HitGeometry'

@@ -30,7 +30,7 @@
 // Plugin
 export { CanvasControlsPlugin } from './CanvasControlsPlugin'
 // Components (for advanced use cases)
-export { PanState } from './components'
+export { PanState, ScrollState } from './components'
 // Constants
 export { CONTROLS_PLUGIN_NAME } from './constants'
 // Types

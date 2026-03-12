@@ -17,6 +17,8 @@ export interface TextEditorState {
   alignment: ComputedRef<TextAlignment>
   /** Current text color (null if mixed or no selection) */
   color: ComputedRef<string | null>
+  /** Current link href (null if no link) */
+  linkHref: ComputedRef<string | null>
 }
 
 export interface TextEditorCommands {
@@ -30,6 +32,10 @@ export interface TextEditorCommands {
   setAlignment(alignment: TextAlignment): void
   /** Set text color */
   setColor(color: string): void
+  /** Set link on current selection */
+  setLink(href: string): void
+  /** Remove link from current selection */
+  removeLink(): void
 }
 
 export interface TextEditorController {
@@ -118,6 +124,15 @@ export function useTextEditorController(): TextEditorController {
       const color = (attrs.color as string) ?? null
       return color ? normalizeColor(color) : null
     }),
+
+    linkHref: computed(() => {
+      void updateCounter.value
+      const editor = activeEditor.value
+      if (!editor) return null
+
+      const attrs = editor.getAttributes('link')
+      return (attrs.href as string) ?? null
+    }),
   }
 
   const commands: TextEditorCommands = {
@@ -205,6 +220,33 @@ export function useTextEditorController(): TextEditorController {
         editor.chain().focus().selectAll().setColor(color).setTextSelection(to).run()
       } else {
         editor.chain().focus().setColor(color).run()
+      }
+    },
+
+    setLink(href: string) {
+      const editor = activeEditor.value
+      if (!editor) return
+
+      const { from, to } = editor.state.selection
+
+      if (from === to) {
+        // No selection: apply link to all text
+        editor.chain().focus().selectAll().setLink({ href }).setTextSelection(to).run()
+      } else {
+        editor.chain().focus().setLink({ href }).run()
+      }
+    },
+
+    removeLink() {
+      const editor = activeEditor.value
+      if (!editor) return
+
+      const { from, to } = editor.state.selection
+
+      if (from === to) {
+        editor.chain().focus().selectAll().unsetLink().setTextSelection(to).run()
+      } else {
+        editor.chain().focus().unsetLink().run()
       }
     },
   }

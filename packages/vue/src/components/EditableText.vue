@@ -18,6 +18,7 @@ import TiptapText from "@tiptap/extension-text";
 import Bold from "@tiptap/extension-bold";
 import Italic from "@tiptap/extension-italic";
 import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
@@ -158,6 +159,13 @@ function createEditor(): Editor {
       Bold,
       Italic,
       Underline,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+      }),
       TextAlign.configure({
         types: ["paragraph"],
         alignments: ["left", "center", "right", "justify"],
@@ -340,6 +348,21 @@ function handlePointerEvent(event: PointerEvent) {
   }
 }
 
+// Open links when clicking on them outside of edit mode
+function handleClick(event: MouseEvent) {
+  if (props.edited) return;
+
+  const target = (event.target as HTMLElement).closest("a");
+  if (!target) return;
+
+  const href = target.getAttribute("href");
+  if (!href) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  window.open(href, "_blank", "noopener,noreferrer");
+}
+
 onUnmounted(() => {
   if (editor.value) {
     textEditorController.unregister();
@@ -358,6 +381,7 @@ onUnmounted(() => {
     @pointerdown="handlePointerEvent"
     @pointermove="handlePointerEvent"
     @pointerup="handlePointerEvent"
+    @click="handleClick"
   >
     <!-- Tiptap editor when actively editing -->
     <EditorContent v-if="editor" :editor="editor" />
@@ -392,5 +416,12 @@ onUnmounted(() => {
 
 .wov-editable-text .ProseMirror-focused {
   outline: none;
+}
+
+.wov-editable-text a {
+  color: var(--wov-link-color);
+  text-decoration: underline;
+  pointer-events: auto;
+  cursor: pointer;
 }
 </style>

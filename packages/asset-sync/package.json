@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/asset-sync",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Asset management for WovenCanvas - upload queueing, caching, and URL resolution",
   "repository": {
     "type": "git",
@@ -48,6 +48,6 @@
   },
   "type": "module",
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "catalog:"
   }
 }

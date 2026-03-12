@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-selection",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Selection plugin - select, move, and resize objects on infinite canvas",
   "repository": {
     "type": "git",
@@ -50,8 +50,8 @@
     "@woven-canvas/core": "workspace:^",
     "@woven-canvas/math": "workspace:^",
     "fractional-indexing-jittered": "^1",
-    "typescript": "^5",
-    "xstate": "^5",
+    "typescript": "catalog:",
+    "xstate": "catalog:",
     "zod": "^3 || ^4"
   }
 }

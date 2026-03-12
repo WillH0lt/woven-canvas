@@ -42,7 +42,7 @@
     "tsup": "^8.5.0",
     "tsx": "^4.20.6",
     "turbo": "^2.6.0",
-    "typescript": "^5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.0.7"
   },
   "lint-staged": {

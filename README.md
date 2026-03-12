@@ -53,6 +53,7 @@ import "@woven-canvas/vue/style.css";
 | [@woven-canvas/plugin-pen](./packages/plugin-pen)                         | Freehand drawing with pressure sensitivity |
 | [@woven-canvas/plugin-arrows](./packages/plugin-arrows)                   | Connectors and arrow tools                 |
 | [@woven-canvas/plugin-eraser](./packages/plugin-eraser)                   | Eraser tool for removing content           |
+| [@woven-canvas/plugin-tapes](./packages/plugin-tapes)                     | Washi tape drawing tool                    |
 | [@woven-canvas/plugin-canvas-controls](./packages/plugin-canvas-controls) | Pan, zoom, and canvas navigation           |
 
 ## Examples

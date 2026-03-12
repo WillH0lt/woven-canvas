@@ -84,6 +84,8 @@ function onTransformHandleDrag(ctx: Context, handleId: EntityId, position: Vec2)
     onScaleHandleDrag(ctx, handleId, position, true)
   } else if (handle.kind === TransformHandleKind.Stretch) {
     onScaleHandleDrag(ctx, handleId, position, false)
+  } else if (handle.kind === TransformHandleKind.RotateScale) {
+    onRotateScaleHandleDrag(ctx, handleId, position)
   }
 }
 
@@ -344,5 +346,112 @@ function onScaleHandleDrag(ctx: Context, handleId: EntityId, position: Vec2, mai
     // Toggle flip state when handles cross over
     // XOR with start flip state to toggle when flipped
     block.flip = [flippedX !== blockStart.flip[0], flippedY !== blockStart.flip[1]]
+  }
+}
+
+/**
+ * Handle rotateScale handle drag - simultaneously rotate and scale a block
+ * by dragging an endpoint. Used for tape blocks where each end acts as a
+ * combined rotate+scale handle.
+ *
+ * The dragged endpoint determines the new angle and length of the tape.
+ * The opposite endpoint stays fixed while the tape pivots and stretches.
+ *
+ * @param position - The new position being set on the handle
+ */
+function onRotateScaleHandleDrag(ctx: Context, handleId: EntityId, position: Vec2): void {
+  const transformBoxes = transformBoxQuery.current(ctx)
+  if (transformBoxes.length === 0) return
+
+  const boxId = transformBoxes[0]
+  const boxStart = DragStart.read(ctx, boxId)
+
+  const handle = TransformHandle.read(ctx, handleId)
+  const handleBlock = Block.read(ctx, handleId)
+
+  // Calculate handle center from the new position
+  const handleCenter: Vec2 = [position[0] + handleBlock.size[0] / 2, position[1] + handleBlock.size[1] / 2]
+
+  // Snap handle position to grid
+  Grid.snapPosition(ctx, handleCenter)
+
+  // Calculate the fixed (opposite) endpoint from the START state
+  // For tape, handles are at left center (vectorX=-1) and right center (vectorX=1)
+  // The fixed point is the midpoint of the opposite edge
+  const boxStartCenter: Vec2 = [
+    boxStart.position[0] + boxStart.size[0] / 2,
+    boxStart.position[1] + boxStart.size[1] / 2,
+  ]
+
+  // Opposite endpoint in local space (center of the opposite edge)
+  const fixedLocal: Vec2 = [(-handle.vectorX * boxStart.size[0]) / 2, 0]
+  Vec2.rotate(fixedLocal, boxStart.rotateZ)
+  const fixedPoint: Vec2 = [boxStartCenter[0] + fixedLocal[0], boxStartCenter[1] + fixedLocal[1]]
+
+  // Vector from fixed point to dragged handle
+  const diff: Vec2 = [handleCenter[0] - fixedPoint[0], handleCenter[1] - fixedPoint[1]]
+
+  // New length = distance between endpoints
+  const newLength = Vec2.length(diff)
+  if (newLength < 1) return
+
+  // New rotation = angle of the vector from fixed to dragged
+  // Adjust based on which end is being dragged:
+  // - Right handle (vectorX=1): angle points from left→right, which is the block's rotation
+  // - Left handle (vectorX=-1): angle points from right→left, so subtract PI
+  let newRotateZ = Math.atan2(diff[1], diff[0])
+  if (handle.vectorX === -1) {
+    newRotateZ = Scalar.normalizeAngle(newRotateZ - Math.PI)
+  }
+
+  // Apply angular snapping
+  const grid = Grid.read(ctx)
+  const keyboard = Keyboard.read(ctx)
+  let snapAngle = 0
+  if (keyboard.shiftDown) {
+    snapAngle = grid.shiftSnapAngleRad
+  } else if (grid.enabled) {
+    snapAngle = grid.snapAngleRad
+  }
+
+  if (snapAngle > 0) {
+    newRotateZ = Math.round(newRotateZ / snapAngle) * snapAngle
+  }
+
+  // Recalculate the handle position after snapping (the angle may have changed)
+  // This ensures the tape length is correct after angle snapping
+  const snappedDiff: Vec2 = [Math.cos(newRotateZ) * handle.vectorX, Math.sin(newRotateZ) * handle.vectorX]
+  const projectedLength = Vec2.dot(diff, snappedDiff)
+  const finalLength = Math.max(projectedLength, 1)
+
+  // Original tape height (thickness) stays constant
+  const startHeight = boxStart.size[1]
+
+  // Update transform box
+  const boxBlock = Block.write(ctx, boxId)
+  boxBlock.rotateZ = newRotateZ
+
+  // New box center is midpoint between fixed point and new dragged endpoint
+  const newDraggedPoint: Vec2 = [
+    fixedPoint[0] + Math.cos(newRotateZ) * handle.vectorX * finalLength,
+    fixedPoint[1] + Math.sin(newRotateZ) * handle.vectorX * finalLength,
+  ]
+  const newCenter: Vec2 = [(fixedPoint[0] + newDraggedPoint[0]) / 2, (fixedPoint[1] + newDraggedPoint[1]) / 2]
+
+  boxBlock.size = [finalLength, startHeight]
+  boxBlock.position = [newCenter[0] - finalLength / 2, newCenter[1] - startHeight / 2]
+
+  // Update all selected blocks (typically just the one tape block)
+  for (const blockId of selectedBlocksQuery.current(ctx)) {
+    if (!hasComponent(ctx, blockId, DragStart)) continue
+    const block = Block.write(ctx, blockId)
+
+    block.rotateZ = newRotateZ
+    block.size = [finalLength, startHeight]
+    block.position = [newCenter[0] - finalLength / 2, newCenter[1] - startHeight / 2]
+
+    if (grid.strict) {
+      Grid.snapPosition(ctx, block.position)
+    }
   }
 }

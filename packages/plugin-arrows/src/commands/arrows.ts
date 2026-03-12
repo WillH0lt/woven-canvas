@@ -60,3 +60,12 @@ export const HideTransformHandles = defineCommand<{}>('arrows-hide-transform-han
  * Show transform handles after hiding.
  */
 export const ShowTransformHandles = defineCommand<{}>('arrows-show-transform-handles')
+
+/**
+ * Place a default-sized arrow at the given position (on simple click).
+ */
+export const PlaceArrow = defineCommand<{
+  entityId: EntityId
+  position: Vec2
+  kind: ArrowKind
+}>('arrows-place-arrow')

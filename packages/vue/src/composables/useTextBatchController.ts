@@ -4,6 +4,7 @@ import Bold from '@tiptap/extension-bold'
 import Color from '@tiptap/extension-color'
 import Document from '@tiptap/extension-document'
 import Italic from '@tiptap/extension-italic'
+import Link from '@tiptap/extension-link'
 import Paragraph from '@tiptap/extension-paragraph'
 import TiptapText from '@tiptap/extension-text'
 import TextAlign from '@tiptap/extension-text-align'
@@ -28,6 +29,9 @@ const extensions = [
   Bold,
   Italic,
   Underline,
+  Link.configure({
+    openOnClick: false,
+  }),
   TextAlign.configure({
     types: ['paragraph'],
     alignments: ['left', 'center', 'right', 'justify'],
@@ -54,6 +58,8 @@ export interface TextBatchState {
   fontSize: ComputedRef<number | null>
   /** Current font family if all same (null if mixed) */
   fontFamily: ComputedRef<string | null>
+  /** Current link href if all same (null if mixed or no link) */
+  linkHref: ComputedRef<string | null>
 }
 
 export interface TextStyleOptions {
@@ -80,6 +86,10 @@ export interface TextBatchCommands {
   setFontFamily(family: string): void
   /** Set multiple text style properties at once */
   setTextStyle(options: TextStyleOptions): void
+  /** Set link on all selected text entities */
+  setLink(href: string): void
+  /** Remove link from all selected text entities */
+  removeLink(): void
 }
 
 export interface TextBatchController {
@@ -305,6 +315,72 @@ function setColorInHtml(html: string, color: string): string {
   return generateHTML(doc, extensions)
 }
 
+/**
+ * Get the link href from HTML content (returns first found href, null if none)
+ */
+function getLinkHrefFromHtml(html: string): string | null {
+  if (!html.trim()) return null
+
+  const doc = generateJSON(html, extensions)
+  let href: string | null = null
+
+  walkTextNodes(doc, (node) => {
+    if (href === null) {
+      const linkMark = node.marks?.find((m) => m.type === 'link')
+      if (linkMark?.attrs?.href) {
+        href = linkMark.attrs.href as string
+      }
+    }
+  })
+
+  return href
+}
+
+/**
+ * Set link on all text nodes in HTML
+ */
+function setLinkInHtml(html: string, href: string): string {
+  if (!html.trim()) return html
+
+  const doc = generateJSON(html, extensions)
+
+  walkTextNodes(doc, (node) => {
+    const marks = node.marks ?? []
+    const existingIndex = marks.findIndex((m) => m.type === 'link')
+
+    if (existingIndex !== -1) {
+      marks[existingIndex] = {
+        ...marks[existingIndex],
+        attrs: {
+          ...marks[existingIndex].attrs,
+          href,
+        },
+      }
+      node.marks = marks
+    } else {
+      node.marks = [...marks, { type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer' } }]
+    }
+  })
+
+  return generateHTML(doc, extensions)
+}
+
+/**
+ * Remove link mark from all text nodes in HTML
+ */
+function removeLinkInHtml(html: string): string {
+  if (!html.trim()) return html
+
+  const doc = generateJSON(html, extensions)
+
+  walkTextNodes(doc, (node) => {
+    const marks = node.marks ?? []
+    node.marks = marks.filter((m) => m.type !== 'link')
+  })
+
+  return generateHTML(doc, extensions)
+}
+
 // ============================================================================
 // Composable
 // ============================================================================
@@ -525,6 +601,26 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
 
       return fontFamily
     }),
+
+    linkHref: computed(() => {
+      let href: string | null = null
+      let foundAny = false
+
+      for (const text of textsMap.value.values()) {
+        if (!text) continue
+
+        const contentHref = getLinkHrefFromHtml(text.content)
+
+        if (!foundAny) {
+          href = contentHref
+          foundAny = true
+        } else if (href !== contentHref) {
+          return null // mixed
+        }
+      }
+
+      return href
+    }),
   }
 
   function computeMarkState(markType: MarkType): boolean | null {
@@ -610,6 +706,16 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
           if (options.letterSpacingEm !== undefined) text.letterSpacingEm = options.letterSpacingEm
         },
       )
+    },
+
+    setLink(href: string) {
+      // Links don't affect dimensions, no measurement needed
+      applyContentOnly((content) => setLinkInHtml(content, href))
+    },
+
+    removeLink() {
+      // Links don't affect dimensions, no measurement needed
+      applyContentOnly((content) => removeLinkInHtml(content))
     },
   }
 

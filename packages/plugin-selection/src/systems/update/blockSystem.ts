@@ -432,6 +432,38 @@ function cloneEntities(ctx: Context, entityIds: EntityId[], offset: Vec2, seed: 
   const syncedComponentId = Synced._getComponentId(ctx)
   const blockComponentId = Block._getComponentId(ctx)
 
+  // Pre-compute clone ranks: all clones go below all originals, preserving relative order.
+  // 1. Collect original ranks and sort ascending
+  const entityIdSet = new Set(entityIds)
+  const sortedEntities = entityIds
+    .filter((id) => hasComponent(ctx, id, Block))
+    .sort((a, b) => {
+      const rankA = Block.read(ctx, a).rank
+      const rankB = Block.read(ctx, b).rank
+      return rankA < rankB ? -1 : rankA > rankB ? 1 : 0
+    })
+
+  // 2. Find the highest rank below the lowest original, excluding selected entities
+  const lowestOriginalRank = sortedEntities.length > 0 ? Block.read(ctx, sortedEntities[0]).rank : null
+  let prevRank: string | null = null
+  if (lowestOriginalRank !== null) {
+    for (const blockId of syncedBlocksQuery.current(ctx)) {
+      if (entityIdSet.has(blockId)) continue
+      const block = Block.read(ctx, blockId)
+      if (block.rank < lowestOriginalRank && (prevRank === null || block.rank > prevRank)) {
+        prevRank = block.rank
+      }
+    }
+  }
+
+  // 3. Generate clone ranks in order between prevRank and lowestOriginalRank
+  const cloneRankMap = new Map<EntityId, string>()
+  for (const entityId of sortedEntities) {
+    const rank = RankBounds.genBetween(prevRank, lowestOriginalRank)
+    cloneRankMap.set(entityId, rank)
+    prevRank = rank
+  }
+
   // Build map during clone creation: original EntityId -> clone EntityId
   const originalToClone = new Map<EntityId, EntityId>()
 
@@ -460,12 +492,12 @@ function cloneEntities(ctx: Context, entityIds: EntityId[], offset: Vec2, seed: 
         ...(componentDef.snapshot(ctx, entityId) as Record<string, unknown>),
       }
 
-      // For Block component: apply offset and generate rank behind original
+      // For Block component: apply offset and assign pre-computed rank
       if (componentId === blockComponentId) {
         const pos = Vec2.clone(data.position as Vec2)
         Vec2.add(pos, offset)
         data.position = pos
-        data.rank = RankBounds.genPrev(ctx)
+        data.rank = cloneRankMap.get(entityId) ?? RankBounds.genBetween(prevRank, lowestOriginalRank)
       }
 
       addComponent(ctx, cloneEntityId, componentDef, data as any)

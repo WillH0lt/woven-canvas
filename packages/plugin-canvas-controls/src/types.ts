@@ -8,6 +8,10 @@ export const CanvasControlsOptionsSchema = z.object({
   minZoom: z.number().default(0.05),
   /** Maximum zoom level (default: 2.7 = 270%) */
   maxZoom: z.number().default(2.7),
+  /** Enable smooth scroll tweening between scroll points (default: false) */
+  smoothScroll: z.boolean().default(true),
+  /** Smooth scroll time in seconds - how long to reach target (default: 0.12) */
+  smoothScrollTime: z.number().default(0.12),
 })
 
 /**
