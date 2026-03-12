@@ -6,7 +6,7 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "postinstall": "npx is-ci || nuxt prepare",
     "lint": "biome check .",
     "lint:fix": "biome check --fix .",
     "format": "biome format --fix .",
