@@ -1,3 +1,4 @@
+export { GlideState } from './GlideState'
 export { PanState } from './PanState'
 export { PinchState } from './PinchState'
 export { ScrollState } from './ScrollState'

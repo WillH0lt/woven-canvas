@@ -63,11 +63,19 @@ export function attachPointerListeners(domElement: HTMLElement): void {
       })
     },
     onContextMenu: (e: MouseEvent) => {
+      // Allow the native context menu when right-clicking inside a text editor
+      // so spelling suggestions and other browser features remain available.
+      if (e.target instanceof HTMLElement && e.target.closest('[contenteditable="true"]')) return
+
       e.preventDefault()
 
-      // Check if there's already a pointerdown in the buffer for this frame
-      const hasPointerDown = state.eventsBuffer.some((evt) => evt.type === 'pointerdown')
-      if (hasPointerDown) return
+      // Skip if we already have a real pointer event for the right button this frame.
+      // Modern browsers fire pointerdown on right-click press AND contextmenu on release,
+      // so we only need the synthetic event as a fallback for browsers that don't fire pointerdown.
+      const hasRightButtonEvent = state.eventsBuffer.some(
+        (evt) => evt.button === 2 && (evt.type === 'pointerdown' || evt.type === 'pointerup'),
+      )
+      if (hasRightButtonEvent) return
 
       // Create a synthetic pointer event for right-click
       state.eventsBuffer.push({

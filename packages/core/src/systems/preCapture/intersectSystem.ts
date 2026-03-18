@@ -1,7 +1,7 @@
 import { addComponent, type Context, defineQuery, getResources, hasComponent, removeComponent } from '@woven-ecs/core'
 import { Aabb, Block, Held, HitGeometry, Hovered, Pointer } from '../../components'
 import { defineEditorSystem } from '../../EditorSystem'
-import { computeAabb, intersectPoint, isHeldByRemote } from '../../helpers'
+import { canBlockInteract, computeAabb, intersectPoint, isHeldByRemote } from '../../helpers'
 import { Camera, Controls, Intersect, Mouse } from '../../singletons'
 import type { EditorResources } from '../../types'
 
@@ -116,6 +116,12 @@ export const intersectSystem = defineEditorSystem({ phase: 'capture', priority: 
   }
 
   for (const entityId of added) {
+    // Skip non-interactable blocks — without Aabb they are excluded from all intersection queries
+    if (hasComponent(ctx, entityId, Block)) {
+      const block = Block.read(ctx, entityId)
+      if (!canBlockInteract(ctx, block.tag)) continue
+    }
+
     // Ensure block has Aabb component
     if (!hasComponent(ctx, entityId, Aabb)) {
       addComponent(ctx, entityId, Aabb, { value: [0, 0, 0, 0] })
@@ -126,6 +132,8 @@ export const intersectSystem = defineEditorSystem({ phase: 'capture', priority: 
   }
 
   for (const entityId of changed) {
+    if (!hasComponent(ctx, entityId, Aabb)) continue
+
     const aabb = Aabb.write(ctx, entityId)
     computeAabb(ctx, entityId, aabb.value)
   }

@@ -16,8 +16,16 @@ const canvasContext = injectedContext;
 
 const asset = useComponent(props.entityId, Asset);
 
-const displayUrl = ref<string | null>(null);
-const isLoading = ref(true);
+// Resolve the initial URL during setup so it's available for SSR
+const assetManagerForSetup = canvasContext.getAssetManager();
+const initialAsset = asset.value;
+let initialUrl: string | null = null;
+if (assetManagerForSetup && initialAsset?.identifier) {
+  initialUrl = await assetManagerForSetup.getDisplayUrl(initialAsset.identifier);
+}
+
+const displayUrl = ref<string | null>(initialUrl);
+const isLoading = ref(!initialUrl);
 const hasError = ref(false);
 
 let isMounted = true;
@@ -28,8 +36,6 @@ onUnmounted(() => {
 async function updateDisplayUrl() {
   const assetManager = canvasContext.getAssetManager();
   if (!assetManager) {
-    isLoading.value = false;
-    hasError.value = true;
     return;
   }
 

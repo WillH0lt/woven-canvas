@@ -61,14 +61,14 @@ export function canBlockScale(ctx: Context, tag: string): boolean {
 }
 
 /**
- * Check if a block definition allows selection.
+ * Check if a block definition allows interaction (hover, select, drag, etc.).
  *
  * @param ctx - The ECS context
  * @param tag - The block tag to check
- * @returns True if the block can be selected
+ * @returns True if the block can be interacted with
  */
-export function canBlockSelect(ctx: Context, tag: string): boolean {
-  return getBlockDef(ctx, tag).selectable
+export function canBlockInteract(ctx: Context, tag: string): boolean {
+  return getBlockDef(ctx, tag).interactable
 }
 
 /**

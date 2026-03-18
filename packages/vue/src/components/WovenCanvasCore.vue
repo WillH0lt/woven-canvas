@@ -364,7 +364,14 @@ provide(TOOLTIP_KEY, tooltipContext);
 let eventIndex = 0;
 let animationFrameId: number | null = null;
 let store: CanvasStore | null = null;
-let assetManager: AssetManager | null = null;
+
+// Create asset manager eagerly so resolveUrl is available during SSR.
+// init() and resumePendingUploads() are deferred to onMounted (they need IndexedDB).
+const documentId = (props.store ?? {}).persistence?.documentId ?? "default";
+let assetManager: AssetManager | null = new AssetManager({
+  provider: props.assetProvider ?? new LocalAssetProvider(),
+  documentId,
+});
 
 // Build the plugins array from props
 function buildPlugins(storeInstance: CanvasStore): EditorPluginInput[] {
@@ -533,15 +540,9 @@ onMounted(async () => {
   editorRef.value = editor;
   isLoading.value = false;
 
-  // Initialize asset manager
-  const syncOpts = props.store ?? {};
-  const documentId = syncOpts.persistence?.documentId ?? "default";
-  assetManager = new AssetManager({
-    provider: props.assetProvider ?? new LocalAssetProvider(),
-    documentId,
-  });
-  await assetManager.init();
-  await assetManager.resumePendingUploads();
+  // Initialize asset manager (created during setup for SSR availability)
+  await assetManager?.init();
+  await assetManager?.resumePendingUploads();
 
   // Start the render loop
   animationFrameId = requestAnimationFrame(tick);

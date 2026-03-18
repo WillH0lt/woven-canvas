@@ -29,6 +29,11 @@ export class LocalAssetProvider implements AssetProvider {
   }
 
   async resolveUrl(identifier: string) {
+    // URLs and local paths are already displayable
+    if (identifier.startsWith('http://') || identifier.startsWith('https://') || identifier.startsWith('/')) {
+      return identifier
+    }
+
     const store = await this.getStore()
     const record = await store.get<StoredAsset>(identifier)
 

@@ -119,7 +119,7 @@ export { FontFamily, type FontFamilyInput, FontLoader } from './FontLoader'
 // Helpers
 export {
   canBlockEdit,
-  canBlockSelect,
+  canBlockInteract,
   detectEmbedProvider,
   getBlockDef,
   getBlockResizeMode,

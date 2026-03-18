@@ -73,20 +73,6 @@ const PASTE_WRAP_CHAR_THRESHOLD = 50;
 const MIN_WRAP_WIDTH = 300;
 
 /**
- * Strip inline styles and class attributes from pasted HTML so external content
- * adopts the app's default styling rather than bringing its own.
- */
-function stripExternalStyles(html: string): string {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  doc.body.querySelectorAll("[style], [class]").forEach((el) => {
-    el.removeAttribute("style");
-    el.removeAttribute("class");
-  });
-  return doc.body.innerHTML;
-}
-
-/**
  * Enable constrainWidth on the current block so pasted text wraps instead of
  * extending infinitely.
  */
@@ -127,10 +113,10 @@ function handlePaste(_view: unknown, event: ClipboardEvent): boolean {
   // clipboard, so its absence means the content came from an external source.
   const isFromApp = html.includes("data-pm-slice");
 
-  if (!isFromApp && html) {
-    // External paste: strip styles then insert cleaned HTML ourselves.
+  if (!isFromApp) {
+    // External paste: insert as plain text only.
     event.preventDefault();
-    editor.value?.commands.insertContent(stripExternalStyles(html), {
+    editor.value?.commands.insertContent(plainText, {
       parseOptions: { preserveWhitespace: true },
     });
 

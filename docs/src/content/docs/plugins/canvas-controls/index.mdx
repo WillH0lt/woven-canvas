@@ -46,6 +46,8 @@ To disable it:
 |--------|------|---------|-------------|
 | `minZoom` | `number` | `0.05` | Minimum zoom level (5%) |
 | `maxZoom` | `number` | `2.7` | Maximum zoom level (270%) |
+| `smoothScroll` | `{ enabled, time }` | `{ enabled: true, time: 0.12 }` | Smooth scroll tweening options |
+| `cameraBounds` | `CameraBounds` | `undefined` | Restrict the camera viewport to a rectangular region |
 
 ```typescript
 CanvasControlsPlugin({
@@ -73,6 +75,32 @@ The plugin maintains internal pan state for smooth momentum-based panning:
 | `Panning` | User is actively dragging |
 | `Gliding` | Momentum-based movement after release |
 
+## Camera Bounds
+
+You can restrict the camera viewport to a rectangular region in world coordinates using the `cameraBounds` option:
+
+```typescript
+CanvasControlsPlugin({
+  cameraBounds: {
+    top: 0,
+    bottom: 2000,
+    left: 0,
+    right: 3000,
+    restrict: 'edges', // 'edges' or 'center'
+  },
+})
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `top` | `number` | — | Top edge of the bounds in world coordinates |
+| `bottom` | `number` | — | Bottom edge of the bounds in world coordinates |
+| `left` | `number` | — | Left edge of the bounds in world coordinates |
+| `right` | `number` | — | Right edge of the bounds in world coordinates |
+| `restrict` | `'edges' \| 'center'` | `'edges'` | `'edges'`: no viewport edge can extend past bounds. `'center'`: viewport center cannot leave bounds |
+
+```
+
 ## Programmatic Camera Control
 
 You can control the camera programmatically using the editor API:
@@ -90,6 +118,16 @@ editor.nextTick((ctx) => {
   // Set zoom level
   camera.zoom = 1.5
 })
+```
+
+### Smooth Camera Glide
+
+To smoothly animate the camera to center on a world position, use the `GlideToPosition` command:
+
+```typescript
+import { GlideToPosition } from '@woven-canvas/plugin-canvas-controls'
+
+editor.command(GlideToPosition, { centerX: 500, centerY: 300 })
 ```
 
 For another camera control example, see:

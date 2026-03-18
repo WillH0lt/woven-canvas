@@ -18,7 +18,7 @@ const clientId = crypto.randomUUID()
         //   url: 'ws://localhost:8087',
         // },
       }"
-      :plugin-options="{ controls: { maxZoom: 3, smoothScroll: true } }"
+      :plugin-options="{ controls: { maxZoom: 3 } }"
       :background="{
         kind: 'dots',
         color: '#f4f4f4',

@@ -10,8 +10,9 @@ import {
 } from '@woven-canvas/core'
 import { Vec2 } from '@woven-canvas/math'
 
-import { PinchState } from '../components'
+import { GlideState, PinchState } from '../components'
 import { CONTROLS_PLUGIN_NAME } from '../constants'
+import { clampCameraToBounds } from '../helpers/clampCameraToBounds'
 import type { CanvasControlsOptions } from '../types'
 
 /**
@@ -30,6 +31,9 @@ const pointerQuery = defineQuery((q) => q.with(Pointer))
  * core input systems have updated singletons.
  */
 export const PostInputPinch = defineEditorSystem({ phase: 'input', priority: -100 }, (ctx: Context) => {
+  // Defer to camera glide when active
+  if (GlideState.read(ctx).active) return
+
   const options = getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME)
 
   // Get all pointer entities
@@ -114,6 +118,11 @@ export const PostInputPinch = defineEditorSystem({ phase: 'input', priority: -10
     // Convert screen movement to world movement (divide by zoom)
     cam.left -= centerDx / cam.zoom
     cam.top -= centerDy / cam.zoom
+  }
+
+  // Enforce camera bounds
+  if (options.cameraBounds) {
+    clampCameraToBounds(ctx, Camera.write(ctx), options.cameraBounds)
   }
 
   // Update state for next frame

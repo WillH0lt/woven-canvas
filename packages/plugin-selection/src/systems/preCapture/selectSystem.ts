@@ -1,7 +1,7 @@
 import {
   Block,
   Controls,
-  canBlockSelect,
+  canBlockInteract,
   defineEditorSystem,
   defineQuery,
   Edited,
@@ -69,8 +69,8 @@ const selectionMachine = setup({
   },
   guards: {
     isThresholdReached: ({ context, event }) => {
-      const dist = Vec2Ns.distance(context.pointingStartClient, event.screenPosition)
-      return dist >= POINTING_THRESHOLD
+      const worldDist = Vec2Ns.distance(context.pointingStartWorld, event.worldPosition)
+      return worldDist * event.cameraZoom >= POINTING_THRESHOLD
     },
     isOverBlock: ({ event }) => {
       return event.intersects.length > 0
@@ -87,7 +87,7 @@ const selectionMachine = setup({
           // Skip non-selectable blocks
           if (hasComponent(ctx, entityId, Block)) {
             const block = Block.read(ctx, entityId)
-            if (!canBlockSelect(ctx, block.tag)) continue
+            if (!canBlockInteract(ctx, block.tag)) continue
           }
           return true
         }
@@ -275,7 +275,7 @@ const selectionMachine = setup({
           // Skip non-selectable blocks
           if (hasComponent(ctx, entityId, Block)) {
             const block = Block.read(ctx, entityId)
-            if (!canBlockSelect(ctx, block.tag)) continue
+            if (!canBlockInteract(ctx, block.tag)) continue
           }
           intersectId = entityId
           break

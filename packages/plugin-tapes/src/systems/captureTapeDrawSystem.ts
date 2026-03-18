@@ -38,8 +38,8 @@ const tapeDrawMachine = setup({
   },
   guards: {
     isThresholdReached: ({ context, event }) => {
-      const dist = Vec2.distance(context.pointingStartClient as [number, number], event.screenPosition)
-      return dist >= POINTING_THRESHOLD
+      const worldDist = Vec2.distance(context.pointingStartWorld as [number, number], event.worldPosition)
+      return worldDist * event.cameraZoom >= POINTING_THRESHOLD
     },
   },
   actions: {
@@ -138,7 +138,7 @@ const tapeDrawMachine = setup({
           target: TapeDrawStateEnum.Drawing,
         },
         pointerUp: {
-          actions: ['placeTape', 'exitTapeControl'],
+          actions: ['placeTape'],
           target: TapeDrawStateEnum.Idle,
         },
         cancel: {
@@ -148,7 +148,7 @@ const tapeDrawMachine = setup({
     },
     [TapeDrawStateEnum.Drawing]: {
       entry: 'addTape',
-      exit: 'exitTapeControl',
+      exit: [],
       on: {
         pointerMove: {
           actions: 'drawTape',

@@ -8,7 +8,7 @@ const ControlsSchema = {
   /** Tool activated by middle mouse button */
   middleMouseTool: field.string().max(32).default('hand'),
   /** Tool activated by right mouse button */
-  rightMouseTool: field.string().max(32).default('menu'),
+  rightMouseTool: field.string().max(32).default('hand'),
   /** Tool activated by mouse wheel */
   wheelTool: field.string().max(32).default('scroll'),
   /** Tool activated by mouse wheel with modifier key held */

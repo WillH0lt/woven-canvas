@@ -2,7 +2,7 @@ import {
   addComponent,
   Block,
   type Context,
-  canBlockSelect,
+  canBlockInteract,
   defineQuery,
   type EditorResources,
   type EntityId,
@@ -22,7 +22,7 @@ const blockQuery = defineQuery((q) => q.with(Block))
  * Add Selected and Held components to an entity.
  * Does nothing if the entity already has the Selected component.
  * Does nothing if held by a remote user.
- * Does nothing if the block's definition has selectable: false.
+ * Does nothing if the block's definition has interactable: false.
  * If already held by the local user (from dragging), only adds Selected.
  *
  * @param ctx - The ECS context
@@ -32,10 +32,10 @@ export function selectBlock(ctx: Context, entityId: EntityId): void {
   if (hasComponent(ctx, entityId, Selected)) return
   // Don't select if held by a remote user
   if (isHeldByRemote(ctx, entityId)) return
-  // Don't select if block definition has selectable: false
+  // Don't select if block definition has interactable: false
   if (hasComponent(ctx, entityId, Block)) {
     const block = Block.read(ctx, entityId)
-    if (!canBlockSelect(ctx, block.tag)) return
+    if (!canBlockInteract(ctx, block.tag)) return
   }
 
   const { sessionId } = getResources<EditorResources>(ctx)
@@ -72,7 +72,7 @@ export function deselectAll(ctx: Context): void {
 
 /**
  * Select all blocks in the document.
- * Skips blocks held by remote users and non-selectable blocks.
+ * Skips blocks held by remote users and non-interactable blocks.
  *
  * @param ctx - The ECS context
  */

@@ -27,6 +27,9 @@
       "path": "packages/plugin-selection"
     },
     {
+      "path": "packages/plugin-tapes"
+    },
+    {
       "path": "packages/vue"
     },
     {

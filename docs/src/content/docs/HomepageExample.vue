@@ -4,10 +4,13 @@ import '@woven-canvas/vue/style.css'
 </script>
 
 <template>
-  <WovenCanvas :store="{
-    persistence: {
-      documentId: 'homepage'
-    }
-  }">
+  <WovenCanvas
+    :background="{ kind: 'dots' }"
+    :store="{
+      persistence: {
+        documentId: 'homepage'
+      }
+    }"
+  >
   </WovenCanvas>
 </template>

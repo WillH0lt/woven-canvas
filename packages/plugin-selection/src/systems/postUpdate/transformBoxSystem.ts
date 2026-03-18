@@ -355,8 +355,8 @@ function addOrUpdateTransformHandles(ctx: Context, transformBoxId: EntityId): vo
           rotateZ,
           rank: TRANSFORM_HANDLE_ROTATE_RANK,
           cursorKind: rotateCursorKinds[xi + yi * 2],
-          scaleMultiplier: [0.5, 0.5],
-          anchor: [1 - xi, 1 - yi], // Anchor toward block, expand away
+          scaleMultiplier: [1, 1],
+          anchor: [1 - xi, 1 - yi],
         })
       }
     }

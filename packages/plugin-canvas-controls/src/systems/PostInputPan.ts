@@ -5,6 +5,7 @@ import {
   type FrameInput,
   getFrameInput,
   getKeyboardInput,
+  getPluginResources,
   getPointerInput,
   type InferStateContext,
   Key,
@@ -13,8 +14,11 @@ import {
 } from '@woven-canvas/core'
 import { assign, setup } from 'xstate'
 
-import { PanState, PinchState } from '../components'
+import { GlideState, PanState, PinchState } from '../components'
+import { CONTROLS_PLUGIN_NAME } from '../constants'
 import { smoothDamp } from '../helpers'
+import { clampCameraToBounds } from '../helpers/clampCameraToBounds'
+import type { CanvasControlsOptions } from '../types'
 import { PanStateValue } from '../types'
 
 /** How long the glide should take to reach the target (seconds) */
@@ -77,6 +81,9 @@ const panMachine = setup({
       const cam = Camera.write(ctx)
       cam.left -= deltaX
       cam.top -= deltaY
+
+      const options = getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME)
+      if (options.cameraBounds) clampCameraToBounds(ctx, cam, options.cameraBounds)
     },
 
     startGlide: assign(({ event }) => {
@@ -118,11 +125,25 @@ const panMachine = setup({
       cam.left = position[0]
       cam.top = position[1]
 
+      let vx = newVelocity[0]
+      let vy = newVelocity[1]
+
+      const options = getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME)
+      if (options.cameraBounds) {
+        const preClampLeft = cam.left
+        const preClampTop = cam.top
+        clampCameraToBounds(ctx, cam, options.cameraBounds)
+        // Zero velocity on axes that hit a wall so glide continues along the wall
+        if (cam.left !== preClampLeft) vx = 0
+        if (cam.top !== preClampTop) vy = 0
+      }
+
       return {
-        velocityX: newVelocity[0],
-        velocityY: newVelocity[1],
-        expectedLeft: position[0],
-        expectedTop: position[1],
+        velocityX: vx,
+        velocityY: vy,
+        // Use clamped position so cameraWasMoved guard doesn't kill the glide
+        expectedLeft: cam.left,
+        expectedTop: cam.top,
       }
     }),
 
@@ -225,6 +246,15 @@ const panMachine = setup({
 export const PostInputPan = defineEditorSystem({ phase: 'input', priority: -100 }, (ctx) => {
   const currentState = PanState.read(ctx).state
   const pinchActive = PinchState.read(ctx).active
+  const glideActive = GlideState.read(ctx).active
+
+  // When camera glide is active, reset pan to Idle and defer.
+  if (glideActive) {
+    if (currentState !== PanStateValue.Idle) {
+      PanState.copy(ctx, PanState.default())
+    }
+    return
+  }
 
   // When pinch gesture is active, defer to PostInputPinch system.
   // Reset pan state to Idle so when pinch ends, we start fresh without a jump.

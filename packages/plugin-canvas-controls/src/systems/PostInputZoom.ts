@@ -10,7 +10,9 @@ import {
   Screen,
 } from '@woven-canvas/core'
 
+import { GlideState } from '../components'
 import { CONTROLS_PLUGIN_NAME } from '../constants'
+import { clampCameraToBounds } from '../helpers/clampCameraToBounds'
 import type { CanvasControlsOptions } from '../types'
 
 /**
@@ -25,6 +27,9 @@ import type { CanvasControlsOptions } from '../types'
  * Active when: Mouse wheel scrolled and "zoom" tool is active for wheel input.
  */
 export const PostInputZoom = defineEditorSystem({ phase: 'input', priority: -100 }, (ctx: Context) => {
+  // Defer to camera glide when active
+  if (GlideState.read(ctx).active) return
+
   const options = getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME)
   const keyboard = Keyboard.read(ctx)
 
@@ -69,4 +74,9 @@ export const PostInputZoom = defineEditorSystem({ phase: 'input', priority: -100
   cam.left = left
   cam.top = top
   cam.zoom = zoom
+
+  // Enforce camera bounds
+  if (options.cameraBounds) {
+    clampCameraToBounds(ctx, cam, options.cameraBounds)
+  }
 })

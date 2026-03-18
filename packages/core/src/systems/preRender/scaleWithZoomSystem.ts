@@ -10,6 +10,7 @@ const scaleWithZoomQuery = defineQuery((q) => q.with(Block).tracking(ScaleWithZo
 // Pre-allocated vectors to avoid allocations in hot path
 const _scaledSize: Vec2 = [0, 0]
 const _anchorOffset: Vec2 = [0, 0]
+const _anchorAdj: Vec2 = [0, 0]
 
 /**
  * PreRenderScaleWithZoom system - maintains screen-space size for entities
@@ -66,10 +67,25 @@ function scaleBlock(ctx: Context, entityId: EntityId, zoom: number): void {
   _scaledSize[0] = swz.startSize[0] * scaleX
   _scaledSize[1] = swz.startSize[1] * scaleY
 
-  // Calculate anchor offset: (startSize - scaledSize) * anchor
+  // Calculate anchor offset accounting for block rotation.
+  // delta = startSize - scaledSize
   Vec2.copy(_anchorOffset, swz.startSize)
   Vec2.sub(_anchorOffset, _scaledSize)
-  Vec2.multiply(_anchorOffset, swz.anchor)
+
+  if (block.rotateZ !== 0) {
+    // For rotated blocks, the anchor point in world space is:
+    //   blockCenter + rotate(size * (anchor - 0.5), rotateZ)
+    // To keep it fixed as size changes:
+    //   offset = delta/2 + rotate(delta * (anchor - 0.5), rotateZ)
+    _anchorAdj[0] = _anchorOffset[0] * (swz.anchor[0] - 0.5)
+    _anchorAdj[1] = _anchorOffset[1] * (swz.anchor[1] - 0.5)
+    Vec2.rotate(_anchorAdj, block.rotateZ)
+    _anchorOffset[0] = _anchorOffset[0] * 0.5 + _anchorAdj[0]
+    _anchorOffset[1] = _anchorOffset[1] * 0.5 + _anchorAdj[1]
+  } else {
+    // Non-rotated: simple anchor multiply (equivalent to above when rotateZ=0)
+    Vec2.multiply(_anchorOffset, swz.anchor)
+  }
 
   // Apply position with anchor offset
   Vec2.copy(block.position, swz.startPosition)

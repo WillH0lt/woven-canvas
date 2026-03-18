@@ -301,14 +301,18 @@ describe('WovenCanvas', () => {
 
   describe('events', () => {
     it('should emit ready event with editor instance', async () => {
-      const wrapper = mount(WovenCanvas)
+      const readyArgs: any[] = []
+      const _wrapper = mount(WovenCanvas, {
+        attrs: {
+          onReady: (...args: any[]) => readyArgs.push(args),
+        },
+      })
       await flushPromises()
 
-      const readyEvents = wrapper.emitted('ready')
-      expect(readyEvents).toHaveLength(1)
+      expect(readyArgs).toHaveLength(1)
 
       const editorInstance = getLastEditorInstance()
-      expect(readyEvents![0][0]).toBe(editorInstance)
+      expect(readyArgs[0][0]).toBe(editorInstance)
     })
   })
 

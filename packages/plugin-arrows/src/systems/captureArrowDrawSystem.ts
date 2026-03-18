@@ -37,8 +37,8 @@ const arrowDrawMachine = setup({
   },
   guards: {
     isThresholdReached: ({ context, event }) => {
-      const dist = Vec2.distance(context.pointingStartClient as [number, number], event.screenPosition)
-      return dist >= POINTING_THRESHOLD
+      const worldDist = Vec2.distance(context.pointingStartWorld as [number, number], event.worldPosition)
+      return worldDist * event.cameraZoom >= POINTING_THRESHOLD
     },
   },
   actions: {

@@ -312,7 +312,7 @@ describe('captureScroll system', () => {
     document.body.appendChild(domElement)
 
     editor = new Editor(domElement, {
-      plugins: [CanvasControlsPlugin()],
+      plugins: [CanvasControlsPlugin({ smoothScroll: { enabled: false } })],
     })
     await editor.initialize()
     await editor.tick()

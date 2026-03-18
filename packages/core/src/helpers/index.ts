@@ -3,9 +3,9 @@
 // Block definition helpers (plugin-specific)
 export {
   canBlockEdit,
+  canBlockInteract,
   canBlockRotate,
   canBlockScale,
-  canBlockSelect,
   getBlockDef,
   getBlockDefs,
   getBlockResizeMode,

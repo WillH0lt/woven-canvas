@@ -238,7 +238,7 @@ export const ControlsOptions = z.object({
    * Tool activated by right mouse button.
    * @default 'menu'
    */
-  rightMouseTool: z.string().max(32).default('menu'),
+  rightMouseTool: z.string().max(32).default('hand'),
 
   /**
    * Tool activated by mouse wheel.
@@ -474,7 +474,7 @@ export const BlockDef = z.object({
     .default(ResizeMode.Scale),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
-  selectable: z.boolean().default(true),
+  interactable: z.boolean().default(true),
   connectors: BlockDefConnectors.default(BlockDefConnectors.parse({})),
 })
 

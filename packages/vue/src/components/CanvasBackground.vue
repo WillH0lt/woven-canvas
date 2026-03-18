@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, inject, type Ref } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, inject, type Ref } from "vue";
 import { useSingleton } from "../composables/useSingleton";
 import { Camera, Grid } from "@woven-canvas/core";
 import type { BackgroundOptions } from "../types";
@@ -9,6 +9,18 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const DEFAULT_BACKGROUND: BackgroundOptions = {
+  kind: "none",
+  color: "#f4f4f4",
+  strokeColor: "#a1a1a1",
+  subdivisionStep: 5,
+};
+
+const bg = computed<BackgroundOptions>(() => ({
+  ...DEFAULT_BACKGROUND,
+  ...props.background,
+}));
 
 // Get camera and grid from ECS singletons
 const camera = useSingleton(Camera);
@@ -159,7 +171,7 @@ function createGridPattern(
 function renderDots(ctx: CanvasRenderingContext2D): void {
   let colWidth = grid.value.colWidth;
   let rowHeight = grid.value.rowHeight;
-  const step = props.background.subdivisionStep;
+  const step = bg.value.subdivisionStep;
 
   const w = screen.value.width;
   const h = screen.value.height;
@@ -197,10 +209,10 @@ function renderDots(ctx: CanvasRenderingContext2D): void {
   const colWidthCanvas = colWidth * camera.value.zoom;
   const rowHeightCanvas = rowHeight * camera.value.zoom;
 
-  const roundedX = Math.round(colWidthCanvas);
-  const roundedY = Math.round(rowHeightCanvas);
+  const roundedX = Math.max(1, Math.round(colWidthCanvas));
+  const roundedY = Math.max(1, Math.round(rowHeightCanvas));
 
-  const pattern = createDotPattern(roundedX, roundedY, props.background);
+  const pattern = createDotPattern(roundedX, roundedY, bg.value);
   if (!pattern) return;
 
   pattern.setTransform(
@@ -228,7 +240,7 @@ function renderDots(ctx: CanvasRenderingContext2D): void {
 function renderGrid(ctx: CanvasRenderingContext2D): void {
   let colWidth = grid.value.colWidth;
   let rowHeight = grid.value.rowHeight;
-  const step = props.background.subdivisionStep;
+  const step = bg.value.subdivisionStep;
 
   const w = screen.value.width;
   const h = screen.value.height;
@@ -266,10 +278,10 @@ function renderGrid(ctx: CanvasRenderingContext2D): void {
   const colWidthCanvas = colWidth * camera.value.zoom;
   const rowHeightCanvas = rowHeight * camera.value.zoom;
 
-  const roundedX = Math.round(colWidthCanvas);
-  const roundedY = Math.round(rowHeightCanvas);
+  const roundedX = Math.max(1, Math.round(colWidthCanvas));
+  const roundedY = Math.max(1, Math.round(rowHeightCanvas));
 
-  const pattern = createGridPattern(roundedX, roundedY, props.background);
+  const pattern = createGridPattern(roundedX, roundedY, bg.value);
   if (!pattern) return;
 
   pattern.setTransform(
@@ -310,19 +322,19 @@ function renderBackground(): void {
   ctx.clearRect(0, 0, width, height);
 
   // Fill background color
-  ctx.fillStyle = props.background.color;
+  ctx.fillStyle = bg.value.color;
   ctx.fillRect(0, 0, width, height);
 
-  if (props.background.kind === "dots") {
+  if (bg.value.kind === "dots") {
     renderDots(ctx);
-  } else if (props.background.kind === "grid") {
+  } else if (bg.value.kind === "grid") {
     renderGrid(ctx);
   }
 }
 
 // Watch for changes and re-render
 watch(
-  () => [props.background, camera.value, grid.value, screen.value],
+  () => [bg.value, camera.value, grid.value, screen.value],
   () => {
     renderBackground();
   },

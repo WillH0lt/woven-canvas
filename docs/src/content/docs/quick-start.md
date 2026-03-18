@@ -20,7 +20,10 @@ import "@woven-canvas/vue/style.css";
 </script>
 
 <template>
-  <WovenCanvas style="width: 100%; height: 100vh" />
+  <WovenCanvas
+    :background="{ kind: 'dots' }"
+    style="width: 100%; height: 100vh"
+  />
 </template>
 ```
 
@@ -45,6 +48,7 @@ import { WovenCanvas } from "@woven-canvas/vue";
 
 <template>
   <WovenCanvas
+    :background="{ kind: 'dots' }"
     :store="{
       // Save to IndexedDB for offline persistence
       persistence: {
@@ -68,6 +72,7 @@ const clientId = crypto.randomUUID(); // Unique ID for this client
 
 <template>
   <WovenCanvas
+    :background="{ kind: 'dots' }"
     :store="{
     ...
     // Real-time sync with other users

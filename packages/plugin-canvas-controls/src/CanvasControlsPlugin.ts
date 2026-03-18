@@ -1,8 +1,8 @@
 import type { EditorPlugin, EditorPluginFactory } from '@woven-canvas/core'
 
-import { PanState, PinchState, ScrollState } from './components'
+import { GlideState, PanState, PinchState, ScrollState } from './components'
 import { CONTROLS_PLUGIN_NAME } from './constants'
-import { PostInputPan, PostInputPinch, PostInputScroll, PostInputZoom } from './systems'
+import { CameraGlideSystem, PostInputPan, PostInputPinch, PostInputScroll, PostInputZoom } from './systems'
 import { type CanvasControlsOptions, type CanvasControlsOptionsInput, CanvasControlsOptionsSchema } from './types'
 
 /**
@@ -14,9 +14,9 @@ function createControlsPlugin(options: CanvasControlsOptionsInput = {}): EditorP
 
     resources: CanvasControlsOptionsSchema.parse(options),
 
-    singletons: [PanState, PinchState, ScrollState],
+    singletons: [GlideState, PanState, PinchState, ScrollState],
 
-    systems: [PostInputZoom, PostInputScroll, PostInputPan, PostInputPinch],
+    systems: [PostInputZoom, PostInputScroll, PostInputPan, PostInputPinch, CameraGlideSystem],
   }
 }
 

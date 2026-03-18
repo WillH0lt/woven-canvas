@@ -29,12 +29,18 @@
 
 // Plugin
 export { CanvasControlsPlugin } from './CanvasControlsPlugin'
+// Commands
+export { GlideToPosition } from './commands'
 // Components (for advanced use cases)
-export { PanState, ScrollState } from './components'
+export { GlideState, PanState, ScrollState } from './components'
 // Constants
 export { CONTROLS_PLUGIN_NAME } from './constants'
+// Helpers
+export { clampCameraToBounds } from './helpers'
 // Types
 export {
+  type CameraBounds,
+  CameraBoundsSchema,
   type CanvasControlsOptions,
   type CanvasControlsOptionsInput,
   CanvasControlsOptionsSchema,

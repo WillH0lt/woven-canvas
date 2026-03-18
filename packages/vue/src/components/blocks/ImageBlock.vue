@@ -17,9 +17,16 @@ const canvasContext = injectedContext;
 const asset = useComponent(props.entityId, Asset);
 const image = useComponent(props.entityId, Image);
 
-// Display URL - either blob URL for pending uploads or resolved URL
-const displayUrl = ref<string | null>(null);
-const isLoading = ref(true);
+// Resolve the initial URL during setup so it's available for SSR
+const assetManager = canvasContext.getAssetManager();
+const initialAsset = asset.value;
+let initialUrl: string | null = null;
+if (assetManager && initialAsset?.identifier) {
+  initialUrl = await assetManager.getDisplayUrl(initialAsset.identifier);
+}
+
+const displayUrl = ref<string | null>(initialUrl);
+const isLoading = ref(!initialUrl);
 const hasError = ref(false);
 
 // Track if we're mounted for async operations
@@ -29,14 +36,6 @@ onUnmounted(() => {
 });
 
 async function updateDisplayUrl() {
-  const assetManager = canvasContext.getAssetManager();
-  if (!assetManager) {
-    // No asset manager configured - can't display images
-    isLoading.value = false;
-    hasError.value = true;
-    return;
-  }
-
   const assetData = asset.value;
   if (!assetData) {
     isLoading.value = false;
@@ -47,7 +46,7 @@ async function updateDisplayUrl() {
     isLoading.value = true;
     hasError.value = false;
 
-    const url = await assetManager.getDisplayUrl(assetData.identifier);
+    const url = await assetManager?.getDisplayUrl(assetData.identifier);
 
     if (!isMounted) return;
 
@@ -106,9 +105,7 @@ const imageStyle = computed(() => ({
 <template>
   <div class="wov-image-block">
     <!-- Loading state -->
-    <div v-if="isLoading && !displayUrl" class="wov-image-placeholder">
-      <span>Loading...</span>
-    </div>
+    <div v-if="isLoading && !displayUrl" class="wov-image-placeholder" />
 
     <!-- Error state -->
     <div v-else-if="hasError" class="wov-image-placeholder wov-image-error">
@@ -149,14 +146,6 @@ const imageStyle = computed(() => ({
 .wov-image-placeholder {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(128, 128, 128, 0.1);
-  border: 1px dashed rgba(128, 128, 128, 0.3);
-  border-radius: 4px;
-  color: rgba(128, 128, 128, 0.7);
-  font-size: 14px;
 }
 
 .wov-image-error {
