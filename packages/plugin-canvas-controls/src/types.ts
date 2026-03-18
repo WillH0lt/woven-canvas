@@ -37,7 +37,7 @@ export const CanvasControlsOptionsSchema = z.object({
       /** Time in seconds to reach target position (default: 0.12) */
       time: z.number().default(0.12),
     })
-    .default({}),
+    .default({ enabled: true, time: 0.12 }),
   /** Optional camera bounds - restricts the camera viewport to stay within this region */
   cameraBounds: CameraBoundsSchema.optional(),
 })
