@@ -17,6 +17,7 @@ import {
   getResources,
   Held,
   hasComponent,
+  isAlive,
   on,
   RankBounds,
   removeComponent,
@@ -565,11 +566,13 @@ function swapConnectorRefs(ctx: Context, fromTo: Map<EntityId, EntityId>): void 
   for (const [fromId, toId] of fromTo) {
     // Find connectors where this entity is the startBlock
     for (const connectorId of getBackrefs(ctx, fromId, Connector, 'startBlock')) {
+      if (!isAlive(ctx, connectorId)) continue
       Connector.write(ctx, connectorId).startBlock = toId
     }
 
     // Find connectors where this entity is the endBlock
     for (const connectorId of getBackrefs(ctx, fromId, Connector, 'endBlock')) {
+      if (!isAlive(ctx, connectorId)) continue
       Connector.write(ctx, connectorId).endBlock = toId
     }
   }

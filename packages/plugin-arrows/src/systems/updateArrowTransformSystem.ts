@@ -12,6 +12,7 @@ import {
   getBlockDef,
   hasComponent,
   Intersect,
+  isAlive,
   Opacity,
   on,
   RankBounds,
@@ -123,7 +124,7 @@ function updateArrowsForChangedBlocks(ctx: Context): void {
     // Use checkExistence=false to find refs to deleted blocks
     const startArrows = getBackrefs(ctx, blockId, Connector, 'startBlock', false)
     for (const arrowId of startArrows) {
-      if (updatedArrows.has(arrowId)) continue
+      if (!isAlive(ctx, arrowId) || updatedArrows.has(arrowId)) continue
       updatedArrows.add(arrowId)
       updateArrowForConnectedBlock(ctx, arrowId)
     }
@@ -131,7 +132,7 @@ function updateArrowsForChangedBlocks(ctx: Context): void {
     // Find arrows connected to this block via endBlock
     const endArrows = getBackrefs(ctx, blockId, Connector, 'endBlock', false)
     for (const arrowId of endArrows) {
-      if (updatedArrows.has(arrowId)) continue
+      if (!isAlive(ctx, arrowId) || updatedArrows.has(arrowId)) continue
       updatedArrows.add(arrowId)
       updateArrowForConnectedBlock(ctx, arrowId)
     }

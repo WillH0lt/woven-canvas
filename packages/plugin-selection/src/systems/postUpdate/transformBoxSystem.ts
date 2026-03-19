@@ -408,6 +408,7 @@ function addOrUpdateTransformHandles(ctx: Context, transformBoxId: EntityId): vo
   const existingHandles = getBackrefs(ctx, transformBoxId, TransformHandle, 'transformBox')
   const handleMap = new Map<string, EntityId>()
   for (const handleId of existingHandles) {
+    if (!isAlive(ctx, handleId)) continue
     const handle = TransformHandle.read(ctx, handleId)
     const key = `${handle.kind}-${handle.vectorX}-${handle.vectorY}`
     handleMap.set(key, handleId)
@@ -529,6 +530,7 @@ function addTapeHandles(
   const existingHandles = getBackrefs(ctx, transformBoxId, TransformHandle, 'transformBox')
   const handleMap = new Map<string, EntityId>()
   for (const handleId of existingHandles) {
+    if (!isAlive(ctx, handleId)) continue
     const handle = TransformHandle.read(ctx, handleId)
     const key = `${handle.kind}-${handle.vectorX}-${handle.vectorY}`
     handleMap.set(key, handleId)
@@ -607,6 +609,7 @@ function hideTransformBox(ctx: Context, transformBoxId: EntityId): void {
   const handles = getBackrefs(ctx, transformBoxId, TransformHandle, 'transformBox')
 
   for (const handleId of handles) {
+    if (!isAlive(ctx, handleId)) continue
     if (!hasComponent(ctx, handleId, Opacity)) {
       addComponent(ctx, handleId, Opacity, { value: 0 })
     } else {
@@ -636,6 +639,7 @@ function showTransformBox(ctx: Context, transformBoxId: EntityId): void {
   const handles = getBackrefs(ctx, transformBoxId, TransformHandle, 'transformBox')
 
   for (const handleId of handles) {
+    if (!isAlive(ctx, handleId)) continue
     if (hasComponent(ctx, handleId, Opacity)) {
       removeComponent(ctx, handleId, Opacity)
     }
