@@ -24,7 +24,7 @@
     "test:watch": "pnpm -r --if-present test:watch",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish",
+    "release": "pnpm build && pnpm -r publish",
     "prepare": "husky"
   },
   "devDependencies": {
