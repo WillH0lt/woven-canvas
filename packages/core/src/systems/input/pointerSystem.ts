@@ -77,6 +77,11 @@ export function attachPointerListeners(domElement: HTMLElement): void {
       )
       if (hasRightButtonEvent) return
 
+      // Skip if another pointer is already active. When right-clicking while another
+      // button is held, the browser may not fire pointerdown/pointerup for button 2,
+      // so the synthetic entity (pointerId 0) would never be cleaned up.
+      if (state.pointerEntityMap.size > 0) return
+
       // Create a synthetic pointer event for right-click
       state.eventsBuffer.push({
         type: 'pointerdown',
