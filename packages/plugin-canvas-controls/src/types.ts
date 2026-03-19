@@ -38,6 +38,15 @@ export const CanvasControlsOptionsSchema = z.object({
       time: z.number().default(0.12),
     })
     .default({ enabled: true, time: 0.12 }),
+  /** Smooth zoom options - tweens between zoom levels for a fluid feel */
+  smoothZoom: z
+    .object({
+      /** Enable smooth zoom tweening (default: true) */
+      enabled: z.boolean().default(true),
+      /** Time in seconds to reach target zoom level (default: 0.12) */
+      time: z.number().default(0.12),
+    })
+    .default({ enabled: true, time: 0.12 }),
   /** Optional camera bounds - restricts the camera viewport to stay within this region */
   cameraBounds: CameraBoundsSchema.optional(),
 })

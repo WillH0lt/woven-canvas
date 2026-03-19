@@ -9,7 +9,7 @@ import {
   Keyboard,
 } from '@woven-canvas/core'
 
-import { GlideState, PanState, ScrollState } from '../components'
+import { GlideState, PanState, ScrollState, ZoomState } from '../components'
 import { CONTROLS_PLUGIN_NAME } from '../constants'
 import { smoothDamp } from '../helpers'
 import { clampCameraToBounds } from '../helpers/clampCameraToBounds'
@@ -64,6 +64,14 @@ export const PostInputScroll = defineEditorSystem({ phase: 'input', priority: -1
   const options = getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME)
   const keyboard = Keyboard.read(ctx)
   const wheelEvent = getScrollWheelEvent(ctx, keyboard.modDown)
+
+  // If a scroll event arrives while smooth zoom is animating, snap zoom to
+  // its target so the camera position settles before we start scrolling.
+  // Otherwise the zoom animation keeps shifting camera.left/top each frame,
+  // pulling the scroll off course and causing diagonal drift.
+  if (wheelEvent && ZoomState.read(ctx).active) {
+    ZoomState.reset(ctx)
+  }
 
   if (!options.smoothScroll.enabled) {
     // Direct scroll mode
