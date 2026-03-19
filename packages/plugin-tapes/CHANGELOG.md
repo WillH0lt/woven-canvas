@@ -1,5 +1,15 @@
 # @woven-canvas/plugin-tapes
 
+## 1.0.3
+
+### Patch Changes
+
+- 0b828ff: fix changesets release
+- Updated dependencies [0b828ff]
+  - @woven-canvas/core@1.0.4
+  - @woven-canvas/math@1.0.3
+  - @woven-canvas/plugin-selection@1.0.4
+
 ## 1.0.2
 
 ### Patch Changes

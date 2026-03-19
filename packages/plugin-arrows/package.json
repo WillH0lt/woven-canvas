@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-arrows",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Arrows plugin - draw and edit arc and elbow arrows for infinite canvas",
   "repository": {
     "type": "git",
