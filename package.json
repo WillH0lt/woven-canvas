@@ -22,11 +22,15 @@
     "lint": "biome check --fix --unsafe && prettier --write \"**/*.md\"",
     "test": "pnpm -r --if-present test",
     "test:watch": "pnpm -r --if-present test:watch",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "@biomejs/biome": "^2.3.14",
+    "@changesets/cli": "^2.30.0",
     "@microsoft/api-extractor": "^7.54.0",
     "@types/node": "24.10.0",
     "@vitest/browser": "^4.0.7",

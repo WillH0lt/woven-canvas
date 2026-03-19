@@ -19,6 +19,14 @@ const editor = new Editor(domElement, {
     ...CanvasControlsPlugin({
       minZoom: 0.05, // Minimum zoom level (default: 0.05 = 5%)
       maxZoom: 2.7, // Maximum zoom level (default: 2.7 = 270%)
+      smoothScroll: {
+        enabled: true, // Enable smooth scroll tweening (default: true)
+        time: 0.12, // Time in seconds to reach target position (default: 0.12)
+      },
+      smoothZoom: {
+        enabled: true, // Enable smooth zoom tweening (default: true)
+        time: 0.12, // Time in seconds to reach target zoom level (default: 0.12)
+      },
     }),
   ],
 });
