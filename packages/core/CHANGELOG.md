@@ -1,5 +1,13 @@
 # @woven-canvas/core
 
+## 1.0.4
+
+### Patch Changes
+
+- 0b828ff: fix changesets release
+- Updated dependencies [0b828ff]
+  - @woven-canvas/math@1.0.3
+
 ## 1.0.3
 
 ### Patch Changes

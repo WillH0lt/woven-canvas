@@ -1,6 +1,6 @@
 {
   "name": "@woven-canvas/plugin-tapes",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Tape plugin - draw washi tape with click-and-drag for infinite canvas",
   "repository": {
     "type": "git",

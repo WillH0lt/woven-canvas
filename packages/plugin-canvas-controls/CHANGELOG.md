@@ -1,5 +1,14 @@
 # @woven-canvas/plugin-canvas-controls
 
+## 1.0.5
+
+### Patch Changes
+
+- 0b828ff: fix changesets release
+- Updated dependencies [0b828ff]
+  - @woven-canvas/core@1.0.4
+  - @woven-canvas/math@1.0.3
+
 ## 1.0.4
 
 ### Patch Changes
