@@ -499,11 +499,11 @@ subscribeSingleton(Camera.name, (value) => {
   }
 });
 
-// When initialState is provided, create a headless editor during setup
-// to populate blocks for both SSR and client hydration.
-// This top-level await makes the component async, requiring a <Suspense>
-// ancestor — use the WovenCanvas wrapper (which adds one internally).
-if (props.initialState) {
+// When initialState is provided during SSR, create a headless editor during
+// setup to populate blocks so they are included in the server-rendered HTML.
+// Skip this in the browser — the real editor created on mount will load state
+// from the authoritative source (IndexedDB if persisted, otherwise initialState).
+if (props.initialState && typeof window === 'undefined') {
   const headlessEditor = await createEditorAndStore(null, props.initialState);
   // Two ticks: first loads initial state into ECS, second lets queries detect
   // the new entities so updateBlocks fully populates sortedBlocks.

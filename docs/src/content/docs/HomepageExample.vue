@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { WovenCanvas } from '@woven-canvas/vue'
 import '@woven-canvas/vue/style.css'
+import initialState from './initialState.json'
 </script>
 
 <template>
@@ -11,6 +12,7 @@ import '@woven-canvas/vue/style.css'
         documentId: 'homepage'
       }
     }"
+    :initialState="initialState"
   >
   </WovenCanvas>
 </template>
