@@ -76,21 +76,33 @@ const MIN_WRAP_WIDTH = 300;
  * Enable constrainWidth on the current block so pasted text wraps instead of
  * extending infinitely.
  */
-function enableConstrainWidth() {
-  nextEditorTick((ctx) => {
-    const writableText = Text.write(ctx, props.entityId);
-    writableText.constrainWidth = true;
+async function enableConstrainWidth() {
+  // Hide text immediately to prevent flash while block resizes
+  if (editableTextRef.value) {
+    editableTextRef.value.style.opacity = "0";
+  }
 
-    const block = Block.read(ctx, props.entityId);
-    const newWidth = Math.max(block.size[0], MIN_WRAP_WIDTH);
-    const writableBlock = Block.write(ctx, props.entityId);
-    writableBlock.size = [newWidth, block.size[1]];
+  const ctx = await nextEditorTick();
+  const block = Block.read(ctx, props.entityId);
+  const newWidth = Math.max(block.size[0], MIN_WRAP_WIDTH);
+  const writableBlock = Block.write(ctx, props.entityId);
+  writableBlock.size = [newWidth, block.size[1]];
 
-    // Reset keyboard state (Ctrl may be stuck from paste shortcut)
-    ResetKeyboard.spawn(ctx);
+  const writableText = Text.write(ctx, props.entityId);
+  writableText.constrainWidth = true;
 
-    // Deselect to commit to undo/redo history
-    DeselectAll.spawn(ctx);
+  // Reset keyboard state (Ctrl may be stuck from paste shortcut)
+  ResetKeyboard.spawn(ctx);
+
+  // Show text after updates are painted and reposition floating menu
+  // Wait two frames: first for Vue to apply DOM updates, second to read correct bounds
+  requestAnimationFrame(() => {
+    if (editableTextRef.value) {
+      editableTextRef.value.style.opacity = "";
+    }
+    requestAnimationFrame(() => {
+      textEditorController.updateCounter.value++;
+    });
   });
 }
 
@@ -114,11 +126,15 @@ function handlePaste(_view: unknown, event: ClipboardEvent): boolean {
   const isFromApp = html.includes("data-pm-slice");
 
   if (!isFromApp) {
-    // External paste: insert as plain text only.
+    // External paste: insert as plain text, converting newlines to paragraphs
+    // so line breaks survive the HTML round-trip (bare \n inside a <p> gets
+    // collapsed when Tiptap re-parses the saved HTML on re-edit).
     event.preventDefault();
-    editor.value?.commands.insertContent(plainText, {
-      parseOptions: { preserveWhitespace: true },
-    });
+    const paragraphs = plainText.trimEnd().split(/\r?\n/).map((line) => ({
+      type: "paragraph",
+      content: line ? [{ type: "text", text: line }] : [],
+    }));
+    editor.value?.commands.insertContent(paragraphs);
 
     if (!t.constrainWidth && plainText.length > PASTE_WRAP_CHAR_THRESHOLD) {
       enableConstrainWidth();

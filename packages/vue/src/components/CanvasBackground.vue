@@ -198,7 +198,7 @@ function renderDots(ctx: CanvasRenderingContext2D): void {
     numCols = Math.round((endX - startX) / colWidth);
     numRows = Math.round((endY - startY) / rowHeight);
 
-    if (Math.max(numCols, numRows) > 200) {
+    if (Math.max(numCols, numRows) > 125) {
       colWidth *= 2;
       rowHeight *= 2;
     } else {
