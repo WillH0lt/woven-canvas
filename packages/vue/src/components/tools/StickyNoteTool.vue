@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { VerticalAlignment, TextAlignment } from "@woven-canvas/core";
-import ToolbarButton from "../ToolbarButton.vue";
+import { VerticalAlignment, TextAlignment } from '@woven-canvas/core'
+import ToolbarButton from '../ToolbarButton.vue'
 
 const snapshot = JSON.stringify({
   block: {
-    tag: "sticky-note",
+    tag: 'sticky-note',
     size: [200, 200],
   },
   color: {
@@ -18,7 +18,7 @@ const snapshot = JSON.stringify({
   verticalAlign: {
     value: VerticalAlignment.Center,
   },
-});
+})
 </script>
 
 <template>

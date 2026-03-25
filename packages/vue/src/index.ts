@@ -90,7 +90,7 @@ export { default as TextTool } from './components/tools/TextTool.vue'
 // User Presence
 export { default as UserPresence } from './components/UserPresence.vue'
 export { default as WovenCanvas } from './components/WovenCanvas.vue'
-export type { WovenCanvasPluginOptions, WovenCanvasProps } from './components/WovenCanvasCore.vue'
+export type { CopyPasteOptions, WovenCanvasPluginOptions, WovenCanvasProps } from './components/WovenCanvasCore.vue'
 export { useComponent } from './composables/useComponent'
 export { useComponents } from './composables/useComponents'
 export {
@@ -130,11 +130,12 @@ export {
   createTooltipContext,
   useTooltipSingleton,
 } from './composables/useTooltipSingleton'
-// Editing Plugin
 export { EDITING_PLUGIN_NAME } from './constants'
 export { CURSORS, CursorKind } from './cursors'
 export { EditingPlugin, type EditingPluginOptions, type EditingPluginResources } from './EditingPlugin'
 export { SHAPES } from './shapes'
+// Editing Plugin
+export type { BlockSnapshot } from './systems'
 // Types
 export type { BackgroundOptions, BlockData } from './types'
 // Utilities

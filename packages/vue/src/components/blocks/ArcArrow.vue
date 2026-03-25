@@ -1,121 +1,113 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
-import { Color } from "@woven-canvas/core";
-import { Arc, type ArcComputed, type Vec2 } from "@woven-canvas/math";
-import { ArcArrow } from "@woven-canvas/plugin-arrows";
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { Color } from '@woven-canvas/core'
+import { Arc, type ArcComputed, type Vec2 } from '@woven-canvas/math'
+import { ArcArrow } from '@woven-canvas/plugin-arrows'
 
-import { useComponent } from "../../composables/useComponent";
-import ArrowHead from "./ArrowHead.vue";
-import type { BlockData } from "../../types";
-import { getArrowHead } from "../../arrowHeads";
+import { useComponent } from '../../composables/useComponent'
+import ArrowHead from './ArrowHead.vue'
+import type { BlockData } from '../../types'
+import { getArrowHead } from '../../arrowHeads'
 
-const props = defineProps<BlockData>();
+const props = defineProps<BlockData>()
 
-const containerRef = ref<HTMLElement | null>(null);
-const clientWidth = ref(0);
-const clientHeight = ref(0);
+const containerRef = ref<HTMLElement | null>(null)
+const clientWidth = ref(0)
+const clientHeight = ref(0)
 
-const color = useComponent(props.entityId, Color);
-const arcArrow = useComponent(props.entityId, ArcArrow);
+const color = useComponent(props.entityId, Color)
+const arcArrow = useComponent(props.entityId, ArcArrow)
 
 // Watch for resize
-let resizeObserver: ResizeObserver | null = null;
+let resizeObserver: ResizeObserver | null = null
 onMounted(() => {
   if (containerRef.value) {
     resizeObserver = new ResizeObserver(() => {
       if (containerRef.value) {
-        clientWidth.value = containerRef.value.clientWidth;
-        clientHeight.value = containerRef.value.clientHeight;
+        clientWidth.value = containerRef.value.clientWidth
+        clientHeight.value = containerRef.value.clientHeight
       }
-    });
-    resizeObserver.observe(containerRef.value);
-    clientWidth.value = containerRef.value.clientWidth;
-    clientHeight.value = containerRef.value.clientHeight;
+    })
+    resizeObserver.observe(containerRef.value)
+    clientWidth.value = containerRef.value.clientWidth
+    clientHeight.value = containerRef.value.clientHeight
   }
-});
+})
 
 onUnmounted(() => {
-  resizeObserver?.disconnect();
-});
+  resizeObserver?.disconnect()
+})
 
 const hex = computed(() => {
-  if (!color.value) return "#000000";
-  const r = color.value.red.toString(16).padStart(2, "0");
-  const g = color.value.green.toString(16).padStart(2, "0");
-  const b = color.value.blue.toString(16).padStart(2, "0");
-  return `#${r}${g}${b}`;
-});
+  if (!color.value) return '#000000'
+  const r = color.value.red.toString(16).padStart(2, '0')
+  const g = color.value.green.toString(16).padStart(2, '0')
+  const b = color.value.blue.toString(16).padStart(2, '0')
+  return `#${r}${g}${b}`
+})
 
-const baseThickness = computed(() => arcArrow.value?.value[6] ?? 2);
-const thickness = computed(() => `${baseThickness.value}px`);
+const baseThickness = computed(() => arcArrow.value?.value[6] ?? 2)
+const thickness = computed(() => `${baseThickness.value}px`)
 
-const isEmphasized = computed(() => props.hovered || props.selected);
+const isEmphasized = computed(() => props.hovered || props.selected)
 
 // Check if the arc is curved (points are not collinear)
 const isCurved = computed(() => {
-  if (!arcArrow.value) return false;
-  const v = arcArrow.value.value;
+  if (!arcArrow.value) return false
+  const v = arcArrow.value.value
   // Create arc tuple from UV coords
-  const arc = Arc.create(v[0], v[1], v[2], v[3], v[4], v[5], v[6]);
-  return !Arc.isCollinear(arc);
-});
+  const arc = Arc.create(v[0], v[1], v[2], v[3], v[4], v[5], v[6])
+  return !Arc.isCollinear(arc)
+})
 
 // Compute world-space arc from UV coordinates
 const worldArc = computed(() => {
-  if (!arcArrow.value) return null;
-  const v = arcArrow.value.value;
-  const w = clientWidth.value;
-  const h = clientHeight.value;
-  return Arc.create(
-    v[0] * w,
-    v[1] * h,
-    v[2] * w,
-    v[3] * h,
-    v[4] * w,
-    v[5] * h,
-    v[6],
-  );
-});
+  if (!arcArrow.value) return null
+  const v = arcArrow.value.value
+  const w = clientWidth.value
+  const h = clientHeight.value
+  return Arc.create(v[0] * w, v[1] * h, v[2] * w, v[3] * h, v[4] * w, v[5] * h, v[6])
+})
 
 // Compute arc properties (center, radius, etc.)
 const arcComputed = computed((): ArcComputed | null => {
-  if (!worldArc.value || !isCurved.value) return null;
-  return Arc.compute(worldArc.value);
-});
+  if (!worldArc.value || !isCurved.value) return null
+  return Arc.compute(worldArc.value)
+})
 
 // Compute trimmed path data
 const pathData = computed(() => {
-  if (!arcArrow.value || !worldArc.value) return null;
+  if (!arcArrow.value || !worldArc.value) return null
 
-  const arc = worldArc.value;
-  const startHead = arcArrow.value.startArrowHead;
-  const endHead = arcArrow.value.endArrowHead;
+  const arc = worldArc.value
+  const startHead = arcArrow.value.startArrowHead
+  const endHead = arcArrow.value.endArrowHead
 
-  const arcLength = Arc.length(arc);
+  const arcLength = Arc.length(arc)
 
-  let tStart = arcArrow.value.trimStart;
+  let tStart = arcArrow.value.trimStart
   // Add gap if connected to a block and has arrow head
-  if (props.connector?.startBlock && startHead !== "none") {
-    const headGap = getArrowHead(startHead)?.gap ?? 0;
-    const gap = arcLength > 0 ? headGap / arcLength : 0;
-    tStart += gap;
+  if (props.connector?.startBlock && startHead !== 'none') {
+    const headGap = getArrowHead(startHead)?.gap ?? 0
+    const gap = arcLength > 0 ? headGap / arcLength : 0
+    tStart += gap
   }
 
-  let tEnd = arcArrow.value.trimEnd;
+  let tEnd = arcArrow.value.trimEnd
   // Add gap if connected to a block and has arrow head
-  if (props.connector?.endBlock && endHead !== "none") {
-    const headGap = getArrowHead(endHead)?.gap ?? 0;
-    const gap = arcLength > 0 ? headGap / arcLength : 0;
-    tEnd += gap; // Add because we use (1 - tEnd) below
+  if (props.connector?.endBlock && endHead !== 'none') {
+    const headGap = getArrowHead(endHead)?.gap ?? 0
+    const gap = arcLength > 0 ? headGap / arcLength : 0
+    tEnd += gap // Add because we use (1 - tEnd) below
   }
 
   // tEnd is measured from end toward start, so invert it for arc parametric
-  const actualTEnd = 1 - tEnd;
+  const actualTEnd = 1 - tEnd
 
-  const start = Arc.parametricToPoint(arc, tStart);
-  const end = Arc.parametricToPoint(arc, actualTEnd);
-  const startDir = flipDirection(Arc.directionAt(arc, tStart));
-  const endDir = Arc.directionAt(arc, actualTEnd);
+  const start = Arc.parametricToPoint(arc, tStart)
+  const end = Arc.parametricToPoint(arc, actualTEnd)
+  const startDir = flipDirection(Arc.directionAt(arc, tStart))
+  const endDir = Arc.directionAt(arc, actualTEnd)
 
   return {
     start,
@@ -126,36 +118,36 @@ const pathData = computed(() => {
     tEnd: actualTEnd,
     startHead,
     endHead,
-  };
-});
+  }
+})
 
 // SVG path for curved arc
 const curvedPath = computed(() => {
-  if (!pathData.value || !arcComputed.value || !isCurved.value) return "";
+  if (!pathData.value || !arcComputed.value || !isCurved.value) return ''
 
-  const { start, end, tStart, tEnd } = pathData.value;
-  const { radius, clockwise, arcAngle } = arcComputed.value;
+  const { start, end, tStart, tEnd } = pathData.value
+  const { radius, clockwise, arcAngle } = arcComputed.value
 
-  const trimmedArcAngle = arcAngle * (tEnd - tStart);
-  const largeArc = trimmedArcAngle > Math.PI ? 1 : 0;
-  const sweep = clockwise ? 0 : 1;
+  const trimmedArcAngle = arcAngle * (tEnd - tStart)
+  const largeArc = trimmedArcAngle > Math.PI ? 1 : 0
+  const sweep = clockwise ? 0 : 1
 
-  return `M ${start[0]} ${start[1]} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${end[0]} ${end[1]}`;
-});
+  return `M ${start[0]} ${start[1]} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${end[0]} ${end[1]}`
+})
 
 // SVG line for straight arrow
 const straightLinePoints = computed(() => {
-  if (!pathData.value || isCurved.value) return null;
+  if (!pathData.value || isCurved.value) return null
   return {
     x1: pathData.value.start[0],
     y1: pathData.value.start[1],
     x2: pathData.value.end[0],
     y2: pathData.value.end[1],
-  };
-});
+  }
+})
 
 function flipDirection(dir: Vec2): Vec2 {
-  return [-dir[0], -dir[1]];
+  return [-dir[0], -dir[1]]
 }
 </script>
 

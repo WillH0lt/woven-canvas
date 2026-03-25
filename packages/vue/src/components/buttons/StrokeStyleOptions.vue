@@ -1,35 +1,34 @@
 <script setup lang="ts">
-import { StrokeKind } from "@woven-canvas/core";
+import { StrokeKind } from '@woven-canvas/core'
 
 defineProps<{
-  currentStyle: StrokeKind;
-  hasMultipleStyles: boolean;
-}>();
+  currentStyle: StrokeKind
+  hasMultipleStyles: boolean
+}>()
 
 const emit = defineEmits<{
-  change: [kind: StrokeKind];
-}>();
+  change: [kind: StrokeKind]
+}>()
 
 const strokeOptions: { kind: StrokeKind; label: string }[] = [
-  { kind: StrokeKind.Solid, label: "Solid" },
-  { kind: StrokeKind.Dashed, label: "Dashed" },
-  { kind: StrokeKind.None, label: "None" },
-];
+  { kind: StrokeKind.Solid, label: 'Solid' },
+  { kind: StrokeKind.Dashed, label: 'Dashed' },
+  { kind: StrokeKind.None, label: 'None' },
+]
 
 function getDashArray(kind: StrokeKind): string {
   switch (kind) {
     case StrokeKind.Dashed:
-      return "6 6";
+      return '6 6'
     case StrokeKind.None:
-      return "";
-    case StrokeKind.Solid:
+      return ''
     default:
-      return "";
+      return ''
   }
 }
 
 function handleClick(kind: StrokeKind) {
-  emit("change", kind);
+  emit('change', kind)
 }
 </script>
 

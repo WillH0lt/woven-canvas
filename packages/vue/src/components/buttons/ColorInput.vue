@@ -1,77 +1,77 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
-  modelValue?: string;
-}>();
+  modelValue?: string
+}>()
 
 const emit = defineEmits<{
-  "update:modelValue": [color: string];
-}>();
+  'update:modelValue': [color: string]
+}>()
 
-const inputValue = ref(props.modelValue ?? "");
+const inputValue = ref(props.modelValue ?? '')
 
 // Sync input value when modelValue changes externally
 watch(
   () => props.modelValue,
   (newValue) => {
     if (newValue && newValue !== inputValue.value) {
-      inputValue.value = newValue;
+      inputValue.value = newValue
     }
-  }
-);
+  },
+)
 
 function isValidHex(value: string): boolean {
-  const hex = value.startsWith("#") ? value : `#${value}`;
-  return /^#[0-9A-Fa-f]{6}$/.test(hex);
+  const hex = value.startsWith('#') ? value : `#${value}`
+  return /^#[0-9A-Fa-f]{6}$/.test(hex)
 }
 
 function normalizeHex(value: string): string {
-  const hex = value.startsWith("#") ? value : `#${value}`;
-  return hex.toLowerCase();
+  const hex = value.startsWith('#') ? value : `#${value}`
+  return hex.toLowerCase()
 }
 
 function handleInput(event: Event) {
-  const target = event.target as HTMLInputElement;
-  let value = target.value;
+  const target = event.target as HTMLInputElement
+  let value = target.value
 
   // Auto-apply when 6 or 7 characters (valid hex) are typed
   if (value.length === 6 || value.length === 7) {
     if (isValidHex(value)) {
-      const normalized = normalizeHex(value);
-      inputValue.value = normalized;
-      emit("update:modelValue", normalized);
+      const normalized = normalizeHex(value)
+      inputValue.value = normalized
+      emit('update:modelValue', normalized)
     }
   }
 }
 
 function handleChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const value = target.value;
+  const target = event.target as HTMLInputElement
+  const value = target.value
 
   if (value && isValidHex(value)) {
-    const normalized = normalizeHex(value);
-    inputValue.value = normalized;
-    emit("update:modelValue", normalized);
+    const normalized = normalizeHex(value)
+    inputValue.value = normalized
+    emit('update:modelValue', normalized)
   } else if (props.modelValue) {
     // Reset to current valid value
-    inputValue.value = props.modelValue;
+    inputValue.value = props.modelValue
   }
 }
 
 function handleKeyDown(event: KeyboardEvent) {
   // Stop propagation to prevent canvas shortcuts (e.g., Ctrl+A selecting all blocks)
-  event.stopPropagation();
+  event.stopPropagation()
 
-  if (event.key === "Enter") {
-    const target = event.target as HTMLInputElement;
-    const value = target.value;
+  if (event.key === 'Enter') {
+    const target = event.target as HTMLInputElement
+    const value = target.value
 
     if (value && isValidHex(value)) {
-      const normalized = normalizeHex(value);
-      inputValue.value = normalized;
-      emit("update:modelValue", normalized);
-      setTimeout(() => target.select());
+      const normalized = normalizeHex(value)
+      inputValue.value = normalized
+      emit('update:modelValue', normalized)
+      setTimeout(() => target.select())
     }
   }
 }

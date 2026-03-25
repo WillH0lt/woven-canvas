@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ToolbarButton from "../ToolbarButton.vue";
-import { CursorKind } from "../../cursors";
+import ToolbarButton from '../ToolbarButton.vue'
+import { CursorKind } from '../../cursors'
 </script>
 
 <template>

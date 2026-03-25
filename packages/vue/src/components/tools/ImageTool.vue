@@ -1,62 +1,62 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { Camera, Screen } from "@woven-canvas/core";
-import { CursorKind } from "../../cursors";
+import { ref } from 'vue'
+import { Camera, Screen } from '@woven-canvas/core'
+import { CursorKind } from '../../cursors'
 
-import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
-import { useEditorContext } from "../../composables/useEditorContext";
-import { useToolbar } from "../../composables/useToolbar";
-import { useImageCreation } from "../../composables/useImageCreation";
+import { useTooltipSingleton } from '../../composables/useTooltipSingleton'
+import { useEditorContext } from '../../composables/useEditorContext'
+import { useToolbar } from '../../composables/useToolbar'
+import { useImageCreation } from '../../composables/useImageCreation'
 
-const { nextEditorTick } = useEditorContext();
-const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
-const { setTool } = useToolbar();
-const { createImageBlock } = useImageCreation();
+const { nextEditorTick } = useEditorContext()
+const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton()
+const { setTool } = useToolbar()
+const { createImageBlock } = useImageCreation()
 
-const buttonRef = ref<HTMLButtonElement | null>(null);
-const fileInputRef = ref<HTMLInputElement | null>(null);
+const buttonRef = ref<HTMLButtonElement | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 function handleClick() {
   // Open file picker
-  fileInputRef.value?.click();
+  fileInputRef.value?.click()
 }
 
 async function handleFileSelect(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
 
   // Reset input so same file can be selected again
-  input.value = "";
+  input.value = ''
 
   // Validate it's an image
-  if (!file.type.startsWith("image/")) {
-    console.warn("Selected file is not an image");
-    return;
+  if (!file.type.startsWith('image/')) {
+    console.warn('Selected file is not an image')
+    return
   }
 
   // Get viewport center in world coordinates
-  const ctx = await nextEditorTick();
-  const camera = Camera.read(ctx);
-  const screen = Screen.read(ctx);
-  const centerX = camera.left + screen.width / camera.zoom / 2;
-  const centerY = camera.top + screen.height / camera.zoom / 2;
+  const ctx = await nextEditorTick()
+  const camera = Camera.read(ctx)
+  const screen = Screen.read(ctx)
+  const centerX = camera.left + screen.width / camera.zoom / 2
+  const centerY = camera.top + screen.height / camera.zoom / 2
 
   // Create image at viewport center
-  await createImageBlock(file, centerX, centerY);
+  await createImageBlock(file, centerX, centerY)
 
   // Switch to select tool
-  setTool("select", undefined, CursorKind.Select);
+  setTool('select', undefined, CursorKind.Select)
 }
 
 function handleMouseEnter() {
   if (buttonRef.value) {
-    showTooltip("Image", buttonRef.value);
+    showTooltip('Image', buttonRef.value)
   }
 }
 
 function handleMouseLeave() {
-  hideTooltip();
+  hideTooltip()
 }
 </script>
 

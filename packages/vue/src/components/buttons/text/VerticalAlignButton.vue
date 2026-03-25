@@ -1,58 +1,53 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@woven-canvas/core";
-import { VerticalAlign, VerticalAlignment } from "@woven-canvas/core";
+import { computed } from 'vue'
+import type { EntityId } from '@woven-canvas/core'
+import { VerticalAlign, VerticalAlignment } from '@woven-canvas/core'
 
-import MenuButton from "../MenuButton.vue";
-import { useComponents } from "../../../composables/useComponents";
-import { useEditorContext } from "../../../composables/useEditorContext";
-import { useTextFormatting } from "../../../composables/useTextFormatting";
+import MenuButton from '../MenuButton.vue'
+import { useComponents } from '../../../composables/useComponents'
+import { useEditorContext } from '../../../composables/useEditorContext'
+import { useTextFormatting } from '../../../composables/useTextFormatting'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
-const { state: textState } = useTextFormatting(() => props.entityIds);
+const { nextEditorTick } = useEditorContext()
+const { state: textState } = useTextFormatting(() => props.entityIds)
 
-type VerticalAlignType =
-  (typeof VerticalAlignment)[keyof typeof VerticalAlignment];
+type VerticalAlignType = (typeof VerticalAlignment)[keyof typeof VerticalAlignment]
 
-const alignments: VerticalAlignType[] = [
-  VerticalAlignment.Top,
-  VerticalAlignment.Center,
-  VerticalAlignment.Bottom,
-];
+const alignments: VerticalAlignType[] = [VerticalAlignment.Top, VerticalAlignment.Center, VerticalAlignment.Bottom]
 
-const verticalAlignsMap = useComponents(() => props.entityIds, VerticalAlign);
+const verticalAlignsMap = useComponents(() => props.entityIds, VerticalAlign)
 
 // Get current vertical alignment (null if mixed)
 const currentAlignment = computed<VerticalAlignType | null>(() => {
-  let alignment: VerticalAlignType | null = null;
+  let alignment: VerticalAlignType | null = null
 
   for (const va of verticalAlignsMap.value.values()) {
-    const value = (va?.value ?? VerticalAlignment.Top) as VerticalAlignType;
+    const value = (va?.value ?? VerticalAlignment.Top) as VerticalAlignType
     if (alignment === null) {
-      alignment = value;
+      alignment = value
     } else if (alignment !== value) {
-      return null; // Mixed alignments
+      return null // Mixed alignments
     }
   }
 
-  return alignment;
-});
+  return alignment
+})
 
 function cycleAlignment() {
-  const current = currentAlignment.value ?? VerticalAlignment.Top;
-  const currentIndex = alignments.indexOf(current);
-  const nextAlignment = alignments[(currentIndex + 1) % alignments.length];
+  const current = currentAlignment.value ?? VerticalAlignment.Top
+  const currentIndex = alignments.indexOf(current)
+  const nextAlignment = alignments[(currentIndex + 1) % alignments.length]
 
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const va = VerticalAlign.write(ctx, entityId);
-      va.value = nextAlignment;
+      const va = VerticalAlign.write(ctx, entityId)
+      va.value = nextAlignment
     }
-  });
+  })
 }
 </script>
 

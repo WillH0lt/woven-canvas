@@ -1,41 +1,33 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import {
-  hexToHsva,
-  hsvToHex,
-  hsvaToHex,
-  type HSVAColor,
-} from "../../utils/color";
-import ColorInput from "./ColorInput.vue";
-import ColorSlider from "./ColorSlider.vue";
+import { computed, ref, watch } from 'vue'
+import { hexToHsva, hsvToHex, hsvaToHex, type HSVAColor } from '../../utils/color'
+import ColorInput from './ColorInput.vue'
+import type ColorSlider from './ColorSlider.vue'
 
 const props = defineProps<{
-  modelValue?: string;
-  withOpacity?: boolean;
-}>();
+  modelValue?: string
+  withOpacity?: boolean
+}>()
 
 const emit = defineEmits<{
-  "update:modelValue": [color: string];
-}>();
+  'update:modelValue': [color: string]
+}>()
 
 // Slider refs for checking drag state
-const hueSliderRef = ref<InstanceType<typeof ColorSlider> | null>(null);
-const opacitySliderRef = ref<InstanceType<typeof ColorSlider> | null>(null);
+const hueSliderRef = ref<InstanceType<typeof ColorSlider> | null>(null)
+const opacitySliderRef = ref<InstanceType<typeof ColorSlider> | null>(null)
 
 // Color picker state
-const selectorRef = ref<HTMLDivElement | null>(null);
-const selectorPosition = ref({ x: 100, y: 0 });
-const huePosition = ref(0);
-const opacityPosition = ref(0);
-const isDraggingSelector = ref(false);
+const selectorRef = ref<HTMLDivElement | null>(null)
+const selectorPosition = ref({ x: 100, y: 0 })
+const huePosition = ref(0)
+const opacityPosition = ref(0)
+const isDraggingSelector = ref(false)
 
 // Check if any slider is being dragged
 const isDragging = computed(
-  () =>
-    isDraggingSelector.value ||
-    hueSliderRef.value?.isDragging ||
-    opacitySliderRef.value?.isDragging,
-);
+  () => isDraggingSelector.value || hueSliderRef.value?.isDragging || opacitySliderRef.value?.isDragging,
+)
 
 // Computed HSVA from positions
 const currentHsva = computed<HSVAColor>(() => ({
@@ -43,11 +35,9 @@ const currentHsva = computed<HSVAColor>(() => ({
   s: selectorPosition.value.x,
   v: 100 - selectorPosition.value.y,
   a: ((100 - opacityPosition.value) / 100) * 255,
-}));
+}))
 
-const trackHueColor = computed(() =>
-  hsvToHex({ h: currentHsva.value.h, s: 100, v: 100 }),
-);
+const trackHueColor = computed(() => hsvToHex({ h: currentHsva.value.h, s: 100, v: 100 }))
 
 // RGB color without alpha for display
 const pickedColorRgb = computed(() =>
@@ -56,87 +46,73 @@ const pickedColorRgb = computed(() =>
     s: currentHsva.value.s,
     v: currentHsva.value.v,
   }),
-);
+)
 
 // Full color with alpha
-const pickedColor = computed(() =>
-  props.withOpacity ? hsvaToHex(currentHsva.value) : pickedColorRgb.value,
-);
+const pickedColor = computed(() => (props.withOpacity ? hsvaToHex(currentHsva.value) : pickedColorRgb.value))
 
 // Hue track gradient (static)
-const hueGradient =
-  "linear-gradient(to bottom, red 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, red 100%)";
+const hueGradient = 'linear-gradient(to bottom, red 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, red 100%)'
 
 // Opacity gradient (dynamic based on picked color)
-const opacityGradient = computed(
-  () => `linear-gradient(to top, transparent 0%, ${pickedColorRgb.value} 100%)`,
-);
+const opacityGradient = computed(() => `linear-gradient(to top, transparent 0%, ${pickedColorRgb.value} 100%)`)
 
 // Initialize positions from modelValue (supports hex6 and hex8)
 function initFromColor(color: string | undefined) {
   if (color) {
-    const hsva = hexToHsva(color);
-    selectorPosition.value = { x: hsva.s, y: 100 - hsva.v };
-    huePosition.value = (hsva.h / 360) * 100;
-    opacityPosition.value = 100 - (hsva.a / 255) * 100;
+    const hsva = hexToHsva(color)
+    selectorPosition.value = { x: hsva.s, y: 100 - hsva.v }
+    huePosition.value = (hsva.h / 360) * 100
+    opacityPosition.value = 100 - (hsva.a / 255) * 100
   }
 }
 
 // Handle hex input change
 function handleHexInput(color: string) {
-  initFromColor(color);
-  emit(
-    "update:modelValue",
-    props.withOpacity ? hsvaToHex(hexToHsva(color)) : color,
-  );
+  initFromColor(color)
+  emit('update:modelValue', props.withOpacity ? hsvaToHex(hexToHsva(color)) : color)
 }
 
 // Initialize on mount
-initFromColor(props.modelValue);
+initFromColor(props.modelValue)
 
 // Watch for external changes
 watch(
   () => props.modelValue,
   (newColor) => {
     if (!isDragging.value) {
-      initFromColor(newColor);
+      initFromColor(newColor)
     }
   },
-);
+)
 
 // Emit color change while dragging
 watch([selectorPosition, huePosition, opacityPosition], () => {
   if (isDragging.value) {
-    emit("update:modelValue", pickedColor.value);
+    emit('update:modelValue', pickedColor.value)
   }
-});
+})
 
 // Selector dragging
 function startSelectorDrag(e: PointerEvent) {
-  isDraggingSelector.value = true;
-  updateSelectorPosition(e);
-  window.addEventListener("pointermove", updateSelectorPosition);
-  window.addEventListener("pointerup", stopSelectorDrag);
+  isDraggingSelector.value = true
+  updateSelectorPosition(e)
+  window.addEventListener('pointermove', updateSelectorPosition)
+  window.addEventListener('pointerup', stopSelectorDrag)
 }
 
 function updateSelectorPosition(e: PointerEvent) {
-  if (!selectorRef.value) return;
-  const rect = selectorRef.value.getBoundingClientRect();
-  const x = Math.max(
-    0,
-    Math.min(100, ((e.clientX - rect.left) / rect.width) * 100),
-  );
-  const y = Math.max(
-    0,
-    Math.min(100, ((e.clientY - rect.top) / rect.height) * 100),
-  );
-  selectorPosition.value = { x, y };
+  if (!selectorRef.value) return
+  const rect = selectorRef.value.getBoundingClientRect()
+  const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
+  const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
+  selectorPosition.value = { x, y }
 }
 
 function stopSelectorDrag() {
-  isDraggingSelector.value = false;
-  window.removeEventListener("pointermove", updateSelectorPosition);
-  window.removeEventListener("pointerup", stopSelectorDrag);
+  isDraggingSelector.value = false
+  window.removeEventListener('pointermove', updateSelectorPosition)
+  window.removeEventListener('pointerup', stopSelectorDrag)
 }
 </script>
 

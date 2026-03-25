@@ -1,62 +1,62 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { Embed, EmbedProvider } from "@woven-canvas/core";
+import { computed } from 'vue'
+import { Embed, EmbedProvider } from '@woven-canvas/core'
 
-import type { BlockData } from "../../types";
-import { useComponent } from "../../composables/useComponent";
+import type { BlockData } from '../../types'
+import { useComponent } from '../../composables/useComponent'
 
-const props = defineProps<BlockData>();
+const props = defineProps<BlockData>()
 
-const embed = useComponent(props.entityId, Embed);
+const embed = useComponent(props.entityId, Embed)
 
 const iframeSrc = computed(() => {
-  if (!embed.value) return null;
-  return embed.value.embedUrl || embed.value.url || null;
-});
+  if (!embed.value) return null
+  return embed.value.embedUrl || embed.value.url || null
+})
 
 const iframeAllow = computed(() => {
-  if (!embed.value) return "";
+  if (!embed.value) return ''
   switch (embed.value.provider) {
     case EmbedProvider.Youtube:
-      return "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      return 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
     case EmbedProvider.Spotify:
-      return "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
+      return 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'
     case EmbedProvider.GoogleMaps:
-      return "fullscreen";
+      return 'fullscreen'
     case EmbedProvider.GoogleCalendar:
-      return "fullscreen";
+      return 'fullscreen'
     case EmbedProvider.GoogleSlides:
-      return "fullscreen";
+      return 'fullscreen'
     case EmbedProvider.Figma:
-      return "fullscreen";
+      return 'fullscreen'
     default:
-      return "fullscreen";
+      return 'fullscreen'
   }
-});
+})
 
 const providerLabel = computed(() => {
-  if (!embed.value) return "Embed";
+  if (!embed.value) return 'Embed'
   switch (embed.value.provider) {
     case EmbedProvider.Youtube:
-      return "YouTube";
+      return 'YouTube'
     case EmbedProvider.Spotify:
-      return "Spotify";
+      return 'Spotify'
     case EmbedProvider.GoogleMaps:
-      return "Google Maps";
+      return 'Google Maps'
     case EmbedProvider.GoogleCalendar:
-      return "Google Calendar";
+      return 'Google Calendar'
     case EmbedProvider.GoogleSlides:
-      return "Google Slides";
+      return 'Google Slides'
     case EmbedProvider.Figma:
-      return "Figma";
+      return 'Figma'
     case EmbedProvider.GithubGist:
-      return "GitHub Gist";
+      return 'GitHub Gist'
     case EmbedProvider.Tldraw:
-      return "tldraw";
+      return 'tldraw'
     default:
-      return "Embed";
+      return 'Embed'
   }
-});
+})
 </script>
 
 <template>

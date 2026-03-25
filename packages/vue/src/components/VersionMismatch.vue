@@ -1,10 +1,10 @@
 <script setup lang="ts">
 defineProps<{
-  versionMismatch: boolean;
-}>();
+  versionMismatch: boolean
+}>()
 
 function reloadPage() {
-  window.location.reload();
+  window.location.reload()
 }
 </script>
 

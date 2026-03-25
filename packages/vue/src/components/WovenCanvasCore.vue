@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  ref,
-  onMounted,
-  onUnmounted,
-  shallowRef,
-  provide,
-  type Ref,
-} from "vue";
+import { ref, onMounted, onUnmounted, shallowRef, provide, type Ref } from 'vue'
 import {
   Editor,
   Camera,
@@ -32,94 +25,80 @@ import {
   type EditorPluginInput,
   type InferCanvasComponentType,
   type Context,
-} from "@woven-canvas/core";
-import {
-  CanvasStore,
-  type CanvasStoreOptions,
-  type ComponentData
-} from "@woven-ecs/canvas-store";
-import {
-  AssetManager,
-  LocalAssetProvider,
-  type AssetProvider,
-} from "@woven-canvas/asset-sync";
-import {
-  CanvasControlsPlugin,
-  type CanvasControlsOptionsInput,
-} from "@woven-canvas/plugin-canvas-controls";
-import {
-  createSelectionPlugin,
-  Selected,
-  type SelectionPluginOptionsInput,
-} from "@woven-canvas/plugin-selection";
-import {
-  createEraserPlugin,
-  type EraserPluginOptions,
-} from "@woven-canvas/plugin-eraser";
-import { createPenPlugin } from "@woven-canvas/plugin-pen";
-import {
-  createArrowsPlugin,
-  type ArrowsPluginOptions,
-} from "@woven-canvas/plugin-arrows";
-import { createTapesPlugin } from "@woven-canvas/plugin-tapes";
+} from '@woven-canvas/core'
+import { CanvasStore, type CanvasStoreOptions, type ComponentData } from '@woven-ecs/canvas-store'
+import { AssetManager, LocalAssetProvider, type AssetProvider } from '@woven-canvas/asset-sync'
+import { CanvasControlsPlugin, type CanvasControlsOptionsInput } from '@woven-canvas/plugin-canvas-controls'
+import { createSelectionPlugin, Selected, type SelectionPluginOptionsInput } from '@woven-canvas/plugin-selection'
+import { createEraserPlugin, type EraserPluginOptions } from '@woven-canvas/plugin-eraser'
+import { createPenPlugin } from '@woven-canvas/plugin-pen'
+import { createArrowsPlugin, type ArrowsPluginOptions } from '@woven-canvas/plugin-arrows'
+import { createTapesPlugin } from '@woven-canvas/plugin-tapes'
 
-import {
-  WOVEN_CANVAS_KEY,
-  TOOLTIP_KEY,
-  type WovenCanvasContext,
-  type UserData,
-} from "../injection";
-import { createTooltipContext } from "../composables/useTooltipSingleton";
-import SelectionBox from "./blocks/SelectionBox.vue";
-import TransformBox from "./blocks/TransformBox.vue";
-import TransformHandle from "./blocks/TransformHandle.vue";
-import StickyNote from "./blocks/StickyNote.vue";
-import TextBlock from "./blocks/TextBlock.vue";
-import FloatingMenu from "./FloatingMenu.vue";
-import Toolbar from "./Toolbar.vue";
-import Eraser from "./blocks/Eraser.vue";
-import PenStroke from "./blocks/PenStroke.vue";
-import ArcArrow from "./blocks/ArcArrow.vue";
-import ElbowArrow from "./blocks/ElbowArrow.vue";
-import ArrowHandle from "./blocks/ArrowHandle.vue";
-import ArrowTerminal from "./blocks/ArrowTerminal.vue";
-import EmbedBlock from "./blocks/EmbedBlock.vue";
-import ImageBlock from "./blocks/ImageBlock.vue";
-import ShapeBlock from "./blocks/ShapeBlock.vue";
-import TapeBlock from "./blocks/TapeBlock.vue";
-import { EditingPlugin } from "../EditingPlugin";
-import type { BlockData, BackgroundOptions } from "../types";
-import FileDropZone from "./FileDropZone.vue";
-import UserPresence from "./UserPresence.vue";
-import UserCursors from "./UserCursors.vue";
-import OfflineIndicator from "./OfflineIndicator.vue";
-import VersionMismatch from "./VersionMismatch.vue";
-import CanvasBackground from "./CanvasBackground.vue";
-import BackToContentButton from "./BackToContentButton.vue";
-import LoadingOverlay from "./LoadingOverlay.vue";
+import { WOVEN_CANVAS_KEY, TOOLTIP_KEY, type WovenCanvasContext, type UserData } from '../injection'
+import { createTooltipContext } from '../composables/useTooltipSingleton'
+import SelectionBox from './blocks/SelectionBox.vue'
+import TransformBox from './blocks/TransformBox.vue'
+import TransformHandle from './blocks/TransformHandle.vue'
+import StickyNote from './blocks/StickyNote.vue'
+import TextBlock from './blocks/TextBlock.vue'
+import FloatingMenu from './FloatingMenu.vue'
+import Toolbar from './Toolbar.vue'
+import Eraser from './blocks/Eraser.vue'
+import PenStroke from './blocks/PenStroke.vue'
+import ArcArrow from './blocks/ArcArrow.vue'
+import ElbowArrow from './blocks/ElbowArrow.vue'
+import ArrowHandle from './blocks/ArrowHandle.vue'
+import ArrowTerminal from './blocks/ArrowTerminal.vue'
+import EmbedBlock from './blocks/EmbedBlock.vue'
+import ImageBlock from './blocks/ImageBlock.vue'
+import ShapeBlock from './blocks/ShapeBlock.vue'
+import TapeBlock from './blocks/TapeBlock.vue'
+import { EditingPlugin } from '../EditingPlugin'
+import { useKeyboardAvoidance } from '../composables/useKeyboardAvoidance'
+import type { BlockData, BackgroundOptions } from '../types'
+import FileDropZone from './FileDropZone.vue'
+import ClipboardHandler from './ClipboardHandler.vue'
+import UserPresence from './UserPresence.vue'
+import UserCursors from './UserCursors.vue'
+import OfflineIndicator from './OfflineIndicator.vue'
+import VersionMismatch from './VersionMismatch.vue'
+import CanvasBackground from './CanvasBackground.vue'
+import BackToContentButton from './BackToContentButton.vue'
+import LoadingOverlay from './LoadingOverlay.vue'
 
 // Queries for tracking blocks and state components
-const blockQuery = defineQuery((q) => q.tracking(Block));
-const connectorQuery = defineQuery((q) => q.with(Block).tracking(Connector));
-const selectedQuery = defineQuery((q) => q.with(Block).tracking(Selected));
-const heldQuery = defineQuery((q) => q.with(Block).tracking(Held));
-const hoveredQuery = defineQuery((q) => q.with(Block).tracking(Hovered));
-const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited));
-const opacityQuery = defineQuery((q) => q.with(Block).tracking(Opacity));
-const userQuery = defineQuery((q) => q.tracking(User));
+const blockQuery = defineQuery((q) => q.tracking(Block))
+const connectorQuery = defineQuery((q) => q.with(Block).tracking(Connector))
+const selectedQuery = defineQuery((q) => q.with(Block).tracking(Selected))
+const heldQuery = defineQuery((q) => q.with(Block).tracking(Held))
+const hoveredQuery = defineQuery((q) => q.with(Block).tracking(Hovered))
+const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited))
+const opacityQuery = defineQuery((q) => q.with(Block).tracking(Opacity))
+const userQuery = defineQuery((q) => q.tracking(User))
 
-type BlockDef = InferCanvasComponentType<typeof Block.schema>;
+type BlockDef = InferCanvasComponentType<typeof Block.schema>
+
+/**
+ * Options for copy/paste behavior.
+ */
+export interface CopyPasteOptions {
+  /** Whether copy/paste is enabled. @default true */
+  enabled?: boolean
+  /** Whether pasting external text creates a text block. @default true */
+  canPasteTextAsBlock?: boolean
+}
 
 /**
  * Options for built-in plugins (pass false to disable a plugin)
  */
 export interface WovenCanvasPluginOptions {
-  controls?: CanvasControlsOptionsInput | false;
-  selection?: SelectionPluginOptionsInput | false;
-  eraser?: EraserPluginOptions | false;
-  pen?: false;
-  arrows?: ArrowsPluginOptions | false;
-  tapes?: false;
+  controls?: CanvasControlsOptionsInput | false
+  selection?: SelectionPluginOptionsInput | false
+  eraser?: EraserPluginOptions | false
+  pen?: false
+  arrows?: ArrowsPluginOptions | false
+  tapes?: false
 }
 
 /**
@@ -127,138 +106,137 @@ export interface WovenCanvasPluginOptions {
  */
 export interface WovenCanvasProps {
   // Store options for persistence, history, and multiplayer
-  store?: CanvasStoreOptions;
+  store?: CanvasStoreOptions
 
   // Editor options (passed through to Editor constructor)
-  editor?: EditorOptionsInput;
+  editor?: EditorOptionsInput
 
   // Background options (grid, dots, or none)
-  background?: BackgroundOptions;
+  background?: BackgroundOptions
 
   // Asset provider for image uploads (defaults to LocalAssetProvider)
-  assetProvider?: AssetProvider;
+  assetProvider?: AssetProvider
 
   // Options for built-in plugins (pass false to disable a plugin)
-  pluginOptions?: WovenCanvasPluginOptions;
+  pluginOptions?: WovenCanvasPluginOptions
 
   // Initial controls configuration (tool mappings for mouse buttons, wheel, etc.)
-  controls?: ControlsOptionsInput;
+  controls?: ControlsOptionsInput
+
+  // JSON snapshot of block to create on double-click (empty string to disable)
+  doubleClickSnapshot?: string
+
+  // Copy/paste behavior options
+  copyPaste?: CopyPasteOptions
 
   // Initial state for SSR pre-rendering.
   // When provided, the editor is created headlessly during setup so blocks render server-side.
   // On mount, the DOM is attached and the editor becomes interactive.
-  initialState?: Record<string, ComponentData>;
+  initialState?: Record<string, ComponentData>
 }
 
-const props = defineProps<WovenCanvasProps>();
+const props = defineProps<WovenCanvasProps>()
 
 const emit = defineEmits<{
-  ready: [editor: Editor, store: CanvasStore];
-}>();
+  ready: [editor: Editor, store: CanvasStore]
+}>()
 
 // Define slots - block slots use "block:<tag>" naming, other slots allow overriding built-in UI
 defineSlots<
   {
-    default?: () => any;
-    loading?: (props: { isLoading: boolean }) => any;
-    background?: (props: { background: BackgroundOptions }) => any;
-    "floating-menu"?: () => any;
-    toolbar?: () => any;
-    "user-cursors"?: (props: {
-      users: UserData[];
-      currentSessionId: string;
-      camera: { left: number; top: number; zoom: number };
-    }) => any;
-    "user-presence"?: (props: { users: UserData[] }) => any;
-    "offline-indicator"?: (props: { isOnline: boolean }) => any;
-    "version-mismatch"?: (props: { versionMismatch: boolean }) => any;
-    "back-to-content"?: () => any;
+    default?: () => any
+    loading?: (props: { isLoading: boolean }) => any
+    background?: (props: { background: BackgroundOptions }) => any
+    'floating-menu'?: () => any
+    toolbar?: () => any
+    'user-cursors'?: (props: {
+      users: UserData[]
+      currentSessionId: string
+      camera: { left: number; top: number; zoom: number }
+    }) => any
+    'user-presence'?: (props: { users: UserData[] }) => any
+    'offline-indicator'?: (props: { isOnline: boolean }) => any
+    'version-mismatch'?: (props: { versionMismatch: boolean }) => any
+    'back-to-content'?: () => any
     /** Slot for file drag-drop zone. Currently handles images. Set to empty to disable. */
-    "file-drop-zone"?: () => any;
+    'file-drop-zone'?: () => any
   } & {
-    [slotName: `block:${string}`]: (props: BlockData) => any;
+    [slotName: `block:${string}`]: (props: BlockData) => any
   }
->();
+>()
 
 // Container ref for editor DOM element
-const containerRef = ref<HTMLDivElement | null>(null);
+const containerRef = ref<HTMLDivElement | null>(null)
 
 // Editor instance
-const editorRef = shallowRef<Editor | null>(null);
+const editorRef = shallowRef<Editor | null>(null)
 
 // Parse user data from props (userId and sessionId won't change)
-const parsedUser = UserDataZod.parse(props.editor?.user ?? {});
+const parsedUser = UserDataZod.parse(props.editor?.user ?? {})
 
 // Track which entities exist (for hasEntity check)
-const entities = new Set<EntityId>();
+const entities = new Set<EntityId>()
 
 // Track users by sessionId for selection highlighting
-const usersBySessionId = new Map<string, UserData>();
+const usersBySessionId = new Map<string, UserData>()
 
 // Users array for UserPresence component
-const usersArray = shallowRef<UserData[]>([]);
+const usersArray = shallowRef<UserData[]>([])
 
 // Component subscriptions - entityId -> componentName -> Set of callbacks
-const componentSubscriptions = new Map<
-  EntityId,
-  Map<string, Set<(value: unknown) => void>>
->();
+const componentSubscriptions = new Map<EntityId, Map<string, Set<(value: unknown) => void>>>()
 
 // Singleton subscriptions - singletonName -> Set of callbacks
-const singletonSubscriptions = new Map<string, Set<(value: unknown) => void>>();
+const singletonSubscriptions = new Map<string, Set<(value: unknown) => void>>()
 
 // Tick callbacks - called after each tick/processEvents
-const tickCallbacks = new Set<(ctx: Context) => void>();
+const tickCallbacks = new Set<(ctx: Context) => void>()
 
 // Block data for rendering - entityId -> reactive block data
-const blockMap = new Map<EntityId, Ref<BlockData>>();
+const blockMap = new Map<EntityId, Ref<BlockData>>()
 
 // Blocks sorted by rank for rendering
-const sortedBlocks = shallowRef<Ref<BlockData>[]>([]);
+const sortedBlocks = shallowRef<Ref<BlockData>[]>([])
 
 // Online status - updated each tick from the store
-const isOnline = ref(true);
+const isOnline = ref(true)
 
 // Version mismatch - set when server reports incompatible protocol version
-const versionMismatch = ref(false);
+const versionMismatch = ref(false)
 
 // Loading state - shown until editor is initialized and first tick completes.
 // When initialState is provided, blocks are pre-populated so no loading needed.
-const isLoading = ref(!props.initialState);
+const isLoading = ref(!props.initialState)
 
 // Camera ref for internal rendering - updated via subscription
-const cameraRef = shallowRef(Camera.default());
+const cameraRef = shallowRef(Camera.default())
 
 // Subscribe to component changes for an entity
-function subscribeComponent(
-  entityId: EntityId,
-  componentName: string,
-  callback: (value: unknown) => void,
-): () => void {
-  let entitySubs = componentSubscriptions.get(entityId);
+function subscribeComponent(entityId: EntityId, componentName: string, callback: (value: unknown) => void): () => void {
+  let entitySubs = componentSubscriptions.get(entityId)
   if (!entitySubs) {
-    entitySubs = new Map();
-    componentSubscriptions.set(entityId, entitySubs);
+    entitySubs = new Map()
+    componentSubscriptions.set(entityId, entitySubs)
   }
 
-  let callbacks = entitySubs.get(componentName);
+  let callbacks = entitySubs.get(componentName)
   if (!callbacks) {
-    callbacks = new Set();
-    entitySubs.set(componentName, callbacks);
+    callbacks = new Set()
+    entitySubs.set(componentName, callbacks)
   }
 
-  callbacks.add(callback);
+  callbacks.add(callback)
 
   // Return unsubscribe function
   return () => {
-    callbacks!.delete(callback);
+    callbacks!.delete(callback)
     if (callbacks!.size === 0) {
-      entitySubs!.delete(componentName);
+      entitySubs!.delete(componentName)
       if (entitySubs!.size === 0) {
-        componentSubscriptions.delete(entityId);
+        componentSubscriptions.delete(entityId)
       }
     }
-  };
+  }
 }
 
 // Notify subscribers of a component change (or removal when removed=true)
@@ -268,77 +246,71 @@ function notifySubscribers(
   componentDef: AnyCanvasComponentDef,
   removed = false,
 ): void {
-  const entitySubs = componentSubscriptions.get(entityId);
-  if (!entitySubs) return;
+  const entitySubs = componentSubscriptions.get(entityId)
+  if (!entitySubs) return
 
-  const callbacks = entitySubs.get(componentDef.name);
-  if (!callbacks || callbacks.size === 0) return;
+  const callbacks = entitySubs.get(componentDef.name)
+  if (!callbacks || callbacks.size === 0) return
 
-  let value: unknown = null;
+  let value: unknown = null
   if (!removed) {
-    value = componentDef.snapshot(ctx, entityId);
+    value = componentDef.snapshot(ctx, entityId)
   }
 
   for (const callback of callbacks) {
-    callback(value);
+    callback(value)
   }
 }
 
 // Subscribe to singleton changes
-function subscribeSingleton(
-  singletonName: string,
-  callback: (value: unknown) => void,
-): () => void {
-  let callbacks = singletonSubscriptions.get(singletonName);
+function subscribeSingleton(singletonName: string, callback: (value: unknown) => void): () => void {
+  let callbacks = singletonSubscriptions.get(singletonName)
   if (!callbacks) {
-    callbacks = new Set();
-    singletonSubscriptions.set(singletonName, callbacks);
+    callbacks = new Set()
+    singletonSubscriptions.set(singletonName, callbacks)
   }
 
-  callbacks.add(callback);
+  callbacks.add(callback)
 
   // Return unsubscribe function
   return () => {
-    callbacks!.delete(callback);
+    callbacks!.delete(callback)
     if (callbacks!.size === 0) {
-      singletonSubscriptions.delete(singletonName);
+      singletonSubscriptions.delete(singletonName)
     }
-  };
+  }
 }
 
 // Notify singleton subscribers
-function notifySingletonSubscribers(
-  ctx: Context,
-  singletonDef: AnyCanvasSingletonDef,
-): void {
-  const callbacks = singletonSubscriptions.get(singletonDef.name);
-  if (!callbacks || callbacks.size === 0) return;
+function notifySingletonSubscribers(ctx: Context, singletonDef: AnyCanvasSingletonDef): void {
+  const callbacks = singletonSubscriptions.get(singletonDef.name)
+  if (!callbacks || callbacks.size === 0) return
 
-  const value = singletonDef.snapshot(ctx);
+  const value = singletonDef.snapshot(ctx)
 
   for (const callback of callbacks) {
-    callback(value);
+    callback(value)
   }
 }
 
 // Register a callback to be called on each tick
 function registerTickCallback(callback: (ctx: Context) => void): () => void {
-  tickCallbacks.add(callback);
+  tickCallbacks.add(callback)
 
   // Return unregister function
   return () => {
-    tickCallbacks.delete(callback);
-  };
+    tickCallbacks.delete(callback)
+  }
 }
 
 // Get current user's sessionId (parsed from props, won't change)
 function getSessionId(): string {
-  return parsedUser.sessionId;
+  return parsedUser.sessionId
 }
 
 // Get user info by session ID
 function getUserBySessionId(sessionId: string): UserData | null {
-  return usersBySessionId.get(sessionId) ?? null;
+  return usersBySessionId.get(sessionId) ?? null
 }
 
 // Provide context to composables
@@ -351,83 +323,93 @@ const canvasContext: WovenCanvasContext = {
   subscribeComponent,
   subscribeSingleton,
   registerTickCallback,
-};
-provide(WOVEN_CANVAS_KEY, canvasContext);
+}
+provide(WOVEN_CANVAS_KEY, canvasContext)
 
 // Provide container ref for FloatingMenu positioning
-provide("containerRef", containerRef);
+provide('containerRef', containerRef)
 
 // Provide tooltip context for per-instance tooltip state
-const tooltipContext = createTooltipContext();
-provide(TOOLTIP_KEY, tooltipContext);
+const tooltipContext = createTooltipContext()
+provide(TOOLTIP_KEY, tooltipContext)
 
-let eventIndex = 0;
-let animationFrameId: number | null = null;
-let store: CanvasStore | null = null;
+// Pan camera to keep edited blocks visible when mobile keyboard opens
+useKeyboardAvoidance((cb) => {
+  editorRef.value?.nextTick(cb)
+})
+
+let eventIndex = 0
+let animationFrameId: number | null = null
+let store: CanvasStore | null = null
 
 // Create asset manager eagerly so resolveUrl is available during SSR.
 // init() and resumePendingUploads() are deferred to onMounted (they need IndexedDB).
-const documentId = (props.store ?? {}).persistence?.documentId ?? "default";
+const documentId = props.store?.persistence?.documentId ?? 'default'
 let assetManager: AssetManager | null = new AssetManager({
   provider: props.assetProvider ?? new LocalAssetProvider(),
   documentId,
-});
+})
 
 // Build the plugins array from props
 function buildPlugins(storeInstance: CanvasStore): EditorPluginInput[] {
-  const allPlugins: EditorPluginInput[] = [];
-  const opts = props.pluginOptions;
+  const allPlugins: EditorPluginInput[] = []
+  const opts = props.pluginOptions
 
   if (opts?.controls !== false) {
-    allPlugins.push(CanvasControlsPlugin(opts?.controls ?? {}));
+    allPlugins.push(CanvasControlsPlugin(opts?.controls ?? {}))
   }
   if (opts?.selection !== false) {
-    allPlugins.push(createSelectionPlugin(opts?.selection || undefined));
+    allPlugins.push(createSelectionPlugin(opts?.selection || undefined))
   }
   if (opts?.eraser !== false) {
-    allPlugins.push(createEraserPlugin(opts?.eraser || undefined));
+    allPlugins.push(createEraserPlugin(opts?.eraser || undefined))
   }
   if (opts?.pen !== false) {
-    allPlugins.push(createPenPlugin());
+    allPlugins.push(createPenPlugin())
   }
   if (opts?.arrows !== false) {
-    allPlugins.push(createArrowsPlugin(opts?.arrows || undefined));
+    allPlugins.push(createArrowsPlugin(opts?.arrows || undefined))
   }
   if (opts?.tapes !== false) {
-    allPlugins.push(createTapesPlugin());
+    allPlugins.push(createTapesPlugin())
   }
-  allPlugins.push(EditingPlugin({ store: storeInstance }));
+  allPlugins.push(
+    EditingPlugin({
+      store: storeInstance,
+      doubleClickSnapshot: props.doubleClickSnapshot,
+    }),
+  )
 
   if (props.editor?.plugins) {
-    allPlugins.push(...props.editor.plugins);
+    allPlugins.push(...props.editor.plugins)
   }
 
-  return allPlugins;
+  return allPlugins
 }
 
 // Build store options from props, wrapping websocket callbacks
 function buildStoreOptions(): CanvasStoreOptions {
-  const syncOpts = props.store ?? {};
+  const syncOpts = props.store ?? {}
   const storeOptions: CanvasStoreOptions = {
     history: true,
     ...syncOpts,
-  };
+  }
 
   if (syncOpts.websocket) {
     storeOptions.websocket = {
       ...syncOpts.websocket,
       onVersionMismatch: (serverProtocolVersion) => {
-        versionMismatch.value = true;
-        syncOpts.websocket?.onVersionMismatch?.(serverProtocolVersion);
+        versionMismatch.value = true
+        syncOpts.websocket?.onVersionMismatch?.(serverProtocolVersion)
       },
       onConnectivityChange: (online) => {
-        isOnline.value = online;
-        syncOpts.websocket?.onConnectivityChange?.(online);
+        isOnline.value = online
+        syncOpts.websocket?.onConnectivityChange?.(online)
       },
-    };
+    }
   }
 
-  return storeOptions;
+  return storeOptions
 }
 
 // Create editor and store, initialize both, return the editor
@@ -435,178 +417,175 @@ async function createEditorAndStore(
   domElement: HTMLElement | null,
   initialState?: Record<string, ComponentData>,
 ): Promise<Editor> {
-  const storeOptions = buildStoreOptions();
+  const storeOptions = buildStoreOptions()
 
   // Strip browser-only options when headless (SSR)
   if (!domElement) {
-    delete storeOptions.persistence;
-    delete storeOptions.websocket;
+    delete storeOptions.persistence
+    delete storeOptions.websocket
   }
 
   // Pass initial state to the store for first-tick loading
   if (initialState) {
-    storeOptions.initialState = initialState;
+    storeOptions.initialState = initialState
   }
 
-  store = new CanvasStore(storeOptions);
+  store = new CanvasStore(storeOptions)
 
   const editorOptions: EditorOptionsInput = {
     ...props.editor,
     user: parsedUser,
     plugins: buildPlugins(store),
     controls: props.controls,
-  };
+  }
 
-  const editor = new Editor(domElement, editorOptions);
-  await editor.initialize();
+  const editor = new Editor(domElement, editorOptions)
+  await editor.initialize()
 
   await store.initialize({
     components: editor.components,
     singletons: editor.singletons,
-  });
+  })
 
-  return editor;
+  return editor
 }
 
 // Run one tick cycle: sync store, process ECS events, update block reactive state
 async function runTick(editor: Editor): Promise<void> {
   editor.nextTick((ctx) => {
     if (store) {
-      store.sync(ctx);
+      store.sync(ctx)
     }
-    processEvents(ctx);
-    updateBlocks(ctx);
+    processEvents(ctx)
+    updateBlocks(ctx)
 
     for (const callback of tickCallbacks) {
-      callback(ctx);
+      callback(ctx)
     }
-  });
+  })
 
-  await editor.tick();
+  await editor.tick()
 }
 
 async function tick() {
-  if (!editorRef.value || !store) return;
+  if (!editorRef.value || !store) return
 
-  await runTick(editorRef.value);
+  await runTick(editorRef.value)
 
-  animationFrameId = requestAnimationFrame(tick);
+  animationFrameId = requestAnimationFrame(tick)
 }
 
 subscribeSingleton(Camera.name, (value) => {
   if (value) {
-    cameraRef.value = value as typeof cameraRef.value;
+    cameraRef.value = value as typeof cameraRef.value
   }
-});
+})
 
 // When initialState is provided during SSR, create a headless editor during
 // setup to populate blocks so they are included in the server-rendered HTML.
 // Skip this in the browser — the real editor created on mount will load state
 // from the authoritative source (IndexedDB if persisted, otherwise initialState).
 if (props.initialState && typeof window === 'undefined') {
-  const headlessEditor = await createEditorAndStore(null, props.initialState);
+  const headlessEditor = await createEditorAndStore(null, props.initialState)
   // Two ticks: first loads initial state into ECS, second lets queries detect
   // the new entities so updateBlocks fully populates sortedBlocks.
-  await runTick(headlessEditor);
-  await runTick(headlessEditor);
-  editorRef.value = headlessEditor;
+  await runTick(headlessEditor)
+  await runTick(headlessEditor)
+  editorRef.value = headlessEditor
 }
 
 // Scroll prevention handler - stored for cleanup
-let scrollHandler: (() => void) | null = null;
+let scrollHandler: (() => void) | null = null
 
 onMounted(async () => {
-  if (!containerRef.value) return;
+  if (!containerRef.value) return
 
   // Prevent scrolling on the canvas container
   scrollHandler = () => {
-    containerRef.value?.scrollTo(0, 0);
-  };
-  containerRef.value.addEventListener("scroll", scrollHandler);
+    containerRef.value?.scrollTo(0, 0)
+  }
+  containerRef.value.addEventListener('scroll', scrollHandler)
 
   // Dispose headless editor from setup (keep blockMap populated for smooth transition)
   if (editorRef.value) {
-    editorRef.value.dispose();
-    store?.close();
-    store = null;
-    eventIndex = 0;
+    editorRef.value.dispose()
+    store?.close()
+    store = null
+    eventIndex = 0
   }
 
   // Create editor with the real DOM element
-  const editor = await createEditorAndStore(
-    containerRef.value,
-    props.initialState,
-  );
-  editorRef.value = editor;
-  isLoading.value = false;
+  const editor = await createEditorAndStore(containerRef.value, props.initialState)
+  editorRef.value = editor
+  isLoading.value = false
 
   // Initialize asset manager (created during setup for SSR availability)
-  await assetManager?.init();
-  await assetManager?.resumePendingUploads();
+  await assetManager?.init()
+  await assetManager?.resumePendingUploads()
 
   // Start the render loop
-  animationFrameId = requestAnimationFrame(tick);
+  animationFrameId = requestAnimationFrame(tick)
 
   // Emit ready event with editor instance
-  emit("ready", editorRef.value!, store!);
-});
+  emit('ready', editorRef.value!, store!)
+})
 
 onUnmounted(() => {
   if (animationFrameId !== null) {
-    cancelAnimationFrame(animationFrameId);
+    cancelAnimationFrame(animationFrameId)
   }
-  assetManager?.close();
-  store?.close();
-  editorRef.value?.dispose();
-});
+  assetManager?.close()
+  store?.close()
+  editorRef.value?.dispose()
+})
 
 /**
  * Process ECS events and update reactive state.
  */
 function processEvents(ctx: Context) {
-  const { events, newIndex } = ctx.eventBuffer.readEvents(eventIndex);
-  eventIndex = newIndex;
+  const { events, newIndex } = ctx.eventBuffer.readEvents(eventIndex)
+  eventIndex = newIndex
 
-  if (events.length === 0) return;
+  if (events.length === 0) return
 
-  const { componentsById, singletonsById } = getResources<EditorResources>(ctx);
+  const { componentsById, singletonsById } = getResources<EditorResources>(ctx)
 
   for (const { entityId, eventType, componentId } of events) {
     // Handle singleton events (special entity ID)
     if (entityId === SINGLETON_ENTITY_ID) {
       if (eventType === EventType.CHANGED) {
-        const singletonDef = singletonsById.get(componentId);
+        const singletonDef = singletonsById.get(componentId)
         if (singletonDef) {
-          notifySingletonSubscribers(ctx, singletonDef);
+          notifySingletonSubscribers(ctx, singletonDef)
         }
       }
-      continue;
+      continue
     }
 
     if (eventType === EventType.ADDED) {
       // Track entity existence
-      entities.add(entityId);
+      entities.add(entityId)
     } else if (eventType === EventType.REMOVED) {
       // Entity removed
-      entities.delete(entityId);
-      componentSubscriptions.delete(entityId);
+      entities.delete(entityId)
+      componentSubscriptions.delete(entityId)
     } else if (eventType === EventType.COMPONENT_ADDED) {
       // Ensure entity is tracked
-      entities.add(entityId);
+      entities.add(entityId)
 
-      const componentDef = componentsById.get(componentId);
+      const componentDef = componentsById.get(componentId)
       if (componentDef) {
-        notifySubscribers(ctx, entityId, componentDef);
+        notifySubscribers(ctx, entityId, componentDef)
       }
     } else if (eventType === EventType.COMPONENT_REMOVED) {
-      const componentDef = componentsById.get(componentId);
+      const componentDef = componentsById.get(componentId)
       if (componentDef) {
-        notifySubscribers(ctx, entityId, componentDef, true);
+        notifySubscribers(ctx, entityId, componentDef, true)
       }
     } else if (eventType === EventType.CHANGED) {
-      const componentDef = componentsById.get(componentId);
+      const componentDef = componentsById.get(componentId)
       if (componentDef) {
-        notifySubscribers(ctx, entityId, componentDef);
+        notifySubscribers(ctx, entityId, componentDef)
       }
     }
   }
@@ -616,13 +595,13 @@ function processEvents(ctx: Context) {
  * Update block state using ECS queries and rebuild sorted array if needed.
  */
 function updateBlocks(ctx: Context) {
-  let needsResort = false;
+  let needsResort = false
 
   // Handle block additions
   for (const entityId of blockQuery.added(ctx)) {
-    const snapshot = Block.snapshot(ctx, entityId);
-    const blockDef = editorRef.value?.blockDefs[snapshot.tag];
-    const stratum = blockDef?.stratum ?? "content";
+    const snapshot = Block.snapshot(ctx, entityId)
+    const blockDef = editorRef.value?.blockDefs[snapshot.tag]
+    const stratum = blockDef?.stratum ?? 'content'
     blockMap.set(
       entityId,
       ref({
@@ -636,170 +615,170 @@ function updateBlocks(ctx: Context) {
         opacity: null,
         connector: null,
       }),
-    );
-    needsResort = true;
+    )
+    needsResort = true
   }
 
   // Handle block removals
   for (const entityId of blockQuery.removed(ctx)) {
-    blockMap.delete(entityId);
-    needsResort = true;
+    blockMap.delete(entityId)
+    needsResort = true
   }
 
   // Handle block changes (position, size, rank, etc.)
   for (const entityId of blockQuery.changed(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef) {
-      const snapshot = Block.snapshot(ctx, entityId);
+      const snapshot = Block.snapshot(ctx, entityId)
       if (blockRef.value.block.rank !== snapshot.rank) {
-        needsResort = true;
+        needsResort = true
       }
-      blockRef.value.block = snapshot;
+      blockRef.value.block = snapshot
     }
   }
 
   // Update users map for selection color lookup
-  let usersChanged = false;
+  let usersChanged = false
   for (const entityId of userQuery.addedOrChanged(ctx)) {
-    const userSnapshot = User.snapshot(ctx, entityId);
-    usersBySessionId.set(userSnapshot.sessionId, userSnapshot);
-    usersChanged = true;
+    const userSnapshot = User.snapshot(ctx, entityId)
+    usersBySessionId.set(userSnapshot.sessionId, userSnapshot)
+    usersChanged = true
   }
   for (const entityId of userQuery.removed(ctx)) {
-    const user = User.read(ctx, entityId);
-    usersBySessionId.delete(user.sessionId);
-    usersChanged = true;
+    const user = User.read(ctx, entityId)
+    usersBySessionId.delete(user.sessionId)
+    usersChanged = true
   }
   if (usersChanged) {
-    usersArray.value = Array.from(usersBySessionId.values());
+    usersArray.value = Array.from(usersBySessionId.values())
   }
 
   // Update selected state (boolean - Selected is an empty component)
   for (const entityId of selectedQuery.added(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef && !blockRef.value.selected) {
-      blockRef.value.selected = true;
+      blockRef.value.selected = true
     }
   }
   for (const entityId of selectedQuery.removed(ctx)) {
-    const blockRef = blockMap.get(entityId);
-    if (blockRef && blockRef.value.selected) {
-      blockRef.value.selected = false;
+    const blockRef = blockMap.get(entityId)
+    if (blockRef?.value.selected) {
+      blockRef.value.selected = false
     }
   }
 
   // Update held state (for remote user presence)
   for (const entityId of heldQuery.addedOrChanged(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef) {
-      blockRef.value.held = Held.snapshot(ctx, entityId);
+      blockRef.value.held = Held.snapshot(ctx, entityId)
     }
   }
   for (const entityId of heldQuery.removed(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef && blockRef.value.held !== null) {
-      blockRef.value.held = null;
+      blockRef.value.held = null
     }
   }
 
   // Update hovered state
   for (const entityId of hoveredQuery.added(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef && !blockRef.value.hovered) {
-      blockRef.value.hovered = true;
+      blockRef.value.hovered = true
     }
   }
   for (const entityId of hoveredQuery.removed(ctx)) {
-    const blockRef = blockMap.get(entityId);
-    if (blockRef && blockRef.value.hovered) {
-      blockRef.value.hovered = false;
+    const blockRef = blockMap.get(entityId)
+    if (blockRef?.value.hovered) {
+      blockRef.value.hovered = false
     }
   }
 
   // Update edited state
   for (const entityId of editedQuery.added(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef && !blockRef.value.edited) {
-      blockRef.value.edited = true;
+      blockRef.value.edited = true
     }
   }
   for (const entityId of editedQuery.removed(ctx)) {
-    const blockRef = blockMap.get(entityId);
-    if (blockRef && blockRef.value.edited) {
-      blockRef.value.edited = false;
+    const blockRef = blockMap.get(entityId)
+    if (blockRef?.value.edited) {
+      blockRef.value.edited = false
     }
   }
 
   // Update opacity state
   for (const entityId of opacityQuery.addedOrChanged(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef) {
-      blockRef.value.opacity = Opacity.snapshot(ctx, entityId);
+      blockRef.value.opacity = Opacity.snapshot(ctx, entityId)
     }
   }
   for (const entityId of opacityQuery.removed(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef && blockRef.value.opacity !== null) {
-      blockRef.value.opacity = null;
+      blockRef.value.opacity = null
     }
   }
 
   // Update connector state
   for (const entityId of connectorQuery.addedOrChanged(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef) {
-      blockRef.value.connector = Connector.snapshot(ctx, entityId);
+      blockRef.value.connector = Connector.snapshot(ctx, entityId)
     }
   }
   for (const entityId of connectorQuery.removed(ctx)) {
-    const blockRef = blockMap.get(entityId);
+    const blockRef = blockMap.get(entityId)
     if (blockRef && blockRef.value.connector !== null) {
-      blockRef.value.connector = null;
+      blockRef.value.connector = null
     }
   }
 
   // Rebuild sorted array only when blocks added/removed or rank changed
   if (needsResort) {
-    const blocks = Array.from(blockMap.values());
+    const blocks = Array.from(blockMap.values())
 
-    blocks.sort((a, b) => (a.value.block.rank > b.value.block.rank ? 1 : -1));
+    blocks.sort((a, b) => (a.value.block.rank > b.value.block.rank ? 1 : -1))
 
-    sortedBlocks.value = blocks;
+    sortedBlocks.value = blocks
   }
 }
 
 function getBlockTransform(block: BlockDef): string | undefined {
-  const hasRotation = block.rotateZ !== 0;
-  const hasFlipX = block.flip[0];
-  const hasFlipY = block.flip[1];
+  const hasRotation = block.rotateZ !== 0
+  const hasFlipX = block.flip[0]
+  const hasFlipY = block.flip[1]
 
   if (!hasRotation && !hasFlipX && !hasFlipY) {
-    return undefined;
+    return undefined
   }
 
-  const parts: string[] = [];
-  if (hasRotation) parts.push(`rotate(${block.rotateZ}rad)`);
-  if (hasFlipX) parts.push("scaleX(-1)");
-  if (hasFlipY) parts.push("scaleY(-1)");
+  const parts: string[] = []
+  if (hasRotation) parts.push(`rotate(${block.rotateZ}rad)`)
+  if (hasFlipX) parts.push('scaleX(-1)')
+  if (hasFlipY) parts.push('scaleY(-1)')
 
-  return parts.join(" ");
+  return parts.join(' ')
 }
 
 function getHeldByColor(data: BlockData): string | null {
-  const { held } = data;
-  if (!held || !held.sessionId) return null;
-  if (held.sessionId === parsedUser.sessionId) return null;
-  const otherUser = getUserBySessionId(held.sessionId);
-  return otherUser?.color ?? null;
+  const { held } = data
+  if (!held || !held.sessionId) return null
+  if (held.sessionId === parsedUser.sessionId) return null
+  const otherUser = getUserBySessionId(held.sessionId)
+  return otherUser?.color ?? null
 }
 
 function getBlockStyle(data: BlockData) {
-  const { block, stratum, opacity } = data;
-  const heldByColor = getHeldByColor(data);
-  const opacityValue = opacity !== null ? opacity.value / 255 : 1;
+  const { block, stratum, opacity } = data
+  const heldByColor = getHeldByColor(data)
+  const opacityValue = opacity !== null ? opacity.value / 255 : 1
 
   return {
-    position: "absolute" as const,
+    position: 'absolute' as const,
     left: `${block.position[0]}px`,
     top: `${block.position[1]}px`,
     width: `${block.size[0]}px`,
@@ -807,12 +786,12 @@ function getBlockStyle(data: BlockData) {
     zIndex: STRATUM_ORDER[stratum] * 1000,
     transform: getBlockTransform(block),
     opacity: opacityValue,
-    pointerEvents: "none" as const,
-    userSelect: "none" as const,
-    "--wov-held-by-color": heldByColor ?? undefined,
+    pointerEvents: 'none' as const,
+    userSelect: 'none' as const,
+    '--wov-held-by-color': heldByColor ?? undefined,
     // Delay fade-in (0→1) to allow dimensions to settle, but hide immediately (1→0)
-    transition: opacityValue === 1 ? "opacity 0ms 32ms" : undefined,
-  };
+    transition: opacityValue === 1 ? 'opacity 0ms 32ms' : undefined,
+  }
 }
 </script>
 
@@ -981,6 +960,9 @@ function getBlockStyle(data: BlockData) {
     <slot v-if="editorRef" name="file-drop-zone">
       <FileDropZone />
     </slot>
+
+    <!-- Clipboard handler (copy, cut, paste) -->
+    <ClipboardHandler v-if="editorRef" :options="props.copyPaste" />
   </div>
 </template>
 

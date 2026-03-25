@@ -1,58 +1,58 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@woven-canvas/core";
-import { Asset } from "@woven-canvas/core";
+import { computed } from 'vue'
+import type { EntityId } from '@woven-canvas/core'
+import { Asset } from '@woven-canvas/core'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useComponents } from "../../composables/useComponents";
-import { useEditorContext } from "../../composables/useEditorContext";
+import MenuDropdown from './MenuDropdown.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useComponents } from '../../composables/useComponents'
+import { useEditorContext } from '../../composables/useEditorContext'
 
 const TAPE_OPTIONS = [
   {
-    name: "Masking Tape",
-    url: "https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F7e3b7dde-927d-4b09-aeb4-d49eac36d4ea.png?generation=1715183194653465&alt=media",
+    name: 'Masking Tape',
+    url: 'https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F7e3b7dde-927d-4b09-aeb4-d49eac36d4ea.png?generation=1715183194653465&alt=media',
   },
   {
-    name: "Transparent",
-    url: "https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F522899b7-0ae9-4303-bdca-71105d835210.png?generation=1715183195130528&alt=media",
+    name: 'Transparent',
+    url: 'https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F522899b7-0ae9-4303-bdca-71105d835210.png?generation=1715183195130528&alt=media',
   },
   {
-    name: "Arabic",
-    url: "https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F3658d208-67e9-48a4-865b-44842187b523.png?generation=1715183192038109&alt=media",
+    name: 'Arabic',
+    url: 'https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F3658d208-67e9-48a4-865b-44842187b523.png?generation=1715183192038109&alt=media',
   },
   {
-    name: "Balloons",
-    url: "https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F7d836c56-ae9a-44e6-a624-e6a49286dcde.png?generation=1715183193267076&alt=media",
+    name: 'Balloons',
+    url: 'https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F7d836c56-ae9a-44e6-a624-e6a49286dcde.png?generation=1715183193267076&alt=media',
   },
   {
-    name: "Flowers",
-    url: "https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2Fc1a1b89a-543f-4817-8afa-76544e94d776.png?generation=1715183194007112&alt=media",
+    name: 'Flowers',
+    url: 'https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2Fc1a1b89a-543f-4817-8afa-76544e94d776.png?generation=1715183194007112&alt=media',
   },
-];
+]
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const assetsMap = useComponents(() => props.entityIds, Asset);
+const assetsMap = useComponents(() => props.entityIds, Asset)
 
 const currentUrl = computed(() => {
   for (const asset of assetsMap.value.values()) {
-    if (asset?.identifier) return asset.identifier;
+    if (asset?.identifier) return asset.identifier
   }
-  return null;
-});
+  return null
+})
 
 function selectTape(url: string) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const asset = Asset.write(ctx, entityId);
-      asset.identifier = url;
+      const asset = Asset.write(ctx, entityId)
+      asset.identifier = url
     }
-  });
+  })
 }
 </script>
 

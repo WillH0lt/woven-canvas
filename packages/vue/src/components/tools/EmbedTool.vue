@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, inject, watch, nextTick, type Ref } from "vue";
+import { ref, computed, inject, watch, nextTick, type Ref } from 'vue'
 import {
   Block,
   Camera,
@@ -12,254 +12,249 @@ import {
   detectEmbedProvider,
   resolveEmbedUrl,
   validateEmbedUrl,
-} from "@woven-canvas/core";
-import { Synced } from "@woven-ecs/canvas-store";
-import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
+} from '@woven-canvas/core'
+import { Synced } from '@woven-ecs/canvas-store'
+import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/vue'
 
-import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
-import { useEditorContext } from "../../composables/useEditorContext";
-import { useToolbar } from "../../composables/useToolbar";
-import { CursorKind } from "../../cursors";
+import { useTooltipSingleton } from '../../composables/useTooltipSingleton'
+import { useEditorContext } from '../../composables/useEditorContext'
+import { useToolbar } from '../../composables/useToolbar'
+import { CursorKind } from '../../cursors'
 
-const { nextEditorTick } = useEditorContext();
-const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
-const { setTool } = useToolbar();
+const { nextEditorTick } = useEditorContext()
+const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton()
+const { setTool } = useToolbar()
 
-const buttonRef = ref<HTMLButtonElement | null>(null);
-const panelRef = ref<HTMLElement | null>(null);
-const urlInputRef = ref<HTMLInputElement | null>(null);
+const buttonRef = ref<HTMLButtonElement | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
+const urlInputRef = ref<HTMLInputElement | null>(null)
 
 // Panel state
-const panelOpen = ref(false);
-const selectedProvider = ref<EmbedProvider | null>(null);
-const urlValue = ref("");
-const urlError = ref("");
+const panelOpen = ref(false)
+const selectedProvider = ref<EmbedProvider | null>(null)
+const urlValue = ref('')
+const urlError = ref('')
 
 // Get container ref for teleport
-const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
+const containerRef = inject<Ref<HTMLElement | null>>('containerRef')
 
 // Floating UI
 const { floatingStyles } = useFloating(buttonRef, panelRef, {
-  placement: "top",
+  placement: 'top',
   middleware: [offset(16), flip(), shift({ padding: 8 })],
   whileElementsMounted: autoUpdate,
-});
+})
 
 const providers = [
-  { value: EmbedProvider.Youtube, label: "YouTube", icon: "youtube" },
-  { value: EmbedProvider.Spotify, label: "Spotify", icon: "spotify" },
-  { value: EmbedProvider.GoogleMaps, label: "Google Maps", icon: "map" },
+  { value: EmbedProvider.Youtube, label: 'YouTube', icon: 'youtube' },
+  { value: EmbedProvider.Spotify, label: 'Spotify', icon: 'spotify' },
+  { value: EmbedProvider.GoogleMaps, label: 'Google Maps', icon: 'map' },
   {
     value: EmbedProvider.GoogleCalendar,
-    label: "Google Calendar",
-    icon: "calendar",
+    label: 'Google Calendar',
+    icon: 'calendar',
   },
   {
     value: EmbedProvider.GoogleSlides,
-    label: "Google Slides",
-    icon: "slides",
+    label: 'Google Slides',
+    icon: 'slides',
   },
-  { value: EmbedProvider.Figma, label: "Figma", icon: "figma" },
-  { value: EmbedProvider.GithubGist, label: "GitHub Gist", icon: "gist" },
-  { value: EmbedProvider.Tldraw, label: "tldraw", icon: "tldraw" },
-] as const;
+  { value: EmbedProvider.Figma, label: 'Figma', icon: 'figma' },
+  { value: EmbedProvider.GithubGist, label: 'GitHub Gist', icon: 'gist' },
+  { value: EmbedProvider.Tldraw, label: 'tldraw', icon: 'tldraw' },
+] as const
 
 const urlPlaceholder = computed(() => {
-  if (!selectedProvider.value) return "Paste a URL...";
+  if (!selectedProvider.value) return 'Paste a URL...'
   switch (selectedProvider.value) {
     case EmbedProvider.Youtube:
-      return "https://www.youtube.com/watch?v=...";
+      return 'https://www.youtube.com/watch?v=...'
     case EmbedProvider.Spotify:
-      return "https://open.spotify.com/track/...";
+      return 'https://open.spotify.com/track/...'
     case EmbedProvider.GoogleMaps:
-      return "https://www.google.com/maps/...";
+      return 'https://www.google.com/maps/...'
     case EmbedProvider.GoogleCalendar:
-      return "https://calendar.google.com/...";
+      return 'https://calendar.google.com/...'
     case EmbedProvider.GoogleSlides:
-      return "https://docs.google.com/presentation/...";
+      return 'https://docs.google.com/presentation/...'
     case EmbedProvider.Figma:
-      return "https://www.figma.com/...";
+      return 'https://www.figma.com/...'
     case EmbedProvider.GithubGist:
-      return "https://gist.github.com/...";
+      return 'https://gist.github.com/...'
     case EmbedProvider.Tldraw:
-      return "https://www.tldraw.com/...";
+      return 'https://www.tldraw.com/...'
     default:
-      return "Paste a URL...";
+      return 'Paste a URL...'
   }
-});
+})
 
 function handleClick() {
-  panelOpen.value = !panelOpen.value;
-  selectedProvider.value = null;
-  urlValue.value = "";
-  urlError.value = "";
+  panelOpen.value = !panelOpen.value
+  selectedProvider.value = null
+  urlValue.value = ''
+  urlError.value = ''
 }
 
 function selectProvider(provider: EmbedProvider) {
-  selectedProvider.value = provider;
-  urlValue.value = "";
-  urlError.value = "";
+  selectedProvider.value = provider
+  urlValue.value = ''
+  urlError.value = ''
   nextTick(() => {
-    urlInputRef.value?.focus();
-  });
+    urlInputRef.value?.focus()
+  })
 }
 
 function goBack() {
-  selectedProvider.value = null;
-  urlValue.value = "";
-  urlError.value = "";
+  selectedProvider.value = null
+  urlValue.value = ''
+  urlError.value = ''
 }
 
 async function submitUrl() {
-  const url = urlValue.value.trim();
+  const url = urlValue.value.trim()
   if (!url) {
-    urlError.value = "Please enter a URL";
-    return;
+    urlError.value = 'Please enter a URL'
+    return
   }
 
   // Validate URL
   try {
-    new URL(url);
+    new URL(url)
   } catch {
-    urlError.value = "Please enter a valid URL";
-    return;
+    urlError.value = 'Please enter a valid URL'
+    return
   }
 
-  const provider = selectedProvider.value ?? detectEmbedProvider(url);
+  const provider = selectedProvider.value ?? detectEmbedProvider(url)
 
   // Validate URL matches the selected provider
-  const validationError = validateEmbedUrl(url, provider);
+  const validationError = validateEmbedUrl(url, provider)
   if (validationError) {
-    urlError.value = validationError;
-    return;
+    urlError.value = validationError
+    return
   }
 
-  const embedUrl = resolveEmbedUrl(url, provider);
+  const embedUrl = resolveEmbedUrl(url, provider)
 
   // Default sizes per provider
-  let width = 480;
-  let height = 320;
+  let width = 480
+  let height = 320
   switch (provider) {
     case EmbedProvider.Youtube:
-      width = 560;
-      height = 315;
-      break;
+      width = 560
+      height = 315
+      break
     case EmbedProvider.Spotify:
-      width = 352;
-      height = 152;
-      break;
+      width = 352
+      height = 152
+      break
     case EmbedProvider.GoogleMaps:
-      width = 600;
-      height = 450;
-      break;
+      width = 600
+      height = 450
+      break
     case EmbedProvider.GoogleCalendar:
-      width = 600;
-      height = 500;
-      break;
+      width = 600
+      height = 500
+      break
     case EmbedProvider.GoogleSlides:
-      width = 640;
-      height = 389;
-      break;
+      width = 640
+      height = 389
+      break
     case EmbedProvider.Figma:
-      width = 600;
-      height = 400;
-      break;
+      width = 600
+      height = 400
+      break
     case EmbedProvider.GithubGist:
-      width = 500;
-      height = 300;
-      break;
+      width = 500
+      height = 300
+      break
     case EmbedProvider.Tldraw:
-      width = 600;
-      height = 400;
-      break;
+      width = 600
+      height = 400
+      break
   }
 
   // Get viewport center in world coordinates
-  const ctx = await nextEditorTick();
-  const camera = Camera.read(ctx);
-  const screen = Screen.read(ctx);
-  const centerX = camera.left + screen.width / camera.zoom / 2;
-  const centerY = camera.top + screen.height / camera.zoom / 2;
+  const ctx = await nextEditorTick()
+  const camera = Camera.read(ctx)
+  const screen = Screen.read(ctx)
+  const centerX = camera.left + screen.width / camera.zoom / 2
+  const centerY = camera.top + screen.height / camera.zoom / 2
 
   // Snap size to grid if enabled
-  const grid = Grid.read(ctx);
+  const grid = Grid.read(ctx)
   if (grid.enabled) {
-    width = Math.max(grid.colWidth, Math.round(width / grid.colWidth) * grid.colWidth);
-    height = Math.max(grid.rowHeight, Math.round(height / grid.rowHeight) * grid.rowHeight);
+    width = Math.max(grid.colWidth, Math.round(width / grid.colWidth) * grid.colWidth)
+    height = Math.max(grid.rowHeight, Math.round(height / grid.rowHeight) * grid.rowHeight)
   }
 
   // Create entity
-  const entityId = createEntity(ctx);
+  const entityId = createEntity(ctx)
 
-  addComponent(ctx, entityId, Block);
-  const block = Block.write(ctx, entityId);
-  block.tag = "embed";
-  block.position[0] = centerX - width / 2;
-  block.position[1] = centerY - height / 2;
-  block.size[0] = width;
-  block.size[1] = height;
+  addComponent(ctx, entityId, Block)
+  const block = Block.write(ctx, entityId)
+  block.tag = 'embed'
+  block.position[0] = centerX - width / 2
+  block.position[1] = centerY - height / 2
+  block.size[0] = width
+  block.size[1] = height
 
-  Grid.snapPosition(ctx, block.position);
+  Grid.snapPosition(ctx, block.position)
 
-  addComponent(ctx, entityId, Embed);
-  const embed = Embed.write(ctx, entityId);
-  embed.url = url;
-  embed.embedUrl = embedUrl;
-  embed.provider = provider;
+  addComponent(ctx, entityId, Embed)
+  const embed = Embed.write(ctx, entityId)
+  embed.url = url
+  embed.embedUrl = embedUrl
+  embed.provider = provider
 
   addComponent(ctx, entityId, Synced, {
     id: crypto.randomUUID(),
-  });
+  })
 
   // Close panel and switch to select tool
-  panelOpen.value = false;
-  selectedProvider.value = null;
-  urlValue.value = "";
-  setTool("select", undefined, CursorKind.Select);
+  panelOpen.value = false
+  selectedProvider.value = null
+  urlValue.value = ''
+  setTool('select', undefined, CursorKind.Select)
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    submitUrl();
-  } else if (event.key === "Escape") {
-    event.preventDefault();
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    submitUrl()
+  } else if (event.key === 'Escape') {
+    event.preventDefault()
     if (selectedProvider.value) {
-      goBack();
+      goBack()
     } else {
-      panelOpen.value = false;
+      panelOpen.value = false
     }
   }
 }
 
 function handleClickOutside(event: MouseEvent) {
-  const target = event.target as Node;
-  if (
-    buttonRef.value &&
-    !buttonRef.value.contains(target) &&
-    panelRef.value &&
-    !panelRef.value.contains(target)
-  ) {
-    panelOpen.value = false;
+  const target = event.target as Node
+  if (buttonRef.value && !buttonRef.value.contains(target) && panelRef.value && !panelRef.value.contains(target)) {
+    panelOpen.value = false
   }
 }
 
 watch(panelOpen, (open) => {
   if (open) {
-    document.addEventListener("click", handleClickOutside, true);
+    document.addEventListener('click', handleClickOutside, true)
   } else {
-    document.removeEventListener("click", handleClickOutside, true);
+    document.removeEventListener('click', handleClickOutside, true)
   }
-});
+})
 
 function handleMouseEnter() {
   if (buttonRef.value) {
-    showTooltip("Embed", buttonRef.value);
+    showTooltip('Embed', buttonRef.value)
   }
 }
 
 function handleMouseLeave() {
-  hideTooltip();
+  hideTooltip()
 }
 </script>
 

@@ -1,62 +1,60 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { type EntityId, Shape, StrokeKind } from "@woven-canvas/core";
+import { computed } from 'vue'
+import { type EntityId, Shape, StrokeKind } from '@woven-canvas/core'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useComponents } from "../../composables/useComponents";
-import { useEditorContext } from "../../composables/useEditorContext";
+import MenuDropdown from './MenuDropdown.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useComponents } from '../../composables/useComponents'
+import { useEditorContext } from '../../composables/useEditorContext'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const shapesMap = useComponents(() => props.entityIds, Shape);
+const shapesMap = useComponents(() => props.entityIds, Shape)
 
 // Get the current stroke style
 const currentStyle = computed(() => {
-  const first = shapesMap.value.values().next().value;
-  return first?.strokeKind ?? StrokeKind.Solid;
-});
+  const first = shapesMap.value.values().next().value
+  return first?.strokeKind ?? StrokeKind.Solid
+})
 
 // Check if multiple different styles are selected
 const hasMultipleStyles = computed(() => {
-  const styles = new Set<StrokeKind>();
+  const styles = new Set<StrokeKind>()
   for (const shape of shapesMap.value.values()) {
     if (shape) {
-      styles.add(shape.strokeKind);
+      styles.add(shape.strokeKind)
     }
   }
-  return styles.size > 1;
-});
+  return styles.size > 1
+})
 
 // Available stroke styles
 const strokeOptions: { kind: StrokeKind; label: string }[] = [
-  { kind: StrokeKind.Solid, label: "Solid" },
-  { kind: StrokeKind.Dashed, label: "Dashed" },
-  { kind: StrokeKind.None, label: "None" },
-];
+  { kind: StrokeKind.Solid, label: 'Solid' },
+  { kind: StrokeKind.Dashed, label: 'Dashed' },
+  { kind: StrokeKind.None, label: 'None' },
+]
 
 function handleStyleChange(kind: StrokeKind) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const shape = Shape.write(ctx, entityId);
-      shape.strokeKind = kind;
+      const shape = Shape.write(ctx, entityId)
+      shape.strokeKind = kind
     }
-  });
+  })
 }
 
 // Get dash array for preview
 function getDashArray(kind: StrokeKind): string {
   switch (kind) {
     case StrokeKind.Dashed:
-      return "6 6";
-    case StrokeKind.Solid:
-    case StrokeKind.None:
+      return '6 6'
     default:
-      return "";
+      return ''
   }
 }
 </script>

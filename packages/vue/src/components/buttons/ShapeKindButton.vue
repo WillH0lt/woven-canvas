@@ -1,53 +1,53 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { type EntityId, Shape } from "@woven-canvas/core";
-import { SHAPES } from "../../shapes";
+import { computed } from 'vue'
+import { type EntityId, Shape } from '@woven-canvas/core'
+import { SHAPES } from '../../shapes'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useComponents } from "../../composables/useComponents";
-import { useEditorContext } from "../../composables/useEditorContext";
+import MenuDropdown from './MenuDropdown.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useComponents } from '../../composables/useComponents'
+import { useEditorContext } from '../../composables/useEditorContext'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const shapesMap = useComponents(() => props.entityIds, Shape);
+const shapesMap = useComponents(() => props.entityIds, Shape)
 
 // Get the current shape kind
 const currentKind = computed(() => {
-  const first = shapesMap.value.values().next().value;
-  return first?.kind ?? "rectangle";
-});
+  const first = shapesMap.value.values().next().value
+  return first?.kind ?? 'rectangle'
+})
 
 // Check if multiple different kinds are selected
 const hasMultipleKinds = computed(() => {
-  const kinds = new Set<string>();
+  const kinds = new Set<string>()
   for (const shape of shapesMap.value.values()) {
     if (shape) {
-      kinds.add(shape.kind);
+      kinds.add(shape.kind)
     }
   }
-  return kinds.size > 1;
-});
+  return kinds.size > 1
+})
 
 // Available shape kinds with labels (derived from SHAPES constant)
 const shapeOptions = computed(() =>
   Object.keys(SHAPES).map((kind) => ({
     kind,
     label: kind.charAt(0).toUpperCase() + kind.slice(1),
-  }))
-);
+  })),
+)
 
 function handleKindChange(kind: string) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const shapeData = Shape.write(ctx, entityId);
-      shapeData.kind = kind;
+      const shapeData = Shape.write(ctx, entityId)
+      shapeData.kind = kind
     }
-  });
+  })
 }
 </script>
 

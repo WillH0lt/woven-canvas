@@ -1,48 +1,48 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@woven-canvas/core";
-import { PenStroke } from "@woven-canvas/plugin-pen";
+import { computed } from 'vue'
+import type { EntityId } from '@woven-canvas/core'
+import { PenStroke } from '@woven-canvas/plugin-pen'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useComponents } from "../../composables/useComponents";
-import { useEditorContext } from "../../composables/useEditorContext";
+import MenuDropdown from './MenuDropdown.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useComponents } from '../../composables/useComponents'
+import { useEditorContext } from '../../composables/useEditorContext'
 
 const THICKNESS_OPTIONS = [
-  { label: "S", value: 4 },
-  { label: "M", value: 8 },
-  { label: "L", value: 16 },
-] as const;
+  { label: 'S', value: 4 },
+  { label: 'M', value: 8 },
+  { label: 'L', value: 16 },
+] as const
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const strokesMap = useComponents(() => props.entityIds, PenStroke);
+const strokesMap = useComponents(() => props.entityIds, PenStroke)
 
 const currentThickness = computed<number | null>(() => {
-  let first: number | null = null;
+  let first: number | null = null
   for (const stroke of strokesMap.value.values()) {
     if (stroke) {
       if (first === null) {
-        first = stroke.thickness;
+        first = stroke.thickness
       } else if (stroke.thickness !== first) {
-        return null; // mixed
+        return null // mixed
       }
     }
   }
-  return first;
-});
+  return first
+})
 
 function handleSelect(thickness: number) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const stroke = PenStroke.write(ctx, entityId);
-      stroke.thickness = thickness;
+      const stroke = PenStroke.write(ctx, entityId)
+      stroke.thickness = thickness
     }
-  });
+  })
 }
 </script>
 

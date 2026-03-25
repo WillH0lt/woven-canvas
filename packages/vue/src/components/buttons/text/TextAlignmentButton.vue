@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { TextAlignment, type TextAlignment as TextAlignmentType, type EntityId } from "@woven-canvas/core";
+import { TextAlignment, type TextAlignment as TextAlignmentType, type EntityId } from '@woven-canvas/core'
 
-import MenuButton from "../MenuButton.vue";
-import { useTextFormatting } from "../../../composables/useTextFormatting";
+import MenuButton from '../MenuButton.vue'
+import { useTextFormatting } from '../../../composables/useTextFormatting'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { state, commands } = useTextFormatting(() => props.entityIds);
+const { state, commands } = useTextFormatting(() => props.entityIds)
 
 const alignments: TextAlignmentType[] = [
   TextAlignment.Left,
   TextAlignment.Center,
   TextAlignment.Right,
   TextAlignment.Justify,
-];
+]
 
 function cycleAlignment() {
-  const currentIndex = alignments.indexOf(state.alignment);
-  const nextAlignment = alignments[(currentIndex + 1) % alignments.length];
-  commands.setAlignment(nextAlignment);
+  const currentIndex = alignments.indexOf(state.alignment)
+  const nextAlignment = alignments[(currentIndex + 1) % alignments.length]
+  commands.setAlignment(nextAlignment)
 }
 </script>
 

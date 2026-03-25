@@ -9,14 +9,14 @@ Plugins extend the Woven Canvas editor with new tools, behaviors, and functional
 
 Woven Canvas includes several built-in plugins that provide core functionality:
 
-| Plugin                                       | Description                                          |
-| -------------------------------------------- | ---------------------------------------------------- |
-| [Core](/plugins/core/)                       | Input handling, block types, and essential systems   |
-| [Selection](/plugins/selection/)             | Core selection, transform, clipboard, and z-ordering |
-| [Canvas Controls](/plugins/canvas-controls/) | Pan, zoom, and scroll navigation                     |
-| [Pen](/plugins/pen/)                         | Freehand drawing with pressure sensitivity           |
-| [Eraser](/plugins/eraser/)                   | Object eraser tool                                   |
-| [Arrows](/plugins/arrows/)                   | Arc and elbow arrow connectors                       |
+| Plugin                                       | Description                                        |
+| -------------------------------------------- | -------------------------------------------------- |
+| [Core](/plugins/core/)                       | Input handling, block types, and essential systems |
+| [Selection](/plugins/selection/)             | Core selection, transform, and z-ordering          |
+| [Canvas Controls](/plugins/canvas-controls/) | Pan, zoom, and scroll navigation                   |
+| [Pen](/plugins/pen/)                         | Freehand drawing with pressure sensitivity         |
+| [Eraser](/plugins/eraser/)                   | Object eraser tool                                 |
+| [Arrows](/plugins/arrows/)                   | Arc and elbow arrow connectors                     |
 
 ## Using Plugins
 

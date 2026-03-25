@@ -3,8 +3,8 @@ import { type EditorPlugin, type FontFamilyInput, Key, Redo, Undo } from '@woven
 import type { CanvasStore } from '@woven-ecs/canvas-store'
 import { EDITING_PLUGIN_NAME } from './constants'
 import { CURSORS } from './cursors'
-import { BlockPlacementState } from './singletons'
-import { blockPlacementSystem, undoRedoSystem } from './systems'
+import { BlockPlacementState, DoubleClickState } from './singletons'
+import { blockPlacementSystem, doubleClickCreateSystem, undoRedoSystem } from './systems'
 
 export interface EditingPluginResources {
   store: CanvasStore
@@ -12,6 +12,7 @@ export interface EditingPluginResources {
 
 export interface EditingPluginOptions {
   store: CanvasStore
+  doubleClickSnapshot?: string
 }
 
 export const DEFAULT_FONTS: FontFamilyInput[] = [
@@ -49,8 +50,13 @@ export function EditingPlugin(options: EditingPluginOptions): EditorPlugin {
   return {
     name: EDITING_PLUGIN_NAME,
     resources: { store: options.store } satisfies EditingPluginResources,
-    singletons: [BlockPlacementState],
-    systems: [blockPlacementSystem, undoRedoSystem],
+    singletons: [BlockPlacementState, DoubleClickState],
+    systems: [blockPlacementSystem, doubleClickCreateSystem, undoRedoSystem],
+    setup(ctx) {
+      if (options.doubleClickSnapshot) {
+        DoubleClickState.write(ctx).snapshot = options.doubleClickSnapshot
+      }
+    },
     cursors: CURSORS,
     fonts: DEFAULT_FONTS,
     keybinds: [

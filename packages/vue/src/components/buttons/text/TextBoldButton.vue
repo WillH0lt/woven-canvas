@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { EntityId } from "@woven-canvas/core";
+import type { EntityId } from '@woven-canvas/core'
 
-import MenuButton from "../MenuButton.vue";
-import { useTextFormatting } from "../../../composables/useTextFormatting";
+import MenuButton from '../MenuButton.vue'
+import { useTextFormatting } from '../../../composables/useTextFormatting'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { state, commands } = useTextFormatting(() => props.entityIds);
+const { state, commands } = useTextFormatting(() => props.entityIds)
 </script>
 
 <template>

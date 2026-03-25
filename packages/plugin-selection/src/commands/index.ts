@@ -12,8 +12,6 @@ export {
   SetCursor,
   UncloneEntities,
 } from './blocks'
-// Clipboard commands
-export { Copy, Cut, Paste } from './clipboard'
 export {
   AddHeld,
   AddSelectionBox,

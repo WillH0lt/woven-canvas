@@ -1,46 +1,46 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { type EntityId, Shape } from "@woven-canvas/core";
+import { computed } from 'vue'
+import { type EntityId, Shape } from '@woven-canvas/core'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import { useComponents } from "../../composables/useComponents";
-import { useEditorContext } from "../../composables/useEditorContext";
+import MenuDropdown from './MenuDropdown.vue'
+import { useComponents } from '../../composables/useComponents'
+import { useEditorContext } from '../../composables/useEditorContext'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const shapesMap = useComponents(() => props.entityIds, Shape);
+const shapesMap = useComponents(() => props.entityIds, Shape)
 
 // Get current stroke width
 const currentWidth = computed<number>(() => {
-  const first = shapesMap.value.values().next().value;
-  return first?.strokeWidth ?? 2;
-});
+  const first = shapesMap.value.values().next().value
+  return first?.strokeWidth ?? 2
+})
 
 // Check if there are multiple different widths
 const hasMultipleWidths = computed(() => {
-  const widths = new Set<number>();
+  const widths = new Set<number>()
   for (const shape of shapesMap.value.values()) {
     if (shape) {
-      widths.add(shape.strokeWidth);
+      widths.add(shape.strokeWidth)
     }
   }
-  return widths.size > 1;
-});
+  return widths.size > 1
+})
 
 function handleWidthChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const newWidth = parseInt(target.value, 10);
+  const target = event.target as HTMLInputElement
+  const newWidth = parseInt(target.value, 10)
 
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const shape = Shape.write(ctx, entityId);
-      shape.strokeWidth = newWidth;
+      const shape = Shape.write(ctx, entityId)
+      shape.strokeWidth = newWidth
     }
-  });
+  })
 }
 </script>
 

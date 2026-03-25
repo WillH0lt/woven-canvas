@@ -1,96 +1,96 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import ColorPicker from "./ColorPicker.vue";
-import { hexToRgb, type ColorData } from "../../utils/color";
+import { computed, ref } from 'vue'
+import ColorPicker from './ColorPicker.vue'
+import { hexToRgb, type ColorData } from '../../utils/color'
 
 const props = defineProps<{
-  currentColor?: string;
-  palette?: string[];
-  hideHighlight?: boolean;
-  withPicker?: boolean;
-  withOpacity?: boolean;
-}>();
+  currentColor?: string
+  palette?: string[]
+  hideHighlight?: boolean
+  withPicker?: boolean
+  withOpacity?: boolean
+}>()
 
 const emit = defineEmits<{
-  change: [color: ColorData];
-  "picker-open": [open: boolean];
-}>();
+  change: [color: ColorData]
+  'picker-open': [open: boolean]
+}>()
 
 const defaultPalette = [
-  "#000000",
-  "#374151",
-  "#6B7280",
-  "#9CA3AF",
-  "#D1D5DB",
-  "#FFFFFF",
-  "#EF4444",
-  "#F97316",
-  "#EAB308",
-  "#22C55E",
-  "#14B8A6",
-  "#3B82F6",
-  "#8B5CF6",
-  "#EC4899",
-];
+  '#000000',
+  '#374151',
+  '#6B7280',
+  '#9CA3AF',
+  '#D1D5DB',
+  '#FFFFFF',
+  '#EF4444',
+  '#F97316',
+  '#EAB308',
+  '#22C55E',
+  '#14B8A6',
+  '#3B82F6',
+  '#8B5CF6',
+  '#EC4899',
+]
 
 // With picker: need odd palette count (palette + rainbow button = even total)
 // Without picker: need even palette count
 const colors = computed(() => {
-  const palette = props.palette ?? defaultPalette;
-  const needsOdd = props.withPicker;
-  const isOdd = palette.length % 2 === 1;
+  const palette = props.palette ?? defaultPalette
+  const needsOdd = props.withPicker
+  const isOdd = palette.length % 2 === 1
 
   if (needsOdd && !isOdd) {
     // Remove last color to make it odd
-    return palette.slice(0, -1);
+    return palette.slice(0, -1)
   } else if (!needsOdd && isOdd) {
     // Remove last color to make it even
-    return palette.slice(0, -1);
+    return palette.slice(0, -1)
   }
-  return palette;
-});
-const pickerOpen = ref(false);
-const pickerColor = ref(props.currentColor ?? "#ff0000");
+  return palette
+})
+const pickerOpen = ref(false)
+const pickerColor = ref(props.currentColor ?? '#ff0000')
 
 function colorsEqual(a: string, b: string): boolean {
   // Compare full RGBA (normalize 6-digit hex to 8-digit with ff alpha)
   const normalize = (c: string) => {
-    const hex = c.replace(/^#/, "").toLowerCase();
-    return hex.length === 6 ? hex + "ff" : hex;
-  };
-  return normalize(a) === normalize(b);
+    const hex = c.replace(/^#/, '').toLowerCase()
+    return hex.length === 6 ? `${hex}ff` : hex
+  }
+  return normalize(a) === normalize(b)
 }
 
 function isSelected(color: string): boolean {
-  if (props.hideHighlight || !props.currentColor) return false;
-  return colorsEqual(props.currentColor, color);
+  if (props.hideHighlight || !props.currentColor) return false
+  return colorsEqual(props.currentColor, color)
 }
 
 function isRainbowSelected(): boolean {
-  if (props.hideHighlight || !props.currentColor) return false;
-  return !colors.value.some((c) => colorsEqual(props.currentColor!, c));
+  if (props.hideHighlight || !props.currentColor) return false
+  return !colors.value.some((c) => colorsEqual(props.currentColor!, c))
 }
 
 function selectColor(color: string) {
-  const rgb = hexToRgb(color);
+  const rgb = hexToRgb(color)
   if (rgb) {
-    emit("change", rgb);
+    emit('change', rgb)
   }
 }
 
 function togglePicker() {
   if (!pickerOpen.value && props.currentColor) {
-    pickerColor.value = props.currentColor;
+    pickerColor.value = props.currentColor
   }
-  pickerOpen.value = !pickerOpen.value;
-  emit("picker-open", pickerOpen.value);
+  pickerOpen.value = !pickerOpen.value
+  emit('picker-open', pickerOpen.value)
 }
 
 function onPickerChange(color: string) {
-  pickerColor.value = color;
-  const rgb = hexToRgb(color);
+  pickerColor.value = color
+  const rgb = hexToRgb(color)
   if (rgb) {
-    emit("change", rgb);
+    emit('change', rgb)
   }
 }
 </script>

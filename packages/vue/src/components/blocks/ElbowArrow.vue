@@ -1,146 +1,141 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
-import { Color } from "@woven-canvas/core";
-import { Vec2 } from "@woven-canvas/math";
-import { ElbowArrow } from "@woven-canvas/plugin-arrows";
-import { useComponent } from "../../composables/useComponent";
-import ArrowHead from "./ArrowHead.vue";
-import type { BlockData } from "../../types";
-import { getArrowHead } from "../../arrowHeads";
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { Color } from '@woven-canvas/core'
+import { Vec2 } from '@woven-canvas/math'
+import { ElbowArrow } from '@woven-canvas/plugin-arrows'
+import { useComponent } from '../../composables/useComponent'
+import ArrowHead from './ArrowHead.vue'
+import type { BlockData } from '../../types'
+import { getArrowHead } from '../../arrowHeads'
 
-const props = defineProps<BlockData>();
+const props = defineProps<BlockData>()
 
-const containerRef = ref<HTMLElement | null>(null);
-const clientWidth = ref(0);
-const clientHeight = ref(0);
+const containerRef = ref<HTMLElement | null>(null)
+const clientWidth = ref(0)
+const clientHeight = ref(0)
 
-const color = useComponent(props.entityId, Color);
-const elbowArrow = useComponent(props.entityId, ElbowArrow);
+const color = useComponent(props.entityId, Color)
+const elbowArrow = useComponent(props.entityId, ElbowArrow)
 
-const isEmphasized = computed(() => props.hovered || props.selected);
+const isEmphasized = computed(() => props.hovered || props.selected)
 
 // Watch for resize
-let resizeObserver: ResizeObserver | null = null;
+let resizeObserver: ResizeObserver | null = null
 onMounted(() => {
   if (containerRef.value) {
     resizeObserver = new ResizeObserver(() => {
       if (containerRef.value) {
-        clientWidth.value = containerRef.value.clientWidth;
-        clientHeight.value = containerRef.value.clientHeight;
+        clientWidth.value = containerRef.value.clientWidth
+        clientHeight.value = containerRef.value.clientHeight
       }
-    });
-    resizeObserver.observe(containerRef.value);
-    clientWidth.value = containerRef.value.clientWidth;
-    clientHeight.value = containerRef.value.clientHeight;
+    })
+    resizeObserver.observe(containerRef.value)
+    clientWidth.value = containerRef.value.clientWidth
+    clientHeight.value = containerRef.value.clientHeight
   }
-});
+})
 
 onUnmounted(() => {
-  resizeObserver?.disconnect();
-});
+  resizeObserver?.disconnect()
+})
 
 const hex = computed(() => {
-  if (!color.value) return "#000000";
-  const r = color.value.red.toString(16).padStart(2, "0");
-  const g = color.value.green.toString(16).padStart(2, "0");
-  const b = color.value.blue.toString(16).padStart(2, "0");
-  return `#${r}${g}${b}`;
-});
+  if (!color.value) return '#000000'
+  const r = color.value.red.toString(16).padStart(2, '0')
+  const g = color.value.green.toString(16).padStart(2, '0')
+  const b = color.value.blue.toString(16).padStart(2, '0')
+  return `#${r}${g}${b}`
+})
 
-const baseThickness = computed(() => elbowArrow.value?.thickness ?? 2);
-const thickness = computed(() => `${baseThickness.value}px`);
+const baseThickness = computed(() => elbowArrow.value?.thickness ?? 2)
+const thickness = computed(() => `${baseThickness.value}px`)
 
 // Get points from the elbow arrow buffer
 const worldPoints = computed((): Vec2[] => {
-  if (!elbowArrow.value) return [];
+  if (!elbowArrow.value) return []
 
-  const arrow = elbowArrow.value;
-  const w = clientWidth.value;
-  const h = clientHeight.value;
-  const points: Vec2[] = [];
+  const arrow = elbowArrow.value
+  const w = clientWidth.value
+  const h = clientHeight.value
+  const points: Vec2[] = []
 
   for (let i = 0; i < arrow.pointCount; i++) {
-    const x = arrow.points[i * 2] * w;
-    const y = arrow.points[i * 2 + 1] * h;
-    points.push([x, y]);
+    const x = arrow.points[i * 2] * w
+    const y = arrow.points[i * 2 + 1] * h
+    points.push([x, y])
   }
 
-  return points;
-});
+  return points
+})
 
 // Untrimmed line segments for highlight background
 const untrimmedLines = computed((): { start: Vec2; end: Vec2 }[] => {
-  const points = worldPoints.value;
-  if (points.length < 2) return [];
+  const points = worldPoints.value
+  if (points.length < 2) return []
 
-  const lines: { start: Vec2; end: Vec2 }[] = [];
+  const lines: { start: Vec2; end: Vec2 }[] = []
   for (let i = 0; i < points.length - 1; i++) {
-    lines.push({ start: points[i], end: points[i + 1] });
+    lines.push({ start: points[i], end: points[i + 1] })
   }
-  return lines;
-});
+  return lines
+})
 
 // Compute trimmed path data
 const pathData = computed(() => {
-  if (!elbowArrow.value || worldPoints.value.length < 2) return null;
+  if (!elbowArrow.value || worldPoints.value.length < 2) return null
 
-  const arrow = elbowArrow.value;
-  const points = [...worldPoints.value.map((p) => [...p] as Vec2)];
+  const arrow = elbowArrow.value
+  const points = [...worldPoints.value.map((p) => [...p] as Vec2)]
 
-  const startHead = arrow.startArrowHead;
-  const endHead = arrow.endArrowHead;
+  const startHead = arrow.startArrowHead
+  const endHead = arrow.endArrowHead
 
   // Compute direction vectors
-  const startVec: Vec2 = [
-    points[1][0] - points[0][0],
-    points[1][1] - points[0][1],
-  ];
+  const startVec: Vec2 = [points[1][0] - points[0][0], points[1][1] - points[0][1]]
   const endVec: Vec2 = [
     points[points.length - 1][0] - points[points.length - 2][0],
     points[points.length - 1][1] - points[points.length - 2][1],
-  ];
+  ]
 
-  let tStart = arrow.trimStart;
+  let tStart = arrow.trimStart
   // Add gap if connected to a block and has arrow head
-  if (props.connector?.startBlock && startHead !== "none") {
-    const len = Math.hypot(startVec[0], startVec[1]);
-    const headGap = getArrowHead(startHead)?.gap ?? 0;
-    const gap = len > 0 ? headGap / len : 0;
-    tStart += gap;
+  if (props.connector?.startBlock && startHead !== 'none') {
+    const len = Math.hypot(startVec[0], startVec[1])
+    const headGap = getArrowHead(startHead)?.gap ?? 0
+    const gap = len > 0 ? headGap / len : 0
+    tStart += gap
   }
 
-  let tEnd = arrow.trimEnd;
+  let tEnd = arrow.trimEnd
   // Add gap if connected to a block and has arrow head
-  if (props.connector?.endBlock && endHead !== "none") {
-    const len = Math.hypot(endVec[0], endVec[1]);
-    const headGap = getArrowHead(endHead)?.gap ?? 0;
-    const gap = len > 0 ? headGap / len : 0;
-    tEnd += gap;
+  if (props.connector?.endBlock && endHead !== 'none') {
+    const len = Math.hypot(endVec[0], endVec[1])
+    const headGap = getArrowHead(endHead)?.gap ?? 0
+    const gap = len > 0 ? headGap / len : 0
+    tEnd += gap
   }
 
   // Trim start point
   points[0] = [
     points[0][0] + (points[1][0] - points[0][0]) * tStart,
     points[0][1] + (points[1][1] - points[0][1]) * tStart,
-  ];
+  ]
 
   // Trim end point
-  const lastIdx = points.length - 1;
+  const lastIdx = points.length - 1
   points[lastIdx] = [
-    points[lastIdx - 1][0] +
-      (points[lastIdx][0] - points[lastIdx - 1][0]) * (1 - tEnd),
-    points[lastIdx - 1][1] +
-      (points[lastIdx][1] - points[lastIdx - 1][1]) * (1 - tEnd),
-  ];
+    points[lastIdx - 1][0] + (points[lastIdx][0] - points[lastIdx - 1][0]) * (1 - tEnd),
+    points[lastIdx - 1][1] + (points[lastIdx][1] - points[lastIdx - 1][1]) * (1 - tEnd),
+  ]
 
   // Build line segments
-  const lines: { start: Vec2; end: Vec2 }[] = [];
+  const lines: { start: Vec2; end: Vec2 }[] = []
   for (let i = 0; i < points.length - 1; i++) {
-    lines.push({ start: points[i], end: points[i + 1] });
+    lines.push({ start: points[i], end: points[i + 1] })
   }
 
   // Flip start direction for arrow head
-  Vec2.scale(startVec, -1);
+  Vec2.scale(startVec, -1)
 
   return {
     points,
@@ -151,8 +146,8 @@ const pathData = computed(() => {
     endDir: endVec,
     startHead,
     endHead,
-  };
-});
+  }
+})
 </script>
 
 <template>

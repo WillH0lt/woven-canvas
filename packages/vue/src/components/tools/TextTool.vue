@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import ToolbarButton from "../ToolbarButton.vue";
+import ToolbarButton from '../ToolbarButton.vue'
 
 const placementSnapshot = JSON.stringify({
   block: {
-    tag: "text",
+    tag: 'text',
     size: [10, 29],
   },
   text: {
     constrainWidth: false,
     fontSizePx: 24,
   },
-});
+})
 
 const dragOutSnapshot = JSON.stringify({
   block: {
-    tag: "text",
+    tag: 'text',
     size: [36, 29],
   },
   text: {
-    content: "text",
+    content: 'text',
     constrainWidth: false,
     fontSizePx: 24,
   },
-});
+})
 </script>
 
 <template>

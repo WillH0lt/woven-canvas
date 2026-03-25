@@ -1,68 +1,68 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@woven-canvas/core";
-import { Color } from "@woven-canvas/core";
+import { computed } from 'vue'
+import type { EntityId } from '@woven-canvas/core'
+import { Color } from '@woven-canvas/core'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import ColorBubbles from "./ColorBubbles.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useComponents } from "../../composables/useComponents";
-import { useEditorContext } from "../../composables/useEditorContext";
-import { rgbToHex, type ColorData } from "../../utils/color";
+import MenuDropdown from './MenuDropdown.vue'
+import ColorBubbles from './ColorBubbles.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useComponents } from '../../composables/useComponents'
+import { useEditorContext } from '../../composables/useEditorContext'
+import { rgbToHex, type ColorData } from '../../utils/color'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
 // Use useComponents at setup level (not inside computed)
-const colorsMap = useComponents(() => props.entityIds, Color);
+const colorsMap = useComponents(() => props.entityIds, Color)
 
 // Get all selected colors as hex values
 const selectedColors = computed<string[]>(() => {
-  const colorSet = new Set<string>();
+  const colorSet = new Set<string>()
 
   for (const color of colorsMap.value.values()) {
     if (color) {
-      const colorHex = rgbToHex(color);
-      colorSet.add(colorHex);
+      const colorHex = rgbToHex(color)
+      colorSet.add(colorHex)
     }
   }
 
-  return Array.from(colorSet);
-});
+  return Array.from(colorSet)
+})
 
 // Check if there are multiple different colors
-const hasMultipleColors = computed(() => selectedColors.value.length > 1);
+const hasMultipleColors = computed(() => selectedColors.value.length > 1)
 
 // Get the first color for the swatch
 const currentColorHex = computed(() => {
-  return selectedColors.value[0] ?? null;
-});
+  return selectedColors.value[0] ?? null
+})
 
 // Style for the swatch (gradient if multiple colors)
 const swatchStyle = computed(() => {
-  if (selectedColors.value.length === 0) return { backgroundColor: "#000" };
+  if (selectedColors.value.length === 0) return { backgroundColor: '#000' }
 
   if (selectedColors.value.length >= 2) {
-    const c0 = selectedColors.value[0];
-    const c1 = selectedColors.value[1];
+    const c0 = selectedColors.value[0]
+    const c1 = selectedColors.value[1]
     return {
       background: `linear-gradient(45deg, ${c0} 0%, ${c0} 50%, ${c1} 50%, ${c1} 100%)`,
-    };
+    }
   }
 
-  return { backgroundColor: selectedColors.value[0] };
-});
+  return { backgroundColor: selectedColors.value[0] }
+})
 
 function handleColorChange(color: ColorData) {
-  const hex = rgbToHex(color);
+  const hex = rgbToHex(color)
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      Color.fromHex(ctx, entityId, hex);
+      Color.fromHex(ctx, entityId, hex)
     }
-  });
+  })
 }
 </script>
 

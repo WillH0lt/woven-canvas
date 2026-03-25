@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ToolbarButton from "../ToolbarButton.vue";
+import ToolbarButton from '../ToolbarButton.vue'
 </script>
 
 <template>

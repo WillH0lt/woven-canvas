@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { VerticalAlignment, TextAlignment, StrokeKind } from "@woven-canvas/core";
-import ToolbarButton from "../ToolbarButton.vue";
+import { VerticalAlignment, TextAlignment, StrokeKind } from '@woven-canvas/core'
+import ToolbarButton from '../ToolbarButton.vue'
 
 const snapshot = JSON.stringify({
   block: {
-    tag: "shape",
+    tag: 'shape',
     size: [200, 200],
   },
   shape: {
-    kind: "rectangle",
+    kind: 'rectangle',
     strokeKind: StrokeKind.Solid,
     strokeWidth: 2,
     strokeRed: 0,
@@ -26,7 +26,7 @@ const snapshot = JSON.stringify({
   verticalAlign: {
     value: VerticalAlignment.Center,
   },
-});
+})
 </script>
 
 <template>

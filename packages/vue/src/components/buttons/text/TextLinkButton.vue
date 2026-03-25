@@ -1,75 +1,72 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, inject, type Ref } from "vue";
-import type { EntityId } from "@woven-canvas/core";
-import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
+import { ref, watch, nextTick, inject, type Ref } from 'vue'
+import type { EntityId } from '@woven-canvas/core'
+import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/vue'
 
-import MenuButton from "../MenuButton.vue";
-import { useTextFormatting } from "../../../composables/useTextFormatting";
+import MenuButton from '../MenuButton.vue'
+import { useTextFormatting } from '../../../composables/useTextFormatting'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { state, commands } = useTextFormatting(() => props.entityIds);
+const { state, commands } = useTextFormatting(() => props.entityIds)
 
-const isOpen = ref(false);
-const linkValue = ref("");
-const inputRef = ref<HTMLInputElement | null>(null);
-const buttonRef = ref<HTMLElement | null>(null);
-const dropdownRef = ref<HTMLElement | null>(null);
+const isOpen = ref(false)
+const linkValue = ref('')
+const inputRef = ref<HTMLInputElement | null>(null)
+const buttonRef = ref<HTMLElement | null>(null)
+const dropdownRef = ref<HTMLElement | null>(null)
 
 // Get container ref from WovenCanvas for teleport
-const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
+const containerRef = inject<Ref<HTMLElement | null>>('containerRef')
 
 // Floating positioning
 const { floatingStyles } = useFloating(buttonRef, dropdownRef, {
-  placement: "top",
+  placement: 'top',
   middleware: [offset(8), flip(), shift({ padding: 8 })],
   whileElementsMounted: autoUpdate,
-});
+})
 
 function openLinkInput() {
-  linkValue.value = state.linkHref ?? "";
-  isOpen.value = true;
+  linkValue.value = state.linkHref ?? ''
+  isOpen.value = true
   nextTick(() => {
-    inputRef.value?.focus();
-    inputRef.value?.select();
-  });
+    inputRef.value?.focus()
+    inputRef.value?.select()
+  })
 }
 
 function applyLink() {
-  const href = linkValue.value.trim();
+  const href = linkValue.value.trim()
   if (href) {
-    commands.setLink(href);
+    commands.setLink(href)
   } else {
-    commands.removeLink();
+    commands.removeLink()
   }
-  isOpen.value = false;
+  isOpen.value = false
 }
 
 function removeLink() {
-  commands.removeLink();
-  linkValue.value = "";
-  isOpen.value = false;
+  commands.removeLink()
+  linkValue.value = ''
+  isOpen.value = false
 }
 
 function handleClickOutside(event: MouseEvent) {
-  const target = event.target as Node;
-  if (
-    !buttonRef.value?.contains(target) &&
-    !dropdownRef.value?.contains(target)
-  ) {
-    isOpen.value = false;
+  const target = event.target as Node
+  if (!buttonRef.value?.contains(target) && !dropdownRef.value?.contains(target)) {
+    isOpen.value = false
   }
 }
 
 watch(isOpen, (open) => {
   if (open) {
-    document.addEventListener("click", handleClickOutside, true);
+    document.addEventListener('click', handleClickOutside, true)
   } else {
-    document.removeEventListener("click", handleClickOutside, true);
+    document.removeEventListener('click', handleClickOutside, true)
   }
-});
+})
 </script>
 
 <template>

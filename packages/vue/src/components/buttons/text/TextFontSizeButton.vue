@@ -1,65 +1,65 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@woven-canvas/core";
+import { computed } from 'vue'
+import type { EntityId } from '@woven-canvas/core'
 
-import MenuDropdown from "../MenuDropdown.vue";
-import IconChevronDown from "../../icons/IconChevronDown.vue";
-import { useTextFormatting } from "../../../composables/useTextFormatting";
+import MenuDropdown from '../MenuDropdown.vue'
+import IconChevronDown from '../../icons/IconChevronDown.vue'
+import { useTextFormatting } from '../../../composables/useTextFormatting'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { state, commands } = useTextFormatting(() => props.entityIds);
+const { state, commands } = useTextFormatting(() => props.entityIds)
 
 const FONT_SIZE_OPTIONS = [
-  { label: "Small", value: 16, displayValue: 10 },
-  { label: "Medium", value: 24, displayValue: 12 },
-  { label: "Large", value: 40, displayValue: 16 },
-  { label: "Huge", value: 96, displayValue: 20 },
-];
+  { label: 'Small', value: 16, displayValue: 10 },
+  { label: 'Medium', value: 24, displayValue: 12 },
+  { label: 'Large', value: 40, displayValue: 16 },
+  { label: 'Huge', value: 96, displayValue: 20 },
+]
 
 // Get current font size (null if mixed)
-const currentFontSize = computed<number | null>(() => state.fontSize);
+const currentFontSize = computed<number | null>(() => state.fontSize)
 
 // Label for the button
 const buttonLabel = computed(() => {
-  const size = currentFontSize.value;
-  if (size === null) return "Mixed";
+  const size = currentFontSize.value
+  if (size === null) return 'Mixed'
 
-  const option = FONT_SIZE_OPTIONS.find((o) => o.value === size);
-  if (option) return option.label;
+  const option = FONT_SIZE_OPTIONS.find((o) => o.value === size)
+  if (option) return option.label
 
-  return `${+size.toFixed(1)} px`;
-});
+  return `${+size.toFixed(1)} px`
+})
 
 // Display value for the input (shows current font size)
 const inputDisplayValue = computed(() => {
-  const size = currentFontSize.value;
-  if (size === null) return "";
-  return String(+size.toFixed(1));
-});
+  const size = currentFontSize.value
+  if (size === null) return ''
+  return String(+size.toFixed(1))
+})
 
 function setFontSize(value: number) {
-  commands.setFontSize(value);
+  commands.setFontSize(value)
 }
 
 function handleInputChange(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const value = Number.parseFloat(input.value);
+  const input = e.target as HTMLInputElement
+  const value = Number.parseFloat(input.value)
   if (!Number.isNaN(value) && value > 0) {
-    setFontSize(value);
+    setFontSize(value)
   }
 }
 
 function handleInputKeyDown(e: KeyboardEvent) {
-  if (e.key === "Enter") {
-    (e.target as HTMLInputElement).blur();
+  if (e.key === 'Enter') {
+    ;(e.target as HTMLInputElement).blur()
   }
 }
 
 function handleWheelStop(e: Event) {
-  e.stopPropagation();
+  e.stopPropagation()
 }
 </script>
 

@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
+import { ref } from 'vue'
+import { useTooltipSingleton } from '../../composables/useTooltipSingleton'
 
 const props = defineProps<{
-  title?: string;
-}>();
+  title?: string
+}>()
 
 const emit = defineEmits<{
-  click: [event: MouseEvent];
-}>();
+  click: [event: MouseEvent]
+}>()
 
-const buttonRef = ref<HTMLButtonElement | null>(null);
-const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton();
+const buttonRef = ref<HTMLButtonElement | null>(null)
+const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton()
 
 function handleClick(event: MouseEvent) {
-  emit("click", event);
+  emit('click', event)
 }
 
 function handleMouseEnter() {
   if (props.title && buttonRef.value) {
-    showTooltip(props.title, buttonRef.value);
+    showTooltip(props.title, buttonRef.value)
   }
 }
 
 function handleMouseLeave() {
-  hideTooltip();
+  hideTooltip()
 }
 </script>
 

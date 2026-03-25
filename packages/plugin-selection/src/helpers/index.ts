@@ -1,5 +1,3 @@
-// UUID helpers
-
 // Ref field helpers
 export {
   convertRefsToUuids,

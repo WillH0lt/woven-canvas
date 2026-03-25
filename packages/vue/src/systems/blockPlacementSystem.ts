@@ -34,7 +34,7 @@ const editedQuery = defineQuery((q) => q.with(Edited))
  * Snapshot format for creating blocks.
  * Keys are component names (lowercase), values are component data.
  */
-type BlockSnapshot = Record<string, unknown> & {
+export type BlockSnapshot = Record<string, unknown> & {
   block: {
     tag: string
     size?: [number, number]
@@ -64,7 +64,7 @@ function parseSnapshot(heldSnapshot: string): BlockSnapshot | null {
 /**
  * Create the block entity from snapshot at the given position.
  */
-function createBlockFromSnapshot(ctx: Context, snapshot: BlockSnapshot, position: [number, number]): EntityId {
+export function createBlockFromSnapshot(ctx: Context, snapshot: BlockSnapshot, position: [number, number]): EntityId {
   const blockDef = getBlockDef(ctx, snapshot.block.tag)
   if (!blockDef) {
     throw new Error(`Block placement: block definition for tag "${snapshot.block.tag}" not found`)
@@ -108,9 +108,6 @@ function createBlockFromSnapshot(ctx: Context, snapshot: BlockSnapshot, position
     }
   }
 
-  const { sessionId } = getResources<EditorResources>(ctx)
-  addComponent(ctx, entityId, Held, { sessionId })
-
   return entityId
 }
 
@@ -127,6 +124,10 @@ function placeBlockAndSetupSelection(
 ): void {
   // Create the block at the position
   const entityId = createBlockFromSnapshot(ctx, snapshot, worldPosition)
+
+  // Mark as held for dragging
+  const { sessionId } = getResources<EditorResources>(ctx)
+  addComponent(ctx, entityId, Held, { sessionId })
 
   // Get the block's position for draggedEntityStart
   const block = Block.read(ctx, entityId)

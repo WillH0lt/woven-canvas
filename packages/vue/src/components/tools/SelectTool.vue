@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { watch } from "vue";
-import { DeselectAll } from "@woven-canvas/plugin-selection";
+import { watch } from 'vue'
+import { DeselectAll } from '@woven-canvas/plugin-selection'
 
-import ToolbarButton from "../ToolbarButton.vue";
-import { CursorKind } from "../../cursors";
-import { useEditorContext, useToolbar } from "../../composables";
+import ToolbarButton from '../ToolbarButton.vue'
+import { CursorKind } from '../../cursors'
+import { useEditorContext, useToolbar } from '../../composables'
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const { activeTool } = useToolbar();
+const { activeTool } = useToolbar()
 watch(activeTool, (_, oldTool) => {
-  if (oldTool === "select") {
+  if (oldTool === 'select') {
     nextEditorTick((ctx) => {
-      DeselectAll.spawn(ctx);
-    });
+      DeselectAll.spawn(ctx)
+    })
   }
-});
+})
 </script>
 
 <template>

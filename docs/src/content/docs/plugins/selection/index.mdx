@@ -69,9 +69,6 @@ SelectionPlugin({
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl/Cmd + A` | Select all blocks |
-| `Ctrl/Cmd + X` | Cut selected blocks |
-| `Ctrl/Cmd + C` | Copy selected blocks |
-| `Ctrl/Cmd + V` | Paste blocks |
 | `Delete` | Remove selected blocks |
 | `]` | Bring selected forward (z-order) |
 | `[` | Send selected backward (z-order) |
@@ -120,16 +117,6 @@ editor.command(DuplicateSelected)
 // Change z-order
 editor.command(BringForwardSelected)
 editor.command(SendBackwardSelected)
-```
-
-### Clipboard Commands
-
-```typescript
-import { Cut, Copy, Paste } from '@woven-canvas/plugin-selection'
-
-editor.command(Cut)
-editor.command(Copy)
-editor.command(Paste, { position: [100, 100] }) // Optional position
 ```
 
 ## Components

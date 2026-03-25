@@ -1,67 +1,67 @@
 <script setup lang="ts">
-import { computed, ref, inject, watch, onMounted, onUnmounted } from "vue";
-import { Image, Asset, UploadState } from "@woven-canvas/core";
+import { computed, ref, inject, watch, onMounted, onUnmounted } from 'vue'
+import { Image, Asset, UploadState } from '@woven-canvas/core'
 
-import type { BlockData } from "../../types";
-import { useComponent } from "../../composables/useComponent";
-import { WOVEN_CANVAS_KEY } from "../../injection";
+import type { BlockData } from '../../types'
+import { useComponent } from '../../composables/useComponent'
+import { WOVEN_CANVAS_KEY } from '../../injection'
 
-const props = defineProps<BlockData>();
+const props = defineProps<BlockData>()
 
-const injectedContext = inject(WOVEN_CANVAS_KEY);
+const injectedContext = inject(WOVEN_CANVAS_KEY)
 if (!injectedContext) {
-  throw new Error("ImageBlock must be used within a WovenCanvas component");
+  throw new Error('ImageBlock must be used within a WovenCanvas component')
 }
-const canvasContext = injectedContext;
+const canvasContext = injectedContext
 
-const asset = useComponent(props.entityId, Asset);
-const image = useComponent(props.entityId, Image);
+const asset = useComponent(props.entityId, Asset)
+const image = useComponent(props.entityId, Image)
 
 // Resolve the initial URL during setup so it's available for SSR
-const assetManager = canvasContext.getAssetManager();
-const initialAsset = asset.value;
-let initialUrl: string | null = null;
+const assetManager = canvasContext.getAssetManager()
+const initialAsset = asset.value
+let initialUrl: string | null = null
 if (assetManager && initialAsset?.identifier) {
-  initialUrl = await assetManager.getDisplayUrl(initialAsset.identifier);
+  initialUrl = await assetManager.getDisplayUrl(initialAsset.identifier)
 }
 
-const displayUrl = ref<string | null>(initialUrl);
-const isLoading = ref(!initialUrl);
-const hasError = ref(false);
+const displayUrl = ref<string | null>(initialUrl)
+const isLoading = ref(!initialUrl)
+const hasError = ref(false)
 
 // Track if we're mounted for async operations
-let isMounted = true;
+let isMounted = true
 onUnmounted(() => {
-  isMounted = false;
-});
+  isMounted = false
+})
 
 async function updateDisplayUrl() {
-  const assetData = asset.value;
+  const assetData = asset.value
   if (!assetData) {
-    isLoading.value = false;
-    return;
+    isLoading.value = false
+    return
   }
 
   try {
-    isLoading.value = true;
-    hasError.value = false;
+    isLoading.value = true
+    hasError.value = false
 
-    const url = await assetManager?.getDisplayUrl(assetData.identifier);
+    const url = await assetManager?.getDisplayUrl(assetData.identifier)
 
-    if (!isMounted) return;
+    if (!isMounted) return
 
     if (url) {
-      displayUrl.value = url;
-      isLoading.value = false;
+      displayUrl.value = url
+      isLoading.value = false
     } else if (assetData.uploadState === UploadState.Failed) {
-      hasError.value = true;
-      isLoading.value = false;
+      hasError.value = true
+      isLoading.value = false
     }
   } catch (error) {
-    if (!isMounted) return;
-    console.error("Failed to get display URL:", error);
-    hasError.value = true;
-    isLoading.value = false;
+    if (!isMounted) return
+    console.error('Failed to get display URL:', error)
+    hasError.value = true
+    isLoading.value = false
   }
 }
 
@@ -69,37 +69,37 @@ async function updateDisplayUrl() {
 watch(
   () => asset.value,
   () => {
-    updateDisplayUrl();
+    updateDisplayUrl()
   },
   { immediate: true },
-);
+)
 
 // Also try to get URL on mount in case asset was already loaded
 onMounted(() => {
-  updateDisplayUrl();
-});
+  updateDisplayUrl()
+})
 
 const uploadProgress = computed(() => {
-  const assetData = asset.value;
-  if (!assetData) return null;
+  const assetData = asset.value
+  if (!assetData) return null
 
   switch (assetData.uploadState) {
     case UploadState.Pending:
-      return "Loading...";
+      return 'Loading...'
     case UploadState.Uploading:
-      return "Loading...";
+      return 'Loading...'
     case UploadState.Failed:
-      return "Failed";
+      return 'Failed'
     default:
-      return null;
+      return null
   }
-});
+})
 
 const imageStyle = computed(() => ({
-  width: "100%",
-  height: "100%",
-  objectFit: "fill" as const,
-}));
+  width: '100%',
+  height: '100%',
+  objectFit: 'fill' as const,
+}))
 </script>
 
 <template>

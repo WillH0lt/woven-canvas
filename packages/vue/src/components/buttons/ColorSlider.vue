@@ -1,43 +1,40 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref } from 'vue'
 
 const props = defineProps<{
-  modelValue: number;
-  thumbColor: string;
-  background?: string;
-}>();
+  modelValue: number
+  thumbColor: string
+  background?: string
+}>()
 
 const emit = defineEmits<{
-  "update:modelValue": [value: number];
-}>();
+  'update:modelValue': [value: number]
+}>()
 
-const sliderRef = ref<HTMLDivElement | null>(null);
-const isDragging = ref(false);
+const sliderRef = ref<HTMLDivElement | null>(null)
+const isDragging = ref(false)
 
 function startDrag(e: PointerEvent) {
-  isDragging.value = true;
-  updatePosition(e);
-  window.addEventListener("pointermove", updatePosition);
-  window.addEventListener("pointerup", stopDrag);
+  isDragging.value = true
+  updatePosition(e)
+  window.addEventListener('pointermove', updatePosition)
+  window.addEventListener('pointerup', stopDrag)
 }
 
 function updatePosition(e: PointerEvent) {
-  if (!sliderRef.value) return;
-  const rect = sliderRef.value.getBoundingClientRect();
-  const y = Math.max(
-    0,
-    Math.min(100, ((e.clientY - rect.top) / rect.height) * 100),
-  );
-  emit("update:modelValue", y);
+  if (!sliderRef.value) return
+  const rect = sliderRef.value.getBoundingClientRect()
+  const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
+  emit('update:modelValue', y)
 }
 
 function stopDrag() {
-  isDragging.value = false;
-  window.removeEventListener("pointermove", updatePosition);
-  window.removeEventListener("pointerup", stopDrag);
+  isDragging.value = false
+  window.removeEventListener('pointermove', updatePosition)
+  window.removeEventListener('pointerup', stopDrag)
 }
 
-defineExpose({ isDragging });
+defineExpose({ isDragging })
 </script>
 
 <template>

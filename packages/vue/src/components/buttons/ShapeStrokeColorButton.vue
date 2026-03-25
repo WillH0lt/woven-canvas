@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { type EntityId, Shape, StrokeKind } from "@woven-canvas/core";
+import { computed, ref } from 'vue'
+import { type EntityId, Shape, StrokeKind } from '@woven-canvas/core'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import ColorBubbles from "./ColorBubbles.vue";
-import StrokeStyleOptions from "./StrokeStyleOptions.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useComponents } from "../../composables/useComponents";
-import { useEditorContext } from "../../composables/useEditorContext";
-import { rgbToHex, type ColorData } from "../../utils/color";
+import MenuDropdown from './MenuDropdown.vue'
+import ColorBubbles from './ColorBubbles.vue'
+import StrokeStyleOptions from './StrokeStyleOptions.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useComponents } from '../../composables/useComponents'
+import { useEditorContext } from '../../composables/useEditorContext'
+import { rgbToHex, type ColorData } from '../../utils/color'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const shapesMap = useComponents(() => props.entityIds, Shape);
+const shapesMap = useComponents(() => props.entityIds, Shape)
 
-const pickerOpen = ref(false);
+const pickerOpen = ref(false)
 
 // Get all selected stroke colors as hex values
 const selectedColors = computed<string[]>(() => {
-  const colorSet = new Set<string>();
+  const colorSet = new Set<string>()
 
   for (const shape of shapesMap.value.values()) {
     if (shape) {
@@ -31,57 +31,57 @@ const selectedColors = computed<string[]>(() => {
         green: shape.strokeGreen,
         blue: shape.strokeBlue,
         alpha: 255,
-      });
-      colorSet.add(hex);
+      })
+      colorSet.add(hex)
     }
   }
 
-  return Array.from(colorSet);
-});
+  return Array.from(colorSet)
+})
 
 // Check if there are multiple different colors
-const hasMultipleColors = computed(() => selectedColors.value.length > 1);
+const hasMultipleColors = computed(() => selectedColors.value.length > 1)
 
 // Get the first color for the swatch
 const currentColorHex = computed(() => {
-  return selectedColors.value[0] ?? "#000000";
-});
+  return selectedColors.value[0] ?? '#000000'
+})
 
 // Get the current stroke style
 const currentStyle = computed(() => {
-  const first = shapesMap.value.values().next().value;
-  return first?.strokeKind ?? StrokeKind.Solid;
-});
+  const first = shapesMap.value.values().next().value
+  return first?.strokeKind ?? StrokeKind.Solid
+})
 
 // Check if multiple different styles are selected
 const hasMultipleStyles = computed(() => {
-  const styles = new Set<StrokeKind>();
+  const styles = new Set<StrokeKind>()
   for (const shape of shapesMap.value.values()) {
     if (shape) {
-      styles.add(shape.strokeKind);
+      styles.add(shape.strokeKind)
     }
   }
-  return styles.size > 1;
-});
+  return styles.size > 1
+})
 
 function handleColorChange(color: ColorData) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const shape = Shape.write(ctx, entityId);
-      shape.strokeRed = color.red;
-      shape.strokeGreen = color.green;
-      shape.strokeBlue = color.blue;
+      const shape = Shape.write(ctx, entityId)
+      shape.strokeRed = color.red
+      shape.strokeGreen = color.green
+      shape.strokeBlue = color.blue
     }
-  });
+  })
 }
 
 function handleStyleChange(kind: StrokeKind) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const shape = Shape.write(ctx, entityId);
-      shape.strokeKind = kind;
+      const shape = Shape.write(ctx, entityId)
+      shape.strokeKind = kind
     }
-  });
+  })
 }
 </script>
 

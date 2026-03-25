@@ -1,37 +1,30 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { useComponent } from "../../composables/useComponent";
-import { useTextStretchBehavior } from "../../composables/useTextStretchBehavior";
-import {
-  Color,
-  VerticalAlign,
-  VerticalAlignment,
-} from "@woven-canvas/core";
-import type { BlockData } from "../../types";
-import EditableText from "../EditableText.vue";
+import { computed, ref } from 'vue'
+import { useComponent } from '../../composables/useComponent'
+import { useTextStretchBehavior } from '../../composables/useTextStretchBehavior'
+import { Color, VerticalAlign, VerticalAlignment } from '@woven-canvas/core'
+import type { BlockData } from '../../types'
+import EditableText from '../EditableText.vue'
 
-const props = defineProps<BlockData>();
+const props = defineProps<BlockData>()
 
-const color = useComponent(props.entityId, Color);
-const verticalAlign = useComponent(props.entityId, VerticalAlign);
+const color = useComponent(props.entityId, Color)
+const verticalAlign = useComponent(props.entityId, VerticalAlign)
 
-const containerRef = ref<HTMLElement | null>(null);
+const containerRef = ref<HTMLElement | null>(null)
 
 const alignItemsMap: Record<string, string> = {
-  [VerticalAlignment.Top]: "flex-start",
-  [VerticalAlignment.Center]: "center",
-  [VerticalAlignment.Bottom]: "flex-end",
-};
+  [VerticalAlignment.Top]: 'flex-start',
+  [VerticalAlignment.Center]: 'center',
+  [VerticalAlignment.Bottom]: 'flex-end',
+}
 
 const containerStyle = computed(() => ({
-  backgroundColor: color.value
-    ? `rgb(${color.value.red}, ${color.value.green}, ${color.value.blue})`
-    : undefined,
+  backgroundColor: color.value ? `rgb(${color.value.red}, ${color.value.green}, ${color.value.blue})` : undefined,
   // Min-height = block width to maintain square minimum
   minHeight: `${props.block.size[0]}px`,
-  alignItems:
-    alignItemsMap[verticalAlign.value?.value ?? VerticalAlignment.Top],
-}));
+  alignItems: alignItemsMap[verticalAlign.value?.value ?? VerticalAlignment.Top],
+}))
 
 // Use composable for text stretch behavior with square minimum height
 const { handleEditEnd } = useTextStretchBehavior({
@@ -39,7 +32,7 @@ const { handleEditEnd } = useTextStretchBehavior({
   containerRef,
   minWidth: () => props.block.size[0],
   minHeight: () => props.block.size[0],
-});
+})
 </script>
 
 <template>

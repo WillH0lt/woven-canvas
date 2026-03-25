@@ -1,84 +1,84 @@
 <script setup lang="ts">
-import { ref, inject, watch, onMounted, onUnmounted } from "vue";
-import { Asset, UploadState } from "@woven-canvas/core";
+import { ref, inject, watch, onMounted, onUnmounted } from 'vue'
+import { Asset, UploadState } from '@woven-canvas/core'
 
-import type { BlockData } from "../../types";
-import { useComponent } from "../../composables/useComponent";
-import { WOVEN_CANVAS_KEY } from "../../injection";
+import type { BlockData } from '../../types'
+import { useComponent } from '../../composables/useComponent'
+import { WOVEN_CANVAS_KEY } from '../../injection'
 
-const props = defineProps<BlockData>();
+const props = defineProps<BlockData>()
 
-const injectedContext = inject(WOVEN_CANVAS_KEY);
+const injectedContext = inject(WOVEN_CANVAS_KEY)
 if (!injectedContext) {
-  throw new Error("TapeBlock must be used within a WovenCanvas component");
+  throw new Error('TapeBlock must be used within a WovenCanvas component')
 }
-const canvasContext = injectedContext;
+const canvasContext = injectedContext
 
-const asset = useComponent(props.entityId, Asset);
+const asset = useComponent(props.entityId, Asset)
 
 // Resolve the initial URL during setup so it's available for SSR
-const assetManagerForSetup = canvasContext.getAssetManager();
-const initialAsset = asset.value;
-let initialUrl: string | null = null;
+const assetManagerForSetup = canvasContext.getAssetManager()
+const initialAsset = asset.value
+let initialUrl: string | null = null
 if (assetManagerForSetup && initialAsset?.identifier) {
-  initialUrl = await assetManagerForSetup.getDisplayUrl(initialAsset.identifier);
+  initialUrl = await assetManagerForSetup.getDisplayUrl(initialAsset.identifier)
 }
 
-const displayUrl = ref<string | null>(initialUrl);
-const isLoading = ref(!initialUrl);
-const hasError = ref(false);
+const displayUrl = ref<string | null>(initialUrl)
+const isLoading = ref(!initialUrl)
+const hasError = ref(false)
 
-let isMounted = true;
+let isMounted = true
 onUnmounted(() => {
-  isMounted = false;
-});
+  isMounted = false
+})
 
 async function updateDisplayUrl() {
-  const assetManager = canvasContext.getAssetManager();
+  const assetManager = canvasContext.getAssetManager()
   if (!assetManager) {
-    return;
+    return
   }
 
-  const assetData = asset.value;
+  const assetData = asset.value
   if (!assetData || !assetData.identifier) {
-    isLoading.value = false;
-    return;
+    isLoading.value = false
+    return
   }
 
   try {
-    isLoading.value = true;
-    hasError.value = false;
+    isLoading.value = true
+    hasError.value = false
 
-    const url = await assetManager.getDisplayUrl(assetData.identifier);
+    const url = await assetManager.getDisplayUrl(assetData.identifier)
 
-    if (!isMounted) return;
+    if (!isMounted) return
 
     if (url) {
-      displayUrl.value = url;
-      isLoading.value = false;
+      displayUrl.value = url
+      isLoading.value = false
     } else if (assetData.uploadState === UploadState.Failed) {
-      hasError.value = true;
-      isLoading.value = false;
+      hasError.value = true
+      isLoading.value = false
     }
   } catch (error) {
-    if (!isMounted) return;
-    console.error("Failed to get tape display URL:", error);
-    hasError.value = true;
-    isLoading.value = false;
+    if (!isMounted) return
+    console.error('Failed to get tape display URL:', error)
+    hasError.value = true
+    isLoading.value = false
   }
 }
 
 watch(
   () => asset.value,
   () => {
-    updateDisplayUrl();
+    updateDisplayUrl()
   },
   { immediate: true },
-);
+)
 
 onMounted(() => {
-  updateDisplayUrl();
-});
+  updateDisplayUrl()
+})
 </script>
 
 <template>

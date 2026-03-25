@@ -1,31 +1,27 @@
 <script setup lang="ts">
-import { ref, computed, watch, inject, type Ref } from "vue";
-import { useFloating, offset, flip, shift } from "@floating-ui/vue";
-import { useTooltipSingleton } from "../../composables/useTooltipSingleton";
+import { ref, computed, watch, inject, type Ref } from 'vue'
+import { useFloating, offset, flip, shift } from '@floating-ui/vue'
+import { useTooltipSingleton } from '../../composables/useTooltipSingleton'
 
-const { activeTooltip, isVisible } = useTooltipSingleton();
+const { activeTooltip, isVisible } = useTooltipSingleton()
 
 // Get container ref from WovenCanvas for teleport
-const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
+const containerRef = inject<Ref<HTMLElement | null>>('containerRef')
 
 // Tooltip element ref
-const tooltipRef = ref<HTMLElement | null>(null);
+const tooltipRef = ref<HTMLElement | null>(null)
 
 // Virtual reference element that tracks the anchor
-const anchorRef = computed(() => activeTooltip.value?.anchor ?? null);
+const anchorRef = computed(() => activeTooltip.value?.anchor ?? null)
 
 // Use floating-ui for positioning
 const { floatingStyles } = useFloating(anchorRef, tooltipRef, {
-  placement: "top",
-  middleware: [
-    offset(8),
-    flip({ fallbackPlacements: ["bottom"] }),
-    shift({ padding: 8 }),
-  ],
-});
+  placement: 'top',
+  middleware: [offset(8), flip({ fallbackPlacements: ['bottom'] }), shift({ padding: 8 })],
+})
 
 // Track if tooltip should be displayed (combines visibility state with having content)
-const shouldShow = computed(() => isVisible.value && activeTooltip.value?.text);
+const shouldShow = computed(() => isVisible.value && activeTooltip.value?.text)
 </script>
 
 <template>

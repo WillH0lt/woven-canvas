@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@woven-canvas/core";
+import { computed } from 'vue'
+import type { EntityId } from '@woven-canvas/core'
 
-import MenuDropdown from "../MenuDropdown.vue";
-import ColorBubbles from "../ColorBubbles.vue";
-import IconChevronDown from "../../icons/IconChevronDown.vue";
-import { useTextFormatting } from "../../../composables/useTextFormatting";
-import { rgbToHex, type ColorData } from "../../../utils/color";
+import MenuDropdown from '../MenuDropdown.vue'
+import ColorBubbles from '../ColorBubbles.vue'
+import IconChevronDown from '../../icons/IconChevronDown.vue'
+import { useTextFormatting } from '../../../composables/useTextFormatting'
+import { rgbToHex, type ColorData } from '../../../utils/color'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { state, commands } = useTextFormatting(() => props.entityIds);
+const { state, commands } = useTextFormatting(() => props.entityIds)
 
 // Get the current color from state
 const currentColorHex = computed(() => {
-  return state.color ?? "#000000";
-});
+  return state.color ?? '#000000'
+})
 
 // Style for the color underline
 const underlineStyle = computed(() => {
-  return { backgroundColor: currentColorHex.value };
-});
+  return { backgroundColor: currentColorHex.value }
+})
 
 function handleColorChange(color: ColorData) {
-  commands.setColor(rgbToHex(color));
+  commands.setColor(rgbToHex(color))
 }
 </script>
 

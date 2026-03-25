@@ -1,66 +1,66 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { type EntityId, Shape } from "@woven-canvas/core";
+import { computed, ref } from 'vue'
+import { type EntityId, Shape } from '@woven-canvas/core'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import ColorBubbles from "./ColorBubbles.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useComponents } from "../../composables/useComponents";
-import { useEditorContext } from "../../composables/useEditorContext";
-import { rgbToHex, type ColorData } from "../../utils/color";
+import MenuDropdown from './MenuDropdown.vue'
+import ColorBubbles from './ColorBubbles.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useComponents } from '../../composables/useComponents'
+import { useEditorContext } from '../../composables/useEditorContext'
+import { rgbToHex, type ColorData } from '../../utils/color'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const shapesMap = useComponents(() => props.entityIds, Shape);
+const shapesMap = useComponents(() => props.entityIds, Shape)
 
 // Fill opacity modes
-type FillMode = "solid" | "faded" | "none";
+type FillMode = 'solid' | 'faded' | 'none'
 
 const fillModes: { mode: FillMode; label: string; alpha: number }[] = [
-  { mode: "solid", label: "Solid", alpha: 255 },
-  { mode: "faded", label: "Faded", alpha: 128 },
-  { mode: "none", label: "None", alpha: 0 },
-];
+  { mode: 'solid', label: 'Solid', alpha: 255 },
+  { mode: 'faded', label: 'Faded', alpha: 128 },
+  { mode: 'none', label: 'None', alpha: 0 },
+]
 
 // Get current fill mode based on alpha
 const currentFillMode = computed<FillMode>(() => {
-  const first = shapesMap.value.values().next().value;
-  const alpha = first?.fillAlpha ?? 255;
-  if (alpha === 0) return "none";
-  if (alpha < 200) return "faded";
-  return "solid";
-});
+  const first = shapesMap.value.values().next().value
+  const alpha = first?.fillAlpha ?? 255
+  if (alpha === 0) return 'none'
+  if (alpha < 200) return 'faded'
+  return 'solid'
+})
 
 // Check if multiple different modes are selected
 const hasMultipleModes = computed(() => {
-  const modes = new Set<FillMode>();
+  const modes = new Set<FillMode>()
   for (const shape of shapesMap.value.values()) {
     if (shape) {
-      const alpha = shape.fillAlpha ?? 255;
-      if (alpha === 0) modes.add("none");
-      else if (alpha < 200) modes.add("faded");
-      else modes.add("solid");
+      const alpha = shape.fillAlpha ?? 255
+      if (alpha === 0) modes.add('none')
+      else if (alpha < 200) modes.add('faded')
+      else modes.add('solid')
     }
   }
-  return modes.size > 1;
-});
+  return modes.size > 1
+})
 
 function handleModeChange(alpha: number) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const shape = Shape.write(ctx, entityId);
-      shape.fillAlpha = alpha;
+      const shape = Shape.write(ctx, entityId)
+      shape.fillAlpha = alpha
     }
-  });
+  })
 }
 
 // Get all selected fill colors as hex8 values (includes alpha)
 const selectedColors = computed<string[]>(() => {
-  const colorSet = new Set<string>();
+  const colorSet = new Set<string>()
 
   for (const shape of shapesMap.value.values()) {
     if (shape) {
@@ -69,36 +69,36 @@ const selectedColors = computed<string[]>(() => {
         green: shape.fillGreen,
         blue: shape.fillBlue,
         alpha: shape.fillAlpha ?? 255,
-      });
-      colorSet.add(hex);
+      })
+      colorSet.add(hex)
     }
   }
 
-  return Array.from(colorSet);
-});
+  return Array.from(colorSet)
+})
 
 // Check if there are multiple different colors
-const hasMultipleColors = computed(() => selectedColors.value.length > 1);
+const hasMultipleColors = computed(() => selectedColors.value.length > 1)
 
 // Get the first color for the swatch (hex8)
 const currentColorHex = computed(() => {
-  return selectedColors.value[0] ?? "#4a90d9";
-});
+  return selectedColors.value[0] ?? '#4a90d9'
+})
 
 function handleColorChange(color: ColorData) {
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
-      const shape = Shape.write(ctx, entityId);
-      shape.fillRed = color.red;
-      shape.fillGreen = color.green;
-      shape.fillBlue = color.blue;
-      shape.fillAlpha = color.alpha;
+      const shape = Shape.write(ctx, entityId)
+      shape.fillRed = color.red
+      shape.fillGreen = color.green
+      shape.fillBlue = color.blue
+      shape.fillAlpha = color.alpha
     }
-  });
+  })
 }
 
 // Track if picker is open
-const pickerOpen = ref(false);
+const pickerOpen = ref(false)
 </script>
 
 <template>

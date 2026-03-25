@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import ToolbarButton from "../ToolbarButton.vue";
-import { ArrowHeadKind } from "@woven-canvas/plugin-arrows";
+import ToolbarButton from '../ToolbarButton.vue'
+import { ArrowHeadKind } from '@woven-canvas/plugin-arrows'
 
 const snapshot = JSON.stringify({
   block: {
-    tag: "elbow-arrow",
+    tag: 'elbow-arrow',
     size: [200, 200],
   },
   elbowArrow: {
@@ -14,7 +14,7 @@ const snapshot = JSON.stringify({
     endArrowHead: ArrowHeadKind.V,
   },
   connector: {},
-});
+})
 </script>
 
 <template>

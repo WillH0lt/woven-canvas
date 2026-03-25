@@ -7,7 +7,7 @@ import {
   Key,
 } from '@woven-canvas/core'
 
-import { BringForwardSelected, Copy, Cut, Paste, RemoveSelected, SelectAll, SendBackwardSelected } from './commands'
+import { BringForwardSelected, RemoveSelected, SelectAll, SendBackwardSelected } from './commands'
 
 import * as components from './components'
 import { SELECTION_PLUGIN_NAME } from './constants'
@@ -98,21 +98,6 @@ export function createSelectionPlugin(options: SelectionPluginOptionsInput = {})
     ],
 
     keybinds: [
-      {
-        command: Cut.name,
-        key: Key.X,
-        mod: true,
-      },
-      {
-        command: Copy.name,
-        key: Key.C,
-        mod: true,
-      },
-      {
-        command: Paste.name,
-        key: Key.V,
-        mod: true,
-      },
       {
         command: RemoveSelected.name,
         key: Key.Delete,

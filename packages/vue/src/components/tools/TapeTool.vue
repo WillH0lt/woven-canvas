@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import ToolbarButton from "../ToolbarButton.vue";
+import ToolbarButton from '../ToolbarButton.vue'
 
 const DEFAULT_TAPE_IMAGE =
-  "https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F7e3b7dde-927d-4b09-aeb4-d49eac36d4ea.png?generation=1715183194653465&alt=media";
+  'https://storage.googleapis.com/download/storage/v1/b/zine-maker-public/o/tapes%2F7e3b7dde-927d-4b09-aeb4-d49eac36d4ea.png?generation=1715183194653465&alt=media'
 
 // Snapshot is only used for drag-out from toolbar (not click-to-place).
 // Canvas click-to-draw is handled by captureTapeDrawSystem.
 const snapshot = JSON.stringify({
   block: {
-    tag: "tape",
+    tag: 'tape',
     size: [200, 30],
   },
   tape: {
@@ -16,9 +16,9 @@ const snapshot = JSON.stringify({
   },
   asset: {
     identifier: DEFAULT_TAPE_IMAGE,
-    uploadState: "complete",
+    uploadState: 'complete',
   },
-});
+})
 </script>
 
 <template>

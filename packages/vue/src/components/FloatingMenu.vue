@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, inject, provide } from "vue";
+import { computed, ref, inject, provide, watch } from "vue";
 import { useFloating, offset, flip, shift } from "@floating-ui/vue";
 import {
   Block,
@@ -214,18 +214,30 @@ const hiddenSelectionStates: SelectionState[] = [
 ];
 
 // Should the menu be visible?
+// Use a small delay before showing to prevent a 1-frame flash on paste
 const shouldShow = computed(
   () =>
     selectedItems.value.length > 0 &&
     !isOffScreen.value &&
     !hiddenSelectionStates.includes(selectionState.value.state),
 );
+
+const isVisible = ref(false);
+let showTimer: ReturnType<typeof setTimeout> | undefined;
+watch(shouldShow, (val) => {
+  clearTimeout(showTimer);
+  if (val) {
+    showTimer = setTimeout(() => { isVisible.value = true; }, 40);
+  } else {
+    isVisible.value = false;
+  }
+}, { immediate: true });
 </script>
 
 <template>
   <Transition name="wov-fade">
     <div
-      v-if="shouldShow"
+      v-if="isVisible"
       ref="floatingRef"
       class="wov-floating-menu"
       :style="floatingStyles"

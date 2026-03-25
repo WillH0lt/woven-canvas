@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { EntityId } from "@woven-canvas/core";
+import { computed } from 'vue'
+import type { EntityId } from '@woven-canvas/core'
 
-import MenuDropdown from "../MenuDropdown.vue";
-import IconChevronDown from "../../icons/IconChevronDown.vue";
-import { useTextFormatting } from "../../../composables/useTextFormatting";
-import { useFonts } from "../../../composables/useFonts";
+import MenuDropdown from '../MenuDropdown.vue'
+import IconChevronDown from '../../icons/IconChevronDown.vue'
+import { useTextFormatting } from '../../../composables/useTextFormatting'
+import { useFonts } from '../../../composables/useFonts'
 
 export interface FontOption {
-  name: string;
-  displayName: string;
-  previewImage?: string;
+  name: string
+  displayName: string
+  previewImage?: string
 }
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { state, commands } = useTextFormatting(() => props.entityIds);
+const { state, commands } = useTextFormatting(() => props.entityIds)
 
 // Get fonts from editor (filtered to selectable only)
-const editorFonts = useFonts();
+const editorFonts = useFonts()
 
 // Map editor fonts to FontOption format, use props.fonts as override
 const resolvedFonts = computed<FontOption[]>(() => {
@@ -28,27 +28,27 @@ const resolvedFonts = computed<FontOption[]>(() => {
     name: font.name,
     displayName: font.displayName,
     previewImage: font.previewImage,
-  }));
-});
+  }))
+})
 
 // Get current font family (null if mixed)
-const currentFontFamily = computed<string | null>(() => state.fontFamily);
+const currentFontFamily = computed<string | null>(() => state.fontFamily)
 
 // Label for the button
 const buttonLabel = computed(() => {
-  const family = currentFontFamily.value;
-  if (family === null) return "Mixed";
+  const family = currentFontFamily.value
+  if (family === null) return 'Mixed'
 
-  const font = resolvedFonts.value.find((f) => f.name === family);
-  return font?.displayName ?? family;
-});
+  const font = resolvedFonts.value.find((f) => f.name === family)
+  return font?.displayName ?? family
+})
 
 function setFontFamily(fontName: string) {
-  commands.setFontFamily(fontName);
+  commands.setFontFamily(fontName)
 }
 
 function handleWheelStop(e: Event) {
-  e.stopPropagation();
+  e.stopPropagation()
 }
 </script>
 

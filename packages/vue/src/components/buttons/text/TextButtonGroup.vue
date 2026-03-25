@@ -1,39 +1,39 @@
 <script setup lang="ts">
-import { inject, computed, ref, provide, type Ref } from "vue";
-import { useElementSize } from "@vueuse/core";
-import type { EntityId } from "@woven-canvas/core";
+import { inject, computed, ref, provide, type Ref } from 'vue'
+import { useElementSize } from '@vueuse/core'
+import type { EntityId } from '@woven-canvas/core'
 
-import MenuDropdown from "../MenuDropdown.vue";
-import { DROPDOWN_ACTIVE_KEY } from "../../../injection";
-import IconChevronDown from "../../icons/IconChevronDown.vue";
-import TextFontFamilyButton from "./TextFontFamilyButton.vue";
-import TextFontSizeButton from "./TextFontSizeButton.vue";
-import TextBoldButton from "./TextBoldButton.vue";
-import TextItalicButton from "./TextItalicButton.vue";
-import TextUnderlineButton from "./TextUnderlineButton.vue";
-import TextLinkButton from "./TextLinkButton.vue";
-import TextColorButton from "./TextColorButton.vue";
-import TextAlignmentButton from "./TextAlignmentButton.vue";
-import VerticalAlignButton from "./VerticalAlignButton.vue";
-import { useTextFormatting } from "../../../composables/useTextFormatting";
+import MenuDropdown from '../MenuDropdown.vue'
+import { DROPDOWN_ACTIVE_KEY } from '../../../injection'
+import IconChevronDown from '../../icons/IconChevronDown.vue'
+import TextFontFamilyButton from './TextFontFamilyButton.vue'
+import TextFontSizeButton from './TextFontSizeButton.vue'
+import TextBoldButton from './TextBoldButton.vue'
+import TextItalicButton from './TextItalicButton.vue'
+import TextUnderlineButton from './TextUnderlineButton.vue'
+import TextLinkButton from './TextLinkButton.vue'
+import TextColorButton from './TextColorButton.vue'
+import TextAlignmentButton from './TextAlignmentButton.vue'
+import VerticalAlignButton from './VerticalAlignButton.vue'
+import { useTextFormatting } from '../../../composables/useTextFormatting'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-  showVerticalAlign?: boolean;
-}>();
+  entityIds: EntityId[]
+  showVerticalAlign?: boolean
+}>()
 
-const { state } = useTextFormatting(() => props.entityIds);
+const { state } = useTextFormatting(() => props.entityIds)
 
 // Get container ref to measure width
-const containerRef = inject<Ref<HTMLElement | null>>("containerRef");
-const { width } = useElementSize(containerRef);
+const containerRef = inject<Ref<HTMLElement | null>>('containerRef')
+const { width } = useElementSize(containerRef)
 
 // Use compact mode when container is narrow
-const useCompactMode = computed(() => width.value > 0 && width.value < 600);
+const useCompactMode = computed(() => width.value > 0 && width.value < 600)
 
 // Provide dropdown coordination context so only one dropdown is open per level
-const activeByLevel = ref(new Map<number, string>());
-provide(DROPDOWN_ACTIVE_KEY, activeByLevel);
+const activeByLevel = ref(new Map<number, string>())
+provide(DROPDOWN_ACTIVE_KEY, activeByLevel)
 </script>
 
 <template>

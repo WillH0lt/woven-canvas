@@ -5,9 +5,9 @@
  *
  * All props, events, and slots are forwarded transparently to WovenCanvasCore.
  */
-import WovenCanvasCore from "./WovenCanvasCore.vue";
+import WovenCanvasCore from './WovenCanvasCore.vue'
 
-defineOptions({ inheritAttrs: false });
+defineOptions({ inheritAttrs: false })
 </script>
 
 <template>

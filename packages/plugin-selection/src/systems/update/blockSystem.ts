@@ -1,9 +1,6 @@
 import {
-  Aabb,
   addComponent,
   Block,
-  Camera,
-  type ComponentDef,
   Connector,
   type Context,
   Cursor,
@@ -12,7 +9,6 @@ import {
   defineQuery,
   type EditorResources,
   type EntityId,
-  Grid,
   getBackrefs,
   getResources,
   Held,
@@ -25,17 +21,14 @@ import {
   Synced,
 } from '@woven-canvas/core'
 
-import { Aabb as AabbNs, Vec2 } from '@woven-canvas/math'
+import { Vec2 } from '@woven-canvas/math'
 import {
   AddHeld,
   BringForwardSelected,
   CloneEntities,
-  Copy,
-  Cut,
   DeselectAll,
   DeselectBlock,
   DragBlock,
-  Paste,
   RemoveBlock,
   RemoveHeld,
   RemoveSelected,
@@ -47,16 +40,7 @@ import {
   UncloneEntities,
 } from '../../commands'
 import { Selected } from '../../components'
-import {
-  convertRefsToUuids,
-  deselectBlock,
-  generateUuidBySeed,
-  getRefFieldNames,
-  resolveRefFields,
-  selectBlock,
-} from '../../helpers'
-import { Clipboard } from '../../singletons'
-import type { ClipboardEntityData } from '../../singletons/Clipboard'
+import { deselectBlock, generateUuidBySeed, selectBlock } from '../../helpers'
 
 // Query for locally selected blocks
 const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected))
@@ -73,7 +57,6 @@ const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced))
  * - DragBlock
  * - BringForwardSelected, SendBackwardSelected
  * - SetCursor
- * - Cut, Copy, Paste
  */
 export const blockSystem = defineEditorSystem({ phase: 'update' }, (ctx: Context) => {
   on(ctx, DragBlock, (ctx, { entityId, position }) => {
@@ -151,22 +134,6 @@ export const blockSystem = defineEditorSystem({ phase: 'update' }, (ctx: Context
     }
   })
 
-  on(ctx, Copy, (ctx) => {
-    copySelectedBlocks(ctx)
-  })
-
-  on(ctx, Cut, (ctx) => {
-    copySelectedBlocks(ctx)
-    // Remove selected blocks after copying
-    for (const entityId of selectedBlocksQuery.current(ctx)) {
-      removeEntity(ctx, entityId)
-    }
-  })
-
-  on(ctx, Paste, (ctx, payload) => {
-    pasteBlocks(ctx, payload?.position)
-  })
-
   on(ctx, CloneEntities, (ctx, { entityIds, offset, seed }) => {
     cloneEntities(ctx, entityIds, offset, seed)
   })
@@ -236,190 +203,6 @@ function sendBackwardSelected(ctx: Context): void {
   for (const entityId of selectedBlocks) {
     const block = Block.write(ctx, entityId)
     block.rank = RankBounds.genPrev(ctx)
-  }
-}
-
-/**
- * Copy selected blocks to clipboard.
- * Serializes all document-synced components for each selected entity.
- * Ref fields are serialized as UUIDs (Synced.id) instead of EntityIds.
- * Only copies blocks selected by the current session.
- */
-function copySelectedBlocks(ctx: Context): void {
-  const selectedBlocks = [...selectedBlocksQuery.current(ctx)]
-  if (selectedBlocks.length === 0) return
-
-  const { componentsById } = getResources<EditorResources>(ctx)
-  const documentComponents = new Map([...componentsById].filter(([, def]) => def.sync === 'document'))
-
-  const clipboardEntities: ClipboardEntityData[] = []
-
-  // Compute union of all selected block AABBs
-  const unionAabb = AabbNs.zero()
-  let hasAabb = false
-
-  const syncedComponentId = Synced._getComponentId(ctx)
-
-  // Serialize each selected entity
-  for (const entityId of selectedBlocks) {
-    const entityData: ClipboardEntityData = new Map()
-
-    // Always include Synced component (even though sync: "none") for UUID mapping
-    if (hasComponent(ctx, entityId, Synced)) {
-      entityData.set(syncedComponentId, Synced.snapshot(ctx, entityId))
-    }
-
-    // Iterate through entity's components and serialize document-synced ones
-    for (const componentId of ctx.entityBuffer.getComponentIds(entityId)) {
-      // Skip Synced - already handled above
-      if (componentId === syncedComponentId) continue
-
-      const componentDef = documentComponents.get(componentId)
-      if (componentDef) {
-        const snapshot = componentDef.snapshot(ctx, entityId)
-
-        // Convert ref fields from EntityId to UUID
-        const converted = convertRefsToUuids(ctx, componentDef.schema, snapshot)
-        entityData.set(componentId, converted)
-      }
-    }
-
-    clipboardEntities.push(entityData)
-
-    // Track bounding box for center calculation
-    if (hasComponent(ctx, entityId, Aabb)) {
-      const { value } = Aabb.read(ctx, entityId)
-      if (!hasAabb) {
-        AabbNs.copy(unionAabb, value)
-        hasAabb = true
-      } else {
-        AabbNs.union(unionAabb, value)
-      }
-    }
-  }
-
-  // Store in clipboard
-  Clipboard.setEntities(ctx, clipboardEntities)
-  const clipboard = Clipboard.write(ctx)
-  clipboard.count = clipboardEntities.length
-  clipboard.center = AabbNs.center(unionAabb)
-}
-
-/**
- * Paste entities from clipboard.
- * Restores all document-synced components for each entity.
- * Ref fields (stored as UUIDs) are resolved to pasted EntityIds,
- * or set to null if the referenced block wasn't copied.
- * @param position - Optional position to paste at. If not provided, pastes at screen center.
- */
-function pasteBlocks(ctx: Context, position?: Vec2): void {
-  const clipboardEntities = Clipboard.getEntities(ctx)
-  if (clipboardEntities.length === 0) return
-
-  const { componentsById } = getResources<EditorResources>(ctx)
-  const documentComponents = new Map([...componentsById].filter(([, def]) => def.sync === 'document'))
-
-  const clipboard = Clipboard.read(ctx)
-  const syncedComponentId = Synced._getComponentId(ctx)
-  const blockComponentId = Block._getComponentId(ctx)
-
-  // Calculate paste offset
-  let offset: Vec2
-  if (position) {
-    // Paste centered at the given position
-    offset = Vec2.clone(position)
-    Vec2.sub(offset, clipboard.center)
-  } else {
-    // Paste centered at the screen center
-    const screenCenter = Camera.getWorldCenter(ctx)
-    offset = Vec2.clone(screenCenter)
-    Vec2.sub(offset, clipboard.center)
-    // Snap offset to grid so the entire group aligns while preserving arrangement
-    Grid.snapPosition(ctx, offset)
-  }
-
-  // Sort clipboard entities by rank to maintain relative z-order
-  const sortedEntities = [...clipboardEntities].sort((a, b) => {
-    const blockDataA = a.get(blockComponentId) as { rank?: string } | undefined
-    const blockDataB = b.get(blockComponentId) as { rank?: string } | undefined
-    const rankA = blockDataA?.rank ?? ''
-    const rankB = blockDataB?.rank ?? ''
-    if (rankA < rankB) return -1
-    if (rankA > rankB) return 1
-    return 0
-  })
-
-  // Deselect current selection
-  deselectAllBlocks(ctx)
-
-  // Maps original Synced.id (UUID) -> new pasted EntityId
-  const uuidToNewEntityId = new Map<string, EntityId>()
-
-  // Track components with ref fields for deferred resolution
-  const pendingRefs: Array<{
-    entityId: EntityId
-    componentDef: ComponentDef<any>
-    componentData: Record<string, unknown>
-  }> = []
-
-  // First pass: create new entities from clipboard data
-  for (const entityData of sortedEntities) {
-    const entityId = createEntity(ctx)
-
-    // Get original Synced.id from clipboard and map to new EntityId
-    const syncedData = entityData.get(syncedComponentId) as { id: string } | undefined
-    if (syncedData?.id) {
-      uuidToNewEntityId.set(syncedData.id, entityId)
-    }
-
-    // Add Synced component with new UUID
-    addComponent(ctx, entityId, Synced, {
-      id: crypto.randomUUID(),
-    })
-
-    // Add all other components from clipboard
-    for (const [componentId, componentData] of entityData) {
-      // Skip synced - we already added it with a new ID
-      if (componentId === syncedComponentId) continue
-
-      const componentDef = documentComponents.get(componentId)
-      if (!componentDef) continue
-
-      // Clone the data to avoid mutating clipboard
-      const data = { ...(componentData as Record<string, unknown>) }
-
-      // Special handling for Block component: apply offset and new rank
-      if (componentId === blockComponentId) {
-        const pos = Vec2.clone(data.position as Vec2)
-        Vec2.add(pos, offset)
-        data.position = pos
-        data.rank = RankBounds.genNext(ctx)
-      }
-
-      // Check if component has ref fields - defer resolution
-      const refFields = getRefFieldNames(componentDef.schema)
-      if (refFields.length > 0) {
-        // Remove ref fields - they default to null, we resolve them in second pass
-        for (const fieldName of refFields) {
-          delete data[fieldName]
-        }
-        pendingRefs.push({
-          entityId,
-          componentDef,
-          componentData: componentData as Record<string, unknown>,
-        })
-      }
-
-      addComponent(ctx, entityId, componentDef, data as any)
-    }
-
-    // Select the pasted entity
-    selectBlock(ctx, entityId)
-  }
-
-  // Second pass: resolve ref fields from UUIDs to EntityIds
-  for (const { entityId, componentDef, componentData } of pendingRefs) {
-    resolveRefFields(ctx, entityId, componentDef, componentData, uuidToNewEntityId)
   }
 }
 

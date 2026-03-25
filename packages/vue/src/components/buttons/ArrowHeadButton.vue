@@ -1,102 +1,92 @@
 <script setup lang="ts">
-import { shallowRef, computed } from "vue";
-import { hasComponent, type EntityId } from "@woven-canvas/core";
-import {
-  ElbowArrow,
-  ArcArrow,
-  ArrowHeadKind,
-} from "@woven-canvas/plugin-arrows";
+import { shallowRef, computed } from 'vue'
+import { hasComponent, type EntityId } from '@woven-canvas/core'
+import { ElbowArrow, ArcArrow, ArrowHeadKind } from '@woven-canvas/plugin-arrows'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useEditorContext } from "../../composables/useEditorContext";
-import { ARROW_HEADS, getArrowHead, type ArrowHeadDef } from "../../arrowHeads";
+import MenuDropdown from './MenuDropdown.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useEditorContext } from '../../composables/useEditorContext'
+import { ARROW_HEADS, getArrowHead, type ArrowHeadDef } from '../../arrowHeads'
 
-type ArrowSide = "start" | "end";
+type ArrowSide = 'start' | 'end'
 
 const props = defineProps<{
-  entityIds: EntityId[];
-  side: ArrowSide;
-}>();
+  entityIds: EntityId[]
+  side: ArrowSide
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const currentHead = shallowRef<ArrowHeadKind | null>(null);
+const currentHead = shallowRef<ArrowHeadKind | null>(null)
 
 const currentHeadDef = computed(() => {
-  const kind =
-    currentHead.value ??
-    (props.side === "start" ? ArrowHeadKind.None : ArrowHeadKind.V);
-  return getArrowHead(kind);
-});
+  const kind = currentHead.value ?? (props.side === 'start' ? ArrowHeadKind.None : ArrowHeadKind.V)
+  return getArrowHead(kind)
+})
 
 // Update current arrow head on each tick
 nextEditorTick((ctx) => {
-  let first: ArrowHeadKind | null = null;
+  let first: ArrowHeadKind | null = null
 
   for (const entityId of props.entityIds) {
     if (hasComponent(ctx, entityId, ElbowArrow)) {
-      const arrow = ElbowArrow.read(ctx, entityId);
-      const head =
-        props.side === "start" ? arrow.startArrowHead : arrow.endArrowHead;
+      const arrow = ElbowArrow.read(ctx, entityId)
+      const head = props.side === 'start' ? arrow.startArrowHead : arrow.endArrowHead
       if (first === null) {
-        first = head;
+        first = head
       } else if (head !== first) {
         // Mixed selection - use default based on end type
-        currentHead.value =
-          props.side === "start" ? ArrowHeadKind.None : ArrowHeadKind.V;
-        return;
+        currentHead.value = props.side === 'start' ? ArrowHeadKind.None : ArrowHeadKind.V
+        return
       }
     }
     if (hasComponent(ctx, entityId, ArcArrow)) {
-      const arrow = ArcArrow.read(ctx, entityId);
-      const head =
-        props.side === "start" ? arrow.startArrowHead : arrow.endArrowHead;
+      const arrow = ArcArrow.read(ctx, entityId)
+      const head = props.side === 'start' ? arrow.startArrowHead : arrow.endArrowHead
       if (first === null) {
-        first = head;
+        first = head
       } else if (head !== first) {
         // Mixed selection - use default based on end type
-        currentHead.value =
-          props.side === "start" ? ArrowHeadKind.None : ArrowHeadKind.V;
-        return;
+        currentHead.value = props.side === 'start' ? ArrowHeadKind.None : ArrowHeadKind.V
+        return
       }
     }
   }
 
-  currentHead.value = first;
-});
+  currentHead.value = first
+})
 
 function handleSelect(head: ArrowHeadKind) {
-  currentHead.value = head;
+  currentHead.value = head
 
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       if (hasComponent(ctx, entityId, ElbowArrow)) {
-        const arrow = ElbowArrow.write(ctx, entityId);
-        if (props.side === "start") {
-          arrow.startArrowHead = head;
+        const arrow = ElbowArrow.write(ctx, entityId)
+        if (props.side === 'start') {
+          arrow.startArrowHead = head
         } else {
-          arrow.endArrowHead = head;
+          arrow.endArrowHead = head
         }
       }
       if (hasComponent(ctx, entityId, ArcArrow)) {
-        const arrow = ArcArrow.write(ctx, entityId);
-        if (props.side === "start") {
-          arrow.startArrowHead = head;
+        const arrow = ArcArrow.write(ctx, entityId)
+        if (props.side === 'start') {
+          arrow.startArrowHead = head
         } else {
-          arrow.endArrowHead = head;
+          arrow.endArrowHead = head
         }
       }
     }
-  });
+  })
 }
 
 function getSvg(def: ArrowHeadDef | undefined): string {
-  if (!def) return "";
-  const isStart = props.side === "start";
-  const headX = isStart ? 4 : 20;
-  const transform = `translate(${headX}, 12) scale(${isStart ? "-0.8, 0.8" : "0.8"})`;
-  return `<line x1="${isStart ? 8 : 4}" y1="12" x2="${isStart ? 20 : 16}" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><g transform="${transform}">${def.svg}</g>`;
+  if (!def) return ''
+  const isStart = props.side === 'start'
+  const headX = isStart ? 4 : 20
+  const transform = `translate(${headX}, 12) scale(${isStart ? '-0.8, 0.8' : '0.8'})`
+  return `<line x1="${isStart ? 8 : 4}" y1="12" x2="${isStart ? 20 : 16}" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><g transform="${transform}">${def.svg}</g>`
 }
 </script>
 

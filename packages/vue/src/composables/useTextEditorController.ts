@@ -51,6 +51,8 @@ export interface TextEditorController {
   commands: TextEditorCommands
   /** Counter that increments on each transaction (for triggering updates) */
   updateCounter: Ref<number>
+  /** Schedule a floating menu reposition after the next two animation frames */
+  repositionMenu(): void
   /** Register an editor and elements as active (called by EditableText) */
   register(editor: Editor, textElement: HTMLElement, blockElement: HTMLElement): void
   /** Unregister the active editor and elements (called by EditableText) */
@@ -271,6 +273,14 @@ export function useTextEditorController(): TextEditorController {
     activeBlockElement.value = null
   }
 
+  function repositionMenu() {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        updateCounter.value++
+      })
+    })
+  }
+
   return {
     editor: activeEditor,
     blockElement: activeBlockElement,
@@ -280,5 +290,6 @@ export function useTextEditorController(): TextEditorController {
     updateCounter,
     register,
     unregister,
+    repositionMenu,
   }
 }

@@ -1,68 +1,68 @@
 <script setup lang="ts">
-import { shallowRef } from "vue";
-import { hasComponent, type EntityId } from "@woven-canvas/core";
-import { ElbowArrow, ArcArrow } from "@woven-canvas/plugin-arrows";
+import { shallowRef } from 'vue'
+import { hasComponent, type EntityId } from '@woven-canvas/core'
+import { ElbowArrow, ArcArrow } from '@woven-canvas/plugin-arrows'
 
-import MenuDropdown from "./MenuDropdown.vue";
-import IconChevronDown from "../icons/IconChevronDown.vue";
-import { useEditorContext } from "../../composables/useEditorContext";
+import MenuDropdown from './MenuDropdown.vue'
+import IconChevronDown from '../icons/IconChevronDown.vue'
+import { useEditorContext } from '../../composables/useEditorContext'
 
 const THICKNESS_OPTIONS = [
-  { label: "S", value: 2 },
-  { label: "M", value: 4 },
-  { label: "L", value: 8 },
-] as const;
+  { label: 'S', value: 2 },
+  { label: 'M', value: 4 },
+  { label: 'L', value: 8 },
+] as const
 
 const props = defineProps<{
-  entityIds: EntityId[];
-}>();
+  entityIds: EntityId[]
+}>()
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick } = useEditorContext()
 
-const currentThickness = shallowRef<number | null>(null);
+const currentThickness = shallowRef<number | null>(null)
 
 // Update current thickness on each tick
 nextEditorTick((ctx) => {
-  let first: number | null = null;
+  let first: number | null = null
 
   for (const entityId of props.entityIds) {
     if (hasComponent(ctx, entityId, ElbowArrow)) {
-      const arrow = ElbowArrow.read(ctx, entityId);
+      const arrow = ElbowArrow.read(ctx, entityId)
       if (first === null) {
-        first = arrow.thickness;
+        first = arrow.thickness
       } else if (arrow.thickness !== first) {
-        currentThickness.value = null;
-        return;
+        currentThickness.value = null
+        return
       }
     }
     if (hasComponent(ctx, entityId, ArcArrow)) {
-      const thickness = ArcArrow.getThickness(ctx, entityId);
+      const thickness = ArcArrow.getThickness(ctx, entityId)
       if (first === null) {
-        first = thickness;
+        first = thickness
       } else if (thickness !== first) {
-        currentThickness.value = null;
-        return;
+        currentThickness.value = null
+        return
       }
     }
   }
 
-  currentThickness.value = first;
-});
+  currentThickness.value = first
+})
 
 function handleSelect(thickness: number) {
-  currentThickness.value = thickness;
+  currentThickness.value = thickness
 
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       if (hasComponent(ctx, entityId, ElbowArrow)) {
-        const arrow = ElbowArrow.write(ctx, entityId);
-        arrow.thickness = thickness;
+        const arrow = ElbowArrow.write(ctx, entityId)
+        arrow.thickness = thickness
       }
       if (hasComponent(ctx, entityId, ArcArrow)) {
-        ArcArrow.setThickness(ctx, entityId, thickness);
+        ArcArrow.setThickness(ctx, entityId, thickness)
       }
     }
-  });
+  })
 }
 </script>
 
