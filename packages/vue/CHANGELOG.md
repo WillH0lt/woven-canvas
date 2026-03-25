@@ -1,5 +1,11 @@
 # @woven-canvas/vue
 
+## 1.0.9
+
+### Patch Changes
+
+- 9021855: track default font
+
 ## 1.0.8
 
 ### Patch Changes
