@@ -12,6 +12,17 @@ export interface EditorContext {
   getEditor(): Editor | null
 
   /**
+   * Set default property values for a component.
+   * Values are merged with existing defaults.
+   */
+  setDefaults(component: string, values: Record<string, unknown>): void
+
+  /**
+   * Get default property values for a component.
+   */
+  getDefaults(component: string): Record<string, unknown>
+
+  /**
    * Execute a callback on the next editor tick.
    * This is the recommended way to make changes to the editor state.
    *
@@ -78,6 +89,8 @@ export function useEditorContext(): EditorContext {
 
   return {
     getEditor: () => canvasContext.getEditor(),
+    setDefaults: (component, values) => canvasContext.setDefaults(component, values),
+    getDefaults: (component) => canvasContext.getDefaults(component),
     nextEditorTick(callback?: (ctx: Context) => void): Promise<Context> {
       return new Promise((resolve) => {
         const editor = canvasContext.getEditor()

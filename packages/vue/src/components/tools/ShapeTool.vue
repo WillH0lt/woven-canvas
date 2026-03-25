@@ -1,31 +1,38 @@
 <script setup lang="ts">
+import { computed, inject } from 'vue'
 import { VerticalAlignment, TextAlignment, StrokeKind } from '@woven-canvas/core'
 import ToolbarButton from '../ToolbarButton.vue'
+import { WOVEN_CANVAS_KEY } from '../../injection'
 
-const snapshot = JSON.stringify({
-  block: {
-    tag: 'shape',
-    size: [200, 200],
-  },
-  shape: {
-    kind: 'rectangle',
-    strokeKind: StrokeKind.Solid,
-    strokeWidth: 2,
-    strokeRed: 0,
-    strokeGreen: 0,
-    strokeBlue: 0,
-    strokeAlpha: 255,
-    fillRed: 255,
-    fillGreen: 255,
-    fillBlue: 255,
-    fillAlpha: 0,
-  },
-  text: {
-    defaultAlignment: TextAlignment.Center,
-  },
-  verticalAlign: {
-    value: VerticalAlignment.Center,
-  },
+const canvasContext = inject(WOVEN_CANVAS_KEY)!
+
+const snapshot = computed(() => {
+  return JSON.stringify({
+    block: {
+      tag: 'shape',
+      size: [200, 200],
+    },
+    shape: {
+      kind: 'rectangle',
+      strokeKind: StrokeKind.Solid,
+      strokeWidth: 2,
+      strokeRed: 0,
+      strokeGreen: 0,
+      strokeBlue: 0,
+      strokeAlpha: 255,
+      fillRed: 255,
+      fillGreen: 255,
+      fillBlue: 255,
+      fillAlpha: 0,
+    },
+    text: {
+      defaultAlignment: TextAlignment.Center,
+      ...canvasContext.getDefaults('text'),
+    },
+    verticalAlign: {
+      value: VerticalAlignment.Center,
+    },
+  })
 })
 </script>
 

@@ -1,27 +1,37 @@
 <script setup lang="ts">
+import { computed, inject } from 'vue'
 import ToolbarButton from '../ToolbarButton.vue'
+import { WOVEN_CANVAS_KEY } from '../../injection'
 
-const placementSnapshot = JSON.stringify({
-  block: {
-    tag: 'text',
-    size: [10, 29],
-  },
-  text: {
-    constrainWidth: false,
-    fontSizePx: 24,
-  },
+const canvasContext = inject(WOVEN_CANVAS_KEY)!
+
+const placementSnapshot = computed(() => {
+  return JSON.stringify({
+    block: {
+      tag: 'text',
+      size: [10, 29],
+    },
+    text: {
+      constrainWidth: false,
+      fontSizePx: 24,
+      ...canvasContext.getDefaults('text'),
+    },
+  })
 })
 
-const dragOutSnapshot = JSON.stringify({
-  block: {
-    tag: 'text',
-    size: [36, 29],
-  },
-  text: {
-    content: 'text',
-    constrainWidth: false,
-    fontSizePx: 24,
-  },
+const dragOutSnapshot = computed(() => {
+  return JSON.stringify({
+    block: {
+      tag: 'text',
+      size: [36, 29],
+    },
+    text: {
+      content: 'text',
+      constrainWidth: false,
+      fontSizePx: 24,
+      ...canvasContext.getDefaults('text'),
+    },
+  })
 })
 </script>
 

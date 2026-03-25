@@ -5,6 +5,9 @@ import type { InjectionKey } from 'vue'
 /** User data stored in the users map */
 export type UserData = InferCanvasComponentType<typeof User.schema>
 
+/** Partial component property overrides, keyed by component name */
+export type ComponentDefaults = Record<string, Record<string, unknown>>
+
 /** Context provided by WovenCanvas */
 export interface WovenCanvasContext {
   /** Check if an entity exists */
@@ -23,6 +26,12 @@ export interface WovenCanvasContext {
   subscribeSingleton: (singletonName: string, callback: (value: unknown) => void) => () => void
   /** Register a callback to be called on each tick. Returns unregister function. */
   registerTickCallback: (callback: (ctx: Context) => void) => () => void
+  /** Stored default property overrides for new blocks, keyed by component name */
+  defaults: ComponentDefaults
+  /** Set default property values for a component (merged with existing defaults) */
+  setDefaults: (component: string, values: Record<string, unknown>) => void
+  /** Get default property values for a component */
+  getDefaults: (component: string) => Record<string, unknown>
 }
 
 /** Injection key for WovenCanvas context */

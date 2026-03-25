@@ -28,8 +28,9 @@ import {
   Selected,
   selectBlock,
 } from '@woven-canvas/plugin-selection'
-import { onMounted, onUnmounted, type Ref, watch } from 'vue'
+import { inject, onMounted, onUnmounted, type Ref, watch } from 'vue'
 import { MIN_WRAP_WIDTH, PASTE_WRAP_CHAR_THRESHOLD } from '../constants'
+import { WOVEN_CANVAS_KEY } from '../injection'
 import { createBlockFromSnapshot } from '../systems/blockPlacementSystem'
 import { plainTextToHtml } from '../utils/plainTextToHtml'
 import { useEditorContext } from './useEditorContext'
@@ -333,6 +334,7 @@ export function useClipboard(containerRef: Ref<HTMLElement | null>, options: Cop
   if (!enabled) return
 
   const { getEditor, nextEditorTick } = useEditorContext()
+  const canvasContext = inject(WOVEN_CANVAS_KEY)!
   const textEditorController = useTextEditorController()
 
   let pendingPaste: { plainText: string; html: string } | null = null
@@ -445,6 +447,7 @@ export function useClipboard(containerRef: Ref<HTMLElement | null>, options: Cop
         text: {
           constrainWidth: shouldConstrain,
           fontSizePx: 24,
+          ...canvasContext.getDefaults('text'),
         },
       },
       position,

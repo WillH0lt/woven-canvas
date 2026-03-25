@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, shallowRef, provide, type Ref } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, shallowRef, provide, type Ref } from 'vue'
 import {
   Editor,
   Camera,
@@ -323,6 +323,13 @@ const canvasContext: WovenCanvasContext = {
   subscribeComponent,
   subscribeSingleton,
   registerTickCallback,
+  defaults: reactive({} as Record<string, Record<string, unknown>>),
+  setDefaults(component: string, values: Record<string, unknown>) {
+    this.defaults[component] = { ...this.defaults[component], ...values }
+  },
+  getDefaults(component: string) {
+    return this.defaults[component] ?? {}
+  },
 }
 provide(WOVEN_CANVAS_KEY, canvasContext)
 

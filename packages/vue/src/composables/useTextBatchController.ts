@@ -11,7 +11,8 @@ import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import Underline from '@tiptap/extension-underline'
 import { Block, Camera, type EntityId, Screen, Text, type TextAlignment } from '@woven-canvas/core'
-import { type ComputedRef, computed, type MaybeRefOrGetter, nextTick, type ShallowRef, toValue } from 'vue'
+import { type ComputedRef, computed, inject, type MaybeRefOrGetter, nextTick, type ShallowRef, toValue } from 'vue'
+import { WOVEN_CANVAS_KEY } from '../injection'
 import { type BlockDimensions, computeBlockDimensions } from '../utils/blockDimensions'
 import { normalizeColor } from '../utils/color'
 import { useComponents } from './useComponents'
@@ -485,6 +486,7 @@ function measureWithClone(
 
 export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>): TextBatchController {
   const { nextEditorTick } = useEditorContext()
+  const canvasContext = inject(WOVEN_CANVAS_KEY)!
   const textsMap = useComponents(entityIds, Text)
   const camera = useSingleton(Camera)
   const screen = useSingleton(Screen)
@@ -682,6 +684,7 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
     },
 
     setFontFamily(family: string) {
+      canvasContext.setDefaults('text', { fontFamily: family })
       applyTextStyleChange(
         (text) => ({ ...text, fontFamily: family }),
         (text) => {
@@ -691,6 +694,14 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
     },
 
     setTextStyle(options: TextStyleOptions) {
+      const textDefaults: Record<string, unknown> = {}
+      if (options.fontFamily !== undefined) textDefaults.fontFamily = options.fontFamily
+      if (options.fontSizePx !== undefined) textDefaults.fontSizePx = options.fontSizePx
+      if (options.lineHeight !== undefined) textDefaults.lineHeight = options.lineHeight
+      if (options.letterSpacingEm !== undefined) textDefaults.letterSpacingEm = options.letterSpacingEm
+      if (Object.keys(textDefaults).length > 0) {
+        canvasContext.setDefaults('text', textDefaults)
+      }
       applyTextStyleChange(
         (text) => ({
           ...text,
