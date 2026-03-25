@@ -534,7 +534,7 @@ onMounted(async () => {
   animationFrameId = requestAnimationFrame(tick)
 
   // Seed default font family from first registered font
-  const firstFont = editorRef.value?.fonts[0]?.name
+  const firstFont = editorRef.value?.fonts?.[0]?.name
   if (firstFont) {
     canvasContext.setDefaults('text', { fontFamily: firstFont })
   }
