@@ -1,5 +1,12 @@
 # @woven-canvas/vue
 
+## 1.0.10
+
+### Patch Changes
+
+- 3ef22ce: patch
+- ec755ea: initialize default font
+
 ## 1.0.9
 
 ### Patch Changes
