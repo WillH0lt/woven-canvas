@@ -10,7 +10,7 @@ import { Asset, Color, Embed, Image, Shape, Text, VerticalAlign } from './compon
 import { CORE_PLUGIN_NAME } from './constants'
 import type { EditorPlugin } from './plugin'
 import * as singletons from './singletons'
-import { keybindSystem } from './systems/capture'
+import { captureShapeDrawSystem, keybindSystem } from './systems/capture'
 import {
   attachKeyboardListeners,
   attachMouseListeners,
@@ -30,6 +30,7 @@ import { cursorSystem, presenceSystem } from './systems/postRender'
 import { intersectSystem } from './systems/preCapture'
 import { rankBoundsSystem } from './systems/preInput'
 import { canSeeBlocksSystem, scaleWithZoomSystem } from './systems/preRender'
+import { updateShapeDrawSystem } from './systems/update'
 import { type EditorResources, ResizeMode } from './types'
 
 /**
@@ -94,6 +95,10 @@ export const CorePlugin: EditorPlugin = {
     // Capture phase
     intersectSystem, // priority: 100
     keybindSystem,
+    captureShapeDrawSystem, // priority: 100
+
+    // Update phase
+    updateShapeDrawSystem,
 
     // Render phase
     scaleWithZoomSystem, // priority: 100

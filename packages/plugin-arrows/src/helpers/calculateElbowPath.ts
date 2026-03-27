@@ -249,7 +249,7 @@ class ElbowPathCalculator {
     let direction: Vec2
 
     if (blockId) {
-      const result = this.exitClosestSide(point, blockId)
+      const result = this.exitClosestSide(point, blockId, target)
       direction = result.direction
     } else {
       direction = getDominantDirection(point, target)
@@ -258,7 +258,7 @@ class ElbowPathCalculator {
     return Ray.fromPoints(point, direction)
   }
 
-  private exitClosestSide(point: Vec2, blockId: EntityId): { direction: Vec2; distance: number } {
+  private exitClosestSide(point: Vec2, blockId: EntityId, target: Vec2): { direction: Vec2; distance: number } {
     const block = Block.read(this.ctx, blockId)
     const center = Block.getCenter(this.ctx, blockId)
 
@@ -327,7 +327,7 @@ class ElbowPathCalculator {
     // If point is close to center (UV near 0.5, 0.5), use dominant direction
     const CENTER_THRESHOLD = 0.2
     if (Math.abs(u - 0.5) < CENTER_THRESHOLD && Math.abs(v - 0.5) < CENTER_THRESHOLD) {
-      const dominantDir = getDominantDirection(point, this.localEnd)
+      const dominantDir = getDominantDirection(point, target)
       const dominantExit = exits.find((e) => e.direction[0] === dominantDir[0] && e.direction[1] === dominantDir[1])
       if (dominantExit) {
         return dominantExit

@@ -50,6 +50,14 @@ export {
   ResetKeyboard,
   Undo,
 } from './command'
+// Shape draw commands
+export {
+  AddShapeBlock,
+  CompleteShapeBlock,
+  DrawShapeBlock,
+  PlaceShapeBlock,
+  RemoveShapeBlock,
+} from './commands'
 // Components
 export {
   Aabb,
@@ -154,6 +162,9 @@ export {
   RankBounds,
   ScaleWithZoomState,
   Screen,
+  ShapeDrawState,
+  ShapeDrawStateEnum,
+  type ShapeDrawStateValue,
 } from './singletons'
 // types
 export type {

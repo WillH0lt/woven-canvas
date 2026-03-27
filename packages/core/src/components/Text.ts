@@ -13,7 +13,7 @@ export const Text = defineCanvasComponent(
     /** Font size in pixels */
     fontSizePx: field.float64().default(24),
     /** Font family name */
-    fontFamily: field.string().max(64).default('Figtree'),
+    fontFamily: field.string().max(64).default(''),
     /** Line height multiplier */
     lineHeight: field.float64().default(1.2),
     /** Letter spacing in em units */

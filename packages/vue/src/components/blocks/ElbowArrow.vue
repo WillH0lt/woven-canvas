@@ -115,18 +115,19 @@ const pathData = computed(() => {
     tEnd += gap
   }
 
-  // Trim start point
-  points[0] = [
+  // Compute trimmed positions from original points before any mutation
+  // (avoids the end trim referencing an already-moved start when there are only 2 points)
+  const lastIdx = points.length - 1
+  const trimmedStart: Vec2 = [
     points[0][0] + (points[1][0] - points[0][0]) * tStart,
     points[0][1] + (points[1][1] - points[0][1]) * tStart,
   ]
-
-  // Trim end point
-  const lastIdx = points.length - 1
-  points[lastIdx] = [
+  const trimmedEnd: Vec2 = [
     points[lastIdx - 1][0] + (points[lastIdx][0] - points[lastIdx - 1][0]) * (1 - tEnd),
     points[lastIdx - 1][1] + (points[lastIdx][1] - points[lastIdx - 1][1]) * (1 - tEnd),
   ]
+  points[0] = trimmedStart
+  points[lastIdx] = trimmedEnd
 
   // Build line segments
   const lines: { start: Vec2; end: Vec2 }[] = []
