@@ -1,5 +1,14 @@
 # @woven-canvas/vue
 
+## 1.0.11
+
+### Patch Changes
+
+- 5f5300f: shape drawing and arrow bug fixing
+- Updated dependencies [5f5300f]
+  - @woven-canvas/plugin-arrows@1.0.5
+  - @woven-canvas/core@1.0.5
+
 ## 1.0.10
 
 ### Patch Changes
