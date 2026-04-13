@@ -1,5 +1,15 @@
 # @woven-canvas/plugin-arrows
 
+## 1.0.5
+
+### Patch Changes
+
+- 38f8455: Added frames
+- 5f5300f: shape drawing and arrow bug fixing
+- Updated dependencies [38f8455]
+- Updated dependencies [5f5300f]
+  - @woven-canvas/core@1.0.5
+
 ## 1.0.4
 
 ### Patch Changes
