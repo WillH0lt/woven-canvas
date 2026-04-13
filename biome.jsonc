@@ -21,6 +21,8 @@
       "!public/",
       "!build/",
       "!**/.turbo/",
+      "!**/.tsup/",
+      "!**/dist/",
       "!**/.nuxt/",
       "!**/.nuxt"
     ]
