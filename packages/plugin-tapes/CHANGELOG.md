@@ -1,5 +1,14 @@
 # @woven-canvas/plugin-tapes
 
+## 1.0.4
+
+### Patch Changes
+
+- 38f8455: Added frames
+- Updated dependencies [38f8455]
+- Updated dependencies [5f5300f]
+  - @woven-canvas/core@1.0.5
+
 ## 1.0.3
 
 ### Patch Changes
