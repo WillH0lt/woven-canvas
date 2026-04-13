@@ -39,7 +39,7 @@ export {
   type System,
 } from '@woven-ecs/core'
 // Plugin
-export { CorePlugin } from './CorePlugin'
+export { createCorePlugin } from './CorePlugin'
 // Command system
 export {
   type CommandDef,
@@ -50,13 +50,39 @@ export {
   ResetKeyboard,
   Undo,
 } from './command'
-// Shape draw commands
+// Selection commands
+// Transform box commands
+// Frame containment commands
 export {
-  AddShapeBlock,
-  CompleteShapeBlock,
-  DrawShapeBlock,
-  PlaceShapeBlock,
-  RemoveShapeBlock,
+  AddFrameHighlight,
+  AddHeld,
+  AddSelectionBox,
+  AddTransformBox,
+  AssignFrameChildren,
+  BringForwardSelected,
+  CloneEntities,
+  DeselectAll,
+  DeselectBlock,
+  DragBlock,
+  DuplicateSelected,
+  EndTransformBoxEdit,
+  HideTransformBox,
+  RemoveBlock,
+  RemoveFrameHighlight,
+  RemoveHeld,
+  RemoveSelected,
+  RemoveSelectionBox,
+  RemoveTransformBox,
+  SelectAll,
+  SelectBlock,
+  SendBackwardSelected,
+  SetCursor,
+  ShowTransformBox,
+  StartTransformBoxEdit,
+  ToggleSelect,
+  UncloneEntities,
+  UpdateSelectionBox,
+  UpdateTransformBox,
 } from './commands'
 // Components
 export {
@@ -65,9 +91,13 @@ export {
   Block,
   Color,
   Connector,
+  DragStart,
+  EditAfterPlacing,
   Edited,
   Embed,
   EmbedProvider,
+  Frame,
+  FrameDropTarget,
   Held,
   HitGeometry,
   Hovered,
@@ -79,15 +109,21 @@ export {
   PointerButton,
   PointerType,
   ScaleWithZoom,
+  Selected,
+  SelectionBox,
   Shape,
   StrokeKind,
   Text,
+  TransformBox,
+  TransformHandle,
   UploadState,
   User,
   VerticalAlign,
 } from './components'
 // Constants
 export { STRATUM_ORDER } from './constants'
+// Cursors
+export { CURSORS, CursorKind } from './cursors'
 // Editor class
 export { Editor, type QueryCallback } from './Editor'
 // State machine singleton
@@ -128,16 +164,34 @@ export { FontFamily, type FontFamilyInput, FontLoader } from './FontLoader'
 export {
   canBlockEdit,
   canBlockInteract,
+  cascadeDelete,
+  compareBlockOrder,
+  convertRefsToUuids,
+  deselectAll,
+  deselectBlock,
   detectEmbedProvider,
+  findFrameAtPoint,
+  generateUuidBySeed,
   getBlockDef,
   getBlockResizeMode,
+  getChildren,
+  getDescendants,
+  getEntityUuid,
+  getRefFieldNames,
   getTopmostBlockAtPoint,
+  getWorldPosition,
   intersectAabb,
   intersectCapsule,
   intersectPoint,
+  isAncestor,
   isHeldByRemote,
   resolveEmbedUrl,
+  resolveRefFields,
+  type SortableBlock,
+  selectAll,
+  selectBlock,
   validateEmbedUrl,
+  worldToLocal,
 } from './helpers'
 // State machine utilities
 export { type MachineResult, runMachine } from './machine'
@@ -153,7 +207,7 @@ export {
   Camera,
   Controls,
   Cursor,
-  Frame,
+  FrameContainmentState,
   Grid,
   Intersect,
   Key,
@@ -162,14 +216,16 @@ export {
   RankBounds,
   ScaleWithZoomState,
   Screen,
-  ShapeDrawState,
-  ShapeDrawStateEnum,
-  type ShapeDrawStateValue,
+  ScrollEdgesStateSingleton,
+  SelectionStateSingleton,
+  Tick,
+  TransformBoxStateSingleton,
 } from './singletons'
 // types
 export type {
   BlockDefInput,
   ControlsOptionsInput,
+  CorePluginOptionsInput,
   CursorDefMap,
   EditorOptionsInput,
   EditorResources,
@@ -180,13 +236,21 @@ export type {
 export {
   BlockDef,
   ControlsOptions,
+  type CorePluginOptions,
+  CorePluginOptionsSchema,
   CursorDef,
+  FrameContainmentStateEnum,
+  type FrameContainmentStateValue,
   GridOptions,
   getPluginResources,
   Keybind,
   ResizeMode,
+  ScrollEdgesState,
+  SelectionState,
   Stratum,
   TextAlignment,
+  TransformBoxState,
+  TransformHandleKind,
   UserData,
   VerticalAlignment,
 } from './types'

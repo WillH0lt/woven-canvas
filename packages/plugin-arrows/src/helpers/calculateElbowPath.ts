@@ -127,8 +127,9 @@ class ElbowPathCalculator {
   private getBlockAabb(entityId: EntityId): Aabb {
     const block = Block.read(this.ctx, entityId)
 
-    // Transform center to local space
-    const center: Vec2 = [block.position[0] + block.size[0] / 2, block.position[1] + block.size[1] / 2]
+    // Transform center to local space (use world position for hierarchy support)
+    const worldPos = Block.getWorldPosition(this.ctx, entityId)
+    const center: Vec2 = [worldPos[0] + block.size[0] / 2, worldPos[1] + block.size[1] / 2]
     const localCenter = this.transformToLocal(center)
 
     // The relative rotation is block rotation minus arrow rotation
@@ -260,6 +261,7 @@ class ElbowPathCalculator {
 
   private exitClosestSide(point: Vec2, blockId: EntityId, target: Vec2): { direction: Vec2; distance: number } {
     const block = Block.read(this.ctx, blockId)
+    const worldPos = Block.getWorldPosition(this.ctx, blockId)
     const center = Block.getCenter(this.ctx, blockId)
 
     // Transform point to world space for geometry tests
@@ -293,7 +295,7 @@ class ElbowPathCalculator {
     for (let i = 0; i < worldDirections.length; i++) {
       const worldDir = worldDirections[i]
       const ray = Ray.fromPoints(nudgedPoint, worldDir)
-      const intersections = Ray.intersectRect(ray, block.position, block.size, block.rotateZ)
+      const intersections = Ray.intersectRect(ray, worldPos, block.size, block.rotateZ)
       if (intersections.length === 0) {
         continue
       }
@@ -308,7 +310,7 @@ class ElbowPathCalculator {
       console.error('[exitClosestSide] No valid exit direction found!', {
         point,
         nudgedPoint,
-        blockPosition: block.position,
+        blockPosition: worldPos,
         blockSize: block.size,
         blockRotateZ: block.rotateZ,
         center,

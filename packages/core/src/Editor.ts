@@ -8,7 +8,7 @@ import {
   type SingletonDef,
   World,
 } from '@woven-ecs/core'
-import { CorePlugin } from './CorePlugin'
+import { createCorePlugin } from './CorePlugin'
 import { type CommandDef, CommandMarker, cleanupCommands } from './command'
 import { User } from './components'
 import type { EditorSystem } from './EditorSystem'
@@ -161,7 +161,8 @@ export class Editor {
     const plugins = pluginInputs.map(parsePlugin)
 
     // Sort plugins by dependencies, always including CorePlugin first
-    const sortedPlugins = sortPluginsByDependencies([CorePlugin, ...plugins])
+    const corePlugin = createCorePlugin(options.corePlugin)
+    const sortedPlugins = sortPluginsByDependencies([corePlugin, ...plugins])
 
     // Collect all components and singletons from plugins and custom options
     // Always include CommandMarker for the command system

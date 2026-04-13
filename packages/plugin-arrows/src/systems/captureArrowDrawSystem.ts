@@ -2,6 +2,7 @@ import {
   Controls,
   Cursor,
   createEntity,
+  DeselectAll,
   defineEditorSystem,
   type EntityId,
   getPointerInput,
@@ -9,7 +10,6 @@ import {
   type PointerInput,
 } from '@woven-canvas/core'
 import { Vec2 } from '@woven-canvas/math'
-import { DeselectAll } from '@woven-canvas/plugin-selection'
 import { assign, setup } from 'xstate'
 import { AddArrow, PlaceArrow, RemoveArrow } from '../commands'
 import { POINTING_THRESHOLD } from '../constants'
@@ -89,6 +89,7 @@ const arrowDrawMachine = setup({
     exitArrowControl: ({ event }) => {
       const controls = Controls.write(event.ctx)
       controls.leftMouseTool = 'select'
+      controls.activeToolName = 'select'
 
       const cursor = Cursor.write(event.ctx)
       cursor.cursorKind = 'select'

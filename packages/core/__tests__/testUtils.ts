@@ -1,21 +1,227 @@
 /**
- * Shared test utilities for the editor package.
+ * Shared test utilities for simulating pointer and mouse events.
  */
 
-import { Synced } from '@woven-ecs/canvas-store'
-import { addComponent, type Context, createEntity } from '@woven-ecs/core'
-import { Aabb, Block } from '../src/components'
+import {
+  Aabb,
+  addComponent,
+  Block,
+  type BlockDef,
+  type Context,
+  type CursorDefMap,
+  createEntity,
+  type EditorResources,
+  getResources,
+  Held,
+  RankBounds,
+  Synced,
+} from '@woven-canvas/core'
+import { Selected } from '../src/components'
+import { CURSORS } from '../src/cursors'
+
+/**
+ * Test resources interface for plugin tests.
+ */
+export interface TestResources {
+  blockDefs?: Record<string, BlockDef>
+  cursors?: CursorDefMap
+}
+
+/**
+ * Default test resources for plugin tests.
+ * These can be extended or overridden when creating test plugins.
+ */
+export const DEFAULT_TEST_RESOURCES: TestResources = {
+  blockDefs: {},
+  cursors: CURSORS,
+}
+
+/**
+ * Create test resources by merging defaults with overrides.
+ * Useful for test plugins that need specific resource values.
+ *
+ * @example
+ * ```ts
+ * const testPlugin = {
+ *   name: PLUGIN_NAME,
+ *   blockDefs: { text: BlockDef.parse({ tag: "text" }) },
+ *   cursors: CURSORS,
+ *   // ...
+ * };
+ * ```
+ */
+export function createTestResources(overrides: Partial<TestResources> = {}): TestResources {
+  return {
+    ...DEFAULT_TEST_RESOURCES,
+    ...overrides,
+  }
+}
+
+/**
+ * Options for creating a test block.
+ */
+export interface CreateBlockOptions {
+  position?: [number, number]
+  size?: [number, number]
+  rank?: string
+  tag?: string
+  rotateZ?: number
+  synced?: boolean
+  selected?: boolean
+}
+
+/**
+ * Create a block entity for testing.
+ * Returns the entity ID.
+ */
+export function createBlock(ctx: Context, options: CreateBlockOptions = {}): number {
+  const {
+    position = [100, 100],
+    size = [100, 100],
+    rank,
+    tag = 'text',
+    rotateZ = 0,
+    synced = true,
+    selected = false,
+  } = options
+
+  // Use provided rank or generate a new one using RankBounds
+  const blockRank = rank ?? RankBounds.genNext(ctx)
+
+  const entityId = createEntity(ctx)
+  addComponent(ctx, entityId, Block, {
+    position,
+    size,
+    rank: blockRank,
+    tag,
+    rotateZ,
+  })
+  addComponent(ctx, entityId, Aabb, {})
+  // Compute actual AABB from block corners
+  Aabb.expandByBlock(ctx, entityId, entityId)
+
+  if (synced) {
+    addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() })
+  }
+
+  if (selected) {
+    const { sessionId } = getResources<EditorResources>(ctx)
+    addComponent(ctx, entityId, Selected, {})
+    addComponent(ctx, entityId, Held, { sessionId })
+  }
+
+  return entityId
+}
+
+export interface PointerEventOptions {
+  shiftKey?: boolean
+  altKey?: boolean
+  button?: number
+}
+
+/**
+ * Creates a pointer event simulator with tracked pointer IDs.
+ * Each instance maintains its own pointer ID counter for consistent
+ * pointer events across a test.
+ */
+export function createPointerSimulator() {
+  let currentPointerId = 1
+
+  return {
+    /**
+     * Reset the pointer ID counter (call in beforeEach).
+     */
+    reset() {
+      currentPointerId = 1
+    },
+
+    /**
+     * Get the current pointer ID.
+     */
+    get pointerId() {
+      return currentPointerId
+    },
+
+    /**
+     * Simulate a pointer down event on an element.
+     */
+    pointerDown(element: HTMLElement, x: number, y: number, options: PointerEventOptions = {}): void {
+      element.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          clientX: x,
+          clientY: y,
+          button: options.button ?? 0,
+          pointerId: currentPointerId,
+          pointerType: 'mouse',
+          pressure: 0.5,
+          shiftKey: options.shiftKey ?? false,
+          altKey: options.altKey ?? false,
+          bubbles: true,
+        }),
+      )
+    },
+
+    /**
+     * Simulate a pointer up event.
+     * Dispatches on window since PointerInputSystem listens there.
+     * Increments the pointer ID after the event.
+     */
+    pointerUp(x: number, y: number, options: PointerEventOptions = {}): void {
+      window.dispatchEvent(
+        new PointerEvent('pointerup', {
+          clientX: x,
+          clientY: y,
+          button: options.button ?? 0,
+          pointerId: currentPointerId,
+          pointerType: 'mouse',
+          pressure: 0,
+          shiftKey: options.shiftKey ?? false,
+          altKey: options.altKey ?? false,
+          bubbles: true,
+        }),
+      )
+      currentPointerId++
+    },
+
+    /**
+     * Simulate a pointer move event.
+     * Dispatches on window since PointerInputSystem listens there.
+     * Also dispatches a mouse move for intersection detection.
+     */
+    pointerMove(x: number, y: number, options: PointerEventOptions = {}): void {
+      // Also dispatch mouse move for intersection detection
+      simulateMouseMove(x, y)
+      window.dispatchEvent(
+        new PointerEvent('pointermove', {
+          clientX: x,
+          clientY: y,
+          button: options.button ?? 0,
+          pointerId: currentPointerId,
+          pointerType: 'mouse',
+          pressure: 0.5,
+          shiftKey: options.shiftKey ?? false,
+          altKey: options.altKey ?? false,
+          bubbles: true,
+        }),
+      )
+    },
+
+    /**
+     * Simulate a complete click (pointer down + up) at a position.
+     */
+    click(element: HTMLElement, x: number, y: number, options: PointerEventOptions = {}): void {
+      this.pointerDown(element, x, y, options)
+      this.pointerUp(x, y, options)
+    },
+  }
+}
 
 /**
  * Simulate a mouse move event.
- * Dispatches on the target element so event.target is set correctly.
- * The event bubbles to window where mouseInputSystem listens.
- *
- * @param x - clientX coordinate
- * @param y - clientY coordinate
- * @param target - Element to dispatch on (defaults to document.body, use domElement for canvas events)
+ * Dispatches on window since mouseInputSystem listens there.
  */
-export function simulateMouseMove(x: number, y: number, target: EventTarget = document.body): void {
+export function simulateMouseMove(x: number, y: number, element?: HTMLElement): void {
+  const target = element ?? window
   target.dispatchEvent(
     new MouseEvent('mousemove', {
       clientX: x,
@@ -42,44 +248,66 @@ export function simulateMouseLeave(element: HTMLElement): void {
  */
 export function createMockElement(): HTMLElement {
   const element = document.createElement('div')
+  Object.defineProperty(element, 'clientWidth', { value: 800 })
+  Object.defineProperty(element, 'clientHeight', { value: 600 })
+  element.getBoundingClientRect = () =>
+    ({
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 600,
+      right: 800,
+      bottom: 600,
+      x: 0,
+      y: 0,
+      toJSON: () => {},
+    }) as DOMRect
   document.body.appendChild(element)
   return element
 }
 
 /**
- * Options for creating a test block.
+ * Simulate a key down event.
+ * Dispatches on the element since KeyboardInputSystem listens there.
+ * @param element - The DOM element to dispatch the event on
+ * @param code - The keyboard code (e.g., "KeyA", "ShiftLeft", "Space")
+ * @param options - Modifier key options
  */
-export interface CreateBlockOptions {
-  position?: [number, number]
-  size?: [number, number]
-  rank?: string
-  tag?: string
-  rotateZ?: number
-  synced?: boolean
+export function simulateKeyDown(
+  element: HTMLElement,
+  code: string,
+  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {},
+): void {
+  element.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      code,
+      shiftKey: options.shiftKey ?? false,
+      altKey: options.altKey ?? false,
+      ctrlKey: options.ctrlKey ?? false,
+      bubbles: true,
+    }),
+  )
 }
 
 /**
- * Create a block entity for testing.
- * Returns the entity ID.
+ * Simulate a key up event.
+ * Dispatches on the element since KeyboardInputSystem listens there.
+ * @param element - The DOM element to dispatch the event on
+ * @param code - The keyboard code (e.g., "KeyA", "ShiftLeft", "Space")
+ * @param options - Modifier key options
  */
-export function createBlock(ctx: Context, options: CreateBlockOptions = {}): number {
-  const { position = [100, 100], size = [100, 100], rank = 'a', tag = 'text', rotateZ = 0, synced = true } = options
-
-  const entityId = createEntity(ctx)
-  addComponent(ctx, entityId, Block, {
-    position,
-    size,
-    rank,
-    tag,
-    rotateZ,
-  })
-  addComponent(ctx, entityId, Aabb, {})
-  // Compute actual AABB from block corners
-  Aabb.expandByBlock(ctx, entityId, entityId)
-
-  if (synced) {
-    addComponent(ctx, entityId, Synced, { id: crypto.randomUUID() })
-  }
-
-  return entityId
+export function simulateKeyUp(
+  element: HTMLElement,
+  code: string,
+  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {},
+): void {
+  element.dispatchEvent(
+    new KeyboardEvent('keyup', {
+      code,
+      shiftKey: options.shiftKey ?? false,
+      altKey: options.altKey ?? false,
+      ctrlKey: options.ctrlKey ?? false,
+      bubbles: true,
+    }),
+  )
 }

@@ -1,11 +1,8 @@
-export { frameSystem } from './frameSystem'
-
 export {
   attachKeyboardListeners,
   detachKeyboardListeners,
   keyboardSystem,
 } from './keyboardSystem'
-
 export {
   attachMouseListeners,
   detachMouseListeners,
@@ -21,3 +18,4 @@ export {
   detachScreenObserver,
   screenSystem,
 } from './screenSystem'
+export { tickSystem } from './tickSystem'

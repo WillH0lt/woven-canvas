@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, inject, onUnmounted } from "vue";
-import { Undo, Redo, getPluginResources, type Context } from "@woven-canvas/core";
-import { RemoveSelected } from "@woven-canvas/plugin-selection";
+import { Undo, Redo, getPluginResources, RemoveSelected, type Context } from "@woven-canvas/core";
 
 import { useEditorContext } from "../composables/useEditorContext";
 import { EDITING_PLUGIN_NAME } from "../constants";

@@ -4,8 +4,12 @@ export { Asset, UploadState } from './Asset'
 export { Block } from './Block'
 export { Color } from './Color'
 export { Connector } from './Connector'
+export { DragStart } from './DragStart'
+export { EditAfterPlacing } from './EditAfterPlacing'
 export { Edited } from './Edited'
 export { Embed, EmbedProvider } from './Embed'
+export { Frame } from './Frame'
+export { FrameDropTarget } from './FrameDropTarget'
 export { Held } from './Held'
 // Hit geometry for collision detection
 export { HitGeometry, MAX_HIT_ARCS, MAX_HIT_CAPSULES } from './HitGeometry'
@@ -22,10 +26,14 @@ export {
 } from './Pointer'
 // Transform components
 export { ScaleWithZoom } from './ScaleWithZoom'
+export { Selected } from './Selected'
+export { SelectionBox } from './SelectionBox'
 // Shape
 export { Shape, StrokeKind } from './Shape'
 // Content components
 export { Text } from './Text'
+export { TransformBox } from './TransformBox'
+export { TransformHandle } from './TransformHandle'
 // User presence
 export { User } from './User'
 export { VerticalAlign } from './VerticalAlign'

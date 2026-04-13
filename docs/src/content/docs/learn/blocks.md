@@ -140,8 +140,7 @@ Use `useQuery` to find blocks matching criteria:
 
 ```typescript
 import { useQuery } from "@woven-canvas/vue";
-import { Block } from "@woven-canvas/core";
-import { Selected } from "@woven-canvas/plugin-selection";
+import { Block, Selected } from "@woven-canvas/core";
 
 // All blocks
 const allBlocks = useQuery([Block]);

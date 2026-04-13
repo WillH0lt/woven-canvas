@@ -1,6 +1,6 @@
 import { getResources } from '@woven-ecs/core'
 import { defineEditorSystem } from '../../EditorSystem'
-import { Frame, Screen } from '../../singletons'
+import { Screen, Tick } from '../../singletons'
 import type { EditorResources } from '../../types'
 
 /**
@@ -66,10 +66,10 @@ export const screenSystem = defineEditorSystem({ phase: 'input' }, (ctx) => {
   const state = instanceState.get(domElement)
   if (!state) return
 
-  const frame = Frame.read(ctx)
+  const tick = Tick.read(ctx)
 
   // Handle initial sizing on first frame
-  if (frame.number === 1) {
+  if (tick.number === 1) {
     state.needsUpdate = true
   }
 

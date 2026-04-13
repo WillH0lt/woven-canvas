@@ -13,6 +13,8 @@ const props = withDefaults(
     dragOutSnapshot?: string;
     /** JSON snapshot of the block to create when placing on canvas */
     placementSnapshot?: string;
+    /** JSON snapshot of the block to draw on canvas (click-and-drag to define size) */
+    drawSnapshot?: string;
     /** Cursor kind to use when this tool is active */
     cursor?: string;
   }>(),
@@ -35,7 +37,11 @@ const isSelected = computed(
 );
 
 function handleClick() {
-  toolbarContext.setTool(props.name, props.placementSnapshot, props.cursor);
+  toolbarContext.setTool(props.name, {
+    snapshot: props.placementSnapshot,
+    drawSnapshot: props.drawSnapshot,
+    cursor: props.cursor,
+  });
 }
 
 function handlePointerDown() {

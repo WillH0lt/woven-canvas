@@ -5,13 +5,11 @@ import {
   Block,
   Camera,
   Screen,
+  Selected,
+  SelectionState,
+  SelectionStateSingleton,
   type EntityId,
 } from "@woven-canvas/core";
-import {
-  Selected,
-  SelectionStateSingleton,
-  SelectionState,
-} from "@woven-canvas/plugin-selection";
 import { Aabb, Rect } from "@woven-canvas/math";
 
 import { useQuery } from "../composables/useQuery";
@@ -101,9 +99,13 @@ const selectionBounds = computed<Aabb | null>(() => {
 
   let bounds: Aabb | null = null;
 
+  const editor = canvasContext?.getEditor();
+  const ctx = editor?._getContext();
+
   for (const item of selectedItems.value) {
     const block = item.block.value;
-    Rect.getAabb(block.position, block.size, block.rotateZ, _aabb);
+    const worldPos = ctx ? Block.getWorldPosition(ctx, item.entityId) : block.position;
+    Rect.getAabb(worldPos, block.size, block.rotateZ, _aabb);
     Aabb.translate(_aabb, [-cam.left, -cam.top]);
     Aabb.scale(_aabb, cam.zoom);
 

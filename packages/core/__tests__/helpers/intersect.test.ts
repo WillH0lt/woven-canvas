@@ -1,16 +1,17 @@
 import { Editor, type EditorPlugin } from '@woven-canvas/core'
+import { addComponent } from '@woven-ecs/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { Aabb, Block } from '../../src/components'
-import { intersectAabb } from '../../src/helpers/intersect'
+import { Aabb, Block, Frame } from '../../src/components'
+import { intersectAabb, intersectPoint } from '../../src/helpers/intersect'
 import { createBlock, createMockElement } from '../testUtils'
 
 // Mock DOM element for tests
 const mockDomElement = createMockElement()
 
-// Minimal plugin that registers Block and Aabb components
+// Minimal plugin that registers Block, Aabb, and Frame components
 const TestPlugin: EditorPlugin = {
   name: 'test',
-  components: [Block, Aabb],
+  components: [Block, Aabb, Frame],
 }
 
 describe('intersectAabb', () => {
@@ -298,6 +299,248 @@ describe('intersectAabb', () => {
 
       await editor.tick()
       expect(result.length).toBe(3)
+    })
+  })
+
+  describe('frame clipping', () => {
+    /**
+     * Helper to create a frame entity (Block + Frame components) with an AABB.
+     */
+    function createFrame(
+      ctx: ReturnType<typeof editor.getContext>,
+      options: { position: [number, number]; size: [number, number] },
+    ) {
+      const entityId = createBlock(ctx, { ...options, synced: false })
+      addComponent(ctx, entityId, Frame, { label: 'Frame' })
+      return entityId
+    }
+
+    /**
+     * Helper to create a child block parented to a frame, with position
+     * specified in local coordinates relative to the parent.
+     */
+    function createChildBlock(
+      ctx: ReturnType<typeof editor.getContext>,
+      parentId: number,
+      options: { position: [number, number]; size: [number, number] },
+    ) {
+      const entityId = createBlock(ctx, { ...options, synced: false })
+      const block = Block.write(ctx, entityId)
+      block.parentId = parentId
+      // Recompute AABB since parent changed
+      Aabb.setByPoints(ctx, entityId, Block.getCorners(ctx, entityId))
+      return entityId
+    }
+
+    describe('intersectPoint', () => {
+      it('should intersect a child block at a point inside the frame', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          // Frame at (0,0) size 200x200
+          const frameId = createFrame(ctx, { position: [0, 0], size: [200, 200] })
+          // Child fully inside frame at local (50,50) size 100x100
+          childId = createChildBlock(ctx, frameId, { position: [50, 50], size: [100, 100] })
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Point inside both the child and the frame
+          result = intersectPoint(ctx, [100, 100])
+        })
+
+        await editor.tick()
+        expect(result).toContain(childId)
+      })
+
+      it('should not intersect a child block at a point outside the frame', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          // Frame at (0,0) size 200x200
+          const frameId = createFrame(ctx, { position: [0, 0], size: [200, 200] })
+          // Child extends outside frame: local position (150,150) size 100x100
+          // World bounds: (150,150) to (250,250) — partially outside frame
+          childId = createChildBlock(ctx, frameId, { position: [150, 150], size: [100, 100] })
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Point at (220, 220) — inside the child's geometry but outside the frame
+          result = intersectPoint(ctx, [220, 220])
+        })
+
+        await editor.tick()
+        // Child should be clipped — point is outside frame bounds
+        expect(result).not.toContain(childId)
+      })
+
+      it('should intersect a child at the visible portion inside the frame', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          // Frame at (0,0) size 200x200
+          const frameId = createFrame(ctx, { position: [0, 0], size: [200, 200] })
+          // Child extends outside: local (150,150) size 100x100
+          childId = createChildBlock(ctx, frameId, { position: [150, 150], size: [100, 100] })
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Point at (175, 175) — inside both the child and the frame
+          result = intersectPoint(ctx, [175, 175])
+        })
+
+        await editor.tick()
+        expect(result).toContain(childId)
+      })
+
+      it('should handle nested frames', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          // Outer frame at (0,0) size 300x300
+          const outerFrameId = createFrame(ctx, { position: [0, 0], size: [300, 300] })
+          // Inner frame at local (50,50) size 200x200 — world (50,50) to (250,250)
+          const innerFrameId = createChildBlock(ctx, outerFrameId, { position: [50, 50], size: [200, 200] })
+          addComponent(ctx, innerFrameId, Frame, { label: 'Inner' })
+          // Child at inner-local (150,150) size 100x100 — world (200,200) to (300,300)
+          // Clipped by inner frame to (200,200)-(250,250)
+          childId = createChildBlock(ctx, innerFrameId, { position: [150, 150], size: [100, 100] })
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Point at (270, 270) — inside child geometry but outside inner frame
+          result = intersectPoint(ctx, [270, 270])
+        })
+
+        await editor.tick()
+        expect(result).not.toContain(childId)
+      })
+    })
+
+    describe('intersectAabb', () => {
+      it('should intersect a child block when selection is inside the frame', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          const frameId = createFrame(ctx, { position: [0, 0], size: [200, 200] })
+          childId = createChildBlock(ctx, frameId, { position: [50, 50], size: [100, 100] })
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Selection fully inside frame, overlapping child
+          result = intersectAabb(ctx, [60, 60, 140, 140])
+        })
+
+        await editor.tick()
+        expect(result).toContain(childId)
+      })
+
+      it('should not intersect a child block when selection is outside the frame', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          const frameId = createFrame(ctx, { position: [0, 0], size: [200, 200] })
+          // Child extends outside: world (150,150) to (250,250)
+          childId = createChildBlock(ctx, frameId, { position: [150, 150], size: [100, 100] })
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Selection at (210,210)-(240,240) — overlaps child but not the frame
+          result = intersectAabb(ctx, [210, 210, 240, 240])
+        })
+
+        await editor.tick()
+        expect(result).not.toContain(childId)
+      })
+
+      it('should intersect a child block when selection overlaps both child and frame', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          const frameId = createFrame(ctx, { position: [0, 0], size: [200, 200] })
+          // Child extends outside: world (150,150) to (250,250)
+          childId = createChildBlock(ctx, frameId, { position: [150, 150], size: [100, 100] })
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Selection at (160,160)-(220,220) — overlaps both child and frame
+          result = intersectAabb(ctx, [160, 160, 220, 220])
+        })
+
+        await editor.tick()
+        expect(result).toContain(childId)
+      })
+
+      it('should not intersect children of nested frames when selection misses inner frame', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          const outerFrameId = createFrame(ctx, { position: [0, 0], size: [300, 300] })
+          const innerFrameId = createChildBlock(ctx, outerFrameId, { position: [50, 50], size: [200, 200] })
+          addComponent(ctx, innerFrameId, Frame, { label: 'Inner' })
+          // Child world pos: (200,200) to (300,300), clipped by inner frame (50,50)-(250,250)
+          childId = createChildBlock(ctx, innerFrameId, { position: [150, 150], size: [100, 100] })
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Selection at (260,260)-(290,290) — inside outer frame but outside inner frame
+          result = intersectAabb(ctx, [260, 260, 290, 290])
+        })
+
+        await editor.tick()
+        expect(result).not.toContain(childId)
+      })
+    })
+
+    describe('non-frame parents', () => {
+      it('should not clip children of non-frame parents', async () => {
+        let result: number[] = []
+        let childId = 0
+
+        editor.nextTick((ctx) => {
+          // Parent is a regular block, not a frame
+          const parentId = createBlock(ctx, { position: [0, 0], size: [200, 200], synced: false })
+          // Child extends outside parent: world (150,150) to (350,350)
+          childId = createBlock(ctx, { position: [150, 150], size: [200, 200], synced: false })
+          const block = Block.write(ctx, childId)
+          block.parentId = parentId
+          Aabb.setByPoints(ctx, childId, Block.getCorners(ctx, childId))
+        })
+
+        await editor.tick()
+
+        editor.nextTick((ctx) => {
+          // Point outside parent but inside child — should still intersect
+          // because parent is not a frame (no clipping)
+          result = intersectPoint(ctx, [300, 300])
+        })
+
+        await editor.tick()
+        expect(result).toContain(childId)
+      })
     })
   })
 })

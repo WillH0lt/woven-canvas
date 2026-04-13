@@ -6,8 +6,8 @@ export interface ToolbarContext {
   activeTool: ComputedRef<string>
   /** Whether a tool is currently being held (pointer down) */
   heldTool: Ref<string | null>
-  /** Set the active tool */
-  setTool: (toolName: string, snapshot?: string, cursor?: string) => void
+  /** Set the active tool. drawSnapshot triggers draw-to-create mode. */
+  setTool: (toolName: string, options?: { snapshot?: string; drawSnapshot?: string; cursor?: string }) => void
   /** Handle drag-out for a tool (creates block and starts dragging) */
   dragOutTool: (snapshot: string) => void
   /** Register a pointer down on a tool button */

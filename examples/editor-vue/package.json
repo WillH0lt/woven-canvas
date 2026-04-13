@@ -11,11 +11,12 @@
   "dependencies": {
     "@woven-canvas/core": "workspace:^",
     "@woven-canvas/plugin-canvas-controls": "workspace:^",
-    "@woven-canvas/plugin-selection": "workspace:^",
     "@woven-canvas/vue": "workspace:^",
-    "vue": "^3.5.24"
+    "vue": "^3.5.24",
+    "xstate": "catalog:"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
@@ -24,7 +25,6 @@
     "vite-plugin-full-reload": "^1.2.0",
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.5.0",
-    "vue-tsc": "^3.1.4",
-    "@types/bun": "latest"
+    "vue-tsc": "^3.1.4"
   }
 }

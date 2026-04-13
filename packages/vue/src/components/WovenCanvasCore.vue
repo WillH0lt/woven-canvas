@@ -14,6 +14,8 @@ import {
   EventType,
   SINGLETON_ENTITY_ID,
   STRATUM_ORDER,
+  compareBlockOrder,
+  type SortableBlock,
   defineQuery,
   getResources,
   Held,
@@ -25,11 +27,11 @@ import {
   type EditorPluginInput,
   type InferCanvasComponentType,
   type Context,
+  Selected,
 } from '@woven-canvas/core'
 import { CanvasStore, type CanvasStoreOptions, type ComponentData } from '@woven-ecs/canvas-store'
 import { AssetManager, LocalAssetProvider, type AssetProvider } from '@woven-canvas/asset-sync'
 import { CanvasControlsPlugin, type CanvasControlsOptionsInput } from '@woven-canvas/plugin-canvas-controls'
-import { createSelectionPlugin, Selected, type SelectionPluginOptionsInput } from '@woven-canvas/plugin-selection'
 import { createEraserPlugin, type EraserPluginOptions } from '@woven-canvas/plugin-eraser'
 import { createPenPlugin } from '@woven-canvas/plugin-pen'
 import { createArrowsPlugin, type ArrowsPluginOptions } from '@woven-canvas/plugin-arrows'
@@ -54,6 +56,7 @@ import EmbedBlock from './blocks/EmbedBlock.vue'
 import ImageBlock from './blocks/ImageBlock.vue'
 import ShapeBlock from './blocks/ShapeBlock.vue'
 import TapeBlock from './blocks/TapeBlock.vue'
+import FrameBlock from './blocks/FrameBlock.vue'
 import { EditingPlugin } from '../EditingPlugin'
 import { useKeyboardAvoidance } from '../composables/useKeyboardAvoidance'
 import type { BlockData, BackgroundOptions } from '../types'
@@ -94,7 +97,6 @@ export interface CopyPasteOptions {
  */
 export interface WovenCanvasPluginOptions {
   controls?: CanvasControlsOptionsInput | false
-  selection?: SelectionPluginOptionsInput | false
   eraser?: EraserPluginOptions | false
   pen?: false
   arrows?: ArrowsPluginOptions | false
@@ -364,9 +366,6 @@ function buildPlugins(storeInstance: CanvasStore): EditorPluginInput[] {
 
   if (opts?.controls !== false) {
     allPlugins.push(CanvasControlsPlugin(opts?.controls ?? {}))
-  }
-  if (opts?.selection !== false) {
-    allPlugins.push(createSelectionPlugin(opts?.selection || undefined))
   }
   if (opts?.eraser !== false) {
     allPlugins.push(createEraserPlugin(opts?.eraser || undefined))
@@ -638,12 +637,12 @@ function updateBlocks(ctx: Context) {
     needsResort = true
   }
 
-  // Handle block changes (position, size, rank, etc.)
+  // Handle block changes (position, size, rank, parentId, etc.)
   for (const entityId of blockQuery.changed(ctx)) {
     const blockRef = blockMap.get(entityId)
     if (blockRef) {
       const snapshot = Block.snapshot(ctx, entityId)
-      if (blockRef.value.block.rank !== snapshot.rank) {
+      if (blockRef.value.block.rank !== snapshot.rank || blockRef.value.block.parentId !== snapshot.parentId) {
         needsResort = true
       }
       blockRef.value.block = snapshot
@@ -750,11 +749,24 @@ function updateBlocks(ctx: Context) {
     }
   }
 
-  // Rebuild sorted array only when blocks added/removed or rank changed
+  // Rebuild sorted array only when blocks added/removed or rank/parentId changed
   if (needsResort) {
     const blocks = Array.from(blockMap.values())
 
-    blocks.sort((a, b) => (a.value.block.rank > b.value.block.rank ? 1 : -1))
+    // Lookup function for parent chain resolution from snapshot data
+    const getBlock = (id: unknown): SortableBlock | null => {
+      const ref = blockMap.get(id as EntityId)
+      if (!ref) return null
+      const b = ref.value
+      return { rank: b.block.rank, stratum: b.stratum, parentId: b.block.parentId }
+    }
+
+    // Sort using shared compareBlockOrder (ascending — behind first, matching DOM paint order)
+    blocks.sort((a, b) => {
+      const sa: SortableBlock = { rank: a.value.block.rank, stratum: a.value.stratum, parentId: a.value.block.parentId }
+      const sb: SortableBlock = { rank: b.value.block.rank, stratum: b.value.stratum, parentId: b.value.block.parentId }
+      return compareBlockOrder(getBlock, sa, sb)
+    })
 
     sortedBlocks.value = blocks
   }
@@ -785,15 +797,130 @@ function getHeldByColor(data: BlockData): string | null {
   return otherUser?.color ?? null
 }
 
+/**
+ * Convert a world-space point into a block's local (pre-CSS-transform) coordinate space.
+ * CSS applies: local → rotate(rotateZ) around center → translate(position).
+ * (Default transform-origin is 50% 50% = block center.)
+ * So inverse: world → subtract position → subtract center → rotate(-rotateZ) → add center.
+ */
+function worldToBlockLocal(wx: number, wy: number, block: BlockDef, worldPos: [number, number]): [number, number] {
+  const dx = wx - worldPos[0]
+  const dy = wy - worldPos[1]
+
+  if (block.rotateZ === 0) return [dx, dy]
+
+  const cx = block.size[0] / 2
+  const cy = block.size[1] / 2
+  const rx = dx - cx
+  const ry = dy - cy
+  const cos = Math.cos(-block.rotateZ)
+  const sin = Math.sin(-block.rotateZ)
+  return [rx * cos - ry * sin + cx, rx * sin + ry * cos + cy]
+}
+
+/**
+ * Resolve the world position of a block by walking up the parentId chain
+ * using BlockData snapshots from blockMap.
+ */
+function resolveWorldPosition(data: BlockData): [number, number] {
+  let x = data.block.position[0]
+  let y = data.block.position[1]
+
+  let currentParentId = data.block.parentId
+  const visited = new Set<EntityId>()
+
+  while (currentParentId !== null) {
+    if (visited.has(currentParentId)) break
+    visited.add(currentParentId)
+    const parentRef = blockMap.get(currentParentId)
+    if (!parentRef) break
+    x += parentRef.value.block.position[0]
+    y += parentRef.value.block.position[1]
+    currentParentId = parentRef.value.block.parentId
+  }
+
+  return [x, y]
+}
+
+/**
+ * Walk up the parent chain and compute the intersection of all ancestor
+ * frame bounds in world space. Returns [left, top, right, bottom] or null if
+ * no clipping is needed.
+ */
+function getAncestorClipBounds(data: BlockData): [number, number, number, number] | null {
+  let cl = -Infinity
+  let ct = -Infinity
+  let cr = Infinity
+  let cb = Infinity
+
+  let currentParentId = data.block.parentId
+  while (currentParentId !== null) {
+    const frameRef = blockMap.get(currentParentId)
+    if (!frameRef) break
+
+    const frame = frameRef.value.block
+    // Resolve frame's world position by walking its own parent chain
+    const frameWorldPos = resolveWorldPosition(frameRef.value)
+    cl = Math.max(cl, frameWorldPos[0])
+    ct = Math.max(ct, frameWorldPos[1])
+    cr = Math.min(cr, frameWorldPos[0] + frame.size[0])
+    cb = Math.min(cb, frameWorldPos[1] + frame.size[1])
+
+    // Walk up to the frame's parent
+    currentParentId = frame.parentId
+  }
+
+  if (cl === -Infinity) return null
+  return [cl, ct, cr, cb]
+}
+
+/**
+ * Compute clip-path for a block that belongs to a frame.
+ * Recursively intersects all ancestor frame bounds.
+ * Uses inset() for axis-aligned blocks (fast) and polygon() for rotated blocks.
+ */
+function getFrameClipPath(data: BlockData): string | undefined {
+  const bounds = getAncestorClipBounds(data)
+  if (!bounds) return undefined
+
+  const [cl, ct, cr, cb] = bounds
+  const block = data.block
+  const worldPos = resolveWorldPosition(data)
+
+  if (block.rotateZ === 0) {
+    // Values can be negative — that extends the clip region beyond the element's box,
+    // allowing content that overflows (like frame labels) to remain visible as long as
+    // it's within the parent frame's bounds.
+    const topClip = ct - worldPos[1]
+    const leftClip = cl - worldPos[0]
+    const bottomClip = (worldPos[1] + block.size[1]) - cb
+    const rightClip = (worldPos[0] + block.size[0]) - cr
+
+    if (topClip <= 0 && leftClip <= 0 && bottomClip <= 0 && rightClip <= 0) return undefined
+
+    return `inset(${topClip}px ${rightClip}px ${bottomClip}px ${leftClip}px)`
+  }
+
+  // Rotated block: transform clip rect corners into block's local space
+  const tl = worldToBlockLocal(cl, ct, block, worldPos)
+  const tr = worldToBlockLocal(cr, ct, block, worldPos)
+  const br = worldToBlockLocal(cr, cb, block, worldPos)
+  const bl = worldToBlockLocal(cl, cb, block, worldPos)
+
+  return `polygon(${tl[0]}px ${tl[1]}px, ${tr[0]}px ${tr[1]}px, ${br[0]}px ${br[1]}px, ${bl[0]}px ${bl[1]}px)`
+}
+
 function getBlockStyle(data: BlockData) {
   const { block, stratum, opacity } = data
   const heldByColor = getHeldByColor(data)
   const opacityValue = opacity !== null ? opacity.value / 255 : 1
+  const clipPath = getFrameClipPath(data)
+  const worldPos = resolveWorldPosition(data)
 
   return {
     position: 'absolute' as const,
-    left: `${block.position[0]}px`,
-    top: `${block.position[1]}px`,
+    left: `${worldPos[0]}px`,
+    top: `${worldPos[1]}px`,
     width: `${block.size[0]}px`,
     height: `${block.size[1]}px`,
     zIndex: STRATUM_ORDER[stratum] * 1000,
@@ -804,6 +931,7 @@ function getBlockStyle(data: BlockData) {
     '--wov-held-by-color': heldByColor ?? undefined,
     // Delay fade-in (0→1) to allow dimensions to settle, but hide immediately (1→0)
     transition: opacityValue === 1 ? 'opacity 0ms 32ms' : undefined,
+    clipPath,
   }
 }
 </script>
@@ -908,6 +1036,10 @@ function getBlockStyle(data: BlockData) {
           />
           <TapeBlock
             v-else-if="blockData.value.block.tag === 'tape'"
+            v-bind="blockData.value"
+          />
+          <FrameBlock
+            v-else-if="blockData.value.block.tag === 'frame'"
             v-bind="blockData.value"
           />
         </slot>

@@ -1,7 +1,7 @@
 import { type Context, defineQuery, getResources } from '@woven-ecs/core'
 
 import { defineEditorSystem } from '../../EditorSystem'
-import { Cursor, Frame } from '../../singletons'
+import { Cursor, Tick } from '../../singletons'
 import type { CursorDef, EditorResources } from '../../types'
 
 const cursorQuery = defineQuery((q) => q.tracking(Cursor))
@@ -38,10 +38,10 @@ export const cursorSystem = defineEditorSystem({ phase: 'render', priority: -100
 
   const changedCursors = cursorQuery.changed(ctx)
 
-  const frame = Frame.read(ctx)
+  const tick = Tick.read(ctx)
 
   // If no cursor changes, skip updating DOM
-  if (changedCursors.length === 0 && frame.number !== 1) {
+  if (changedCursors.length === 0 && tick.number !== 1) {
     return
   }
 

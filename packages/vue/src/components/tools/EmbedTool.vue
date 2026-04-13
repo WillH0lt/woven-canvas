@@ -215,7 +215,9 @@ async function submitUrl() {
   panelOpen.value = false
   selectedProvider.value = null
   urlValue.value = ''
-  setTool('select', undefined, CursorKind.Select)
+  setTool('select', {
+    cursor: CursorKind.Select
+  })
 }
 
 function handleKeydown(event: KeyboardEvent) {

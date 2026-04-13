@@ -47,16 +47,6 @@ vi.mock('@woven-canvas/plugin-canvas-controls', () => ({
   })),
 }))
 
-vi.mock('@woven-canvas/plugin-selection', async () => {
-  const actual = await vi.importActual('@woven-canvas/plugin-selection')
-  return {
-    ...actual,
-    SelectionPlugin: {
-      name: 'selection',
-    },
-  }
-})
-
 vi.mock('@woven-canvas/asset-sync', () => {
   class MockAssetManager {
     init = vi.fn().mockResolvedValue(undefined)
@@ -246,16 +236,6 @@ describe('WovenCanvas', () => {
       await flushPromises()
 
       expect(CanvasControlsPlugin).toHaveBeenCalled()
-    })
-
-    it('should include SelectionPlugin by default', async () => {
-      mount(WovenCanvas)
-      await flushPromises()
-
-      const editorInstance = getLastEditorInstance()
-      const hasSelectionPlugin = editorInstance.options.plugins?.some((p: any) => p.name === 'selection')
-
-      expect(hasSelectionPlugin).toBe(true)
     })
 
     it('should pass custom plugins to Editor', async () => {

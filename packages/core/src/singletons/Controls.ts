@@ -15,6 +15,8 @@ const ControlsSchema = {
   modWheelTool: field.string().max(32).default('zoom'),
   /** JSON snapshot of block to place on next click (empty string = no placement active) */
   heldSnapshot: field.string().max(65536).default(''),
+  /** User-facing tool name for UI highlighting (may differ from leftMouseTool during draw/drag-out) */
+  activeToolName: field.string().max(32).default('select'),
 }
 
 /**

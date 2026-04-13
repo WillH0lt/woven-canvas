@@ -49,7 +49,6 @@ import "@woven-canvas/vue/style.css";
 
 | Plugin                                                                    | Description                                |
 | ------------------------------------------------------------------------- | ------------------------------------------ |
-| [@woven-canvas/plugin-selection](./packages/plugin-selection)             | Select, move, and resize objects           |
 | [@woven-canvas/plugin-pen](./packages/plugin-pen)                         | Freehand drawing with pressure sensitivity |
 | [@woven-canvas/plugin-arrows](./packages/plugin-arrows)                   | Connectors and arrow tools                 |
 | [@woven-canvas/plugin-eraser](./packages/plugin-eraser)                   | Eraser tool for removing content           |

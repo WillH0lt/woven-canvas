@@ -29,8 +29,6 @@ export function createTapesPlugin(): EditorPlugin {
   return {
     name: TAPES_PLUGIN_NAME,
 
-    dependencies: ['selection'],
-
     components: Object.values(components).filter((v) => v instanceof CanvasComponentDef),
 
     singletons: Object.values(singletons).filter((v) => v instanceof CanvasSingletonDef),

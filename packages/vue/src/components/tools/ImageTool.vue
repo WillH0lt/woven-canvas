@@ -46,7 +46,9 @@ async function handleFileSelect(event: Event) {
   await createImageBlock(file, centerX, centerY)
 
   // Switch to select tool
-  setTool('select', undefined, CursorKind.Select)
+  setTool('select', {
+    cursor: CursorKind.Select
+  })
 }
 
 function handleMouseEnter() {

@@ -3,7 +3,7 @@ import { type Context, defineQuery, type EntityId } from '@woven-ecs/core'
 
 import { Pointer, type PointerButton } from '../components'
 import { intersectPoint } from '../helpers'
-import { Camera, Frame, Key, Keyboard } from '../singletons'
+import { Camera, Key, Keyboard, Tick } from '../singletons'
 import type { PointerInput, PointerInputOptions } from './types'
 
 // Default thresholds for click detection
@@ -103,7 +103,7 @@ export function getPointerInput(
   } = options
 
   const state = getTrackingState(ctx)
-  const frameNumber = Frame.read(ctx).number
+  const frameNumber = Tick.read(ctx).number
 
   const events: PointerInput[] = []
 

@@ -5,16 +5,17 @@ import {
   type Context,
   defineEditorSystem,
   type EntityId,
+  findFrameAtPoint,
   Grid,
   Image,
   on,
   RankBounds,
   removeEntity,
   Synced,
+  selectBlock,
   UploadState,
 } from '@woven-canvas/core'
 import type { Vec2 } from '@woven-canvas/math'
-import { selectBlock } from '@woven-canvas/plugin-selection'
 import { AddTape, CompleteTape, DrawTape, PlaceTape, RemoveTape } from '../commands'
 import { Tape } from '../components'
 import { DEFAULT_TAPE_IMAGE, DEFAULT_TAPE_LENGTH, DEFAULT_TAPE_THICKNESS } from '../constants'
@@ -78,6 +79,8 @@ function addTape(ctx: Context, entityId: EntityId, position: Vec2): void {
     identifier: DEFAULT_TAPE_IMAGE,
     uploadState: UploadState.Complete,
   })
+
+  assignToFrameAtPoint(ctx, entityId, snappedPos)
 }
 
 /**
@@ -108,9 +111,9 @@ function drawTape(ctx: Context, entityId: EntityId, start: Vec2, end: Vec2): voi
   const thickness = tape.thickness
 
   // Position is top-left corner of the unrotated bounding box centered on midpoint
-  block.position = [midX - length / 2, midY - thickness / 2]
   block.size = [Math.max(length, 1), thickness]
   block.rotateZ = angle
+  Block.setWorldPosition(ctx, entityId, [midX - length / 2, midY - thickness / 2])
 }
 
 /**
@@ -140,6 +143,7 @@ function placeTape(ctx: Context, entityId: EntityId, position: Vec2): void {
     uploadState: UploadState.Complete,
   })
 
+  assignToFrameAtPoint(ctx, entityId, snappedPos)
   selectBlock(ctx, entityId)
 }
 
@@ -156,4 +160,17 @@ function completeTape(ctx: Context, entityId: EntityId): void {
   }
 
   selectBlock(ctx, entityId)
+}
+
+/**
+ * If a point lies inside a frame, assign the entity as a child of that frame.
+ */
+function assignToFrameAtPoint(ctx: Context, entityId: EntityId, point: Vec2): void {
+  const frameId = findFrameAtPoint(ctx, point, entityId)
+  if (frameId !== null) {
+    const currentWorldPos = Block.getWorldPosition(ctx, entityId)
+    const block = Block.write(ctx, entityId)
+    block.parentId = frameId
+    Block.setWorldPosition(ctx, entityId, currentWorldPos)
+  }
 }

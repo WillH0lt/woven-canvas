@@ -5,6 +5,7 @@ import {
   Connector,
   type Context,
   createEntity,
+  DragBlock,
   defineEditorSystem,
   defineQuery,
   type EntityId,
@@ -19,16 +20,13 @@ import {
   removeComponent,
   removeEntity,
   ScaleWithZoom,
-  Synced,
-} from '@woven-canvas/core'
-import { Rect, type Vec2 } from '@woven-canvas/math'
-import {
-  DragBlock,
   SelectionState,
   SelectionStateSingleton,
+  Synced,
   selectBlock,
   TransformHandle,
-} from '@woven-canvas/plugin-selection'
+} from '@woven-canvas/core'
+import { Rect, type Vec2 } from '@woven-canvas/math'
 import { generateJitteredKeyBetween } from 'fractional-indexing-jittered'
 import {
   AddArrow,

@@ -44,6 +44,7 @@ describe('PostRenderCursor', () => {
     editor = new Editor(mockDomElement, {
       plugins: [],
       cursors: TEST_CURSOR_DEFS,
+      omitPluginCursors: true,
     })
     await editor.initialize()
   })

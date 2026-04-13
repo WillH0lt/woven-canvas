@@ -1,4 +1,13 @@
-import { addComponent, type Context, defineQuery, getResources, hasComponent, removeComponent } from '@woven-ecs/core'
+import {
+  addComponent,
+  type Context,
+  defineQuery,
+  type EntityId,
+  getBackrefs,
+  getResources,
+  hasComponent,
+  removeComponent,
+} from '@woven-ecs/core'
 import { Aabb, Block, Held, HitGeometry, Hovered, Pointer } from '../../components'
 import { defineEditorSystem } from '../../EditorSystem'
 import { canBlockInteract, computeAabb, intersectPoint, isHeldByRemote } from '../../helpers'
@@ -83,6 +92,19 @@ function arraysEqual(a: number[], b: number[]): boolean {
 const added = new Set<number>()
 const changed = new Set<number>()
 
+/**
+ * Recursively add all descendants of an entity to the set.
+ * When a parent moves, its children's world-space AABBs are stale
+ * even though their local Block data hasn't changed.
+ */
+function addDescendants(ctx: Context, entityId: EntityId, set: Set<number>): void {
+  for (const childId of getBackrefs(ctx, entityId, Block, 'parentId')) {
+    if (set.has(childId)) continue
+    set.add(childId)
+    addDescendants(ctx, childId, set)
+  }
+}
+
 // Track previous obscured state per editor instance to detect when mouse returns to canvas
 const prevObscuredByElement = new WeakMap<HTMLElement, boolean>()
 
@@ -113,6 +135,12 @@ export const intersectSystem = defineEditorSystem({ phase: 'capture', priority: 
   }
   for (const entityId of hitGeometryChanged.changed(ctx)) {
     changed.add(entityId)
+  }
+
+  // When a parent moves, its children's world-space AABBs are stale.
+  // Collect all descendants of changed blocks for AABB recomputation.
+  for (const entityId of [...changed]) {
+    addDescendants(ctx, entityId, changed)
   }
 
   for (const entityId of added) {

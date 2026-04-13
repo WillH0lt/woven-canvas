@@ -1,37 +1,39 @@
 import {
   Aabb,
+  AssignFrameChildren,
   addComponent,
   Block,
   Camera,
   type ComponentDef,
   type Context,
   canBlockEdit,
+  cascadeDelete,
   createEntity,
+  DeselectAll,
   defineQuery,
+  deselectAll,
+  EditAfterPlacing,
   type EditorResources,
   type EntityId,
+  findFrameAtPoint,
   Grid,
+  getDescendants,
   getResources,
   hasComponent,
+  isAlive,
   Mouse,
   RankBounds,
-  removeEntity,
+  SelectBlock,
+  Selected,
   Synced,
+  selectBlock,
   Text,
 } from '@woven-canvas/core'
 import { Aabb as AabbNs, Vec2 } from '@woven-canvas/math'
-import {
-  DeselectAll,
-  deselectAll,
-  EditAfterPlacing,
-  SelectBlock,
-  Selected,
-  selectBlock,
-} from '@woven-canvas/plugin-selection'
 import { inject, onMounted, onUnmounted, type Ref, watch } from 'vue'
 import { MIN_WRAP_WIDTH, PASTE_WRAP_CHAR_THRESHOLD } from '../constants'
+import { createBlockFromSnapshot } from '../helpers/snapshot'
 import { WOVEN_CANVAS_KEY } from '../injection'
-import { createBlockFromSnapshot } from '../systems/blockPlacementSystem'
 import { plainTextToHtml } from '../utils/plainTextToHtml'
 import { useEditorContext } from './useEditorContext'
 import { useTextEditorController } from './useTextEditorController'
@@ -40,7 +42,7 @@ const CLIPBOARD_FORMAT_VERSION = 1
 const SYNCED_KEY = 'Synced'
 const BLOCK_CLIPBOARD_TYPE = 'application/x-woven-canvas'
 
-type ClipboardEntityData = Map<number, unknown>
+export type ClipboardEntityData = Map<number, unknown>
 
 interface ClipboardJson {
   version: number
@@ -55,13 +57,34 @@ const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected))
 
 // --- Serialization ---
 
-function serializeSelectedBlocks(ctx: Context): ClipboardJson | null {
-  const selectedBlocks = [...selectedBlocksQuery.current(ctx)]
+/** @internal Exported for testing */
+export function serializeSelectedBlocks(ctx: Context): ClipboardJson | null {
+  let selectedBlocks = [...selectedBlocksQuery.current(ctx)]
   if (selectedBlocks.length === 0) return null
+
+  // Expand selection to include all descendants of selected blocks
+  const allBlocksSet = new Set(selectedBlocks)
+  for (const entityId of selectedBlocks) {
+    for (const descendant of getDescendants(ctx, entityId)) {
+      allBlocksSet.add(descendant)
+    }
+  }
+  selectedBlocks = [...allBlocksSet]
 
   const { componentsById } = getResources<EditorResources>(ctx)
   const documentComponents = new Map([...componentsById].filter(([, def]) => def.sync === 'document'))
   const syncedComponentId = Synced._getComponentId(ctx)
+
+  // Collect UUIDs of all blocks being copied so we can detect orphaned children
+  const selectedUuids = new Set<string>()
+  for (const entityId of selectedBlocks) {
+    if (hasComponent(ctx, entityId, Synced)) {
+      selectedUuids.add(Synced.read(ctx, entityId).id)
+    }
+  }
+
+  // Build a set of entity IDs being copied for quick lookup
+  const selectedSet = new Set(selectedBlocks)
 
   const entities: Array<Record<string, unknown>> = []
   const unionAabb = AabbNs.zero()
@@ -80,6 +103,18 @@ function serializeSelectedBlocks(ctx: Context): ClipboardJson | null {
       if (componentDef) {
         const snapshot = componentDef.snapshot(ctx, entityId)
         const converted = convertRefsToUuids(ctx, componentDef.schema, snapshot)
+
+        // If this is a Block with a parentId whose parent is NOT also being copied,
+        // convert to world position and clear parentId so paste works correctly.
+        if (componentDef.name === 'block' && converted.parentId != null) {
+          const parentId = Block.read(ctx, entityId).parentId
+          if (parentId !== null && !selectedSet.has(parentId)) {
+            const worldPos = Block.getWorldPosition(ctx, entityId)
+            converted.position = [worldPos[0], worldPos[1]]
+            converted.parentId = null
+          }
+        }
+
         entityObj[componentDef.name] = converted
       }
     }
@@ -104,7 +139,8 @@ function serializeSelectedBlocks(ctx: Context): ClipboardJson | null {
   }
 }
 
-function deserializeClipboardJson(
+/** @internal Exported for testing */
+export function deserializeClipboardJson(
   ctx: Context,
   json: string,
 ): { entities: ClipboardEntityData[]; center: [number, number] } | null {
@@ -191,7 +227,8 @@ function resolveRefFields(
 
 // --- Paste entities ---
 
-function pasteEntities(
+/** @internal Exported for testing */
+export function pasteEntities(
   ctx: Context,
   clipboardEntities: ClipboardEntityData[],
   center: [number, number],
@@ -249,9 +286,15 @@ function pasteEntities(
       const data = { ...(componentData as Record<string, unknown>) }
 
       if (componentId === blockComponentId) {
-        const pos = Vec2.clone(data.position as Vec2)
-        Vec2.add(pos, offset)
-        data.position = pos
+        // Only offset root blocks (no parentId). Children keep their local
+        // positions — they move because their parent is offset.
+        const blockData = componentData as Record<string, unknown>
+        const hasParent = blockData.parentId != null
+        if (!hasParent) {
+          const pos = Vec2.clone(data.position as Vec2)
+          Vec2.add(pos, offset)
+          data.position = pos
+        }
         data.rank = RankBounds.genNext(ctx)
       }
 
@@ -271,6 +314,29 @@ function pasteEntities(
 
   for (const { entityId, componentDef, componentData } of pendingRefs) {
     resolveRefFields(ctx, entityId, componentDef, componentData, uuidToNewEntityId)
+  }
+
+  // After pasting, check if any root block's center lands on a frame and assign it
+  const assignments: Array<{ entityId: EntityId; frameId: EntityId | null }> = []
+  for (const entityData of sortedEntities) {
+    const syncedData = entityData.get(syncedComponentId) as { id: string } | undefined
+    if (!syncedData?.id) continue
+    const entityId = uuidToNewEntityId.get(syncedData.id)
+    if (!entityId || !hasComponent(ctx, entityId, Block)) continue
+
+    const blockData = Block.read(ctx, entityId)
+    // Only assign root blocks (children stay with their parent)
+    if (blockData.parentId !== null) continue
+
+    const blockCenter = Block.getCenter(ctx, entityId)
+    const frameId = findFrameAtPoint(ctx, blockCenter as [number, number], entityId)
+    if (frameId !== null) {
+      assignments.push({ entityId, frameId })
+    }
+  }
+
+  if (assignments.length > 0) {
+    AssignFrameChildren.spawn(ctx, { assignments })
   }
 }
 
@@ -389,7 +455,9 @@ export function useClipboard(containerRef: Ref<HTMLElement | null>, options: Cop
 
     nextEditorTick((ctx) => {
       for (const entityId of selectedBlocksQuery.current(ctx)) {
-        removeEntity(ctx, entityId)
+        if (isAlive(ctx, entityId)) {
+          cascadeDelete(ctx, entityId)
+        }
       }
     })
   }
@@ -417,7 +485,16 @@ export function useClipboard(containerRef: Ref<HTMLElement | null>, options: Cop
       const ctx = await nextEditorTick()
       const result = deserializeClipboardJson(ctx, blockJson)
       if (result) {
-        pasteEntities(ctx, result.entities, result.center)
+        // Paste at cursor position when using a mouse, otherwise center of screen
+        const mouse = Mouse.read(ctx)
+        const isMouseActive = mouse.position[0] !== 0 || mouse.position[1] !== 0
+        if (isMouseActive) {
+          const cam = Camera.read(ctx)
+          const worldPos: Vec2 = [cam.left + mouse.position[0] / cam.zoom, cam.top + mouse.position[1] / cam.zoom]
+          pasteEntities(ctx, result.entities, result.center, worldPos)
+        } else {
+          pasteEntities(ctx, result.entities, result.center)
+        }
       }
       return
     }

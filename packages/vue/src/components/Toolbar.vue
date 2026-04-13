@@ -17,6 +17,7 @@ import ElbowArrowTool from "./tools/ElbowArrowTool.vue";
 import ImageTool from "./tools/ImageTool.vue";
 import EmbedTool from "./tools/EmbedTool.vue";
 import TapeTool from "./tools/TapeTool.vue";
+import FrameTool from "./tools/FrameTool.vue";
 import { useTooltipSingleton } from "../composables/useTooltipSingleton";
 import { TOOLBAR_KEY, type ToolbarContext } from "../injection";
 import { useSingleton } from "../composables/useSingleton";
@@ -31,7 +32,7 @@ const heldSnapshot = ref<string | null>(null);
 
 const controls = useSingleton(Controls);
 
-const activeTool = computed(() => controls.value.leftMouseTool);
+const activeTool = computed(() => controls.value.activeToolName);
 
 // Default tool components (defined once, used in both toolbar and overflow menu)
 const defaultTools = [
@@ -41,6 +42,7 @@ const defaultTools = [
   ImageTool,
   EmbedTool,
   ShapeTool,
+  FrameTool,
   ElbowArrowTool,
   StickyNoteTool,
   TapeTool,
@@ -219,14 +221,23 @@ watch(hasOverflow, (has) => {
 });
 
 // Set the active tool via the editor
-function setTool(toolName: string, snapshot?: string, cursor?: string) {
+function setTool(toolName: string, options?: { snapshot?: string; drawSnapshot?: string; cursor?: string }) {
+  const { snapshot, drawSnapshot, cursor } = options ?? {};
   // Store snapshot locally for drag-out detection
-  heldSnapshot.value = snapshot ?? null;
+  heldSnapshot.value = snapshot ?? drawSnapshot ?? null;
 
   nextEditorTick((ctx: Context) => {
     const controls = Controls.write(ctx);
-    controls.leftMouseTool = toolName;
-    controls.heldSnapshot = snapshot ?? "";
+    controls.activeToolName = toolName;
+
+    if (drawSnapshot) {
+      // Draw mode: leftMouseTool = 'draw', snapshot is the draw snapshot
+      controls.leftMouseTool = "draw";
+      controls.heldSnapshot = drawSnapshot;
+    } else {
+      controls.leftMouseTool = toolName;
+      controls.heldSnapshot = snapshot ?? "";
+    }
 
     if (cursor) {
       Cursor.setCursor(ctx, cursor);
@@ -235,6 +246,7 @@ function setTool(toolName: string, snapshot?: string, cursor?: string) {
 }
 
 // Handle drag-out: set drag-out tool so blockPlacementSystem handles it
+// activeToolName stays as-is so the button remains highlighted
 function dragOutTool(snapshot: string) {
   nextEditorTick((ctx: Context) => {
     const controls = Controls.write(ctx);

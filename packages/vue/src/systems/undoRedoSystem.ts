@@ -1,5 +1,4 @@
-import { defineEditorSystem, getPluginResources, on, Redo, Undo } from '@woven-canvas/core'
-import { deselectAll } from '@woven-canvas/plugin-selection'
+import { defineEditorSystem, deselectAll, getPluginResources, on, Redo, Undo } from '@woven-canvas/core'
 
 import { EDITING_PLUGIN_NAME } from '../constants'
 import type { EditingPluginResources } from '../EditingPlugin'

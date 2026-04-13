@@ -9,6 +9,7 @@ import {
   defineQuery,
   type EditorResources,
   type EntityId,
+  findFrameAtPoint,
   getResources,
   Held,
   HitGeometry,
@@ -109,6 +110,15 @@ function startStroke(ctx: Context, position: [number, number], pressure: number 
     hasPressure,
   })
 
+  // Assign to frame if the stroke starts on one
+  const frameId = findFrameAtPoint(ctx, position, strokeId)
+  if (frameId !== null) {
+    const currentWorldPos = Block.getWorldPosition(ctx, strokeId)
+    const block = Block.write(ctx, strokeId)
+    block.parentId = frameId
+    Block.setWorldPosition(ctx, strokeId, currentWorldPos)
+  }
+
   // Store reference to active stroke in state singleton
   const state = PenStateSingleton.write(ctx)
   state.activeStroke = strokeId
@@ -145,13 +155,16 @@ function addStrokePoint(ctx: Context, strokeId: EntityId, point: [number, number
 
     // Update block to match the expanded Aabb
     const { value: aabb } = Aabb.read(ctx, strokeId)
+    const worldLeft = AabbNs.left(aabb)
+    const worldTop = AabbNs.top(aabb)
     const block = Block.write(ctx, strokeId)
-    Vec2.set(block.position, AabbNs.left(aabb), AabbNs.top(aabb))
     Vec2.set(block.size, AabbNs.width(aabb), AabbNs.height(aabb))
+    Block.setWorldPosition(ctx, strokeId, [worldLeft, worldTop])
 
     // Update original bounds for affine transform calculations
-    stroke.originalLeft = block.position[0]
-    stroke.originalTop = block.position[1]
+    // These must be world-space since stroke.points are world-space
+    stroke.originalLeft = worldLeft
+    stroke.originalTop = worldTop
     stroke.originalWidth = block.size[0]
     stroke.originalHeight = block.size[1]
   }

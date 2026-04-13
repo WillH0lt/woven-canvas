@@ -2,17 +2,63 @@ import { Aabb, type Vec2 } from '@woven-canvas/math'
 import { type Context, defineQuery, type EntityId, hasComponent } from '@woven-ecs/core'
 import { Aabb as AabbComp } from '../components/Aabb'
 import { Block } from '../components/Block'
+import { Frame } from '../components/Frame'
 import { HitGeometry } from '../components/HitGeometry'
-import { STRATUM_ORDER } from '../constants'
 import { getBlockDef } from './blockDefs'
+import { compareBlockOrder, type SortableBlock } from './sortBlocks'
 
 // Query for all blocks with Aabb
 const blocksWithAabb = defineQuery((q) => q.with(Block, AabbComp))
 
 /**
+ * Check if a point is inside all ancestor frames of a block.
+ * If the block is inside a frame, the visible area is clipped by the frame bounds,
+ * so an intersection only counts if the point is also within the frame.
+ */
+function isPointInsideAncestorFrames(ctx: Context, entityId: EntityId, point: Vec2): boolean {
+  let current = Block.read(ctx, entityId).parentId
+
+  while (current !== null && hasComponent(ctx, current, Block)) {
+    if (hasComponent(ctx, current, Frame)) {
+      if (!AabbComp.containsPoint(ctx, current, point)) {
+        return false
+      }
+    }
+
+    current = Block.read(ctx, current).parentId
+  }
+
+  return true
+}
+
+/**
+ * Check if an AABB intersects all ancestor frames of a block.
+ * If the block is inside a frame, the visible area is clipped by the frame bounds,
+ * so an intersection only counts if the AABB also intersects the frame.
+ */
+function isAabbInsideAncestorFrames(ctx: Context, entityId: EntityId, bounds: Aabb): boolean {
+  let current = Block.read(ctx, entityId).parentId
+
+  while (current !== null && hasComponent(ctx, current, Block)) {
+    if (hasComponent(ctx, current, Frame)) {
+      const { value: frameAabb } = AabbComp.read(ctx, current)
+      if (!Aabb.intersects(bounds, frameAabb)) {
+        return false
+      }
+    }
+
+    current = Block.read(ctx, current).parentId
+  }
+
+  return true
+}
+
+/**
  * Find all blocks that contain a point, sorted by z-order (topmost first).
  *
  * Uses AABB for fast rejection, then precise rotated block intersection.
+ * For blocks inside frames, also checks that the point falls within
+ * all ancestor frame bounds (since frames clip their children).
  *
  * @param ctx - ECS context
  * @param point - Point to test in world coordinates [x, y]
@@ -39,6 +85,11 @@ export function intersectPoint(ctx: Context, point: Vec2, entityIds?: Iterable<E
       if (!Block.containsPoint(ctx, entityId, point)) {
         continue
       }
+    }
+
+    // If block is inside a frame, verify the point is within frame bounds
+    if (!isPointInsideAncestorFrames(ctx, entityId, point)) {
+      continue
     }
 
     intersects.push(entityId)
@@ -73,63 +124,58 @@ export function intersectAabb(ctx: Context, bounds: Aabb, entityIds?: Iterable<E
       continue
     }
 
-    // If selection box fully contains block AABB, it's definitely intersecting
-    if (Aabb.contains(bounds, entityAabb)) {
-      intersecting.push(entityId)
+    // If selection box doesn't fully contain block AABB, do precise check
+    if (!Aabb.contains(bounds, entityAabb)) {
+      // Check HitGeometry if present, otherwise use block intersection
+      if (hasComponent(ctx, entityId, HitGeometry)) {
+        if (!HitGeometry.intersectsAabbWorld(ctx, entityId, bounds)) {
+          continue
+        }
+      } else {
+        // Use SAT for precise AABB-to-oriented-block intersection
+        if (!Block.intersectsAabb(ctx, entityId, bounds)) {
+          continue
+        }
+      }
+    }
+
+    // If block is inside a frame, verify the AABB intersects frame bounds
+    if (!isAabbInsideAncestorFrames(ctx, entityId, bounds)) {
       continue
     }
 
-    // Check HitGeometry if present, otherwise use block intersection
-    if (hasComponent(ctx, entityId, HitGeometry)) {
-      if (HitGeometry.intersectsAabbWorld(ctx, entityId, bounds)) {
-        intersecting.push(entityId)
-      }
-    } else {
-      // Use SAT for precise AABB-to-oriented-block intersection
-      if (Block.intersectsAabb(ctx, entityId, bounds)) {
-        intersecting.push(entityId)
-      }
-    }
+    intersecting.push(entityId)
   }
 
   return intersecting
 }
 
 /**
- * Sort entity IDs by stratum then rank in descending order (topmost first).
- * Overlay blocks are always on top of content, which are on top of background.
- * Within each stratum, blocks are sorted by rank (higher = on top).
+ * Sort entity IDs by stratum then hierarchical rank in descending order (topmost first).
+ * Uses the shared compareBlockOrder for consistency with Vue rendering order.
  */
 function sortByRankDescending(ctx: Context, entityIds: EntityId[]): EntityId[] {
-  return entityIds.sort((a, b) => {
-    const blockA = Block.read(ctx, a)
-    const blockB = Block.read(ctx, b)
-
-    // Get stratum for each block
-    const stratumA = getBlockDef(ctx, blockA.tag).stratum
-    const stratumB = getBlockDef(ctx, blockB.tag).stratum
-
-    // Sort by stratum first (overlay > content > background)
-    const stratumOrderA = STRATUM_ORDER[stratumA]
-    const stratumOrderB = STRATUM_ORDER[stratumB]
-    if (stratumOrderB !== stratumOrderA) {
-      return stratumOrderB - stratumOrderA
+  // Build lookup for parentId → SortableBlock resolution
+  const getBlock = (id: unknown): SortableBlock | null => {
+    if (!hasComponent(ctx, id as EntityId, Block)) return null
+    const block = Block.read(ctx, id as EntityId)
+    return {
+      rank: block.rank,
+      stratum: getBlockDef(ctx, block.tag).stratum,
+      parentId: block.parentId,
     }
+  }
 
-    // Within same stratum, sort by rank
-    const rankA = blockA.rank
-    const rankB = blockB.rank
+  // Pre-compute SortableBlock for each entity
+  const entries = entityIds.map((id) => ({
+    id,
+    sortable: getBlock(id)!,
+  }))
 
-    // Handle empty ranks (put at bottom)
-    if (!rankA && !rankB) return 0
-    if (!rankA) return 1
-    if (!rankB) return -1
+  // Sort descending (topmost first) — negate compareBlockOrder which sorts ascending
+  entries.sort((a, b) => -compareBlockOrder(getBlock, a.sortable, b.sortable))
 
-    // Descending order: higher rank first
-    if (rankB > rankA) return 1
-    if (rankB < rankA) return -1
-    return 0
-  })
+  return entries.map((e) => e.id)
 }
 
 /**

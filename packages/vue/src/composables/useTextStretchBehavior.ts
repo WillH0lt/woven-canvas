@@ -1,12 +1,17 @@
-import { Block, Camera, type Context, hasComponent, Screen, Text } from '@woven-canvas/core'
 import {
+  Block,
+  Camera,
+  type Context,
+  hasComponent,
+  Screen,
   SelectionState,
   SelectionStateSingleton,
+  Text,
   TransformBoxStateSingleton,
   TransformHandle,
   TransformHandleKind,
   UpdateTransformBox,
-} from '@woven-canvas/plugin-selection'
+} from '@woven-canvas/core'
 import { type MaybeRefOrGetter, type Ref, toValue, watch } from 'vue'
 import type { BlockData } from '../types'
 import { type BlockDimensions, computeBlockDimensions } from '../utils/blockDimensions'
@@ -75,7 +80,7 @@ export function useTextStretchBehavior(options: TextStretchBehaviorOptions): Tex
 
     const writableBlock = Block.write(ctx, entityId)
     writableBlock.size = [finalWidth, finalHeight]
-    writableBlock.position = [dimensions.left, dimensions.top]
+    Block.setWorldPosition(ctx, entityId, [dimensions.left, dimensions.top])
 
     if (TransformBoxState.value.transformBoxId !== null) {
       UpdateTransformBox.spawn(ctx, {

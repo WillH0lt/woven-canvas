@@ -1,4 +1,4 @@
-import { Camera, defineEditorSystem, Frame, on, Screen } from '@woven-canvas/core'
+import { Camera, defineEditorSystem, on, Screen, Tick } from '@woven-canvas/core'
 
 import { GlideToPosition } from '../commands'
 import { GlideState } from '../components/GlideState'
@@ -33,7 +33,7 @@ export const CameraGlideSystem = defineEditorSystem({ phase: 'update', priority:
   const glide = GlideState.read(ctx)
   if (!glide.active) return
 
-  const frame = Frame.read(ctx)
+  const tick = Tick.read(ctx)
   const camera = Camera.read(ctx)
 
   const { position, velocity } = smoothDamp(
@@ -42,7 +42,7 @@ export const CameraGlideSystem = defineEditorSystem({ phase: 'update', priority:
     [glide.velocityX, glide.velocityY],
     GLIDE_SMOOTH_TIME,
     Number.POSITIVE_INFINITY,
-    frame.delta,
+    tick.delta,
   )
 
   const dist = Math.hypot(position[0] - glide.targetLeft, position[1] - glide.targetTop)

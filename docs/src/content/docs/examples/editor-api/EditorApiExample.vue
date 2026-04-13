@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import '@woven-canvas/vue/style.css'
-import { type Editor, Block, addComponent, createEntity, RankBounds, Synced, Shape } from '@woven-canvas/core'
-import { SelectAll } from '@woven-canvas/plugin-selection'
+import {
+  type Editor,
+  Block,
+  addComponent,
+  createEntity,
+  RankBounds,
+  Synced,
+  Shape,
+  SelectAll,
+} from '@woven-canvas/core'
 import { WovenCanvas } from '@woven-canvas/vue'
 import Palette from './Palette.vue'
 

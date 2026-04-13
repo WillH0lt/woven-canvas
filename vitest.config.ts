@@ -11,5 +11,20 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
+    projects: [
+      path.resolve(__dirname, 'packages/vue'),
+      {
+        resolve: {
+          conditions: ['@woven-canvas/source'],
+        },
+        test: {
+          name: 'core',
+          environment: 'jsdom',
+          setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
+          include: [path.resolve(__dirname, 'packages/*/__tests__/**/*.test.ts')],
+          exclude: [path.resolve(__dirname, 'packages/vue/**')],
+        },
+      },
+    ],
   },
 })

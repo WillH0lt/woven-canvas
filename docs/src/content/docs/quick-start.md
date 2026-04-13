@@ -125,8 +125,7 @@ Query entities by their components with `useQuery`. The result updates automatic
 <script setup lang="ts">
 import { watchEffect } from "vue";
 import { useQuery } from "@woven-canvas/vue";
-import { Block } from "@woven-canvas/core";
-import { Selected } from "@woven-canvas/plugin-selection";
+import { Block, Selected } from "@woven-canvas/core";
 
 // Query all selected blocks
 const selectedBlocks = useQuery([Block, Selected]);

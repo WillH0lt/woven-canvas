@@ -1,7 +1,41 @@
+// Block manipulation commands
 export {
-  AddShapeBlock,
-  CompleteShapeBlock,
-  DrawShapeBlock,
-  PlaceShapeBlock,
-  RemoveShapeBlock,
-} from './shapeDraw'
+  BringForwardSelected,
+  CloneEntities,
+  DragBlock,
+  DuplicateSelected,
+  RemoveBlock,
+  RemoveSelected,
+  SendBackwardSelected,
+  SetCursor,
+  UncloneEntities,
+} from './blocks'
+// Frame containment commands
+export {
+  AddFrameHighlight,
+  AssignFrameChildren,
+  RemoveFrameHighlight,
+} from './containment'
+// Selection commands
+export {
+  AddHeld,
+  AddSelectionBox,
+  DeselectAll,
+  DeselectBlock,
+  RemoveHeld,
+  RemoveSelectionBox,
+  SelectAll,
+  SelectBlock,
+  ToggleSelect,
+  UpdateSelectionBox,
+} from './selection'
+// Transform box commands
+export {
+  AddTransformBox,
+  EndTransformBoxEdit,
+  HideTransformBox,
+  RemoveTransformBox,
+  ShowTransformBox,
+  StartTransformBoxEdit,
+  UpdateTransformBox,
+} from './transformBox'

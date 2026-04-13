@@ -3,10 +3,33 @@ import { type Context, type EntityId, hasComponent } from '@woven-ecs/core'
 
 import { Aabb as AabbComponent } from '../components/Aabb'
 import { Block } from '../components/Block'
+import { Frame } from '../components/Frame'
 import { HitGeometry } from '../components/HitGeometry'
 
 // Pre-allocated matrix for UV-to-world transforms (avoids allocation in hot paths)
 const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0]
+
+/**
+ * Check if a capsule intersects all ancestor frames of a block.
+ * If the block is inside a frame, the visible area is clipped by the frame bounds,
+ * so an intersection only counts if the capsule also intersects the frame.
+ */
+function isCapsuleInsideAncestorFrames(ctx: Context, entityId: EntityId, capsule: Capsule): boolean {
+  let current = Block.read(ctx, entityId).parentId
+
+  while (current !== null && hasComponent(ctx, current, Block)) {
+    if (hasComponent(ctx, current, Frame)) {
+      const { value: frameAabb } = AabbComponent.read(ctx, current)
+      if (!Capsule.intersectsAabb(capsule, frameAabb)) {
+        return false
+      }
+    }
+
+    current = Block.read(ctx, current).parentId
+  }
+
+  return true
+}
 
 /**
  * Find all blocks that intersect with a capsule.
@@ -45,15 +68,22 @@ export function intersectCapsule(ctx: Context, capsule: Capsule, entityIds: Iter
 
     // Narrow phase: Check against HitGeometry if available
     if (hasComponent(ctx, entityId, HitGeometry)) {
-      if (intersectsCapsuleHitGeometry(ctx, entityId, capsule)) {
-        intersects.push(entityId)
+      if (!intersectsCapsuleHitGeometry(ctx, entityId, capsule)) {
+        continue
       }
     } else {
       // Fall back to AABB intersection for entities without HitGeometry
-      if (Capsule.intersectsAabb(capsule, aabb.value)) {
-        intersects.push(entityId)
+      if (!Capsule.intersectsAabb(capsule, aabb.value)) {
+        continue
       }
     }
+
+    // If block is inside a frame, verify the capsule bounds intersect frame bounds
+    if (!isCapsuleInsideAncestorFrames(ctx, entityId, capsule)) {
+      continue
+    }
+
+    intersects.push(entityId)
   }
 
   return intersects

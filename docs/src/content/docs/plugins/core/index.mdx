@@ -1,23 +1,53 @@
 ---
 title: Core Plugin
-description: Input handling, block types, and essential editor systems
+description: Input handling, block types, selection, transform, and essential editor systems
 ---
 
-The Core plugin provides the foundational systems that power Woven Canvas. It handles input processing, block intersection detection, cursor management, and includes built-in block types like sticky notes, text, images, and shapes.
+The Core plugin provides the foundational systems that power Woven Canvas. It handles input processing, block intersection detection, cursor management, selection, transform, and includes built-in block types like sticky notes, text, images, shapes, and frames.
 
 ## Overview
 
 The Core plugin is always included automatically and cannot be disabled. It provides:
 
 - **Input handling** — Keyboard, mouse, pointer, and screen events
+- **Selection** — Single, multi-select, marquee selection
+- **Transform** — Scale, stretch, rotate handles
 - **Block systems** — Intersection detection, z-ordering, visibility culling
 - **Cursor management** — Visual cursor state
 - **Keybind processing** — Converts key presses to commands
-- **Built-in block types** — Sticky notes, text, images, and shapes
+- **Edge scrolling** — Auto-scroll when dragging near viewport edges
+- **Frame containment** — Group blocks within frame containers
+- **Built-in block types** — Sticky notes, text, images, shapes, and frames
+
+## Options
+
+Configure the core plugin via the `corePlugin` editor option:
+
+```typescript
+const editor = new Editor(el, {
+  corePlugin: {
+    edgeScrolling: {
+      enabled: true,
+      edgeSizePx: 20,
+      edgeScrollSpeedPxPerFrame: 10,
+      edgeScrollDelayMs: 100,
+    }
+  }
+})
+```
+
+### Edge Scrolling
+
+Auto-scrolls the camera when dragging near viewport edges.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `edgeScrolling.enabled` | `boolean` | `true` | Enable auto-scroll when dragging near viewport edges |
+| `edgeScrolling.edgeSizePx` | `number` | `10` | Size of the edge zone in pixels |
+| `edgeScrolling.edgeScrollSpeedPxPerFrame` | `number` | `15` | Camera scroll speed in pixels per frame |
+| `edgeScrolling.edgeScrollDelayMs` | `number` | `250` | Delay before scrolling starts in milliseconds |
 
 ## Built-in Block Types
-
-The Core plugin registers four block types:
 
 ### Sticky Note
 
@@ -72,9 +102,76 @@ A geometric shape with optional text content.
 }
 ```
 
-## Components
+### Frame
 
-The Core plugin provides essential ECS components:
+A container that groups blocks. Blocks dragged into a frame become children.
+
+```typescript
+{
+  tag: 'frame',
+  components: [Frame],
+  resizeMode: ResizeMode.Free,
+  canRotate: false,
+  connectors: { enabled: false }
+}
+```
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + A` | Select all blocks |
+| `Delete` | Remove selected blocks |
+| `]` | Bring selected forward (z-order) |
+| `[` | Send selected backward (z-order) |
+
+## Commands
+
+Commands can be dispatched programmatically via `editor.command()`:
+
+### Selection Commands
+
+```typescript
+import {
+  SelectBlock,
+  DeselectBlock,
+  DeselectAll,
+  SelectAll,
+  ToggleSelect,
+} from '@woven-canvas/core'
+
+// Select a specific block
+editor.command(SelectBlock, { entityId, deselectOthers: true })
+
+// Deselect all blocks
+editor.command(DeselectAll)
+
+// Select all blocks
+editor.command(SelectAll)
+```
+
+### Block Manipulation Commands
+
+```typescript
+import {
+  RemoveSelected,
+  DuplicateSelected,
+  BringForwardSelected,
+  SendBackwardSelected,
+} from '@woven-canvas/core'
+
+// Delete all selected blocks
+editor.command(RemoveSelected)
+
+// Duplicate selected blocks
+editor.command(DuplicateSelected)
+
+// Change z-order
+editor.command(BringForwardSelected)
+editor.command(SendBackwardSelected)
+```
+
+## Components
 
 ### Spatial Components
 
@@ -108,19 +205,36 @@ The Core plugin provides essential ECS components:
 | `Pointer` | Pointer input state with sample history |
 | `User` | User presence information |
 
+### Selection Components
+
+| Component | Description |
+|-----------|-------------|
+| `Selected` | Marks an entity as selected |
+| `DragStart` | Tracks drag initiation position |
+| `EditAfterPlacing` | Triggers edit mode after block creation |
+| `SelectionBox` | Marquee selection rectangle |
+| `TransformBox` | Transform box container |
+| `TransformHandle` | Corner, edge, and rotation handles |
+
+### Frame Components
+
+| Component | Description |
+|-----------|-------------|
+| `Frame` | Frame container data (label) |
+| `FrameDropTarget` | Marks a frame as a drop target during drag |
+
 ### Using Components
 
 ```typescript
-import { defineQuery } from '@woven-canvas/core'
-import { Block, Hovered, Text } from '@woven-canvas/core'
+import { defineQuery, Block, Selected } from '@woven-canvas/core'
 
-// Query for hovered text blocks
-const hoveredText = defineQuery((q) => q.with(Block, Text, Hovered))
+// Query for selected blocks
+const selectedBlocks = defineQuery((q) => q.with(Block, Selected))
 
 // In a system
-for (const entityId of hoveredText.current(ctx)) {
-  const text = Text.read(ctx, entityId)
-  console.log(text.content)
+for (const entityId of selectedBlocks.current(ctx)) {
+  const block = Block.read(ctx, entityId)
+  console.log(block.position)
 }
 ```
 
@@ -133,7 +247,7 @@ Singleton components store global editor state (one instance per world):
 | `Camera` | Viewport position and zoom level |
 | `Screen` | Screen dimensions and device pixel ratio |
 | `Cursor` | Current cursor style |
-| `Frame` | Frame timing and delta time |
+| `Tick` | Tick timing and delta time |
 | `Keyboard` | Keyboard state bitmask |
 | `Mouse` | Mouse position and button state |
 | `Controls` | Active tool and control mode |
@@ -141,6 +255,11 @@ Singleton components store global editor state (one instance per world):
 | `Intersect` | Block intersection results |
 | `RankBounds` | Min/max block z-order values |
 | `ScaleWithZoomState` | Zoom-based scaling state |
+| `SelectionStateSingleton` | Selection state machine state |
+| `TransformBoxStateSingleton` | Transform box state machine state |
+| `ScrollEdgesStateSingleton` | Edge scrolling state machine state |
+| `FrameDrawState` | Frame drawing state machine state |
+| `FrameContainmentState` | Frame containment state machine state |
 
 ### Accessing Singletons
 
@@ -177,7 +296,24 @@ The Core plugin runs these systems automatically:
 | System | Description |
 |--------|-------------|
 | `intersectSystem` | Detects which block is under the pointer |
+| `selectSystem` | Runs the selection state machine (click, drag, marquee) |
 | `keybindSystem` | Matches key presses to registered keybinds |
+| `hoverCursorSystem` | Sets cursor when hovering transform handles |
+| `scrollEdgesSystem` | Auto-scrolls when dragging near viewport edges |
+| `captureTransformBoxSystem` | Manages transform box lifecycle |
+| `captureFrameContainmentSystem` | Tracks frame containment during drag |
+| `captureFrameDrawSystem` | Handles frame drawing interactions |
+
+### Update Phase
+
+| System | Description |
+|--------|-------------|
+| `blockSystem` | Handles block manipulation commands |
+| `dragHandlerSystem` | Updates blocks when transform box moves |
+| `updateSelectSystem` | Handles selection box commands |
+| `updateFrameDrawSystem` | Processes frame draw commands |
+| `updateFrameContainmentSystem` | Processes frame containment commands |
+| `updateFrameSetupSystem` | Sets up hit geometry for frames |
 
 ### Render Phase
 
@@ -266,6 +402,7 @@ The Vue package provides toolbar and floating menu components for core block typ
 
 | Component | Description |
 |-----------|-------------|
+| `SelectTool` | Toolbar button for the select tool |
 | `StickyNoteTool` | Toolbar button to create sticky notes |
 | `TextTool` | Toolbar button to create text blocks |
 | `ImageTool` | Toolbar button to upload images |
@@ -281,6 +418,7 @@ The Vue package provides toolbar and floating menu components for core block typ
 <script setup lang="ts">
 import {
   WovenCanvas,
+  SelectTool,
   StickyNoteTool,
   TextTool,
   ImageTool,
@@ -293,6 +431,7 @@ import {
   <WovenCanvas>
     <template #toolbar>
       <Toolbar>
+        <SelectTool />
         <StickyNoteTool />
         <TextTool />
         <ImageTool />
@@ -339,27 +478,3 @@ import {
   </WovenCanvas>
 </template>
 ```
-
-#### ColorButton Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `entityIds` | `EntityId[]` | Selected entity IDs |
-
-#### ShapeKindButton Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `entityIds` | `EntityId[]` | Selected shape entity IDs |
-
-#### ShapeFillColorButton Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `entityIds` | `EntityId[]` | Selected shape entity IDs |
-
-#### ShapeStrokeColorButton Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `entityIds` | `EntityId[]` | Selected shape entity IDs |

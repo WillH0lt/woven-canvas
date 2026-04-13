@@ -67,7 +67,6 @@ export default defineConfig({
           items: [
             { label: "Overview", slug: "plugins" },
             { label: "Core", slug: "plugins/core" },
-            { label: "Selection", slug: "plugins/selection" },
             { label: "Canvas Controls", slug: "plugins/canvas-controls" },
             { label: "Pen", slug: "plugins/pen" },
             { label: "Eraser", slug: "plugins/eraser" },

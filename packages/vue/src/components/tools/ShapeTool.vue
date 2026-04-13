@@ -41,6 +41,7 @@ const snapshot = computed(() => {
     name="shape"
     tooltip="Shape"
     :drag-out-snapshot="snapshot"
+    :draw-snapshot="snapshot"
   >
     <svg
       viewBox="0 0 20 20"

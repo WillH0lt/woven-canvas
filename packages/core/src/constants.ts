@@ -5,3 +5,6 @@ export const STRATUM_ORDER = {
   content: 1,
   overlay: 2,
 } as const
+
+/** Frame border edge hit thickness in world units */
+export const FRAME_EDGE_THICKNESS = 12

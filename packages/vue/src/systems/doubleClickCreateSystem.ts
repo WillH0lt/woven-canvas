@@ -1,17 +1,23 @@
 import {
   addComponent,
+  Block,
   type Context,
   Controls,
   canBlockEdit,
   defineEditorSystem,
+  EditAfterPlacing,
   type EditorResources,
+  Frame,
+  findFrameAtPoint,
   getPointerInput,
   getResources,
+  hasComponent,
   PointerButton,
+  Selected,
+  Text,
 } from '@woven-canvas/core'
-import { EditAfterPlacing, Selected } from '@woven-canvas/plugin-selection'
+import { type BlockSnapshot, createBlockFromSnapshot } from '../helpers/snapshot'
 import { DoubleClickState } from '../singletons'
-import { type BlockSnapshot, createBlockFromSnapshot } from './blockPlacementSystem'
 
 /** Time window for double-click detection (ms) */
 const DOUBLE_CLICK_TIME_MS = 400
@@ -41,8 +47,9 @@ export const doubleClickCreateSystem = defineEditorSystem({ phase: 'capture' }, 
   const clickEvent = events.find((e) => e.type === 'click' && !e.obscured)
   if (!clickEvent) return
 
-  // Only trigger on empty canvas (no blocks under cursor)
-  if (clickEvent.intersects.length > 0) return
+  // Only trigger on empty canvas or on frames (no non-frame blocks under cursor)
+  const hasNonFrameIntersect = clickEvent.intersects.some((id) => !hasComponent(ctx, id, Frame))
+  if (hasNonFrameIntersect) return
 
   const now = performance.now()
   const timeDelta = now - dblState.lastClickTime
@@ -65,15 +72,34 @@ export const doubleClickCreateSystem = defineEditorSystem({ phase: 'capture' }, 
     if (!(snapshot.block.tag in editor.blockDefs)) return
 
     // Double-click detected — create block
-    const tag = snapshot.block.tag
     const entityId = createBlockFromSnapshot(ctx, snapshot, clickEvent.worldPosition)
+
+    // Assign to frame if placed inside one
+    const frameId = findFrameAtPoint(ctx, clickEvent.worldPosition, entityId)
+    if (frameId !== null) {
+      const currentWorldPos = Block.getWorldPosition(ctx, entityId)
+      const block = Block.write(ctx, entityId)
+      block.parentId = frameId
+      Block.setWorldPosition(ctx, entityId, currentWorldPos)
+    }
+
+    // Default empty fontFamily to the first registered font
+    if (hasComponent(ctx, entityId, Text)) {
+      const text = Text.read(ctx, entityId)
+      if (!text.fontFamily) {
+        const firstFont = editor.fonts[0]?.name
+        if (firstFont) {
+          Text.write(ctx, entityId).fontFamily = firstFont
+        }
+      }
+    }
 
     // Directly select the block (pointer is already released after double-click,
     // so the Pointing → pointerUp flow won't work)
     addComponent(ctx, entityId, Selected, {})
 
     // Mark for immediate editing if the block supports it
-    if (canBlockEdit(ctx, tag)) {
+    if (canBlockEdit(ctx, snapshot.block.tag)) {
       addComponent(ctx, entityId, EditAfterPlacing, {})
     }
 

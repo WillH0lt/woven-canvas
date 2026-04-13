@@ -257,6 +257,28 @@ export type ControlsOptions = z.infer<typeof ControlsOptions>
 export type ControlsOptionsInput = z.input<typeof ControlsOptions>
 
 /**
+ * Schema for core plugin options.
+ */
+const EdgeScrollingSchema = z.object({
+  /** Whether edge scrolling is enabled (default: true) */
+  enabled: z.boolean().default(true),
+  /** Size of the edge zone in pixels (default: 10) */
+  edgeSizePx: z.number().default(10),
+  /** Camera scroll speed in pixels per frame (default: 15) */
+  edgeScrollSpeedPxPerFrame: z.number().default(15),
+  /** Delay before scrolling starts in milliseconds (default: 250) */
+  edgeScrollDelayMs: z.number().default(250),
+})
+
+export const CorePluginOptionsSchema = z.object({
+  /** Edge scrolling options */
+  edgeScrolling: EdgeScrollingSchema.default(EdgeScrollingSchema.parse({})),
+})
+
+export type CorePluginOptions = z.output<typeof CorePluginOptionsSchema>
+export type CorePluginOptionsInput = z.input<typeof CorePluginOptionsSchema>
+
+/**
  * Editor configuration options schema.
  */
 export const EditorOptionsSchema = z.object({
@@ -265,6 +287,11 @@ export const EditorOptionsSchema = z.object({
    * Plugins are sorted by dependencies automatically.
    */
   plugins: z.array(z.custom<EditorPluginInput>()).default([]),
+
+  /**
+   * Core plugin options (edge scrolling, etc.).
+   */
+  corePlugin: z.custom<CorePluginOptionsInput>().default({}),
 
   /**
    * Maximum number of entities.
@@ -488,3 +515,62 @@ export type BlockDefInput = z.input<typeof BlockDef>
  * Normalized block definition type (after parsing with defaults applied).
  */
 export type BlockDef = z.infer<typeof BlockDef>
+
+/**
+ * State for selection state machine.
+ */
+export const SelectionState = {
+  Idle: 'idle',
+  Pointing: 'pointing',
+  Dragging: 'dragging',
+  SelectionBoxPointing: 'selectionBoxPointing',
+  SelectionBoxDragging: 'selectionBoxDragging',
+} as const
+
+export type SelectionState = (typeof SelectionState)[keyof typeof SelectionState]
+
+/**
+ * State for transform box state machine.
+ */
+export const TransformBoxState = {
+  None: 'none',
+  Idle: 'idle',
+  Editing: 'editing',
+} as const
+
+export type TransformBoxState = (typeof TransformBoxState)[keyof typeof TransformBoxState]
+
+/**
+ * Kind of transform handle (corner, edge, rotation).
+ */
+export const TransformHandleKind = {
+  Scale: 'scale',
+  Stretch: 'stretch',
+  Rotate: 'rotate',
+  RotateScale: 'rotateScale',
+} as const
+
+export type TransformHandleKind = (typeof TransformHandleKind)[keyof typeof TransformHandleKind]
+
+/**
+ * State for scroll edges state machine.
+ */
+export const ScrollEdgesState = {
+  Idle: 'idle',
+  Waiting: 'waiting',
+  Scrolling: 'scrolling',
+} as const
+
+export type ScrollEdgesState = (typeof ScrollEdgesState)[keyof typeof ScrollEdgesState]
+
+/**
+ * State values for the frame containment state machine.
+ */
+export const FrameContainmentStateEnum = {
+  /** Idle - no drag in progress */
+  Idle: 'idle',
+  /** Tracking - a block is being dragged, monitoring frame overlap */
+  Tracking: 'tracking',
+} as const
+
+export type FrameContainmentStateValue = (typeof FrameContainmentStateEnum)[keyof typeof FrameContainmentStateEnum]

@@ -47,7 +47,6 @@
   "peerDependencies": {
     "@woven-canvas/core": "workspace:^",
     "@woven-canvas/math": "workspace:^",
-    "@woven-canvas/plugin-selection": "workspace:^",
     "fractional-indexing-jittered": "^1",
     "typescript": "catalog:",
     "xstate": "catalog:"

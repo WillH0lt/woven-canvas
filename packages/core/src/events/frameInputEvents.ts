@@ -1,5 +1,5 @@
 import type { Context } from '@woven-ecs/core'
-import { Frame } from '../singletons'
+import { Tick } from '../singletons'
 import type { FrameInput } from './types'
 
 /**
@@ -26,13 +26,13 @@ import type { FrameInput } from './types'
  * ```
  */
 export function getFrameInput(ctx: Context): FrameInput {
-  const frame = Frame.read(ctx)
+  const tick = Tick.read(ctx)
 
   return {
     type: 'frame',
     ctx,
-    delta: frame.delta,
-    frameNumber: frame.number,
-    time: frame.time,
+    delta: tick.delta,
+    frameNumber: tick.number,
+    time: tick.time,
   }
 }

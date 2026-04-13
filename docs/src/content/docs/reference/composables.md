@@ -92,8 +92,7 @@ Subscribe to a query and get matching entities:
 
 ```typescript
 import { useQuery } from "@woven-canvas/vue";
-import { Block } from "@woven-canvas/core";
-import { Selected } from "@woven-canvas/plugin-selection";
+import { Block, Selected } from "@woven-canvas/core";
 
 // Query for selected blocks
 const selectedItems = useQuery([Block, Selected] as const);

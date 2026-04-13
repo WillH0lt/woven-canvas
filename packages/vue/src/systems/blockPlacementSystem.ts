@@ -5,111 +5,31 @@ import {
   Controls,
   Cursor,
   canBlockEdit,
-  createEntity,
   defineEditorSystem,
   defineQuery,
+  EditAfterPlacing,
   Edited,
   type EditorResources,
-  type EntityId,
-  Grid,
-  getBlockDef,
+  findFrameAtPoint,
   getPluginResources,
   getPointerInput,
   getResources,
   Held,
   PointerButton,
-  RankBounds,
-  Synced,
+  SelectionState,
+  SelectionStateSingleton,
 } from '@woven-canvas/core'
-import { EditAfterPlacing, SelectionState, SelectionStateSingleton } from '@woven-canvas/plugin-selection'
 
 import { EDITING_PLUGIN_NAME } from '../constants'
 import type { EditingPluginResources } from '../EditingPlugin'
+import { type BlockSnapshot, createBlockFromSnapshot, parseSnapshot } from '../helpers/snapshot'
 import { BlockPlacementState } from '../singletons'
+
+// Re-export for consumers
+export { type BlockSnapshot, createBlockFromSnapshot, parseSnapshot }
 
 // Query for edited blocks
 const editedQuery = defineQuery((q) => q.with(Edited))
-
-/**
- * Snapshot format for creating blocks.
- * Keys are component names (lowercase), values are component data.
- */
-export type BlockSnapshot = Record<string, unknown> & {
-  block: {
-    tag: string
-    size?: [number, number]
-    rank?: string
-  }
-}
-
-/**
- * Parse the snapshot from Controls.heldSnapshot.
- */
-function parseSnapshot(heldSnapshot: string): BlockSnapshot | null {
-  if (!heldSnapshot) return null
-
-  try {
-    const snapshot = JSON.parse(heldSnapshot) as BlockSnapshot
-    if (!snapshot.block?.tag) {
-      console.warn('Block snapshot missing required tag:', snapshot)
-      return null
-    }
-    return snapshot
-  } catch {
-    console.warn('Invalid block snapshot JSON:', heldSnapshot)
-    return null
-  }
-}
-
-/**
- * Create the block entity from snapshot at the given position.
- */
-export function createBlockFromSnapshot(ctx: Context, snapshot: BlockSnapshot, position: [number, number]): EntityId {
-  const blockDef = getBlockDef(ctx, snapshot.block.tag)
-  if (!blockDef) {
-    throw new Error(`Block placement: block definition for tag "${snapshot.block.tag}" not found`)
-  }
-
-  // Get size from snapshot or use defaults
-  const size: [number, number] = snapshot.block.size ?? [100, 100]
-
-  // Calculate position to center the block on click point, then snap to grid
-  const placedPosition: [number, number] = [position[0] - size[0] / 2, position[1] - size[1] / 2]
-  Grid.snapPosition(ctx, placedPosition)
-  const [left, top] = placedPosition
-
-  // Generate a rank for the new block (place at front)
-  const rank = snapshot.block.rank ?? RankBounds.genNext(ctx)
-
-  // Create the entity
-  const entityId = createEntity(ctx)
-
-  // Add Synced component for persistence (unless explicitly in snapshot)
-  if (!('synced' in snapshot)) {
-    addComponent(ctx, entityId, Synced, {
-      id: crypto.randomUUID(),
-    })
-  }
-
-  // Add Block component with computed position and rank
-  const blockData = Object.assign({}, snapshot.block, {
-    position: [left, top] as [number, number],
-    size,
-    rank,
-  })
-  addComponent(ctx, entityId, Block, blockData)
-
-  for (const Comp of blockDef.components) {
-    if (!(Comp.name in snapshot)) {
-      addComponent(ctx, entityId, Comp)
-    } else {
-      const componentData = snapshot[Comp.name] as object
-      addComponent(ctx, entityId, Comp, componentData)
-    }
-  }
-
-  return entityId
-}
 
 /**
  * Place a block and set up selection state to Pointing.
@@ -125,12 +45,22 @@ function placeBlockAndSetupSelection(
   // Create the block at the position
   const entityId = createBlockFromSnapshot(ctx, snapshot, worldPosition)
 
+  // Assign to frame if placed inside one
+  const frameId = findFrameAtPoint(ctx, worldPosition, entityId)
+  if (frameId !== null) {
+    // Get current world position, set parent, then convert to parent-local
+    const currentWorldPos = Block.getWorldPosition(ctx, entityId)
+    const block = Block.write(ctx, entityId)
+    block.parentId = frameId
+    Block.setWorldPosition(ctx, entityId, currentWorldPos)
+  }
+
   // Mark as held for dragging
   const { sessionId } = getResources<EditorResources>(ctx)
   addComponent(ctx, entityId, Held, { sessionId })
 
-  // Get the block's position for draggedEntityStart
-  const block = Block.read(ctx, entityId)
+  // Get the block's world position for draggedEntityStart
+  const blockWorldPos = Block.getWorldPosition(ctx, entityId)
 
   // Mark block for editing after placement if it's editable
   if (canBlockEdit(ctx, snapshot.block.tag)) {
@@ -154,7 +84,7 @@ function placeBlockAndSetupSelection(
   selectionState.state = mode === 'dragOut' ? SelectionState.Dragging : SelectionState.Pointing
   selectionState.dragStart = worldPosition
   selectionState.draggedEntity = entityId
-  selectionState.draggedEntityStart = block.position
+  selectionState.draggedEntityStart = blockWorldPos
   selectionState.pointingStartClient = screenPosition
   selectionState.pointingStartWorld = worldPosition
   selectionState.isCloning = false
@@ -162,6 +92,7 @@ function placeBlockAndSetupSelection(
   // Reset controls to select tool and clear snapshot
   const controlsWrite = Controls.write(ctx)
   controlsWrite.leftMouseTool = 'select'
+  controlsWrite.activeToolName = 'select'
   controlsWrite.heldSnapshot = ''
 
   const cursor = Cursor.write(ctx)
@@ -203,6 +134,9 @@ export const blockPlacementSystem = defineEditorSystem({ phase: 'capture' }, (ct
 
   // Only run when we have a snapshot to place
   if (!controls.heldSnapshot) return
+
+  // Skip draw mode — handled by drawPlacementSystem
+  if (controls.leftMouseTool === 'draw') return
 
   // Get pointer events for left mouse button
   const events = getPointerInput(ctx, [PointerButton.Left])

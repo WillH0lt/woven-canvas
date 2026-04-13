@@ -71,8 +71,7 @@ Vue composables provide reactive access to ECS data:
 
 ```typescript
 import { useComponent, useSingleton, useQuery } from "@woven-canvas/vue";
-import { Block, Camera } from "@woven-canvas/core";
-import { Selected } from "@woven-canvas/plugin-selection";
+import { Block, Camera, Selected } from "@woven-canvas/core";
 
 // Subscribe to a component on a specific entity
 const block = useComponent(entityId, Block);
@@ -92,8 +91,7 @@ Commands are the primary way to trigger actions from user input.
 
 ```typescript
 import { useEditorContext } from "@woven-canvas/vue";
-import { Undo } from "@woven-canvas/core";
-import { DeselectAll } from "@woven-canvas/plugin-selection";
+import { Undo, DeselectAll } from "@woven-canvas/core";
 
 const { nextEditorTick } = useEditorContext();
 
@@ -110,8 +108,7 @@ For convenience, you can also dispatch commands directly on the editor:
 
 ```typescript
 import { useEditorContext } from "@woven-canvas/vue";
-import { Undo } from "@woven-canvas/core";
-import { DeselectAll } from "@woven-canvas/plugin-selection";
+import { Undo, DeselectAll } from "@woven-canvas/core";
 
 const { getEditor } = useEditorContext();
 

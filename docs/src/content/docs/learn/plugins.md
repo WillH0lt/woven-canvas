@@ -153,8 +153,7 @@ export const SetPotency = defineCommand<{
 Systems run each frame to process commands and update state:
 
 ```typescript
-import { defineEditorSystem, defineQuery } from "@woven-canvas/core";
-import { Selected } from "@woven-canvas/plugin-selection";
+import { defineEditorSystem, defineQuery, Selected } from "@woven-canvas/core";
 
 // Query for entities matching criteria
 const selectedPotions = defineQuery((q) => q.with(Potion, Selected));
@@ -269,7 +268,7 @@ Declare plugins your plugin depends on:
 export function PotionPlugin(): EditorPlugin {
   return {
     name: "potions",
-    dependencies: ["selection"], // Requires SelectionPlugin
+    dependencies: ["canvas-controls"], // Requires CanvasControlsPlugin
     // ...
   };
 }
@@ -290,8 +289,8 @@ import {
   defineQuery,
   field,
   Key,
+  Selected,
 } from "@woven-canvas/core";
-import { Selected } from "@woven-canvas/plugin-selection";
 
 // Components
 export const HslColor = defineCanvasComponent("hsl-color", {
@@ -334,7 +333,6 @@ const potionCursor: CursorDef = {
 export function PotionPlugin(): EditorPlugin {
   return {
     name: "potions",
-    dependencies: ["selection"],
     components: [HslColor, Potion],
     systems: [brewPotionSystem],
     keybinds: [{ command: BrewPotion.name, key: Key.Enter, mod: true }],

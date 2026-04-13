@@ -1,6 +1,6 @@
 import { type Aabb, type Mat2, Rect, Vec2 } from '@woven-canvas/math'
 import { CanvasComponentDef } from '@woven-ecs/canvas-store'
-import { type Context, type EntityId, field } from '@woven-ecs/core'
+import { type Context, type EntityId, field, hasComponent } from '@woven-ecs/core'
 
 import { ResizeMode } from '../types'
 
@@ -37,6 +37,8 @@ const BlockSchema = {
   rank: field.string().max(36).default(''),
   /** How the block can be resized */
   resizeMode: field.enum(ResizeMode).default(ResizeMode.Default),
+  /** Parent block ID — position is relative to parent if set */
+  parentId: field.ref(),
 }
 
 /**
@@ -45,53 +47,111 @@ const BlockSchema = {
  * Contains position (left, top), size (width, height), rotation (rotateZ),
  * z-order (rank), and element tag.
  */
+// Pre-allocated vector for world position resolution
+const _worldPos: Vec2 = [0, 0]
+
 class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
   constructor() {
     super({ name: 'block', sync: 'document' }, BlockSchema)
   }
 
   /**
-   * Get the center point of a block.
-   * @param out - Optional output vector to write to (avoids allocation)
+   * Resolve world-space position by walking up the parentId chain.
+   * For root blocks (no parent), returns block.position directly.
    */
-  getCenter(ctx: Context, entityId: EntityId, out?: Vec2): Vec2 {
-    const { position, size } = this.read(ctx, entityId)
+  getWorldPosition(ctx: Context, entityId: EntityId, out?: Vec2): Vec2 {
+    const block = this.read(ctx, entityId)
     const result: Vec2 = out ?? [0, 0]
-    Rect.getCenter(position, size, result)
+    result[0] = block.position[0]
+    result[1] = block.position[1]
+
+    let current = block.parentId
+    const visited = new Set<EntityId>()
+
+    while (current !== null && hasComponent(ctx, current, this)) {
+      if (visited.has(current)) break
+      visited.add(current)
+      const parent = this.read(ctx, current)
+      result[0] += parent.position[0]
+      result[1] += parent.position[1]
+      current = parent.parentId
+    }
+
     return result
   }
 
   /**
-   * Set the center point of a block (adjusts position accordingly).
+   * Set the world-space position of a block (converts to parent-local internally).
    */
-  setCenter(ctx: Context, entityId: EntityId, center: Vec2): void {
+  setWorldPosition(ctx: Context, entityId: EntityId, worldPos: Vec2): void {
     const block = this.write(ctx, entityId)
-    Rect.setCenter(block.position, block.size, center)
+    const parentId = block.parentId
+
+    if (parentId === null || !hasComponent(ctx, parentId, this)) {
+      Vec2.copy(block.position, worldPos)
+      return
+    }
+
+    const parentWorld = this.getWorldPosition(ctx, parentId, _worldPos)
+    block.position[0] = worldPos[0] - parentWorld[0]
+    block.position[1] = worldPos[1] - parentWorld[1]
   }
 
   /**
-   * Get the four corner points of a block (accounting for rotation).
+   * Get the center point of a block in world space.
+   * @param out - Optional output vector to write to (avoids allocation)
+   */
+  getCenter(ctx: Context, entityId: EntityId, out?: Vec2): Vec2 {
+    const { size } = this.read(ctx, entityId)
+    const worldPos = this.getWorldPosition(ctx, entityId, _worldPos)
+    const result: Vec2 = out ?? [0, 0]
+    Rect.getCenter(worldPos, size, result)
+    return result
+  }
+
+  /**
+   * Set the center point of a block in world space (adjusts local position accordingly).
+   */
+  setCenter(ctx: Context, entityId: EntityId, center: Vec2): void {
+    const block = this.write(ctx, entityId)
+    // Compute the world position that corresponds to this center
+    const worldPos: Vec2 = [center[0] - block.size[0] / 2, center[1] - block.size[1] / 2]
+    // Convert to local
+    const parentId = block.parentId
+    if (parentId !== null && hasComponent(ctx, parentId, this)) {
+      const parentWorld = this.getWorldPosition(ctx, parentId, _worldPos)
+      block.position[0] = worldPos[0] - parentWorld[0]
+      block.position[1] = worldPos[1] - parentWorld[1]
+    } else {
+      Vec2.copy(block.position, worldPos)
+    }
+  }
+
+  /**
+   * Get the four corner points of a block in world space (accounting for rotation).
    * Returns corners in order: top-left, top-right, bottom-right, bottom-left.
    * @param out - Optional output array to write to (avoids allocation)
    */
   getCorners(ctx: Context, entityId: EntityId, out?: [Vec2, Vec2, Vec2, Vec2]): [Vec2, Vec2, Vec2, Vec2] {
-    const { position, size, rotateZ } = this.read(ctx, entityId)
+    const { size, rotateZ } = this.read(ctx, entityId)
+    const worldPos = this.getWorldPosition(ctx, entityId, _worldPos)
     const result: [Vec2, Vec2, Vec2, Vec2] = out ?? [
       [0, 0],
       [0, 0],
       [0, 0],
       [0, 0],
     ]
-    Rect.getCorners(position, size, rotateZ, result)
+    Rect.getCorners(worldPos, size, rotateZ, result)
     return result
   }
 
   /**
-   * Check if a point intersects a block (accounting for rotation).
+   * Check if a world-space point intersects a block (accounting for rotation).
    */
   containsPoint(ctx: Context, entityId: EntityId, point: Vec2): boolean {
-    const { position, size, rotateZ } = this.read(ctx, entityId)
-    return Rect.containsPoint(position, size, rotateZ, point)
+    const { size, rotateZ } = this.read(ctx, entityId)
+    const worldPos = this.getWorldPosition(ctx, entityId, _worldPos)
+    return Rect.containsPoint(worldPos, size, rotateZ, point)
   }
 
   /**
@@ -157,13 +217,15 @@ class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
    * Optimized to avoid allocations for hot path usage.
    */
   intersectsAabb(ctx: Context, entityId: EntityId, aabb: Aabb): boolean {
-    const { position, size, rotateZ } = this.read(ctx, entityId)
-    return Rect.intersectsAabb(position, size, rotateZ, aabb, _blockCorners, _aabbCorners, _blockAxes)
+    const { size, rotateZ } = this.read(ctx, entityId)
+    const worldPos = this.getWorldPosition(ctx, entityId, _worldPos)
+    return Rect.intersectsAabb(worldPos, size, rotateZ, aabb, _blockCorners, _aabbCorners, _blockAxes)
   }
 
   worldToUv(ctx: Context, entityId: EntityId, worldPos: Vec2): Vec2 {
-    const { position, size, rotateZ, flip } = this.read(ctx, entityId)
-    const uv = Rect.worldToUv(position, size, rotateZ, worldPos)
+    const { size, rotateZ, flip } = this.read(ctx, entityId)
+    const blockWorldPos = this.getWorldPosition(ctx, entityId, _worldPos)
+    const uv = Rect.worldToUv(blockWorldPos, size, rotateZ, worldPos)
     // Apply flip to UV coordinates
     if (flip[0]) uv[0] = 1 - uv[0]
     if (flip[1]) uv[1] = 1 - uv[1]
@@ -171,10 +233,11 @@ class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
   }
 
   uvToWorld(ctx: Context, entityId: EntityId, uv: Vec2): Vec2 {
-    const { position, size, rotateZ, flip } = this.read(ctx, entityId)
+    const { size, rotateZ, flip } = this.read(ctx, entityId)
+    const worldPos = this.getWorldPosition(ctx, entityId, _worldPos)
     // Apply flip to UV coordinates before converting to world
     const flippedUv: Vec2 = [flip[0] ? 1 - uv[0] : uv[0], flip[1] ? 1 - uv[1] : uv[1]]
-    return Rect.uvToWorld(position, size, rotateZ, flippedUv)
+    return Rect.uvToWorld(worldPos, size, rotateZ, flippedUv)
   }
 
   /**
@@ -188,8 +251,9 @@ class BlockDef extends CanvasComponentDef<typeof BlockSchema> {
    * @param out - Output matrix to write to [a, b, c, d, tx, ty]
    */
   getUvToWorldMatrix(ctx: Context, entityId: EntityId, out: Mat2): void {
-    const { position, size, rotateZ, flip } = this.read(ctx, entityId)
-    Rect.getUvToWorldMatrix(position, size, rotateZ, out)
+    const { size, rotateZ, flip } = this.read(ctx, entityId)
+    const worldPos = this.getWorldPosition(ctx, entityId, _worldPos)
+    Rect.getUvToWorldMatrix(worldPos, size, rotateZ, out)
     // Apply flip by negating scale and adjusting translation
     if (flip[0]) {
       out[0] = -out[0] // Negate scaleX
