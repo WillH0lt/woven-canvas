@@ -65,6 +65,8 @@ export {
 export { default as CanvasBackground } from './components/CanvasBackground.vue'
 // Text Components
 export { default as EditableText } from './components/EditableText.vue'
+// File Drop Zone
+export { default as FileDropZone } from './components/FileDropZone.vue'
 // Floating Menu Components
 export { default as FloatingMenu } from './components/FloatingMenu.vue'
 export { default as FloatingMenuBar } from './components/FloatingMenuBar.vue'
@@ -133,6 +135,7 @@ export {
 export { EDITING_PLUGIN_NAME } from './constants'
 export { CURSORS, CursorKind } from './cursors'
 export { EditingPlugin, type EditingPluginOptions, type EditingPluginResources } from './EditingPlugin'
+export { WOVEN_CANVAS_KEY, type WovenCanvasContext } from './injection'
 export { SHAPES } from './shapes'
 // Editing Plugin
 export type { BlockSnapshot } from './systems'

@@ -1,7 +1,5 @@
-import type { Context, EntityId } from '@woven-ecs/core'
-export type { Context }
-
 import type { AnyCanvasComponentDef, AnyCanvasSingletonDef } from '@woven-ecs/canvas-store'
+import type { Context, EntityId } from '@woven-ecs/core'
 import { z } from 'zod'
 
 import type { Editor } from './Editor'
@@ -115,6 +113,16 @@ export interface EditorResources {
    * Use this for singleton lookup by runtime id (e.g., from events).
    */
   singletonsById: Map<number, AnyCanvasSingletonDef>
+
+  /**
+   * When true, user-initiated mutations are blocked:
+   * - `editor.command()` is a no-op
+   * - Input systems (pointer drag/transform, keyboard) skip their bodies
+   * Adapter-originated mutations (websocket, persistence) still apply — so
+   * remote edits show up on the viewer's canvas.
+   * Read from systems via `isReadonly(ctx)`.
+   */
+  readonly: boolean
 }
 
 /**
@@ -162,6 +170,22 @@ export type SystemPhase = 'input' | 'capture' | 'update' | 'render'
 export function getPluginResources<T>(ctx: Context, pluginName: string): T {
   const resources = ctx.resources as EditorResources
   return resources.pluginResources[pluginName] as T
+}
+
+/**
+ * Check whether the editor is in readonly mode.
+ * Use at the top of mutating input systems to early-return.
+ *
+ * @example
+ * ```typescript
+ * defineEditorSystem({ phase: 'input' }, (ctx) => {
+ *   if (isReadonly(ctx)) return
+ *   // ... mutation logic
+ * })
+ * ```
+ */
+export function isReadonly(ctx: Context): boolean {
+  return (ctx.resources as EditorResources).readonly
 }
 
 /**
@@ -382,6 +406,16 @@ export const EditorOptionsSchema = z.object({
    * ```
    */
   controls: z.custom<ControlsOptionsInput>().optional(),
+
+  /**
+   * When true, user-initiated mutations are blocked — input systems skip
+   * their bodies and `editor.command()` is a no-op. Adapter-originated
+   * mutations (websocket, persistence) still apply, so remote edits remain
+   * visible. Useful for viewer-mode share links.
+   *
+   * @default false
+   */
+  readonly: z.boolean().default(false),
 })
 
 export type EditorOptionsInput = z.input<typeof EditorOptionsSchema>
@@ -502,6 +536,7 @@ export const BlockDef = z.object({
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
   interactable: z.boolean().default(true),
+  excludeFromRankBounds: z.boolean().default(false),
   connectors: BlockDefConnectors.default(BlockDefConnectors.parse({})),
 })
 

@@ -243,6 +243,7 @@ export {
   type FrameContainmentStateValue,
   GridOptions,
   getPluginResources,
+  isReadonly,
   Keybind,
   ResizeMode,
   ScrollEdgesState,

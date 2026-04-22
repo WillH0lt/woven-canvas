@@ -9,6 +9,7 @@ import {
   findFrameAtPoint,
   Grid,
   getPointerInput,
+  isReadonly,
   type PointerInput,
   removeEntity,
   selectBlock,
@@ -213,6 +214,8 @@ const drawMachine = setup({
  * block tag, default size, and component initialization data.
  */
 export const drawPlacementSystem = defineEditorSystem({ phase: 'capture', priority: 100 }, (ctx: Context) => {
+  if (isReadonly(ctx)) return
+
   const controls = Controls.read(ctx)
 
   if (controls.leftMouseTool !== DRAW_TOOL || !controls.heldSnapshot) return

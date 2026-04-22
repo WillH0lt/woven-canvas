@@ -255,6 +255,7 @@ export class Editor {
       singletonsByName,
       componentsById,
       singletonsById,
+      readonly: options.readonly,
     }
 
     this.world = new World(allDefs, {
@@ -431,6 +432,11 @@ export class Editor {
     this.nextTick((ctx) => {
       def.spawn(ctx, payload)
     })
+  }
+
+  /** Runtime readonly flag. Input systems and command() check this to gate mutations. */
+  get readonly(): boolean {
+    return (this.ctx.resources as EditorResources).readonly
   }
 
   /**

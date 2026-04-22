@@ -12,6 +12,7 @@ import {
   getPointerInput,
   getResources,
   hasComponent,
+  isReadonly,
   PointerButton,
   Selected,
   Text,
@@ -33,6 +34,8 @@ const DOUBLE_CLICK_DISTANCE = 10
  * or leave empty to disable.
  */
 export const doubleClickCreateSystem = defineEditorSystem({ phase: 'capture' }, (ctx: Context) => {
+  if (isReadonly(ctx)) return
+
   const dblState = DoubleClickState.read(ctx)
   if (!dblState.snapshot) return
 

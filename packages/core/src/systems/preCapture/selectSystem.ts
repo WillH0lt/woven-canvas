@@ -31,7 +31,7 @@ import { isHeldByRemote } from '../../helpers/held'
 import { Controls } from '../../singletons/Controls'
 import { Grid } from '../../singletons/Grid'
 import { SelectionStateSingleton } from '../../singletons/SelectionStateSingleton'
-import { SelectionState } from '../../types'
+import { isReadonly, SelectionState } from '../../types'
 
 // Minimum pointer move distance to start dragging
 const POINTING_THRESHOLD = 4
@@ -433,6 +433,9 @@ const selectionMachine = setup({
  * - Selection box (marquee) for multi-select
  */
 export const selectSystem = defineEditorSystem({ phase: 'capture', priority: 100 }, (ctx) => {
+  // Readonly mode: no selection/drag/resize/rotate initiated by pointer input.
+  if (isReadonly(ctx)) return
+
   // Get pointer buttons mapped to 'select' tool
   let buttons = Controls.getButtons(ctx, 'select')
 

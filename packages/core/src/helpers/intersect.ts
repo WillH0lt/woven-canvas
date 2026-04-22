@@ -4,7 +4,7 @@ import { Aabb as AabbComp } from '../components/Aabb'
 import { Block } from '../components/Block'
 import { Frame } from '../components/Frame'
 import { HitGeometry } from '../components/HitGeometry'
-import { getBlockDef } from './blockDefs'
+import { canBlockInteract, getBlockDef } from './blockDefs'
 import { compareBlockOrder, type SortableBlock } from './sortBlocks'
 
 // Query for all blocks with Aabb
@@ -70,6 +70,11 @@ export function intersectPoint(ctx: Context, point: Vec2, entityIds?: Iterable<E
   const entities = entityIds ?? blocksWithAabb.current(ctx)
 
   for (const entityId of entities) {
+    // Skip non-interactable blocks — they exist in space (for ancestor frame
+    // clipping and drop targeting) but are never hit targets.
+    const block = Block.read(ctx, entityId)
+    if (!canBlockInteract(ctx, block.tag)) continue
+
     // Fast AABB rejection
     if (!AabbComp.containsPoint(ctx, entityId, point)) {
       continue
@@ -117,6 +122,11 @@ export function intersectAabb(ctx: Context, bounds: Aabb, entityIds?: Iterable<E
   const entities = entityIds ?? blocksWithAabb.current(ctx)
 
   for (const entityId of entities) {
+    // Skip non-interactable blocks — they exist in space (for ancestor frame
+    // clipping and drop targeting) but are never hit targets.
+    const block = Block.read(ctx, entityId)
+    if (!canBlockInteract(ctx, block.tag)) continue
+
     const { value: entityAabb } = AabbComp.read(ctx, entityId)
 
     // Fast AABB-AABB rejection

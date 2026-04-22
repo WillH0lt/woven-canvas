@@ -14,15 +14,22 @@ const props = withDefaults(
   }
 );
 
-const { nextEditorTick } = useEditorContext();
+const { nextEditorTick, getEditor } = useEditorContext();
 const { createImageBlock } = useImageCreation();
 const isDragging = ref(false);
 let dragCounter = 0;
+
+// Check via the editor since that's authoritative (vs. reading a prop that
+// might be stale during the runtime flip from editor → viewer).
+function isReadonlyNow(): boolean {
+  return getEditor()?.readonly === true;
+}
 
 // Get the container ref from WovenCanvas to listen for drag events on this specific canvas
 const containerRef = inject<{ value: HTMLElement | null }>("containerRef");
 
 function handleContainerDragEnter(e: DragEvent) {
+  if (isReadonlyNow()) return;
   // Only respond to drags with files or images
   if (e.dataTransfer?.types.some(t => t === "Files" || t === "text/uri-list" || t === "text/html")) {
     dragCounter++;
@@ -79,6 +86,7 @@ function handleDragLeave(e: DragEvent) {
 
 async function handleDrop(e: DragEvent) {
   e.preventDefault();
+  if (isReadonlyNow()) return;
 
   if (!e.dataTransfer) return;
 

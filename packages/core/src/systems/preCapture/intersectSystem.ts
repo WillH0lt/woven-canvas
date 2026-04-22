@@ -43,12 +43,18 @@ function clearHovered(ctx: Context): void {
  * Find the first valid entity to hover from the intersect list.
  * Returns undefined if the topmost synced entity is held by a remote user,
  * to prevent accidentally grabbing blocks underneath.
+ * Skips non-interactable blocks so they never receive Hovered.
  */
 function findValidHoverTarget(ctx: Context, intersected: number[]): number | undefined {
   for (const entityId of intersected) {
     // If the topmost synced entity is held by remote, don't hover anything
     // This prevents accidentally grabbing blocks underneath held blocks
     if (isHeldByRemote(ctx, entityId)) return undefined
+
+    if (hasComponent(ctx, entityId, Block)) {
+      const block = Block.read(ctx, entityId)
+      if (!canBlockInteract(ctx, block.tag)) continue
+    }
 
     return entityId
   }
@@ -144,13 +150,9 @@ export const intersectSystem = defineEditorSystem({ phase: 'capture', priority: 
   }
 
   for (const entityId of added) {
-    // Skip non-interactable blocks — without Aabb they are excluded from all intersection queries
-    if (hasComponent(ctx, entityId, Block)) {
-      const block = Block.read(ctx, entityId)
-      if (!canBlockInteract(ctx, block.tag)) continue
-    }
-
-    // Ensure block has Aabb component
+    // Ensure block has Aabb component. Non-interactable blocks still get an Aabb
+    // so they can serve as ancestor frames for clipping and as drop targets via
+    // findFrameAtPoint. Interaction policy is enforced at the intersect query level.
     if (!hasComponent(ctx, entityId, Aabb)) {
       addComponent(ctx, entityId, Aabb, { value: [0, 0, 0, 0] })
     }

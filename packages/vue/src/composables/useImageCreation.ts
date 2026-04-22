@@ -118,25 +118,18 @@ export function useImageCreation(): UseImageCreationReturn {
   }
 
   /**
-   * Upload the image file (runs in background, updates asset state).
+   * Upload the image file (runs in background). Asset.uploadState transitions
+   * are driven by WovenCanvas via AssetManager lifecycle events, so the caller
+   * doesn't need to patch state here — and neither do uploads that resume from
+   * IndexedDB on a later session.
    */
-  async function uploadImage(entityId: EntityId, identifier: string, file: File) {
+  function uploadImage(_entityId: EntityId, identifier: string, file: File) {
     const assetManager = canvasContext?.getAssetManager()
     if (!assetManager) return
 
-    try {
-      await assetManager.upload(identifier, file, {
-        filename: file.name,
-        mimeType: file.type,
-      })
-      const ctx = await nextEditorTick()
-      const asset = Asset.write(ctx, entityId)
-      asset.uploadState = UploadState.Complete
-    } catch {
-      const ctx = await nextEditorTick()
-      const asset = Asset.write(ctx, entityId)
-      asset.uploadState = UploadState.Failed
-    }
+    assetManager.upload(identifier, file, { filename: file.name, mimeType: file.type }).catch((err) => {
+      console.error('Asset upload failed:', err)
+    })
   }
 
   return {

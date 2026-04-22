@@ -2,6 +2,7 @@ import { Synced } from '@woven-ecs/canvas-store'
 import { type Context, defineQuery } from '@woven-ecs/core'
 import { Block } from '../../components'
 import { defineEditorSystem } from '../../EditorSystem'
+import { getBlockDef } from '../../helpers/blockDefs'
 import { RankBounds } from '../../singletons'
 
 // Query for blocks - tracks added blocks to sync their ranks
@@ -21,6 +22,10 @@ export const rankBoundsSystem = defineEditorSystem({ phase: 'input', priority: 1
   // Process newly added blocks
   for (const entityId of added) {
     const block = Block.read(ctx, entityId)
+
+    // Skip blocks whose blockDef opts out of rank bounds tracking
+    if (getBlockDef(ctx, block.tag).excludeFromRankBounds) continue
+
     if (block.rank === '') {
       const writableBlock = Block.write(ctx, entityId)
       writableBlock.rank = RankBounds.genNext(ctx)

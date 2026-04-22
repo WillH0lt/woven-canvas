@@ -5,10 +5,17 @@ import { getMyUserEntityId } from '../../helpers'
 import { Camera, Mouse } from '../../singletons'
 
 const pointerQuery = defineQuery((q) => q.tracking(Pointer))
+// Tracked query on the Camera singleton. `.changed()` returns the singleton
+// entity whenever any of its fields (left/top/zoom) mutates this frame — which
+// covers every camera move path: wheel, keyboard pan, hand-tool drag, and
+// programmatic camera moves.
+const cameraChangedQuery = defineQuery((q) => q.tracking(Camera))
 
 export const presenceSystem = defineEditorSystem({ phase: 'render', priority: -100 }, (ctx: Context) => {
-  // Update user position based on mouse input
-  if (Mouse.didMove(ctx)) {
+  // Update user position when the screen-space cursor moved, or when the
+  // camera moved (which changes the world-space projection of a stationary
+  // cursor). Both cases require a presence refresh for remote observers.
+  if (Mouse.didMove(ctx) || cameraChangedQuery.changed(ctx).length > 0) {
     const mouse = Mouse.read(ctx)
     updateUserPosition(ctx, mouse.position)
     return

@@ -49,12 +49,45 @@ export class AssetManager {
       reject: (error: Error) => void
     }
   >()
+  /** Lifecycle listeners — fire for every upload, including resumed ones. */
+  private startListeners = new Set<(identifier: string) => void>()
+  private completeListeners = new Set<(identifier: string) => void>()
+  private errorListeners = new Set<(identifier: string, error: Error) => void>()
 
   constructor(options: AssetManagerOptions) {
     this.provider = options.provider
     this.documentId = options.documentId
     this.maxRetries = options.provider.maxRetries ?? 3
     this.retryDelay = options.provider.retryDelay ?? 5000
+  }
+
+  /**
+   * Subscribe to upload lifecycle events. Returns an unsubscribe function.
+   *
+   * These fire for every provider.upload() attempt — first-time uploads, retries,
+   * and uploads resumed from IndexedDB on a later session. This makes them the
+   * single source of truth for upload-state transitions; consumers that wire
+   * into these events don't need to also await upload() to stay consistent.
+   */
+  onUploadStart(listener: (identifier: string) => void): () => void {
+    this.startListeners.add(listener)
+    return () => {
+      this.startListeners.delete(listener)
+    }
+  }
+
+  onUploadComplete(listener: (identifier: string) => void): () => void {
+    this.completeListeners.add(listener)
+    return () => {
+      this.completeListeners.delete(listener)
+    }
+  }
+
+  onUploadError(listener: (identifier: string, error: Error) => void): () => void {
+    this.errorListeners.add(listener)
+    return () => {
+      this.errorListeners.delete(listener)
+    }
   }
 
   /**
@@ -90,6 +123,13 @@ export class AssetManager {
       throw new Error('AssetManager not initialized')
     }
 
+    // Register the blob URL synchronously, before any awaits, so callers of
+    // getDisplayUrl() in the same tick see the local preview instead of
+    // falling through to provider.resolveUrl() (which for remote providers
+    // would hand back a URL that doesn't exist yet).
+    const blobUrl = URL.createObjectURL(blob)
+    this.blobUrls.set(identifier, blobUrl)
+
     // Store the binary
     await this.binariesStore.put(identifier, blob)
 
@@ -101,10 +141,6 @@ export class AssetManager {
       retryCount: 0,
     }
     await this.jobsStore.put(identifier, job)
-
-    // Create blob URL for immediate display
-    const blobUrl = URL.createObjectURL(blob)
-    this.blobUrls.set(identifier, blobUrl)
 
     // Return a promise that resolves when upload completes
     return new Promise<void>((resolve, reject) => {
@@ -133,7 +169,8 @@ export class AssetManager {
 
     // Resolve through the provider (handles HTTP URLs, local paths, UUIDs, etc.)
     try {
-      return await this.provider.resolveUrl(identifier)
+      const resolved = await this.provider.resolveUrl(identifier)
+      return resolved
     } catch (error) {
       console.error(`Failed to resolve URL for ${identifier}:`, error)
       return null
@@ -238,17 +275,19 @@ export class AssetManager {
       return
     }
 
+    for (const listener of this.startListeners) listener(identifier)
+
     try {
       await this.provider.upload(blob, identifier, job.metadata)
 
       // Upload succeeded
-      await this.onUploadSuccess(identifier)
+      await this.handleUploadSuccess(identifier)
     } catch (error) {
-      await this.onUploadError(identifier, job, error)
+      await this.handleUploadError(identifier, job, error)
     }
   }
 
-  private async onUploadSuccess(identifier: string): Promise<void> {
+  private async handleUploadSuccess(identifier: string): Promise<void> {
     if (!this.jobsStore || !this.binariesStore) return
 
     // Clean up blob URL
@@ -264,6 +303,8 @@ export class AssetManager {
 
     this.uploading.delete(identifier)
 
+    for (const listener of this.completeListeners) listener(identifier)
+
     // Resolve the promise
     const pending = this.uploadPromises.get(identifier)
     if (pending) {
@@ -272,7 +313,7 @@ export class AssetManager {
     }
   }
 
-  private async onUploadError(identifier: string, job: UploadJob, error: unknown): Promise<void> {
+  private async handleUploadError(identifier: string, job: UploadJob, error: unknown): Promise<void> {
     if (!this.jobsStore) return
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -295,10 +336,13 @@ export class AssetManager {
         this.retryDelay * 2 ** job.retryCount,
       ) // Exponential backoff
     } else {
-      // Max retries exceeded, reject the promise
+      // Max retries exceeded
+      const finalError = error instanceof Error ? error : new Error(errorMessage)
+      for (const listener of this.errorListeners) listener(identifier, finalError)
+
       const pending = this.uploadPromises.get(identifier)
       if (pending) {
-        pending.reject(new Error(errorMessage))
+        pending.reject(finalError)
         this.uploadPromises.delete(identifier)
       }
     }

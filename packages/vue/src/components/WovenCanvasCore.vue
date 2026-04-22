@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, shallowRef, provide, type Ref } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, shallowRef, provide, watch, type Ref } from 'vue'
 import {
   Editor,
   Camera,
+  Asset,
   Block,
   Connector,
   Hovered,
   Edited,
   Opacity,
   User,
+  UploadState,
   type ControlsOptionsInput,
   UserData as UserDataZod,
   EventType,
@@ -28,6 +30,7 @@ import {
   type InferCanvasComponentType,
   type Context,
   Selected,
+  Frame,
 } from '@woven-canvas/core'
 import { CanvasStore, type CanvasStoreOptions, type ComponentData } from '@woven-ecs/canvas-store'
 import { AssetManager, LocalAssetProvider, type AssetProvider } from '@woven-canvas/asset-sync'
@@ -72,6 +75,7 @@ import LoadingOverlay from './LoadingOverlay.vue'
 
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block))
+const assetQuery = defineQuery((q) => q.with(Asset))
 const connectorQuery = defineQuery((q) => q.with(Block).tracking(Connector))
 const selectedQuery = defineQuery((q) => q.with(Block).tracking(Selected))
 const heldQuery = defineQuery((q) => q.with(Block).tracking(Held))
@@ -527,6 +531,27 @@ onMounted(async () => {
 
   // Initialize asset manager (created during setup for SSR availability)
   await assetManager?.init()
+
+  // Drive Asset.uploadState from AssetManager lifecycle events. This fires for
+  // every upload attempt — first-time, retry, and crucially any upload resumed
+  // from IndexedDB on this mount — so callers don't need to flip uploadState
+  // themselves and resumed jobs correctly transition to Complete/Failed.
+  if (assetManager) {
+    const patchByIdentifier = (identifier: string, uploadState: (typeof UploadState)[keyof typeof UploadState]) => {
+      editor.nextTick((ctx) => {
+        for (const entityId of assetQuery.current(ctx)) {
+          if (Asset.read(ctx, entityId).identifier === identifier) {
+            Asset.patch(ctx, entityId, { uploadState })
+            return
+          }
+        }
+      })
+    }
+    assetManager.onUploadStart((id) => patchByIdentifier(id, UploadState.Uploading))
+    assetManager.onUploadComplete((id) => patchByIdentifier(id, UploadState.Complete))
+    assetManager.onUploadError((id) => patchByIdentifier(id, UploadState.Failed))
+  }
+
   await assetManager?.resumePendingUploads()
 
   // Start the render loop
@@ -541,6 +566,15 @@ onMounted(async () => {
   // Emit ready event with editor instance
   emit('ready', editorRef.value!, store!)
 })
+
+// Runtime readonly toggle — permissions can change across a session (role
+// switch, share revoke, etc.) without remounting the canvas.
+watch(
+  () => props.editor?.readonly,
+  (next) => {
+    editorRef.value?.setReadonly(!!next)
+  },
+)
 
 onUnmounted(() => {
   if (animationFrameId !== null) {
@@ -842,10 +876,17 @@ function resolveWorldPosition(data: BlockData): [number, number] {
   return [x, y]
 }
 
+/** Check whether a block tag's definition includes the Frame component. */
+function blockDefHasFrame(tag: string): boolean {
+  const def = editorRef.value?.blockDefs[tag]
+  return def?.components?.some((c: AnyCanvasComponentDef) => c === Frame) ?? false
+}
+
 /**
  * Walk up the parent chain and compute the intersection of all ancestor
- * frame bounds in world space. Returns [left, top, right, bottom] or null if
- * no clipping is needed.
+ * frame bounds in world space. Only ancestors whose blockDef includes the
+ * Frame component contribute clipping. Returns [left, top, right, bottom]
+ * or null if no clipping is needed.
  */
 function getAncestorClipBounds(data: BlockData): [number, number, number, number] | null {
   let cl = -Infinity
@@ -855,19 +896,21 @@ function getAncestorClipBounds(data: BlockData): [number, number, number, number
 
   let currentParentId = data.block.parentId
   while (currentParentId !== null) {
-    const frameRef = blockMap.get(currentParentId)
-    if (!frameRef) break
+    const parentRef = blockMap.get(currentParentId)
+    if (!parentRef) break
 
-    const frame = frameRef.value.block
-    // Resolve frame's world position by walking its own parent chain
-    const frameWorldPos = resolveWorldPosition(frameRef.value)
-    cl = Math.max(cl, frameWorldPos[0])
-    ct = Math.max(ct, frameWorldPos[1])
-    cr = Math.min(cr, frameWorldPos[0] + frame.size[0])
-    cb = Math.min(cb, frameWorldPos[1] + frame.size[1])
+    // Only clip against ancestors that are frames
+    if (blockDefHasFrame(parentRef.value.block.tag)) {
+      const frame = parentRef.value.block
+      const frameWorldPos = resolveWorldPosition(parentRef.value)
+      cl = Math.max(cl, frameWorldPos[0])
+      ct = Math.max(ct, frameWorldPos[1])
+      cr = Math.min(cr, frameWorldPos[0] + frame.size[0])
+      cb = Math.min(cb, frameWorldPos[1] + frame.size[1])
+    }
 
-    // Walk up to the frame's parent
-    currentParentId = frame.parentId
+    // Walk up to the parent's parent
+    currentParentId = parentRef.value.block.parentId
   }
 
   if (cl === -Infinity) return null

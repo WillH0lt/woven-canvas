@@ -18,6 +18,7 @@ export function createTooltipContext(): TooltipContext {
 
   let hoverTimer: ReturnType<typeof setTimeout> | null = null
   let warmupTimer: ReturnType<typeof setTimeout> | null = null
+  let anchorObserver: MutationObserver | null = null
 
   function clearTimers() {
     if (hoverTimer) {
@@ -30,6 +31,25 @@ export function createTooltipContext(): TooltipContext {
     }
   }
 
+  function stopAnchorObserver() {
+    if (anchorObserver) {
+      anchorObserver.disconnect()
+      anchorObserver = null
+    }
+  }
+
+  // Watch for the anchor being removed from the document so the tooltip
+  // never lingers pointing at a detached element (e.g. when the button
+  // that triggered it unmounts while hovered).
+  function watchAnchor(anchor: HTMLElement) {
+    stopAnchorObserver()
+    if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') return
+    anchorObserver = new MutationObserver(() => {
+      if (!anchor.isConnected) reset()
+    })
+    anchorObserver.observe(document.body, { childList: true, subtree: true })
+  }
+
   /**
    * Shows a tooltip for the given element after the hover delay.
    * If already warmed up, shows immediately.
@@ -38,6 +58,7 @@ export function createTooltipContext(): TooltipContext {
     clearTimers()
 
     activeTooltip.value = { text, anchor }
+    watchAnchor(anchor)
 
     if (isWarmedUp.value) {
       // Already warmed up, show immediately
@@ -57,6 +78,7 @@ export function createTooltipContext(): TooltipContext {
    */
   function hide() {
     clearTimers()
+    stopAnchorObserver()
     isVisible.value = false
     activeTooltip.value = null
 
@@ -74,6 +96,7 @@ export function createTooltipContext(): TooltipContext {
    */
   function reset() {
     clearTimers()
+    stopAnchorObserver()
     isVisible.value = false
     activeTooltip.value = null
     isWarmedUp.value = false

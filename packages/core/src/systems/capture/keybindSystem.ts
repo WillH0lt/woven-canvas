@@ -2,7 +2,7 @@ import { addComponent, type Context, createEntity, getResources } from '@woven-e
 import { CommandMarker } from '../../command'
 import { defineEditorSystem } from '../../EditorSystem'
 import { Keyboard } from '../../singletons'
-import type { EditorResources } from '../../types'
+import { type EditorResources, isReadonly } from '../../types'
 
 /**
  * Keybind capture system - handles keybind-to-command mapping.
@@ -11,6 +11,9 @@ import type { EditorResources } from '../../types'
  * the plugin's keybind configuration.
  */
 export const keybindSystem = defineEditorSystem({ phase: 'capture' }, (ctx: Context) => {
+  // Readonly mode: keyboard shortcuts don't fire commands.
+  if (isReadonly(ctx)) return
+
   const keyboard = Keyboard.read(ctx)
   const { editor } = getResources<EditorResources>(ctx)
 

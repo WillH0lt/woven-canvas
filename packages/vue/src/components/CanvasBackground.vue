@@ -147,7 +147,7 @@ function createGridPattern(
         0,
         posX,
         height,
-        isStrongLine ? 3 * lineSize : lineSize
+        isStrongLine ? 2 * lineSize : lineSize
       );
     }
 
@@ -160,7 +160,7 @@ function createGridPattern(
         posY,
         width,
         posY,
-        isStrongLine ? 3 * lineSize : lineSize
+        isStrongLine ? 2 * lineSize : lineSize
       );
     }
   }

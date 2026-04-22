@@ -15,6 +15,7 @@ import {
   getPointerInput,
   getResources,
   Held,
+  isReadonly,
   PointerButton,
   SelectionState,
   SelectionStateSingleton,
@@ -125,6 +126,8 @@ function squashUndoHistory(ctx: Context): void {
  * - The selectSystem handles subsequent dragging and pointerUp (selecting)
  */
 export const blockPlacementSystem = defineEditorSystem({ phase: 'capture' }, (ctx: Context) => {
+  if (isReadonly(ctx)) return
+
   // Squash undo history when editing ends
   if (editedQuery.removed(ctx).length > 0 && editedQuery.current(ctx).length === 0) {
     squashUndoHistory(ctx)

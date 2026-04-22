@@ -43,7 +43,7 @@ const text = useComponent(props.entityId, Text)
 const camera = useSingleton(Camera)
 const screen = useSingleton(Screen)
 const textEditorController = useTextEditorController()
-const { nextEditorTick } = useEditorContext()
+const { nextEditorTick, getEditor } = useEditorContext()
 const mouse = useSingleton(Mouse)
 
 // Template ref for measuring text dimensions
@@ -143,6 +143,8 @@ function handlePaste(_view: unknown, event: ClipboardEvent): boolean {
 }
 
 function createEditor(): Editor {
+  const readonly = getEditor()?.readonly === true
+
   return new Editor({
     extensions: [
       Document,
@@ -168,7 +170,7 @@ function createEditor(): Editor {
       UndoRedo,
     ],
     content: text.value?.content ?? '',
-    editable: true,
+    editable: !readonly,
     parseOptions: {
       preserveWhitespace: true,
     },
