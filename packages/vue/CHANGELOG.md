@@ -1,5 +1,14 @@
 # @woven-canvas/vue
 
+## 1.0.12
+
+### Patch Changes
+
+- 7fb6351: readonly state and bug fixes
+- Updated dependencies [7fb6351]
+  - @woven-canvas/asset-sync@1.0.5
+  - @woven-canvas/core@1.0.6
+
 ## 1.0.11
 
 ### Patch Changes
