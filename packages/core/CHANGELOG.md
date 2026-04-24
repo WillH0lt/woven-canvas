@@ -1,5 +1,11 @@
 # @woven-canvas/core
 
+## 1.0.6
+
+### Patch Changes
+
+- 7fb6351: readonly state and bug fixes
+
 ## 1.0.5
 
 ### Patch Changes
