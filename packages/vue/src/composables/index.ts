@@ -32,4 +32,4 @@ export {
   useTextStretchBehavior,
 } from './useTextStretchBehavior'
 export { useToolbar } from './useToolbar'
-export { createTooltipContext, type TooltipState, useTooltipSingleton } from './useTooltipSingleton'
+export { type TooltipState, useTooltipSingleton } from './useTooltipSingleton'

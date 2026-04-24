@@ -5,7 +5,6 @@ import { useElementSize } from "@vueuse/core";
 import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
 
 import ActionBar from "./ActionBar.vue";
-import MenuTooltip from "./buttons/MenuTooltip.vue";
 import SelectTool from "./tools/SelectTool.vue";
 import HandTool from "./tools/HandTool.vue";
 import StickyNoteTool from "./tools/StickyNoteTool.vue";
@@ -317,8 +316,6 @@ provide(TOOLBAR_KEY, toolbarContext);
         </svg>
       </button>
 
-      <!-- Singleton tooltip rendered once for all toolbar items -->
-      <MenuTooltip />
     </div>
 
     <!-- Overflow menu -->

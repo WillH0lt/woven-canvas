@@ -128,10 +128,7 @@ export {
   useTextStretchBehavior,
 } from './composables/useTextStretchBehavior'
 export { useToolbar } from './composables/useToolbar'
-export {
-  createTooltipContext,
-  useTooltipSingleton,
-} from './composables/useTooltipSingleton'
+export { useTooltipSingleton } from './composables/useTooltipSingleton'
 export { EDITING_PLUGIN_NAME } from './constants'
 export { CURSORS, CursorKind } from './cursors'
 export { EditingPlugin, type EditingPluginOptions, type EditingPluginResources } from './EditingPlugin'

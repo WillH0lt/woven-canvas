@@ -52,6 +52,9 @@ vi.mock('@woven-canvas/asset-sync', () => {
     init = vi.fn().mockResolvedValue(undefined)
     resumePendingUploads = vi.fn().mockResolvedValue(undefined)
     close = vi.fn()
+    onUploadStart = vi.fn(() => () => {})
+    onUploadComplete = vi.fn(() => () => {})
+    onUploadError = vi.fn(() => () => {})
   }
   class MockLocalAssetProvider {}
   return {

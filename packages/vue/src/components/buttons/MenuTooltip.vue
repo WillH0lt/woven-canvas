@@ -1,31 +1,36 @@
 <script setup lang="ts">
-import { ref, computed, watch, inject, type Ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useFloating, offset, flip, shift } from '@floating-ui/vue'
-import { useTooltipSingleton } from '../../composables/useTooltipSingleton'
+import { mountedTooltipInstances, useTooltipSingleton } from '../../composables/useTooltipSingleton'
 
 const { activeTooltip, isVisible } = useTooltipSingleton()
 
-// Get container ref from WovenCanvas for teleport
-const containerRef = inject<Ref<HTMLElement | null>>('containerRef')
-
-// Tooltip element ref
 const tooltipRef = ref<HTMLElement | null>(null)
-
-// Virtual reference element that tracks the anchor
 const anchorRef = computed(() => activeTooltip.value?.anchor ?? null)
 
-// Use floating-ui for positioning
 const { floatingStyles } = useFloating(anchorRef, tooltipRef, {
   placement: 'top',
   middleware: [offset(8), flip({ fallbackPlacements: ['bottom'] }), shift({ padding: 8 })],
 })
 
-// Track if tooltip should be displayed (combines visibility state with having content)
-const shouldShow = computed(() => isVisible.value && activeTooltip.value?.text)
+// Only the first-mounted MenuTooltip renders. Pages with multiple WovenCanvas
+// instances would otherwise produce duplicate tooltip DOM nodes.
+const instanceId = Symbol('menu-tooltip')
+const isPrimary = computed(() => mountedTooltipInstances.value[0] === instanceId)
+
+onMounted(() => {
+  mountedTooltipInstances.value.push(instanceId)
+})
+
+onUnmounted(() => {
+  mountedTooltipInstances.value = mountedTooltipInstances.value.filter((id) => id !== instanceId)
+})
+
+const shouldShow = computed(() => isPrimary.value && isVisible.value && activeTooltip.value?.text)
 </script>
 
 <template>
-  <Teleport v-if="containerRef" :to="containerRef">
+  <Teleport to="body">
     <Transition name="wov-tooltip-fade">
       <div
         v-if="shouldShow"
@@ -40,16 +45,19 @@ const shouldShow = computed(() => isVisible.value && activeTooltip.value?.text)
 </template>
 
 <style>
+/* Fallbacks are required because the tooltip is teleported to <body>, which
+   sits outside `.wov-root` where the theme vars are defined. */
 .wov-menu-tooltip {
   position: absolute;
-  z-index: var(--wov-z-tooltip);
+  z-index: var(--wov-z-tooltip, 1002);
   width: max-content;
-  background: var(--wov-gray-700);
-  color: var(--wov-gray-100);
+  background: var(--wov-gray-700, #060607);
+  color: var(--wov-gray-100, #f8f9f9);
+  font-family: var(--wov-font-family, "Figtree", sans-serif);
   font-weight: bold;
   padding: 5px 10px;
-  border-radius: var(--wov-menu-tooltip-border-radius);
-  font-size: 70%;
+  border-radius: var(--wov-menu-tooltip-border-radius, 6px);
+  font-size: 12px;
   pointer-events: none;
 }
 

@@ -40,8 +40,7 @@ import { createPenPlugin } from '@woven-canvas/plugin-pen'
 import { createArrowsPlugin, type ArrowsPluginOptions } from '@woven-canvas/plugin-arrows'
 import { createTapesPlugin } from '@woven-canvas/plugin-tapes'
 
-import { WOVEN_CANVAS_KEY, TOOLTIP_KEY, type WovenCanvasContext, type UserData } from '../injection'
-import { createTooltipContext } from '../composables/useTooltipSingleton'
+import { WOVEN_CANVAS_KEY, type WovenCanvasContext, type UserData } from '../injection'
 import SelectionBox from './blocks/SelectionBox.vue'
 import TransformBox from './blocks/TransformBox.vue'
 import TransformHandle from './blocks/TransformHandle.vue'
@@ -65,6 +64,7 @@ import { useKeyboardAvoidance } from '../composables/useKeyboardAvoidance'
 import type { BlockData, BackgroundOptions } from '../types'
 import FileDropZone from './FileDropZone.vue'
 import ClipboardHandler from './ClipboardHandler.vue'
+import MenuTooltip from './buttons/MenuTooltip.vue'
 import UserPresence from './UserPresence.vue'
 import UserCursors from './UserCursors.vue'
 import OfflineIndicator from './OfflineIndicator.vue'
@@ -342,10 +342,6 @@ provide(WOVEN_CANVAS_KEY, canvasContext)
 // Provide container ref for FloatingMenu positioning
 provide('containerRef', containerRef)
 
-// Provide tooltip context for per-instance tooltip state
-const tooltipContext = createTooltipContext()
-provide(TOOLTIP_KEY, tooltipContext)
-
 // Pan camera to keep edited blocks visible when mobile keyboard opens
 useKeyboardAvoidance((cb) => {
   editorRef.value?.nextTick(cb)
@@ -566,15 +562,6 @@ onMounted(async () => {
   // Emit ready event with editor instance
   emit('ready', editorRef.value!, store!)
 })
-
-// Runtime readonly toggle — permissions can change across a session (role
-// switch, share revoke, etc.) without remounting the canvas.
-watch(
-  () => props.editor?.readonly,
-  (next) => {
-    editorRef.value?.setReadonly(!!next)
-  },
-)
 
 onUnmounted(() => {
   if (animationFrameId !== null) {
@@ -1151,6 +1138,11 @@ function getBlockStyle(data: BlockData) {
 
     <!-- Clipboard handler (copy, cut, paste) -->
     <ClipboardHandler v-if="editorRef" :options="props.copyPaste" />
+
+    <!-- App-wide tooltip host. Teleports to <body>, driven by the module-level
+         tooltip singleton, so it renders tooltips for any button on the page —
+         inside the canvas or outside. No need for consumers to mount anything. -->
+    <MenuTooltip />
   </div>
 </template>
 

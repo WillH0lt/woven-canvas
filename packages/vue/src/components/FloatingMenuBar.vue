@@ -5,7 +5,6 @@ import ColorButton from "./buttons/ColorButton.vue";
 import PenStrokeThicknessButton from "./buttons/PenStrokeThicknessButton.vue";
 import ArrowThicknessButton from "./buttons/ArrowThicknessButton.vue";
 import ArrowHeadButton from "./buttons/ArrowHeadButton.vue";
-import MenuTooltip from "./buttons/MenuTooltip.vue";
 import TapeImageButton from "./buttons/TapeImageButton.vue";
 import TextButtonGroup from "./buttons/text/TextButtonGroup.vue";
 import ShapeKindButton from "./buttons/ShapeKindButton.vue";
@@ -116,8 +115,6 @@ onUnmounted(() => {
       </slot>
     </template>
 
-    <!-- Singleton tooltip rendered once for all menu items -->
-    <MenuTooltip />
   </div>
 </template>
 
