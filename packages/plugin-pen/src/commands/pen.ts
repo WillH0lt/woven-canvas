@@ -8,7 +8,6 @@ import type { Vec2 } from '@woven-canvas/math'
 export const StartPenStroke = defineCommand<{
   worldPosition: Vec2
   pressure: number | null
-  thickness: number
 }>('start-pen-stroke')
 
 /**

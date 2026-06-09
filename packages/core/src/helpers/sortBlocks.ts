@@ -65,7 +65,6 @@ export function compareBlockOrder(
   a: SortableBlock,
   b: SortableBlock,
 ): number {
-  // Sort by stratum first (background < content < overlay)
   const stratumDiff = STRATUM_ORDER[a.stratum] - STRATUM_ORDER[b.stratum]
   if (stratumDiff !== 0) return stratumDiff
 

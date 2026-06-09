@@ -110,6 +110,7 @@ blockDefs: [
     resizeMode: ResizeMode.Free, // Free transform resizing
     canRotate: true, // Allow rotation
     canScale: true, // Allow scaling
+    snappable: true, // Snap to grid when dragged/rotated
     stratum: "content", // 'background', 'content', or 'overlay'
     components: [HslColor, Potion], // Additional components for this block type
     connectors: { enabled: true }, // Arrow connection support
@@ -125,6 +126,7 @@ blockDefs: [
 | `resizeMode` | `ResizeMode` | `ResizeMode.Scale`  | `Scale` (maintain aspect), `Free` (stretch) |
 | `canRotate`  | `boolean`    | `true`              | Allow rotation                              |
 | `canScale`   | `boolean`    | `true`              | Allow scaling                               |
+| `snappable`  | `boolean`    | `true`              | Allow snapping                              |
 | `stratum`    | `string`     | `'content'`         | Render layer                                |
 | `components` | `array`      | `[]`                | Components added to new blocks              |
 | `connectors` | `object`     | `{ enabled: true }` | Arrow connection config                     |

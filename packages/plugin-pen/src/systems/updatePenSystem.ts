@@ -2,6 +2,7 @@ import {
   Aabb,
   addComponent,
   Block,
+  Camera,
   Color,
   type Context,
   createEntity,
@@ -15,6 +16,7 @@ import {
   HitGeometry,
   hasComponent,
   MAX_HIT_CAPSULES,
+  MAX_HIT_POLYGON_POINTS,
   on,
   RankBounds,
   removeComponent,
@@ -22,13 +24,28 @@ import {
   Synced,
 } from '@woven-canvas/core'
 import { Aabb as AabbNs, Vec2 } from '@woven-canvas/math'
-import simplify from 'simplify-js'
 
 import { AddPenStrokePoint, CompletePenStroke, RemovePenStroke, StartPenStroke } from '../commands'
 import { PenStroke, POINTS_CAPACITY } from '../components'
-import { PenStateSingleton } from '../singletons'
+import { PenPresetSingleton, PenStateSingleton } from '../singletons'
+import { PenStrokeKind } from '../types'
 
 const penStrokesQuery = defineQuery((q) => q.tracking(PenStroke))
+
+/**
+ * Live point-simplification tuning, expressed in *screen pixels* and divided by
+ * the camera zoom at sample time so perceived fidelity is constant at any zoom.
+ *
+ * The simplifier is an online Reumann–Witkam "sleeve": every pointer move
+ * overwrites a single provisional tail point so the stroke tip always tracks the
+ * cursor exactly (fully responsive), and a point is only committed to the buffer
+ * when the cursor leaves a tolerance corridor around the current direction. A
+ * straight drag therefore stores 2 points; curves store points proportional to
+ * their curvature.
+ */
+const SIMPLIFY_TOLERANCE_PX = 0.75
+/** Minimum travel from the anchor before a sleeve direction is trusted (px). */
+const MIN_DIRECTION_DISTANCE_PX = 4
 
 /**
  * Update pen system - handles pen commands and stroke management.
@@ -40,8 +57,8 @@ const penStrokesQuery = defineQuery((q) => q.tracking(PenStroke))
  * - RemovePenStroke: Delete stroke entity
  */
 export const updatePenSystem = defineEditorSystem({ phase: 'update' }, (ctx: Context) => {
-  on(ctx, StartPenStroke, (ctx, { worldPosition, pressure, thickness }) => {
-    startStroke(ctx, worldPosition, pressure, thickness)
+  on(ctx, StartPenStroke, (ctx, { worldPosition, pressure }) => {
+    startStroke(ctx, worldPosition, pressure)
   })
 
   on(ctx, AddPenStrokePoint, (ctx, { strokeId, worldPosition, pressure }) => {
@@ -67,7 +84,12 @@ export const updatePenSystem = defineEditorSystem({ phase: 'update' }, (ctx: Con
 /**
  * Start a new pen stroke at the given position.
  */
-function startStroke(ctx: Context, position: [number, number], pressure: number | null, thickness: number): void {
+function startStroke(ctx: Context, position: [number, number], pressure: number | null): void {
+  // Brush thickness and color are read from the live PenPresetSingleton so
+  // consumers can drive them from UI (slider, color picker) without having
+  // to plumb the values through commands.
+  const preset = PenPresetSingleton.read(ctx)
+  const { thickness, kind } = preset
   const radius = thickness / 2
 
   // Create stroke entity
@@ -86,8 +108,13 @@ function startStroke(ctx: Context, position: [number, number], pressure: number 
     size: [radius * 2, radius * 2],
   })
 
-  // Add Color component for stroke color
-  addComponent(ctx, strokeId, Color, {})
+  // Add Color component populated from the preset.
+  addComponent(ctx, strokeId, Color, {
+    red: preset.red,
+    green: preset.green,
+    blue: preset.blue,
+    alpha: preset.alpha,
+  })
 
   // Add Held component to indicate this stroke is being drawn
   const { sessionId } = getResources<EditorResources>(ctx)
@@ -108,6 +135,7 @@ function startStroke(ctx: Context, position: [number, number], pressure: number 
     originalHeight: radius * 2,
     isComplete: false,
     hasPressure,
+    kind,
   })
 
   // Assign to frame if the stroke starts on one
@@ -123,51 +151,139 @@ function startStroke(ctx: Context, position: [number, number], pressure: number 
   const state = PenStateSingleton.write(ctx)
   state.activeStroke = strokeId
   state.lastWorldPosition = position
+  // Reset the simplifier's sleeve — direction is re-established on the first moves.
+  state.sleeveDir = [0, 0]
 }
 
 /**
- * Add a point to the active pen stroke.
+ * Add a point to the active pen stroke, applying live simplification.
+ *
+ * The last slot in the points buffer is always a *provisional tail*: it is
+ * rewritten to the live cursor on every move so the stroke tip stays glued to
+ * the pointer. A point is only permanently committed (the tail is "frozen" and a
+ * fresh tail appended) when the cursor leaves the sleeve corridor around the
+ * current drawing direction — i.e. at genuine bends. This keeps long straight
+ * runs down to two points while preserving curvature, with no perceptible lag.
+ *
+ * See {@link SIMPLIFY_TOLERANCE_PX} for the algorithm overview.
  */
 function addStrokePoint(ctx: Context, strokeId: EntityId, point: [number, number], pressure: number | null): void {
   const stroke = PenStroke.write(ctx, strokeId)
+  const count = stroke.pointCount
+  const px = point[0]
+  const py = point[1]
+  const pr = pressure !== null ? pressure : 0.5
 
-  const nextIndex = stroke.pointCount
+  // The point buffer is full: the stroke can grow no further. Finalize it (once)
+  // and stop accepting points, rather than endlessly sliding the provisional
+  // tail. Clearing activeStroke makes the capture machine stop feeding points
+  // and prevents pointerUp from completing the stroke a second time.
+  if (count >= POINTS_CAPACITY) {
+    if (!stroke.isComplete) {
+      completeStroke(ctx, strokeId)
+      PenStateSingleton.write(ctx).activeStroke = null
+    }
+    return
+  }
 
-  // Check if we've exceeded capacity
-  if (nextIndex >= POINTS_CAPACITY) return
+  // Tolerances in world units: a fixed screen-pixel budget scaled by zoom.
+  const zoom = Camera.read(ctx).zoom || 1
+  const tolerance = SIMPLIFY_TOLERANCE_PX / zoom
+  const minDirectionDistance = MIN_DIRECTION_DISTANCE_PX / zoom
 
-  // Add point to buffer
-  stroke.points[nextIndex * 2] = point[0]
-  stroke.points[nextIndex * 2 + 1] = point[1]
+  // First move after StartPenStroke: seed the provisional tail (index 1).
+  if (count === 1) {
+    writePoint(stroke, count, px, py, pr)
+    stroke.pointCount = count + 1
+    expandBoundsToPoint(ctx, strokeId, stroke, point)
+    return
+  }
 
-  // Add pressure (use 0.5 as default if no pressure data)
-  if (pressure !== null) {
-    stroke.pressures[nextIndex] = pressure
+  const state = PenStateSingleton.write(ctx)
+  const dir = state.sleeveDir
+  const tailIdx = count - 1
+  const ax = stroke.points[(count - 2) * 2]
+  const ay = stroke.points[(count - 2) * 2 + 1]
+
+  if (dir[0] === 0 && dir[1] === 0) {
+    // No trusted direction yet (stroke start, or just after a commit). Keep the
+    // tail on the cursor and adopt a direction once we've travelled far enough
+    // for it to be stable against jitter.
+    writePoint(stroke, tailIdx, px, py, pr)
+    const dx = px - ax
+    const dy = py - ay
+    const len = Math.hypot(dx, dy)
+    if (len >= minDirectionDistance) {
+      state.sleeveDir = [dx / len, dy / len]
+    }
+    expandBoundsToPoint(ctx, strokeId, stroke, point)
+    return
+  }
+
+  // Perpendicular distance of the live sample from the sleeve line (anchor + dir).
+  // `dir` is a unit vector, so the 2D cross product magnitude is the distance.
+  const ux = px - ax
+  const uy = py - ay
+  const perpendicular = Math.abs(ux * dir[1] - uy * dir[0])
+
+  if (perpendicular >= tolerance) {
+    // The cursor left the sleeve: the current tail is a real vertex. Freeze it
+    // by appending a fresh tail at the new sample. The frozen tail becomes the
+    // new anchor; clear the direction so it re-establishes from there.
+    writePoint(stroke, count, px, py, pr)
+    stroke.pointCount = count + 1
+    state.sleeveDir = [0, 0]
   } else {
-    stroke.pressures[nextIndex] = 0.5
+    // Still within the corridor: slide the tail to the cursor.
+    writePoint(stroke, tailIdx, px, py, pr)
   }
 
-  stroke.pointCount++
+  expandBoundsToPoint(ctx, strokeId, stroke, point)
+}
 
-  // Update bounds if point is outside current Aabb
-  if (!Aabb.containsPoint(ctx, strokeId, point)) {
-    Aabb.expandByPoint(ctx, strokeId, point)
+/**
+ * Write a point + pressure into the stroke buffers at the given point index.
+ */
+function writePoint(
+  stroke: ReturnType<typeof PenStroke.write>,
+  index: number,
+  x: number,
+  y: number,
+  pressure: number,
+): void {
+  stroke.points[index * 2] = x
+  stroke.points[index * 2 + 1] = y
+  stroke.pressures[index] = pressure
+}
 
-    // Update block to match the expanded Aabb
-    const { value: aabb } = Aabb.read(ctx, strokeId)
-    const worldLeft = AabbNs.left(aabb)
-    const worldTop = AabbNs.top(aabb)
-    const block = Block.write(ctx, strokeId)
-    Vec2.set(block.size, AabbNs.width(aabb), AabbNs.height(aabb))
-    Block.setWorldPosition(ctx, strokeId, [worldLeft, worldTop])
+/**
+ * Expand the stroke's Aabb (and the dependent Block bounds + original bounds used
+ * for affine transforms) to include `point`, if it falls outside the current box.
+ */
+function expandBoundsToPoint(
+  ctx: Context,
+  strokeId: EntityId,
+  stroke: ReturnType<typeof PenStroke.write>,
+  point: [number, number],
+): void {
+  if (Aabb.containsPoint(ctx, strokeId, point)) return
 
-    // Update original bounds for affine transform calculations
-    // These must be world-space since stroke.points are world-space
-    stroke.originalLeft = worldLeft
-    stroke.originalTop = worldTop
-    stroke.originalWidth = block.size[0]
-    stroke.originalHeight = block.size[1]
-  }
+  Aabb.expandByPoint(ctx, strokeId, point)
+
+  // Update block to match the expanded Aabb
+  const { value: aabb } = Aabb.read(ctx, strokeId)
+  const worldLeft = AabbNs.left(aabb)
+  const worldTop = AabbNs.top(aabb)
+  const block = Block.write(ctx, strokeId)
+  Vec2.set(block.size, AabbNs.width(aabb), AabbNs.height(aabb))
+  Block.setWorldPosition(ctx, strokeId, [worldLeft, worldTop])
+
+  // Update original bounds for affine transform calculations.
+  // These must be world-space since stroke.points are world-space.
+  stroke.originalLeft = worldLeft
+  stroke.originalTop = worldTop
+  stroke.originalWidth = block.size[0]
+  stroke.originalHeight = block.size[1]
 }
 
 /**
@@ -194,34 +310,25 @@ function removeStroke(ctx: Context, strokeId: EntityId): void {
 /**
  * Generate hit geometry for the completed stroke.
  *
- * Simplifies the stroke points and creates capsules for collision detection.
- * Iteratively increases tolerance until the result fits within MAX_HIT_CAPSULES.
+ * For a `Stroke` (ink ribbon) we lay capsules along the path. For a `Fill` we
+ * store the outline as a closed even-odd polygon so the hit region matches the
+ * rendered fill (including spiral-style holes).
+ *
+ * The stroke points are already economical thanks to live simplification while
+ * drawing, so they are used directly — no extra RDP pass. The only reduction is
+ * a uniform stride subsample, applied solely as a safety net when an unusually
+ * detailed stroke would overflow the fixed capsule/polygon capacities.
  */
 function generateHitGeometry(ctx: Context, strokeId: EntityId): void {
   const stroke = PenStroke.read(ctx, strokeId)
 
-  // Build array of points for simplification
+  // Build array of points from the (already simplified) stroke buffer.
   const points: { x: number; y: number }[] = []
   for (let i = 0; i < stroke.pointCount; i++) {
     points.push({
       x: stroke.points[i * 2],
       y: stroke.points[i * 2 + 1],
     })
-  }
-
-  // Simplify points, doubling tolerance until we fit within MAX_HIT_CAPSULES
-  let tolerance = stroke.thickness
-  let simplifiedPoints = simplify(points, tolerance, false)
-
-  while (simplifiedPoints.length - 1 > MAX_HIT_CAPSULES) {
-    tolerance *= 2
-    simplifiedPoints = simplify(points, tolerance, false)
-  }
-
-  // Ensure we have at least 2 points for a capsule
-  if (simplifiedPoints.length === 1) {
-    const pt = simplifiedPoints[0]
-    simplifiedPoints.push({ x: pt.x, y: pt.y })
   }
 
   // Add HitGeometry component if not present
@@ -231,19 +338,60 @@ function generateHitGeometry(ctx: Context, strokeId: EntityId): void {
     HitGeometry.clear(ctx, strokeId)
   }
 
-  // Create capsules from simplified points using ORIGINAL bounds for UV conversion.
-  // stroke.points are stored in original world coordinates, so we must use
-  // originalLeft/Top/Width/Height (not current Block bounds) for correct UVs.
+  // UV conversion uses ORIGINAL bounds: stroke.points are stored in original
+  // world coordinates, so we must use originalLeft/Top/Width/Height (not current
+  // Block bounds) for correct UVs.
   const { originalLeft, originalTop, originalWidth, originalHeight } = stroke
+  const toUv = (p: { x: number; y: number }): [number, number] => [
+    (p.x - originalLeft) / originalWidth,
+    (p.y - originalTop) / originalHeight,
+  ]
 
-  for (let i = 0; i < simplifiedPoints.length - 1; i++) {
-    const p0 = simplifiedPoints[i]
-    const p1 = simplifiedPoints[i + 1]
+  // Fill: store a closed even-odd polygon matching the rendered fill region.
+  if (stroke.kind === PenStrokeKind.Fill) {
+    const polygonPoints = subsampleToCapacity(points, MAX_HIT_POLYGON_POINTS)
 
-    // Convert original world coords to UV using original bounds
-    const uv0: [number, number] = [(p0.x - originalLeft) / originalWidth, (p0.y - originalTop) / originalHeight]
-    const uv1: [number, number] = [(p1.x - originalLeft) / originalWidth, (p1.y - originalTop) / originalHeight]
-
-    HitGeometry.addCapsuleUv(ctx, strokeId, uv0, uv1, stroke.thickness)
+    // A polygon needs at least 3 vertices to enclose area. If the fill is too
+    // small/degenerate, fall through to capsule geometry so it stays selectable.
+    if (polygonPoints.length >= 3) {
+      HitGeometry.setPolygonUv(ctx, strokeId, polygonPoints.map(toUv))
+      return
+    }
   }
+
+  // Stroke (default): capsules between consecutive points. N points -> N-1
+  // capsules, so cap the point count at MAX_HIT_CAPSULES + 1.
+  const capsulePoints = subsampleToCapacity(points, MAX_HIT_CAPSULES + 1)
+
+  // Ensure we have at least 2 points for a capsule
+  if (capsulePoints.length === 1) {
+    const pt = capsulePoints[0]
+    capsulePoints.push({ x: pt.x, y: pt.y })
+  }
+
+  for (let i = 0; i < capsulePoints.length - 1; i++) {
+    const p0 = capsulePoints[i]
+    const p1 = capsulePoints[i + 1]
+
+    HitGeometry.addCapsuleUv(ctx, strokeId, toUv(p0), toUv(p1), stroke.thickness)
+  }
+}
+
+/**
+ * Uniformly subsample `points` down to exactly `max` entries, always keeping the
+ * first and last. Returns the input unchanged when it already fits. This is a
+ * cheap safety net for the hit-geometry capacity limits — the drawn points are
+ * already simplified, so it is a no-op for the vast majority of strokes.
+ */
+function subsampleToCapacity<T>(points: T[], max: number): T[] {
+  if (points.length <= max) return points
+
+  // Evenly spaced indices across [0, length-1]; the last entry is the endpoint.
+  const stride = (points.length - 1) / (max - 1)
+  const result: T[] = []
+  for (let i = 0; i < max - 1; i++) {
+    result.push(points[Math.round(i * stride)])
+  }
+  result.push(points[points.length - 1])
+  return result
 }

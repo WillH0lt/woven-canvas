@@ -104,39 +104,42 @@ export class FontLoader {
 
   /**
    * Load a single font family.
-   * Adds a link element to the document head and waits for the font to be ready.
+   * Fetches the stylesheet as text and injects it via an inline <style>, so
+   * the @font-face rules land in a same-origin sheet. Tools that introspect
+   * CSSOM (e.g. modern-screenshot's font embedding for /preview raster
+   * captures) can't read cross-origin sheets, which a <link> to
+   * fonts.googleapis.com would produce.
    *
    * @param family - Font family to load
    */
-  private loadSingleFont(family: FontFamily): Promise<void> {
+  private async loadSingleFont(family: FontFamily): Promise<void> {
     this.loadedFonts.add(family.name)
 
     // Skip actual font loading in SSR/headless — fonts are loaded client-side
-    if (typeof document === 'undefined') {
-      return Promise.resolve()
+    if (typeof document === 'undefined') return
+
+    const url = this.buildGoogleFontsUrl(family)
+    let cssText: string
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      cssText = await res.text()
+    } catch (err) {
+      throw new Error(`Failed to load font stylesheet: ${family.name}. ${err}`)
     }
 
-    return new Promise((resolve, reject) => {
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.href = this.buildGoogleFontsUrl(family)
-      link.onload = async () => {
-        try {
-          // Wait for all font variants to be loaded
-          const loadPromises = this.getFontLoadPromises(family)
-          await Promise.all(loadPromises)
-          // Ensure all fonts are ready
-          await document.fonts.ready
-          resolve()
-        } catch (error) {
-          reject(new Error(`Failed to load font face for: ${family.name}. ${error}`))
-        }
-      }
-      link.onerror = () => {
-        reject(new Error(`Failed to load font stylesheet: ${family.name}`))
-      }
-      document.head.appendChild(link)
-    })
+    const style = document.createElement('style')
+    style.setAttribute('data-wov-font-family', family.name)
+    style.textContent = cssText
+    document.head.appendChild(style)
+
+    try {
+      const loadPromises = this.getFontLoadPromises(family)
+      await Promise.all(loadPromises)
+      await document.fonts.ready
+    } catch (err) {
+      throw new Error(`Failed to load font face for: ${family.name}. ${err}`)
+    }
   }
 
   /**

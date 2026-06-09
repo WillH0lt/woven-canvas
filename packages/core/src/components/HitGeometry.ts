@@ -1,10 +1,14 @@
-import { type Aabb, Arc, Capsule, Mat2, type Vec2 } from '@woven-canvas/math'
+import { type Aabb, Arc, Capsule, Mat2, Polygon, type Vec2 } from '@woven-canvas/math'
 import { CanvasComponentDef } from '@woven-ecs/canvas-store'
 import { type Context, type EntityId, field } from '@woven-ecs/core'
 import { Block } from './Block'
 
 // Pre-allocated matrix for UV-to-world transforms (avoids allocation in hot paths)
 const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0]
+
+// Pre-allocated scratch for transforming the UV polygon to world space without
+// per-call allocation. _worldPolygon holds [x0, y0, x1, y1, ...] in world units.
+const _polyPt: Vec2 = [0, 0]
 
 /**
  * Maximum number of capsules that can be stored in the hitCapsules array.
@@ -28,11 +32,27 @@ export const MAX_HIT_ARCS = 2
  */
 const FLOATS_PER_ARC = 7
 
+/**
+ * Maximum number of vertices in the filled-polygon hit region.
+ * Each vertex takes 2 floats: x, y.
+ */
+export const MAX_HIT_POLYGON_POINTS = 128
+
+/**
+ * Number of floats per polygon vertex in the hitPolygon array.
+ */
+const FLOATS_PER_POLYGON_POINT = 2
+
+// Pre-allocated scratch holding the polygon transformed to world space.
+const _worldPolygon = new Float32Array(MAX_HIT_POLYGON_POINTS * FLOATS_PER_POLYGON_POINT)
+
 const HitGeometrySchema = {
   hitCapsules: field.buffer(field.float32()).size(MAX_HIT_CAPSULES * FLOATS_PER_CAPSULE),
   capsuleCount: field.uint16().default(0),
   hitArcs: field.buffer(field.float32()).size(MAX_HIT_ARCS * FLOATS_PER_ARC),
   arcCount: field.uint16().default(0),
+  hitPolygon: field.buffer(field.float32()).size(MAX_HIT_POLYGON_POINTS * FLOATS_PER_POLYGON_POINT),
+  polygonPointCount: field.uint16().default(0),
 }
 
 /**
@@ -186,7 +206,29 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
       }
     }
 
+    // Check the filled polygon (even-odd) — transform UV verts to world scratch.
+    const polygonPointCount = this.fillWorldPolygon(hitGeometry.hitPolygon, hitGeometry.polygonPointCount)
+    if (polygonPointCount > 0 && Polygon.containsPointEvenOdd(_worldPolygon, polygonPointCount, point)) {
+      return true
+    }
+
     return false
+  }
+
+  /**
+   * Transform the UV polygon into the shared `_worldPolygon` scratch buffer
+   * using the current `_uvToWorldMatrix` (caller must have built it first).
+   * Returns the vertex count. Allocation-free.
+   */
+  private fillWorldPolygon(hitPolygon: ArrayLike<number>, count: number): number {
+    for (let i = 0; i < count; i++) {
+      _polyPt[0] = hitPolygon[i * 2]
+      _polyPt[1] = hitPolygon[i * 2 + 1]
+      Mat2.transformPoint(_uvToWorldMatrix, _polyPt)
+      _worldPolygon[i * 2] = _polyPt[0]
+      _worldPolygon[i * 2 + 1] = _polyPt[1]
+    }
+    return count
   }
 
   /**
@@ -245,6 +287,12 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
       }
     }
 
+    // Check the filled polygon (coarse) — transform UV verts to world scratch.
+    const polygonPointCount = this.fillWorldPolygon(hitGeometry.hitPolygon, hitGeometry.polygonPointCount)
+    if (polygonPointCount > 0 && Polygon.intersectsAabb(_worldPolygon, polygonPointCount, aabb)) {
+      return true
+    }
+
     return false
   }
 
@@ -296,6 +344,13 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
 
       const worldArc = Arc.create(worldA[0], worldA[1], worldB[0], worldB[1], worldC[0], worldC[1], thickness)
       pts.push(...Arc.getExtrema(worldArc))
+    }
+
+    // Add polygon vertices (transform UV to world).
+    for (let i = 0; i < hitGeometry.polygonPointCount; i++) {
+      const world: Vec2 = [hitGeometry.hitPolygon[i * 2], hitGeometry.hitPolygon[i * 2 + 1]]
+      Mat2.transformPoint(_uvToWorldMatrix, world)
+      pts.push(world)
     }
 
     return pts
@@ -420,6 +475,30 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
   }
 
   /**
+   * Set the filled hit polygon from UV vertices, replacing any existing one.
+   * Positions are in UV coordinates (0-1) relative to the block. The polygon is
+   * implicitly closed and tested with the even-odd fill rule.
+   *
+   * @param ctx - ECS context
+   * @param entityId - Entity ID
+   * @param uvPoints - Polygon vertices in UV coordinates [[x, y], ...]
+   */
+  setPolygonUv(ctx: Context, entityId: EntityId, uvPoints: Vec2[]): void {
+    const hitGeometry = this.write(ctx, entityId)
+
+    const count = Math.min(uvPoints.length, MAX_HIT_POLYGON_POINTS)
+    for (let i = 0; i < count; i++) {
+      hitGeometry.hitPolygon[i * 2] = uvPoints[i][0]
+      hitGeometry.hitPolygon[i * 2 + 1] = uvPoints[i][1]
+    }
+    hitGeometry.polygonPointCount = count
+
+    if (uvPoints.length > MAX_HIT_POLYGON_POINTS) {
+      console.warn(`HitGeometry: polygon truncated to ${MAX_HIT_POLYGON_POINTS} points`)
+    }
+  }
+
+  /**
    * Clear all hit geometry from an entity.
    *
    * @param ctx - ECS context
@@ -429,6 +508,7 @@ class HitGeometryDef extends CanvasComponentDef<typeof HitGeometrySchema> {
     const hitGeometry = this.write(ctx, entityId)
     hitGeometry.capsuleCount = 0
     hitGeometry.arcCount = 0
+    hitGeometry.polygonPointCount = 0
   }
 }
 

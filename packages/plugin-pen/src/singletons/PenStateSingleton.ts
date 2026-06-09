@@ -24,4 +24,13 @@ export const PenStateSingleton = defineEditorState('penState', {
 
   /** Last pointer position in world coordinates [x, y] */
   lastWorldPosition: field.tuple(field.float64(), 2).default([0, 0]),
+
+  /**
+   * Unit direction of the active "sleeve" used by the live point simplifier
+   * (see {@link updatePenSystem}). While drawing, the provisional tail point is
+   * kept collinear with this direction until the cursor deviates far enough to
+   * commit a new vertex. `[0, 0]` means no direction has been established yet
+   * (start of stroke, or just after committing a vertex). Transient draw state.
+   */
+  sleeveDir: field.tuple(field.float64(), 2).default([0, 0]),
 })

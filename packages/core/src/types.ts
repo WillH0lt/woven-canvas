@@ -535,6 +535,7 @@ export const BlockDef = z.object({
     .default(ResizeMode.Scale),
   canRotate: z.boolean().default(true),
   canScale: z.boolean().default(true),
+  snappable: z.boolean().default(true),
   interactable: z.boolean().default(true),
   excludeFromRankBounds: z.boolean().default(false),
   connectors: BlockDefConnectors.default(BlockDefConnectors.parse({})),

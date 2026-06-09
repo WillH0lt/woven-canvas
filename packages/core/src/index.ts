@@ -104,6 +104,7 @@ export {
   Image,
   MAX_HIT_ARCS,
   MAX_HIT_CAPSULES,
+  MAX_HIT_POLYGON_POINTS,
   Opacity,
   Pointer,
   PointerButton,

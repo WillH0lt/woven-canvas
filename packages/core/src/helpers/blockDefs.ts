@@ -72,6 +72,17 @@ export function canBlockInteract(ctx: Context, tag: string): boolean {
 }
 
 /**
+ * Check if a block definition participates in grid snapping.
+ *
+ * @param ctx - The ECS context
+ * @param tag - The block tag to check
+ * @returns True if the block should snap to the grid when dragged/rotated
+ */
+export function canBlockSnap(ctx: Context, tag: string): boolean {
+  return getBlockDef(ctx, tag).snappable
+}
+
+/**
  * Get the effective resize mode for a block entity.
  * Returns the block's resizeMode if set, otherwise falls back to blockDef's resizeMode.
  *

@@ -1,6 +1,6 @@
 import { Vec2 as Vec2Ns } from '@woven-canvas/math'
 import { Synced } from '@woven-ecs/canvas-store'
-import { defineQuery, type EntityId, hasComponent } from '@woven-ecs/core'
+import { type Context, defineQuery, type EntityId, hasComponent } from '@woven-ecs/core'
 import { and, assign, not, setup } from 'xstate'
 import {
   AddHeld,
@@ -26,7 +26,7 @@ import type { InferStateContext } from '../../EditorStateDef'
 import { defineEditorSystem } from '../../EditorSystem'
 import type { PointerInput } from '../../events'
 import { getPointerInput } from '../../events'
-import { canBlockInteract } from '../../helpers/blockDefs'
+import { canBlockInteract, canBlockSnap } from '../../helpers/blockDefs'
 import { isHeldByRemote } from '../../helpers/held'
 import { Controls } from '../../singletons/Controls'
 import { Grid } from '../../singletons/Grid'
@@ -41,6 +41,23 @@ const selectedBlocksQuery = defineQuery((q) => q.with(Block, Selected, Synced))
 
 // Query for edited blocks (to prevent dragging during edit mode)
 const editedBlocksQuery = defineQuery((q) => q.with(Block, Edited))
+
+/**
+ * Whether a drag should snap to the grid.
+ *
+ * A directly-dragged block follows its own blockDef. A TransformBox represents
+ * the whole selection, so it snaps when any selected block is snappable — a
+ * pure-stroke selection drags freely while a mixed selection still snaps.
+ */
+function isDragSnappable(ctx: Context, draggedEntity: EntityId): boolean {
+  if (hasComponent(ctx, draggedEntity, TransformBox)) {
+    for (const blockId of selectedBlocksQuery.current(ctx)) {
+      if (canBlockSnap(ctx, Block.read(ctx, blockId).tag)) return true
+    }
+    return false
+  }
+  return canBlockSnap(ctx, Block.read(ctx, draggedEntity).tag)
+}
 
 /**
  * Selection state machine context - derived from SelectionStateSingleton schema.
@@ -205,8 +222,9 @@ const selectionMachine = setup({
           }
         }
 
-        // Apply grid snapping for synced blocks
-        if (draggingSynced) {
+        // Apply grid snapping for synced blocks, unless the dragged content
+        // opts out (e.g. pen/pencil strokes).
+        if (draggingSynced && isDragSnappable(ctx, context.draggedEntity)) {
           left = Grid.snapX(ctx, left)
           top = Grid.snapY(ctx, top)
         }

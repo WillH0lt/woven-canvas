@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, shallowRef, provide, watch, type Ref } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, shallowRef, provide, computed, type Ref } from 'vue'
 import {
   Editor,
   Camera,
@@ -15,7 +15,6 @@ import {
   UserData as UserDataZod,
   EventType,
   SINGLETON_ENTITY_ID,
-  STRATUM_ORDER,
   compareBlockOrder,
   type SortableBlock,
   defineQuery,
@@ -73,6 +72,28 @@ import CanvasBackground from './CanvasBackground.vue'
 import BackToContentButton from './BackToContentButton.vue'
 import LoadingOverlay from './LoadingOverlay.vue'
 
+// Tag → built-in block component, used by the default `block:<tag>` slot
+// fallback. Adding a new built-in block type only requires adding one
+// entry here — the v-for templates below stay untouched.
+const blockComponents = {
+  'selection-box':   SelectionBox,
+  'transform-box':   TransformBox,
+  'transform-handle': TransformHandle,
+  'arrow-handle':    ArrowHandle,
+  'arrow-terminal':  ArrowTerminal,
+  'sticky-note':     StickyNote,
+  'eraser':          Eraser,
+  'pen-stroke':      PenStroke,
+  'arc-arrow':       ArcArrow,
+  'elbow-arrow':     ElbowArrow,
+  'text':            TextBlock,
+  'image':           ImageBlock,
+  'shape':           ShapeBlock,
+  'embed':           EmbedBlock,
+  'tape':            TapeBlock,
+  'frame':           FrameBlock,
+} as Record<string, unknown>
+
 // Queries for tracking blocks and state components
 const blockQuery = defineQuery((q) => q.tracking(Block))
 const assetQuery = defineQuery((q) => q.with(Asset))
@@ -107,6 +128,7 @@ export interface WovenCanvasPluginOptions {
   tapes?: false
 }
 
+
 /**
  * WovenCanvas component props
  */
@@ -139,11 +161,38 @@ export interface WovenCanvasProps {
   // When provided, the editor is created headlessly during setup so blocks render server-side.
   // On mount, the DOM is attached and the editor becomes interactive.
   initialState?: Record<string, ComponentData>
+
+  /** Block tags to skip rendering in the DOM. Use when an external renderer
+   *  (e.g. a WebGPU canvas in the `render-layer` slot) paints those blocks
+   *  itself — the wrapper, the inner block component, and the block:<tag>
+   *  slot are all suppressed for these tags. Hit testing, hover, and drag
+   *  for omitted tags must be handled by the external renderer. */
+  omitBlockTags?: string[]
 }
 
 const props = defineProps<WovenCanvasProps>()
 
+// Build a Set once per prop change so the per-block v-if check below is
+// O(1). Membership is tested for every block on every render, so a linear
+// scan over the omit array would scale badly with the omit list size.
+const omitBlockTagSet = computed(() => new Set(props.omitBlockTags ?? []))
+
+// Block render layers, painted in array order. Each holds one stratum; the
+// consumer `render-layer` slot (e.g. a WebGPU canvas) is emitted before the
+// content layer, so it sits between page backgrounds and interactive content.
+// Splitting strata into separate DOM layers (rather than one div) is what lets
+// an in-place editor on a content block render above the render layer without
+// any teleporting. See the single loop in the template.
+const blockLayers = [
+  { stratum: 'background', class: 'wov-canvas-background' },
+  { stratum: 'content', class: 'wov-canvas-content' },
+  { stratum: 'overlay', class: 'wov-canvas-overlay' },
+] as const
+
 const emit = defineEmits<{
+  /**
+   * Fires once the editor has finished initializing on the client.
+   */
   ready: [editor: Editor, store: CanvasStore]
 }>()
 
@@ -166,8 +215,23 @@ defineSlots<
     'back-to-content'?: () => any
     /** Slot for file drag-drop zone. Currently handles images. Set to empty to disable. */
     'file-drop-zone'?: () => any
+    /**
+     * Custom rendering layer positioned visually between the content
+     * stratum and the interactive overlay stratum (selection rings,
+     * transform handles). Typical use: drop in a WebGPU canvas that
+     * renders content blocks on the GPU; the DOM-rendered overlay
+     * handles stay on top automatically. Slot content can reach the
+     * live editor + ECS state via `inject(WOVEN_CANVAS_KEY)` (or the
+     * `useSingleton` / `useComponent` composables).
+     */
+    'render-layer'?: () => any
   } & {
     [slotName: `block:${string}`]: (props: BlockData) => any
+  } & {
+    // Catch-all so layout-driven dynamic slot names (e.g. consumer-defined
+    // entries in the `layout` prop) type-check. Specific named slots above
+    // narrow to their exact signatures via TS intersection.
+    [slotName: string]: ((args?: any) => any) | undefined
   }
 >()
 
@@ -204,8 +268,38 @@ const blockMap = new Map<EntityId, Ref<BlockData>>()
 // Blocks sorted by rank for rendering
 const sortedBlocks = shallowRef<Ref<BlockData>[]>([])
 
-// Online status - updated each tick from the store
+
+// Online status, derived from three signals (because each has a gap):
+//   1. navigator.onLine + window 'online'/'offline' — the browser's view.
+//      Wins immediately when offline; we never claim online if the OS says
+//      otherwise.
+//   2. WS onConnectivityChange — flips wsConnected on open/close.
+//   3. A grace timer — after 3 seconds, if the WS still hasn't fired its
+//      first open, we treat that as offline (covers tabs loaded with no
+//      network: the token never mints, no WS ever attempts, no callback
+//      ever fires).
 const isOnline = ref(true)
+const wsConnected = ref(false)
+const graceElapsed = ref(false)
+
+function recomputeIsOnline() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    isOnline.value = false
+    return
+  }
+  // No websocket configured → no real-time channel to track. Stay online.
+  if (!props.store?.websocket) {
+    isOnline.value = true
+    return
+  }
+  // Within the grace window, optimistically report online so we don't
+  // flash the indicator during a normal connection handshake.
+  if (!graceElapsed.value) {
+    isOnline.value = true
+    return
+  }
+  isOnline.value = wsConnected.value
+}
 
 // Version mismatch - set when server reports incompatible protocol version
 const versionMismatch = ref(false)
@@ -409,7 +503,8 @@ function buildStoreOptions(): CanvasStoreOptions {
         syncOpts.websocket?.onVersionMismatch?.(serverProtocolVersion)
       },
       onConnectivityChange: (online) => {
-        isOnline.value = online
+        wsConnected.value = online
+        recomputeIsOnline()
         syncOpts.websocket?.onConnectivityChange?.(online)
       },
     }
@@ -503,8 +598,21 @@ if (props.initialState && typeof window === 'undefined') {
 // Scroll prevention handler - stored for cleanup
 let scrollHandler: (() => void) | null = null
 
+// Network event handlers - stored for cleanup
+const handleNetworkChange = () => { recomputeIsOnline() }
+
+// Grace timer handle (cleared on unmount if it hasn't fired yet)
+let graceTimeout: ReturnType<typeof setTimeout> | null = null
+
 onMounted(async () => {
   if (!containerRef.value) return
+
+  // Seed from browser state and listen for OS-level changes. recomputeIsOnline
+  // checks navigator.onLine on every call, so the listeners just need to
+  // re-trigger it.
+  recomputeIsOnline()
+  window.addEventListener('online', handleNetworkChange)
+  window.addEventListener('offline', handleNetworkChange)
 
   // Prevent scrolling on the canvas container
   scrollHandler = () => {
@@ -550,6 +658,14 @@ onMounted(async () => {
 
   await assetManager?.resumePendingUploads()
 
+  // End the optimistic grace window. After this, if the websocket still
+  // hasn't fired its first onConnectivityChange(true), we treat the canvas
+  // as offline. recomputeIsOnline() handles the read.
+  graceTimeout = setTimeout(() => {
+    graceElapsed.value = true
+    recomputeIsOnline()
+  }, 3000)
+
   // Start the render loop
   animationFrameId = requestAnimationFrame(tick)
 
@@ -567,6 +683,9 @@ onUnmounted(() => {
   if (animationFrameId !== null) {
     cancelAnimationFrame(animationFrameId)
   }
+  if (graceTimeout !== null) clearTimeout(graceTimeout)
+  window.removeEventListener('online', handleNetworkChange)
+  window.removeEventListener('offline', handleNetworkChange)
   assetManager?.close()
   store?.close()
   editorRef.value?.dispose()
@@ -941,10 +1060,12 @@ function getFrameClipPath(data: BlockData): string | undefined {
 }
 
 function getBlockStyle(data: BlockData) {
-  const { block, stratum, opacity } = data
+  const { block, opacity } = data
   const heldByColor = getHeldByColor(data)
   const opacityValue = opacity !== null ? opacity.value / 255 : 1
-  const clipPath = getFrameClipPath(data)
+  // Suppress the frame clip while editing so the Tiptap caret stays visible
+  // as the text grows past the parent frame's bounds.
+  const clipPath = data.edited ? undefined : getFrameClipPath(data)
   const worldPos = resolveWorldPosition(data)
 
   return {
@@ -953,7 +1074,6 @@ function getBlockStyle(data: BlockData) {
     top: `${worldPos[1]}px`,
     width: `${block.size[0]}px`,
     height: `${block.size[1]}px`,
-    zIndex: STRATUM_ORDER[stratum] * 1000,
     transform: getBlockTransform(block),
     opacity: opacityValue,
     pointerEvents: 'none' as const,
@@ -982,99 +1102,44 @@ function getBlockStyle(data: BlockData) {
       <CanvasBackground :background="background" />
     </slot>
 
-    <div
-      class="wov-canvas"
-      :style="{
-        position: 'absolute',
-        transformOrigin: '0 0',
-        transform: `scale(${cameraRef.zoom}) translate(${-cameraRef.left}px, ${-cameraRef.top}px)`,
-        '--wov-zoom': cameraRef.zoom,
-      }"
-    >
+    <template v-for="layer in blockLayers" :key="layer.class">
+      <slot v-if="layer.stratum === 'content'" name="render-layer" />
       <div
-        v-for="blockData in sortedBlocks"
-        :key="blockData.value.entityId"
-        :data-entity-id="blockData.value.entityId"
-        :style="getBlockStyle(blockData.value)"
-        :data-selected="blockData.value.selected || undefined"
-        :data-held-by-other="
-          getHeldByColor(blockData.value) !== null || undefined
-        "
-        :data-hovered="blockData.value.hovered || undefined"
-        class="wov-block"
+        :class="layer.class"
+        :style="{
+          position: 'absolute',
+          transformOrigin: '0 0',
+          transform: `scale(${cameraRef.zoom}) translate(${-cameraRef.left}px, ${-cameraRef.top}px)`,
+          '--wov-zoom': cameraRef.zoom,
+        }"
       >
-        <slot
-          :name="`block:${blockData.value.block.tag}`"
-          v-bind="blockData.value"
-        >
-          <!-- Default blocks -->
-          <SelectionBox
-            v-if="blockData.value.block.tag === 'selection-box'"
-            v-bind="blockData.value"
-          />
-          <TransformBox
-            v-else-if="blockData.value.block.tag === 'transform-box'"
-            v-bind="blockData.value"
-          />
-          <TransformHandle
-            v-else-if="blockData.value.block.tag === 'transform-handle'"
-            v-bind="blockData.value"
-          />
-          <ArrowHandle
-            v-else-if="blockData.value.block.tag === 'arrow-handle'"
-            v-bind="blockData.value"
-          />
-          <ArrowTerminal
-            v-else-if="blockData.value.block.tag === 'arrow-terminal'"
-            v-bind="blockData.value"
-          />
-          <StickyNote
-            v-else-if="blockData.value.block.tag === 'sticky-note'"
-            v-bind="blockData.value"
-          />
-          <Eraser
-            v-else-if="blockData.value.block.tag === 'eraser'"
-            v-bind="blockData.value"
-          />
-          <PenStroke
-            v-else-if="blockData.value.block.tag === 'pen-stroke'"
-            v-bind="blockData.value"
-          />
-          <ArcArrow
-            v-else-if="blockData.value.block.tag === 'arc-arrow'"
-            v-bind="blockData.value"
-          />
-          <ElbowArrow
-            v-else-if="blockData.value.block.tag === 'elbow-arrow'"
-            v-bind="blockData.value"
-          />
-          <TextBlock
-            v-else-if="blockData.value.block.tag === 'text'"
-            v-bind="blockData.value"
-          />
-          <ImageBlock
-            v-else-if="blockData.value.block.tag === 'image'"
-            v-bind="blockData.value"
-          />
-          <ShapeBlock
-            v-else-if="blockData.value.block.tag === 'shape'"
-            v-bind="blockData.value"
-          />
-          <EmbedBlock
-            v-else-if="blockData.value.block.tag === 'embed'"
-            v-bind="blockData.value"
-          />
-          <TapeBlock
-            v-else-if="blockData.value.block.tag === 'tape'"
-            v-bind="blockData.value"
-          />
-          <FrameBlock
-            v-else-if="blockData.value.block.tag === 'frame'"
-            v-bind="blockData.value"
-          />
-        </slot>
+        <template v-for="blockData in sortedBlocks" :key="blockData.value.entityId">
+          <div
+            v-if="blockData.value.stratum === layer.stratum && !omitBlockTagSet.has(blockData.value.block.tag)"
+            :data-entity-id="blockData.value.entityId"
+            :style="getBlockStyle(blockData.value)"
+            :data-selected="blockData.value.selected || undefined"
+            :data-held-by-other="
+              getHeldByColor(blockData.value) !== null || undefined
+            "
+            :data-hovered="blockData.value.hovered || undefined"
+            :data-edited="blockData.value.edited || undefined"
+            class="wov-block"
+          >
+            <slot
+              :name="`block:${blockData.value.block.tag}`"
+              v-bind="blockData.value"
+            >
+              <component
+                :is="blockComponents[blockData.value.block.tag]"
+                v-if="blockComponents[blockData.value.block.tag]"
+                v-bind="blockData.value"
+              />
+            </slot>
+          </div>
+        </template>
       </div>
-    </div>
+    </template>
 
     <!-- User cursors layer -->
     <slot

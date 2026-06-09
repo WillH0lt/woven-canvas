@@ -53,6 +53,10 @@ export class AssetManager {
   private startListeners = new Set<(identifier: string) => void>()
   private completeListeners = new Set<(identifier: string) => void>()
   private errorListeners = new Set<(identifier: string, error: Error) => void>()
+  /** Identifiers whose blob+job are currently mid-write to IndexedDB. */
+  private persisting = new Set<string>()
+  private persistStartListeners = new Set<(identifier: string) => void>()
+  private persistEndListeners = new Set<(identifier: string) => void>()
 
   constructor(options: AssetManagerOptions) {
     this.provider = options.provider
@@ -87,6 +91,27 @@ export class AssetManager {
     this.errorListeners.add(listener)
     return () => {
       this.errorListeners.delete(listener)
+    }
+  }
+
+  /**
+   * Subscribe to persistence lifecycle. Fires while a freshly accepted blob is
+   * mid-write to IndexedDB — the destructive window where leaving the tab loses
+   * the binary. Once persist-end fires, the upload to the remote provider is
+   * fully resumable across reloads (see resumePendingUploads()), so consumers
+   * gating tab/route exits should release the lock at persist-end.
+   */
+  onPersistStart(listener: (identifier: string) => void): () => void {
+    this.persistStartListeners.add(listener)
+    return () => {
+      this.persistStartListeners.delete(listener)
+    }
+  }
+
+  onPersistEnd(listener: (identifier: string) => void): () => void {
+    this.persistEndListeners.add(listener)
+    return () => {
+      this.persistEndListeners.delete(listener)
     }
   }
 
@@ -130,17 +155,24 @@ export class AssetManager {
     const blobUrl = URL.createObjectURL(blob)
     this.blobUrls.set(identifier, blobUrl)
 
-    // Store the binary
-    await this.binariesStore.put(identifier, blob)
-
-    // Store the job
-    const job: UploadJob = {
-      identifier,
-      metadata,
-      createdAt: Date.now(),
-      retryCount: 0,
+    // Track the IDB-write window separately from the upload window. Until both
+    // writes below resolve, leaving the tab loses the binary; after that point,
+    // pending uploads are fully recoverable via resumePendingUploads().
+    this.persisting.add(identifier)
+    for (const listener of this.persistStartListeners) listener(identifier)
+    try {
+      await this.binariesStore.put(identifier, blob)
+      const job: UploadJob = {
+        identifier,
+        metadata,
+        createdAt: Date.now(),
+        retryCount: 0,
+      }
+      await this.jobsStore.put(identifier, job)
+    } finally {
+      this.persisting.delete(identifier)
+      for (const listener of this.persistEndListeners) listener(identifier)
     }
-    await this.jobsStore.put(identifier, job)
 
     // Return a promise that resolves when upload completes
     return new Promise<void>((resolve, reject) => {
@@ -213,6 +245,21 @@ export class AssetManager {
    */
   isUploading(identifier: string): boolean {
     return this.uploading.has(identifier)
+  }
+
+  /**
+   * Check if an asset is currently mid-write to IndexedDB. See onPersistStart
+   * for the distinction between persistence and upload.
+   */
+  isPersisting(identifier: string): boolean {
+    return this.persisting.has(identifier)
+  }
+
+  /**
+   * Number of assets currently mid-write to IndexedDB.
+   */
+  get persistingCount(): number {
+    return this.persisting.size
   }
 
   /**

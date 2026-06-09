@@ -764,11 +764,15 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
         applyChange(Text.write(ctx, entityId))
       }
 
-      // Update block dimensions and position
+      // Update block dimensions and position. `left`/`top` from
+      // measureWithClone are WORLD coordinates, but `block.position`
+      // is parent-local — go through `Block.setWorldPosition` so the
+      // parent's world offset is subtracted out. Without this, text
+      // inside a frame jumps by the frame's world position.
       for (const { entityId, width, height, left, top } of updates) {
-        const block = Block.write(ctx, entityId)
-        block.size = [width, height]
-        block.position = [left, top]
+        const writable = Block.write(ctx, entityId)
+        writable.size = [width, height]
+        Block.setWorldPosition(ctx, entityId, [left, top])
       }
 
       // Trigger floating menu position update after Vue re-renders
@@ -811,11 +815,14 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
         const text = Text.write(ctx, entityId)
         text.content = content
 
-        // Update block dimensions and position if we measured them
+        // Update block dimensions and position if we measured them.
+        // `left`/`top` are WORLD coordinates from measureWithClone;
+        // `block.position` is parent-local, so go through
+        // `Block.setWorldPosition` to subtract the parent's offset.
         if (width > 0 && height > 0) {
-          const block = Block.write(ctx, entityId)
-          block.size = [width, height]
-          block.position = [left, top]
+          const writable = Block.write(ctx, entityId)
+          writable.size = [width, height]
+          Block.setWorldPosition(ctx, entityId, [left, top])
         }
       }
     })

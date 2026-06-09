@@ -8,7 +8,6 @@ import {
 } from '@woven-canvas/core'
 import { assign, setup } from 'xstate'
 import { AddPenStrokePoint, CompletePenStroke, RemovePenStroke, StartPenStroke } from '../commands'
-import { STROKE_THICKNESS } from '../constants'
 import { PenStateSingleton } from '../singletons'
 import { PenState } from '../types'
 
@@ -37,10 +36,11 @@ const penMachine = setup({
       // Extract pressure from pen input, null for mouse/touch
       const pressure = event.pointerType === PointerType.Pen ? event.pressure : null
 
+      // Brush style (kind, thickness, color) is read from PenPresetSingleton
+      // by the update system — keep the command itself minimal.
       StartPenStroke.spawn(event.ctx, {
         worldPosition: event.worldPosition,
         pressure,
-        thickness: STROKE_THICKNESS,
       })
     },
 
@@ -77,6 +77,7 @@ const penMachine = setup({
     resetContext: assign({
       activeStroke: () => null,
       lastWorldPosition: (): [number, number] => [0, 0],
+      sleeveDir: (): [number, number] => [0, 0],
     }),
   },
 }).createMachine({
@@ -85,6 +86,7 @@ const penMachine = setup({
   context: {
     activeStroke: null,
     lastWorldPosition: [0, 0],
+    sleeveDir: [0, 0],
   },
   states: {
     [PenState.Idle]: {
@@ -121,7 +123,6 @@ const penMachine = setup({
  * Generates commands that are processed by the update system.
  */
 export const capturePenSystem = defineEditorSystem({ phase: 'capture', priority: 100 }, (ctx) => {
-  // Get pointer buttons mapped to 'pen' tool
   const buttons = Controls.getButtons(ctx, 'pen')
 
   // Get pointer events (no frame events needed for pen unlike eraser)

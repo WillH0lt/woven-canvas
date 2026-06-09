@@ -142,6 +142,12 @@ interface WovenCanvasProps {
   // Initial state for SSR pre-rendering. When provided, the editor is
   // created headlessly during setup so blocks render in server-side HTML.
   initialState?: Record<string, ComponentData>;
+
+  // Block tags to skip rendering in the DOM. Use when an external renderer
+  // (e.g. a WebGPU canvas in the `render-layer` slot) paints those blocks
+  // itself. The wrapper, inner component, and `block:<tag>` slot are all
+  // suppressed — hit testing for omitted tags is the renderer's responsibility.
+  omitBlockTags?: string[];
 }
 ```
 
@@ -259,6 +265,28 @@ interface FloatingMenuButtonSlots {
   "button:tape": {}; // tape image picker
   "button:<componentName>": {}; // custom components — auto-shown when common to selection
 }
+```
+
+### Render-Layer Slot
+
+Sits visually between the content stratum and the overlay stratum
+(selection rings, transform handles), so its contents render above
+content blocks but below interactive overlays.
+
+The intended use is a custom rendering layer — for example a WebGPU
+canvas that re-renders content on the GPU and composites underneath
+the interactive DOM overlay. Pair with `omitBlockTags` to suppress
+the DOM render for tags the external renderer handles, so they don't
+double-paint.
+
+```vue
+<template>
+  <WovenCanvas :omit-block-tags="['shape', 'pen-stroke', 'brush']">
+    <template #render-layer>
+      <MyWebGpuRenderer />
+    </template>
+  </WovenCanvas>
+</template>
 ```
 
 ### Other UI Slots

@@ -12,7 +12,7 @@ export { Frame } from './Frame'
 export { FrameDropTarget } from './FrameDropTarget'
 export { Held } from './Held'
 // Hit geometry for collision detection
-export { HitGeometry, MAX_HIT_ARCS, MAX_HIT_CAPSULES } from './HitGeometry'
+export { HitGeometry, MAX_HIT_ARCS, MAX_HIT_CAPSULES, MAX_HIT_POLYGON_POINTS } from './HitGeometry'
 // State components
 export { Hovered } from './Hovered'
 // Image/Asset components

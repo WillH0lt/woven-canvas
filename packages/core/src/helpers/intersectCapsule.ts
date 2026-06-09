@@ -1,13 +1,17 @@
-import { Aabb as AabbNs, Arc, Capsule, Mat2, type Vec2 } from '@woven-canvas/math'
+import { Aabb as AabbNs, Arc, Capsule, Mat2, Polygon, type Vec2 } from '@woven-canvas/math'
 import { type Context, type EntityId, hasComponent } from '@woven-ecs/core'
 
 import { Aabb as AabbComponent } from '../components/Aabb'
 import { Block } from '../components/Block'
 import { Frame } from '../components/Frame'
-import { HitGeometry } from '../components/HitGeometry'
+import { HitGeometry, MAX_HIT_POLYGON_POINTS } from '../components/HitGeometry'
 
 // Pre-allocated matrix for UV-to-world transforms (avoids allocation in hot paths)
 const _uvToWorldMatrix: Mat2 = [1, 0, 0, 1, 0, 0]
+
+// Pre-allocated scratch for transforming the UV polygon to world space.
+const _worldPolygon = new Float32Array(MAX_HIT_POLYGON_POINTS * 2)
+const _polyPt: Vec2 = [0, 0]
 
 /**
  * Check if a capsule intersects all ancestor frames of a block.
@@ -142,6 +146,22 @@ function intersectsCapsuleHitGeometry(ctx: Context, entityId: EntityId, capsule:
     const worldCapsule = Capsule.create(worldA[0], worldA[1], worldB[0], worldB[1], radius)
 
     if (Capsule.intersectsCapsule(capsule, worldCapsule)) {
+      return true
+    }
+  }
+
+  // Check filled polygon (even-odd) — transform UV verts to world scratch.
+  const polygonPointCount = hitGeometry.polygonPointCount
+  if (polygonPointCount > 0) {
+    for (let i = 0; i < polygonPointCount; i++) {
+      _polyPt[0] = hitGeometry.hitPolygon[i * 2]
+      _polyPt[1] = hitGeometry.hitPolygon[i * 2 + 1]
+      Mat2.transformPoint(_uvToWorldMatrix, _polyPt)
+      _worldPolygon[i * 2] = _polyPt[0]
+      _worldPolygon[i * 2 + 1] = _polyPt[1]
+    }
+
+    if (Polygon.intersectsCapsule(_worldPolygon, polygonPointCount, capsule)) {
       return true
     }
   }

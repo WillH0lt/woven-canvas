@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { EntityId } from '@woven-canvas/core'
-import { PenStroke } from '@woven-canvas/plugin-pen'
+import { PenStroke, PenStrokeKind } from '@woven-canvas/plugin-pen'
 
 import MenuDropdown from './MenuDropdown.vue'
 import IconChevronDown from '../icons/IconChevronDown.vue'
@@ -21,6 +21,18 @@ const props = defineProps<{
 const { nextEditorTick } = useEditorContext()
 
 const strokesMap = useComponents(() => props.entityIds, PenStroke)
+
+// Thickness is meaningless for fill strokes — hide the control if any selected
+// stroke is a fill, showing it only when every selected stroke uses thickness.
+const showThickness = computed(() => {
+  let hasStroke = false
+  for (const stroke of strokesMap.value.values()) {
+    if (!stroke) continue
+    if (stroke.kind === PenStrokeKind.Fill) return false
+    hasStroke = true
+  }
+  return hasStroke
+})
 
 const currentThickness = computed<number | null>(() => {
   let first: number | null = null
@@ -47,7 +59,7 @@ function handleSelect(thickness: number) {
 </script>
 
 <template>
-  <MenuDropdown title="Thickness">
+  <MenuDropdown v-if="showThickness" title="Thickness">
     <template #button>
       <div class="wov-menu-button">
         <svg

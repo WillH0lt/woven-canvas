@@ -43,6 +43,7 @@ export function createPenPlugin(): EditorPlugin {
       {
         tag: 'pen-stroke',
         resizeMode: ResizeMode.Free,
+        snappable: false,
         components: [components.PenStroke, Color],
         connectors: { enabled: false },
       },

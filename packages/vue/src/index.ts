@@ -27,14 +27,20 @@ export { default as ElbowArrow } from './components/blocks/ElbowArrow.vue'
 // Embed Components
 export { default as EmbedBlock } from './components/blocks/EmbedBlock.vue'
 export { default as Eraser } from './components/blocks/Eraser.vue'
+// Frame Components
+export { default as FrameBlock } from './components/blocks/FrameBlock.vue'
 // Image Components
 export { default as ImageBlock } from './components/blocks/ImageBlock.vue'
 export { default as PenStroke } from './components/blocks/PenStroke.vue'
+// Selection / Transform Components
+export { default as SelectionBox } from './components/blocks/SelectionBox.vue'
 // Shape Components
 export { default as ShapeBlock } from './components/blocks/ShapeBlock.vue'
 // Tape Components
 export { default as TapeBlock } from './components/blocks/TapeBlock.vue'
 export { default as TextBlock } from './components/blocks/TextBlock.vue'
+export { default as TransformBox } from './components/blocks/TransformBox.vue'
+export { default as TransformHandle } from './components/blocks/TransformHandle.vue'
 export { default as ArrowHeadButton } from './components/buttons/ArrowHeadButton.vue'
 export { default as ArrowThicknessButton } from './components/buttons/ArrowThicknessButton.vue'
 export { default as ColorButton } from './components/buttons/ColorButton.vue'
@@ -100,6 +106,11 @@ export {
   useEditorContext,
 } from './composables/useEditorContext'
 export { useFonts } from './composables/useFonts'
+export {
+  type ImageCreationOptions,
+  type UseImageCreationReturn,
+  useImageCreation,
+} from './composables/useImageCreation'
 // Composables
 export { type QueryResultItem, useQuery } from './composables/useQuery'
 export { useSingleton } from './composables/useSingleton'

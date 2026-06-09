@@ -184,7 +184,15 @@ function createEditor(): Editor {
 watch(
   () => props.edited,
   async (isEdited) => {
-    if (isEdited && editableTextRef.value) {
+    if (isEdited) {
+      // On the initial immediate fire during setup — or when the block
+      // is freshly mounted already in edit mode (e.g. after the parent
+      // container re-keys it across a stratum change) — the template
+      // hasn't rendered yet and editableTextRef is still null. Wait
+      // one tick so the ref populates, then proceed.
+      if (!editableTextRef.value) await nextTick()
+      if (!editableTextRef.value) return
+
       // Create editor when entering edit mode
       editor.value = createEditor()
       await handleEditStart(editor.value)

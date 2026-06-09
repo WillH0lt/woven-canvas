@@ -39,9 +39,6 @@
     "check:exports": "attw --pack .",
     "prepublishOnly": "pnpm build"
   },
-  "dependencies": {
-    "simplify-js": "^1.2.4"
-  },
   "devDependencies": {
     "resize-observer-polyfill": "^1.5.1",
     "vitest": "^4.0.7"

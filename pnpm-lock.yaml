@@ -7,11 +7,11 @@ settings:
 catalogs:
   default:
     '@woven-ecs/canvas-store':
-      specifier: ^1.0.9
-      version: 1.0.9
+      specifier: ^1.1.0
+      version: 1.1.0
     '@woven-ecs/core':
-      specifier: ^1.0.4
-      version: 1.0.4
+      specifier: ^1.0.5
+      version: 1.0.5
     fractional-indexing-jittered:
       specifier: ^1.0.0
       version: 1.0.0
@@ -217,10 +217,10 @@ importers:
         version: link:../math
       '@woven-ecs/canvas-store':
         specifier: 'catalog:'
-        version: 1.0.9(typescript@5.9.3)
+        version: 1.1.0(typescript@5.9.3)
       '@woven-ecs/core':
         specifier: 'catalog:'
-        version: 1.0.4(typescript@5.9.3)
+        version: 1.0.5(typescript@5.9.3)
       fractional-indexing-jittered:
         specifier: 'catalog:'
         version: 1.0.0
@@ -323,28 +323,6 @@ importers:
         specifier: ^4.0.7
         version: 4.0.18(@types/node@24.10.13)(@vitest/ui@4.0.18)(happy-dom@20.8.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  packages/plugin-frames:
-    dependencies:
-      '@woven-canvas/core':
-        specifier: workspace:^
-        version: link:../core
-      '@woven-canvas/math':
-        specifier: workspace:^
-        version: link:../math
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      xstate:
-        specifier: 'catalog:'
-        version: 5.28.0
-    devDependencies:
-      resize-observer-polyfill:
-        specifier: ^1.5.1
-        version: 1.5.1
-      vitest:
-        specifier: ^4.0.7
-        version: 4.0.18(@types/node@24.10.13)(@vitest/ui@4.0.18)(happy-dom@20.8.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
-
   packages/plugin-pen:
     dependencies:
       '@woven-canvas/core':
@@ -353,9 +331,6 @@ importers:
       '@woven-canvas/math':
         specifier: workspace:^
         version: link:../math
-      simplify-js:
-        specifier: ^1.2.4
-        version: 1.2.4
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -465,10 +440,10 @@ importers:
         version: link:../plugin-tapes
       '@woven-ecs/canvas-store':
         specifier: 'catalog:'
-        version: 1.0.9(typescript@5.9.3)
+        version: 1.1.0(typescript@5.9.3)
       '@woven-ecs/core':
         specifier: 'catalog:'
-        version: 1.0.4(typescript@5.9.3)
+        version: 1.0.5(typescript@5.9.3)
       perfect-freehand:
         specifier: ^1.2.2
         version: 1.2.3
@@ -2486,13 +2461,13 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
-  '@woven-ecs/canvas-store@1.0.9':
-    resolution: {integrity: sha512-hERoDPhPW9BxDp7hhbKkNwDoMhKnopgETwKl3EudIRj/cw2oJcPSVMjANK1uqf0qpe7+z4V7EdOmNhmlhTfz6w==}
+  '@woven-ecs/canvas-store@1.1.0':
+    resolution: {integrity: sha512-GgitinUQ8//ZaFMU5GfiImPbJ2lIInRas6uaZeQulrhKeK3jkwDVgYuSzPzRHHfnJP3vw4PUmhqSq9HijpbZyQ==}
     peerDependencies:
       typescript: ^5
 
-  '@woven-ecs/core@1.0.4':
-    resolution: {integrity: sha512-GWRzdPEVXTeKQ5PmsMHZcsARggjFaFoH4hVyRP9BgoPNDMDs2p2x1ah5sgbxBQGoByZTk4KTQHjr6bRLLAaxjA==}
+  '@woven-ecs/core@1.0.5':
+    resolution: {integrity: sha512-48+7noUnflKjagSv98XxQuMbYO0L9OOfXArqwNRqOjycF4iP3Z+JuU8uElA5aRZhAfzgDSV5PmFuQtM1FJxvZw==}
     peerDependencies:
       typescript: ^5
 
@@ -4666,9 +4641,6 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
-
-  simplify-js@1.2.4:
-    resolution: {integrity: sha512-vITfSlwt7h/oyrU42R83mtzFpwYk3+mkH9bOHqq/Qw6n8rtR7aE3NZQ5fbcyCUVVmuMJR6ynsAhOfK2qoah8Jg==}
 
   sirv@3.0.2:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
@@ -7628,13 +7600,13 @@ snapshots:
     dependencies:
       vue: 3.5.28(typescript@5.9.3)
 
-  '@woven-ecs/canvas-store@1.0.9(typescript@5.9.3)':
+  '@woven-ecs/canvas-store@1.1.0(typescript@5.9.3)':
     dependencies:
-      '@woven-ecs/core': 1.0.4(typescript@5.9.3)
+      '@woven-ecs/core': 1.0.5(typescript@5.9.3)
       idb: 8.0.3
       typescript: 5.9.3
 
-  '@woven-ecs/core@1.0.4(typescript@5.9.3)':
+  '@woven-ecs/core@1.0.5(typescript@5.9.3)':
     dependencies:
       typescript: 5.9.3
 
@@ -10455,8 +10427,6 @@ snapshots:
   siginfo@2.0.0: {}
 
   signal-exit@4.1.0: {}
-
-  simplify-js@1.2.4: {}
 
   sirv@3.0.2:
     dependencies:

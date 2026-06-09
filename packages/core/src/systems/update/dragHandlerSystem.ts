@@ -9,7 +9,7 @@ import { Text } from '../../components/Text'
 import { TransformBox } from '../../components/TransformBox'
 import { TransformHandle } from '../../components/TransformHandle'
 import { defineEditorSystem } from '../../EditorSystem'
-import { getBlockResizeMode } from '../../helpers/blockDefs'
+import { canBlockSnap, getBlockResizeMode } from '../../helpers/blockDefs'
 import { Grid } from '../../singletons/Grid'
 import { Keyboard } from '../../singletons/Keyboard'
 import { ResizeMode, TransformHandleKind } from '../../types'
@@ -27,6 +27,20 @@ const transformBoxQuery = defineQuery((q) => q.with(Block, TransformBox, DragSta
 function isParentSelected(ctx: Context, blockId: EntityId): boolean {
   const block = Block.read(ctx, blockId)
   return block.parentId !== null && hasComponent(ctx, block.parentId, Selected)
+}
+
+/**
+ * Whether the current selection participates in grid snapping during a
+ * transform-box operation (rotate/scale). Returns true if any transformed block
+ * is snappable; false only when every block opts out (e.g. a selection of
+ * pen/pencil strokes), so such selections transform freely.
+ */
+function isSelectionSnappable(ctx: Context): boolean {
+  for (const blockId of selectedBlocksQuery.current(ctx)) {
+    if (isParentSelected(ctx, blockId)) continue
+    if (canBlockSnap(ctx, Block.read(ctx, blockId).tag)) return true
+  }
+  return false
 }
 
 /**
@@ -74,8 +88,11 @@ function onTransformBoxDrag(ctx: Context, boxId: EntityId, position: Vec2): void
 
     const worldPos: Vec2 = [blockStart.position[0] + dx, blockStart.position[1] + dy]
 
-    // Apply grid snapping to final world position
-    Grid.snapPosition(ctx, worldPos)
+    // Apply grid snapping to final world position, unless this block opts out
+    // (e.g. pen/pencil strokes, which keep exact pointer positions).
+    if (canBlockSnap(ctx, Block.read(ctx, blockId).tag)) {
+      Grid.snapPosition(ctx, worldPos)
+    }
 
     Block.setWorldPosition(ctx, blockId, worldPos)
   }
@@ -128,13 +145,17 @@ function onRotateHandleDrag(ctx: Context, handleId: EntityId, position: Vec2): v
 
   let delta = angleHandle - handleStartAngle
 
-  // Apply angular snapping
+  // Apply angular snapping. The snap angle is selection-wide, so only suppress
+  // the automatic grid snap when the whole selection opts out (e.g. rotating a
+  // lone stroke). Shift remains an explicit constrain override for any block.
   const grid = Grid.read(ctx)
   const keyboard = Keyboard.read(ctx)
+  const selectionSnappable = isSelectionSnappable(ctx)
+
   let snapAngle = 0
   if (keyboard.shiftDown) {
     snapAngle = grid.shiftSnapAngleRad
-  } else if (grid.enabled) {
+  } else if (grid.enabled && selectionSnappable) {
     snapAngle = grid.snapAngleRad
   }
 
@@ -170,8 +191,9 @@ function onRotateHandleDrag(ctx: Context, handleId: EntityId, position: Vec2): v
     const newCenter = Vec2.fromPolar(r, angle, boxCenter)
     const worldPos: Vec2 = [newCenter[0] - block.size[0] / 2, newCenter[1] - block.size[1] / 2]
 
-    // Apply grid snapping to position only in strict mode
-    if (grid.strict) {
+    // Apply grid snapping to position only in strict mode, and only for blocks
+    // that participate in snapping.
+    if (grid.strict && canBlockSnap(ctx, block.tag)) {
       Grid.snapPosition(ctx, worldPos)
     }
 
@@ -200,8 +222,12 @@ function onScaleHandleDrag(ctx: Context, handleId: EntityId, position: Vec2, mai
   // Calculate handle center from the new position
   const handleCenter: Vec2 = [position[0] + handleBlock.size[0] / 2, position[1] + handleBlock.size[1] / 2]
 
-  // Snap handle position to grid (transform box always aligns to grid)
-  Grid.snapPosition(ctx, handleCenter)
+  // Snap handle position to grid (transform box aligns to grid), unless every
+  // block being scaled opts out of snapping (e.g. a pure-stroke selection).
+  const selectionSnappable = isSelectionSnappable(ctx)
+  if (selectionSnappable) {
+    Grid.snapPosition(ctx, handleCenter)
+  }
 
   // Calculate the opposite corner position from the START state (fixed anchor point)
   // The opposite corner is on the opposite side of the box from the handle
@@ -316,8 +342,9 @@ function onScaleHandleDrag(ctx: Context, handleId: EntityId, position: Vec2, mai
     // Check if this is a text block that should maintain aspect ratio
     const isTextResize = getBlockResizeMode(ctx, blockId) === ResizeMode.Text
 
-    // Apply grid snapping to size only in strict mode
-    if (grid.strict) {
+    // Apply grid snapping to size only in strict mode, and only for blocks that
+    // participate in snapping.
+    if (grid.strict && canBlockSnap(ctx, block.tag)) {
       if (isTextResize && maintainAspectRatio) {
         // For text blocks, snap height to grid and derive width from aspect ratio
         newBlockSize[1] = Math.max(grid.rowHeight, Grid.snapY(ctx, newBlockSize[1]))
@@ -333,8 +360,9 @@ function onScaleHandleDrag(ctx: Context, handleId: EntityId, position: Vec2, mai
     const worldPos: Vec2 = Vec2.clone(newBlockCenter)
     Vec2.sub(worldPos, [newBlockSize[0] / 2, newBlockSize[1] / 2])
 
-    // Apply grid snapping to position only in strict mode
-    if (grid.strict) {
+    // Apply grid snapping to position only in strict mode, and only for blocks
+    // that participate in snapping.
+    if (grid.strict && canBlockSnap(ctx, block.tag)) {
       Grid.snapPosition(ctx, worldPos)
     }
 
@@ -424,13 +452,16 @@ function onRotateScaleHandleDrag(ctx: Context, handleId: EntityId, position: Vec
     newRotateZ = Scalar.normalizeAngle(newRotateZ - Math.PI)
   }
 
-  // Apply angular snapping
+  // Apply angular snapping. Suppress automatic grid snap when the whole
+  // selection opts out (e.g. a lone stroke); Shift stays an explicit override.
   const grid = Grid.read(ctx)
   const keyboard = Keyboard.read(ctx)
+  const selectionSnappable = isSelectionSnappable(ctx)
+
   let snapAngle = 0
   if (keyboard.shiftDown) {
     snapAngle = grid.shiftSnapAngleRad
-  } else if (grid.enabled) {
+  } else if (grid.enabled && selectionSnappable) {
     snapAngle = grid.snapAngleRad
   }
 
@@ -471,7 +502,7 @@ function onRotateScaleHandleDrag(ctx: Context, handleId: EntityId, position: Vec
     block.size = [finalLength, startHeight]
 
     const blockWorldPos: Vec2 = [newCenter[0] - finalLength / 2, newCenter[1] - startHeight / 2]
-    if (grid.strict) {
+    if (grid.strict && canBlockSnap(ctx, block.tag)) {
       Grid.snapPosition(ctx, blockWorldPos)
     }
     Block.setWorldPosition(ctx, blockId, blockWorldPos)

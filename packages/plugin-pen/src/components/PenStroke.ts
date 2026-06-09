@@ -1,4 +1,5 @@
 import { CanvasComponentDef, type Context, type EntityId, field } from '@woven-canvas/core'
+import { PenStrokeKind } from '../types'
 
 /**
  * Maximum number of points that can be stored in the stroke.
@@ -48,6 +49,18 @@ const PenStrokeSchema = {
    * Whether the stroke has pressure data from a stylus.
    */
   hasPressure: field.boolean().default(false),
+
+  /**
+   * Drawing mode for the stroke.
+   *
+   * `Stroke` (default) renders an ink ribbon along the path. `Fill` renders
+   * the enclosed area of the path as a filled shape (path closed end-to-start,
+   * even-odd fill rule).
+   *
+   * Not currently exposed through the pen tool / preset — intended for client
+   * apps that set it directly on the stroke entity. See {@link PenStrokeKind}.
+   */
+  kind: field.enum(PenStrokeKind).default(PenStrokeKind.Stroke),
 }
 
 /**
