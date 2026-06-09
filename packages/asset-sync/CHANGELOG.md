@@ -1,5 +1,11 @@
 # @woven-canvas/asset-sync
 
+## 1.0.6
+
+### Patch Changes
+
+- dbb05a6: Add polygon hit geometry with even-odd containment and capsule intersection, pen presets, and related pen tool improvements
+
 ## 1.0.5
 
 ### Patch Changes
