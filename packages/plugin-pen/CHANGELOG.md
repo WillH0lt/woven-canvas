@@ -1,5 +1,14 @@
 # @woven-canvas/plugin-pen
 
+## 1.0.5
+
+### Patch Changes
+
+- dbb05a6: Add polygon hit geometry with even-odd containment and capsule intersection, pen presets, and related pen tool improvements
+- Updated dependencies [dbb05a6]
+  - @woven-canvas/core@1.0.7
+  - @woven-canvas/math@1.0.4
+
 ## 1.0.4
 
 ### Patch Changes
