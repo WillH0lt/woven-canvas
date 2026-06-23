@@ -26,6 +26,8 @@ export {
   intersectPoint,
 } from './intersect'
 export { intersectCapsule } from './intersectCapsule'
+// Layer rank resolution (shared by intersect + vue sort)
+export { isLayerInteractive, resolveLayerRank } from './layerRank'
 // Ref field helpers
 export {
   convertRefsToUuids,
@@ -35,7 +37,6 @@ export {
 } from './ref'
 // Selection helpers
 export { deselectAll, deselectBlock, selectAll, selectBlock } from './select'
-
 // Block sort helpers
 export { compareBlockOrder, type SortableBlock } from './sortBlocks'
 

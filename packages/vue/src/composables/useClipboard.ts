@@ -405,6 +405,18 @@ export function useClipboard(containerRef: Ref<HTMLElement | null>, options: Cop
 
   let pendingPaste: { plainText: string; html: string } | null = null
 
+  // True when focus is in an editable form field (e.g. the color picker hex
+  // input). In that case the browser's native copy/cut/paste must be left
+  // alone so the user can copy text out of / into the field.
+  function isEditableTarget(): boolean {
+    const active = document.activeElement
+    return (
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      !!(active as HTMLElement | null)?.isContentEditable
+    )
+  }
+
   // Watch for editor creation to forward pending text paste
   watch(
     () => textEditorController.editor.value,
@@ -434,6 +446,9 @@ export function useClipboard(containerRef: Ref<HTMLElement | null>, options: Cop
 
   function writeBlocksToClipboard(event: ClipboardEvent): boolean {
     if (textEditorController.editor.value || !event.clipboardData) return false
+    // Don't hijack copy/cut when focus is in an editable field (e.g. copying
+    // the hex code from the color picker input).
+    if (isEditableTarget()) return false
     const editor = getEditor()
     if (!editor) return false
     const ctx = editor._getContext()
@@ -465,14 +480,7 @@ export function useClipboard(containerRef: Ref<HTMLElement | null>, options: Cop
   async function handlePaste(event: ClipboardEvent) {
     if (textEditorController.editor.value) return
 
-    const active = document.activeElement
-    if (
-      active instanceof HTMLInputElement ||
-      active instanceof HTMLTextAreaElement ||
-      (active as HTMLElement)?.isContentEditable
-    ) {
-      return
-    }
+    if (isEditableTarget()) return
 
     // Read clipboard data synchronously before any await
     const blockJson = event.clipboardData?.getData(BLOCK_CLIPBOARD_TYPE) ?? ''

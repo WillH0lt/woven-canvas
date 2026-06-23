@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch, onUnmounted, nextTick } from 'vue'
+import { computed, ref, shallowRef, watch, onUnmounted, nextTick, inject } from 'vue'
 import { Text, Block, Camera, Screen, Mouse, ResetKeyboard, removeEntity, getBlockDef } from '@woven-canvas/core'
 import { Editor, EditorContent } from '@tiptap/vue-3'
 import Document from '@tiptap/extension-document'
@@ -17,6 +17,7 @@ import { UndoRedo } from '@tiptap/extensions'
 import type { BlockData } from '../types'
 import { useComponent, useSingleton, useEditorContext } from '../composables'
 import { useTextEditorController } from '../composables/useTextEditorController'
+import { TEXT_EDITING_OPTIONS_KEY } from '../injection'
 import { computeBlockDimensions } from '../utils/blockDimensions'
 import { PASTE_WRAP_CHAR_THRESHOLD, MIN_WRAP_WIDTH } from '../constants'
 
@@ -46,6 +47,10 @@ const textEditorController = useTextEditorController()
 const { nextEditorTick, getEditor } = useEditorContext()
 const mouse = useSingleton(Mouse)
 
+// Canvas-wide text options (e.g. whether links are enabled). Provided by
+// WovenCanvas; absent when EditableText is used standalone, so default to on.
+const textOptions = inject(TEXT_EDITING_OPTIONS_KEY, undefined)
+
 // Template ref for measuring text dimensions
 const editableTextRef = ref<HTMLElement | null>(null)
 
@@ -57,6 +62,19 @@ const displayContent = ref(text.value?.content ?? '')
 
 // Lazy-initialized Tiptap editor (only created when editing)
 const editor = shallowRef<Editor | null>(null)
+
+// Lazy-load this block's font on demand. The editor no longer eager-loads every
+// configured family's stylesheet (the library can be thousands of fonts), so we
+// inject the @font-face rules the first time a block displays/edits in a given
+// family — and again whenever its font changes. `loadFont` is idempotent and a
+// no-op for already-loaded or unknown families, so this is safe to fire eagerly.
+watch(
+  () => text.value?.fontFamily,
+  (family) => {
+    if (family) void getEditor()?.loadFont(family)
+  },
+  { immediate: true },
+)
 
 /**
  * Enable constrainWidth on the current block so pasted text wraps instead of
@@ -144,6 +162,12 @@ function handlePaste(_view: unknown, event: ClipboardEvent): boolean {
 
 function createEditor(): Editor {
   const readonly = getEditor()?.readonly === true
+  // When links are disabled, keep the Link mark (so existing links still
+  // render) but turn off auto-formatting of typed/pasted URLs.
+  const linksEnabled = textOptions?.value.links !== false
+  // When underline is disabled, leave the mark out of the schema so typed/pasted
+  // underline is stripped on parse and Cmd+U is a no-op.
+  const underlineEnabled = textOptions?.value.underline !== false
 
   return new Editor({
     extensions: [
@@ -154,9 +178,11 @@ function createEditor(): Editor {
       Color,
       Bold,
       Italic,
-      Underline,
+      ...(underlineEnabled ? [Underline] : []),
       Link.configure({
         openOnClick: false,
+        autolink: linksEnabled,
+        linkOnPaste: linksEnabled,
         HTMLAttributes: {
           rel: 'noopener noreferrer',
           target: '_blank',

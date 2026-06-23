@@ -1,17 +1,17 @@
 import { Editor, type EditorPlugin } from '@woven-canvas/core'
-import { addComponent } from '@woven-ecs/core'
+import { addComponent, createEntity } from '@woven-ecs/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { Aabb, Block, Frame } from '../../src/components'
+import { Aabb, Block, Frame, Layer } from '../../src/components'
 import { intersectAabb, intersectPoint } from '../../src/helpers/intersect'
 import { createBlock, createMockElement } from '../testUtils'
 
 // Mock DOM element for tests
 const mockDomElement = createMockElement()
 
-// Minimal plugin that registers Block, Aabb, and Frame components
+// Minimal plugin that registers Block, Aabb, Frame, and Layer components
 const TestPlugin: EditorPlugin = {
   name: 'test',
-  components: [Block, Aabb, Frame],
+  components: [Block, Aabb, Frame, Layer],
 }
 
 describe('intersectAabb', () => {
@@ -512,6 +512,94 @@ describe('intersectAabb', () => {
 
         await editor.tick()
         expect(result).not.toContain(childId)
+      })
+    })
+
+    describe('layer visibility', () => {
+      /** Create a Layer entity, optionally hidden/locked. */
+      function createLayer(
+        ctx: ReturnType<typeof editor.getContext>,
+        options: { hidden?: boolean; locked?: boolean } = {},
+      ) {
+        const entityId = createEntity(ctx)
+        addComponent(ctx, entityId, Layer, { hidden: options.hidden ?? false, locked: options.locked ?? false })
+        return entityId
+      }
+
+      it('intersects a block on a visible layer', async () => {
+        let blockId = 0
+        let result: number[] = []
+
+        editor.nextTick((ctx) => {
+          blockId = createBlock(ctx, { position: [0, 0], size: [100, 100], synced: false })
+          Aabb.expandByBlock(ctx, blockId, blockId)
+          Block.write(ctx, blockId).layerId = createLayer(ctx)
+        })
+
+        await editor.tick()
+        editor.nextTick((ctx) => {
+          result = intersectPoint(ctx, [50, 50])
+        })
+
+        await editor.tick()
+        expect(result).toContain(blockId)
+      })
+
+      it('excludes a block on a hidden layer from point hit-testing', async () => {
+        let blockId = 0
+        let result: number[] = []
+
+        editor.nextTick((ctx) => {
+          blockId = createBlock(ctx, { position: [0, 0], size: [100, 100], synced: false })
+          Aabb.expandByBlock(ctx, blockId, blockId)
+          Block.write(ctx, blockId).layerId = createLayer(ctx, { hidden: true })
+        })
+
+        await editor.tick()
+        editor.nextTick((ctx) => {
+          result = intersectPoint(ctx, [50, 50])
+        })
+
+        await editor.tick()
+        expect(result).not.toContain(blockId)
+      })
+
+      it('excludes a block on a locked layer from point hit-testing', async () => {
+        let blockId = 0
+        let result: number[] = []
+
+        editor.nextTick((ctx) => {
+          blockId = createBlock(ctx, { position: [0, 0], size: [100, 100], synced: false })
+          Aabb.expandByBlock(ctx, blockId, blockId)
+          Block.write(ctx, blockId).layerId = createLayer(ctx, { locked: true })
+        })
+
+        await editor.tick()
+        editor.nextTick((ctx) => {
+          result = intersectPoint(ctx, [50, 50])
+        })
+
+        await editor.tick()
+        expect(result).not.toContain(blockId)
+      })
+
+      it('excludes a block on a hidden layer from marquee (AABB) selection', async () => {
+        let blockId = 0
+        let result: number[] = []
+
+        editor.nextTick((ctx) => {
+          blockId = createBlock(ctx, { position: [0, 0], size: [100, 100], synced: false })
+          Aabb.expandByBlock(ctx, blockId, blockId)
+          Block.write(ctx, blockId).layerId = createLayer(ctx, { hidden: true })
+        })
+
+        await editor.tick()
+        editor.nextTick((ctx) => {
+          result = intersectAabb(ctx, [-10, -10, 200, 200])
+        })
+
+        await editor.tick()
+        expect(result).not.toContain(blockId)
       })
     })
 

@@ -76,6 +76,8 @@ function handleWheelStop(e: Event) {
               class="wov-font-preview"
               :src="font.previewImage"
               :alt="font.name"
+              loading="lazy"
+              decoding="async"
             />
             <span
               v-else

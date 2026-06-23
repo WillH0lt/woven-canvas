@@ -37,23 +37,47 @@ export type FontFamilyInput = z.input<typeof FontFamily>
  * It tracks which fonts have been loaded to avoid duplicate loading.
  */
 export class FontLoader {
-  private loadedFonts: Set<string> = new Set()
+  // Families whose stylesheet has fully loaded (fetched, injected, and the
+  // FontFaces reported ready by the browser).
+  private loaded: Set<string> = new Set()
+  // In-flight loads, keyed by family name, so concurrent callers share one load
+  // and — critically — can `await` it to *completion*. A plain "already started"
+  // flag (the old behaviour) would let a second caller proceed before the font is
+  // actually ready, which breaks code that measures text right after requesting a
+  // font (the block would be sized against fallback metrics).
+  private inFlight: Map<string, Promise<void>> = new Map()
 
   /**
-   * Load multiple font families.
-   * Fonts that have already been loaded will be skipped.
+   * Load multiple font families. Already-loaded families are skipped; in-flight
+   * ones are shared. Resolves once all requested families are ready.
    *
    * @param families - Array of font families to load
    */
   async loadFonts(families: FontFamily[]): Promise<void> {
-    const unloadedFamilies = families.filter((family) => !this.loadedFonts.has(family.name))
+    await Promise.all(families.map((family) => this.loadFont(family)))
+  }
 
-    if (unloadedFamilies.length === 0) {
-      return
-    }
-
-    const fontPromises = unloadedFamilies.map((family) => this.loadSingleFont(family))
-    await Promise.all(fontPromises)
+  /**
+   * Load a single font family, returning a promise that resolves only once the
+   * font is actually ready to render. Idempotent: an already-loaded family
+   * resolves immediately, and concurrent calls for the same family share the one
+   * in-flight load — so a caller that measures text can `await` real metrics.
+   *
+   * @param family - Font family to load
+   */
+  loadFont(family: FontFamily): Promise<void> {
+    if (this.loaded.has(family.name)) return Promise.resolve()
+    const existing = this.inFlight.get(family.name)
+    if (existing) return existing
+    const promise = this.loadSingleFont(family)
+      .then(() => {
+        this.loaded.add(family.name)
+      })
+      .finally(() => {
+        this.inFlight.delete(family.name)
+      })
+    this.inFlight.set(family.name, promise)
+    return promise
   }
 
   /**
@@ -113,8 +137,6 @@ export class FontLoader {
    * @param family - Font family to load
    */
   private async loadSingleFont(family: FontFamily): Promise<void> {
-    this.loadedFonts.add(family.name)
-
     // Skip actual font loading in SSR/headless — fonts are loaded client-side
     if (typeof document === 'undefined') return
 
@@ -172,13 +194,13 @@ export class FontLoader {
    * @returns True if the font has been loaded
    */
   isLoaded(fontName: string): boolean {
-    return this.loadedFonts.has(fontName)
+    return this.loaded.has(fontName)
   }
 
   /**
    * Get the set of loaded font names.
    */
   getLoadedFonts(): ReadonlySet<string> {
-    return this.loadedFonts
+    return this.loaded
   }
 }

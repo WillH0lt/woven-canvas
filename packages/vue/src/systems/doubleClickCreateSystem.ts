@@ -9,6 +9,7 @@ import {
   type EditorResources,
   Frame,
   findFrameAtPoint,
+  getPluginResources,
   getPointerInput,
   getResources,
   hasComponent,
@@ -17,7 +18,9 @@ import {
   Selected,
   Text,
 } from '@woven-canvas/core'
-import { type BlockSnapshot, createBlockFromSnapshot } from '../helpers/snapshot'
+import { EDITING_PLUGIN_NAME } from '../constants'
+import type { EditingPluginResources } from '../EditingPlugin'
+import { applyCreationDefaults, type BlockSnapshot, createBlockFromSnapshot } from '../helpers/snapshot'
 import { DoubleClickState } from '../singletons'
 
 /** Time window for double-click detection (ms) */
@@ -62,13 +65,18 @@ export const doubleClickCreateSystem = defineEditorSystem({ phase: 'capture' }, 
 
   if (timeDelta < DOUBLE_CLICK_TIME_MS && dist < DOUBLE_CLICK_DISTANCE) {
     // Parse the snapshot
-    let snapshot: BlockSnapshot
+    let parsed: BlockSnapshot
     try {
-      snapshot = JSON.parse(dblState.snapshot) as BlockSnapshot
+      parsed = JSON.parse(dblState.snapshot) as BlockSnapshot
     } catch {
       return
     }
-    if (!snapshot.block?.tag) return
+    if (!parsed.block?.tag) return
+
+    // Fill any omitted component fields (e.g. text.fontFamily) from the canvas
+    // creation defaults so double-click inherits the last-used font/size.
+    const { getDefaults } = getPluginResources<EditingPluginResources>(ctx, EDITING_PLUGIN_NAME)
+    const snapshot = applyCreationDefaults(parsed, getDefaults)
 
     // Verify the block definition is registered for this tag
     const { editor } = getResources<EditorResources>(ctx)

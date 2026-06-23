@@ -8,6 +8,7 @@ export interface SortableBlock {
   rank: string
   stratum: Stratum
   parentId: unknown // EntityId or null — we only need identity comparison
+  layerRank?: string
 }
 
 /**
@@ -68,7 +69,15 @@ export function compareBlockOrder(
   const stratumDiff = STRATUM_ORDER[a.stratum] - STRATUM_ORDER[b.stratum]
   if (stratumDiff !== 0) return stratumDiff
 
-  // Within same stratum, sort by hierarchical rank chain
+  // Within a stratum, layer rank dominates: a block in a higher-ranked layer
+  // sorts in front of one in a lower-ranked layer, regardless of rank chain.
+  // Unlayered blocks ('') share a band and fall through to the rank chain,
+  // so behavior is unchanged until layers are actually used.
+  const aLayer = a.layerRank ?? ''
+  const bLayer = b.layerRank ?? ''
+  if (aLayer !== bLayer) return aLayer < bLayer ? -1 : 1
+
+  // Within the same layer, sort by hierarchical rank chain
   const chainA = getRankChain(getBlock, a)
   const chainB = getRankChain(getBlock, b)
   return compareRankChains(chainA, chainB)

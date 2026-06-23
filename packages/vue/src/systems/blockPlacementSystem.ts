@@ -23,7 +23,7 @@ import {
 
 import { EDITING_PLUGIN_NAME } from '../constants'
 import type { EditingPluginResources } from '../EditingPlugin'
-import { type BlockSnapshot, createBlockFromSnapshot, parseSnapshot } from '../helpers/snapshot'
+import { applyCreationDefaults, type BlockSnapshot, createBlockFromSnapshot, parseSnapshot } from '../helpers/snapshot'
 import { BlockPlacementState } from '../singletons'
 
 // Re-export for consumers
@@ -146,8 +146,13 @@ export const blockPlacementSystem = defineEditorSystem({ phase: 'capture' }, (ct
   if (events.length === 0) return
 
   // Parse and validate snapshot
-  const snapshot = parseSnapshot(controls.heldSnapshot)
-  if (!snapshot) return
+  const parsed = parseSnapshot(controls.heldSnapshot)
+  if (!parsed) return
+
+  // Fill any omitted component fields (e.g. text.fontFamily) from the canvas
+  // creation defaults so toolbar placement inherits the last-used font/size.
+  const { getDefaults } = getPluginResources<EditingPluginResources>(ctx, EDITING_PLUGIN_NAME)
+  const snapshot = applyCreationDefaults(parsed, getDefaults)
 
   // Check if this is a drag-out or click-to-place
   const isDragOut = controls.leftMouseTool === 'drag-out'

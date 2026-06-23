@@ -39,6 +39,9 @@ const BlockSchema = {
   resizeMode: field.enum(ResizeMode).default(ResizeMode.Default),
   /** Parent block ID — position is relative to parent if set */
   parentId: field.ref(),
+  /** Layer membership — carried by every block directly (a frame and its
+   *  children each get their own `layerId`; no inheritance). Null = unlayered. */
+  layerId: field.ref(),
 }
 
 /**

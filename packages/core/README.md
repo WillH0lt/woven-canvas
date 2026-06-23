@@ -27,7 +27,7 @@ loop();
 
 ## Documentation
 
-For full API documentation, see the [documentation site](https://wovencanvas.dev).
+For full API documentation, see [woven-canvas.dev](https://woven-canvas.dev).
 
 ## License
 

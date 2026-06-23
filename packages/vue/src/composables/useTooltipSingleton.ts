@@ -1,3 +1,4 @@
+import type { Placement } from '@floating-ui/vue'
 import { type Ref, readonly, ref } from 'vue'
 
 // Timing configuration
@@ -9,13 +10,15 @@ export interface TooltipState {
   text: string
   /** The element to anchor the tooltip to */
   anchor: HTMLElement
+  /** Preferred side to render on, relative to the anchor. Defaults to 'top'. */
+  placement?: Placement
 }
 
 export interface TooltipContext {
   activeTooltip: Readonly<Ref<TooltipState | null>>
   isVisible: Readonly<Ref<boolean>>
   isWarmedUp: Readonly<Ref<boolean>>
-  show: (text: string, anchor: HTMLElement) => void
+  show: (text: string, anchor: HTMLElement, placement?: Placement) => void
   hide: () => void
   reset: () => void
 }
@@ -60,10 +63,10 @@ function watchAnchor(anchor: HTMLElement) {
   anchorObserver.observe(document.body, { childList: true, subtree: true })
 }
 
-function show(text: string, anchor: HTMLElement) {
+function show(text: string, anchor: HTMLElement, placement?: Placement) {
   clearTimers()
 
-  activeTooltip.value = { text, anchor }
+  activeTooltip.value = { text, anchor, placement }
   watchAnchor(anchor)
 
   if (isWarmedUp.value) {

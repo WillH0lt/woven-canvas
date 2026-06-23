@@ -7,10 +7,13 @@ const { activeTooltip, isVisible } = useTooltipSingleton()
 
 const tooltipRef = ref<HTMLElement | null>(null)
 const anchorRef = computed(() => activeTooltip.value?.anchor ?? null)
+// Per-tooltip placement (defaults to 'top'); flip() falls back to the opposite
+// side if there isn't room.
+const placement = computed(() => activeTooltip.value?.placement ?? 'top')
 
 const { floatingStyles } = useFloating(anchorRef, tooltipRef, {
-  placement: 'top',
-  middleware: [offset(8), flip({ fallbackPlacements: ['bottom'] }), shift({ padding: 8 })],
+  placement,
+  middleware: [offset(8), flip(), shift({ padding: 8 })],
 })
 
 // Only the first-mounted MenuTooltip renders. Pages with multiple WovenCanvas

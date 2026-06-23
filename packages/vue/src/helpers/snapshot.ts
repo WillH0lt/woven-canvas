@@ -23,6 +23,36 @@ export type BlockSnapshot = Record<string, unknown> & {
 }
 
 /**
+ * Fill in a placement snapshot's omitted component fields from the canvas
+ * creation defaults (`setDefaults`/`getDefaults`, threaded into ECS via the
+ * editing plugin's `getDefaults` resource). Registered defaults are merged UNDER
+ * each component the snapshot already mentions, so explicit snapshot values
+ * always win, but a field the snapshot leaves undefined (e.g. `text.fontFamily`)
+ * falls back to the last value set there.
+ *
+ * Call this from the interactive placement paths (toolbar click-to-place,
+ * drag-out, double-click) — NOT from `createBlockFromSnapshot` itself, which
+ * stays a faithful primitive (paste, draw, programmatic creation must reproduce
+ * their snapshot exactly, without surprise defaults).
+ */
+export function applyCreationDefaults(
+  snapshot: BlockSnapshot,
+  getDefaults?: (component: string) => Record<string, unknown>,
+): BlockSnapshot {
+  if (!getDefaults) return snapshot
+
+  let merged: BlockSnapshot | null = null
+  for (const key of Object.keys(snapshot)) {
+    if (key === 'block') continue
+    const defaults = getDefaults(key)
+    if (!defaults || Object.keys(defaults).length === 0) continue
+    merged ??= { ...snapshot }
+    merged[key] = { ...defaults, ...(snapshot[key] as object) }
+  }
+  return merged ?? snapshot
+}
+
+/**
  * Parse the snapshot from Controls.heldSnapshot.
  */
 export function parseSnapshot(heldSnapshot: string): BlockSnapshot | null {

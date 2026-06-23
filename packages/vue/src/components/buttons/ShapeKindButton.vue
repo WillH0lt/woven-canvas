@@ -12,7 +12,7 @@ const props = defineProps<{
   entityIds: EntityId[]
 }>()
 
-const { nextEditorTick } = useEditorContext()
+const { nextEditorTick, setDefaults } = useEditorContext()
 
 const shapesMap = useComponents(() => props.entityIds, Shape)
 
@@ -42,6 +42,8 @@ const shapeOptions = computed(() =>
 )
 
 function handleKindChange(kind: string) {
+  // Remember the pick as the creation default for new shapes (mirrors setFontFamily).
+  setDefaults('shape', { kind })
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       const shapeData = Shape.write(ctx, entityId)

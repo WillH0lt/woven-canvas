@@ -16,6 +16,7 @@ import {
   EventType,
   SINGLETON_ENTITY_ID,
   compareBlockOrder,
+  resolveLayerRank,
   type SortableBlock,
   defineQuery,
   getResources,
@@ -30,6 +31,7 @@ import {
   type Context,
   Selected,
   Frame,
+  Layer,
 } from '@woven-canvas/core'
 import { CanvasStore, type CanvasStoreOptions, type ComponentData } from '@woven-ecs/canvas-store'
 import { AssetManager, LocalAssetProvider, type AssetProvider } from '@woven-canvas/asset-sync'
@@ -39,7 +41,13 @@ import { createPenPlugin } from '@woven-canvas/plugin-pen'
 import { createArrowsPlugin, type ArrowsPluginOptions } from '@woven-canvas/plugin-arrows'
 import { createTapesPlugin } from '@woven-canvas/plugin-tapes'
 
-import { WOVEN_CANVAS_KEY, type WovenCanvasContext, type UserData } from '../injection'
+import {
+  TEXT_EDITING_OPTIONS_KEY,
+  type TextEditingOptions,
+  type UserData,
+  WOVEN_CANVAS_KEY,
+  type WovenCanvasContext,
+} from '../injection'
 import SelectionBox from './blocks/SelectionBox.vue'
 import TransformBox from './blocks/TransformBox.vue'
 import TransformHandle from './blocks/TransformHandle.vue'
@@ -104,6 +112,7 @@ const hoveredQuery = defineQuery((q) => q.with(Block).tracking(Hovered))
 const editedQuery = defineQuery((q) => q.with(Block).tracking(Edited))
 const opacityQuery = defineQuery((q) => q.with(Block).tracking(Opacity))
 const userQuery = defineQuery((q) => q.tracking(User))
+const layerQuery = defineQuery((q) => q.tracking(Layer))
 
 type BlockDef = InferCanvasComponentType<typeof Block.schema>
 
@@ -168,6 +177,10 @@ export interface WovenCanvasProps {
    *  slot are all suppressed for these tags. Hit testing, hover, and drag
    *  for omitted tags must be handled by the external renderer. */
   omitBlockTags?: string[]
+
+  /** Text editing behavior. E.g. `{ links: false }` hides the link button and
+   *  disables automatic URL formatting. Defaults preserve full link support. */
+  textOptions?: TextEditingOptions
 }
 
 const props = defineProps<WovenCanvasProps>()
@@ -267,7 +280,6 @@ const blockMap = new Map<EntityId, Ref<BlockData>>()
 
 // Blocks sorted by rank for rendering
 const sortedBlocks = shallowRef<Ref<BlockData>[]>([])
-
 
 // Online status, derived from three signals (because each has a gap):
 //   1. navigator.onLine + window 'online'/'offline' — the browser's view.
@@ -436,6 +448,13 @@ provide(WOVEN_CANVAS_KEY, canvasContext)
 // Provide container ref for FloatingMenu positioning
 provide('containerRef', containerRef)
 
+// Provide text editing options (link support, etc.) to EditableText and the
+// floating text menu. Reactive so a consumer can toggle behavior at runtime.
+provide(
+  TEXT_EDITING_OPTIONS_KEY,
+  computed(() => props.textOptions ?? {}),
+)
+
 // Pan camera to keep edited blocks visible when mobile keyboard opens
 useKeyboardAvoidance((cb) => {
   editorRef.value?.nextTick(cb)
@@ -477,6 +496,9 @@ function buildPlugins(storeInstance: CanvasStore): EditorPluginInput[] {
     EditingPlugin({
       store: storeInstance,
       doubleClickSnapshot: props.doubleClickSnapshot,
+      // Live read of the creation-defaults registry so the placement systems can
+      // apply them in ECS (e.g. inherit the last-used font when a snapshot omits it).
+      getDefaults: (component) => canvasContext.getDefaults(component),
     }),
   )
 
@@ -782,11 +804,21 @@ function updateBlocks(ctx: Context) {
     const blockRef = blockMap.get(entityId)
     if (blockRef) {
       const snapshot = Block.snapshot(ctx, entityId)
-      if (blockRef.value.block.rank !== snapshot.rank || blockRef.value.block.parentId !== snapshot.parentId) {
+      if (
+        blockRef.value.block.rank !== snapshot.rank ||
+        blockRef.value.block.parentId !== snapshot.parentId ||
+        blockRef.value.block.layerId !== snapshot.layerId
+      ) {
         needsResort = true
       }
       blockRef.value.block = snapshot
     }
+  }
+
+  // Any layer add/change/remove can shift block order (layer rank is part of the
+  // sort key, resolved live from ctx below), so trigger a resort.
+  if (layerQuery.addedOrChanged(ctx).length > 0 || layerQuery.removed(ctx).length > 0) {
+    needsResort = true
   }
 
   // Update users map for selection color lookup
@@ -893,7 +925,9 @@ function updateBlocks(ctx: Context) {
   if (needsResort) {
     const blocks = Array.from(blockMap.values())
 
-    // Lookup function for parent chain resolution from snapshot data
+    // Lookup function for parent chain resolution from snapshot data. layerRank
+    // is omitted here — compareBlockOrder only reads it off the two compared
+    // blocks (sa/sb), not off parent-chain lookups.
     const getBlock = (id: unknown): SortableBlock | null => {
       const ref = blockMap.get(id as EntityId)
       if (!ref) return null
@@ -901,10 +935,21 @@ function updateBlocks(ctx: Context) {
       return { rank: b.block.rank, stratum: b.stratum, parentId: b.block.parentId }
     }
 
-    // Sort using shared compareBlockOrder (ascending — behind first, matching DOM paint order)
+    // Sort using shared compareBlockOrder (ascending — behind first, matching DOM
+    // paint order). Layer rank is resolved live from ctx (same helper core uses).
     blocks.sort((a, b) => {
-      const sa: SortableBlock = { rank: a.value.block.rank, stratum: a.value.stratum, parentId: a.value.block.parentId }
-      const sb: SortableBlock = { rank: b.value.block.rank, stratum: b.value.stratum, parentId: b.value.block.parentId }
+      const sa: SortableBlock = {
+        rank: a.value.block.rank,
+        stratum: a.value.stratum,
+        parentId: a.value.block.parentId,
+        layerRank: resolveLayerRank(ctx, a.value.entityId),
+      }
+      const sb: SortableBlock = {
+        rank: b.value.block.rank,
+        stratum: b.value.stratum,
+        parentId: b.value.block.parentId,
+        layerRank: resolveLayerRank(ctx, b.value.entityId),
+      }
       return compareBlockOrder(getBlock, sa, sb)
     })
 

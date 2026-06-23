@@ -17,6 +17,8 @@ export { HitGeometry, MAX_HIT_ARCS, MAX_HIT_CAPSULES, MAX_HIT_POLYGON_POINTS } f
 export { Hovered } from './Hovered'
 // Image/Asset components
 export { Image } from './Image'
+// Layer membership / ordering band
+export { Layer } from './Layer'
 export { Opacity } from './Opacity'
 export {
   addPointerSample,

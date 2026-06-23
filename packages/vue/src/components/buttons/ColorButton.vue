@@ -12,6 +12,9 @@ import { rgbToHex, type ColorData } from '../../utils/color'
 
 const props = defineProps<{
   entityIds: EntityId[]
+  /** Expose the opacity slider in the picker, writing the alpha byte of
+   * `Color` (8-digit hex round-trips through `rgbToHex`/`Color.fromHex`). */
+  withOpacity?: boolean
 }>()
 
 const { nextEditorTick } = useEditorContext()
@@ -80,6 +83,7 @@ function handleColorChange(color: ColorData) {
         :currentColor="currentColorHex ?? undefined"
         :hideHighlight="hasMultipleColors"
         :withPicker="true"
+        :withOpacity="withOpacity"
         @change="handleColorChange"
       />
     </template>

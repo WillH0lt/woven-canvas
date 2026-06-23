@@ -329,11 +329,6 @@ export class Editor {
    * Call this after construction to run async setup.
    */
   async initialize(): Promise<void> {
-    // Load custom fonts
-    if (this.fonts.length > 0) {
-      await this.fontLoader.loadFonts(this.fonts)
-    }
-
     Grid.copy(this.ctx, this.gridOptions)
     Controls.copy(this.ctx, this.controlsOptions)
 
@@ -358,6 +353,35 @@ export class Editor {
         await plugin.setup(this.ctx)
       }
     }
+  }
+
+  /**
+   * Load a single font family's stylesheet on demand, by its `name` (the CSS
+   * font-family — the same key the picker and `Text.fontFamily` use). Looks the
+   * family up in the configured `fonts` and injects its @font-face rules into
+   * the document. Idempotent — the FontLoader dedups, so repeated calls for an
+   * already-loaded (or in-flight) family are cheap no-ops. Unknown names are
+   * ignored. This is how the editor scales to a large font library: nothing is
+   * fetched until a text block actually displays/edits in that family.
+   */
+  async loadFont(name: string): Promise<void> {
+    if (!name) return
+    const family = this.fonts.find((f) => f.name === name)
+    if (!family) return
+    try {
+      // Resolves only when the font is actually ready (FontLoader awaits the
+      // FontFaces), so callers can measure text against real metrics afterward.
+      await this.fontLoader.loadFont(family)
+    } catch (err) {
+      // Best-effort: a font that fails to load just falls back to the renderer's
+      // default. Never reject — callers (e.g. setFontFamily) must proceed either way.
+      console.warn(`Failed to load font: ${name}`, err)
+    }
+  }
+
+  /** Whether a font family's stylesheet has finished loading. */
+  isFontLoaded(name: string): boolean {
+    return this.fontLoader.isLoaded(name)
   }
 
   /**

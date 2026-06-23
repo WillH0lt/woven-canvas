@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { hexToHsva, hsvToHex, hsvaToHex, type HSVAColor } from '../../utils/color'
 import ColorInput from './ColorInput.vue'
-import type ColorSlider from './ColorSlider.vue'
+import ColorSlider from './ColorSlider.vue'
 
 const props = defineProps<{
   modelValue?: string

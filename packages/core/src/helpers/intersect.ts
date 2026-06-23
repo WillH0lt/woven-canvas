@@ -5,6 +5,7 @@ import { Block } from '../components/Block'
 import { Frame } from '../components/Frame'
 import { HitGeometry } from '../components/HitGeometry'
 import { canBlockInteract, getBlockDef } from './blockDefs'
+import { isLayerInteractive, resolveLayerRank } from './layerRank'
 import { compareBlockOrder, type SortableBlock } from './sortBlocks'
 
 // Query for all blocks with Aabb
@@ -75,6 +76,10 @@ export function intersectPoint(ctx: Context, point: Vec2, entityIds?: Iterable<E
     const block = Block.read(ctx, entityId)
     if (!canBlockInteract(ctx, block.tag)) continue
 
+    // Skip blocks on a hidden or locked layer — they render-only (or not at all)
+    // and are never hit targets.
+    if (!isLayerInteractive(ctx, block.layerId)) continue
+
     // Fast AABB rejection
     if (!AabbComp.containsPoint(ctx, entityId, point)) {
       continue
@@ -127,6 +132,10 @@ export function intersectAabb(ctx: Context, bounds: Aabb, entityIds?: Iterable<E
     const block = Block.read(ctx, entityId)
     if (!canBlockInteract(ctx, block.tag)) continue
 
+    // Skip blocks on a hidden or locked layer — they render-only (or not at all)
+    // and are never hit targets.
+    if (!isLayerInteractive(ctx, block.layerId)) continue
+
     const { value: entityAabb } = AabbComp.read(ctx, entityId)
 
     // Fast AABB-AABB rejection
@@ -161,8 +170,9 @@ export function intersectAabb(ctx: Context, bounds: Aabb, entityIds?: Iterable<E
 }
 
 /**
- * Sort entity IDs by stratum then hierarchical rank in descending order (topmost first).
- * Uses the shared compareBlockOrder for consistency with Vue rendering order.
+ * Sort entity IDs by stratum, then layer rank, then hierarchical rank in
+ * descending order (topmost first). Uses the shared compareBlockOrder for
+ * consistency with Vue rendering order.
  */
 function sortByRankDescending(ctx: Context, entityIds: EntityId[]): EntityId[] {
   // Build lookup for parentId → SortableBlock resolution
@@ -173,6 +183,7 @@ function sortByRankDescending(ctx: Context, entityIds: EntityId[]): EntityId[] {
       rank: block.rank,
       stratum: getBlockDef(ctx, block.tag).stratum,
       parentId: block.parentId,
+      layerRank: resolveLayerRank(ctx, id as EntityId),
     }
   }
 

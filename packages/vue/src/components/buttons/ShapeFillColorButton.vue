@@ -13,7 +13,7 @@ const props = defineProps<{
   entityIds: EntityId[]
 }>()
 
-const { nextEditorTick } = useEditorContext()
+const { nextEditorTick, setDefaults } = useEditorContext()
 
 const shapesMap = useComponents(() => props.entityIds, Shape)
 
@@ -50,6 +50,8 @@ const hasMultipleModes = computed(() => {
 })
 
 function handleModeChange(alpha: number) {
+  // Remember the pick as the creation default for new shapes (mirrors setFontFamily).
+  setDefaults('shape', { fillAlpha: alpha })
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       const shape = Shape.write(ctx, entityId)
@@ -86,6 +88,7 @@ const currentColorHex = computed(() => {
 })
 
 function handleColorChange(color: ColorData) {
+  setDefaults('shape', { fillRed: color.red, fillGreen: color.green, fillBlue: color.blue, fillAlpha: color.alpha })
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       const shape = Shape.write(ctx, entityId)

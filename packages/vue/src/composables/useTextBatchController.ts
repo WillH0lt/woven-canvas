@@ -10,7 +10,18 @@ import TiptapText from '@tiptap/extension-text'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import Underline from '@tiptap/extension-underline'
-import { Block, Camera, type EntityId, Screen, Text, type TextAlignment } from '@woven-canvas/core'
+import {
+  Block,
+  Camera,
+  type Context,
+  type EntityId,
+  Screen,
+  Text,
+  type TextAlignment,
+  TransformBoxState,
+  TransformBoxStateSingleton,
+  UpdateTransformBox,
+} from '@woven-canvas/core'
 import { type ComputedRef, computed, inject, type MaybeRefOrGetter, nextTick, type ShallowRef, toValue } from 'vue'
 import { WOVEN_CANVAS_KEY } from '../injection'
 import { type BlockDimensions, computeBlockDimensions } from '../utils/blockDimensions'
@@ -429,6 +440,22 @@ type CameraRef = ShallowRef<{ left: number; top: number; zoom: number }>
 type ScreenRef = ShallowRef<{ left: number; top: number }>
 
 /**
+ * Refresh the transform box so its bounds/handles follow a programmatic (menu-driven)
+ * resize of the selected text. Only when the box is in the `Idle` state — i.e. a
+ * selected-but-not-editing block, where the box is actually visible. While editing
+ * (`Editing` state) the box is hidden and its handles removed, so re-emitting an update
+ * there would wrongly resurrect the handles mid-edit. Nothing else re-syncs the box for
+ * these menu changes, so without this it stays at the old size until the next
+ * selection/pointer event.
+ */
+function refreshTransformBox(ctx: Context): void {
+  const tb = TransformBoxStateSingleton.read(ctx)
+  if (tb.transformBoxId !== null && tb.state === TransformBoxState.Idle) {
+    UpdateTransformBox.spawn(ctx, { transformBoxId: tb.transformBoxId })
+  }
+}
+
+/**
  * Measure text dimensions using an off-screen clone.
  * This allows us to measure the effect of style/content changes synchronously.
  */
@@ -675,6 +702,8 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
     },
 
     setFontSize(size: number) {
+      // Mirror setFontFamily: the pick becomes the default for new text.
+      canvasContext.setDefaults('text', { fontSizePx: size })
       applyTextStyleChange(
         (text) => ({ ...text, fontSizePx: size }),
         (text) => {
@@ -775,6 +804,9 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
         Block.setWorldPosition(ctx, entityId, [left, top])
       }
 
+      // Follow the resize with the transform box (selected-but-not-editing case).
+      refreshTransformBox(ctx)
+
       // Trigger floating menu position update after Vue re-renders
       // and restore focus to the editor if it exists (may have lost focus due to DOM changes)
       nextTick(() => {
@@ -825,6 +857,9 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
           Block.setWorldPosition(ctx, entityId, [left, top])
         }
       }
+
+      // Keep the transform box in sync with the resize (see applyTextStyleChange).
+      refreshTransformBox(ctx)
     })
   }
 

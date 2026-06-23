@@ -82,9 +82,27 @@ export const updatePenSystem = defineEditorSystem({ phase: 'update' }, (ctx: Con
 })
 
 /**
+ * True only for a fully finite world position. Pointer samples taken while the
+ * camera transform is momentarily undefined (e.g. mid pan/zoom, or before the
+ * viewport has measured) can arrive as `NaN`/`Infinity`. A non-finite point
+ * frozen into the buffer is invisible while drawing — perfect-freehand skips it
+ * and the GPU discards its degenerate triangles — but `JSON.stringify` turns it
+ * into `null`, which deserializes back as `0`, so the stroke springs a stray
+ * vertex at the world origin the next time the document loads. Reject such
+ * samples at the single point of entry rather than letting them persist.
+ */
+function isFinitePoint(point: [number, number]): boolean {
+  return Number.isFinite(point[0]) && Number.isFinite(point[1])
+}
+
+/**
  * Start a new pen stroke at the given position.
  */
 function startStroke(ctx: Context, position: [number, number], pressure: number | null): void {
+  // A non-finite start would seed the whole stroke (and its bounds) with NaN —
+  // see isFinitePoint. Ignore the gesture; the next finite pointerdown starts cleanly.
+  if (!isFinitePoint(position)) return
+
   // Brush thickness and color are read from the live PenPresetSingleton so
   // consumers can drive them from UI (slider, color picker) without having
   // to plumb the values through commands.
@@ -168,6 +186,11 @@ function startStroke(ctx: Context, position: [number, number], pressure: number 
  * See {@link SIMPLIFY_TOLERANCE_PX} for the algorithm overview.
  */
 function addStrokePoint(ctx: Context, strokeId: EntityId, point: [number, number], pressure: number | null): void {
+  // Drop non-finite samples before they touch the buffer — see isFinitePoint.
+  // Skipping the point keeps the previous provisional tail intact, so the live
+  // tip simply doesn't jump for that one frame.
+  if (!isFinitePoint(point)) return
+
   const stroke = PenStroke.write(ctx, strokeId)
   const count = stroke.pointCount
   const px = point[0]
@@ -220,21 +243,34 @@ function addStrokePoint(ctx: Context, strokeId: EntityId, point: [number, number
     return
   }
 
-  // Perpendicular distance of the live sample from the sleeve line (anchor + dir).
-  // `dir` is a unit vector, so the 2D cross product magnitude is the distance.
+  // `dir` is a unit vector along the sleeve. Decompose the live sample's offset
+  // from the anchor into:
+  //   perpendicular — distance off the sleeve line (2D cross product magnitude),
+  //   along         — signed distance projected onto the sleeve direction (dot).
   const ux = px - ax
   const uy = py - ay
   const perpendicular = Math.abs(ux * dir[1] - uy * dir[0])
+  const along = ux * dir[0] + uy * dir[1]
 
-  if (perpendicular >= tolerance) {
-    // The cursor left the sleeve: the current tail is a real vertex. Freeze it
-    // by appending a fresh tail at the new sample. The frozen tail becomes the
-    // new anchor; clear the direction so it re-establishes from there.
+  // How far along the sleeve the current (provisional) tail sits. A fold-back
+  // retraces the sleeve line, so it stays inside the perpendicular corridor and
+  // the sleeve alone can't see it — but the cursor's `along` projection starts
+  // shrinking past the tail. Detecting that reversal lets us pin the apex.
+  const tx = stroke.points[tailIdx * 2]
+  const ty = stroke.points[tailIdx * 2 + 1]
+  const tailAlong = (tx - ax) * dir[0] + (ty - ay) * dir[1]
+
+  if (perpendicular >= tolerance || tailAlong - along >= tolerance) {
+    // Either the cursor left the corridor (a genuine bend) or it reversed back
+    // along the sleeve past the tail (a fold). In both cases the current tail is
+    // a real vertex — the apex of the fold in the reversal case. Freeze it by
+    // appending a fresh tail at the new sample; the frozen tail becomes the new
+    // anchor, so clear the direction to re-establish it from there.
     writePoint(stroke, count, px, py, pr)
     stroke.pointCount = count + 1
     state.sleeveDir = [0, 0]
   } else {
-    // Still within the corridor: slide the tail to the cursor.
+    // Still within the corridor and still advancing: slide the tail to the cursor.
     writePoint(stroke, tailIdx, px, py, pr)
   }
 

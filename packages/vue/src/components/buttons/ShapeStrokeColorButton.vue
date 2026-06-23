@@ -14,7 +14,7 @@ const props = defineProps<{
   entityIds: EntityId[]
 }>()
 
-const { nextEditorTick } = useEditorContext()
+const { nextEditorTick, setDefaults } = useEditorContext()
 
 const shapesMap = useComponents(() => props.entityIds, Shape)
 
@@ -65,6 +65,8 @@ const hasMultipleStyles = computed(() => {
 })
 
 function handleColorChange(color: ColorData) {
+  // Remember the pick as the creation default for new shapes (mirrors setFontFamily).
+  setDefaults('shape', { strokeRed: color.red, strokeGreen: color.green, strokeBlue: color.blue })
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       const shape = Shape.write(ctx, entityId)
@@ -76,10 +78,29 @@ function handleColorChange(color: ColorData) {
 }
 
 function handleStyleChange(kind: StrokeKind) {
+  setDefaults('shape', { strokeKind: kind })
   nextEditorTick((ctx) => {
     for (const entityId of props.entityIds) {
       const shape = Shape.write(ctx, entityId)
       shape.strokeKind = kind
+    }
+  })
+}
+
+// Current stroke thickness (falls back to the component default).
+const currentWidth = computed<number>(() => {
+  const first = shapesMap.value.values().next().value
+  return first?.strokeWidth ?? 2
+})
+
+function handleWidthChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const newWidth = parseInt(target.value, 10)
+  setDefaults('shape', { strokeWidth: newWidth })
+  nextEditorTick((ctx) => {
+    for (const entityId of props.entityIds) {
+      const shape = Shape.write(ctx, entityId)
+      shape.strokeWidth = newWidth
     }
   })
 }
@@ -104,6 +125,18 @@ function handleStyleChange(kind: StrokeKind) {
           :hasMultipleStyles="hasMultipleStyles"
           @change="handleStyleChange"
         />
+        <div v-if="!pickerOpen" class="wov-stroke-thickness">
+          <input
+            type="range"
+            min="1"
+            max="20"
+            :value="currentWidth"
+            class="wov-stroke-thickness-slider"
+            aria-label="Stroke thickness"
+            @input="handleWidthChange"
+          />
+          <span class="wov-stroke-thickness-value">{{ currentWidth }}px</span>
+        </div>
         <div v-if="!pickerOpen" class="wov-stroke-divider" />
         <ColorBubbles
           :currentColor="currentColorHex"
@@ -142,5 +175,48 @@ function handleStyleChange(kind: StrokeKind) {
   height: 1px;
   background: var(--wov-gray-600);
   margin: 0 8px;
+}
+
+.wov-stroke-thickness {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+}
+
+.wov-stroke-thickness-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--wov-gray-500);
+  border-radius: 2px;
+  outline: none;
+}
+
+.wov-stroke-thickness-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.wov-stroke-thickness-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.wov-stroke-thickness-value {
+  font-size: 12px;
+  color: var(--wov-gray-100);
+  min-width: 36px;
+  text-align: right;
 }
 </style>

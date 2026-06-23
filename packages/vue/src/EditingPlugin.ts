@@ -8,11 +8,18 @@ import { blockPlacementSystem, doubleClickCreateSystem, drawPlacementSystem, und
 
 export interface EditingPluginResources {
   store: CanvasStore
+  /**
+   * Reads the canvas creation defaults registry (`setDefaults`/`getDefaults` on
+   * the WovenCanvas context). Exposed to ECS so the block-placement systems can
+   * fill the fields a placement snapshot omits — e.g. the last-used font.
+   */
+  getDefaults?: (component: string) => Record<string, unknown>
 }
 
 export interface EditingPluginOptions {
   store: CanvasStore
   doubleClickSnapshot?: string
+  getDefaults?: (component: string) => Record<string, unknown>
 }
 
 export const DEFAULT_FONTS: FontFamilyInput[] = [
@@ -49,7 +56,7 @@ export const DEFAULT_FONTS: FontFamilyInput[] = [
 export function EditingPlugin(options: EditingPluginOptions): EditorPlugin {
   return {
     name: EDITING_PLUGIN_NAME,
-    resources: { store: options.store } satisfies EditingPluginResources,
+    resources: { store: options.store, getDefaults: options.getDefaults } satisfies EditingPluginResources,
     singletons: [BlockPlacementState, DoubleClickState, PlacementDrawState],
     systems: [blockPlacementSystem, drawPlacementSystem, doubleClickCreateSystem, undoRedoSystem],
     setup(ctx) {
