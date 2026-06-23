@@ -1,5 +1,13 @@
 # @woven-canvas/plugin-pen
 
+## 1.0.6
+
+### Patch Changes
+
+- 566fba4: Add a Layer z-order system (named layers with per-layer rank, lock, and hide folded into the shared block sort and hit-testing), configurable per-canvas text editing options (`textOptions` prop to toggle links and underline) with creation defaults, and reject non-finite pen stroke samples so strokes no longer spring a stray vertex at the world origin on reload.
+- Updated dependencies [566fba4]
+  - @woven-canvas/core@1.0.8
+
 ## 1.0.5
 
 ### Patch Changes
