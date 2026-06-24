@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, inject, watch, onMounted, onUnmounted } from 'vue'
-import { Asset, UploadState } from '@woven-canvas/core'
+import { Asset, Image, UploadState } from '@woven-canvas/core'
+import type { ResolveDimensions } from '@woven-canvas/asset-sync'
 
 import type { BlockData } from '../../types'
 import { useComponent } from '../../composables/useComponent'
+import { bucketPx } from '../../helpers/assetDimensions'
 import { WOVEN_CANVAS_KEY } from '../../injection'
 
 const props = defineProps<BlockData>()
@@ -15,14 +17,36 @@ if (!injectedContext) {
 const canvasContext = injectedContext
 
 const asset = useComponent(props.entityId, Asset)
+const image = useComponent(props.entityId, Image)
+
+// A tape repeats horizontally at `background-size: auto 100%`, so one tile is
+// displayed at the block's height tall and `height × aspect` wide. Size the
+// requested variant to that displayed tile — not the looped strip length, and not
+// the full source — so a high-res strip shown thin doesn't fetch its full
+// resolution. Height is clamped to the source (bucketPx), which keeps the derived
+// width ≤ the source too (no upscale). Falls back to bucketing the block width
+// when the intrinsic size isn't known yet.
+function currentDimensions(): ResolveDimensions {
+  const intrinsicWidth = image.value?.width ?? 0
+  const intrinsicHeight = image.value?.height ?? 0
+  const height = bucketPx(props.block.size[1], intrinsicHeight)
+  if (intrinsicWidth <= 0 || intrinsicHeight <= 0) {
+    return { width: bucketPx(props.block.size[0]), height }
+  }
+  return { width: Math.ceil(height * (intrinsicWidth / intrinsicHeight)), height }
+}
 
 // Resolve the initial URL during setup so it's available for SSR
 const assetManagerForSetup = canvasContext.getAssetManager()
 const initialAsset = asset.value
 let initialUrl: string | null = null
 if (assetManagerForSetup && initialAsset?.identifier) {
-  initialUrl = await assetManagerForSetup.getDisplayUrl(initialAsset.identifier)
+  initialUrl = await assetManagerForSetup.getDisplayUrl(initialAsset.identifier, currentDimensions())
 }
+
+// The largest height bucket we've already requested; only re-resolve on growth.
+// Width is derived from height (× aspect), so tracking height growth covers both.
+let requestedHeight = currentDimensions().height
 
 const displayUrl = ref<string | null>(initialUrl)
 const isLoading = ref(!initialUrl)
@@ -49,7 +73,9 @@ async function updateDisplayUrl() {
     isLoading.value = true
     hasError.value = false
 
-    const url = await assetManager.getDisplayUrl(assetData.identifier)
+    const dims = currentDimensions()
+    requestedHeight = dims.height
+    const url = await assetManager.getDisplayUrl(assetData.identifier, dims)
 
     if (!isMounted) return
 
@@ -79,6 +105,17 @@ watch(
 onMounted(() => {
   updateDisplayUrl()
 })
+
+// Re-request a higher-resolution variant when the tape grows taller than the
+// bucket we last asked for. Shrinking is ignored.
+watch(
+  () => props.block.size[1],
+  () => {
+    if (currentDimensions().height > requestedHeight) {
+      updateDisplayUrl()
+    }
+  },
+)
 </script>
 
 <template>

@@ -53,7 +53,7 @@
     --wov-highlighted-block-outline-width: 1.5px;
     --wov-highlighted-block-outline-offset: -1px;
     --wov-highlighted-block-border-radius: 2px;
-    --wov-selection-box-bg: #5865f222;
+    --wov-selection-box-bg: color-mix(in srgb, var(--wov-primary) 13%, transparent);
     --wov-text-selection-color: var(--wov-primary-light);
     --wov-link-color: var(--wov-primary);
   }

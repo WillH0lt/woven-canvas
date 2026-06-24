@@ -1,9 +1,15 @@
 import { addComponent, type Context, hasComponent, removeComponent } from '@woven-ecs/core'
 import { on } from '../../command'
-import { AddFrameHighlight, AssignFrameChildren, RemoveFrameHighlight } from '../../commands/containment'
+import {
+  AddFrameHighlight,
+  AssignFrameChildren,
+  PlaceBlockEvent,
+  RemoveFrameHighlight,
+} from '../../commands/containment'
 import { Block } from '../../components/Block'
 import { FrameDropTarget } from '../../components/FrameDropTarget'
 import { defineEditorSystem } from '../../EditorSystem'
+import { findFrameAtPoint } from '../../helpers/findFrameAtPoint'
 
 /**
  * Update frame containment system - processes containment commands.
@@ -12,12 +18,27 @@ import { defineEditorSystem } from '../../EditorSystem'
  * - AddFrameHighlight: add FrameDropTarget component for visual feedback
  * - RemoveFrameHighlight: remove FrameDropTarget component
  * - AssignFrameChildren: set/clear Block.parentId and convert positions
+ * - PlaceBlockEvent: drop a freshly-created block onto the frame under its own position
  */
 export const updateFrameContainmentSystem = defineEditorSystem({ phase: 'update', priority: -10 }, (ctx: Context) => {
   on(ctx, AddFrameHighlight, (ctx, { frameId }) => {
     if (!hasComponent(ctx, frameId, FrameDropTarget)) {
       addComponent(ctx, frameId, FrameDropTarget)
     }
+  })
+
+  // Generic half of PlaceBlockEvent: parent a just-created block to the frame under its
+  // own world position, keeping that position. Skips a block the caller already
+  // parented deliberately. App plugins (e.g. books → layer assignment) react to the
+  // same command separately, at their own priority.
+  on(ctx, PlaceBlockEvent, (ctx, { entityId }) => {
+    if (!hasComponent(ctx, entityId, Block)) return
+    if (Block.read(ctx, entityId).parentId !== null) return
+    const worldPos = Block.getWorldPosition(ctx, entityId)
+    const frameId = findFrameAtPoint(ctx, worldPos, entityId)
+    if (frameId === null) return
+    Block.write(ctx, entityId).parentId = frameId
+    Block.setWorldPosition(ctx, entityId, worldPos)
   })
 
   on(ctx, RemoveFrameHighlight, (ctx, { frameId }) => {

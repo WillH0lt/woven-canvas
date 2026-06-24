@@ -12,6 +12,8 @@ export {
 } from './blockDefs'
 // AABB computation
 export { computeAabb } from './computeAabb'
+// Block creation
+export { type CreateBlockInput, createBlock } from './createBlock'
 export { detectEmbedProvider, resolveEmbedUrl, validateEmbedUrl } from './embed'
 // Frame helpers
 export { findFrameAtPoint } from './findFrameAtPoint'

@@ -10,7 +10,6 @@ import {
   defineQuery,
   type EditorResources,
   type EntityId,
-  findFrameAtPoint,
   getResources,
   Held,
   HitGeometry,
@@ -18,6 +17,7 @@ import {
   MAX_HIT_CAPSULES,
   MAX_HIT_POLYGON_POINTS,
   on,
+  PlaceBlockEvent,
   RankBounds,
   removeComponent,
   removeEntity,
@@ -156,14 +156,8 @@ function startStroke(ctx: Context, position: [number, number], pressure: number 
     kind,
   })
 
-  // Assign to frame if the stroke starts on one
-  const frameId = findFrameAtPoint(ctx, position, strokeId)
-  if (frameId !== null) {
-    const currentWorldPos = Block.getWorldPosition(ctx, strokeId)
-    const block = Block.write(ctx, strokeId)
-    block.parentId = frameId
-    Block.setWorldPosition(ctx, strokeId, currentWorldPos)
-  }
+  // Place into the page (frame + layer handled by PlaceBlockEvent, from the stroke's position).
+  PlaceBlockEvent.spawn(ctx, { entityId: strokeId })
 
   // Store reference to active stroke in state singleton
   const state = PenStateSingleton.write(ctx)

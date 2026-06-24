@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, inject, watch, onMounted, onUnmounted } from 'vue'
 import { Image, Asset, UploadState } from '@woven-canvas/core'
+import type { ResolveDimensions } from '@woven-canvas/asset-sync'
 
 import type { BlockData } from '../../types'
 import { useComponent } from '../../composables/useComponent'
+import { bucketPx } from '../../helpers/assetDimensions'
 import { WOVEN_CANVAS_KEY } from '../../injection'
 
 const props = defineProps<BlockData>()
@@ -30,12 +32,30 @@ const isRemoteUploading = computed(() => {
   return !assetManager?.hasPendingUpload(a.identifier)
 })
 
+// The device-pixel render target for the current block size, bucketed and
+// clamped to the image's intrinsic size. Drives which variant we request.
+function currentDimensions(): ResolveDimensions {
+  const [w, h] = props.block.size
+  return {
+    width: bucketPx(w, image.value?.width ?? 0),
+    height: bucketPx(h, image.value?.height ?? 0),
+  }
+}
+
+// The largest bucket we've already requested. We only ever re-resolve when the
+// block grows past this — shrinking keeps the higher-res image (CSS scales it
+// down), so we never refetch a smaller, lower-quality variant.
+const requested = { width: 0, height: 0 }
+
 // Resolve the initial URL during setup so it's available for SSR. Skip if the
 // asset is being uploaded remotely — we'll show a spinner until it's ready.
 const initialAsset = asset.value
 let initialUrl: string | null = null
 if (assetManager && initialAsset?.identifier && !isRemoteUploading.value) {
-  initialUrl = await assetManager.getDisplayUrl(initialAsset.identifier)
+  const dims = currentDimensions()
+  requested.width = dims.width
+  requested.height = dims.height
+  initialUrl = await assetManager.getDisplayUrl(initialAsset.identifier, dims)
 }
 
 const displayUrl = ref<string | null>(initialUrl)
@@ -47,6 +67,28 @@ let isMounted = true
 onUnmounted(() => {
   isMounted = false
 })
+
+// Apply a freshly resolved URL. On the first load (no image showing yet) swap
+// in directly. On an upgrade, preload the larger variant off-screen and swap
+// only once it has decoded, so the visible image never blanks mid-resize.
+function applyUrl(url: string) {
+  if (typeof window === 'undefined' || !displayUrl.value) {
+    displayUrl.value = url
+    isLoading.value = false
+    return
+  }
+  const preload = new window.Image()
+  preload.onload = () => {
+    if (!isMounted) return
+    displayUrl.value = url
+    isLoading.value = false
+  }
+  preload.onerror = () => {
+    // Keep the current image; just drop the loading flag.
+    if (isMounted) isLoading.value = false
+  }
+  preload.src = url
+}
 
 async function updateDisplayUrl() {
   const assetData = asset.value
@@ -69,13 +111,15 @@ async function updateDisplayUrl() {
     isLoading.value = true
     hasError.value = false
 
-    const url = await assetManager?.getDisplayUrl(assetData.identifier)
+    const dims = currentDimensions()
+    requested.width = dims.width
+    requested.height = dims.height
+    const url = await assetManager?.getDisplayUrl(assetData.identifier, dims)
 
     if (!isMounted) return
 
     if (url) {
-      displayUrl.value = url
-      isLoading.value = false
+      applyUrl(url)
     } else if (assetData.uploadState === UploadState.Failed) {
       hasError.value = true
       isLoading.value = false
@@ -101,6 +145,18 @@ watch(
 onMounted(() => {
   updateDisplayUrl()
 })
+
+// Re-request a higher-resolution variant when the block grows past the bucket
+// we last asked for. Shrinking is ignored (see `requested`).
+watch(
+  () => [props.block.size[0], props.block.size[1]] as const,
+  () => {
+    const dims = currentDimensions()
+    if (dims.width > requested.width || dims.height > requested.height) {
+      updateDisplayUrl()
+    }
+  },
+)
 
 const imageStyle = computed(() => ({
   width: '100%',

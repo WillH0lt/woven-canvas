@@ -10,12 +10,12 @@ import {
   EditAfterPlacing,
   Edited,
   type EditorResources,
-  findFrameAtPoint,
   getPluginResources,
   getPointerInput,
   getResources,
   Held,
   isReadonly,
+  PlaceBlockEvent,
   PointerButton,
   SelectionState,
   SelectionStateSingleton,
@@ -46,15 +46,8 @@ function placeBlockAndSetupSelection(
   // Create the block at the position
   const entityId = createBlockFromSnapshot(ctx, snapshot, worldPosition)
 
-  // Assign to frame if placed inside one
-  const frameId = findFrameAtPoint(ctx, worldPosition, entityId)
-  if (frameId !== null) {
-    // Get current world position, set parent, then convert to parent-local
-    const currentWorldPos = Block.getWorldPosition(ctx, entityId)
-    const block = Block.write(ctx, entityId)
-    block.parentId = frameId
-    Block.setWorldPosition(ctx, entityId, currentWorldPos)
-  }
+  // Place into the page (frame + layer handled by PlaceBlockEvent, from the block's position).
+  PlaceBlockEvent.spawn(ctx, { entityId })
 
   // Mark as held for dragging
   const { sessionId } = getResources<EditorResources>(ctx)

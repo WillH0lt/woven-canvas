@@ -17,6 +17,7 @@ interface Block {
   rank: string; // Z-order (fractional indexing)
   rotateZ: number; // Rotation in radians
   flip: [boolean, boolean]; // [flipX, flipY] for mirroring
+  layerId: number | null; // Layer membership (null = unlayered)
 }
 ```
 
@@ -67,18 +68,6 @@ interface BlockData {
   opacity: number; // Current opacity
 }
 ```
-
-## Strata (Layers)
-
-Blocks are rendered in three layers:
-
-| Stratum      | Purpose                |
-| ------------ | ---------------------- |
-| `background` | Background elements    |
-| `content`    | Main content (default) |
-| `overlay`    | Selection UI, handles  |
-
-Within each stratum, blocks are sorted by their `rank` property.
 
 ## Reading Block Data
 
@@ -153,3 +142,66 @@ watchEffect(() => {
   console.log("Selected count:", selectedBlocks.value.length);
 });
 ```
+
+## Strata
+
+Blocks are rendered in three strata:
+
+| Stratum      | Purpose                |
+| ------------ | ---------------------- |
+| `background` | Background elements    |
+| `content`    | Main content (default) |
+| `overlay`    | Selection UI, handles  |
+
+Within each stratum, blocks are sorted by their `rank` property.
+
+## Layers
+
+Layers can be useful if you're building a design app.
+
+Layers are named z-order bands within a page that let you group blocks and
+control how they stack, independently of each block's own `rank`. A block joins
+a layer through its `layerId` (`null` means it's unlayered).
+
+Each `Layer` is its own ECS entity with these properties:
+
+| Property | Description                                                                   |
+| -------- | ----------------------------------------------------------------------------- |
+| `label`  | Display name shown in the layers panel                                        |
+| `rank`   | Z-order among the page's layers (fractional indexing) — higher sorts in front |
+| `locked` | When `true`, blocks in the layer can't be selected or hovered                 |
+| `hidden` | When `true`, the layer isn't rendered and is skipped by hit-testing           |
+
+A block's effective stacking order is `(stratum, layer rank, block rank)`
+
+## Creating Blocks
+
+Toolbar tools place blocks for you from a [snapshot](/learn/tools/#snapshots). When a plugin needs to create a block from its **own** system, use `createBlock`:
+
+```typescript
+import {
+  addComponent,
+  createBlock,
+  defineEditorSystem,
+} from "@woven-canvas/core";
+
+const spawnPotionSystem = defineEditorSystem({ phase: "update" }, (ctx) => {
+  for (const cmd of SpawnPotion.consume(ctx)) {
+    const entityId = createBlock(ctx, {
+      tag: "potion-card",
+      position: cmd.point, // top-left, in world coordinates
+      size: [200, 120],
+    });
+
+    // Add any extra components as usual.
+    addComponent(ctx, entityId, Potion, { name: "Health" });
+  }
+});
+```
+
+`createBlock` handles the boilerplate that's easy to forget:
+
+- assigns a `Synced` id so the block persists and syncs in multiplayer,
+- gives it a top-of-stack `rank` (z-order),
+- adds the `Block` component, and
+- **places** the block: parents it to the frame (a page, group, …) under its `position`, and lets other plugins attach per-block state.

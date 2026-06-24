@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@woven-ecs/canvas-store':
-      specifier: ^1.1.0
-      version: 1.1.0
+      specifier: ^1.1.2
+      version: 1.1.2
     '@woven-ecs/core':
       specifier: ^1.0.6
       version: 1.0.6
@@ -217,7 +217,7 @@ importers:
         version: link:../math
       '@woven-ecs/canvas-store':
         specifier: 'catalog:'
-        version: 1.1.0(typescript@5.9.3)
+        version: 1.1.2(typescript@5.9.3)
       '@woven-ecs/core':
         specifier: 'catalog:'
         version: 1.0.6(typescript@5.9.3)
@@ -440,7 +440,7 @@ importers:
         version: link:../plugin-tapes
       '@woven-ecs/canvas-store':
         specifier: 'catalog:'
-        version: 1.1.0(typescript@5.9.3)
+        version: 1.1.2(typescript@5.9.3)
       '@woven-ecs/core':
         specifier: 'catalog:'
         version: 1.0.6(typescript@5.9.3)
@@ -2461,8 +2461,8 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
-  '@woven-ecs/canvas-store@1.1.0':
-    resolution: {integrity: sha512-GgitinUQ8//ZaFMU5GfiImPbJ2lIInRas6uaZeQulrhKeK3jkwDVgYuSzPzRHHfnJP3vw4PUmhqSq9HijpbZyQ==}
+  '@woven-ecs/canvas-store@1.1.2':
+    resolution: {integrity: sha512-HorBsLfNu3CQh2KX8ApjmR4L5Cooiyhsac2iD9GhcrLGKrpfuoDDD5lUNwwGo1RwvBbugQ45kaJ8tyN/qVEFNA==}
     peerDependencies:
       typescript: ^5
 
@@ -7600,7 +7600,7 @@ snapshots:
     dependencies:
       vue: 3.5.28(typescript@5.9.3)
 
-  '@woven-ecs/canvas-store@1.1.0(typescript@5.9.3)':
+  '@woven-ecs/canvas-store@1.1.2(typescript@5.9.3)':
     dependencies:
       '@woven-ecs/core': 1.0.6(typescript@5.9.3)
       idb: 8.0.3

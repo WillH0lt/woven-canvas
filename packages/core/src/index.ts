@@ -67,6 +67,7 @@ export {
   DuplicateSelected,
   EndTransformBoxEdit,
   HideTransformBox,
+  PlaceBlockEvent,
   RemoveBlock,
   RemoveFrameHighlight,
   RemoveHeld,
@@ -169,6 +170,7 @@ export {
   cascadeDelete,
   compareBlockOrder,
   convertRefsToUuids,
+  createBlock,
   deselectAll,
   deselectBlock,
   detectEmbedProvider,
@@ -197,6 +199,7 @@ export {
   validateEmbedUrl,
   worldToLocal,
 } from './helpers'
+export type { CreateBlockInput } from './helpers/createBlock'
 // State machine utilities
 export { type MachineResult, runMachine } from './machine'
 // Plugin system

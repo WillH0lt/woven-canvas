@@ -73,7 +73,9 @@ function handleColorChange(color: ColorData) {
   <MenuDropdown title="Color">
     <template #button>
       <div class="wov-color-button">
-        <div class="wov-color-swatch" :style="swatchStyle" />
+        <div class="wov-color-swatch">
+          <div class="wov-color-swatch-fill" :style="swatchStyle" />
+        </div>
         <IconChevronDown class="wov-chevron-down" />
       </div>
     </template>
@@ -102,11 +104,33 @@ function handleColorChange(color: ColorData) {
 }
 
 .wov-color-swatch {
+  position: relative;
   width: 20px;
   height: 20px;
   border-radius: 9999px;
   outline-style: solid;
   outline-width: 1px;
   outline-color: #ffffff55;
+  overflow: hidden;
+  /* Alpha checkerboard painted behind the swatch fill so a translucent color
+   * reads as translucent (the grid shows through) instead of looking solid. */
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #c0c0c0 25%, transparent 25%),
+    linear-gradient(-45deg, #c0c0c0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c0c0c0 75%),
+    linear-gradient(-45deg, transparent 75%, #c0c0c0 75%);
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0;
+}
+
+.wov-color-swatch-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 </style>

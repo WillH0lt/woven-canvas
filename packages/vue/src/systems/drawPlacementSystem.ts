@@ -6,10 +6,10 @@ import {
   DeselectAll,
   defineEditorSystem,
   type EntityId,
-  findFrameAtPoint,
   Grid,
   getPointerInput,
   isReadonly,
+  PlaceBlockEvent,
   type PointerInput,
   removeEntity,
   selectBlock,
@@ -28,19 +28,6 @@ const MIN_DRAW_SIZE = 1
 
 /** The tool name used for draw-to-create interactions */
 const DRAW_TOOL = 'draw'
-
-/**
- * Assign an entity to a frame if it was created inside one.
- */
-function assignToFrame(ctx: Context, entityId: EntityId, position: [number, number]): void {
-  const frameId = findFrameAtPoint(ctx, position, entityId)
-  if (frameId !== null) {
-    const currentWorldPos = Block.getWorldPosition(ctx, entityId)
-    const block = Block.write(ctx, entityId)
-    block.parentId = frameId
-    Block.setWorldPosition(ctx, entityId, currentWorldPos)
-  }
-}
 
 type PlacementDrawContext = {
   activeEntity: EntityId | null
@@ -88,8 +75,8 @@ const drawMachine = setup({
         const drawSnapshot = { ...snapshot, block: { ...snapshot.block, size: [1, 1] as [number, number] } }
         const entityId = createBlockFromSnapshot(event.ctx, drawSnapshot, context.pointingStartWorld)
 
-        // Assign to frame if drawing started inside one
-        assignToFrame(event.ctx, entityId, context.pointingStartWorld)
+        // Place into the page under the start point (frame + layer handled by PlaceBlockEvent).
+        PlaceBlockEvent.spawn(event.ctx, { entityId })
 
         return entityId
       },
@@ -136,7 +123,7 @@ const drawMachine = setup({
       const snapshot = parseSnapshot(Controls.read(event.ctx).heldSnapshot)
       if (!snapshot) return
       const entityId = createBlockFromSnapshot(event.ctx, snapshot, context.pointingStartWorld)
-      assignToFrame(event.ctx, entityId, context.pointingStartWorld)
+      PlaceBlockEvent.spawn(event.ctx, { entityId })
       selectBlock(event.ctx, entityId)
     },
 

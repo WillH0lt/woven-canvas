@@ -17,6 +17,32 @@ export interface AssetUploadResult {
 }
 
 /**
+ * The size an asset is about to be rendered at, passed to
+ * {@link AssetProvider.resolveUrl} so a provider backed by a resizing CDN
+ * (Cloudinary, imgix, a thumbnailing service) can hand back an appropriately
+ * sized image instead of the full original. Providers that don't resize can
+ * ignore it and return the same URL regardless.
+ *
+ * Sizes are in *device* pixels — the block's CSS size multiplied by
+ * `devicePixelRatio`, rounded up to a step and clamped to the asset's intrinsic
+ * dimensions — so a provider can use them directly without re-applying dpr. They
+ * only ever grow over a block's lifetime: shrinking a block keeps the larger
+ * image (the browser scales it down for free), so a provider never needs to
+ * worry about quality regressing.
+ *
+ * A block that constrains only one axis still supplies both — the unconstrained
+ * axis is the asset's intrinsic size. A horizontally-repeating tape, for
+ * instance, passes its source image's full width so the tile stays full-res,
+ * and the displayed height for the other axis.
+ */
+export interface ResolveDimensions {
+  /** Target render width in device pixels. */
+  width: number
+  /** Target render height in device pixels. */
+  height: number
+}
+
+/**
  * User-provided interface for asset storage with optional configuration.
  *
  * Implement this interface to integrate with your own image/asset hosting service.
@@ -33,9 +59,10 @@ export interface AssetUploadResult {
  *     const { id, url } = await response.json();
  *     return { identifier: id, url };
  *   },
- *   async resolveUrl(identifier) {
+ *   async resolveUrl(identifier, { width, height }) {
  *     const response = await fetch(`/api/assets/${identifier}/url`);
  *     const { url } = await response.json();
+ *     // For a resizing CDN: return `${url}?w=${width}&h=${height}`;
  *     return url;
  *   },
  * };
@@ -60,9 +87,11 @@ export interface AssetProvider {
    * fresh URLs each time or use appropriate caching.
    *
    * @param identifier - The permanent identifier from upload()
+   * @param dimensions - The size the asset is about to be rendered at, so
+   *   resizing providers can request a matching variant. See {@link ResolveDimensions}.
    * @returns A URL that can be used to display the asset
    */
-  resolveUrl(identifier: string): Promise<string>
+  resolveUrl(identifier: string, dimensions: ResolveDimensions): Promise<string>
 
   /**
    * Optional: Delete an asset from storage.

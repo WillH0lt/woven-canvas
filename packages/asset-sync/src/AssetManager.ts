@@ -1,4 +1,4 @@
-import type { AssetMetadata, AssetProvider } from './AssetProvider'
+import type { AssetMetadata, AssetProvider, ResolveDimensions } from './AssetProvider'
 import { type KeyValueStore, openStore } from './storage'
 
 /**
@@ -184,13 +184,16 @@ export class AssetManager {
   /**
    * Get the display URL for an asset.
    *
-   * For pending uploads, returns the blob URL.
-   * For completed uploads, resolves and caches the URL from the provider.
+   * For pending uploads, returns the blob URL (the local preview is already at
+   * full resolution, so `dimensions` is ignored on this path).
+   * For completed uploads, resolves the URL from the provider, passing the
+   * render size through so resizing providers can return a matching variant.
    *
    * @param identifier - The asset identifier
+   * @param dimensions - The size the asset is about to be rendered at. See {@link ResolveDimensions}.
    * @returns The URL to display, or null if not available
    */
-  async getDisplayUrl(identifier: string): Promise<string | null> {
+  async getDisplayUrl(identifier: string, dimensions: ResolveDimensions): Promise<string | null> {
     if (!identifier) return null
 
     // If we have a blob URL for this identifier, use it (pending upload)
@@ -201,7 +204,7 @@ export class AssetManager {
 
     // Resolve through the provider (handles HTTP URLs, local paths, UUIDs, etc.)
     try {
-      const resolved = await this.provider.resolveUrl(identifier)
+      const resolved = await this.provider.resolveUrl(identifier, dimensions)
       return resolved
     } catch (error) {
       console.error(`Failed to resolve URL for ${identifier}:`, error)

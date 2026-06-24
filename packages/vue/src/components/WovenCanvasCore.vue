@@ -665,10 +665,12 @@ onMounted(async () => {
   if (assetManager) {
     const patchByIdentifier = (identifier: string, uploadState: (typeof UploadState)[keyof typeof UploadState]) => {
       editor.nextTick((ctx) => {
+        // Patch EVERY entity on this identifier, not just the first: a single asset
+        // can back multiple blocks (e.g. a duplicated page reuses the same identifier),
+        // and stopping at the first would strand the others on a stale uploadState.
         for (const entityId of assetQuery.current(ctx)) {
           if (Asset.read(ctx, entityId).identifier === identifier) {
             Asset.patch(ctx, entityId, { uploadState })
-            return
           }
         }
       })

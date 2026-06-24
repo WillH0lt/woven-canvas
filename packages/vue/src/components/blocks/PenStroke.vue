@@ -163,7 +163,10 @@ const fillRule = computed(() => (penStroke.value?.kind === PenStrokeKind.Fill ? 
 
 const fillColor = computed(() => {
   if (!color.value) return '#000000'
-  return `rgb(${color.value.red}, ${color.value.green}, ${color.value.blue})`
+  const { red, green, blue, alpha } = color.value
+  // Color.alpha is 0-255; normalize to the 0-1 alpha CSS rgba() expects so a
+  // translucent stroke renders translucent instead of fully opaque.
+  return `rgba(${red}, ${green}, ${blue}, ${(alpha ?? 255) / 255})`
 })
 
 const isEmphasized = computed(() => props.selected || props.hovered)

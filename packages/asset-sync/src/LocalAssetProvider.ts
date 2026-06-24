@@ -1,4 +1,4 @@
-import type { AssetMetadata, AssetProvider } from './AssetProvider'
+import type { AssetMetadata, AssetProvider, ResolveDimensions } from './AssetProvider'
 import { type KeyValueStore, openStore } from './storage'
 
 const DB_NAME = 'wovencanvas-assets'
@@ -28,7 +28,8 @@ export class LocalAssetProvider implements AssetProvider {
     return {}
   }
 
-  async resolveUrl(identifier: string) {
+  // Local blobs have a single resolution, so the render size is ignored.
+  async resolveUrl(identifier: string, _dimensions: ResolveDimensions) {
     // URLs and local paths are already displayable
     if (identifier.startsWith('http://') || identifier.startsWith('https://') || identifier.startsWith('/')) {
       return identifier

@@ -14,6 +14,7 @@ export {
 export {
   AddFrameHighlight,
   AssignFrameChildren,
+  PlaceBlockEvent,
   RemoveFrameHighlight,
 } from './containment'
 // Selection commands

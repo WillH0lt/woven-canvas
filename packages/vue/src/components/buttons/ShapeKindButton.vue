@@ -147,7 +147,7 @@ function handleKindChange(kind: string) {
 }
 
 .wov-shape-kind-option.is-selected {
-  background: var(--wov-primary-600);
+  background: var(--wov-primary);
 }
 
 .wov-shape-option-icon {

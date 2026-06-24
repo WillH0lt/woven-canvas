@@ -149,7 +149,7 @@ function getDashArray(kind: StrokeKind): string {
 }
 
 .wov-stroke-style-option.is-selected {
-  background: var(--wov-primary-600);
+  background: var(--wov-primary);
 }
 
 .wov-stroke-style-preview {

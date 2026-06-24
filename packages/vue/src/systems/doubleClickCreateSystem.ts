@@ -1,6 +1,5 @@
 import {
   addComponent,
-  Block,
   type Context,
   Controls,
   canBlockEdit,
@@ -8,12 +7,12 @@ import {
   EditAfterPlacing,
   type EditorResources,
   Frame,
-  findFrameAtPoint,
   getPluginResources,
   getPointerInput,
   getResources,
   hasComponent,
   isReadonly,
+  PlaceBlockEvent,
   PointerButton,
   Selected,
   Text,
@@ -85,14 +84,8 @@ export const doubleClickCreateSystem = defineEditorSystem({ phase: 'capture' }, 
     // Double-click detected — create block
     const entityId = createBlockFromSnapshot(ctx, snapshot, clickEvent.worldPosition)
 
-    // Assign to frame if placed inside one
-    const frameId = findFrameAtPoint(ctx, clickEvent.worldPosition, entityId)
-    if (frameId !== null) {
-      const currentWorldPos = Block.getWorldPosition(ctx, entityId)
-      const block = Block.write(ctx, entityId)
-      block.parentId = frameId
-      Block.setWorldPosition(ctx, entityId, currentWorldPos)
-    }
+    // Place into the page (frame + layer handled by PlaceBlockEvent, from the block's position).
+    PlaceBlockEvent.spawn(ctx, { entityId })
 
     // Default empty fontFamily to the first registered font
     if (hasComponent(ctx, entityId, Text)) {

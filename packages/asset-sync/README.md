@@ -36,8 +36,13 @@ await assetManager.upload(identifier, blob, {
   mimeType: "image/png",
 });
 
-// Get display URL (returns blob URL for pending uploads, resolved URL otherwise)
-const url = await assetManager.getDisplayUrl(identifier);
+// Get display URL (returns blob URL for pending uploads, resolved URL otherwise).
+// Pass the device-pixel size the asset will render at so resizing providers can
+// return a matching variant.
+const url = await assetManager.getDisplayUrl(identifier, {
+  width: 512,
+  height: 512,
+});
 ```
 
 ## Features
@@ -76,8 +81,12 @@ class AssetManager {
     metadata?: AssetMetadata,
   ): Promise<void>;
 
-  // Get URL for display (blob URL for pending, resolved URL otherwise)
-  getDisplayUrl(identifier: string): Promise<string | null>;
+  // Get URL for display (blob URL for pending, resolved URL otherwise).
+  // `dimensions` is the device-pixel render size, forwarded to the provider.
+  getDisplayUrl(
+    identifier: string,
+    dimensions: ResolveDimensions,
+  ): Promise<string | null>;
 
   // Check upload status
   hasPendingUpload(identifier: string): boolean;
@@ -104,8 +113,13 @@ interface AssetProvider {
     metadata?: AssetMetadata,
   ): Promise<AssetUploadResult>;
 
-  // Resolve an identifier to a displayable URL
-  resolveUrl(identifier: string): Promise<string>;
+  // Resolve an identifier to a displayable URL. `dimensions` is the device-pixel
+  // size the asset will render at — resizing providers (Cloudinary, imgix, etc.)
+  // can use it to return a matching variant; others can ignore it.
+  resolveUrl(
+    identifier: string,
+    dimensions: ResolveDimensions,
+  ): Promise<string>;
 
   // Optional: Delete an asset
   delete?(identifier: string): Promise<void>;
@@ -122,6 +136,11 @@ interface AssetMetadata {
 
 interface AssetUploadResult {
   url?: string; // Optional immediate URL
+}
+
+interface ResolveDimensions {
+  width: number; // Target render width in device pixels
+  height: number; // Target render height in device pixels
 }
 ```
 
@@ -154,9 +173,10 @@ const myProvider: AssetProvider = {
     return { url };
   },
 
-  async resolveUrl(identifier) {
+  async resolveUrl(identifier, { width, height }) {
     const response = await fetch(`/api/assets/${identifier}/url`);
     const { url } = await response.json();
+    // e.g. for a resizing CDN: return `${url}?w=${width}&h=${height}`;
     return url;
   },
 };
