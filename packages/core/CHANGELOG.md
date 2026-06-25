@@ -1,5 +1,12 @@
 # @woven-canvas/core
 
+## 1.0.9
+
+### Patch Changes
+
+- e7bc435: Add a `createBlock` core helper and `PlaceBlockEvent` command so plugins can spawn and place a block in one call — core parents it to the frame under its position, and other plugins (e.g. a paged-document layer system) can react to attach per-block state. Built-in placement systems and the pen plugin now route through it. Asset resolution gains a `ResolveDimensions` argument on `AssetProvider.resolveUrl`/`AssetManager.getDisplayUrl` so resizing CDN providers can return an appropriately sized variant, with image and tape blocks requesting device-pixel render sizes that only ever grow.
+- 561a703: Place newly-created blocks into the frame under their center point instead of their top-left corner. `PlaceBlockEvent` now resolves the target frame from the block's center (derived from `position` and `size`) while still preserving the block's world position when it's reparented.
+
 ## 1.0.8
 
 ### Patch Changes
