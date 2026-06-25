@@ -1,5 +1,16 @@
 # @woven-canvas/vue
 
+## 1.0.15
+
+### Patch Changes
+
+- e7bc435: Add a `createBlock` core helper and `PlaceBlockEvent` command so plugins can spawn and place a block in one call — core parents it to the frame under its position, and other plugins (e.g. a paged-document layer system) can react to attach per-block state. Built-in placement systems and the pen plugin now route through it. Asset resolution gains a `ResolveDimensions` argument on `AssetProvider.resolveUrl`/`AssetManager.getDisplayUrl` so resizing CDN providers can return an appropriately sized variant, with image and tape blocks requesting device-pixel render sizes that only ever grow.
+- Updated dependencies [e7bc435]
+- Updated dependencies [561a703]
+  - @woven-canvas/asset-sync@1.0.7
+  - @woven-canvas/core@1.0.9
+  - @woven-canvas/plugin-pen@1.0.7
+
 ## 1.0.14
 
 ### Patch Changes
