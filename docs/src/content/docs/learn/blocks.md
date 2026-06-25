@@ -204,4 +204,4 @@ const spawnPotionSystem = defineEditorSystem({ phase: "update" }, (ctx) => {
 - assigns a `Synced` id so the block persists and syncs in multiplayer,
 - gives it a top-of-stack `rank` (z-order),
 - adds the `Block` component, and
-- **places** the block: parents it to the frame (a page, group, …) under its `position`, and lets other plugins attach per-block state.
+- **places** the block: parents it to the frame under its center.

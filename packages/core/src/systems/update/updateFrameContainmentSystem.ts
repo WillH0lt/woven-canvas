@@ -18,7 +18,7 @@ import { findFrameAtPoint } from '../../helpers/findFrameAtPoint'
  * - AddFrameHighlight: add FrameDropTarget component for visual feedback
  * - RemoveFrameHighlight: remove FrameDropTarget component
  * - AssignFrameChildren: set/clear Block.parentId and convert positions
- * - PlaceBlockEvent: drop a freshly-created block onto the frame under its own position
+ * - PlaceBlockEvent: drop a freshly-created block onto the frame under its center
  */
 export const updateFrameContainmentSystem = defineEditorSystem({ phase: 'update', priority: -10 }, (ctx: Context) => {
   on(ctx, AddFrameHighlight, (ctx, { frameId }) => {
@@ -28,15 +28,17 @@ export const updateFrameContainmentSystem = defineEditorSystem({ phase: 'update'
   })
 
   // Generic half of PlaceBlockEvent: parent a just-created block to the frame under its
-  // own world position, keeping that position. Skips a block the caller already
+  // center point, keeping its world position. Skips a block the caller already
   // parented deliberately. App plugins (e.g. books → layer assignment) react to the
   // same command separately, at their own priority.
   on(ctx, PlaceBlockEvent, (ctx, { entityId }) => {
     if (!hasComponent(ctx, entityId, Block)) return
     if (Block.read(ctx, entityId).parentId !== null) return
-    const worldPos = Block.getWorldPosition(ctx, entityId)
-    const frameId = findFrameAtPoint(ctx, worldPos, entityId)
+    // Resolve the target frame by the block's center, not its top-left corner.
+    const center = Block.getCenter(ctx, entityId)
+    const frameId = findFrameAtPoint(ctx, center, entityId)
     if (frameId === null) return
+    const worldPos = Block.getWorldPosition(ctx, entityId)
     Block.write(ctx, entityId).parentId = frameId
     Block.setWorldPosition(ctx, entityId, worldPos)
   })
