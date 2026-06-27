@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, shallowRef, provide, computed, type Ref } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, shallowRef, provide, computed, watch, type Ref } from 'vue'
 import {
   Editor,
   Camera,
@@ -681,6 +681,16 @@ onMounted(async () => {
   }
 
   await assetManager?.resumePendingUploads()
+
+  // Re-drain pending uploads whenever connectivity is regained, so an upload
+  // queued offline (or one that exhausted its retries during a long outage)
+  // completes as soon as we're back online instead of waiting for a reload.
+  // resumePendingUploads() is idempotent, so a spurious flap just no-ops.
+  watch(isOnline, (online, wasOnline) => {
+    if (online && !wasOnline) {
+      assetManager?.resumePendingUploads().catch((err) => console.error('Failed to resume uploads:', err))
+    }
+  })
 
   // End the optimistic grace window. After this, if the websocket still
   // hasn't fired its first onConnectivityChange(true), we treat the canvas

@@ -213,9 +213,19 @@ export class AssetManager {
   }
 
   /**
-   * Resume any pending uploads from previous sessions.
-   * Call this after initialization.
-   * Note: Resumed uploads won't have promises to resolve since they're from a previous session.
+   * (Re)attempt every persisted upload that isn't already in flight.
+   *
+   * Call this after initialization AND whenever connectivity is regained — it is
+   * the single entry point for "drain whatever is still pending now". It is
+   * idempotent and safe to call repeatedly:
+   * - uploads already in flight are skipped (no duplicate attempts),
+   * - the local preview is only re-created when we don't already hold it (so a
+   *   same-session reconnect keeps its live blob URL instead of leaking a new one),
+   * - each job's retry budget is reset, so an upload that exhausted its retries
+   *   during a long offline spell tries again instead of staying failed until reload.
+   *
+   * Note: resumed uploads have no promise to resolve since the original upload()
+   * caller (if any) is from a previous session or has already settled.
    */
   async resumePendingUploads(): Promise<void> {
     if (!this.jobsStore || !this.binariesStore) {
@@ -224,14 +234,25 @@ export class AssetManager {
 
     const entries = await this.jobsStore.getAllEntries()
 
-    for (const [identifier] of entries) {
-      // Restore blob URL from stored binary
-      const blob = await this.binariesStore.get<Blob>(identifier)
-      if (blob) {
-        const blobUrl = URL.createObjectURL(blob)
-        this.blobUrls.set(identifier, blobUrl)
+    for (const [identifier, value] of entries) {
+      // Already uploading — leave it alone (don't reset its retries or restart it).
+      if (this.uploading.has(identifier)) continue
+
+      // Restore the local preview only if we don't already hold it: first resume
+      // after a reload needs it; a same-session reconnect already has a live URL.
+      if (!this.blobUrls.has(identifier)) {
+        const blob = await this.binariesStore.get<Blob>(identifier)
+        if (blob) {
+          this.blobUrls.set(identifier, URL.createObjectURL(blob))
+        }
       }
-      // Start upload (no promise to resolve for resumed uploads)
+
+      // Give the job a fresh retry budget so a previously-exhausted upload retries.
+      const job = value as UploadJob
+      if (job?.retryCount) {
+        await this.jobsStore.put(identifier, { ...job, retryCount: 0 })
+      }
+
       this.startUpload(identifier)
     }
   }
