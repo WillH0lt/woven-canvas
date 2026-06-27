@@ -1,5 +1,16 @@
 # @woven-canvas/vue
 
+## 1.0.16
+
+### Patch Changes
+
+- 6f5d755: Update `@woven-ecs/canvas-store` to ^1.2.0
+- d8ea969: Resume pending asset uploads when connectivity is regained, not just on the next load. `AssetManager.resumePendingUploads()` is now idempotent (skips in-flight uploads, reuses existing blob URLs) and resets each job's retry budget, and `WovenCanvas` calls it whenever it transitions back online. So an image queued while offline — or one that exhausted its retries during a long outage — uploads as soon as there's a connection instead of waiting for a reload.
+- Updated dependencies [6f5d755]
+- Updated dependencies [d8ea969]
+  - @woven-canvas/core@1.0.10
+  - @woven-canvas/asset-sync@1.0.8
+
 ## 1.0.15
 
 ### Patch Changes

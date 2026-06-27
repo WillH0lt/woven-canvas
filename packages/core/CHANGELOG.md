@@ -1,5 +1,11 @@
 # @woven-canvas/core
 
+## 1.0.10
+
+### Patch Changes
+
+- 6f5d755: Update `@woven-ecs/canvas-store` to ^1.2.0
+
 ## 1.0.9
 
 ### Patch Changes
