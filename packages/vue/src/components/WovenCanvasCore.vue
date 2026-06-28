@@ -181,6 +181,15 @@ export interface WovenCanvasProps {
   /** Text editing behavior. E.g. `{ links: false }` hides the link button and
    *  disables automatic URL formatting. Defaults preserve full link support. */
   textOptions?: TextEditingOptions
+
+  /** Run the internal `requestAnimationFrame` render loop. Defaults to `true`
+   *  (the interactive editor drives itself every frame). Set `false` to OWN the
+   *  loop from the consumer — the component never schedules a frame on its own,
+   *  and you drive each cycle by calling the exposed `render()`. Intended
+   *  for headless / offscreen rendering (e.g. server-side page capture) where a
+   *  continuous loop is wasteful and an on-screen present can race a GPU readback.
+   *  Reactive: flip to `false` to pause, `true` to resume the loop. */
+  autoRender?: boolean
 }
 
 const props = defineProps<WovenCanvasProps>()
@@ -595,8 +604,44 @@ async function tick() {
 
   await runTick(editorRef.value)
 
-  animationFrameId = requestAnimationFrame(tick)
+  // Re-check after the async cycle: only keep the loop alive while autoRender is on
+  // (a consumer may have flipped it off, or it was off all along — manual mode).
+  if (props.autoRender !== false) {
+    animationFrameId = requestAnimationFrame(tick)
+  } else {
+    animationFrameId = null
+  }
 }
+
+/**
+ * Run exactly one render cycle (store sync → ECS events → block state → tick
+ * callbacks → `editor.tick()`). The manual counterpart to the internal rAF loop:
+ * with `autoRender: false`, the consumer calls this to drive rendering itself
+ * (e.g. step until content has settled, then capture). A no-op before the editor
+ * is ready. Safe to call alongside the auto loop, though that double-ticks — it's
+ * meant for `autoRender: false`.
+ */
+async function render(): Promise<void> {
+  if (!editorRef.value || !store) return
+  await runTick(editorRef.value)
+}
+
+defineExpose({ render })
+
+// Start/stop the internal loop when autoRender is toggled at runtime.
+watch(
+  () => props.autoRender,
+  (auto) => {
+    if (auto === false) {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId)
+        animationFrameId = null
+      }
+    } else if (animationFrameId === null && editorRef.value && store) {
+      animationFrameId = requestAnimationFrame(tick)
+    }
+  },
+)
 
 subscribeSingleton(Camera.name, (value) => {
   if (value) {
@@ -700,8 +745,11 @@ onMounted(async () => {
     recomputeIsOnline()
   }, 3000)
 
-  // Start the render loop
-  animationFrameId = requestAnimationFrame(tick)
+  // Start the render loop — unless the consumer owns it (autoRender: false), in
+  // which case they drive frames via the exposed render().
+  if (props.autoRender !== false) {
+    animationFrameId = requestAnimationFrame(tick)
+  }
 
   // Seed default font family from first registered font
   const firstFont = editorRef.value?.fonts?.[0]?.name

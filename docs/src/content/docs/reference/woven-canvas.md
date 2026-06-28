@@ -148,6 +148,12 @@ interface WovenCanvasProps {
   // itself. The wrapper, inner component, and `block:<tag>` slot are all
   // suppressed — hit testing for omitted tags is the renderer's responsibility.
   omitBlockTags?: string[];
+
+  // Run the internal requestAnimationFrame render loop. Default: true.
+  // Set false to own the loop yourself, call the exposed render() method
+  // to advance the frame.
+  // Reactive: flip to false to pause, true to resume.
+  autoRender?: boolean;
 }
 ```
 
