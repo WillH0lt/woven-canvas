@@ -192,7 +192,10 @@ export interface WovenCanvasProps {
   autoRender?: boolean
 }
 
-const props = defineProps<WovenCanvasProps>()
+// `autoRender` defaults to true. It MUST be defaulted explicitly: Vue casts an absent
+// Boolean prop to `false`, which would otherwise disable the render loop unless a
+// consumer passed `:auto-render="true"`.
+const props = withDefaults(defineProps<WovenCanvasProps>(), { autoRender: true })
 
 // Build a Set once per prop change so the per-block v-if check below is
 // O(1). Membership is tested for every block on every render, so a linear
