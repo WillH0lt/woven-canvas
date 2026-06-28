@@ -1,5 +1,11 @@
 # @woven-canvas/core
 
+## 1.0.11
+
+### Patch Changes
+
+- b1c7434: Update `@woven-ecs/canvas-store` to ^1.3.0 (server-rollback recovery / reverse resync).
+
 ## 1.0.10
 
 ### Patch Changes
