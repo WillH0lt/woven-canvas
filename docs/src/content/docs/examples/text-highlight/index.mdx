@@ -1,0 +1,57 @@
+---
+title: Custom TipTap Extensions
+description: Add your own TipTap marks to text blocks — demonstrated with a highlight color.
+---
+
+import { Code, Tabs, TabItem } from '@astrojs/starlight/components';
+import ExampleContainer from '../../../../components/ExampleContainer.astro';
+import TextHighlightExample from './TextHighlightExample.vue';
+import TextHighlightExampleRaw from './TextHighlightExample.vue?raw';
+import HighlightButtonRaw from './HighlightButton.vue?raw';
+
+woven-canvas ships the common text marks (bold, italic, color, link), but you can add
+your own. This example registers TipTap's [Highlight](https://tiptap.dev/api/marks/highlight)
+mark.
+
+<ExampleContainer>
+  <TextHighlightExample client:only="vue" />
+</ExampleContainer>
+
+<Tabs>
+  <TabItem label="TextHighlightExample.vue">
+    <Code code={TextHighlightExampleRaw} lang="vue" />
+  </TabItem>
+  <TabItem label="HighlightButton.vue">
+    <Code code={HighlightButtonRaw} lang="vue" />
+  </TabItem>
+</Tabs>
+
+## How it works
+
+There are two pieces:
+
+**1. Register the mark** via the `extensions` field of `text-options`:
+
+```vue
+<WovenCanvas :text-options="{ extensions: [Highlight.configure({ multicolor: true })] }" />
+```
+
+**2. Drive it by name.** `useTextFormatting` exposes a generic mark handle that works
+in both edit mode (the active TipTap selection) and batch mode (across selected blocks):
+
+```ts
+const { commands, getMarkAttrs } = useTextFormatting(() => entityIds)
+
+// Read the current highlight color (null if none or mixed). Reactive — use in a computed.
+const color = computed(() => getMarkAttrs('highlight')?.color ?? null)
+
+// Apply / clear
+commands.setMark('highlight', { color: '#FEF08A' })
+commands.unsetMark('highlight')
+```
+
+## Related
+
+- [Using the Editor API](/examples/editor-api/) — Manipulate canvas contents directly
+- [Composables](/reference/composables/) — `useTextFormatting` and friends
+- [WovenCanvas](/reference/woven-canvas/) — `text-options` and other props

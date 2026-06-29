@@ -43,6 +43,10 @@ export interface TextFormattingCommands {
   setAlignment(alignment: TextAlignment): void
   /** Set text color */
   setColor(color: string): void
+  /** Set a mark (by name, with attrs) — for host-app marks added via TextEditingOptions.extensions. */
+  setMark(markType: string, attrs?: Record<string, unknown>): void
+  /** Remove a mark (by name). */
+  unsetMark(markType: string): void
   /** Set font size */
   setFontSize(size: number): void
   /** Set font family */
@@ -60,6 +64,12 @@ export interface TextFormattingController {
   state: TextFormattingState
   /** Commands to modify text formatting */
   commands: TextFormattingCommands
+  /**
+   * Attributes of a mark (by name) on the current selection / selected blocks, or null
+   * if absent or mixed. Routes to the active editor in edit mode, otherwise reads the
+   * selected blocks' content. Reactive — call inside a `computed`. For host-app marks.
+   */
+  getMarkAttrs(markType: string): Record<string, unknown> | null
 }
 
 /**
@@ -194,6 +204,22 @@ export function useTextFormatting(entityIds: MaybeRefOrGetter<EntityId[]>): Text
       }
     },
 
+    setMark(markType: string, attrs?: Record<string, unknown>) {
+      if (hasEditor.value) {
+        editorController.commands.setMark(markType, attrs)
+      } else {
+        batchController.commands.setMark(markType, attrs)
+      }
+    },
+
+    unsetMark(markType: string) {
+      if (hasEditor.value) {
+        editorController.commands.unsetMark(markType)
+      } else {
+        batchController.commands.unsetMark(markType)
+      }
+    },
+
     // fontSize and fontFamily are component-level properties, always use batchController
     setFontSize(size: number) {
       batchController.commands.setFontSize(size)
@@ -224,8 +250,16 @@ export function useTextFormatting(entityIds: MaybeRefOrGetter<EntityId[]>): Text
     },
   }
 
+  function getMarkAttrs(markType: string): Record<string, unknown> | null {
+    if (hasEditor.value) {
+      return editorController.getMarkAttrs(markType)
+    }
+    return batchController.getMarkAttrs(markType)
+  }
+
   return {
     state: state as TextFormattingState,
     commands,
+    getMarkAttrs,
   }
 }

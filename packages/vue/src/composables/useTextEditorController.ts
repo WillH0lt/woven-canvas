@@ -32,6 +32,10 @@ export interface TextEditorCommands {
   setAlignment(alignment: TextAlignment): void
   /** Set text color */
   setColor(color: string): void
+  /** Set a mark (by name, with attrs) on the selection — for host-app marks. */
+  setMark(markType: string, attrs?: Record<string, unknown>): void
+  /** Remove a mark (by name) from the selection. */
+  unsetMark(markType: string): void
   /** Set link on current selection */
   setLink(href: string): void
   /** Remove link from current selection */
@@ -49,6 +53,11 @@ export interface TextEditorController {
   state: TextEditorState
   /** Commands to manipulate the active editor */
   commands: TextEditorCommands
+  /**
+   * Attributes of a mark (by name) on the current selection, or null if the mark is
+   * not active. Reads `updateCounter`, so call it inside a `computed` to stay reactive.
+   */
+  getMarkAttrs(markType: string): Record<string, unknown> | null
   /** Counter that increments on each transaction (for triggering updates) */
   updateCounter: Ref<number>
   /** Schedule a floating menu reposition after the next two animation frames */
@@ -225,6 +234,32 @@ export function useTextEditorController(): TextEditorController {
       }
     },
 
+    setMark(markType: string, attrs?: Record<string, unknown>) {
+      const editor = activeEditor.value
+      if (!editor) return
+
+      const { from, to } = editor.state.selection
+
+      if (from === to) {
+        editor.chain().focus().selectAll().setMark(markType, attrs).setTextSelection(to).run()
+      } else {
+        editor.chain().focus().setMark(markType, attrs).run()
+      }
+    },
+
+    unsetMark(markType: string) {
+      const editor = activeEditor.value
+      if (!editor) return
+
+      const { from, to } = editor.state.selection
+
+      if (from === to) {
+        editor.chain().focus().selectAll().unsetMark(markType).setTextSelection(to).run()
+      } else {
+        editor.chain().focus().unsetMark(markType).run()
+      }
+    },
+
     setLink(href: string) {
       const editor = activeEditor.value
       if (!editor) return
@@ -281,6 +316,13 @@ export function useTextEditorController(): TextEditorController {
     })
   }
 
+  function getMarkAttrs(markType: string): Record<string, unknown> | null {
+    void updateCounter.value
+    const editor = activeEditor.value
+    if (!editor) return null
+    return editor.isActive(markType) ? editor.getAttributes(markType) : null
+  }
+
   return {
     editor: activeEditor,
     blockElement: activeBlockElement,
@@ -291,5 +333,6 @@ export function useTextEditorController(): TextEditorController {
     register,
     unregister,
     repositionMenu,
+    getMarkAttrs,
   }
 }

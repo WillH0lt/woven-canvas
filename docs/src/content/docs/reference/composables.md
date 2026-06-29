@@ -179,16 +179,34 @@ import { useTextFormatting } from "@woven-canvas/vue";
 const {
   state, // TextFormattingState (bold, italic, etc.)
   commands, // TextFormattingCommands (toggleBold, setFontSize, etc.)
+  getMarkAttrs, // (type) => mark attributes on the selection, or null
 } = useTextFormatting();
 
 // Check if selection is bold
-if (state.bold) {
+if (state.isBold) {
   console.log("Text is bold");
 }
 
 // Toggle bold
 commands.toggleBold();
 ```
+
+### Custom marks
+
+For marks your app registers via `text-options` (see
+[WovenCanvas](/reference/woven-canvas/)), drive them generically by name. These work
+in both edit mode (the active selection) and batch mode (across selected blocks):
+
+```typescript
+// Apply / clear a mark with attributes
+commands.setMark("highlight", { color: "#FEF08A" });
+commands.unsetMark("highlight");
+
+// Read a mark's attributes (null if absent or mixed). Reactive — use in a computed.
+const color = computed(() => getMarkAttrs("highlight")?.color ?? null);
+```
+
+See the [Custom TipTap Extensions](/examples/text-highlight/) example for the full pattern.
 
 ## useTooltipSingleton
 

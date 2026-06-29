@@ -139,6 +139,15 @@ interface WovenCanvasProps {
     canPasteTextAsBlock?: boolean; // default: true — paste external text as a text block
   };
 
+  textOptions?: {
+    // text-block editing behavior
+    links?: boolean; // default: true — auto-format typed/pasted URLs as links
+    underline?: boolean; // default: true — allow the underline mark
+    extensions?: Extensions; // optional — extra TipTap extensions (typically marks) to
+    // register in text blocks. Drive them by name via useTextFormatting's
+    // setMark / unsetMark / getMarkAttrs. See the "Custom TipTap Extensions" example.
+  };
+
   // Initial state for SSR pre-rendering. When provided, the editor is
   // created headlessly during setup so blocks render in server-side HTML.
   initialState?: Record<string, ComponentData>;

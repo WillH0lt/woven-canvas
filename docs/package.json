@@ -17,6 +17,7 @@
     "@astrojs/vue": "^5.0.6",
     "@iconify-json/lucide": "^1.2.90",
     "@tailwindcss/postcss": "^4.1.18",
+    "@tiptap/extension-highlight": "~3.20.0",
     "@woven-canvas/core": "workspace:^",
     "@woven-canvas/math": "workspace:^",
     "@woven-canvas/vue": "workspace:^",

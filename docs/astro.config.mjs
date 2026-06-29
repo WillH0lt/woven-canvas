@@ -60,6 +60,7 @@ export default defineConfig({
             { label: "Using the Editor API", slug: "examples/editor-api" },
             { label: "Create a Custom Block", slug: "examples/create-a-custom-block" },
             { label: "Create a Plugin", slug: "examples/create-a-plugin" },
+            { label: "Custom TipTap Extensions", slug: "examples/text-highlight" },
           ],
         },
         {

@@ -23,7 +23,7 @@ import {
   UpdateTransformBox,
 } from '@woven-canvas/core'
 import { type ComputedRef, computed, inject, type MaybeRefOrGetter, nextTick, type ShallowRef, toValue } from 'vue'
-import { WOVEN_CANVAS_KEY } from '../injection'
+import { TEXT_EDITING_OPTIONS_KEY, WOVEN_CANVAS_KEY } from '../injection'
 import { type BlockDimensions, computeBlockDimensions } from '../utils/blockDimensions'
 import { normalizeColor } from '../utils/color'
 import { useComponents } from './useComponents'
@@ -31,8 +31,10 @@ import { useEditorContext } from './useEditorContext'
 import { useSingleton } from './useSingleton'
 import { useTextEditorController } from './useTextEditorController'
 
-// Extensions used for parsing - must match EditableText
-const extensions = [
+// Base extensions used for parsing — must match EditableText. Host-app marks
+// (TextEditingOptions.extensions) are appended per-controller so custom marks survive
+// the parse/serialize boundary instead of being silently stripped.
+const BASE_EXTENSIONS = [
   Document,
   Paragraph,
   TiptapText,
@@ -92,6 +94,10 @@ export interface TextBatchCommands {
   setAlignment(alignment: TextAlignment): void
   /** Set color on all selected text entities */
   setColor(color: string): void
+  /** Set a mark (by name, with attrs) on all selected text entities — for host-app marks. */
+  setMark(markType: string, attrs?: Record<string, unknown>): void
+  /** Remove a mark (by name) from all selected text entities. */
+  unsetMark(markType: string): void
   /** Set font size on all selected text entities */
   setFontSize(size: number): void
   /** Set font family on all selected text entities */
@@ -107,6 +113,12 @@ export interface TextBatchCommands {
 export interface TextBatchController {
   state: TextBatchState
   commands: TextBatchCommands
+  /**
+   * Attributes of a mark (by name) across the selected text — the first occurrence's
+   * attrs, or null if none/mixed. Reads reactively, so call it inside a `computed` to
+   * track selection changes. For host-app marks read in batch (non-editing) mode.
+   */
+  getMarkAttrs(markType: string): Record<string, unknown> | null
 }
 
 // ============================================================================
@@ -182,10 +194,7 @@ function getTextColor(node: TextNode): string | null {
  * Check if all text nodes in HTML have a specific mark
  * Returns true if all have it, false if none have it, null if mixed
  */
-function checkAllHaveMark(html: string, markType: MarkType): boolean | null {
-  if (!html.trim()) return false
-
-  const doc = generateJSON(html, extensions)
+function checkAllHaveMark(doc: JSONContent, markType: MarkType): boolean | null {
   let hasAny = false
   let allHave = true
   let textNodeCount = 0
@@ -208,10 +217,7 @@ function checkAllHaveMark(html: string, markType: MarkType): boolean | null {
 /**
  * Get the alignment from HTML content
  */
-function getAlignment(html: string): TextAlignment {
-  if (!html.trim()) return 'left'
-
-  const doc = generateJSON(html, extensions)
+function getAlignment(doc: JSONContent): TextAlignment {
   let alignment: TextAlignment = 'left'
 
   walkParagraphs(doc, (paragraph) => {
@@ -225,12 +231,9 @@ function getAlignment(html: string): TextAlignment {
 }
 
 /**
- * Get the text color from HTML content (returns first found color)
+ * Get the text color from a parsed doc (returns first found color)
  */
-function getTextColorFromHtml(html: string): string | null {
-  if (!html.trim()) return null
-
-  const doc = generateJSON(html, extensions)
+function getTextColorFromDoc(doc: JSONContent): string | null {
   let color: string | null = null
 
   walkTextNodes(doc, (node) => {
@@ -243,97 +246,80 @@ function getTextColorFromHtml(html: string): string | null {
 }
 
 /**
- * Add a mark to all text nodes in HTML
+ * Add an attr-less mark to every text node that lacks it. Mutates `doc` in place.
  */
-function addMarkInHtml(html: string, markType: MarkType): string {
-  if (!html.trim()) return html
-
-  const doc = generateJSON(html, extensions)
-
+function addMarkInDoc(doc: JSONContent, markType: string): void {
   walkTextNodes(doc, (node) => {
     const marks = node.marks ?? []
-    const existingIndex = marks.findIndex((m) => m.type === markType)
-
-    if (existingIndex === -1) {
+    if (marks.findIndex((m) => m.type === markType) === -1) {
       node.marks = [...marks, { type: markType }]
     }
   })
-
-  return generateHTML(doc, extensions)
 }
 
 /**
- * Remove a mark from all text nodes in HTML
+ * Remove every mark named `markType` from all text nodes. Accepts any mark name so
+ * host-app marks clear the same way as the built-ins. Mutates `doc` in place.
  */
-function removeMarkInHtml(html: string, markType: MarkType): string {
-  if (!html.trim()) return html
-
-  const doc = generateJSON(html, extensions)
-
+function removeMarkInDoc(doc: JSONContent, markType: string): void {
   walkTextNodes(doc, (node) => {
-    const marks = node.marks ?? []
-    node.marks = marks.filter((m) => m.type !== markType)
+    node.marks = (node.marks ?? []).filter((m) => m.type !== markType)
   })
-
-  return generateHTML(doc, extensions)
 }
 
 /**
- * Set alignment on all paragraphs in HTML
+ * Set alignment on all paragraphs. Mutates `doc` in place.
  */
-function setAlignmentInHtml(html: string, alignment: TextAlignment): string {
-  if (!html.trim()) return html
-
-  const doc = generateJSON(html, extensions)
-
+function setAlignmentInDoc(doc: JSONContent, alignment: TextAlignment): void {
   walkParagraphs(doc, (paragraph) => {
     paragraph.attrs = {
       ...paragraph.attrs,
       textAlign: alignment,
     }
   })
-
-  return generateHTML(doc, extensions)
 }
 
 /**
- * Set color on all text nodes in HTML
+ * Merge `attrs` onto an existing mark named `markType` on every text node, or add the
+ * mark if absent. Generic over mark name, so the built-in `textStyle` color and any
+ * host-app mark (e.g. a highlight) go through one path. Mutates `doc` in place.
  */
-function setColorInHtml(html: string, color: string): string {
-  if (!html.trim()) return html
-
-  const doc = generateJSON(html, extensions)
-
+function setMarkInDoc(doc: JSONContent, markType: string, attrs: Record<string, unknown>): void {
   walkTextNodes(doc, (node) => {
     const marks = node.marks ?? []
-    const existingIndex = marks.findIndex((m) => m.type === 'textStyle')
+    const existingIndex = marks.findIndex((m) => m.type === markType)
 
     if (existingIndex !== -1) {
-      // Update existing textStyle mark
       marks[existingIndex] = {
         ...marks[existingIndex],
-        attrs: {
-          ...marks[existingIndex].attrs,
-          color,
-        },
+        attrs: { ...marks[existingIndex].attrs, ...attrs },
       }
       node.marks = marks
     } else {
-      // Add new textStyle mark
-      node.marks = [...marks, { type: 'textStyle', attrs: { color } }]
+      node.marks = [...marks, { type: markType, attrs }]
     }
   })
-
-  return generateHTML(doc, extensions)
 }
 
 /**
- * Get the link href from HTML content (returns first found href, null if none)
+ * First occurrence's attrs for `markType` across all text nodes, or null if no node
+ * carries it. Used to read host-app mark state in batch (non-editing) mode.
  */
-function getLinkHrefFromHtml(html: string): string | null {
-  if (!html.trim()) return null
+function getMarkAttrsFromDoc(doc: JSONContent, markType: string): Record<string, unknown> | null {
+  let attrs: Record<string, unknown> | null = null
+  walkTextNodes(doc, (node) => {
+    if (attrs === null) {
+      const mark = node.marks?.find((m) => m.type === markType)
+      if (mark) attrs = mark.attrs ?? {}
+    }
+  })
+  return attrs
+}
 
-  const doc = generateJSON(html, extensions)
+/**
+ * Get the link href from a parsed doc (returns first found href, null if none)
+ */
+function getLinkHrefFromDoc(doc: JSONContent): string | null {
   let href: string | null = null
 
   walkTextNodes(doc, (node) => {
@@ -349,13 +335,10 @@ function getLinkHrefFromHtml(html: string): string | null {
 }
 
 /**
- * Set link on all text nodes in HTML
+ * Set the link mark (with href + safe rel/target) on all text nodes, merging onto an
+ * existing link. Mutates `doc` in place. (Removal goes through `removeMarkInDoc`.)
  */
-function setLinkInHtml(html: string, href: string): string {
-  if (!html.trim()) return html
-
-  const doc = generateJSON(html, extensions)
-
+function setLinkInDoc(doc: JSONContent, href: string): void {
   walkTextNodes(doc, (node) => {
     const marks = node.marks ?? []
     const existingIndex = marks.findIndex((m) => m.type === 'link')
@@ -363,34 +346,13 @@ function setLinkInHtml(html: string, href: string): string {
     if (existingIndex !== -1) {
       marks[existingIndex] = {
         ...marks[existingIndex],
-        attrs: {
-          ...marks[existingIndex].attrs,
-          href,
-        },
+        attrs: { ...marks[existingIndex].attrs, href },
       }
       node.marks = marks
     } else {
       node.marks = [...marks, { type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer' } }]
     }
   })
-
-  return generateHTML(doc, extensions)
-}
-
-/**
- * Remove link mark from all text nodes in HTML
- */
-function removeLinkInHtml(html: string): string {
-  if (!html.trim()) return html
-
-  const doc = generateJSON(html, extensions)
-
-  walkTextNodes(doc, (node) => {
-    const marks = node.marks ?? []
-    node.marks = marks.filter((m) => m.type !== 'link')
-  })
-
-  return generateHTML(doc, extensions)
 }
 
 // ============================================================================
@@ -518,6 +480,23 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
   const camera = useSingleton(Camera)
   const screen = useSingleton(Screen)
   const textEditorController = useTextEditorController()
+  const textOptions = inject(TEXT_EDITING_OPTIONS_KEY, undefined)
+
+  // The parse/serialize boundary: base schema + host-app marks, so app-provided marks
+  // survive the round-trip below instead of being stripped. `exts` lives only here.
+  const exts = computed(() => {
+    const extra = textOptions?.value.extensions
+    return extra && extra.length > 0 ? [...BASE_EXTENSIONS, ...extra] : BASE_EXTENSIONS
+  })
+  const parse = (html: string): JSONContent => generateJSON(html, exts.value)
+  const toHtml = (doc: JSONContent): string => generateHTML(doc, exts.value)
+  /** Parse → mutate (in place) → serialize. Empty content passes straight through. */
+  const rewrite = (html: string, mutate: (doc: JSONContent) => void): string => {
+    if (!html.trim()) return html
+    const doc = parse(html)
+    mutate(doc)
+    return toHtml(doc)
+  }
 
   const state: TextBatchState = {
     hasTextEntities: computed(() => {
@@ -531,7 +510,7 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
       for (const text of textsMap.value.values()) {
         if (!text) continue
         // Check if content has actual text (not just empty HTML tags)
-        const doc = text.content ? generateJSON(text.content, extensions) : null
+        const doc = text.content ? parse(text.content) : null
         if (doc) {
           let hasText = false
           walkTextNodes(doc, (node) => {
@@ -563,7 +542,7 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
       for (const text of textsMap.value.values()) {
         if (!text) continue
 
-        const contentAlignment = getAlignment(text.content)
+        const contentAlignment = text.content ? getAlignment(parse(text.content)) : 'left'
 
         if (alignment === null) {
           alignment = contentAlignment
@@ -582,7 +561,7 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
       for (const text of textsMap.value.values()) {
         if (!text) continue
 
-        const contentColor = getTextColorFromHtml(text.content)
+        const contentColor = text.content ? getTextColorFromDoc(parse(text.content)) : null
 
         if (!foundAny) {
           color = contentColor
@@ -638,7 +617,7 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
       for (const text of textsMap.value.values()) {
         if (!text) continue
 
-        const contentHref = getLinkHrefFromHtml(text.content)
+        const contentHref = text.content ? getLinkHrefFromDoc(parse(text.content)) : null
 
         if (!foundAny) {
           href = contentHref
@@ -659,7 +638,7 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
     for (const text of textsMap.value.values()) {
       if (!text) continue
 
-      const contentState = checkAllHaveMark(text.content, markType)
+      const contentState = text.content ? checkAllHaveMark(parse(text.content), markType) : false
 
       if (!foundAny) {
         overallState = contentState
@@ -672,33 +651,66 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
     return overallState
   }
 
+  function getMarkAttrs(markType: string): Record<string, unknown> | null {
+    let attrs: Record<string, unknown> | null = null
+    let foundAny = false
+
+    for (const text of textsMap.value.values()) {
+      if (!text) continue
+
+      const contentAttrs = text.content ? getMarkAttrsFromDoc(parse(text.content), markType) : null
+
+      if (!foundAny) {
+        attrs = contentAttrs
+        foundAny = true
+      } else if (JSON.stringify(attrs) !== JSON.stringify(contentAttrs)) {
+        return null // mixed
+      }
+    }
+
+    return attrs
+  }
+
   const commands: TextBatchCommands = {
     toggleBold() {
       applyContentChange((content) =>
-        state.isBold.value ? removeMarkInHtml(content, 'bold') : addMarkInHtml(content, 'bold'),
+        rewrite(content, (doc) => (state.isBold.value ? removeMarkInDoc(doc, 'bold') : addMarkInDoc(doc, 'bold'))),
       )
     },
 
     toggleItalic() {
       applyContentChange((content) =>
-        state.isItalic.value ? removeMarkInHtml(content, 'italic') : addMarkInHtml(content, 'italic'),
+        rewrite(content, (doc) =>
+          state.isItalic.value ? removeMarkInDoc(doc, 'italic') : addMarkInDoc(doc, 'italic'),
+        ),
       )
     },
 
     toggleUnderline() {
       applyContentChange((content) =>
-        state.isUnderline.value ? removeMarkInHtml(content, 'underline') : addMarkInHtml(content, 'underline'),
+        rewrite(content, (doc) =>
+          state.isUnderline.value ? removeMarkInDoc(doc, 'underline') : addMarkInDoc(doc, 'underline'),
+        ),
       )
     },
 
     setAlignment(alignment: TextAlignment) {
       // Alignment doesn't affect dimensions, no measurement needed
-      applyContentOnly((content) => setAlignmentInHtml(content, alignment))
+      applyContentOnly((content) => rewrite(content, (doc) => setAlignmentInDoc(doc, alignment)))
     },
 
     setColor(color: string) {
       // Color doesn't affect dimensions, no measurement needed
-      applyContentOnly((content) => setColorInHtml(content, color))
+      applyContentOnly((content) => rewrite(content, (doc) => setMarkInDoc(doc, 'textStyle', { color })))
+    },
+
+    setMark(markType: string, attrs: Record<string, unknown> = {}) {
+      // A host-app mark could affect layout, so measure + resize like a content change.
+      applyContentChange((content) => rewrite(content, (doc) => setMarkInDoc(doc, markType, attrs)))
+    },
+
+    unsetMark(markType: string) {
+      applyContentChange((content) => rewrite(content, (doc) => removeMarkInDoc(doc, markType)))
     },
 
     setFontSize(size: number) {
@@ -750,12 +762,12 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
 
     setLink(href: string) {
       // Links don't affect dimensions, no measurement needed
-      applyContentOnly((content) => setLinkInHtml(content, href))
+      applyContentOnly((content) => rewrite(content, (doc) => setLinkInDoc(doc, href)))
     },
 
     removeLink() {
       // Links don't affect dimensions, no measurement needed
-      applyContentOnly((content) => removeLinkInHtml(content))
+      applyContentOnly((content) => rewrite(content, (doc) => removeMarkInDoc(doc, 'link')))
     },
   }
 
@@ -881,5 +893,6 @@ export function useTextBatchController(entityIds: MaybeRefOrGetter<EntityId[]>):
   return {
     state,
     commands,
+    getMarkAttrs,
   }
 }

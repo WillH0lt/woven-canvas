@@ -193,6 +193,9 @@ function createEditor(): Editor {
         alignments: ['left', 'center', 'right', 'justify'],
         defaultAlignment: text.value?.defaultAlignment ?? 'left',
       }),
+      // Host-app marks (e.g. a Highlight mark). Placed before UndoRedo so app marks
+      // join the schema but history stays last.
+      ...(textOptions?.value.extensions ?? []),
       UndoRedo,
     ],
     content: text.value?.content ?? '',
