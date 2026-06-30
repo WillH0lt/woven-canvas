@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@woven-ecs/canvas-store':
-      specifier: ^1.3.0
-      version: 1.3.0
+      specifier: ^1.3.1
+      version: 1.3.1
     '@woven-ecs/core':
       specifier: ^1.0.6
       version: 1.0.6
@@ -220,7 +220,7 @@ importers:
         version: link:../math
       '@woven-ecs/canvas-store':
         specifier: 'catalog:'
-        version: 1.3.0(typescript@5.9.3)
+        version: 1.3.1(typescript@5.9.3)
       '@woven-ecs/core':
         specifier: 'catalog:'
         version: 1.0.6(typescript@5.9.3)
@@ -443,7 +443,7 @@ importers:
         version: link:../plugin-tapes
       '@woven-ecs/canvas-store':
         specifier: 'catalog:'
-        version: 1.3.0(typescript@5.9.3)
+        version: 1.3.1(typescript@5.9.3)
       '@woven-ecs/core':
         specifier: 'catalog:'
         version: 1.0.6(typescript@5.9.3)
@@ -2469,8 +2469,8 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
-  '@woven-ecs/canvas-store@1.3.0':
-    resolution: {integrity: sha512-PUTATPJnJKYSpN+7fNkIsNetVkpSRmXuml+q4Oxc60VCFtX9kl2B5jXXJBVkEzBzeSy5GCn1BAhVN2HQ36HbBg==}
+  '@woven-ecs/canvas-store@1.3.1':
+    resolution: {integrity: sha512-dlJym1UqJkPyilcxQsfAhb9khFy9uE9gRtML5Xu1YhyD6bO5BT7VP9HwVdKajHO2QM9A1yMPG2ckeCA66Hh49Q==}
     peerDependencies:
       typescript: ^5
 
@@ -7387,6 +7387,14 @@ snapshots:
     optionalDependencies:
       vite: 7.3.1(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  '@vitest/mocker@4.0.18(vite@7.3.1(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
+    dependencies:
+      '@vitest/spy': 4.0.18
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 7.3.1(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
   '@vitest/pretty-format@4.0.18':
     dependencies:
       tinyrainbow: 3.0.3
@@ -7413,7 +7421,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.18(@types/node@24.10.0)(@vitest/ui@4.0.18)(happy-dom@20.8.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 4.0.18(@types/node@24.10.13)(@vitest/ui@4.0.18)(happy-dom@20.8.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/utils@4.0.18':
     dependencies:
@@ -7604,7 +7612,7 @@ snapshots:
     dependencies:
       vue: 3.5.28(typescript@5.9.3)
 
-  '@woven-ecs/canvas-store@1.3.0(typescript@5.9.3)':
+  '@woven-ecs/canvas-store@1.3.1(typescript@5.9.3)':
     dependencies:
       '@woven-ecs/core': 1.0.6(typescript@5.9.3)
       idb: 8.0.3
@@ -11092,7 +11100,7 @@ snapshots:
   vitest@4.0.18(@types/node@24.10.13)(@vitest/ui@4.0.18)(happy-dom@20.8.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       '@vitest/expect': 4.0.18
-      '@vitest/mocker': 4.0.18(vite@7.3.1(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+      '@vitest/mocker': 4.0.18(vite@7.3.1(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       '@vitest/pretty-format': 4.0.18
       '@vitest/runner': 4.0.18
       '@vitest/snapshot': 4.0.18
