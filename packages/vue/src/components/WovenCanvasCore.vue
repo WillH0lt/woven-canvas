@@ -328,9 +328,19 @@ function recomputeIsOnline() {
 // Version mismatch - set when server reports incompatible protocol version
 const versionMismatch = ref(false)
 
-// Loading state - shown until editor is initialized and first tick completes.
+// Loading state - shown until the document is loaded.
 // When initialState is provided, blocks are pre-populated so no loading needed.
 const isLoading = ref(!props.initialState)
+
+// We show the loading overlay while connected and awaiting the first sync, then
+// drop it once the document is loaded. Two ways it clears: the server's first
+// `synced` signal (see `onSync` below / `store.isSynced` after init), or going
+// offline — if the connection never comes up we let the user work offline
+// rather than spin forever. (`isLoading` only ever clears, so a mid-session
+// disconnect never re-shows the overlay over an already-loaded document.)
+watch(isOnline, (online) => {
+  if (!online) isLoading.value = false
+})
 
 // Camera ref for internal rendering - updated via subscription
 const cameraRef = shallowRef(Camera.default())
@@ -541,6 +551,11 @@ function buildStoreOptions(): CanvasStoreOptions {
         recomputeIsOnline()
         syncOpts.websocket?.onConnectivityChange?.(online)
       },
+      onSync: () => {
+        // First sync from the server: the document is loaded — drop the overlay.
+        isLoading.value = false
+        syncOpts.websocket?.onSync?.()
+      },
     }
   }
 
@@ -701,7 +716,12 @@ onMounted(async () => {
   // Create editor with the real DOM element
   const editor = await createEditorAndStore(containerRef.value, props.initialState)
   editorRef.value = editor
-  isLoading.value = false
+  // A local-only/seeded store is synced immediately, so drop the overlay now; a
+  // websocket store keeps it up until the server's first sync (onSync above) or
+  // until we go offline.
+  if (store!.isSynced) {
+    isLoading.value = false
+  }
 
   // Initialize asset manager (created during setup for SSR availability)
   await assetManager?.init()
