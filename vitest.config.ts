@@ -21,8 +21,10 @@ export default defineConfig({
           name: 'core',
           environment: 'jsdom',
           setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
-          include: [path.resolve(__dirname, 'packages/*/__tests__/**/*.test.ts')],
-          exclude: [path.resolve(__dirname, 'packages/vue/**')],
+          // Globs must use forward slashes — backslashes from a Windows
+          // path.resolve are treated as escapes and match nothing.
+          include: [path.resolve(__dirname, 'packages/*/__tests__/**/*.test.ts').replace(/\\/g, '/')],
+          exclude: [path.resolve(__dirname, 'packages/vue/**').replace(/\\/g, '/')],
         },
       },
     ],

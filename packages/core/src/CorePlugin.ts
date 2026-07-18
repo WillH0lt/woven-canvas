@@ -202,6 +202,11 @@ export function createCorePlugin(options: CorePluginOptionsInput = {}): EditorPl
         key: Key.Delete,
       },
       {
+        // Mac keyboards' delete key reports code "Backspace"
+        command: RemoveSelected.name,
+        key: Key.Backspace,
+      },
+      {
         command: SelectAll.name,
         key: Key.A,
         mod: true,

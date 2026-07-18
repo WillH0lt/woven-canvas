@@ -50,6 +50,7 @@ export function getMouseInput(ctx: Context): MouseInput[] {
       worldPosition: worldPos,
       wheelDeltaX: mouse.wheelDeltaX,
       wheelDeltaY: mouse.wheelDeltaY,
+      wheelModKey: mouse.wheelModKey,
     })
   }
 
@@ -62,6 +63,7 @@ export function getMouseInput(ctx: Context): MouseInput[] {
       worldPosition: worldPos,
       wheelDeltaX: 0,
       wheelDeltaY: 0,
+      wheelModKey: false,
     })
   }
 

@@ -50,10 +50,21 @@ function applyZoom(ctx: Context, newZoom: number, anchorX: number, anchorY: numb
 }
 
 /**
+ * Max effective wheel delta per event when zooming. Trackpad pinches arrive
+ * as many small deltas (±0.5–3) while a mouse wheel notch is ±100+; there is
+ * no reliable way to tell the devices apart across browsers, so clamping puts
+ * both on the same scale — pinch deltas pass through untouched while wheel
+ * notches cap out here.
+ */
+const MAX_ZOOM_DELTA = 10
+
+/**
  * Calculate the target zoom from a wheel delta, clamped to min/max bounds.
+ * A full mouse wheel notch (delta ≥ 10 after clamping) zooms ~10.5%.
  */
 function calcZoomFromWheel(wheelDeltaY: number, currentZoom: number, options: CanvasControlsOptions): number {
-  const zoom = 2 ** ((-0.8 * wheelDeltaY) / 500) * currentZoom
+  const delta = Math.max(-MAX_ZOOM_DELTA, Math.min(MAX_ZOOM_DELTA, wheelDeltaY))
+  const zoom = 2 ** ((-0.8 * delta) / 50) * currentZoom
   return Math.min(options.maxZoom, Math.max(options.minZoom, zoom))
 }
 
@@ -82,12 +93,17 @@ export const PostInputZoom = defineEditorSystem({ phase: 'input', priority: -100
   const options = getPluginResources<CanvasControlsOptions>(ctx, CONTROLS_PLUGIN_NAME)
   const keyboard = Keyboard.read(ctx)
 
-  // Only zoom when the zoom tool is active for wheel input
-  const isZoomActive = Controls.wheelActive(ctx, 'zoom', keyboard.modDown)
-
   // Check for wheel event
   const mouseEvents = getMouseInput(ctx)
   const wheelEvent = mouseEvents.find((e) => e.type === 'wheel')
+
+  // Mod comes from the keyboard or the wheel event itself — trackpad pinch
+  // gestures report ctrlKey on the wheel event without any keydown, and the
+  // keyboard state misses Ctrl/Cmd pressed while the canvas lacked focus.
+  const modDown = keyboard.modDown || (wheelEvent?.wheelModKey ?? false)
+
+  // Only zoom when the zoom tool is active for wheel input
+  const isZoomActive = Controls.wheelActive(ctx, 'zoom', modDown)
 
   if (!options.smoothZoom.enabled) {
     // Direct zoom mode

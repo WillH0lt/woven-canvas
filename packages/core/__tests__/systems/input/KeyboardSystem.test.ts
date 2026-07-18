@@ -150,6 +150,78 @@ describe('Keyboard System', () => {
     })
   })
 
+  describe('macOS Cmd keyup suppression', () => {
+    // macOS doesn't deliver keyup for non-modifier keys while Cmd is held,
+    // so the system must tolerate keydowns for keys it still considers down.
+
+    it('should re-trigger a key re-pressed while Cmd is held', async () => {
+      const ctx = editor._getContext()!
+
+      // Cmd+Z pressed; the Z keyup is swallowed by macOS
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'MetaLeft', metaKey: true, bubbles: true }))
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyZ', metaKey: true, bubbles: true }))
+      await editor.tick()
+      expect(Keyboard.isKeyDownTrigger(ctx, Key.Z)).toBe(true)
+
+      await editor.tick()
+      expect(Keyboard.isKeyDownTrigger(ctx, Key.Z)).toBe(false)
+
+      // Z pressed again with no keyup in between — a fresh press (repeat: false)
+      domElement.dispatchEvent(
+        new KeyboardEvent('keydown', { code: 'KeyZ', metaKey: true, repeat: false, bubbles: true }),
+      )
+      await editor.tick()
+      expect(Keyboard.isKeyDownTrigger(ctx, Key.Z)).toBe(true)
+    })
+
+    it('should not re-trigger on held-key auto-repeat', async () => {
+      const ctx = editor._getContext()!
+
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyA', bubbles: true }))
+      await editor.tick()
+      expect(Keyboard.isKeyDownTrigger(ctx, Key.A)).toBe(true)
+
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyA', repeat: true, bubbles: true }))
+      await editor.tick()
+      expect(Keyboard.isKeyDown(ctx, Key.A)).toBe(true)
+      expect(Keyboard.isKeyDownTrigger(ctx, Key.A)).toBe(false)
+    })
+
+    it('should release stuck non-modifier keys when Cmd is released', async () => {
+      const ctx = editor._getContext()!
+
+      // Cmd+Z pressed; Z's keyup is swallowed, then Cmd is released
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'MetaLeft', metaKey: true, bubbles: true }))
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyZ', metaKey: true, bubbles: true }))
+      await editor.tick()
+      expect(Keyboard.isKeyDown(ctx, Key.Z)).toBe(true)
+
+      domElement.dispatchEvent(new KeyboardEvent('keyup', { code: 'MetaLeft', bubbles: true }))
+      await editor.tick()
+
+      expect(Keyboard.isKeyDown(ctx, Key.Z)).toBe(false)
+      expect(Keyboard.isKeyUpTrigger(ctx, Key.Z)).toBe(true)
+      expect(Keyboard.isKeyDown(ctx, Key.MetaLeft)).toBe(false)
+      expect(Keyboard.read(ctx).modDown).toBe(false)
+    })
+
+    it('should keep other held modifiers down when Cmd is released', async () => {
+      const ctx = editor._getContext()!
+
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', shiftKey: true, bubbles: true }))
+      domElement.dispatchEvent(
+        new KeyboardEvent('keydown', { code: 'MetaLeft', metaKey: true, shiftKey: true, bubbles: true }),
+      )
+      await editor.tick()
+
+      domElement.dispatchEvent(new KeyboardEvent('keyup', { code: 'MetaLeft', shiftKey: true, bubbles: true }))
+      await editor.tick()
+
+      expect(Keyboard.isKeyDown(ctx, Key.ShiftLeft)).toBe(true)
+      expect(Keyboard.read(ctx).shiftDown).toBe(true)
+    })
+  })
+
   describe('blur handling', () => {
     it('should reset all keys on blur', async () => {
       const ctx = editor._getContext()!

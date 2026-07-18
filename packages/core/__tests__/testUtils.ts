@@ -276,7 +276,7 @@ export function createMockElement(): HTMLElement {
 export function simulateKeyDown(
   element: HTMLElement,
   code: string,
-  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {},
+  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; repeat?: boolean } = {},
 ): void {
   element.dispatchEvent(
     new KeyboardEvent('keydown', {
@@ -284,6 +284,8 @@ export function simulateKeyDown(
       shiftKey: options.shiftKey ?? false,
       altKey: options.altKey ?? false,
       ctrlKey: options.ctrlKey ?? false,
+      metaKey: options.metaKey ?? false,
+      repeat: options.repeat ?? false,
       bubbles: true,
     }),
   )
@@ -299,7 +301,7 @@ export function simulateKeyDown(
 export function simulateKeyUp(
   element: HTMLElement,
   code: string,
-  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {},
+  options: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {},
 ): void {
   element.dispatchEvent(
     new KeyboardEvent('keyup', {
@@ -307,6 +309,7 @@ export function simulateKeyUp(
       shiftKey: options.shiftKey ?? false,
       altKey: options.altKey ?? false,
       ctrlKey: options.ctrlKey ?? false,
+      metaKey: options.metaKey ?? false,
       bubbles: true,
     }),
   )

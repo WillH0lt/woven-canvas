@@ -82,6 +82,12 @@ export interface MouseInput {
   wheelDeltaX: number
   /** Vertical wheel delta (positive = scroll down) */
   wheelDeltaY: number
+  /**
+   * Modifier key (Ctrl/Cmd) was held during the wheel event.
+   * Also true for trackpad pinch gestures, which browsers report as
+   * wheel events with ctrlKey set. Always false for mouseMove events.
+   */
+  wheelModKey: boolean
 }
 
 /**

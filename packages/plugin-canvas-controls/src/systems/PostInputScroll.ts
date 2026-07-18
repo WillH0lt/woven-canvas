@@ -32,11 +32,17 @@ function hasAnyKeyDown(keysDownTrigger: ArrayLike<number>): boolean {
 /**
  * Find the wheel event this frame, if the "scroll" tool is active for wheel input.
  * Returns null if there's no wheel event or wheel is mapped to another tool (e.g. zoom).
+ *
+ * The wheel event's own modifier flag counts toward mod detection — trackpad
+ * pinch gestures report ctrlKey on the wheel event without any keydown, and
+ * must not be treated as plain scrolling.
  */
-function getScrollWheelEvent(ctx: Context, modDown: boolean) {
-  if (!Controls.wheelActive(ctx, 'scroll', modDown)) return null
+function getScrollWheelEvent(ctx: Context, keyboardModDown: boolean) {
   const mouseEvents = getMouseInput(ctx)
-  return mouseEvents.find((e) => e.type === 'wheel') ?? null
+  const wheelEvent = mouseEvents.find((e) => e.type === 'wheel') ?? null
+  const modDown = keyboardModDown || (wheelEvent?.wheelModKey ?? false)
+  if (!Controls.wheelActive(ctx, 'scroll', modDown)) return null
+  return wheelEvent
 }
 
 /**

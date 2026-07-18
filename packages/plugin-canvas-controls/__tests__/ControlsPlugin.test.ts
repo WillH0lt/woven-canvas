@@ -223,6 +223,82 @@ describe('captureZoom system', () => {
     expect(camera.zoom).toBe(1)
   })
 
+  it('should zoom on trackpad pinch (wheel with ctrlKey, no keydown)', async () => {
+    const ctx = editor._getContext()!
+
+    expect(Camera.read(ctx).zoom).toBe(1)
+
+    // Pinch gestures arrive as wheel events with ctrlKey set — the keyboard
+    // never sees a Ctrl keydown, so the wheel event's own flag must count.
+    domElement.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaY: -100,
+        clientX: 400,
+        clientY: 300,
+        ctrlKey: true,
+        bubbles: true,
+      }),
+    )
+
+    await editor.tick()
+
+    const camera = Camera.read(ctx)
+    expect(camera.zoom).toBeGreaterThan(1)
+  })
+
+  it('should apply meaningful zoom from small pinch deltas', async () => {
+    // Recreate the editor with smooth zoom off so the zoom math is exact
+    await editor.dispose()
+    editor = new Editor(domElement, {
+      plugins: [CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10, smoothZoom: { enabled: false } })],
+    })
+    await editor.initialize()
+    await editor.tick()
+    const ctx = editor._getContext()!
+
+    // Trackpad pinches send many tiny deltas — 10 events of deltaY -2
+    for (let i = 0; i < 10; i++) {
+      domElement.dispatchEvent(
+        new WheelEvent('wheel', {
+          deltaY: -2,
+          clientX: 400,
+          clientY: 300,
+          ctrlKey: true,
+          bubbles: true,
+        }),
+      )
+      await editor.tick()
+    }
+
+    // Each event zooms 2^(0.8*2/50) ≈ 1.0224 → ~1.25x total. Without the
+    // per-event delta clamp rescale this would only reach ~1.02x.
+    expect(Camera.read(ctx).zoom).toBeGreaterThan(1.2)
+  })
+
+  it('should keep mouse wheel notch zoom at ~10.5% per notch', async () => {
+    await editor.dispose()
+    editor = new Editor(domElement, {
+      plugins: [CanvasControlsPlugin({ minZoom: 0.1, maxZoom: 10, smoothZoom: { enabled: false } })],
+    })
+    await editor.initialize()
+    await editor.tick()
+    const ctx = editor._getContext()!
+
+    // A full mouse wheel notch (deltaY 100) clamps to the max zoom delta
+    domElement.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaY: -100,
+        clientX: 400,
+        clientY: 300,
+        ctrlKey: true,
+        bubbles: true,
+      }),
+    )
+    await editor.tick()
+
+    expect(Camera.read(ctx).zoom).toBeCloseTo(2 ** 0.16, 3)
+  })
+
   it('should respect minZoom limit', async () => {
     const ctx = editor._getContext()!
 

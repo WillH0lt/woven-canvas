@@ -13,6 +13,12 @@ const MouseSchema = {
   moveTrigger: field.boolean().default(false),
   /** True for 1 frame when wheel is scrolled */
   wheelTrigger: field.boolean().default(false),
+  /**
+   * Modifier key (Ctrl/Cmd) was held during this frame's wheel event.
+   * Also true for trackpad pinch gestures, which browsers report as
+   * wheel events with ctrlKey set.
+   */
+  wheelModKey: field.boolean().default(false),
   /** True for 1 frame when mouse enters the editor element */
   enterTrigger: field.boolean().default(false),
   /** True for 1 frame when mouse leaves the editor element */

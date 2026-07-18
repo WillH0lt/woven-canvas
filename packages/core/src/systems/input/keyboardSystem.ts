@@ -122,15 +122,24 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
     if (keyIndex === undefined) continue // Unknown key, skip
 
     if (event.type === 'keydown') {
-      // Check if this is a new press (wasn't down before)
+      // macOS doesn't deliver keyup for non-modifier keys while Cmd is held,
+      // so a key can still be marked down after its keyup was swallowed. A
+      // keydown without `repeat` is always a fresh physical press — trigger
+      // it even if the key looks held.
       const wasDown = getBit(keyboard.keysDown, keyIndex)
-      if (!wasDown) {
+      if (!wasDown || !event.repeat) {
         setBit(keyboard.keysDownTrigger, keyIndex, true)
       }
       setBit(keyboard.keysDown, keyIndex, true)
     } else if (event.type === 'keyup') {
       setBit(keyboard.keysDown, keyIndex, false)
       setBit(keyboard.keysUpTrigger, keyIndex, true)
+
+      // Keyups swallowed while Cmd was held never arrive, even after Cmd is
+      // released — release anything still marked down so keys don't stick.
+      if (event.code === 'MetaLeft' || event.code === 'MetaRight') {
+        releaseNonModifierKeys(keyboard)
+      }
     }
 
     // Update modifier state from the event
@@ -142,6 +151,33 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
   // Clear buffer
   state.eventsBuffer.length = 0
 })
+
+/** Bit indices of modifier keys, which get real keyup events even on macOS. */
+const MODIFIER_KEY_INDICES = new Set([
+  codeToIndex.ShiftLeft,
+  codeToIndex.ShiftRight,
+  codeToIndex.ControlLeft,
+  codeToIndex.ControlRight,
+  codeToIndex.AltLeft,
+  codeToIndex.AltRight,
+  codeToIndex.MetaLeft,
+  codeToIndex.MetaRight,
+])
+
+/**
+ * Release all non-modifier keys still marked down, firing their up-triggers
+ * as if the (swallowed) keyup events had arrived.
+ * @internal
+ */
+function releaseNonModifierKeys(keyboard: { keysDown: Uint8Array; keysUpTrigger: Uint8Array }): void {
+  const bitCount = keyboard.keysDown.length * 8
+  for (let i = 0; i < bitCount; i++) {
+    if (MODIFIER_KEY_INDICES.has(i)) continue
+    if (!getBit(keyboard.keysDown, i)) continue
+    setBit(keyboard.keysDown, i, false)
+    setBit(keyboard.keysUpTrigger, i, true)
+  }
+}
 
 /**
  * Get a bit from a binary field.
