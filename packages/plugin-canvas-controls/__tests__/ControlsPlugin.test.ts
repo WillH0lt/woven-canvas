@@ -566,6 +566,27 @@ describe('capturePan system', () => {
     expect(panState.state).toBe(PanStateValue.Panning)
   })
 
+  it('should remain panning while a hand pointer is held stationary', async () => {
+    const ctx = editor._getContext()!
+
+    domElement.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 1,
+        pointerType: 'mouse',
+        bubbles: true,
+      }),
+    )
+    await editor.tick()
+
+    // No pointer movement or other input on this frame.
+    await editor.tick()
+
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Panning)
+  })
+
   it('should pan camera when dragging with middle mouse', async () => {
     const ctx = editor._getContext()!
 

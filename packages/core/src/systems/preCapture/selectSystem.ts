@@ -459,12 +459,23 @@ export const selectSystem = defineEditorSystem({ phase: 'capture', priority: 100
 
   // If already dragging, continue handling events regardless of tool
   const state = SelectionStateSingleton.read(ctx)
+
   if (state.state === SelectionState.Dragging && buttons.length === 0) {
     buttons = ['left']
   }
 
   // Get pointer events with intersection data
   const events = getPointerInput(ctx, buttons)
+
+  // Space can remap the held left button from select to hand. Unlike a block
+  // drag, a marquee has no reason to continue after that handoff, and without
+  // an event its exit action would never remove the selection box.
+  if (
+    buttons.length === 0 &&
+    (state.state === SelectionState.SelectionBoxPointing || state.state === SelectionState.SelectionBoxDragging)
+  ) {
+    events.push({ type: 'cancel', ctx } as PointerInput)
+  }
 
   if (events.length === 0) return
 
