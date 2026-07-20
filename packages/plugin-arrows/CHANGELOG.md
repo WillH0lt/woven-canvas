@@ -1,5 +1,12 @@
 # @woven-canvas/plugin-arrows
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [d4f0351]
+  - @woven-canvas/core@1.1.0
+
 ## 1.0.5
 
 ### Patch Changes

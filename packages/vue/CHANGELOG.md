@@ -1,5 +1,17 @@
 # @woven-canvas/vue
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [d4f0351]
+  - @woven-canvas/core@1.1.0
+  - @woven-canvas/plugin-canvas-controls@2.0.0
+  - @woven-canvas/plugin-arrows@2.0.0
+  - @woven-canvas/plugin-eraser@2.0.0
+  - @woven-canvas/plugin-pen@2.0.0
+  - @woven-canvas/plugin-tapes@2.0.0
+
 ## 1.3.0
 
 ### Minor Changes

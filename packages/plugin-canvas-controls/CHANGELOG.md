@@ -1,5 +1,18 @@
 # @woven-canvas/plugin-canvas-controls
 
+## 2.0.0
+
+### Minor Changes
+
+- d4f0351: Add spacebar pan: hold the space bar to pan with a left mouse button drag
+  - New `spaceLeftMouseTool` controls option (default `'hand'`) remaps the left mouse button while space is held; set it to an empty string to disable the remap
+  - Releasing space mid-drag ends the pan immediately and restores the left mouse button to its normal tool
+
+### Patch Changes
+
+- Updated dependencies [d4f0351]
+  - @woven-canvas/core@1.1.0
+
 ## 1.0.7
 
 ### Patch Changes
