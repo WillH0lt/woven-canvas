@@ -7,6 +7,7 @@
  * - **Zoom**: Scroll wheel + modifier key (Ctrl/Cmd) - zooms toward cursor
  * - **Scroll**: Scroll wheel without modifier - pans the canvas
  * - **Pan**: Middle mouse button drag - pans the canvas
+ * - **Spacebar pan**: Hold space bar - left mouse button drag pans the canvas
  *
  * @example
  * ```typescript

@@ -27,6 +27,7 @@ function createControlsPlugin(options: CanvasControlsOptionsInput = {}): EditorP
  * - **Zoom**: Scroll wheel with modifier key (Ctrl/Cmd) to zoom in/out
  * - **Scroll**: Scroll wheel without modifier to pan the canvas
  * - **Pan**: Middle mouse button drag to pan the canvas
+ * - **Spacebar pan**: Hold space bar to pan with left mouse button drag
  *
  * Can be used with or without options:
  *

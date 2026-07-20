@@ -1,4 +1,4 @@
-import { Camera, Editor } from '@woven-canvas/core'
+import { Camera, Controls, Editor, PointerButton } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CanvasControlsPlugin, PanState, PanStateValue } from '../src'
 
@@ -692,6 +692,178 @@ describe('capturePan system', () => {
       }),
     )
 
+    await editor.tick()
+
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Idle)
+  })
+})
+
+describe('spacebar pan', () => {
+  let editor: Editor
+  let domElement: HTMLDivElement
+
+  function createDomElement(): HTMLDivElement {
+    const el = document.createElement('div')
+    Object.defineProperty(el, 'clientWidth', { value: 800 })
+    Object.defineProperty(el, 'clientHeight', { value: 600 })
+    el.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        width: 800,
+        height: 600,
+        right: 800,
+        bottom: 600,
+        x: 0,
+        y: 0,
+        toJSON: () => {},
+      }) as DOMRect
+    return el
+  }
+
+  beforeEach(async () => {
+    domElement = createDomElement()
+    document.body.appendChild(domElement)
+
+    editor = new Editor(domElement, {
+      plugins: [CanvasControlsPlugin()],
+    })
+    await editor.initialize()
+    await editor.tick()
+  })
+
+  afterEach(async () => {
+    await editor.dispose()
+    document.body.removeChild(domElement)
+  })
+
+  function pressSpace(): void {
+    domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true }))
+  }
+
+  function releaseSpace(): void {
+    domElement.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', key: ' ', bubbles: true }))
+  }
+
+  it('should map the left mouse button to the hand tool while space is held', async () => {
+    const ctx = editor._getContext()!
+
+    expect(Controls.getButtons(ctx, 'hand')).not.toContain(PointerButton.Left)
+    expect(Controls.getButtons(ctx, 'select')).toContain(PointerButton.Left)
+
+    pressSpace()
+    await editor.tick()
+
+    expect(Controls.getButtons(ctx, 'hand')).toContain(PointerButton.Left)
+    expect(Controls.getButtons(ctx, 'select')).not.toContain(PointerButton.Left)
+
+    releaseSpace()
+    await editor.tick()
+
+    expect(Controls.getButtons(ctx, 'hand')).not.toContain(PointerButton.Left)
+    expect(Controls.getButtons(ctx, 'select')).toContain(PointerButton.Left)
+  })
+
+  it('should pan with left mouse drag while space is held', async () => {
+    const ctx = editor._getContext()!
+
+    pressSpace()
+    await editor.tick()
+
+    domElement.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 0, // Left button
+        pointerType: 'mouse',
+        bubbles: true,
+      }),
+    )
+    await editor.tick()
+
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Panning)
+
+    domElement.dispatchEvent(
+      new PointerEvent('pointermove', {
+        pointerId: 1,
+        clientX: 300,
+        clientY: 200,
+        button: 0,
+        pointerType: 'mouse',
+        bubbles: true,
+      }),
+    )
+    await editor.tick()
+
+    const camera = Camera.read(ctx)
+    expect(camera.left).toBe(100)
+    expect(camera.top).toBe(100)
+  })
+
+  it('should keep panning when space is released mid-drag', async () => {
+    const ctx = editor._getContext()!
+
+    pressSpace()
+    await editor.tick()
+
+    domElement.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 0,
+        pointerType: 'mouse',
+        bubbles: true,
+      }),
+    )
+    await editor.tick()
+
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Panning)
+
+    // Release space while still dragging - pan should continue until mouse up
+    releaseSpace()
+    await editor.tick()
+
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Panning)
+
+    window.dispatchEvent(
+      new PointerEvent('pointerup', {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 0,
+        pointerType: 'mouse',
+        bubbles: true,
+      }),
+    )
+    await editor.tick()
+
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Idle)
+    expect(Controls.getButtons(ctx, 'select')).toContain(PointerButton.Left)
+  })
+
+  it('should not remap when spaceLeftMouseTool is disabled', async () => {
+    const ctx = editor._getContext()!
+
+    Controls.write(ctx).spaceLeftMouseTool = ''
+    await editor.tick()
+
+    pressSpace()
+    await editor.tick()
+
+    expect(Controls.getButtons(ctx, 'select')).toContain(PointerButton.Left)
+
+    domElement.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 300,
+        button: 0,
+        pointerType: 'mouse',
+        bubbles: true,
+      }),
+    )
     await editor.tick()
 
     expect(PanState.read(ctx).state).toBe(PanStateValue.Idle)

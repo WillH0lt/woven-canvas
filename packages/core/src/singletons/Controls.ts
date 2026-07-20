@@ -1,10 +1,13 @@
 import { CanvasSingletonDef } from '@woven-ecs/canvas-store'
 import { type Context, field } from '@woven-ecs/core'
 import { PointerButton } from '../components'
+import { Key, Keyboard } from './Keyboard'
 
 const ControlsSchema = {
   /** Tool activated by left mouse button */
   leftMouseTool: field.string().max(32).default('select'),
+  /** Tool activated by left mouse button while the space bar is held (empty string = no remap) */
+  spaceLeftMouseTool: field.string().max(32).default('hand'),
   /** Tool activated by middle mouse button */
   middleMouseTool: field.string().max(32).default('hand'),
   /** Tool activated by right mouse button */
@@ -40,7 +43,11 @@ class ControlsDef extends CanvasSingletonDef<typeof ControlsSchema> {
     const controls = this.read(ctx)
     const buttons: PointerButton[] = []
 
-    if (tools.includes(controls.leftMouseTool)) {
+    // Holding space remaps the left button to spaceLeftMouseTool (e.g. hand to pan)
+    const spaceRemap = controls.spaceLeftMouseTool !== '' && Keyboard.isKeyDown(ctx, Key.Space)
+    const leftTool = spaceRemap ? controls.spaceLeftMouseTool : controls.leftMouseTool
+
+    if (tools.includes(leftTool)) {
       buttons.push(PointerButton.Left)
     }
     if (tools.includes(controls.middleMouseTool)) {

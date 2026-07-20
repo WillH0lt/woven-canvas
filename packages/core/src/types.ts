@@ -253,6 +253,13 @@ export const ControlsOptions = z.object({
   leftMouseTool: z.string().max(32).default('select'),
 
   /**
+   * Tool activated by left mouse button while the space bar is held.
+   * Set to an empty string to disable the remap.
+   * @default 'hand'
+   */
+  spaceLeftMouseTool: z.string().max(32).default('hand'),
+
+  /**
    * Tool activated by middle mouse button.
    * @default 'hand'
    */
