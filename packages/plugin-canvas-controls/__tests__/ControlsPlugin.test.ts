@@ -801,7 +801,7 @@ describe('spacebar pan', () => {
     expect(camera.top).toBe(100)
   })
 
-  it('should keep panning when space is released mid-drag', async () => {
+  it('should stop panning when space is released mid-drag', async () => {
     const ctx = editor._getContext()!
 
     pressSpace()
@@ -821,17 +821,20 @@ describe('spacebar pan', () => {
 
     expect(PanState.read(ctx).state).toBe(PanStateValue.Panning)
 
-    // Release space while still dragging - pan should continue until mouse up
+    // Release space while still dragging - the pan should end immediately
     releaseSpace()
     await editor.tick()
 
-    expect(PanState.read(ctx).state).toBe(PanStateValue.Panning)
+    expect(PanState.read(ctx).state).toBe(PanStateValue.Idle)
+    expect(Controls.getButtons(ctx, 'select')).toContain(PointerButton.Left)
 
-    window.dispatchEvent(
-      new PointerEvent('pointerup', {
+    // Further dragging should not move the camera
+    const { left: leftBefore, top: topBefore } = Camera.read(ctx)
+    domElement.dispatchEvent(
+      new PointerEvent('pointermove', {
         pointerId: 1,
-        clientX: 400,
-        clientY: 300,
+        clientX: 300,
+        clientY: 200,
         button: 0,
         pointerType: 'mouse',
         bubbles: true,
@@ -840,7 +843,8 @@ describe('spacebar pan', () => {
     await editor.tick()
 
     expect(PanState.read(ctx).state).toBe(PanStateValue.Idle)
-    expect(Controls.getButtons(ctx, 'select')).toContain(PointerButton.Left)
+    expect(Camera.read(ctx).left).toBe(leftBefore)
+    expect(Camera.read(ctx).top).toBe(topBefore)
   })
 
   it('should not remap when spaceLeftMouseTool is disabled', async () => {

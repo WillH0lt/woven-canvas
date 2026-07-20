@@ -10,6 +10,7 @@ import {
   type InferStateContext,
   Key,
   type KeyboardInput,
+  PointerButton,
   type PointerInput,
 } from '@woven-canvas/core'
 import { assign, setup } from 'xstate'
@@ -70,6 +71,7 @@ const panMachine = setup({
     setDragStart: assign({
       panStartX: ({ event }) => (event as PointerInput).worldPosition[0],
       panStartY: ({ event }) => (event as PointerInput).worldPosition[1],
+      panButton: ({ event }) => (event as PointerInput).button,
     }),
 
     moveCamera: ({ context, event }) => {
@@ -148,6 +150,7 @@ const panMachine = setup({
     }),
 
     resetContext: assign({
+      panButton: PointerButton.None,
       panStartX: 0,
       panStartY: 0,
       velocityX: 0,
@@ -162,6 +165,7 @@ const panMachine = setup({
   id: 'pan',
   initial: PanStateValue.Idle,
   context: {
+    panButton: PointerButton.None,
     panStartX: 0,
     panStartY: 0,
     velocityX: 0,
@@ -267,6 +271,18 @@ export const PostInputPan = defineEditorSystem({ phase: 'input', priority: -100 
 
   // Get pointer events for buttons mapped to the "hand" tool
   const buttons = Controls.getButtons(ctx, 'hand')
+
+  // End the pan when the button that started it is no longer mapped to the
+  // hand tool (e.g. space released mid-drag) — its pointer events stop
+  // arriving, which would otherwise leave the machine stuck in Panning.
+  if (currentState === PanStateValue.Panning) {
+    const panButton = PanState.read(ctx).panButton as PointerButton
+    if (!buttons.includes(panButton)) {
+      PanState.copy(ctx, PanState.default())
+      return
+    }
+  }
+
   const pointerEvents = getPointerInput(ctx, buttons)
 
   // Build events array
