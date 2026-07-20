@@ -1,6 +1,6 @@
 ---
-"@woven-canvas/core": minor
-"@woven-canvas/plugin-canvas-controls": minor
+"@woven-canvas/core": patch
+"@woven-canvas/plugin-canvas-controls": patch
 ---
 
 Add spacebar pan: hold the space bar to pan with a left mouse button drag

@@ -1,4 +1,14 @@
-import { addComponent, Block, createEntity, Editor, hasComponent, Intersect, Keyboard } from '@woven-canvas/core'
+import {
+  addComponent,
+  Block,
+  createEntity,
+  defineQuery,
+  Editor,
+  hasComponent,
+  Intersect,
+  Keyboard,
+  SelectionBox,
+} from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CloneEntities, DeselectAll, UncloneEntities } from '../../../src/commands'
 import { Selected } from '../../../src/components'
@@ -8,6 +18,7 @@ import { createBlock, createPointerSimulator, simulateKeyDown, simulateMouseMove
 
 // Pointer simulator for consistent pointer events
 const pointer = createPointerSimulator()
+const selectionBoxQuery = defineQuery((q) => q.with(SelectionBox))
 
 describe('PreCaptureSelect', () => {
   let editor: Editor
@@ -101,6 +112,29 @@ describe('PreCaptureSelect', () => {
 
       await editor.tick()
       expect(state).toBe(SelectionState.Idle)
+    })
+
+    it('should cancel selection box when Space remaps left mouse to hand', async () => {
+      let state: string | undefined
+      let selectionBoxCount = 0
+
+      pointer.pointerDown(domElement, 50, 50)
+      await editor.tick()
+
+      pointer.pointerMove(60, 60)
+      await editor.tick()
+
+      simulateKeyDown(domElement, 'Space')
+      await editor.tick()
+
+      editor.nextTick((ctx) => {
+        state = SelectionStateSingleton.read(ctx).state
+        selectionBoxCount = selectionBoxQuery.current(ctx).length
+      })
+      await editor.tick()
+
+      expect(state).toBe(SelectionState.Idle)
+      expect(selectionBoxCount).toBe(0)
     })
 
     it('should return to Idle on click without drag', async () => {

@@ -1,4 +1,4 @@
-import { defineEditorState, field, PointerButton } from '@woven-canvas/core'
+import { defineEditorState, field } from '@woven-canvas/core'
 
 import { PanStateValue } from '../types'
 
@@ -10,8 +10,6 @@ import { PanStateValue } from '../types'
 export const PanState = defineEditorState('panState', {
   /** Current state of the pan state machine */
   state: field.string().max(16).default(PanStateValue.Idle),
-  /** Button that started the current pan */
-  panButton: field.string().max(8).default(PointerButton.None),
   /** World X coordinate where pan started */
   panStartX: field.float64().default(0),
   /** World Y coordinate where pan started */
