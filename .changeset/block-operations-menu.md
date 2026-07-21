@@ -1,5 +1,5 @@
 ---
-"@woven-canvas/core": minor
+"@woven-canvas/core": patch
 "@woven-canvas/vue": minor
 ---
 
