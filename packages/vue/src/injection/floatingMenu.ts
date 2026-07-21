@@ -5,6 +5,7 @@ import type { ComputedRef, InjectionKey } from 'vue'
 export interface FloatingMenuContext {
   selectedIds: ComputedRef<EntityId[]>
   commonComponents: ComputedRef<Set<string>>
+  showOperations?: ComputedRef<boolean>
 }
 
 /** Injection key for FloatingMenu context */

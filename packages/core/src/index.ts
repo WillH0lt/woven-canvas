@@ -174,6 +174,7 @@ export {
   deselectAll,
   deselectBlock,
   detectEmbedProvider,
+  filterRoots,
   findFrameAtPoint,
   generateUuidBySeed,
   getBlockDef,

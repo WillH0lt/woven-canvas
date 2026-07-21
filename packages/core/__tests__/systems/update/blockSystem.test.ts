@@ -17,6 +17,7 @@ import {
   DeselectAll,
   DeselectBlock,
   DragBlock,
+  DuplicateSelected,
   RemoveBlock,
   RemoveSelected,
   SelectAll,
@@ -1121,6 +1122,160 @@ describe('UpdateBlock', () => {
       await editor.tick()
       expect(cloneHasText).toBe(true)
       expect(cloneTextContent).toBe('Cloned Text')
+    })
+
+    it('should not double-offset a child cloned alongside its parent', async () => {
+      let parentId: number | undefined
+      let childId: number | undefined
+      let cloneParentPosition: [number, number] | undefined
+      let cloneChildPosition: [number, number] | undefined
+      const seed = 'test-seed'
+      const offset: [number, number] = [50, 50]
+
+      editor.nextTick((ctx) => {
+        parentId = createBlock(ctx, { position: [100, 100], synced: true })
+        childId = createBlock(ctx, { position: [10, 10], synced: true })
+        // Child position is parent-relative
+        Block.write(ctx, childId).parentId = parentId
+      })
+
+      await editor.tick()
+
+      editor.command(CloneEntities, {
+        entityIds: [parentId!, childId!],
+        offset,
+        seed,
+      })
+
+      await editor.tick()
+
+      editor.nextTick((ctx) => {
+        for (const blockId of blocksQuery.current(ctx)) {
+          if (blockId === parentId || blockId === childId) continue
+          const block = Block.read(ctx, blockId)
+          if (block.parentId === null) {
+            cloneParentPosition = [...block.position] as [number, number]
+          } else {
+            cloneChildPosition = [...block.position] as [number, number]
+          }
+        }
+      })
+
+      await editor.tick()
+      // Parent clone is offset; child clone keeps its parent-relative
+      // position (the parent's offset already moves it in world space)
+      expect(cloneParentPosition).toEqual([150, 150])
+      expect(cloneChildPosition).toEqual([10, 10])
+    })
+  })
+
+  describe('DuplicateSelected command', () => {
+    it('should create a copy and keep selection on the offset original', async () => {
+      let entityId: number | undefined
+      let originalPosition: [number, number] | undefined
+      let originalSelected = false
+      let clonePosition: [number, number] | undefined
+      let cloneSelected = false
+      let blockCount = 0
+
+      editor.nextTick((ctx) => {
+        entityId = createBlock(ctx, {
+          position: [100, 100],
+          synced: true,
+          selected: true,
+        })
+      })
+
+      await editor.tick()
+
+      editor.command(DuplicateSelected)
+
+      await editor.tick()
+
+      editor.nextTick((ctx) => {
+        for (const blockId of blocksQuery.current(ctx)) {
+          // Skip local-only blocks (selection/transform overlays)
+          if (!hasComponent(ctx, blockId, Synced)) continue
+          blockCount++
+          const block = Block.read(ctx, blockId)
+          if (blockId === entityId) {
+            originalPosition = [...block.position] as [number, number]
+            originalSelected = hasComponent(ctx, blockId, Selected)
+          } else {
+            clonePosition = [...block.position] as [number, number]
+            cloneSelected = hasComponent(ctx, blockId, Selected)
+          }
+        }
+      })
+
+      await editor.tick()
+      expect(blockCount).toBe(2)
+      // The copy stays at the original position; the still-selected
+      // original is offset and becomes "the duplicate"
+      expect(clonePosition).toEqual([100, 100])
+      expect(cloneSelected).toBe(false)
+      expect(originalPosition).toEqual([120, 120])
+      expect(originalSelected).toBe(true)
+    })
+
+    it('should not double-offset a selected child of a selected parent', async () => {
+      let parentId: number | undefined
+      let childId: number | undefined
+      let parentPosition: [number, number] | undefined
+      let childPosition: [number, number] | undefined
+
+      editor.nextTick((ctx) => {
+        parentId = createBlock(ctx, {
+          position: [100, 100],
+          synced: true,
+          selected: true,
+        })
+        childId = createBlock(ctx, {
+          position: [10, 10],
+          synced: true,
+          selected: true,
+        })
+        // Child position is parent-relative
+        Block.write(ctx, childId).parentId = parentId
+      })
+
+      await editor.tick()
+
+      editor.command(DuplicateSelected)
+
+      await editor.tick()
+
+      editor.nextTick((ctx) => {
+        parentPosition = [...Block.read(ctx, parentId!).position] as [number, number]
+        childPosition = [...Block.read(ctx, childId!).position] as [number, number]
+      })
+
+      await editor.tick()
+      expect(parentPosition).toEqual([120, 120])
+      // Child keeps its parent-relative position — the parent's offset
+      // already moves it in world space
+      expect(childPosition).toEqual([10, 10])
+    })
+
+    it('should do nothing when no blocks are selected', async () => {
+      let blockCount = 0
+
+      editor.nextTick((ctx) => {
+        createBlock(ctx, { synced: true, selected: false })
+      })
+
+      await editor.tick()
+
+      editor.command(DuplicateSelected)
+
+      await editor.tick()
+
+      editor.nextTick((ctx) => {
+        blockCount = Array.from(blocksQuery.current(ctx)).length
+      })
+
+      await editor.tick()
+      expect(blockCount).toBe(1)
     })
   })
 

@@ -17,6 +17,7 @@ import { useSingleton } from "../composables/useSingleton";
 import { useTextEditorController } from "../composables/useTextEditorController";
 import { WOVEN_CANVAS_KEY, FLOATING_MENU_KEY } from "../injection";
 import { computeCommonComponents } from "../utils/computeCommonComponents";
+import { computeShowOperations } from "../utils/computeShowOperations";
 import FloatingMenuBar from "./FloatingMenuBar.vue";
 
 // Get editor from context
@@ -38,19 +39,27 @@ const selectedIds = computed<EntityId[]>(() =>
   selectedItems.value.map((item) => item.entityId),
 );
 
+// Selected blocks with their tags, for blockDef-driven menu decisions
+const selectedBlockTags = computed(() =>
+  selectedItems.value.map((item) => ({ tag: item.block.value.tag })),
+);
+
 // Compute common components across selection
 const commonComponents = computed(() => {
   const editor = canvasContext?.getEditor();
-  if (!editor || selectedItems.value.length === 0) return new Set<string>();
+  if (!editor) return new Set<string>();
+  return computeCommonComponents(editor, selectedBlockTags.value);
+});
 
-  const blocks = selectedItems.value.map((item) => ({
-    tag: item.block.value.tag,
-  }));
-  return computeCommonComponents(editor, blocks);
+// Show the block operations (…) button only if every selected block opts in
+const showOperations = computed(() => {
+  const editor = canvasContext?.getEditor();
+  if (!editor) return false;
+  return computeShowOperations(editor, selectedBlockTags.value);
 });
 
 // Provide context for child components
-provide(FLOATING_MENU_KEY, { selectedIds, commonComponents });
+provide(FLOATING_MENU_KEY, { selectedIds, commonComponents, showOperations });
 
 // Pre-allocated array for calculations
 const _aabb: Aabb = [0, 0, 0, 0];

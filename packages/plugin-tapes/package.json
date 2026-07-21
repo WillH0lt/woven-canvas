@@ -37,8 +37,8 @@
     "build": "tsup ./src/index.ts --tsconfig ./tsconfig.build.json --config ../../tsup.config.ts",
     "build:watch": "pnpm build --watch",
     "check:exports": "attw --pack .",
-    "test": "vitest --config ../../vitest.config.ts run --passWithNoTests",
-    "test:watch": "vitest --config ../../vitest.config.ts run --watch",
+    "test": "vitest --config ../../vitest.config.ts run --passWithNoTests packages/plugin-tapes",
+    "test:watch": "vitest --config ../../vitest.config.ts --watch packages/plugin-tapes",
     "prepublishOnly": "pnpm build"
   },
   "devDependencies": {

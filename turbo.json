@@ -14,10 +14,6 @@
     "clean": {
       "cache": false,
       "outputs": ["packages/*/build", "examples/*/build"]
-    },
-    "test:unit:watch": {
-      "cache": false,
-      "persistent": true
     }
   }
 }

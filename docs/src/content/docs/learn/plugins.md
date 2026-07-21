@@ -114,22 +114,24 @@ blockDefs: [
     stratum: "content", // 'background', 'content', or 'overlay'
     components: [HslColor, Potion], // Additional components for this block type
     connectors: { enabled: true }, // Arrow connection support
+    showOperations: true, // Show the block operations (…) button in the floating menu
   },
 ];
 ```
 
 ### Block Options
 
-| Option       | Type         | Default             | Description                                 |
-| ------------ | ------------ | ------------------- | ------------------------------------------- |
-| `tag`        | `string`     | required            | Unique block type identifier                |
-| `resizeMode` | `ResizeMode` | `ResizeMode.Scale`  | `Scale` (maintain aspect), `Free` (stretch) |
-| `canRotate`  | `boolean`    | `true`              | Allow rotation                              |
-| `canScale`   | `boolean`    | `true`              | Allow scaling                               |
-| `snappable`  | `boolean`    | `true`              | Allow snapping                              |
-| `stratum`    | `string`     | `'content'`         | Render layer                                |
-| `components` | `array`      | `[]`                | Components added to new blocks              |
-| `connectors` | `object`     | `{ enabled: true }` | Arrow connection config                     |
+| Option           | Type         | Default             | Description                                               |
+| ---------------- | ------------ | ------------------- | --------------------------------------------------------- |
+| `tag`            | `string`     | required            | Unique block type identifier                              |
+| `resizeMode`     | `ResizeMode` | `ResizeMode.Scale`  | `Scale` (maintain aspect), `Free` (stretch)               |
+| `canRotate`      | `boolean`    | `true`              | Allow rotation                                            |
+| `canScale`       | `boolean`    | `true`              | Allow scaling                                             |
+| `snappable`      | `boolean`    | `true`              | Allow snapping                                            |
+| `stratum`        | `string`     | `'content'`         | Render layer                                              |
+| `components`     | `array`      | `[]`                | Components added to new blocks                            |
+| `connectors`     | `object`     | `{ enabled: true }` | Arrow connection config                                   |
+| `showOperations` | `boolean`    | `true`              | Show the block operations (…) button in the floating menu |
 
 The `Block` component is always included automatically on every block entity.
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, useSlots, inject, onUnmounted } from "vue";
 
+import BlockOperationsButton from "./buttons/BlockOperationsButton.vue";
 import ColorButton from "./buttons/ColorButton.vue";
 import PenStrokeThicknessButton from "./buttons/PenStrokeThicknessButton.vue";
 import ArrowThicknessButton from "./buttons/ArrowThicknessButton.vue";
@@ -16,7 +17,7 @@ import { FLOATING_MENU_KEY } from "../injection";
 const slots = useSlots();
 const { reset: resetTooltip } = useTooltipSingleton();
 const context = inject(FLOATING_MENU_KEY)!;
-const { selectedIds, commonComponents } = context;
+const { selectedIds, commonComponents, showOperations } = context;
 
 // Built-in component names (handled in template)
 const builtInComponentNames = new Set([
@@ -115,6 +116,14 @@ onUnmounted(() => {
       </slot>
     </template>
 
+    <!-- Block operations (…) button, always rightmost -->
+    <template v-if="showOperations">
+      <div class="wov-divider" divider />
+      <slot name="button:operations" :entityIds="selectedIds">
+        <BlockOperationsButton />
+      </slot>
+    </template>
+
   </div>
 </template>
 
@@ -168,5 +177,10 @@ onUnmounted(() => {
   margin: auto 0;
   background-color: var(--wov-gray-600);
   flex-shrink: 0;
+}
+
+/* No divider needed when the operations button is the only button */
+.wov-floating-menu-bar > .wov-divider:first-child {
+  display: none;
 }
 </style>

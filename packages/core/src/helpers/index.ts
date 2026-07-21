@@ -20,7 +20,15 @@ export { findFrameAtPoint } from './findFrameAtPoint'
 // Held state helpers
 export { isHeldByRemote } from './held'
 // Hierarchy helpers
-export { cascadeDelete, getChildren, getDescendants, getWorldPosition, isAncestor, worldToLocal } from './hierarchy'
+export {
+  cascadeDelete,
+  filterRoots,
+  getChildren,
+  getDescendants,
+  getWorldPosition,
+  isAncestor,
+  worldToLocal,
+} from './hierarchy'
 // Intersection helpers
 export {
   getTopmostBlockAtPoint,

@@ -76,6 +76,29 @@ export function getDescendants(ctx: Context, parentId: EntityId): EntityId[] {
 }
 
 /**
+ * Filter a set of entities down to its roots: entities with no ancestor in
+ * the same set. A child's position is parent-relative, so position offsets
+ * must only be applied to these roots — offsetting a child alongside its
+ * ancestor would move it twice.
+ */
+export function filterRoots(ctx: Context, entityIds: EntityId[]): EntityId[] {
+  const idSet = new Set(entityIds)
+  return entityIds.filter((entityId) => {
+    if (!hasComponent(ctx, entityId, Block)) return false
+
+    let current = Block.read(ctx, entityId).parentId
+    const visited = new Set<EntityId>()
+    while (current !== null && hasComponent(ctx, current, Block)) {
+      if (idSet.has(current)) return false
+      if (visited.has(current)) break // cycle safety
+      visited.add(current)
+      current = Block.read(ctx, current).parentId
+    }
+    return true
+  })
+}
+
+/**
  * Recursively delete an entity and all its descendants.
  */
 export function cascadeDelete(ctx: Context, entityId: EntityId): void {

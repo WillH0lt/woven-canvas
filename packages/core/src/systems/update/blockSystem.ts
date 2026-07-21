@@ -21,6 +21,7 @@ import {
   DeselectAll,
   DeselectBlock,
   DragBlock,
+  DuplicateSelected,
   RemoveBlock,
   RemoveHeld,
   RemoveSelected,
@@ -30,17 +31,20 @@ import {
   SetCursor,
   ToggleSelect,
   UncloneEntities,
+  UpdateTransformBox,
 } from '../../commands'
 import { Block } from '../../components/Block'
 import { Connector } from '../../components/Connector'
 import { Held } from '../../components/Held'
 import { Selected } from '../../components/Selected'
 import { defineEditorSystem } from '../../EditorSystem'
-import { cascadeDelete, getDescendants } from '../../helpers/hierarchy'
+import { cascadeDelete, filterRoots, getDescendants } from '../../helpers/hierarchy'
 import { deselectBlock, selectBlock } from '../../helpers/select'
 import { generateUuidBySeed } from '../../helpers/uuid'
 import { Cursor } from '../../singletons/Cursor'
+import { Grid } from '../../singletons/Grid'
 import { RankBounds } from '../../singletons/RankBounds'
+import { TransformBoxStateSingleton } from '../../singletons/TransformBoxStateSingleton'
 import type { EditorResources } from '../../types'
 
 // Query for locally selected blocks
@@ -56,6 +60,7 @@ const syncedBlocksQuery = defineQuery((q) => q.with(Block, Synced))
  * - SelectBlock, DeselectBlock, ToggleSelect, DeselectAll, SelectAll
  * - RemoveBlock, RemoveSelected
  * - DragBlock
+ * - DuplicateSelected
  * - BringForwardSelected, SendBackwardSelected
  * - SetCursor
  */
@@ -120,6 +125,8 @@ export const blockSystem = defineEditorSystem({ phase: 'update' }, (ctx: Context
     }
   })
 
+  on(ctx, DuplicateSelected, duplicateSelected)
+
   on(ctx, BringForwardSelected, bringForwardSelected)
   on(ctx, SendBackwardSelected, sendBackwardSelected)
 
@@ -151,6 +158,42 @@ export const blockSystem = defineEditorSystem({ phase: 'update' }, (ctx: Context
 function deselectAllBlocks(ctx: Context): void {
   for (const entityId of selectedBlocksQuery.current(ctx)) {
     deselectBlock(ctx, entityId)
+  }
+}
+
+// Fallback duplicate offset in world units when the grid is disabled
+const DUPLICATE_OFFSET = 20
+
+/**
+ * Duplicate selected blocks.
+ * Reuses the alt-drag clone machinery: clones stay at the original position
+ * (below the originals, keeping connector attachments), while the
+ * still-selected originals are offset — so the selection ends up on the copy.
+ */
+function duplicateSelected(ctx: Context): void {
+  const selectedBlocks = [...selectedBlocksQuery.current(ctx)]
+  if (selectedBlocks.length === 0) return
+
+  cloneEntities(ctx, selectedBlocks, [0, 0], crypto.randomUUID())
+
+  // Offset by one grid cell so grid-aligned blocks stay aligned
+  const grid = Grid.read(ctx)
+  const offset: Vec2 =
+    grid.enabled && grid.colWidth > 0 && grid.rowHeight > 0
+      ? [grid.colWidth, grid.rowHeight]
+      : [DUPLICATE_OFFSET, DUPLICATE_OFFSET]
+
+  for (const entityId of filterRoots(ctx, selectedBlocks)) {
+    const worldPos = Block.getWorldPosition(ctx, entityId)
+    Vec2.add(worldPos, offset)
+    Block.setWorldPosition(ctx, entityId, worldPos)
+  }
+
+  // The transform box only refreshes on pointer/selection events — nudge it
+  // so it follows the offset blocks
+  const { transformBoxId } = TransformBoxStateSingleton.read(ctx)
+  if (transformBoxId !== null) {
+    UpdateTransformBox.spawn(ctx, { transformBoxId })
   }
 }
 
@@ -214,7 +257,6 @@ function sendBackwardSelected(ctx: Context): void {
  */
 function cloneEntities(ctx: Context, entityIds: EntityId[], offset: Vec2, seed: string): void {
   // Expand to include all descendants of the given entities
-  const rootSet = new Set(entityIds)
   const allEntityIdsSet = new Set(entityIds)
   for (const entityId of entityIds) {
     for (const descendant of getDescendants(ctx, entityId)) {
@@ -222,6 +264,10 @@ function cloneEntities(ctx: Context, entityIds: EntityId[], offset: Vec2, seed: 
     }
   }
   entityIds = [...allEntityIdsSet]
+
+  // Offset applies only to roots of the cloned set — a child's position is
+  // parent-relative, so offsetting it alongside its ancestor would move it twice
+  const rootSet = new Set(filterRoots(ctx, entityIds))
 
   const { componentsById } = getResources<EditorResources>(ctx)
   const documentComponents = new Map([...componentsById].filter(([, def]) => def.sync === 'document'))
