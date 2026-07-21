@@ -1,5 +1,12 @@
 # @woven-canvas/plugin-canvas-controls
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [f411c0b]
+  - @woven-canvas/core@1.1.0
+
 ## 1.0.8
 
 ### Patch Changes
