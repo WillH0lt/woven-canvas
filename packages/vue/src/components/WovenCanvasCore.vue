@@ -172,10 +172,14 @@ export interface WovenCanvasProps {
   initialState?: Record<string, ComponentData>
 
   /** Block tags to skip rendering in the DOM. Use when an external renderer
-   *  (e.g. a WebGPU canvas in the `render-layer` slot) paints those blocks
+   *  (e.g. a WebGL canvas in the `render-layer` slot) paints those blocks
    *  itself — the wrapper, the inner block component, and the block:<tag>
-   *  slot are all suppressed for these tags. Hit testing, hover, and drag
-   *  for omitted tags must be handled by the external renderer. */
+   *  slot are all suppressed for these tags. Omitted blocks stay fully
+   *  interactive (hit testing, hover, drag, selection): pointer input is
+   *  hit-tested in ECS against Block/HitGeometry, never against block DOM
+   *  (block wrappers are pointer-events: none regardless). Only
+   *  DOM-dependent behavior is lost — in-place text editing and anything
+   *  the inner component renders or measures. */
   omitBlockTags?: string[]
 
   /** Text editing behavior. E.g. `{ links: false }` hides the link button and

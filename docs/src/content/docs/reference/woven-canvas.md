@@ -153,9 +153,9 @@ interface WovenCanvasProps {
   initialState?: Record<string, ComponentData>;
 
   // Block tags to skip rendering in the DOM. Use when an external renderer
-  // (e.g. a WebGPU canvas in the `render-layer` slot) paints those blocks
+  // (e.g. a WebGL canvas in the `render-layer` slot) paints those blocks
   // itself. The wrapper, inner component, and `block:<tag>` slot are all
-  // suppressed — hit testing for omitted tags is the renderer's responsibility.
+  // suppressed.
   omitBlockTags?: string[];
 
   // Run the internal requestAnimationFrame render loop. Default: true.
