@@ -1,5 +1,16 @@
 # @woven-canvas/plugin-canvas-controls
 
+## 1.1.0
+
+### Minor Changes
+
+- 12f6cf7: Shift + scroll now pans the canvas horizontally. The Shift flag from wheel events is exposed as `wheelShiftKey` on the Mouse singleton and `MouseInput`, and the scroll system maps a vertical wheel delta onto the horizontal axis while it is held. Browsers that already report shift+wheel as `deltaX` (macOS, Firefox) are left untouched.
+
+### Patch Changes
+
+- Updated dependencies [12f6cf7]
+  - @woven-canvas/core@1.2.0
+
 ## 1.0.8
 
 ### Patch Changes
