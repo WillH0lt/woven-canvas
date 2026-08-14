@@ -88,6 +88,11 @@ export interface MouseInput {
    * wheel events with ctrlKey set. Always false for mouseMove events.
    */
   wheelModKey: boolean
+  /**
+   * Shift key was held during the wheel event.
+   * Always false for mouseMove events.
+   */
+  wheelShiftKey: boolean
 }
 
 /**

@@ -7,7 +7,9 @@ import {
   getMouseInput,
   getPluginResources,
   Keyboard,
+  type MouseInput,
 } from '@woven-canvas/core'
+import type { Vec2 } from '@woven-canvas/math'
 
 import { GlideState, PanState, ScrollState, ZoomState } from '../components'
 import { CONTROLS_PLUGIN_NAME } from '../constants'
@@ -43,6 +45,26 @@ function getScrollWheelEvent(ctx: Context, keyboardModDown: boolean) {
   const modDown = keyboardModDown || (wheelEvent?.wheelModKey ?? false)
   if (!Controls.wheelActive(ctx, 'scroll', modDown)) return null
   return wheelEvent
+}
+
+/**
+ * Resolve the scroll deltas for a wheel event, mapping shift+wheel to
+ * horizontal scrolling.
+ *
+ * Browsers disagree on this: some (Firefox, and macOS in general) already
+ * report shift+wheel as deltaX, others leave it on deltaY. Only swap when
+ * deltaX is empty, so the already-horizontal case passes through untouched
+ * and genuine two-axis trackpad scrolling is never rotated.
+ *
+ * The shift flag comes from the wheel event as well as the keyboard, since
+ * keyboard state misses Shift pressed while the canvas lacked focus.
+ */
+function getScrollDeltas(wheelEvent: MouseInput, keyboardShiftDown: boolean): Vec2 {
+  const shiftDown = keyboardShiftDown || wheelEvent.wheelShiftKey
+  if (shiftDown && wheelEvent.wheelDeltaX === 0) {
+    return [wheelEvent.wheelDeltaY, 0]
+  }
+  return [wheelEvent.wheelDeltaX, wheelEvent.wheelDeltaY]
 }
 
 /**
@@ -83,9 +105,10 @@ export const PostInputScroll = defineEditorSystem({ phase: 'input', priority: -1
     // Direct scroll mode
     if (!wheelEvent) return
 
+    const [deltaX, deltaY] = getScrollDeltas(wheelEvent, keyboard.shiftDown)
     const cam = Camera.write(ctx)
-    cam.left = cam.left + wheelEvent.wheelDeltaX / cam.zoom
-    cam.top = cam.top + wheelEvent.wheelDeltaY / cam.zoom
+    cam.left = cam.left + deltaX / cam.zoom
+    cam.top = cam.top + deltaY / cam.zoom
     if (options.cameraBounds) clampCameraToBounds(ctx, cam, options.cameraBounds)
     return
   }
@@ -97,8 +120,9 @@ export const PostInputScroll = defineEditorSystem({ phase: 'input', priority: -1
 
   // Accumulate wheel deltas into target
   if (wheelEvent) {
-    const dx = wheelEvent.wheelDeltaX / camera.zoom
-    const dy = wheelEvent.wheelDeltaY / camera.zoom
+    const [deltaX, deltaY] = getScrollDeltas(wheelEvent, keyboard.shiftDown)
+    const dx = deltaX / camera.zoom
+    const dy = deltaY / camera.zoom
     if (!active) {
       targetLeft = camera.left + dx
       targetTop = camera.top + dy

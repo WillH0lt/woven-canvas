@@ -17,6 +17,7 @@ interface BufferedMouseEvent {
   deltaY?: number
   deltaMode?: number
   modKey?: boolean
+  shiftKey?: boolean
   target?: EventTarget | null
 }
 
@@ -65,6 +66,7 @@ export function attachMouseListeners(domElement: HTMLElement): void {
         // Trackpad pinch gestures arrive as wheel events with ctrlKey set,
         // without any keydown — capture the flags from the event itself.
         modKey: e.ctrlKey || e.metaKey,
+        shiftKey: e.shiftKey,
       })
     },
     onMouseEnter: () => {
@@ -134,6 +136,7 @@ export const mouseSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context)
   mouse.wheelDeltaX = 0
   mouse.wheelDeltaY = 0
   mouse.wheelModKey = false
+  mouse.wheelShiftKey = false
 
   // Process buffered events
   for (const event of state.eventsBuffer) {
@@ -151,6 +154,7 @@ export const mouseSystem = defineEditorSystem({ phase: 'input' }, (ctx: Context)
         mouse.wheelDeltaY = normalizeWheelDelta(event.deltaY!, event.deltaMode!)
         mouse.wheelTrigger = true
         mouse.wheelModKey = event.modKey === true
+        mouse.wheelShiftKey = event.shiftKey === true
 
         break
 

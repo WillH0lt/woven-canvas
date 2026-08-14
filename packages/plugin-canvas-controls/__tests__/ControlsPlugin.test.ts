@@ -444,6 +444,49 @@ describe('captureScroll system', () => {
     expect(camera.left).toBe(100)
   })
 
+  it('should pan horizontally when scrolling with shift held', async () => {
+    const ctx = editor._getContext()!
+
+    // Browsers that leave shift+wheel on deltaY (Chrome on Windows/Linux)
+    domElement.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaY: 100,
+        clientX: 400,
+        clientY: 300,
+        shiftKey: true,
+        bubbles: true,
+      }),
+    )
+
+    await editor.tick()
+
+    const camera = Camera.read(ctx)
+    expect(camera.left).toBe(100)
+    expect(camera.top).toBe(0)
+  })
+
+  it('should not re-map shift+wheel that the browser already reports as deltaX', async () => {
+    const ctx = editor._getContext()!
+
+    // macOS/Firefox convert shift+wheel to deltaX themselves
+    domElement.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaX: 100,
+        deltaY: 0,
+        clientX: 400,
+        clientY: 300,
+        shiftKey: true,
+        bubbles: true,
+      }),
+    )
+
+    await editor.tick()
+
+    const camera = Camera.read(ctx)
+    expect(camera.left).toBe(100)
+    expect(camera.top).toBe(0)
+  })
+
   it('should not scroll when modifier key is held (zoom takes priority)', async () => {
     const ctx = editor._getContext()!
 
