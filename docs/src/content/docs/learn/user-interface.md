@@ -123,6 +123,7 @@ Override built-in buttons:
 | `button:arrowThickness` | `elbowArrow` | Line thickness                 |
 | `button:arrowHeadStart` | `elbowArrow` | Start arrow style              |
 | `button:arrowHeadEnd`   | `elbowArrow` | End arrow style                |
+| `button:image`          | `image`      | Aspect ratio lock              |
 
 ## User Presence
 

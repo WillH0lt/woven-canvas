@@ -278,6 +278,7 @@ interface FloatingMenuButtonSlots {
   "button:arrowHeadStart": {}; // arrow start head style
   "button:arrowHeadEnd": {}; // arrow end head style
   "button:tape": {}; // tape image picker
+  "button:image": {}; // image aspect ratio lock
   "button:<componentName>": {}; // custom components — auto-shown when common to selection
 }
 ```

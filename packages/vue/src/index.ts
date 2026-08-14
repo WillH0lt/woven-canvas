@@ -43,6 +43,8 @@ export { default as TransformBox } from './components/blocks/TransformBox.vue'
 export { default as TransformHandle } from './components/blocks/TransformHandle.vue'
 export { default as ArrowHeadButton } from './components/buttons/ArrowHeadButton.vue'
 export { default as ArrowThicknessButton } from './components/buttons/ArrowThicknessButton.vue'
+// Image Menu Button Components
+export { default as AspectLockButton } from './components/buttons/AspectLockButton.vue'
 export { default as BlockOperationsButton } from './components/buttons/BlockOperationsButton.vue'
 export { default as ColorButton } from './components/buttons/ColorButton.vue'
 export { default as ColorPicker } from './components/buttons/ColorPicker.vue'

@@ -1,5 +1,6 @@
 import {
   Block,
+  type Context,
   defineQuery,
   Edited,
   Editor,
@@ -15,6 +16,7 @@ import {
   RemoveTransformBox,
   ShowTransformBox,
   StartTransformBoxEdit,
+  UpdateTransformBox,
 } from '../../../src/commands'
 import { DragStart, TransformBox, TransformHandle } from '../../../src/components'
 import { TransformBoxStateSingleton } from '../../../src/singletons'
@@ -505,6 +507,77 @@ describe('PostUpdateTransformBox', () => {
       await editor.tick()
       // Should have 2 stretch handles (left and right edges)
       expect(stretchHandleCount).toBe(2)
+    })
+
+    it('should swap scale handles for stretch handles when a block overrides resizeMode to free', async () => {
+      let blockId: number | undefined
+      let lockedKinds: string[] = []
+      let unlockedKinds: string[] = []
+      let relockedKinds: string[] = []
+
+      // Kinds of every resize handle (corners and edges), rotation handles aside
+      function resizeHandleKinds(ctx: Context): string[] {
+        return Array.from(transformHandleQuery.current(ctx), (id) => TransformHandle.read(ctx, id).kind).filter(
+          (kind) => kind !== TransformHandleKind.Rotate,
+        )
+      }
+
+      // Images default to scale handles
+      editor.nextTick((ctx) => {
+        blockId = createBlock(ctx, { selected: true, tag: 'image' })
+      })
+
+      await editor.tick()
+
+      editor.nextTick((ctx) => {
+        lockedKinds = resizeHandleKinds(ctx)
+      })
+
+      await editor.tick()
+
+      // Unlock the aspect ratio the way the floating menu's aspect lock does
+      editor.nextTick((ctx) => {
+        if (blockId === undefined) return
+        Block.write(ctx, blockId).resizeMode = ResizeMode.Free
+
+        const state = TransformBoxStateSingleton.read(ctx)
+        if (state.transformBoxId !== null) {
+          UpdateTransformBox.spawn(ctx, { transformBoxId: state.transformBoxId })
+        }
+      })
+
+      await editor.tick()
+
+      editor.nextTick((ctx) => {
+        unlockedKinds = resizeHandleKinds(ctx)
+      })
+
+      await editor.tick()
+
+      // Locking again clears the override, so the block def applies once more
+      editor.nextTick((ctx) => {
+        if (blockId === undefined) return
+        Block.write(ctx, blockId).resizeMode = ResizeMode.Default
+
+        const state = TransformBoxStateSingleton.read(ctx)
+        if (state.transformBoxId !== null) {
+          UpdateTransformBox.spawn(ctx, { transformBoxId: state.transformBoxId })
+        }
+      })
+
+      await editor.tick()
+
+      editor.nextTick((ctx) => {
+        relockedKinds = resizeHandleKinds(ctx)
+      })
+
+      await editor.tick()
+
+      expect(lockedKinds.length).toBeGreaterThan(0)
+      expect(lockedKinds.every((kind) => kind === TransformHandleKind.Scale)).toBe(true)
+      expect(unlockedKinds).toHaveLength(lockedKinds.length)
+      expect(unlockedKinds.every((kind) => kind === TransformHandleKind.Stretch)).toBe(true)
+      expect(relockedKinds).toEqual(lockedKinds)
     })
   })
 

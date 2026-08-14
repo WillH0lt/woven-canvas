@@ -100,6 +100,7 @@ import {
 | `ShapeStrokeColorButton` | Shape stroke color picker |
 | `ArrowThicknessButton`   | Arrow line thickness      |
 | `ArrowHeadButton`        | Arrow head style selector |
+| `AspectLockButton`       | Image aspect ratio lock   |
 
 ### Text Formatting Buttons
 

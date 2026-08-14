@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useTooltipSingleton } from '../../composables/useTooltipSingleton'
 
 const props = defineProps<{
@@ -11,6 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const buttonRef = ref<HTMLButtonElement | null>(null)
+const isHovered = ref(false)
 const { show: showTooltip, hide: hideTooltip } = useTooltipSingleton()
 
 function handleClick(event: MouseEvent) {
@@ -18,14 +19,27 @@ function handleClick(event: MouseEvent) {
 }
 
 function handleMouseEnter() {
+  isHovered.value = true
   if (props.title && buttonRef.value) {
     showTooltip(props.title, buttonRef.value)
   }
 }
 
 function handleMouseLeave() {
+  isHovered.value = false
   hideTooltip()
 }
+
+// The tooltip captures its text on mouseenter, so a button that relabels itself
+// under the cursor — a toggle whose title flips when clicked — would keep
+// showing the old text until the pointer leaves and comes back.
+watch(
+  () => props.title,
+  (title) => {
+    if (!isHovered.value || !title || !buttonRef.value) return
+    showTooltip(title, buttonRef.value)
+  },
+)
 </script>
 
 <template>

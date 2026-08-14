@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, useSlots, inject, onUnmounted } from "vue";
 
+import AspectLockButton from "./buttons/AspectLockButton.vue";
 import BlockOperationsButton from "./buttons/BlockOperationsButton.vue";
 import ColorButton from "./buttons/ColorButton.vue";
 import PenStrokeThicknessButton from "./buttons/PenStrokeThicknessButton.vue";
@@ -29,6 +30,7 @@ const builtInComponentNames = new Set([
   "arcArrow",
   "shape",
   "tape",
+  "image",
 ]);
 
 // Custom slots for components not covered by built-ins
@@ -96,6 +98,13 @@ onUnmounted(() => {
       </slot>
       <slot name="button:arrowHeadEnd" :entityIds="selectedIds">
         <ArrowHeadButton :entityIds="selectedIds" side="end" />
+      </slot>
+    </template>
+
+    <!-- Image buttons -->
+    <template v-if="commonComponents.has('image')">
+      <slot name="button:image" :entityIds="selectedIds">
+        <AspectLockButton :entityIds="selectedIds" />
       </slot>
     </template>
 
