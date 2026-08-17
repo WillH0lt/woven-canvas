@@ -1,5 +1,25 @@
 # @woven-canvas/vue
 
+## 2.0.0
+
+### Major Changes
+
+- c698c44: Upgrade `@woven-ecs/canvas-store` from `^1.4.1` to `^2.0.1`. Because it is a peer dependency of `@woven-canvas/vue`, consumers must install `@woven-ecs/canvas-store@^2` alongside this release.
+
+  The 2.0 release fixes silent data loss when a sync socket drops mid-flight. Previously, document patches that had been sent but not yet acknowledged were discarded on reconnect — they lived only in the in-flight map, which `flush()` had already drained out of the send buffer and which the `reconnect` frame never carried. Worse than one lost edit, the ECS adapter had already advanced its `prevState` optimistically, so every later edit to that component went out as a partial diff against a key the server had never seen; an entity whose create was lost this way could never be recovered. In-flight patches now fold back into the offline buffer, persist to IndexedDB, and replay on the next connect, making document delivery at-least-once.
+
+  No API surface changed, and no `@woven-canvas` code needed updating.
+
+### Minor Changes
+
+- 434f131: Add up/down steppers to the custom font-size box in the text menu. Clicking an arrow — or pressing ArrowUp / ArrowDown in the box — changes the size by 1px and applies it right away, starting from whatever the box shows so an uncommitted entry is picked up. Stepping down stops at 1px.
+
+### Patch Changes
+
+- 434f131: Fix the custom font-size box in the text menu destroying the text it was meant to resize. Its keystrokes reached the canvas keybinds, so Backspace — editing `24` down to `2` on the way to `28` — fired `RemoveSelected` and deleted the selected block; the dropdown now stops keydown propagation like the link input does. The box also applied the font on every keystroke, so that same `2` briefly set a 2px font; it now commits once on Enter or blur, and an unusable entry reverts to the applied size.
+- Updated dependencies [c698c44]
+  - @woven-canvas/core@1.3.0
+
 ## 1.5.0
 
 ### Minor Changes
