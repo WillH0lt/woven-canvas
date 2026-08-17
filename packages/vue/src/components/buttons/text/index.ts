@@ -1,3 +1,4 @@
+export { DEFAULT_FONT_SIZE_OPTIONS, type FontSizeOption } from './fontSizeOptions'
 export { default as TextAlignmentButton } from './TextAlignmentButton.vue'
 export { default as TextBoldButton } from './TextBoldButton.vue'
 export { default as TextButtonGroup } from './TextButtonGroup.vue'

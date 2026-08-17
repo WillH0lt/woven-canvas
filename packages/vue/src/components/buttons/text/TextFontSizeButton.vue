@@ -5,10 +5,16 @@ import type { EntityId } from '@woven-canvas/core'
 import MenuDropdown from '../MenuDropdown.vue'
 import IconChevronDown from '../../icons/IconChevronDown.vue'
 import { useTextFormatting } from '../../../composables/useTextFormatting'
+import { DEFAULT_FONT_SIZE_OPTIONS, type FontSizeOption } from './fontSizeOptions'
 
-const props = defineProps<{
-  entityIds: EntityId[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    entityIds: EntityId[]
+    /** Preset sizes offered above the custom-size box. */
+    sizeOptions?: FontSizeOption[]
+  }>(),
+  { sizeOptions: () => DEFAULT_FONT_SIZE_OPTIONS },
+)
 
 const { state, commands } = useTextFormatting(() => props.entityIds)
 
@@ -16,13 +22,6 @@ const inputRef = ref<HTMLInputElement | null>(null)
 
 /** Floor for the steppers, so repeated clicks can't reach 0 or negative sizes. */
 const MIN_STEP_SIZE_PX = 1
-
-const FONT_SIZE_OPTIONS = [
-  { label: 'Small', value: 16, displayValue: 10 },
-  { label: 'Medium', value: 24, displayValue: 12 },
-  { label: 'Large', value: 40, displayValue: 16 },
-  { label: 'Huge', value: 96, displayValue: 20 },
-]
 
 // Get current font size (null if mixed)
 const currentFontSize = computed<number | null>(() => state.fontSize)
@@ -32,7 +31,7 @@ const buttonLabel = computed(() => {
   const size = currentFontSize.value
   if (size === null) return 'Mixed'
 
-  const option = FONT_SIZE_OPTIONS.find((o) => o.value === size)
+  const option = props.sizeOptions.find((o) => o.value === size)
   if (option) return option.label
 
   return `${+size.toFixed(1)} px`
@@ -119,7 +118,7 @@ function handleWheelStop(e: Event) {
         @keydown.stop
       >
         <div
-          v-for="option in FONT_SIZE_OPTIONS"
+          v-for="option in sizeOptions"
           :key="option.value"
           class="wov-font-size-option"
           :class="{ active: currentFontSize === option.value }"

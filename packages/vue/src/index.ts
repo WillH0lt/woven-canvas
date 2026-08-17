@@ -60,7 +60,9 @@ export { default as ShapeStrokeColorButton } from './components/buttons/ShapeStr
 export { default as TapeImageButton } from './components/buttons/TapeImageButton.vue'
 // Text Formatting Button Components
 export {
+  DEFAULT_FONT_SIZE_OPTIONS,
   type FontOption,
+  type FontSizeOption,
   TextAlignmentButton,
   TextBoldButton,
   TextColorButton,
