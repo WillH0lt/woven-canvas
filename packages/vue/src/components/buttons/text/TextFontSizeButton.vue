@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { EntityId } from '@woven-canvas/core'
 
 import MenuDropdown from '../MenuDropdown.vue'
@@ -11,6 +11,11 @@ const props = defineProps<{
 }>()
 
 const { state, commands } = useTextFormatting(() => props.entityIds)
+
+const inputRef = ref<HTMLInputElement | null>(null)
+
+/** Floor for the steppers, so repeated clicks can't reach 0 or negative sizes. */
+const MIN_STEP_SIZE_PX = 1
 
 const FONT_SIZE_OPTIONS = [
   { label: 'Small', value: 16, displayValue: 10 },
@@ -44,17 +49,49 @@ function setFontSize(value: number) {
   commands.setFontSize(value)
 }
 
-function handleInputChange(e: Event) {
+/**
+ * Commit on `change` (Enter / blur), not per keystroke: backspacing `24` down to
+ * `2` on the way to `28` would otherwise apply a 2px font, which reads as the
+ * text vanishing.
+ */
+function handleInputCommit(e: Event) {
   const input = e.target as HTMLInputElement
   const value = Number.parseFloat(input.value)
-  if (!Number.isNaN(value) && value > 0) {
-    setFontSize(value)
+
+  if (Number.isNaN(value) || value <= 0) {
+    // Unusable entry — put the size that's actually applied back in the box.
+    input.value = inputDisplayValue.value
+    return
   }
+
+  setFontSize(value)
+}
+
+/**
+ * Nudge the size by 1px, from whatever the box shows — so stepping picks up an
+ * entry the user typed but hasn't committed yet.
+ */
+function stepFontSize(delta: number) {
+  const typed = Number.parseFloat(inputRef.value?.value ?? '')
+  const base = Number.isNaN(typed) ? currentFontSize.value : typed
+  if (base === null) return // mixed sizes and an empty box: nothing to step from
+
+  const size = Math.max(+(base + delta).toFixed(1), MIN_STEP_SIZE_PX)
+  // `inputDisplayValue` doesn't change when the box already showed the stepped
+  // size (an uncommitted entry), so write the box back by hand.
+  if (inputRef.value) inputRef.value.value = String(size)
+  setFontSize(size)
 }
 
 function handleInputKeyDown(e: KeyboardEvent) {
   if (e.key === 'Enter') {
     ;(e.target as HTMLInputElement).blur()
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    stepFontSize(1)
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    stepFontSize(-1)
   }
 }
 
@@ -73,7 +110,14 @@ function handleWheelStop(e: Event) {
     </template>
 
     <template #dropdown>
-      <div class="wov-font-size-menu" @wheel="handleWheelStop" @click.stop>
+      <!-- `keydown.stop` keeps the custom-size box's keystrokes out of the canvas
+           keybinds — without it Backspace deletes the selected block. -->
+      <div
+        class="wov-font-size-menu"
+        @wheel="handleWheelStop"
+        @click.stop
+        @keydown.stop
+      >
         <div
           v-for="option in FONT_SIZE_OPTIONS"
           :key="option.value"
@@ -104,13 +148,51 @@ function handleWheelStop(e: Event) {
 
         <div class="wov-input-container">
           <input
+            ref="inputRef"
             class="wov-custom-input"
             :value="inputDisplayValue"
-            @input="handleInputChange"
+            @change="handleInputCommit"
             @keydown="handleInputKeyDown"
             placeholder="Custom size"
           />
           <span class="wov-px-suffix">px</span>
+          <!-- `mousedown.prevent` keeps the caret in the box while stepping -->
+          <div class="wov-size-stepper">
+            <button
+              class="wov-size-stepper-button"
+              title="Increase size"
+              @mousedown.prevent
+              @click="stepFontSize(1)"
+            >
+              <svg
+                class="wov-size-stepper-icon up"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 320"
+                fill="currentColor"
+              >
+                <path
+                  d="M233.4 278.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 210.7 86.6 41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"
+                />
+              </svg>
+            </button>
+            <button
+              class="wov-size-stepper-button"
+              title="Decrease size"
+              @mousedown.prevent
+              @click="stepFontSize(-1)"
+            >
+              <svg
+                class="wov-size-stepper-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 320"
+                fill="currentColor"
+              >
+                <path
+                  d="M233.4 278.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 210.7 86.6 41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </template>
@@ -197,6 +279,8 @@ function handleWheelStop(e: Event) {
   border-radius: 6px;
   border: none;
   padding: 8px;
+  /* Room for the px suffix and the stepper arrows */
+  padding-right: 44px;
   color: white;
   font-size: 14px;
   outline: 1px solid var(--wov-gray-600);
@@ -212,8 +296,43 @@ function handleWheelStop(e: Event) {
 
 .wov-px-suffix {
   position: absolute;
-  right: 16px;
+  right: 34px;
   color: var(--wov-gray-400);
   font-size: 14px;
+}
+
+.wov-size-stepper {
+  display: flex;
+  position: absolute;
+  right: 13px;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.wov-size-stepper-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 15px;
+  height: 11px;
+  border-radius: 3px;
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  color: var(--wov-gray-400);
+}
+
+.wov-size-stepper-button:hover {
+  background-color: var(--wov-gray-600);
+  color: white;
+}
+
+.wov-size-stepper-icon {
+  width: 7px;
+}
+
+.wov-size-stepper-icon.up {
+  transform: rotate(180deg);
 }
 </style>
