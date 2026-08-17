@@ -20,6 +20,8 @@ import { useTextFormatting } from '../../../composables/useTextFormatting'
 const props = defineProps<{
   entityIds: EntityId[]
   showVerticalAlign?: boolean
+  /** Passed through to `TextFontSizeButton` — see its `pxPerUnit`. */
+  pxPerUnit?: number
 }>()
 
 const { state } = useTextFormatting(() => props.entityIds)
@@ -61,7 +63,7 @@ provide(DROPDOWN_ACTIVE_KEY, activeByLevel)
           <div class="wov-text-group-row wov-text-group-row-full">
             <TextFontFamilyButton :entityIds="entityIds" />
             <div class="wov-text-group-spacer" />
-            <TextFontSizeButton :entityIds="entityIds" />
+            <TextFontSizeButton :entityIds="entityIds" :px-per-unit="pxPerUnit" />
           </div>
           <div class="wov-text-group-row">
             <TextBoldButton :entityIds="entityIds" />
@@ -83,7 +85,7 @@ provide(DROPDOWN_ACTIVE_KEY, activeByLevel)
     <!-- Normal mode: show all buttons inline -->
     <template v-else>
       <TextFontFamilyButton :entityIds="entityIds" />
-      <TextFontSizeButton :entityIds="entityIds" />
+      <TextFontSizeButton :entityIds="entityIds" :px-per-unit="pxPerUnit" />
       <div divider class="wov-divider" />
       <TextBoldButton :entityIds="entityIds" />
       <TextItalicButton :entityIds="entityIds" />

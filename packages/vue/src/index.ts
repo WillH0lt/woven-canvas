@@ -65,6 +65,7 @@ export {
   type FontSizeOption,
   TextAlignmentButton,
   TextBoldButton,
+  TextButtonGroup,
   TextColorButton,
   TextFontFamilyButton,
   TextFontSizeButton,

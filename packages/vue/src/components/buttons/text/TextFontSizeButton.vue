@@ -5,15 +5,23 @@ import type { EntityId } from '@woven-canvas/core'
 import MenuDropdown from '../MenuDropdown.vue'
 import IconChevronDown from '../../icons/IconChevronDown.vue'
 import { useTextFormatting } from '../../../composables/useTextFormatting'
-import { DEFAULT_FONT_SIZE_OPTIONS, type FontSizeOption } from './fontSizeOptions'
+import { DEFAULT_FONT_SIZE_OPTIONS, type FontSizeOption, previewSizesPx } from './fontSizeOptions'
 
 const props = withDefaults(
   defineProps<{
     entityIds: EntityId[]
-    /** Preset sizes offered above the custom-size box. */
+    /** Preset sizes offered above the custom-size box, in menu units. */
     sizeOptions?: FontSizeOption[]
+    /**
+     * Stored px per menu unit. The menu shows and takes sizes in its own unit and
+     * multiplies by this before writing `fontSizePx`, so a canvas whose page is
+     * bigger than screen scale can keep showing familiar numbers: on a
+     * print-pixel page where 100px is the usual body size, `100 / 24` makes the
+     * menu read 16 / 24 / 40 / 96 while it writes 67 / 100 / 167 / 400.
+     */
+    pxPerUnit?: number
   }>(),
-  { sizeOptions: () => DEFAULT_FONT_SIZE_OPTIONS },
+  { sizeOptions: () => DEFAULT_FONT_SIZE_OPTIONS, pxPerUnit: 1 },
 )
 
 const { state, commands } = useTextFormatting(() => props.entityIds)
@@ -21,31 +29,52 @@ const { state, commands } = useTextFormatting(() => props.entityIds)
 const inputRef = ref<HTMLInputElement | null>(null)
 
 /** Floor for the steppers, so repeated clicks can't reach 0 or negative sizes. */
-const MIN_STEP_SIZE_PX = 1
+const MIN_STEP_SIZE = 1
 
-// Get current font size (null if mixed)
-const currentFontSize = computed<number | null>(() => state.fontSize)
+/** Font size each preset's own label is rendered at, positionally matching `sizeOptions`. */
+const previewSizes = computed(() => previewSizesPx(props.sizeOptions))
+
+/** Stored px → the unit the menu speaks in. */
+function toUnits(px: number): number {
+  return +(px / props.pxPerUnit).toFixed(1)
+}
+
+// Current font size in menu units (null if mixed)
+const currentFontSize = computed<number | null>(() => {
+  const px = state.fontSize
+  return px === null ? null : toUnits(px)
+})
+
+/**
+ * Whether a preset is the size in force. Compared loosely: with a `pxPerUnit`
+ * that doesn't divide evenly, the round-trip through stored px rarely lands back
+ * on the preset exactly (96 units → 400px → 96.0 units, but 16 → 66.7 → 16.0).
+ */
+function isActivePreset(option: FontSizeOption): boolean {
+  const size = currentFontSize.value
+  return size !== null && Math.abs(option.value - size) < 0.05
+}
 
 // Label for the button
 const buttonLabel = computed(() => {
   const size = currentFontSize.value
   if (size === null) return 'Mixed'
 
-  const option = props.sizeOptions.find((o) => o.value === size)
+  const option = props.sizeOptions.find(isActivePreset)
   if (option) return option.label
 
-  return `${+size.toFixed(1)} px`
+  return `${size} px`
 })
 
 // Display value for the input (shows current font size)
 const inputDisplayValue = computed(() => {
   const size = currentFontSize.value
   if (size === null) return ''
-  return String(+size.toFixed(1))
+  return String(size)
 })
 
 function setFontSize(value: number) {
-  commands.setFontSize(value)
+  commands.setFontSize(value * props.pxPerUnit)
 }
 
 /**
@@ -67,15 +96,15 @@ function handleInputCommit(e: Event) {
 }
 
 /**
- * Nudge the size by 1px, from whatever the box shows — so stepping picks up an
- * entry the user typed but hasn't committed yet.
+ * Nudge the size by one unit, from whatever the box shows — so stepping picks up
+ * an entry the user typed but hasn't committed yet.
  */
 function stepFontSize(delta: number) {
   const typed = Number.parseFloat(inputRef.value?.value ?? '')
   const base = Number.isNaN(typed) ? currentFontSize.value : typed
   if (base === null) return // mixed sizes and an empty box: nothing to step from
 
-  const size = Math.max(+(base + delta).toFixed(1), MIN_STEP_SIZE_PX)
+  const size = Math.max(+(base + delta).toFixed(1), MIN_STEP_SIZE)
   // `inputDisplayValue` doesn't change when the box already showed the stepped
   // size (an uncommitted entry), so write the box back by hand.
   if (inputRef.value) inputRef.value.value = String(size)
@@ -118,14 +147,14 @@ function handleWheelStop(e: Event) {
         @keydown.stop
       >
         <div
-          v-for="option in sizeOptions"
+          v-for="(option, index) in sizeOptions"
           :key="option.value"
           class="wov-font-size-option"
-          :class="{ active: currentFontSize === option.value }"
+          :class="{ active: isActivePreset(option) }"
           @click="setFontSize(option.value)"
         >
           <svg
-            v-if="currentFontSize === option.value"
+            v-if="isActivePreset(option)"
             class="wov-check-icon"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 448 512"
@@ -137,7 +166,7 @@ function handleWheelStop(e: Event) {
           </svg>
           <span
             class="wov-option-label"
-            :style="{ fontSize: `${option.displayValue}px` }"
+            :style="{ fontSize: `${previewSizes[index]}px` }"
           >
             {{ option.label }}
           </span>

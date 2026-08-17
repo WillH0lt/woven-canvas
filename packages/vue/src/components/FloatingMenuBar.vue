@@ -117,7 +117,11 @@ onUnmounted(() => {
 
     <!-- Text formatting buttons -->
     <template v-if="commonComponents.has('text')">
-      <slot name="button:text" :entityIds="selectedIds">
+      <slot
+        name="button:text"
+        :entityIds="selectedIds"
+        :showVerticalAlign="commonComponents.has('verticalAlign')"
+      >
         <TextButtonGroup
           :entityIds="selectedIds"
           :showVerticalAlign="commonComponents.has('verticalAlign')"

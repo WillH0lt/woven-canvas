@@ -126,25 +126,6 @@ import {
 } from "@woven-canvas/vue";
 ```
 
-`TextFontSizeButton` offers Small / Medium / Large / Huge presets above its
-custom-size box, tuned for text that defaults to 24px. Pass `sizeOptions` to
-rebase that ladder — useful when your page works at a different scale:
-
-```vue
-<TextFontSizeButton
-  :entity-ids="entityIds"
-  :size-options="[
-    { label: 'Small', value: 67, displayValue: 10 },
-    { label: 'Medium', value: 100, displayValue: 12 },
-    { label: 'Large', value: 167, displayValue: 16 },
-    { label: 'Huge', value: 400, displayValue: 20 },
-  ]"
-/>
-```
-
-`value` is the size written to the text; `displayValue` is only the size the
-row's own label renders at, so the menu previews the relative scale.
-
 ## UI Components
 
 | Component          | Description                   |
