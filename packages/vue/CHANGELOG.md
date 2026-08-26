@@ -1,5 +1,13 @@
 # @woven-canvas/vue
 
+## 1.7.1
+
+### Patch Changes
+
+- ac6aec0: Draw a white halo under the drag, resize, rotate and crosshair cursors (and widen the hand cursor's halo) so they stay visible over dark backgrounds
+- Updated dependencies [ac6aec0]
+  - @woven-canvas/core@1.3.2
+
 ## 1.7.0
 
 ### Minor Changes

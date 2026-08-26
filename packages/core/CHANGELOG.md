@@ -1,5 +1,11 @@
 # @woven-canvas/core
 
+## 1.3.2
+
+### Patch Changes
+
+- ac6aec0: Draw a white halo under the drag, resize, rotate and crosshair cursors (and widen the hand cursor's halo) so they stay visible over dark backgrounds
+
 ## 1.3.1
 
 ### Patch Changes
