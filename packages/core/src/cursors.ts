@@ -18,7 +18,7 @@ export enum CursorKind {
 // SVG Templates
 
 const DRAG_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33.94 33.94">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 33.94 33.94">
   <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
     <path d="M25.46,14.14l2.83,2.83-2.83,2.83"/>
     <path d="M19.8,16.97h8.49"/>
@@ -47,7 +47,7 @@ function makeResizeSvg(rotateZ: number): string {
 function makeRotateSvg(rotateZ: number): string {
   const degrees = (rotateZ * 180) / Math.PI
   return `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 34 34"
+<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="-10 -10 34 34"
      fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
   <g transform="rotate(${degrees} 8 8)">
     <path d="M1,14.76l4,4,4-4"/>
