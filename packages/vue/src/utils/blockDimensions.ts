@@ -42,8 +42,13 @@ export function computeBlockDimensions(
 
   const worldCenter = cameraMatrix.transformPoint(center)
 
-  const width = element.offsetWidth
-  const height = element.offsetHeight
+  // Fractional layout size. `offsetWidth`/`offsetHeight` are integer-rounded, but the
+  // center above comes from a sub-pixel rect — mixing the two shifts the derived
+  // left/top by up to ±0.5px on every re-measure, so a block would creep each time
+  // formatting was applied. Computed style is unaffected by the rotate/zoom transforms.
+  const computed = getComputedStyle(element)
+  const width = parseFloat(computed.width) || element.offsetWidth
+  const height = parseFloat(computed.height) || element.offsetHeight
 
   return {
     width,
