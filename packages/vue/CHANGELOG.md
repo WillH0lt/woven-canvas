@@ -1,5 +1,11 @@
 # @woven-canvas/vue
 
+## 1.7.2
+
+### Patch Changes
+
+- e06ccb5: Fix text blocks creeping by a fraction of a pixel every time formatting (highlight, bold, italic, marks) was applied to a selected block. `computeBlockDimensions` mixed a sub-pixel rect center with integer `offsetWidth`/`offsetHeight`; it now uses the fractional computed size.
+
 ## 1.7.1
 
 ### Patch Changes
