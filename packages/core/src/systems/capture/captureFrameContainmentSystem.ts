@@ -21,8 +21,7 @@ const selectedQuery = defineQuery((q) => q.with(Block, Selected))
 /**
  * Spawn AssignFrameChildren command for the dragged blocks.
  */
-function spawnAssignments(ctx: Context, targetFrame: EntityId | null): void {
-  const draggedEntity = getDraggedEntity(ctx)
+function spawnAssignments(ctx: Context, draggedEntity: EntityId | null, targetFrame: EntityId | null): void {
   if (draggedEntity === null) return
 
   const assignments: Array<{ entityId: EntityId; frameId: EntityId | null }> = []
@@ -84,11 +83,12 @@ const frameContainmentMachine = setup({
           }
 
           // Immediately assign/remove frame child relationship for live clipping
-          spawnAssignments(ctx, targetFrame)
+          spawnAssignments(ctx, getDraggedEntity(ctx), targetFrame)
         }
 
         return targetFrame
       },
+      draggedEntity: ({ context, event }) => getDraggedEntity(event.ctx) ?? context.draggedEntity,
     }),
 
     clearHighlight: ({ context, event }) => {
@@ -97,8 +97,26 @@ const frameContainmentMachine = setup({
       }
     },
 
+    // Drop fallback. Tracking resolves the target frame from the CURSOR so the
+    // highlight follows the hand, but a drag can release with the cursor off every
+    // frame (the gutter between two pages, just past an edge) while the dragged
+    // block itself still sits on one. Without this the block goes loose
+    // (`parentId: null`) yet looks untouched — and anything that only renders a
+    // frame's children (page captures / print) silently drops it. On pointerUp
+    // with no cursor target, re-resolve by the dragged block's center — the same
+    // rule paste and PlaceBlockEvent use — and parent it there.
+    dropByCenter: ({ context, event }) => {
+      if (context.highlightedFrame !== null) return
+      const ctx = event.ctx
+      const draggedEntity = context.draggedEntity
+      if (draggedEntity === null || !hasComponent(ctx, draggedEntity, Block)) return
+      const targetFrame = findFrameAtPoint(ctx, Block.getCenter(ctx, draggedEntity), draggedEntity)
+      if (targetFrame !== null) spawnAssignments(ctx, draggedEntity, targetFrame)
+    },
+
     resetContext: assign({
       highlightedFrame: () => null,
+      draggedEntity: () => null,
     }),
   },
 }).createMachine({
@@ -106,6 +124,7 @@ const frameContainmentMachine = setup({
   initial: FrameContainmentStateEnum.Idle,
   context: {
     highlightedFrame: null,
+    draggedEntity: null,
   },
   states: {
     [FrameContainmentStateEnum.Idle]: {
@@ -124,7 +143,7 @@ const frameContainmentMachine = setup({
           actions: 'updateHighlight',
         },
         pointerUp: {
-          actions: 'clearHighlight',
+          actions: ['dropByCenter', 'clearHighlight'],
           target: FrameContainmentStateEnum.Idle,
         },
         cancel: {

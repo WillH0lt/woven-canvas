@@ -13,4 +13,12 @@ export const FrameContainmentState = defineEditorState('frameContainmentState', 
 
   /** EntityId of the frame currently highlighted as a drop target, or null */
   highlightedFrame: field.ref(),
+
+  /**
+   * The entity being dragged while Tracking (a block, or the TransformBox for a
+   * multi-select), captured on pointerMove. The selection machine has already
+   * left Dragging by the time our pointerUp runs, so the drop fallback can't
+   * re-read it from SelectionState.
+   */
+  draggedEntity: field.ref(),
 })
