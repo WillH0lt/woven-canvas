@@ -6,7 +6,7 @@ packages:
 
 catalog:
   '@woven-ecs/canvas-store': ^2.0.1
-  '@woven-ecs/core': ^1.0.6
+  '@woven-ecs/core': ^1.0.7
   fractional-indexing-jittered: ^1.0.0
   typescript: ^5.9.3
   xstate: ^5.28.0

@@ -10,8 +10,8 @@ catalogs:
       specifier: ^2.0.1
       version: 2.0.1
     '@woven-ecs/core':
-      specifier: ^1.0.6
-      version: 1.0.6
+      specifier: ^1.0.7
+      version: 1.0.7
     fractional-indexing-jittered:
       specifier: ^1.0.0
       version: 1.0.0
@@ -223,7 +223,7 @@ importers:
         version: 2.0.1(typescript@5.9.3)
       '@woven-ecs/core':
         specifier: 'catalog:'
-        version: 1.0.6(typescript@5.9.3)
+        version: 1.0.7(typescript@5.9.3)
       fractional-indexing-jittered:
         specifier: 'catalog:'
         version: 1.0.0
@@ -446,7 +446,7 @@ importers:
         version: 2.0.1(typescript@5.9.3)
       '@woven-ecs/core':
         specifier: 'catalog:'
-        version: 1.0.6(typescript@5.9.3)
+        version: 1.0.7(typescript@5.9.3)
       perfect-freehand:
         specifier: ^1.2.2
         version: 1.2.3
@@ -2474,8 +2474,8 @@ packages:
     peerDependencies:
       typescript: ^5
 
-  '@woven-ecs/core@1.0.6':
-    resolution: {integrity: sha512-lmhODrKl6bny0xCcMvSaFaU9dtHFhl31PH9JrsxK1UHy+8cS4RpzcEGpBpdi9qWRPSXEXtm5bWEak36X2XjxNg==}
+  '@woven-ecs/core@1.0.7':
+    resolution: {integrity: sha512-I+GIQ61ECH9l70un5kEmllihBHB+STK76aW+e0kxBcUVVtEiYJSCYiLjn7pqMiPWQJ0o+4SPp8CLWiW2+PbBRQ==}
     peerDependencies:
       typescript: ^5
 
@@ -7614,11 +7614,11 @@ snapshots:
 
   '@woven-ecs/canvas-store@2.0.1(typescript@5.9.3)':
     dependencies:
-      '@woven-ecs/core': 1.0.6(typescript@5.9.3)
+      '@woven-ecs/core': 1.0.7(typescript@5.9.3)
       idb: 8.0.3
       typescript: 5.9.3
 
-  '@woven-ecs/core@1.0.6(typescript@5.9.3)':
+  '@woven-ecs/core@1.0.7(typescript@5.9.3)':
     dependencies:
       typescript: 5.9.3
 
