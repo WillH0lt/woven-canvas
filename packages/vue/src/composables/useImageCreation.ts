@@ -18,7 +18,7 @@ export interface UseImageCreationReturn {
 
 /**
  * Composable for creating image blocks on the canvas.
- * Handles dimension detection, entity creation, grid snapping, and asset upload.
+ * Handles dimension detection, entity creation, position snapping, and asset upload.
  */
 export function useImageCreation(): UseImageCreationReturn {
   const canvasContext = inject(WOVEN_CANVAS_KEY)
@@ -60,17 +60,12 @@ export function useImageCreation(): UseImageCreationReturn {
     const dimensions = await getImageDimensions(file)
     const ctx = await nextEditorTick()
 
-    // Scale image to reasonable size
+    // Preserve the source aspect ratio, including fractional world dimensions.
+    // Rounding or snapping each side independently distorts the image; only its
+    // position should snap to the grid.
     const scale = Math.min(1, maxSize / Math.max(dimensions.width, dimensions.height))
-    let width = Math.round(dimensions.width * scale)
-    let height = Math.round(dimensions.height * scale)
-
-    // Snap size to grid if enabled
-    const grid = Grid.read(ctx)
-    if (grid.enabled) {
-      width = Math.max(grid.colWidth, Math.round(width / grid.colWidth) * grid.colWidth)
-      height = Math.max(grid.rowHeight, Math.round(height / grid.rowHeight) * grid.rowHeight)
-    }
+    const width = dimensions.width * scale
+    const height = dimensions.height * scale
 
     // Create entity
     const entityId = createEntity(ctx)
