@@ -1,5 +1,12 @@
 # @woven-canvas/core
 
+## 1.3.3
+
+### Patch Changes
+
+- 211858f: Depend on `@woven-ecs/core` ^1.0.7, which preserves the entity generation across ID reclaim so stale `field.ref()` values no longer resolve to the entity that reuses the ID.
+- 13600e2: Add arrow-key nudging for selections and smooth camera movement when nothing is selected. Support diagonal movement, grid-sized selection steps, larger Shift steps, and immediate direction changes while holding multiple arrows. Keep nudge behavior in the controls plugin, using shared keyboard input with editable-field protection and optional native repeat events.
+
 ## 1.3.2
 
 ### Patch Changes

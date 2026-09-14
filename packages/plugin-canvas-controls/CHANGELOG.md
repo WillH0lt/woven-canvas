@@ -1,5 +1,14 @@
 # @woven-canvas/plugin-canvas-controls
 
+## 1.1.1
+
+### Patch Changes
+
+- 13600e2: Add arrow-key nudging for selections and smooth camera movement when nothing is selected. Support diagonal movement, grid-sized selection steps, larger Shift steps, and immediate direction changes while holding multiple arrows. Keep nudge behavior in the controls plugin, using shared keyboard input with editable-field protection and optional native repeat events.
+- Updated dependencies [211858f]
+- Updated dependencies [13600e2]
+  - @woven-canvas/core@1.3.3
+
 ## 1.1.0
 
 ### Minor Changes
