@@ -1,4 +1,4 @@
-import { Editor } from '@woven-canvas/core'
+import { Editor, getKeyboardInput, ResetKeyboard } from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Key, Keyboard } from '../../../src'
 
@@ -23,6 +23,39 @@ describe('Keyboard System', () => {
   })
 
   describe('key state tracking', () => {
+    it('includes native repeats only when requested and clears them after one frame', async () => {
+      const ctx = editor._getContext()!
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyA', bubbles: true }))
+      await editor.tick()
+      expect(getKeyboardInput(ctx, [Key.A], { repeat: true })).toEqual([{ type: 'keyDown', key: Key.A, ctx }])
+
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyA', repeat: true, bubbles: true }))
+      await editor.tick()
+      expect(Keyboard.isKeyRepeatTrigger(ctx, Key.A)).toBe(true)
+      expect(getKeyboardInput(ctx, [Key.A])).toEqual([])
+      expect(getKeyboardInput(ctx, [Key.A], { repeat: true })).toEqual([{ type: 'keyDown', key: Key.A, ctx }])
+      await editor.tick()
+      expect(Keyboard.isKeyRepeatTrigger(ctx, Key.A)).toBe(false)
+      expect(getKeyboardInput(ctx, [Key.A], { repeat: true })).toEqual([])
+    })
+
+    it('clears pending presses and repeats on blur and keyboard reset', async () => {
+      const ctx = editor._getContext()!
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyA', bubbles: true }))
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyA', repeat: true, bubbles: true }))
+      domElement.dispatchEvent(new FocusEvent('blur'))
+      await editor.tick()
+      expect(getKeyboardInput(ctx, [Key.A], { repeat: true })).toEqual([])
+      expect(Keyboard.isKeyDown(ctx, Key.A)).toBe(false)
+
+      domElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyA', repeat: true, bubbles: true }))
+      await editor.tick()
+      editor.command(ResetKeyboard)
+      await editor.tick()
+      expect(getKeyboardInput(ctx, [Key.A], { repeat: true })).toEqual([])
+      expect(Keyboard.isKeyDown(ctx, Key.A)).toBe(false)
+    })
+
     it('should track key down state', async () => {
       const ctx = editor._getContext()!
 

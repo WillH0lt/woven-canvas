@@ -1,8 +1,13 @@
 import type { EditorPlugin, EditorPluginFactory } from '@woven-canvas/core'
 
 import { GlideState, PanState, PinchState, ScrollState, ZoomState } from './components'
+import { CameraNudgeState } from './components/CameraNudgeState'
+import { KeyboardNudgeState } from './components/KeyboardNudgeState'
 import { CONTROLS_PLUGIN_NAME } from './constants'
 import { CameraGlideSystem, PostInputPan, PostInputPinch, PostInputScroll, PostInputZoom } from './systems'
+import { CameraNudgeSystem } from './systems/CameraNudgeSystem'
+import { CaptureNudgeSystem } from './systems/CaptureNudgeSystem'
+import { SelectionNudgeSystem } from './systems/SelectionNudgeSystem'
 import { type CanvasControlsOptions, type CanvasControlsOptionsInput, CanvasControlsOptionsSchema } from './types'
 
 /**
@@ -14,9 +19,18 @@ function createControlsPlugin(options: CanvasControlsOptionsInput = {}): EditorP
 
     resources: CanvasControlsOptionsSchema.parse(options),
 
-    singletons: [GlideState, PanState, PinchState, ScrollState, ZoomState],
+    singletons: [GlideState, PanState, PinchState, ScrollState, ZoomState, CameraNudgeState, KeyboardNudgeState],
 
-    systems: [PostInputZoom, PostInputScroll, PostInputPan, PostInputPinch, CameraGlideSystem],
+    systems: [
+      PostInputZoom,
+      PostInputScroll,
+      PostInputPan,
+      PostInputPinch,
+      CaptureNudgeSystem,
+      CameraNudgeSystem,
+      SelectionNudgeSystem,
+      CameraGlideSystem,
+    ],
   }
 }
 
@@ -28,6 +42,7 @@ function createControlsPlugin(options: CanvasControlsOptionsInput = {}): EditorP
  * - **Scroll**: Scroll wheel without modifier to pan the canvas
  * - **Pan**: Middle mouse button drag to pan the canvas
  * - **Spacebar pan**: Hold space bar to pan with left mouse button drag
+ * - **Arrow keys**: Nudge the selection or smoothly pan the camera when nothing is selected
  *
  * Can be used with or without options:
  *

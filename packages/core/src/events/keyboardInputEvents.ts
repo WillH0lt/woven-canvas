@@ -10,6 +10,7 @@ import type { KeyboardInput } from './types'
  *
  * @param ctx - ECS context
  * @param keys - Array of key indices to check (use Key.A, Key.Escape, etc.)
+ * @param options - Set repeat to include native key repeats as keyDown events.
  * @returns Array of keyboard input events that occurred this frame
  *
  * @example
@@ -22,11 +23,11 @@ import type { KeyboardInput } from './types'
  * }
  * ```
  */
-export function getKeyboardInput(ctx: Context, keys: number[]): KeyboardInput[] {
+export function getKeyboardInput(ctx: Context, keys: number[], options: { repeat?: boolean } = {}): KeyboardInput[] {
   const events: KeyboardInput[] = []
 
   for (const key of keys) {
-    if (Keyboard.isKeyDownTrigger(ctx, key)) {
+    if (Keyboard.isKeyDownTrigger(ctx, key) || (options.repeat && Keyboard.isKeyRepeatTrigger(ctx, key))) {
       events.push({ type: 'keyDown', key, ctx })
     }
     if (Keyboard.isKeyUpTrigger(ctx, key)) {

@@ -15,6 +15,8 @@ const KeyboardSchema = {
    * Uses field.buffer for zero-allocation subarray views.
    */
   keysDownTrigger: field.buffer(field.uint8()).size(KEY_BUFFER_SIZE),
+  /** Native key-repeat triggers, available separately from initial presses. */
+  keysRepeatTrigger: field.buffer(field.uint8()).size(KEY_BUFFER_SIZE),
   /**
    * Buffer for key-up triggers (true for exactly 1 frame when key is released).
    * Uses field.buffer for zero-allocation subarray views.
@@ -69,6 +71,11 @@ class KeyboardDef extends CanvasSingletonDef<typeof KeyboardSchema> {
     return getBit(this.read(ctx).keysDownTrigger, key)
   }
 
+  /** Check whether a native key-repeat event occurred this frame. */
+  isKeyRepeatTrigger(ctx: Context, key: number): boolean {
+    return getBit(this.read(ctx).keysRepeatTrigger, key)
+  }
+
   /**
    * Check if a key was just released this frame.
    * @param ctx - Editor context
@@ -86,6 +93,7 @@ class KeyboardDef extends CanvasSingletonDef<typeof KeyboardSchema> {
     const keyboard = this.write(ctx)
     clearBits(keyboard.keysDown)
     clearBits(keyboard.keysDownTrigger)
+    clearBits(keyboard.keysRepeatTrigger)
     clearBits(keyboard.keysUpTrigger)
     keyboard.shiftDown = false
     keyboard.altDown = false

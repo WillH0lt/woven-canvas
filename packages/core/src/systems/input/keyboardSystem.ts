@@ -34,8 +34,15 @@ export function attachKeyboardListeners(domElement: HTMLElement): void {
   const state: KeyboardState = {
     eventsBuffer: [],
     onKeyDown: (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
+      // Native form controls and editable content own their keyboard input.
+      if (
+        e.target instanceof Element &&
+        e.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')
+      )
+        return
       // Prevent default for certain keys that interfere with canvas interaction
-      if (e.key === 'Tab' || e.key === 'Alt' || e.key === ' ') {
+      if (e.key === 'Tab' || e.key === 'Alt' || e.key === ' ' || e.code.startsWith('Arrow')) {
         e.preventDefault()
       }
       state.eventsBuffer.push(e)
@@ -96,7 +103,10 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
 
   // Check if triggers need to be cleared from previous frame
   const keyboardRead = Keyboard.read(ctx)
-  const triggersNeedClearing = !isZeroed(keyboardRead.keysDownTrigger) || !isZeroed(keyboardRead.keysUpTrigger)
+  const triggersNeedClearing =
+    !isZeroed(keyboardRead.keysDownTrigger) ||
+    !isZeroed(keyboardRead.keysUpTrigger) ||
+    !isZeroed(keyboardRead.keysRepeatTrigger)
 
   // Only write if there are events or triggers need clearing
   if (!hasEvents && !triggersNeedClearing) return
@@ -105,6 +115,7 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
 
   // Clear triggers from previous frame
   clearBits(keyboard.keysDownTrigger)
+  clearBits(keyboard.keysRepeatTrigger)
   clearBits(keyboard.keysUpTrigger)
 
   // Process buffered events
@@ -112,6 +123,8 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
     if (event.type === 'blur') {
       // Reset all keys on blur
       clearBits(keyboard.keysDown)
+      clearBits(keyboard.keysDownTrigger)
+      clearBits(keyboard.keysRepeatTrigger)
       keyboard.shiftDown = false
       keyboard.altDown = false
       keyboard.modDown = false
@@ -130,6 +143,7 @@ export const keyboardSystem = defineEditorSystem({ phase: 'input' }, (ctx: Conte
       if (!wasDown || !event.repeat) {
         setBit(keyboard.keysDownTrigger, keyIndex, true)
       }
+      if (event.repeat) setBit(keyboard.keysRepeatTrigger, keyIndex, true)
       setBit(keyboard.keysDown, keyIndex, true)
     } else if (event.type === 'keyup') {
       setBit(keyboard.keysDown, keyIndex, false)

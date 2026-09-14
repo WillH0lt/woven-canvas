@@ -31,7 +31,7 @@
 // Plugin
 export { CanvasControlsPlugin } from './CanvasControlsPlugin'
 // Commands
-export { GlideToPosition } from './commands'
+export { GlideToPosition, NudgeCamera, NudgeSelected } from './commands'
 // Components (for advanced use cases)
 export { GlideState, PanState, ScrollState } from './components'
 // Constants
