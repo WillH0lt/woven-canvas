@@ -1,5 +1,16 @@
 # @woven-canvas/vue
 
+## 1.7.3
+
+### Patch Changes
+
+- 211858f: Depend on `@woven-ecs/core` ^1.0.7, which preserves the entity generation across ID reclaim so stale `field.ref()` values no longer resolve to the entity that reuses the ID.
+- 04494fe: Preserve image proportions when dropping files or using the image tool, including with grid snapping enabled. Scale both dimensions uniformly without rounding, and snap only the image's position.
+- Updated dependencies [211858f]
+- Updated dependencies [13600e2]
+  - @woven-canvas/core@1.3.3
+  - @woven-canvas/plugin-canvas-controls@1.1.1
+
 ## 1.7.2
 
 ### Patch Changes
