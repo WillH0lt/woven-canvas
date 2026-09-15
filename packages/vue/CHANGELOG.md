@@ -1,5 +1,11 @@
 # @woven-canvas/vue
 
+## 1.7.4
+
+### Patch Changes
+
+- 77330e2: Prevent native canvas drags from interrupting drawing and activating the image drop zone. Preserve text editing and external image drops, clamp unmatched drag leaves, and clear the overlay after cancelled or interrupted drags.
+
 ## 1.7.3
 
 ### Patch Changes
