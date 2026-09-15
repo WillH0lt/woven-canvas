@@ -18,6 +18,7 @@ const { nextEditorTick, getEditor } = useEditorContext();
 const { createImageBlock } = useImageCreation();
 const isDragging = ref(false);
 let dragCounter = 0;
+let internalDrag = false;
 
 // Check via the editor since that's authoritative (vs. reading a prop that
 // might be stale during the runtime flip from editor → viewer).
@@ -27,11 +28,35 @@ function isReadonlyNow(): boolean {
 
 // Get the container ref from WovenCanvas to listen for drag events on this specific canvas
 const containerRef = inject<{ value: HTMLElement | null }>("containerRef");
+let container: HTMLElement | null = null;
+
+function handleWindowDragStart(e: DragEvent) {
+  const target = e.target;
+  internalDrag = target instanceof Element && !!container?.contains(target);
+  handleContainerDrop();
+  // Drawing and block movement use pointer events. A native image or text
+  // selection drag cancels those gestures and must not become an image upload.
+  // Preserve native text editing, but exclude its drags from the drop zone too.
+  if (!isReadonlyNow() && internalDrag && target instanceof Element
+    && !target.closest('input, textarea, [contenteditable="true"]')) {
+    e.preventDefault();
+  }
+}
+
+function handleDragFinished() {
+  internalDrag = false;
+  handleContainerDrop();
+}
+
+function acceptsDrag(e: DragEvent): boolean {
+  return !internalDrag && !isReadonlyNow()
+    && Array.from(e.dataTransfer?.types ?? []).some(
+      t => t === "Files" || t === "text/uri-list" || t === "text/html"
+    );
+}
 
 function handleContainerDragEnter(e: DragEvent) {
-  if (isReadonlyNow()) return;
-  // Only respond to drags with files or images
-  if (e.dataTransfer?.types.some(t => t === "Files" || t === "text/uri-list" || t === "text/html")) {
+  if (acceptsDrag(e)) {
     dragCounter++;
     if (dragCounter === 1) {
       isDragging.value = true;
@@ -40,7 +65,9 @@ function handleContainerDragEnter(e: DragEvent) {
 }
 
 function handleContainerDragLeave() {
-  dragCounter--;
+  // Ignored drags can still produce leaves. Never let those poison the next
+  // drag's counter or leave an active overlay stranded below zero.
+  dragCounter = Math.max(0, dragCounter - 1);
   if (dragCounter === 0) {
     isDragging.value = false;
   }
@@ -52,24 +79,35 @@ function handleContainerDrop() {
 }
 
 onMounted(() => {
-  const container = containerRef?.value;
+  container = containerRef?.value ?? null;
   if (container) {
     container.addEventListener("dragenter", handleContainerDragEnter);
     container.addEventListener("dragleave", handleContainerDragLeave);
     container.addEventListener("drop", handleContainerDrop);
   }
+  window.addEventListener("dragstart", handleWindowDragStart, true);
+  window.addEventListener("dragend", handleDragFinished);
+  // Bubble cleanup runs after handleDrop has checked internalDrag.
+  window.addEventListener("drop", handleDragFinished);
+  window.addEventListener("blur", handleDragFinished);
+  window.addEventListener("pointerdown", handleDragFinished, true);
 });
 
 onUnmounted(() => {
-  const container = containerRef?.value;
   if (container) {
     container.removeEventListener("dragenter", handleContainerDragEnter);
     container.removeEventListener("dragleave", handleContainerDragLeave);
     container.removeEventListener("drop", handleContainerDrop);
   }
+  window.removeEventListener("dragstart", handleWindowDragStart, true);
+  window.removeEventListener("dragend", handleDragFinished);
+  window.removeEventListener("drop", handleDragFinished);
+  window.removeEventListener("blur", handleDragFinished);
+  window.removeEventListener("pointerdown", handleDragFinished, true);
 });
 
 function handleDragOver(e: DragEvent) {
+  if (!acceptsDrag(e)) return;
   e.preventDefault();
   if (e.dataTransfer) {
     e.dataTransfer.dropEffect = "copy";
@@ -77,6 +115,7 @@ function handleDragOver(e: DragEvent) {
 }
 
 function handleDragEnter(e: DragEvent) {
+  if (!acceptsDrag(e)) return;
   e.preventDefault();
 }
 
@@ -85,8 +124,9 @@ function handleDragLeave(e: DragEvent) {
 }
 
 async function handleDrop(e: DragEvent) {
+  handleContainerDrop();
+  if (!acceptsDrag(e)) return;
   e.preventDefault();
-  if (isReadonlyNow()) return;
 
   if (!e.dataTransfer) return;
 
