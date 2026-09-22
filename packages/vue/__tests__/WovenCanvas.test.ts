@@ -39,6 +39,7 @@ import WovenCanvas from '../src/components/WovenCanvas.vue'
 
 // Track all created editor instances
 let editorInstances: any[] = []
+let assetManagerInstances: any[] = []
 
 // Mock the plugins
 vi.mock('@woven-canvas/plugin-canvas-controls', () => ({
@@ -49,6 +50,9 @@ vi.mock('@woven-canvas/plugin-canvas-controls', () => ({
 
 vi.mock('@woven-canvas/asset-sync', () => {
   class MockAssetManager {
+    constructor() {
+      assetManagerInstances.push(this)
+    }
     init = vi.fn().mockResolvedValue(undefined)
     resumePendingUploads = vi.fn().mockResolvedValue(undefined)
     close = vi.fn()
@@ -56,7 +60,9 @@ vi.mock('@woven-canvas/asset-sync', () => {
     onUploadComplete = vi.fn(() => () => {})
     onUploadError = vi.fn(() => () => {})
   }
-  class MockLocalAssetProvider {}
+  class MockLocalAssetProvider {
+    storage = 'local'
+  }
   return {
     AssetManager: MockAssetManager,
     LocalAssetProvider: MockLocalAssetProvider,
@@ -109,6 +115,7 @@ describe('WovenCanvas', () => {
     frameId = 0
     animationFrameCallbacks = new Map()
     editorInstances = []
+    assetManagerInstances = []
 
     mockRequestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
       const id = ++frameId
@@ -132,6 +139,48 @@ describe('WovenCanvas', () => {
   function getLastEditorInstance() {
     return editorInstances[editorInstances.length - 1]
   }
+
+  it.each([
+    ['local', 'complete-local'],
+    ['remote', 'complete'],
+    [undefined, 'complete'],
+  ] as const)('maps provider storage %s to %s after upload completion', async (storage, expected) => {
+    const wrapper = mount(WovenCanvas, {
+      props: { assetProvider: { storage, upload: async () => ({}), resolveUrl: async () => 'image' } },
+    })
+    await flushPromises()
+    const completion = assetManagerInstances.at(-1).onUploadComplete.mock.calls[0][0]
+    completion('photo')
+    const patch = getLastEditorInstance().nextTick.mock.calls.at(-1)[0]
+
+    // Run the actual Core callback against a real ECS world, including two
+    // blocks that share the same image identifier.
+    const { Editor, Asset, createEntity, addComponent } =
+      await vi.importActual<typeof import('@woven-canvas/core')>('@woven-canvas/core')
+    const root = document.createElement('div')
+    const editor = new Editor(root)
+    try {
+      await editor.initialize()
+      let first: number
+      let second: number
+      editor.nextTick((ctx) => {
+        first = createEntity(ctx)
+        second = createEntity(ctx)
+        addComponent(ctx, first, Asset, { identifier: 'photo', uploadState: 'uploading' })
+        addComponent(ctx, second, Asset, { identifier: 'photo', uploadState: 'uploading' })
+      })
+      await editor.tick()
+      editor.nextTick((ctx) => {
+        patch(ctx)
+        expect(Asset.read(ctx, first).uploadState).toBe(expected)
+        expect(Asset.read(ctx, second).uploadState).toBe(expected)
+      })
+      await editor.tick()
+    } finally {
+      await editor.dispose()
+      wrapper.unmount()
+    }
+  })
 
   describe('mounting', () => {
     it('should mount successfully', async () => {

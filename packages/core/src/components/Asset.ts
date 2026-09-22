@@ -11,6 +11,8 @@ export const UploadState = {
   Uploading: 'uploading',
   /** Upload completed successfully */
   Complete: 'complete',
+  /** Saved in this browser only; still needs uploading when adopting a local draft. */
+  CompleteLocal: 'complete-local',
   /** Upload failed */
   Failed: 'failed',
 } as const

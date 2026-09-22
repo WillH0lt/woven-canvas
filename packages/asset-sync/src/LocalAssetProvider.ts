@@ -17,6 +17,7 @@ interface StoredAsset {
  * with cloud storage, implement your own AssetProvider.
  */
 export class LocalAssetProvider implements AssetProvider {
+  readonly storage = 'local' as const
   private store: KeyValueStore | null = null
   private initPromise: Promise<KeyValueStore> | null = null
 

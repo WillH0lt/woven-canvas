@@ -102,6 +102,9 @@ export interface AssetProvider {
 
   // --- Options ---
 
+  /** Where successful uploads are stored. Defaults to remote. */
+  storage?: 'local' | 'remote'
+
   /** Maximum retry attempts for failed uploads (default: 3) */
   maxRetries?: number
 

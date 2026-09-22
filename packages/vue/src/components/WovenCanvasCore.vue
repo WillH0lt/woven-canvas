@@ -493,8 +493,9 @@ let store: CanvasStore | null = null
 // Create asset manager eagerly so resolveUrl is available during SSR.
 // init() and resumePendingUploads() are deferred to onMounted (they need IndexedDB).
 const documentId = props.store?.persistence?.documentId ?? 'default'
+const assetProvider = props.assetProvider ?? new LocalAssetProvider()
 let assetManager: AssetManager | null = new AssetManager({
-  provider: props.assetProvider ?? new LocalAssetProvider(),
+  provider: assetProvider,
   documentId,
 })
 
@@ -748,7 +749,9 @@ onMounted(async () => {
       })
     }
     assetManager.onUploadStart((id) => patchByIdentifier(id, UploadState.Uploading))
-    assetManager.onUploadComplete((id) => patchByIdentifier(id, UploadState.Complete))
+    assetManager.onUploadComplete((id) =>
+      patchByIdentifier(id, assetProvider.storage === 'local' ? UploadState.CompleteLocal : UploadState.Complete),
+    )
     assetManager.onUploadError((id) => patchByIdentifier(id, UploadState.Failed))
   }
 
