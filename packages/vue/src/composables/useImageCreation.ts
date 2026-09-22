@@ -1,5 +1,4 @@
-import { Asset, addComponent, Block, createEntity, type EntityId, Grid, Image, UploadState } from '@woven-canvas/core'
-import { Synced } from '@woven-ecs/canvas-store'
+import { Asset, addComponent, Block, createBlock, type EntityId, Grid, Image, UploadState } from '@woven-canvas/core'
 import { inject } from 'vue'
 import { WOVEN_CANVAS_KEY } from '../injection'
 import { useEditorContext } from './useEditorContext'
@@ -67,17 +66,13 @@ export function useImageCreation(): UseImageCreationReturn {
     const width = dimensions.width * scale
     const height = dimensions.height * scale
 
-    // Create entity
-    const entityId = createEntity(ctx)
-
-    // Add Block component
-    addComponent(ctx, entityId, Block)
+    // Use normal placement so frames and app plugins can adopt the image.
+    const entityId = createBlock(ctx, {
+      tag: 'image',
+      position: [worldX - width / 2, worldY - height / 2],
+      size: [width, height],
+    })
     const block = Block.write(ctx, entityId)
-    block.tag = 'image'
-    block.position[0] = worldX - width / 2
-    block.position[1] = worldY - height / 2
-    block.size[0] = width
-    block.size[1] = height
 
     // Snap position to grid if enabled
     Grid.snapPosition(ctx, block.position)
@@ -97,11 +92,6 @@ export function useImageCreation(): UseImageCreationReturn {
     image.width = dimensions.width
     image.height = dimensions.height
     image.alt = file.name
-
-    // Add Synced component
-    addComponent(ctx, entityId, Synced, {
-      id: crypto.randomUUID(),
-    })
 
     // Upload if asset manager is available
     const assetManager = canvasContext?.getAssetManager()

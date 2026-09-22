@@ -1,4 +1,15 @@
-import { Asset, Block, Editor, Grid, Image, Synced, UploadState } from '@woven-canvas/core'
+import {
+  Asset,
+  addComponent,
+  Block,
+  createBlock,
+  Editor,
+  Frame,
+  Grid,
+  Image,
+  Synced,
+  UploadState,
+} from '@woven-canvas/core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp } from 'vue'
 import { useImageCreation } from '../src/composables/useImageCreation'
@@ -103,6 +114,26 @@ describe('useImageCreation', () => {
     expect(Math.min(...block.size)).toBeGreaterThan(0)
     expect(block.position[0] / 30).toBeCloseTo(Math.round(block.position[0] / 30))
     expect(block.position[1] / 17).toBeCloseTo(Math.round(block.position[1] / 17))
+  })
+
+  it('places a dropped image inside the frame under its center without moving it', async () => {
+    const ctx = editor._getContext()
+    Grid.write(ctx).enabled = false
+    const frameId = createBlock(ctx, { tag: 'frame', position: [100, 200], size: [800, 600] })
+    addComponent(ctx, frameId, Frame)
+    await editor.tick()
+
+    const id = await createImage()
+    await editor.tick()
+
+    const block = Block.read(ctx, id)
+    expect(block.parentId).toBe(frameId)
+    expect(block.position[0]).toBeCloseTo(517 - 200 - 100)
+    expect(block.position[1]).toBeCloseTo(463 - block.size[1] / 2 - 200)
+    const worldPosition = Block.getWorldPosition(ctx, id)
+    expect(worldPosition[0] + block.size[0] / 2).toBeCloseTo(517)
+    expect(worldPosition[1] + block.size[1] / 2).toBeCloseTo(463)
+    expect(block.rank > Block.read(ctx, frameId).rank).toBe(true)
   })
 
   it('allows zero grid spacing without corrupting image dimensions', async () => {
