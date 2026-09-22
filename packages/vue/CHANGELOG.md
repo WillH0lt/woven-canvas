@@ -1,5 +1,11 @@
 # @woven-canvas/vue
 
+## 1.7.6
+
+### Patch Changes
+
+- 77db329: Use standard block placement when creating images so dropped images join the frame under their center and trigger application layer assignment. Preserve image size and world position while assigning the normal stacking rank.
+
 ## 1.7.5
 
 ### Patch Changes
