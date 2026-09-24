@@ -1,5 +1,25 @@
 # @woven-canvas/vue
 
+## 2.0.0
+
+### Major Changes
+
+- c849539: Upgrade to `@woven-ecs/canvas-store` 3. WebSocket authentication now uses
+  `getCredentials: async () => ({ token, expiresAt })` instead of `token` and
+  `store.setToken()`. The store handles credential refresh and retries; `expiresAt`
+  is optional and uses Unix seconds. Update applications using the removed API
+  and install canvas-store 3 alongside the Vue package.
+
+### Patch Changes
+
+- Updated dependencies [c849539]
+  - @woven-canvas/core@2.0.0
+  - @woven-canvas/plugin-arrows@2.0.0
+  - @woven-canvas/plugin-canvas-controls@2.0.0
+  - @woven-canvas/plugin-eraser@2.0.0
+  - @woven-canvas/plugin-pen@2.0.0
+  - @woven-canvas/plugin-tapes@2.0.0
+
 ## 1.7.6
 
 ### Patch Changes
