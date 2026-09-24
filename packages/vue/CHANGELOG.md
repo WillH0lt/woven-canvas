@@ -1,5 +1,12 @@
 # @woven-canvas/vue
 
+## 2.0.1
+
+### Patch Changes
+
+- 8d8a719: Release the canvas-store 3 credential-provider migration as 2.0.1 because npm
+  reserves the previously published 2.0.0 version. No additional runtime changes.
+
 ## 2.0.0
 
 ### Major Changes
