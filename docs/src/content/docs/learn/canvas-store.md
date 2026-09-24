@@ -101,7 +101,7 @@ const storeOptions = {
     url: "wss://your-server.com/sync",
     documentId: "my-document",
     clientId: crypto.randomUUID(),
-    token: "auth-token", // optional auth token
+    getCredentials: async () => ({ token: "auth-token" }), // optional authentication
     startOffline: false, // start disconnected
     onConnectivityChange: (online: boolean) => {
       console.log(online ? "Connected" : "Disconnected");

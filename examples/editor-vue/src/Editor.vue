@@ -16,6 +16,7 @@ const clientId = crypto.randomUUID()
         //   documentId: 'editor-vue-test-22',
         //   clientId,
         //   url: 'ws://localhost:8087',
+        //   getCredentials: async () => ({ token: 'auth-token' }), // optional authentication
         // },
       }"
       :plugin-options="{ controls: { maxZoom: 3 } }"

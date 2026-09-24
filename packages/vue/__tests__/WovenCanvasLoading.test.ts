@@ -82,7 +82,6 @@ vi.mock('@woven-ecs/canvas-store', async () => {
     close = vi.fn()
     connect = vi.fn().mockResolvedValue(undefined)
     disconnect = vi.fn()
-    setToken = vi.fn()
     getState = vi.fn(() => ({}))
     undo = vi.fn()
     redo = vi.fn()

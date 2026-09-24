@@ -15,6 +15,8 @@ import "@woven-canvas/vue/style.css";
 ## Props
 
 ```typescript
+import type { WebsocketCredentials } from "@woven-ecs/canvas-store";
+
 interface WovenCanvasProps {
   store?: {
     // persistence, history, and multiplayer
@@ -32,7 +34,7 @@ interface WovenCanvasProps {
       url: string; // WebSocket server URL
       clientId: string; // unique client identifier
       startOffline?: boolean; // default: false
-      token?: string; // optional — authentication token
+      getCredentials?: () => Promise<WebsocketCredentials>; // fetch and refresh credentials
       onVersionMismatch?: (serverVersion: number) => void;
       onConnectivityChange?: (isOnline: boolean) => void;
     };
