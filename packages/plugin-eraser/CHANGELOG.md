@@ -1,5 +1,12 @@
 # @woven-canvas/plugin-eraser
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [c849539]
+  - @woven-canvas/core@2.0.0
+
 ## 1.0.3
 
 ### Patch Changes
