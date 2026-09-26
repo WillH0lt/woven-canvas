@@ -29,7 +29,8 @@ export type QueryResultItem<T extends readonly ComponentDefWithSchema[]> = {
  * rebuilds results when the set of matching entities changes.
  *
  * Each result item contains its own ShallowRefs that update when
- * component values change.
+ * component values change. Removal notifications retain the last snapshot until
+ * the ECS query removes the row. Retained refs are snapshots, not liveness checks.
  *
  * @param components - Array of component definitions that entities must have
  * @returns Shallow ref with array of matching entities and their component refs
@@ -99,6 +100,9 @@ export function useQuery<T extends readonly ComponentDefWithSchema[]>(components
 
       // Subscribe to changes
       const unsubscribe = canvasContext!.subscribeComponent(entityId, componentDef.name, (value) => {
+        // Component removals can arrive before the query's membership delta.
+        // Keep its non-null snapshot; the query owns row removal and cleanup.
+        if (value === null) return
         ;(componentRef as ShallowRef<unknown>).value = value
       })
       unsubscribes.push(unsubscribe)
