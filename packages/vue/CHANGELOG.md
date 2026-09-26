@@ -1,5 +1,11 @@
 # @woven-canvas/vue
 
+## 2.0.2
+
+### Patch Changes
+
+- 4c4acc9: Keep the last valid component snapshot in useQuery when a removal notification arrives before the ECS query's membership update. The query continues to own row removal and subscription cleanup. This prevents null-reference errors in synchronous query consumers during Undo and remote edits, while preserving normal updates and remove/re-add behavior without changing ECS timing or allocating additional state.
+
 ## 2.0.1
 
 ### Patch Changes
