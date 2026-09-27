@@ -1,5 +1,11 @@
 # @woven-canvas/vue
 
+## 2.0.3
+
+### Patch Changes
+
+- 07ba2f3: Return null from component hooks when an entity is deleted before Vue mounts or updates its subscriptions. A stale entity ID no longer throws or prevents subscriptions for other selected entities.
+
 ## 2.0.2
 
 ### Patch Changes
