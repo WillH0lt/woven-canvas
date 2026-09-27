@@ -7,6 +7,7 @@ import {
   defineCanvasComponent,
   type Editor,
   field,
+  isAlive,
   removeComponent,
   removeEntity,
   Selected,
@@ -16,8 +17,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, createApp, defineComponent, h, inject, nextTick, type Ref, ref, watch } from 'vue'
 import WovenCanvas from '../src/components/WovenCanvas.vue'
 import { useComponent } from '../src/composables/useComponent'
+import { useComponents } from '../src/composables/useComponents'
 import { type QueryResultItem, useQuery } from '../src/composables/useQuery'
-import { WOVEN_CANVAS_KEY } from '../src/injection'
+import { WOVEN_CANVAS_KEY, type WovenCanvasContext } from '../src/injection'
 
 // Keep real ECS, store/history, Vue reactivity and Floating UI sync watchers.
 // Asset persistence/uploads are unrelated and need IndexedDB in a browser.
@@ -53,6 +55,10 @@ describe('query lifecycle with synchronous consumers', () => {
   let remoteMutations: Mutation[]
   let directEntity: Ref<number | null>
   let directBlock: ReturnType<typeof useComponent<typeof Block>>
+  let directEntities: Ref<number[]>
+  let directBlocks: ReturnType<typeof useComponents<typeof Block>>
+  let initialBlocks: ReturnType<typeof useComponents<typeof Block>>
+  let canvasContext: WovenCanvasContext
 
   async function frame() {
     await canvas.value!.render()
@@ -82,20 +88,24 @@ describe('query lifecycle with synchronous consumers', () => {
     errors = []
     remoteMutations = []
     directEntity = ref(null)
+    directEntities = ref([])
     canvas = ref(null)
     let ready = false
     const DirectComponent = defineComponent({
       props: { entityId: { type: Number, required: true } },
       setup(props) {
         directBlock = useComponent(props.entityId, Block)
+        initialBlocks = useComponents([props.entityId], Block)
         return () => null
       },
     })
     const Probe = defineComponent({
       setup() {
         const context = inject(WOVEN_CANVAS_KEY)!
+        canvasContext = context
         selected = useQuery([Block, Selected])
         pages = useQuery([Page, Block])
+        directBlocks = useComponents(directEntities, Block)
         watch(
           selected,
           (rows) => {
@@ -303,6 +313,51 @@ describe('query lifecycle with synchronous consumers', () => {
     expect(memberships).toEqual([0])
     expect(retained.every((row) => row.block.value.tag === 'shape')).toBe(true)
     stop()
+  })
+
+  it('subscribes to surviving entities when a queued selection contains a deleted entity', async () => {
+    const removed = await addPage('queued-removal')
+    const survivor = await addPage('queued-survivor')
+    const stop = canvasContext.registerTickCallback((ctx) => {
+      stop()
+      // Run after WovenCanvas publishes its queries/events. Vue has not flushed
+      // the ID watcher yet, and WovenCanvas's entity cache still says "alive".
+      directEntities.value = selected.value.map((row) => row.entityId)
+      removeEntity(ctx, removed)
+      expect(canvasContext.hasEntity(removed)).toBe(true)
+      expect(isAlive(ctx, removed)).toBe(false)
+    })
+    await frame()
+    expect(errors).toEqual([])
+    expect(directBlocks.value.get(removed)).toBeNull()
+    expect(directBlocks.value.get(survivor)?.tag).toBe('shape')
+
+    directEntities.value = [survivor]
+    await nextTick()
+    expect(directBlocks.value.has(removed)).toBe(false)
+    editor.nextTick((ctx) => Block.patch(ctx, survivor, { position: [250, 350] }))
+    await settle()
+    expect(directBlocks.value.get(survivor)?.position).toEqual([250, 350])
+
+    directEntities.value = []
+    await nextTick()
+    expect(directBlocks.value.size).toBe(0)
+  })
+
+  it('mounts nullable component hooks after the entity has been deleted', async () => {
+    const id = await addPage('mount-removal')
+    editor.nextTick((ctx) => {
+      directEntity.value = id
+      removeEntity(ctx, id)
+    })
+    await frame()
+    expect(errors).toEqual([])
+    expect(directBlock.value).toBeNull()
+    expect(initialBlocks.value.get(id)).toBeNull()
+
+    directEntity.value = null
+    await settle()
+    expect(selected.value).toEqual([])
   })
 
   it.each(['deselect', 'delete', 'delete-and-pan'] as const)('handles %s without null snapshots', async (mode) => {
