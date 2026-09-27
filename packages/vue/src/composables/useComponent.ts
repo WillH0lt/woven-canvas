@@ -3,6 +3,7 @@ import {
   type EntityId,
   hasComponent,
   type InferCanvasComponentType,
+  isAlive,
 } from '@woven-canvas/core'
 import { inject, onUnmounted, type ShallowRef, shallowRef } from 'vue'
 import { WOVEN_CANVAS_KEY } from '../injection'
@@ -63,7 +64,8 @@ export function useComponent<T extends ComponentDefWithSchema>(
   const editor = canvasContext.getEditor()
   if (editor) {
     const ctx = editor._getContext()
-    if (hasComponent(ctx, entityId, componentDef)) {
+    // The entity may have been deleted since Vue queued this component's mount.
+    if (isAlive(ctx, entityId) && hasComponent(ctx, entityId, componentDef)) {
       componentRef.value = componentDef.snapshot(ctx, entityId)
     }
   }

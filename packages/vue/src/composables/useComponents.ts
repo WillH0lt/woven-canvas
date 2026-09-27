@@ -3,6 +3,7 @@ import {
   type EntityId,
   hasComponent,
   type InferCanvasComponentType,
+  isAlive,
 } from '@woven-canvas/core'
 import { inject, type MaybeRefOrGetter, onUnmounted, type ShallowRef, shallowRef, toValue, watch } from 'vue'
 import { WOVEN_CANVAS_KEY } from '../injection'
@@ -57,7 +58,8 @@ export function useComponents<T extends ComponentDefWithSchema>(
     const editor = canvasContext!.getEditor()
     if (editor) {
       const ctx = editor._getContext()
-      if (hasComponent(ctx, entityId, componentDef)) {
+      // The ECS can delete an entity before Vue flushes this ID watcher.
+      if (isAlive(ctx, entityId) && hasComponent(ctx, entityId, componentDef)) {
         const newMap = new Map(componentsMap.value)
         newMap.set(entityId, componentDef.snapshot(ctx, entityId))
         componentsMap.value = newMap
