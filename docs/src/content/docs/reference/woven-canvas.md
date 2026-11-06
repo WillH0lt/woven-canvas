@@ -172,10 +172,20 @@ interface WovenCanvasProps {
 
 ```typescript
 interface WovenCanvasEvents {
-  // Emitted when initialization completes
-  ready: [editor: Editor, store: CanvasStore];
+  // Emitted when initialization completes. `assetManager` is the canvas's own
+  // (initialized, pending uploads resumed): upload through it so
+  // Asset.uploadState tracks the upload.
+  ready: [editor: Editor, store: CanvasStore, assetManager: AssetManager];
+  // Emitted once when the document has loaded and the loading overlay lifts:
+  // the store's first sync (immediately for local-only stores, at setup with
+  // an initialState), or going offline before that. Can fire before or after
+  // `ready`.
+  loaded: [];
 }
 ```
+
+`ready` and `loaded` are useful for UI rendered outside `<WovenCanvas>`, where
+`useEditorContext()` isn't available.
 
 ## Slots
 
@@ -346,14 +356,19 @@ interface UISlots {
 ```vue
 <script setup lang="ts">
 import { WovenCanvas, type Editor } from "@woven-canvas/vue";
+import type { AssetManager } from "@woven-canvas/asset-sync";
 import type { CanvasStore } from "@woven-ecs/canvas-store";
 
 const storeOptions = {
   persistence: { documentId: "my-canvas" },
 };
 
-function onReady(editor: Editor, store: CanvasStore) {
+function onReady(editor: Editor, store: CanvasStore, assets: AssetManager) {
   console.log("Canvas ready!");
+}
+
+function onLoaded() {
+  console.log("Document loaded");
 }
 </script>
 
@@ -364,6 +379,7 @@ function onReady(editor: Editor, store: CanvasStore) {
     :plugin-options="{ controls: { maxZoom: 5 } }"
     :background="{ kind: 'dots' }"
     @ready="onReady"
+    @loaded="onLoaded"
   >
     <template #block:my-block="props">
       <MyBlock v-bind="props" />
