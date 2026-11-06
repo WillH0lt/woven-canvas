@@ -220,9 +220,20 @@ const blockLayers = [
 
 const emit = defineEmits<{
   /**
-   * Fires once the editor has finished initializing on the client.
+   * Fires once the editor has finished initializing on the client. `assetManager`
+   * is the canvas's own, initialized and with pending uploads resumed — upload
+   * through it so `Asset.uploadState` tracks the upload. Handy for UI rendered
+   * outside the canvas, where `useEditorContext().getAssetManager()` isn't
+   * available.
    */
-  ready: [editor: Editor, store: CanvasStore]
+  ready: [editor: Editor, store: CanvasStore, assetManager: AssetManager]
+  /**
+   * Fires once, when the document has loaded and the loading overlay lifts: on
+   * the store's first sync (immediately for local-only stores, at setup for an
+   * `initialState`), or on going offline before that. Independent of `ready` —
+   * it can fire before or after it.
+   */
+  loaded: []
 }>()
 
 // Define slots - block slots use "block:<tag>" naming, other slots allow overriding built-in UI
@@ -345,6 +356,16 @@ const isLoading = ref(!props.initialState)
 watch(isOnline, (online) => {
   if (!online) isLoading.value = false
 })
+
+// `isLoading` only ever clears, so `loaded` fires exactly once — right away when
+// an `initialState` means there was nothing to load.
+watch(
+  isLoading,
+  (loading) => {
+    if (!loading) emit('loaded')
+  },
+  { immediate: true },
+)
 
 // Camera ref for internal rendering - updated via subscription
 const cameraRef = shallowRef(Camera.default())
@@ -787,8 +808,8 @@ onMounted(async () => {
     canvasContext.setDefaults('text', { fontFamily: firstFont })
   }
 
-  // Emit ready event with editor instance
-  emit('ready', editorRef.value!, store!)
+  // Emit ready event with the editor, store and asset manager
+  emit('ready', editorRef.value!, store!, assetManager!)
 })
 
 onUnmounted(() => {

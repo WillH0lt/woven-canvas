@@ -346,6 +346,48 @@ describe('WovenCanvas', () => {
       const editorInstance = getLastEditorInstance()
       expect(readyArgs[0][0]).toBe(editorInstance)
     })
+
+    it('should pass the canvas asset manager with the ready event', async () => {
+      const readyArgs: any[] = []
+      mount(WovenCanvas, {
+        attrs: {
+          onReady: (...args: any[]) => readyArgs.push(args),
+        },
+      })
+      await flushPromises()
+
+      const assetManager = assetManagerInstances.at(-1)
+      expect(readyArgs[0][2]).toBe(assetManager)
+      // Handed over initialized, with pending uploads already resumed.
+      expect(assetManager.init).toHaveBeenCalled()
+      expect(assetManager.resumePendingUploads).toHaveBeenCalled()
+    })
+
+    it('should emit loaded once when a local store has loaded', async () => {
+      let loaded = 0
+      mount(WovenCanvas, {
+        attrs: {
+          onLoaded: () => loaded++,
+        },
+      })
+      await flushPromises()
+
+      expect(loaded).toBe(1)
+    })
+
+    it('should emit loaded once, right away, with an initialState', async () => {
+      let loaded = 0
+      mount(WovenCanvas, {
+        props: { initialState: {} },
+        attrs: {
+          onLoaded: () => loaded++,
+        },
+      })
+      expect(loaded).toBe(1)
+
+      await flushPromises()
+      expect(loaded).toBe(1)
+    })
   })
 
   describe('tick loop', () => {
